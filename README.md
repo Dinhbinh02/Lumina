@@ -20,7 +20,7 @@ Lumina là một Chrome Extension mạnh mẽ, đưa các mô hình ngôn ngữ 
 
 ## Hướng dẫn cài đặt
 
-1. **Tải mã nguồn**: Clone hoặc tải bộ code này về máy tính.
+1. **Tải mã nguồn**: Clone hoặc tải mã nguồn này về máy tính.
 2. **Cài đặt Extension**:
    - Truy cập `chrome://extensions/` trên Google Chrome.
    - Bật **Developer mode** (Chế độ nhà phát triển) ở góc trên bên phải.
