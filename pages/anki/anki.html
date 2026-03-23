@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lumina - Anki Management</title>
+    <link rel="stylesheet" href="anki.css">
+    <link rel="stylesheet" href="anki_generator.css">
+    <link rel="stylesheet" href="anki_manager.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="../../lib/flatpickr.min.css">
+    <script src="../../lib/flatpickr.min.js"></script>
+    <script src="../../lib/d3.min.js"></script>
+    <script src="../../lib/cal-heatmap.js"></script>
+    <link rel="stylesheet" href="../../lib/cal-heatmap.css">
+
+</head>
+
+<body>
+    <div class="anki-container">
+        <header class="anki-header">
+            <div class="logo-area">
+                <h1>Anki Management</h1>
+                <div id="connectionStatus" class="connection-status disconnected">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Disconnected</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="refreshConnectionBtn" class="icon-btn" title="Retry Connection">🔄</button>
+            </div>
+        </header>
+
+        <div class="anki-main">
+            <nav class="anki-sidebar">
+                <div class="sidebar-header">
+                    <h2>Anki Management</h2>
+                </div>
+                <button class="nav-item active" data-tab="browser">
+                    <span class="icon">🗂️</span> Card Manager
+                </button>
+                <button class="nav-item" data-tab="setup">
+                    <span class="icon">⚙️</span> Anki Setup
+                </button>
+                <button class="nav-item" data-tab="templates">
+                    <span class="icon">📝</span>Templates
+                </button>
+                <button class="nav-item" data-tab="generator">
+                    <span class="icon">✨</span> Card Generator
+                </button>
+                <div class="nav-spacer"></div>
+
+                <div id="connectionStatusSidebar" class="connection-status disconnected">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Disconnected</span>
+                </div>
+            </nav>
+
+            <div class="anki-content-area">
+                <div id="tab-browser" class="tab-content active">
+                    <div class="browser-layout panel">
+                        <div class="browser-header">
+                            <div class="unified-search-bar">
+                                <button id="regenerateSelectedBtn" class="action-pill primary"
+                                    title="Regenerate selected cards">Regenerate</button>
+                                <button id="moveSelectedBtn" class="action-pill secondary"
+                                    title="Move to Deck">Move</button>
+                                <button id="deleteSelectedBtn" class="action-pill danger"
+                                    title="Delete selected cards">Delete</button>
+
+                                <div class="search-main-wrap">
+                                    <input type="text" id="browserSearch" placeholder="Search cards...">
+                                </div>
+
+
+
+                                <div class="filter-pill" id="deckPill">
+                                    <span class="pill-label">Deck:</span>
+                                    <span class="pill-value" id="deckPillValue">All Decks</span>
+                                    <span class="pill-arrow">▾</span>
+                                    <div class="custom-dropdown" id="deckDropdown">
+                                        <input type="text" class="dropdown-search" placeholder="Search decks...">
+                                        <div class="dropdown-list" id="deckDropdownList"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="browser-body">
+                            <span id="cardCountBadge" class="card-count-badge">0 cards</span>
+                            <div class="browser-results-container">
+                                <table id="browserTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="checkbox-cell" style="width: 40px; text-align: center;">
+                                                <input type="checkbox" id="selectAllCards">
+                                            </th>
+                                            <th data-sort="deck" style="width: 13%;">Deck</th>
+                                            <th data-sort="content" style="width: 47%;">Content</th>
+                                            <th data-sort="created" style="width: 20%;">Created</th>
+                                            <th data-sort="modified" style="width: 20%;">Modified</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="browserTableBody">
+                                        <tr>
+                                            <td colspan="5" style="text-align:center">No search results</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Side Editor for Browser -->
+                            <div id="sideEditor" class="side-editor">
+                                <div class="side-editor-header">
+                                    <h3>Edit Card</h3>
+                                </div>
+                                <div id="editorContent" class="editor-content"></div>
+                                <div class="side-editor-footer" style="display: none;">
+                                    <div class="editor-actions">
+                                        <button id="deleteCardBtn" class="btn-danger">Delete</button>
+                                        <div class="flex-spacer"></div>
+                                        <button id="cancelCardBtn" class="btn-secondary"
+                                            style="margin-right: 8px;">Cancel</button>
+                                        <button id="saveCardBtn" class="btn-primary">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="anki-heatmap-section" class="heatmap-section">
+                        <div class="heatmap-container">
+                            <div id="cal-heatmap"></div>
+                        </div>
+                        <div class="heatmap-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Daily average:</span>
+                                <span id="stat-daily-avg" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Days learned:</span>
+                                <span id="stat-days-learned" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Longest streak:</span>
+                                <span id="stat-longest-streak" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Current streak:</span>
+                                <span id="stat-current-streak" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="tab-setup" class="tab-content">
+                    <div class="setup-manager-layout">
+                        <div class="setup-col decks-col">
+                            <div class="setup-panel-header">
+                                <h3>Decks</h3>
+                                <button id="createNewDeckBtn" class="btn-primary" style="padding: 6px 12px;">+
+                                    Create</button>
+                            </div>
+                            <div id="deckListScroll" class="setup-list-container">
+                                <ul id="deckList" class="setup-item-list"></ul>
+                            </div>
+                        </div>
+
+                        <div class="setup-col models-col">
+                            <div class="setup-panel-header">
+                                <h3>Note Types</h3>
+                                <button id="createNewModelBtn" class="btn-primary" style="padding: 6px 12px;">+
+                                    Create</button>
+                            </div>
+                            <div id="modelListScroll" class="setup-list-container">
+                                <ul id="modelList" class="setup-item-list"></ul>
+                            </div>
+                        </div>
+
+                        <div class="setup-col dive-col">
+                            <div id="modelDiveEmpty" class="empty-state">Select a Note Type to manage fields and card
+                                designs</div>
+
+                            <div id="modelDiveContent" class="dive-content hidden">
+                                <div class="dive-section fields-section">
+                                    <div class="dive-header">
+                                        <h4>Fields</h4>
+                                        <button id="addFieldBtn" class="btn-text-small">+ Add</button>
+                                    </div>
+                                    <div id="modelFieldsList" class="field-pill-container"></div>
+                                </div>
+
+                                <div class="dive-section templates-section">
+                                    <div class="dive-header">
+                                        <h4>Card Types / Templates</h4>
+                                    </div>
+                                    <div id="modelTemplatesList" class="template-selector-list"></div>
+
+                                    <div id="cardTemplateEditor" class="card-editor-box">
+                                        <div class="editor-sub-nav">
+                                            <button class="sub-nav-item active" data-view="front">Front
+                                                Template</button>
+                                            <button class="sub-nav-item" data-view="back">Back Template</button>
+                                            <button class="sub-nav-item" data-view="styling">Styling (CSS)</button>
+                                        </div>
+                                        <div class="editor-textareas">
+                                            <textarea id="templateFrontEditor" class="code-editor"
+                                                placeholder="Front HTML"></textarea>
+                                            <textarea id="templateBackEditor" class="code-editor hidden"
+                                                placeholder="Back HTML"></textarea>
+                                            <textarea id="templateCssEditor" class="code-editor hidden"
+                                                placeholder="Global CSS"></textarea>
+                                        </div>
+                                        <div class="editor-footer">
+                                            <button id="previewModelNoteBtn" class="btn-secondary"
+                                                style="margin-right: 8px;">Preview Card</button>
+                                            <button id="saveModelChangesBtn" class="btn-primary">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-templates" class="tab-content">
+                    <div class="browser-layout panel">
+                        <div class="browser-header">
+                            <div class="unified-search-bar">
+                                <div class="search-main-wrap">
+                                    <input type="text" id="templateSearch" placeholder="Search templates...">
+                                </div>
+                                <button id="createNewTemplateBtn" class="btn-primary" style="padding: 6px 12px;">+
+                                    Create</button>
+                            </div>
+                        </div>
+                        <div class="browser-body">
+                            <div class="browser-table-header">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 15%;">Name</th>
+                                            <th style="width: 40%;">Prompt</th>
+                                            <th style="width: 5%;">Fields</th>
+                                            <th style="width: 20%;">Created</th>
+                                            <th style="width: 20%;">Modified</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                            <div class="browser-results-container">
+                                <table id="templateTable">
+                                    <tbody id="templateTableBody">
+                                        <tr>
+                                            <td colspan="5" style="text-align:center">Loading templates...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="templateEditor" class="side-editor">
+                                <div class="side-editor-header">
+                                    <h3 id="templateEditorTitle">Edit Template</h3>
+                                </div>
+                                <div class="editor-content">
+                                    <div class="setup-group" style="margin-bottom: 20px;">
+                                        <label>Template Name</label>
+                                        <input type="text" id="editTemplateName" placeholder="e.g. English Vocab"
+                                            class="full-width">
+                                    </div>
+                                    <div class="setup-group" style="margin-bottom: 20px;">
+                                        <label>Prompt</label>
+                                        <textarea id="editTemplateGlobalPrompt"
+                                            placeholder="What is the overall goal of this card? (e.g. Help me learn business English vocabulary)"
+                                            class="full-width"></textarea>
+                                    </div>
+                                    <div class="setup-group" style="margin-bottom: 20px;">
+                                        <label>Anki Note Type (Model)</label>
+                                        <div class="lumina-model-selector" id="note-type-selector">
+                                            <button class="lumina-model-btn" id="note-type-btn">
+                                                <span class="lumina-current-model"
+                                                    id="note-type-label">Loading...</span>
+                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                                    style="margin-left: auto; opacity: 0.6;">
+                                                    <path d="M18 9l-6 6-6-6" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round"
+                                                        transform="rotate(180 12 12)" />
+                                                </svg>
+                                            </button>
+                                            <div class="lumina-model-dropdown" id="note-type-dropdown"></div>
+                                        </div>
+                                    </div>
+                                    <div class="setup-group" style="margin-bottom: 20px;">
+                                        <label>AI Model</label>
+                                        <div class="lumina-model-selector" id="anki-model-selector">
+                                            <button class="lumina-model-btn" id="anki-model-btn">
+                                                <span class="lumina-current-model"
+                                                    id="anki-model-label">Loading...</span>
+                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                                    style="margin-left: auto; opacity: 0.6;">
+                                                    <path d="M18 9l-6 6-6-6" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round"
+                                                        transform="rotate(180 12 12)" />
+                                                </svg>
+                                            </button>
+                                            <div class="lumina-model-dropdown" id="anki-model-dropdown"></div>
+                                        </div>
+                                    </div>
+                                    <div class="fields-section">
+                                        <div class="editor-section-header">
+                                            <label
+                                                style="font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase;">Field
+                                                Rules</label>
+                                            <button id="addTemplateFieldBtn" class="btn-text-small">+ Add Field</button>
+                                        </div>
+                                        <div id="editFieldsContainer" class="fields-list"></div>
+                                    </div>
+                                    <div class="preview-section"
+                                        style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0f0f0;">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <label
+                                                style="font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase;">Sample
+                                                Examples (Max 3)</label>
+                                            <button id="addExamplePreviewBtn" class="btn-text-small">Add
+                                                Example</button>
+                                        </div>
+                                        <div id="examplePreviewsContainer"></div>
+                                    </div>
+                                </div>
+                                <div class="side-editor-footer">
+                                    <div class="editor-actions">
+                                        <button id="deleteTemplateBtn" class="btn-danger">Delete</button>
+                                        <div class="flex-spacer"></div>
+                                        <button id="cancelTemplateBtn" class="btn-secondary">Cancel</button>
+                                        <button id="saveTemplateBtn" class="btn-primary">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-generator" class="tab-content">
+                <div class="generator-layout">
+                    <div class="generator-top-row">
+                        <section class="generator-container setup-container">
+                            <div class="setup-body">
+                                <div class="setup-row">
+                                    <div class="setup-group flex-1">
+                                        <label>Target Deck</label>
+                                        <select id="deckSelect" class="full-width"></select>
+                                    </div>
+                                    <div class="setup-group flex-1">
+                                        <label>Template</label>
+                                        <select id="templateSelect" class="full-width"></select>
+                                    </div>
+                                </div>
+                                <div class="setup-row">
+                                    <div class="setup-group flex-1">
+                                        <label>AI Model</label>
+                                        <div class="lumina-model-selector" id="gen-model-selector">
+                                            <button class="lumina-model-btn" id="gen-model-btn">
+                                                <span class="lumina-current-model" id="gen-model-label">Loading...</span>
+                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                                    style="margin-left: auto; opacity: 0.6;">
+                                                    <path d="M18 9l-6 6-6-6" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round"
+                                                        transform="rotate(180 12 12)" />
+                                                </svg>
+                                            </button>
+                                            <div class="lumina-model-dropdown" id="gen-model-dropdown"></div>
+                                        </div>
+                                    </div>
+                                    <div class="setup-group" style="width: 100px; flex-shrink: 0;">
+                                        <label>Batch Size</label>
+                                        <input type="number" id="batchSizeInput" value="10" min="1" max="50" style="padding: 10px;">
+                                    </div>
+                                </div>
+                                <div class="setup-group flex-grow">
+                                    <label>Words <span id="batchWordCount"
+                                            style="font-weight: normal; color: #999; margin-left: 4px; font-size: 0.9em;">(0)</span></label>
+                                    <textarea id="batchInput" class="full-width"
+                                        placeholder="Enter words separated by commas or one per line..."></textarea>
+                                </div>
+                            </div>
+                            <footer class="setup-footer">
+                                <button id="generateBatchBtn" class="btn-primary full-width">Generate</button>
+                            </footer>
+                        </section>
+
+                        <section class="generator-container preview-container">
+                            <div id="previewContainer" class="preview-labels-grid">
+                                <div class="empty-state">No cards generated yet</div>
+                            </div>
+                            <span id="genCardCountBadge" class="card-count-badge hidden">0 cards</span>
+                        </section>
+                    </div>
+
+                    <section class="generator-container history-container">
+                        <div class="history-table-wrapper">
+                            <table class="history-table">
+                                <colgroup>
+                                    <col style="width: 70px;">
+                                    <col>
+                                    <col style="width: 180px;">
+                                    <col style="width: 240px;">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Words</th>
+                                        <th>Created Date</th>
+                                        <th style="text-align: center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div id="exampleModal" class="modal-overlay hidden">
+                <div class="modal-content" id="exampleModalContent">
+                    <div class="modal-header modal-header-mini"></div>
+                    <div id="exampleFieldsContainer" class="modal-body"></div>
+                    <div class="modal-footer modal-footer-borderless">
+                        <button id="regenerateExBtn" class="btn-secondary"
+                            style="margin-right: 8px;">Regenerate</button>
+                        <button id="saveExampleBtn" class="btn-primary">Save Example</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Modal (Replaces native alerts) -->
+            <div id="statusModal" class="modal-overlay hidden">
+                <div class="modal-content status-modal-content">
+                    <div id="statusIcon" style="font-size: 32px; margin-bottom: 12px; text-align: center;"></div>
+                    <div id="statusTitle" style="font-size: 16px; font-weight: 700; margin-bottom: 8px; text-align: center;"></div>
+                    <div id="statusMessage" style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; max-height: 200px; overflow-y: auto;"></div>
+                    <div class="modal-footer" style="padding: 0; border: none; justify-content: center; gap: 10px;">
+                        <button id="statusCopyBtn" class="btn-secondary hidden">Copy Missing Words</button>
+                        <button id="statusCloseBtn" class="btn-primary" style="min-width: 80px;">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cardPreviewModal" class="modal-overlay hidden">
+                <div class="modal-content preview-modal-content">
+                    <div class="modal-header preview-modal-header-mini">
+                        <div class="preview-toggle-wrap">
+                            <button class="toggle-btn active" data-side="front">Front</button>
+                            <button class="toggle-btn" data-side="back">Back</button>
+                        </div>
+                    </div>
+                    <div class="modal-body preview-body-scroll">
+                        <div class="anki-card-frame">
+                            <style id="ankiPreviewStyle"></style>
+                            <div id="ankiCardContent" class="card"></div>
+                        </div>
+                    </div>
+                    <div class="preview-modal-footer-mini"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <script src="../../lib/utils/constants.js"></script>
+    <script src="anki_client.js"></script>
+    <script src="anki.js"></script>
+    <script src="anki_heatmap.js"></script>
+    <script src="anki_generator.js"></script>
+    <script src="anki_manager.js"></script>
+
+
+
+    <div id="moveCardsModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Move to Deck</h3>
+                <button class="close-btn" id="closeMoveModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; font-size: 13px; color: #666;">Select target deck:</p>
+                <div class="custom-dropdown open" style="position: static; display: flex !important; border: 1px solid #ddd; border-radius: 8px;">
+                    <input type="text" id="moveDeckSearch" class="dropdown-search" placeholder="Search decks..." style="border:none; border-bottom: 1px solid #eee;">
+                    <div id="moveDeckList" class="dropdown-list" style="max-height: 200px; display: block;">
+                        <!-- Decks will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee;">
+                <button id="cancelMoveBtn" class="action-pill">Cancel</button>
+                <button id="confirmMoveBtn" class="action-pill primary">Move Cards</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="heatmapDetailsModal" class="modal-overlay hidden">
+        <div class="modal-content"
+            style="max-width: 600px !important; min-height: 300px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 id="heatmapDetailsTitle">Review Activity</h3>
+                <button class="close-btn" id="closeHeatmapModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 0;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 12px; font-size: 10px; color: #999;">ID</th>
+                            <th style="padding: 12px; font-size: 10px; color: #999;">WORD</th>
+                            <th style="padding: 12px; font-size: 10px; color: #999;">EASE</th>
+                            <th style="padding: 12px; font-size: 10px; color: #999;">RESULT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="heatmapDetailsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

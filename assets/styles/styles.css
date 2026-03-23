@@ -1,0 +1,4909 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+
+/* Font imports handled by extension logic */
+/* --- Liquid Glass / Apple Style Design System --- */
+/* Global: Hide All Scrollbars */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Global Selection Highlight */
+::selection {
+  background: #b1d4fc !important;
+  /* Light blue highlight */
+  color: inherit !important;
+  /* Keep original text color or use a high contrast one if needed */
+  text-shadow: none !important;
+}
+
+:root,
+:host {
+
+  /* Transparency Control (0.0 = fully transparent, 1.0 = solid) */
+  --lumina-glass-opacity: 0.95;
+  --lumina-glass-base-rgb: 255,
+    255,
+    255;
+  /* RGB components for background */
+
+  /* Computed glass backgrounds */
+  --lumina-glass-bg: rgba(var(--lumina-glass-base-rgb), var(--lumina-glass-opacity));
+  --lumina-glass-bg-light: rgba(var(--lumina-glass-base-rgb), calc(var(--lumina-glass-opacity) * 0.6));
+  /* Transparency Control (0.0 = fully transparent, 1.0 = solid) */
+  --lumina-glass-border: rgba(0, 0, 0, 0.15);
+
+  /* Standardized Blur Tiers */
+  --lumina-blur-primary: blur(8px);
+  --lumina-blur-secondary: blur(12px) saturate(150%);
+  --lumina-blur-tertiary: blur(8px);
+
+  /* Standardized Shadow Tiers */
+  --lumina-shadow-primary: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  --lumina-shadow-secondary: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --lumina-shadow-tertiary: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --lumina-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --lumina-shadow-focus: 0 0 0 3px rgba(var(--lumina-primary-rgb), 0.4);
+
+  --lumina-primary-color: #0056D2;
+  --lumina-primary-rgb: 0,
+    86,
+    210;
+  --lumina-text-primary: #000000;
+  --lumina-text-secondary: #444444;
+  --lumina-text-tertiary: #757575;
+
+  --lumina-radius-lg: 24px;
+  --lumina-radius-md: 16px;
+  --lumina-radius-sm: 12px;
+
+  --lumina-input-bg: #FFFFFF;
+
+  --lumina-font-family: 'Montserrat',
+    sans-serif;
+}
+
+/* Dark Mode Overrides - Pure Black High Contrast */
+[data-theme="dark"],
+:host([data-theme="dark"]) {
+  /* Backgrounds */
+  --lumina-glass-base-rgb: 0, 0, 0;
+  /* Pure Black Base */
+
+  /* Text - High Contrast */
+  --lumina-text-primary: #FFFFFF;
+  --lumina-text-secondary: #A1A1A6;
+  /* Cool Gray */
+  --lumina-text-tertiary: #6E6E73;
+  /* Darker Gray */
+
+  /* Accents */
+  --lumina-primary-color: #0A84FF;
+  /* iOS Dark Mode Blue */
+  --lumina-primary-rgb: 10, 132, 255;
+
+  /* UI Elements */
+  /* UI Elements */
+  --lumina-glass-border: rgba(255, 255, 255, 0.15);
+  /* Stronger border for black bg */
+  --lumina-input-bg: #1C1C1E;
+  /* Distinct input background (Dark Gray) */
+  --lumina-card-bg: #1C1C1E;
+
+  /* Shadows - Subtle on black */
+  --lumina-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 1);
+  --lumina-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.8);
+  --lumina-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Utility: Hidden class for version swapping */
+.lumina-hidden {
+  display: none !important;
+}
+
+
+
+.lumina-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  cursor: grab !important;
+  z-index: 999 !important;
+  background: transparent !important;
+  pointer-events: none !important;
+  /* Managed by JS for priority selection */
+}
+
+.lumina-drag-handle:active {
+  cursor: grabbing !important;
+}
+
+.lumina-dict-popup {
+  display: block;
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  min-width: 200px;
+  min-height: 200px;
+  overflow: visible !important;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+  contain: content;
+  isolation: isolate;
+  overscroll-behavior: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  font-family: 'Montserrat', 'Roboto', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-transform: none !important;
+  text-indent: 0 !important;
+  text-shadow: none !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  word-wrap: normal !important;
+  color: var(--lumina-text-primary) !important;
+  animation: lumina-pop-in 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-align: left !important;
+  box-sizing: border-box !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  direction: ltr !important;
+  unicode-bidi: normal !important;
+  /* Defaults to reduce inline styles */
+  zoom: 1;
+  opacity: 0;
+  /* Hidden by default, shown by JS after positioning */
+  transition: none;
+  /* No transition by default, enabled when needed */
+}
+
+.lumina-dict-popup p,
+.lumina-dict-popup div,
+.lumina-dict-popup span,
+.lumina-dict-popup a,
+.lumina-dict-popup li,
+.lumina-dict-popup ul,
+.lumina-dict-popup ol,
+.lumina-dict-popup dl,
+.lumina-dict-popup dd,
+.lumina-dict-popup blockquote,
+.lumina-dict-popup pre,
+.lumina-dict-popup code,
+.lumina-dict-popup time,
+.lumina-dict-popup label,
+.lumina-dict-popup td {
+  font-weight: 520;
+  line-height: 1.65;
+}
+
+.lumina-dict-popup p {
+  margin-bottom: 0.8em;
+}
+
+.lumina-dict-popup ul,
+.lumina-dict-popup ol {
+  padding-left: 24px !important;
+  margin-bottom: 0.8em !important;
+  list-style-position: outside !important;
+}
+
+.lumina-dict-popup li {
+  margin-bottom: 0.4em !important;
+}
+
+.lumina-dict-popup b,
+.lumina-dict-popup strong,
+.lumina-dict-popup h1,
+.lumina-dict-popup h2,
+.lumina-dict-popup h3,
+.lumina-dict-popup h4,
+.lumina-dict-popup h5,
+.lumina-dict-popup h6,
+.lumina-dict-popup th,
+.lumina-dict-popup dt,
+.lumina-dict-popup legend,
+.lumina-dict-popup optgroup {
+  font-weight: 620 !important;
+}
+
+.lumina-dict-popup code {
+  background-color: #e9eef6 !important;
+  color: #444746 !important;
+  border: none !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  font-family: 'Google Sans Code', 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', monospace !important;
+  font-weight: 400 !important;
+}
+
+.lumina-dict-popup pre {
+  font-family: 'Google Sans Code', 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', monospace !important;
+}
+
+[data-theme="dark"] .lumina-dict-popup,
+.lumina-dict-popup[data-theme="dark"] {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-dict-popup.lumina-pinned {
+  z-index: 2147483647 !important;
+  border-color: rgba(var(--lumina-primary-rgb), 0.4) !important;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(var(--lumina-primary-rgb), 0.1) !important;
+  will-change: auto;
+  transition: none !important;
+  transform: translateZ(0);
+}
+
+.lumina-resize-handle {
+  position: absolute;
+  z-index: 100 !important;
+  background: transparent;
+}
+
+.lumina-resize-n {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.lumina-resize-s {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.lumina-resize-e {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.lumina-resize-w {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+/* Corners (Overlapping edges) */
+.lumina-resize-ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+  z-index: 101 !important;
+}
+
+.lumina-resize-nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  z-index: 101 !important;
+}
+
+.lumina-resize-se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  z-index: 101 !important;
+}
+
+.lumina-resize-sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+  z-index: 101 !important;
+}
+
+/* Hide resize handle when minimized */
+.lumina-dict-popup.lumina-minimized .lumina-resize-handle {
+  display: none;
+}
+
+/* Ensure all children have consistent styles */
+.lumina-dict-popup *,
+.lumina-dict-popup *::before,
+.lumina-dict-popup *::after {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  text-transform: inherit;
+  direction: inherit;
+}
+
+@keyframes lumina-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes lumina-fade-in-up {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.lumina-dict-popup * {
+  box-sizing: border-box;
+  font-family: var(--lumina-font-family) !important;
+}
+
+.lumina-dict-popup input,
+.lumina-dict-popup textarea,
+.lumina-dict-popup button,
+.lumina-spotlight-overlay input,
+.lumina-spotlight-overlay textarea {
+  font-family: var(--lumina-font-family) !important;
+}
+
+.lumina-dict-popup ::placeholder,
+.lumina-spotlight-overlay ::placeholder {
+  font-family: var(--lumina-font-family) !important;
+  opacity: 0.6;
+}
+
+/* --- Header & Typography --- */
+
+.lumina-dict-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  position: relative !important;
+}
+
+.lumina-dict-play-btn {
+  display: block !important;
+  position: absolute !important;
+  top: 2px !important;
+  right: 0 !important;
+  width: 28px !important;
+  height: 28px !important;
+  cursor: pointer !important;
+  background-color: rgba(var(--lumina-primary-rgb), 0.1) !important;
+  border-radius: 50% !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="%23007AFF"><path d="M320-200v-560l440 280-440 280Z"/></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+.lumina-dict-play-btn:hover {
+  background-color: rgba(var(--lumina-primary-rgb), 0.2);
+  transform: scale(1.05);
+}
+
+.lumina-dict-popup .lumina-dict-word {
+  font-weight: 700 !important;
+  font-size: 1.6em !important;
+  color: var(--lumina-text-primary);
+  letter-spacing: -0.03em;
+  text-transform: lowercase !important;
+  display: inline-block;
+  line-height: 1.2 !important;
+  margin-top: -6px !important;
+}
+
+.lumina-dict-popup .lumina-dict-ipa {
+  color: var(--lumina-primary-color);
+  font-weight: 620 !important;
+  font-size: 1.1em !important;
+  font-family: "SF Pro Rounded", "Google Sans Code", "JetBrains Mono", var(--lumina-font-family);
+  margin-top: 2px;
+  background: rgba(var(--lumina-primary-rgb), 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+  align-self: flex-start;
+}
+
+/* --- Meanings & Content --- */
+
+.lumina-dict-meanings {
+  margin-top: 12px;
+  font-weight: 500 !important;
+}
+
+.lumina-dict-meaning-item {
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.lumina-dict-popup .lumina-dict-pos {
+  display: inline-block;
+  font-size: 0.85em !important;
+  font-weight: 620 !important;
+  color: var(--lumina-primary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(var(--lumina-primary-rgb), 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  margin-bottom: 3px;
+  vertical-align: middle;
+}
+
+.lumina-dict-popup .lumina-dict-meaning-text {
+  font-weight: 620 !important;
+  color: var(--lumina-text-primary);
+  font-size: 1em !important;
+  line-height: 1.65;
+  ;
+  display: inline;
+}
+
+.lumina-dict-meaning-text::first-letter {
+  text-transform: uppercase !important;
+}
+
+.lumina-dict-example {
+  font-style: italic;
+  color: var(--lumina-text-secondary);
+  margin-top: 6px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.4);
+  font-size: 0.92em !important;
+  font-weight: 500 !important;
+  line-height: 1.65;
+  ;
+}
+
+.lumina-dict-translation {
+  color: var(--lumina-text-secondary);
+  font-weight: 500 !important;
+  font-size: 1em !important;
+}
+
+.lumina-dict-popup .lumina-dict-original-text {
+  color: var(--lumina-text-primary);
+  font-weight: 620 !important;
+  margin-bottom: 8px;
+  cursor: text;
+  width: 100%;
+  font-size: 1em !important;
+}
+
+.lumina-dict-related-section {
+  margin-top: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.lumina-dict-related-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.lumina-dict-related-row:last-child {
+  margin-bottom: 0;
+}
+
+.lumina-dict-popup .lumina-dict-related-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 620 !important;
+  color: var(--lumina-text-tertiary);
+  /* Softer label */
+  font-size: 0.85em !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.lumina-dict-related-icon {
+  font-size: 1.1em;
+  line-height: 1;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.lumina-dict-related-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+/* Chip Styles */
+.lumina-dict-synonym-item,
+.lumina-dict-antonym-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.92em !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid transparent;
+  line-height: 1.4;
+}
+
+/* Synonyms - Green/Teal tint */
+.lumina-dict-synonym-item {
+  background: rgba(52, 199, 89, 0.12);
+  /* Apple Green light */
+  color: #248a3d;
+  border-color: rgba(52, 199, 89, 0.15);
+}
+
+[data-theme="dark"] .lumina-dict-synonym-item {
+  background: rgba(48, 209, 88, 0.2);
+  color: #6ee788;
+  border-color: rgba(48, 209, 88, 0.15);
+}
+
+.lumina-dict-synonym-item:hover {
+  background: rgba(52, 199, 89, 0.2) !important;
+  /* Stronger green on hover */
+  border-color: rgba(52, 199, 89, 0.15) !important;
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .lumina-dict-synonym-item:hover {
+  background: rgba(48, 209, 88, 0.25) !important;
+  border-color: rgba(48, 209, 88, 0.15) !important;
+}
+
+/* Antonyms - Red/Orange tint */
+.lumina-dict-antonym-item {
+  background: rgba(255, 59, 48, 0.12);
+  /* Apple Red light */
+  color: #d72b22;
+  border-color: rgba(255, 59, 48, 0.15);
+}
+
+[data-theme="dark"] .lumina-dict-antonym-item {
+  background: rgba(255, 69, 58, 0.2);
+  color: #ff6961;
+  border-color: rgba(255, 69, 58, 0.15);
+}
+
+.lumina-dict-antonym-item:hover {
+  background: rgba(255, 59, 48, 0.15);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+
+/* Collocations - Blue/Indigo tint */
+.lumina-dict-collocation-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.92em !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid transparent;
+  line-height: 1.4;
+  background: rgba(0, 122, 255, 0.12);
+  /* Apple Blue light */
+  color: #007aff;
+  border-color: rgba(0, 122, 255, 0.15);
+}
+
+[data-theme="dark"] .lumina-dict-collocation-item {
+  background: rgba(10, 132, 255, 0.2);
+  color: #64d2ff;
+  border-color: rgba(10, 132, 255, 0.15);
+}
+
+.lumina-dict-collocation-item:hover {
+  background: rgba(0, 122, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* File Attachments */
+.lumina-chat-question-files {
+  margin-top: 4px;
+}
+
+.lumina-chat-attached-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.lumina-chat-attached-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.92em !important;
+  color: var(--lumina-text-primary);
+  max-width: 200px;
+}
+
+.lumina-chat-attached-file span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* File Preview Item */
+.lumina-image-preview-item.is-file {
+  width: auto;
+  min-width: 100px;
+  max-width: 150px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.lumina-file-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--lumina-text-primary);
+  font-size: 0.85em !important;
+  width: 100%;
+}
+
+.lumina-file-icon svg {
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-file-name {
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-dict-synonym-item:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.2);
+  border-color: rgba(var(--lumina-primary-rgb), 0.3);
+}
+
+
+
+.lumina-dict-separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  margin: 10px 0;
+}
+
+/* --- Model Thoughts (Reasoning Models) --- */
+
+.lumina-thinking-container {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  transition: background-color 0.12s ease, opacity 0.12s ease;
+  opacity: 1;
+}
+
+.lumina-thinking-container:not(.appeared) {
+  opacity: 1;
+  animation: none;
+}
+
+.lumina-thinking-container.collapsed {
+  background: transparent;
+}
+
+.lumina-thinking-container:not(.collapsed) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.lumina-thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+}
+
+.lumina-thinking-container:not(.collapsed) .lumina-thinking-header {
+  padding: 8px 12px;
+}
+
+.lumina-thinking-header:hover {
+  opacity: 0.8;
+}
+
+.lumina-thinking-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-text-secondary);
+  transition: color 0.12s ease, opacity 0.12s ease;
+}
+
+.lumina-thinking-container.collapsed .lumina-thinking-icon {
+  transform: rotate(-90deg);
+}
+
+.lumina-thinking-icon svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.lumina-thinking-label {
+  font-size: 1em !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.3px;
+  color: var(--lumina-text-primary);
+  transition: color 0.12s ease, opacity 0.12s ease;
+}
+
+/* Drag & Drop Styles */
+.chain-item {
+  cursor: grab;
+}
+
+.chain-item:active {
+  cursor: grabbing;
+}
+
+.chain-item-ghost {
+  opacity: 0.5;
+  background: var(--sidebar-hover);
+  border: 1px dashed var(--primary-color);
+}
+
+.lumina-thinking-content {
+  padding: 0 12px 12px 12px;
+  font-size: 0.92em !important;
+  line-height: 1.65;
+  ;
+  color: var(--lumina-text-secondary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 250px;
+  overflow-y: auto;
+  transition: background-color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.lumina-thinking-container.collapsed .lumina-thinking-content {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* --- Loading & Errors --- */
+
+.lumina-dict-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--lumina-text-secondary);
+  font-weight: 500 !important;
+}
+
+.lumina-dict-error {
+  color: #FF3B30;
+  padding: 12px;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.15);
+  border-radius: 12px;
+  font-size: 1em !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* --- Chat Mode --- */
+
+.lumina-dict-popup.lumina-mode-chat,
+.lumina-dict-popup.lumina-with-input {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  height: 360px;
+  min-height: 200px;
+  max-height: 360px;
+  background: var(--lumina-glass-bg);
+  /* Ensure background persists */
+}
+
+.lumina-chat-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+.lumina-chat-scroll-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  overflow-anchor: auto;
+  /* Enable native scroll anchoring */
+  padding: 10px 10px 0 10px;
+  max-width: 740px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  /* For overlay positioning */
+}
+
+/* Performant fade-out overlay instead of mask-image */
+.lumina-chat-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.lumina-chat-container::after {
+  content: '';
+  position: absolute;
+  bottom: 60px;
+  /* Above the input area */
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to top, var(--lumina-glass-base-rgb) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.8;
+}
+
+[data-theme="dark"] .lumina-chat-container::after {
+  background: linear-gradient(to top, #000 0%, transparent 100%);
+}
+
+/* (fade handled by mask-image on .lumina-chat-scroll-content above) */
+
+.lumina-chat-context {
+  flex-shrink: 0;
+  align-self: flex-end;
+  color: var(--lumina-text-primary);
+  padding: 10px 16px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, calc(0.05 + var(--lumina-glass-opacity, 0.75) * 0.03));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: none;
+  font-weight: 500 !important;
+  font-size: 1em !important;
+  border-radius: 16px;
+  max-width: 100%;
+  box-sizing: border-box;
+  line-height: 1.5;
+  font-style: italic;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-chat-context:hover {
+  background: rgba(0, 0, 0, calc(0.08 + var(--lumina-glass-opacity, 0.75) * 0.03));
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Answer Versioning and Navigation */
+.lumina-answer-versions {
+  display: flex;
+  flex-direction: column;
+}
+
+.lumina-answer-version {
+  display: none;
+  width: 100%;
+}
+
+.lumina-answer-version.active {
+  display: block;
+  animation: none;
+}
+
+.lumina-answer-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  font-size: 0.85em;
+  color: var(--lumina-text-secondary);
+  user-select: none;
+  width: fit-content;
+}
+
+[data-theme="dark"] .lumina-answer-nav {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Nav inside translation card needs spacing */
+.lumina-translation-card .lumina-answer-nav {
+  margin-left: 16px;
+  margin-bottom: 12px;
+  margin-top: 0px;
+}
+
+.lumina-answer-nav-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  color: var(--lumina-text-secondary);
+  font-size: 0.92em;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.lumina-answer-nav-btn:hover:not(:disabled) {
+  background: rgba(var(--lumina-primary-rgb), 0.15);
+  color: var(--lumina-primary-color);
+}
+
+.lumina-answer-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.lumina-answer-nav-counter {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.85em !important;
+}
+
+.lumina-context-collapsed {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.lumina-context-collapsed:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Context text span */
+.lumina-context-text {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Context remove button */
+.lumina-context-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-chat-context:hover .lumina-context-remove {
+  opacity: 1;
+}
+
+.lumina-context-remove:hover {
+  background: rgba(255, 59, 48, 0.8);
+  color: white;
+  transform: scale(1.1);
+}
+
+.lumina-chat-context {
+  position: relative;
+}
+
+.lumina-chat-history {
+  display: flex;
+  flex-direction: column;
+  overflow-anchor: none;
+}
+
+.lumina-dict-entry {
+  display: flex;
+  flex-direction: column;
+  /* Performance optimization: isolate layout and style for long histories */
+  contain: layout style;
+  transform: translateZ(0); /* Force GPU layer */
+}
+
+
+/* --- Chat Bubbles (iMessage Style) --- */
+
+.lumina-chat-question {
+  align-self: flex-end !important;
+  background: #e9eef6 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  color: var(--lumina-text-primary) !important;
+  padding: 10px 16px !important;
+  border-radius: 20px !important;
+  border-bottom-right-radius: 14px !important;
+  font-weight: 520;
+  max-width: 85% !important;
+  word-wrap: break-word !important;
+  font-size: 1em !important;
+  line-height: 1.65 !important;
+  white-space: pre-wrap !important;
+  display: flex !important;
+  flex-direction: column !important;
+  outline: none !important;
+  transition: background-color 0.12s ease, color 0.12s ease !important;
+  margin-bottom: 16px !important;
+}
+
+/* User requested no hover effect */
+.lumina-chat-question:not(.proofread-question):hover {
+  background: #e9eef6;
+  border-color: transparent;
+}
+
+.lumina-chat-question>div[contenteditable="true"],
+.lumina-chat-question.expanded>div[contenteditable="true"] {
+  outline: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  max-height: 166px !important;
+  overflow-y: auto !important;
+  cursor: text !important;
+  line-height: 1.65 !important;
+}
+
+.lumina-chat-answer {
+  width: 100% !important;
+  color: var(--lumina-text-primary) !important;
+  font-weight: 520 !important;
+  line-height: 1.65 !important;
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  font-size: 1em !important;
+  cursor: text !important;
+}
+
+.lumina-chat-answer p {
+  margin-bottom: 0.8em !important;
+  margin-top: 0 !important;
+  line-height: 1.65 !important;
+  color: inherit !important;
+}
+
+.lumina-chat-answer p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.lumina-chat-answer strong,
+.lumina-chat-answer b {
+  font-weight: 620 !important;
+  color: inherit !important;
+}
+
+.lumina-chat-answer em,
+.lumina-chat-answer i {
+  font-style: italic !important;
+  color: inherit !important;
+}
+
+.lumina-chat-answer h1,
+.lumina-chat-answer h2,
+.lumina-chat-answer h3,
+.lumina-chat-answer h4,
+.lumina-chat-answer h1 code,
+.lumina-chat-answer h2 code,
+.lumina-chat-answer h3 code,
+.lumina-chat-answer h4 code {
+  margin-top: 1.25em !important;
+  margin-bottom: 0.6em !important;
+  line-height: 1.35 !important;
+  color: var(--lumina-text-primary) !important;
+  font-weight: 620 !important;
+}
+
+.lumina-chat-answer h1:first-child,
+.lumina-chat-answer h2:first-child,
+.lumina-chat-answer h3:first-child,
+.lumina-chat-answer h4:first-child {
+  margin-top: 0 !important;
+}
+
+.lumina-chat-answer h1 {
+  font-size: 1.2em !important;
+}
+
+.lumina-chat-answer h2 {
+  font-size: 1.1em !important;
+}
+
+.lumina-chat-answer h3 {
+  font-size: 1.04em !important;
+}
+
+.lumina-chat-answer h4 {
+  font-size: 1em !important;
+}
+
+.lumina-chat-answer ul,
+.lumina-chat-answer ol {
+  margin-bottom: 0.8em !important;
+  margin-top: 0 !important;
+  padding-left: 1.5em !important;
+}
+
+.lumina-chat-answer ul:last-child,
+.lumina-chat-answer ol:last-child {
+  margin-bottom: 0 !important;
+}
+
+.lumina-chat-answer li {
+  margin-bottom: 0.45em !important;
+  line-height: 1.65 !important;
+  padding-left: 0.2em !important;
+}
+
+.lumina-chat-answer li:last-child {
+  margin-bottom: 0 !important;
+}
+
+.lumina-chat-answer blockquote {
+  margin: 1em 0 !important;
+  padding: 10px 16px !important;
+  border-left: 3px solid rgba(0, 0, 0, 0.15) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-radius: 4px !important;
+  font-style: italic !important;
+  font-size: 0.92em !important;
+  line-height: 1.65 !important;
+  color: var(--lumina-text-secondary) !important;
+}
+
+.lumina-chat-answer .lumina-table-wrap {
+  margin: 1em 0 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lumina-chat-answer table {
+  margin: 0 !important;
+  border-collapse: collapse !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  font-size: 0.93em !important;
+  line-height: 1.65 !important;
+}
+
+.lumina-chat-answer th,
+.lumina-chat-answer td {
+  padding: 8px 12px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  line-height: 1.65 !important;
+  text-align: left !important;
+}
+
+.lumina-chat-answer th {
+  background: rgba(0, 0, 0, 0.04) !important;
+  font-weight: 620 !important;
+}
+
+.lumina-chat-answer hr {
+  margin: 1.5em 0 !important;
+  border: none !important;
+  height: 1px !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* --- Code Blocks (Dark Theme) --- */
+.lumina-chat-answer code {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: var(--lumina-text-primary) !important;
+  border: none !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.95em !important;
+  font-weight: 520 !important;
+}
+
+.lumina-chat-answer pre {
+  background: #e9eef6 !important;
+  padding: 12px !important;
+  border-radius: 12px !important;
+  overflow-x: auto !important;
+  margin: 12px 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+  white-space: pre !important;
+}
+
+.lumina-code-block-wrap {
+  position: relative;
+  background: #e9eef6 !important;
+  border-radius: 12px !important;
+}
+
+/* Dark theme overrides for code blocks */
+[data-theme="dark"] .lumina-chat-answer pre,
+[data-theme="dark"] .lumina-code-block-wrap {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Copy button inside code blocks */
+.lumina-code-copy-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.07);
+  color: #5f6368;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+/* Expansion for "hover near" effect */
+.lumina-code-copy-btn::before {
+  content: '';
+  position: absolute;
+  top: -32px;
+  left: -32px;
+  right: -8px;
+  bottom: -8px;
+  z-index: -1;
+  background: transparent;
+}
+
+.lumina-code-copy-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.13);
+  color: #3c4043;
+}
+
+.lumina-code-copy-btn.copied {
+  color: #188038;
+  background: rgba(24, 128, 56, 0.1);
+  opacity: 1;
+}
+
+.lumina-chat-answer pre code {
+  display: inline-block;
+  background: transparent !important;
+  padding: 0 !important;
+  color: #5f6368 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.95em !important;
+  line-height: 1.5 !important;
+  font-weight: 520 !important;
+  min-width: 100%;
+}
+
+/* --- Syntax Highlighting (Gemini Light Theme) --- */
+
+/* Purple #8430ce - keyword, operator, punctuation, selectors, attr */
+.lumina-chat-answer pre code .hljs-keyword,
+.lumina-chat-answer pre code .hljs-operator,
+.lumina-chat-answer pre code .hljs-punctuation,
+.lumina-chat-answer pre code .hljs-selector-attr,
+.lumina-chat-answer pre code .hljs-selector-pseudo,
+.lumina-chat-answer pre code .hljs-tag .hljs-attr,
+.lumina-chat-answer pre code .hljs-attr {
+  color: #8430ce !important;
+}
+
+/* Blue #1967d2 - built_in, function, meta */
+.lumina-chat-answer pre code .hljs-built_in,
+.lumina-chat-answer pre code .hljs-meta,
+.lumina-chat-answer pre code .hljs-meta .hljs-keyword,
+.lumina-chat-answer pre code .hljs-regexp,
+.lumina-chat-answer pre code .hljs-doctag {
+  color: #1967d2 !important;
+}
+
+/* Green #188038 - string */
+.lumina-chat-answer pre code .hljs-string,
+.lumina-chat-answer pre code .hljs-symbol {
+  color: #188038 !important;
+}
+
+/* Gold #996900 - class, title, type, number, literal */
+.lumina-chat-answer pre code .hljs-title,
+.lumina-chat-answer pre code .hljs-section,
+.lumina-chat-answer pre code .hljs-selector-class,
+.lumina-chat-answer pre code .hljs-selector-id,
+.lumina-chat-answer pre code .hljs-type,
+.lumina-chat-answer pre code .hljs-function,
+.lumina-chat-answer pre code .hljs-class .hljs-title,
+.lumina-chat-answer pre code .hljs-number,
+.lumina-chat-answer pre code .hljs-literal {
+  color: #996900 !important;
+}
+
+/* Gray #5f6368 - comment, attribute, params, property */
+.lumina-chat-answer pre code .hljs-comment,
+.lumina-chat-answer pre code .hljs-quote,
+.lumina-chat-answer pre code .hljs-attribute,
+.lumina-chat-answer pre code .hljs-params,
+.lumina-chat-answer pre code .hljs-property {
+  color: #5f6368 !important;
+}
+
+.lumina-chat-answer pre code .hljs-comment,
+.lumina-chat-answer pre code .hljs-quote {
+  font-style: italic;
+}
+
+/* Red #d93025 - variable, tag, name */
+.lumina-chat-answer pre code .hljs-variable,
+.lumina-chat-answer pre code .hljs-template-variable,
+.lumina-chat-answer pre code .hljs-tag,
+.lumina-chat-answer pre code .hljs-selector-tag,
+.lumina-chat-answer pre code .hljs-name {
+  color: #d93025 !important;
+}
+
+.lumina-chat-answer ol,
+.lumina-chat-answer ul {
+  margin: 0 0 8px 0;
+  padding-left: 24px;
+  list-style-position: outside;
+}
+
+.lumina-chat-answer li {
+  margin: 4px 0;
+}
+
+/* KaTeX Math Styling Override */
+.lumina-chat-answer .katex {
+  font-size: 1em !important;
+  font-weight: 500 !important;
+  text-rendering: optimizeLegibility;
+}
+
+.lumina-chat-answer .katex .text {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+.lumina-chat-answer .katex-display {
+  margin: 0.8em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+.lumina-chat-answer .mord .mtight {
+  font-weight: 600 !important;
+}
+
+.lumina-chat-input-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 740px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 0 10px 10px 10px;
+  z-index: 20;
+  background: var(--lumina-chat-bg, transparent);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-end;
+  height: auto;
+  min-height: 48px;
+  pointer-events: none;
+}
+
+.lumina-input-container {
+  width: 100% !important;
+  flex: 1;
+  border-radius: 28px !important;
+  background: var(--lumina-input-bg) !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  position: relative !important;
+  z-index: 2 !important;
+  opacity: 1;
+  pointer-events: auto !important;
+  font-size: 0.92em !important;
+  contain: layout style !important;
+  transform: translateZ(0);
+}
+
+[data-theme="dark"] .lumina-input-container {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+
+.lumina-input-container::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  padding: 1px !important;
+  background: linear-gradient(var(--lumina-primary-color),
+      #00D2FF,
+      var(--lumina-primary-color)) !important;
+  background-size: 100% 200% !important;
+  border-radius: 28px !important;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  mask-composite: exclude !important;
+  -webkit-mask-composite: destination-out !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  opacity: 0;
+  will-change: background-position, opacity;
+}
+
+.lumina-input-container.lumina-sending::after {
+  animation: lumina-send-flash 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes lumina-send-flash {
+  0% {
+    opacity: 0;
+    background-position: 0% 0%;
+  }
+
+  20% {
+    opacity: 1;
+    background-position: 0% 50%;
+  }
+
+  65% {
+    opacity: 1;
+    background-position: 0% 120%;
+  }
+
+  100% {
+    opacity: 0;
+    background-position: 0% 200%;
+  }
+}
+
+.lumina-input-container .lumina-chat-input {
+  font-size: 1.087em !important;
+}
+
+.lumina-input-container .lumina-input-bar * {
+  font-size: 1em;
+}
+
+.lumina-chat-input {
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none;
+  font-family: inherit !important;
+  line-height: 1.4 !important;
+  letter-spacing: normal !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  font-weight: 500 !important;
+  color: var(--lumina-text-primary) !important;
+  resize: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: 129px !important;
+  min-height: 24px !important;
+  height: auto;
+  padding: 6px 8px !important;
+}
+
+.lumina-input-bar {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(100px, 30%) auto;
+  grid-template-rows: auto 34px; /* Fixed height for the tools row */
+  column-gap: 8px;
+  row-gap: 0;
+  padding: 8px 12px;
+  align-items: end; /* Anchor to bottom to prevent 1px jitter */
+  position: relative;
+  overflow: visible;
+}
+
+.lumina-input-bar .lumina-left-actions {
+  grid-row: 2;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lumina-input-bar .lumina-chat-input {
+  grid-row: 2;
+  grid-column: 2; /* Shifted left */
+  /* GPU Layer to prevent text-growth jitter from affecting neighbors */
+  transform: translateZ(0); 
+}
+
+/* Toggle buttons are now handles by .lumina-left-actions flexbox gap */
+
+.lumina-input-bar .lumina-model-selector {
+  grid-row: 2;
+  grid-column: 3;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.lumina-input-bar .lumina-trailing-group {
+  grid-row: 2;
+  grid-column: 4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lumina-input-bar .lumina-model-btn {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 32px !important;
+  padding: 0 10px !important;
+  background: #f2f2f2 !important;
+  border: none !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease; /* Removed transform to avoid jitter */
+  gap: 4px !important;
+}
+
+.lumina-input-bar .lumina-model-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Dark theme for model btn */
+[data-theme="dark"] .lumina-input-bar .lumina-model-btn {
+  background: #2C2C2E !important;
+}
+
+[data-theme="dark"] .lumina-input-bar .lumina-model-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-input-bar .lumina-current-model {
+  font-weight: 520 !important;
+  color: var(--lumina-text-secondary) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  text-align: left;
+}
+
+.lumina-input-bar .lumina-current-model:hover {
+  color: var(--lumina-text-primary) !important;
+}
+
+.lumina-input-bar .lumina-model-dropdown {
+  position: absolute !important;
+  bottom: 130% !important;
+  left: 50% !important;
+  right: auto !important;
+  width: 220px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--lumina-glass-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+  padding: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(10px);
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none;
+  z-index: 10000 !important;
+}
+
+.lumina-input-bar .lumina-model-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Expanded State: Input takes Row 1, Buttons stay in Row 2 */
+.lumina-input-bar.expanded .lumina-chat-input {
+  grid-row: 1;
+  grid-column: 1 / span 4;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.lumina-input-bar.expanded .lumina-left-actions,
+.lumina-input-bar.expanded .lumina-model-selector,
+.lumina-input-bar.expanded .lumina-trailing-group {
+  grid-row: 2;
+}
+
+/* Ensure buttons stay in normal flow below input */
+.lumina-input-bar .lumina-chat-input {
+  flex-grow: 1;
+  border: none;
+  background: transparent;
+  min-height: 24px;
+  max-height: 200px;
+  padding: 4px 8px;
+  resize: none;
+  font-family: inherit;
+  font-size: 1em;
+  line-height: 1.4;
+  outline: none;
+  min-width: 0;
+  user-select: text;
+  -webkit-user-select: text;
+  /* Native CSS Auto-Resize (Chrome 123+) */
+  field-sizing: content;
+  height: auto !important;
+}
+
+/* Plus Toggle & Mic & Regenerate */
+.lumina-plus-toggle,
+.lumina-mic-btn,
+.lumina-regenerate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: var(--lumina-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+  /* Separate GPU Layer to prevent jitter during layout reflow */
+  transform: translateZ(0);
+}
+
+.lumina-plus-toggle:hover,
+.lumina-mic-btn:hover,
+.lumina-regenerate-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-primary);
+}
+
+/* Stop Response Button */
+.lumina-stop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: #FF3B30;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease; /* Removed transform */
+  flex-shrink: 0;
+  grid-area: trailing;
+  justify-self: end;
+}
+
+.lumina-stop-btn:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: #E02020;
+}
+
+/* Ensure stop button takes same position as mic in expanded mode */
+.lumina-input-bar.expanded .lumina-stop-btn {
+  grid-column: 4;
+  grid-row: 2;
+  justify-self: end;
+}
+
+/* Action Menu Wrapper */
+.lumina-actions-dropdown-wrapper {
+  position: relative;
+  order: -1;
+}
+
+/* Dropdown Menu Container */
+.lumina-actions-menu {
+  position: absolute !important;
+  bottom: 110% !important;
+  left: 0 !important;
+  background: #f2f2f2 !important;
+  backdrop-filter: var(--lumina-blur-primary) !important;
+  border: 1px solid var(--lumina-glass-border) !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+  padding: 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-width: 160px !important;
+
+  /* Hidden state */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+  font-size: 1em !important;
+}
+
+/* Show Menu on Active (Click) */
+.lumina-actions-dropdown-wrapper.active .lumina-actions-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto !important;
+}
+
+/* Menu Items */
+.lumina-actions-menu>button,
+.lumina-actions-menu .lumina-tools-toggle,
+.lumina-actions-menu .lumina-model-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--lumina-text-primary) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  text-align: left;
+  transition: background 0.15s ease;
+  font-family: inherit;
+  box-shadow: none;
+  font-weight: 500 !important;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+
+.lumina-actions-menu>button:hover,
+.lumina-actions-menu .lumina-tools-toggle:hover,
+.lumina-actions-menu .lumina-model-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Tool Toggles (Proofread, AI, Translate) - Handled below in main tools section */
+
+
+.lumina-input-bar.has-active-tool .lumina-mic-btn {
+  order: 4;
+  margin-left: auto;
+}
+
+/* Override Attach Toggle inside menu */
+.lumina-attach-toggle {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  justify-content: flex-start;
+}
+
+.lumina-attach-toggle svg {
+  margin-right: 0;
+}
+
+.lumina-attach-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: transparent;
+  color: #86868b;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.lumina-attach-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-primary);
+  transform: none;
+}
+
+.lumina-attach-btn svg {
+  stroke: currentColor;
+  stroke-width: 0;
+  /* Fill is used */
+  fill: currentColor;
+}
+
+.lumina-image-preview-container {
+  padding: 12px 12px 0 12px;
+}
+
+.lumina-image-preview-container:empty {
+  display: none;
+  margin-bottom: 0;
+}
+
+.lumina-image-list {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.lumina-image-preview-item {
+  position: relative;
+  height: 60px;
+  flex: 0 1 60px;
+  /* Start at 60px, shrink if needed */
+  min-width: 30px;
+  /* Minimum visible width */
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.lumina-image-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  /* Hide by default to keep clean */
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-image-preview-item:hover .lumina-image-remove {
+  opacity: 1;
+}
+
+.lumina-image-remove:hover {
+  background: rgba(255, 59, 48, 0.9);
+  transform: scale(1.1);
+}
+
+/* Question with files */
+.lumina-chat-question-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 6px 0;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
+.lumina-chat-question-files img {
+  height: 100px;
+  width: auto;
+  max-width: 100%;
+  min-width: 60px;
+  flex-shrink: 1;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.lumina-chat-question-files img:hover {
+  transform: scale(1.02);
+}
+
+.lumina-file-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  max-width: 150px;
+}
+
+.lumina-file-chip:hover {
+  background: var(--hover-bg);
+  transform: scale(1.02);
+}
+
+.lumina-file-chip svg {
+  flex-shrink: 0;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-file-chip span {
+  font-size: 0.85em !important;
+  color: var(--lumina-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- File Preview Overlay (Messenger-style) --- */
+.lumina-preview-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  box-sizing: border-box !important;
+  border-radius: 24px !important;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+}
+
+.lumina-dict-popup.lumina-viewing-preview .lumina-chat-scroll-content,
+.lumina-dict-popup.lumina-viewing-preview .lumina-chat-input-wrapper {
+  visibility: hidden;
+}
+
+.lumina-preview-container.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lumina-preview-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgba(255, 255, 255, 0.9);
+  z-index: 10;
+}
+
+.lumina-preview-close svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  opacity: 1;
+}
+
+.lumina-preview-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: none;
+}
+
+.lumina-preview-close:active {
+  transform: scale(0.95);
+}
+
+/* Preview Content Container */
+.lumina-preview-content {
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Subtle entrance animation */
+  animation: previewContentFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes previewContentFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lumina-preview-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Preview Image */
+.lumina-preview-content img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 16px;
+  display: block;
+  cursor: zoom-in;
+  /* No transition - instant response for zoom/drag */
+
+  /* Subtle shadow to lift image off background */
+  box-shadow: none;
+}
+
+/* Zoomed state */
+.lumina-preview-content img.zoomed {
+  cursor: grab;
+  border-radius: 8px;
+  max-width: none;
+  max-height: none;
+}
+
+/* Allow panning when zoomed */
+.lumina-preview-content.panning {
+  overflow: auto;
+  cursor: grab;
+}
+
+.lumina-preview-content.panning:active {
+  cursor: grabbing;
+}
+
+/* --- Image Lookup (Google Minimalist Style) --- */
+
+.lumina-image-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--lumina-primary-rgb), 0.18);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  width: 100%;
+}
+
+.lumina-image-query {
+  padding: 12px 16px;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: var(--lumina-text-primary);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lumina-image-query::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: var(--lumina-primary-color);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.lumina-image-container {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+  margin: 0 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lumina-image-container::-webkit-scrollbar {
+  display: none;
+}
+
+.lumina-image-item {
+  flex-shrink: 0;
+  width: 140px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.03);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  scroll-snap-align: start;
+}
+
+.lumina-image-item:hover {
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+.lumina-image-item:active {
+  transform: scale(0.98);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .lumina-image-card {
+  background: rgba(30, 30, 30, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .lumina-image-query {
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .lumina-image-item {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Thinking Indicator (replaces spinner) --- */
+
+/* --- Typing Indicator (Three Dots) --- */
+
+.lumina-typing-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid var(--lumina-glass-border);
+  border-radius: 16px;
+  opacity: 0;
+  animation: lumina-fade-in-up 0.3s ease forwards;
+  animation-delay: 0.1s;
+}
+
+/* Full width typing container in translation blocks */
+.lumina-translation-block .lumina-typing-container,
+.lumina-translation-target .lumina-typing-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Spacing for loading indicator in regenerate context */
+.lumina-answer-version .lumina-typing-container {
+  margin-top: 10px;
+}
+
+.lumina-loading-wrapper {
+  padding: 0;
+}
+
+.lumina-thinking-shimmer {
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  line-height: 1.65 !important;
+  letter-spacing: normal !important;
+  color: var(--lumina-text-primary);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.lumina-thinking-shimmer::after {
+  content: "";
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  animation: lumina-dots 1.5s steps(4, end) infinite;
+}
+
+/* YouTube Fetching Indicator */
+.lumina-fetching-shimmer {
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  line-height: 1.65 !important;
+  color: var(--lumina-text-primary);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.lumina-fetching-shimmer::after {
+  content: "";
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  animation: lumina-dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes lumina-dots {
+  0% {
+    content: "";
+  }
+
+  25% {
+    content: ".";
+  }
+
+  50% {
+    content: "..";
+  }
+
+  75% {
+    content: "...";
+  }
+}
+
+.lumina-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lumina-typing-indicator span {
+  display: block;
+  width: 4px;
+  height: 4px;
+  /* Use explicit gray for better visibility/fallback */
+  background-color: #888;
+  border-radius: 50%;
+  opacity: 0.8;
+  /* Slight increase in opacity for better visibility with gray */
+  animation: lumina-typing-bounce 1.4s infinite ease-in-out both;
+}
+
+[data-theme="dark"] .lumina-typing-indicator span {
+  background-color: #AAA;
+}
+
+.lumina-typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.lumina-typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes lumina-typing-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  40% {
+    transform: scale(1.2);
+    /* Subtle pulse/scale instead of jump */
+    opacity: 1;
+  }
+}
+
+@keyframes lumina-thinking-appear {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- Content Transition --- */
+
+.lumina-fade-in {
+  animation: lumina-fade-in-anim 0s forwards;
+  opacity: 1;
+}
+
+@keyframes lumina-fade-in-anim {
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- Proofread Styles --- */
+
+.lumina-proofread-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px;
+}
+
+.lumina-proofread-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lumina-proofread-text {
+  font-family: 'Google Sans', 'Roboto', sans-serif;
+  font-size: 1.14em !important;
+  color: #202124;
+  line-height: 1.65;
+  ;
+  width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  outline: none;
+  cursor: text;
+  padding: 10px;
+  padding-right: 52px;
+  background: transparent;
+}
+
+.lumina-proofread-actions {
+  position: absolute;
+  bottom: 9px;
+  right: 9px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  width: auto;
+  padding: 0;
+}
+
+.lumina-proofread-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #5f6368;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.lumina-proofread-copy-btn:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  color: #202124;
+}
+
+.lumina-proofread-copy-btn:active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.lumina-proofread-copy-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* --- Spotlight Mode (Ctrl + Space) --- */
+
+.lumina-spotlight-overlay {
+  /* Isolation from page styles */
+  all: initial;
+
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: transparent !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding-top: 0 !important;
+  font-family: 'Montserrat', 'Roboto', sans-serif !important;
+  font-size: inherit !important;
+  line-height: 1.5 !important;
+  box-sizing: border-box !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.lumina-spotlight-overlay *,
+.lumina-spotlight-overlay *::before,
+.lumina-spotlight-overlay *::after {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+.lumina-spotlight-wrapper {
+  font-family: 'Montserrat', 'Roboto', sans-serif !important;
+  font-size: inherit !important;
+  /* Default, can be overridden by JS */
+  line-height: 21px !important;
+  letter-spacing: normal !important;
+  color: var(--lumina-text-primary) !important;
+  box-sizing: border-box !important;
+}
+
+.lumina-spotlight-bar {
+  width: 600px;
+  max-width: 90vw;
+  background: var(--lumina-input-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border: 0.5px solid var(--lumina-glass-border);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+
+
+.lumina-spotlight-bar::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  padding: 1px !important;
+  background: linear-gradient(var(--lumina-primary-color),
+      #00D2FF,
+      var(--lumina-primary-color)) !important;
+  background-size: 100% 200% !important;
+  border-radius: 16px !important;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  mask-composite: exclude !important;
+  -webkit-mask-composite: destination-out !important;
+  animation: lumina-border-rotate 1.5s infinite linear !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  opacity: 0.7 !important;
+  will-change: background-position;
+}
+
+.lumina-spotlight-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-primary-color);
+}
+
+.lumina-spotlight-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.lumina-spotlight-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1.69em !important;
+  color: var(--lumina-text-primary);
+  padding: 12px 8px;
+  outline: none;
+  font-weight: 500 !important;
+  font-family: inherit;
+}
+
+.lumina-spotlight-input::placeholder {
+  color: #999;
+  font-weight: 300 !important;
+}
+
+@keyframes lumina-scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes lumina-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lumina-morph-spotlight {
+  0% {
+    width: 600px;
+    min-height: 60px;
+    max-height: 60px;
+    opacity: 1;
+    overflow: hidden;
+    /* Hide content initially */
+  }
+
+  100% {
+    width: 380px;
+    min-height: 100px;
+    max-height: 500px;
+    /* Allow it to grow to content */
+    height: auto;
+    opacity: 1;
+  }
+}
+
+.lumina-popup-expand {
+  animation: lumina-morph-spotlight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  transform-origin: center center;
+  transition: background-color 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Smoother resize */
+}
+
+/* --- Window Controls (Apple Style) --- */
+
+.lumina-window-controls {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: auto;
+  display: flex;
+  gap: 5px;
+  pointer-events: auto;
+  z-index: 20;
+  padding: 4px;
+  border-radius: 12px;
+  justify-content: flex-start;
+}
+
+/* Expand hover area with pseudo-element */
+.lumina-window-controls::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  z-index: -1;
+}
+
+/* Show all buttons when hovering on the controls container (including expanded area) */
+.lumina-window-controls:hover .lumina-window-btn {
+  opacity: 1;
+}
+
+.lumina-window-btn {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  background: transparent;
+  /* backdrop-filter removed for solid vibrant look */
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  color: transparent;
+  opacity: 0;
+  /* Hidden by default */
+  position: relative;
+}
+
+.lumina-window-btn:hover {
+  transform: none;
+}
+
+/* Close button specific styling */
+.lumina-btn-close {
+  background: #FF605C;
+}
+
+
+
+
+.lumina-window-btn svg {
+  width: 8px;
+  height: 8px;
+  fill: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.lumina-window-controls:hover .lumina-window-btn svg {
+  opacity: 1;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* --- Minimized State & Restore Bar --- */
+
+.lumina-dict-popup.lumina-minimized {
+  transform: translateX(calc(100% + 20px)) !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lumina-restore-bar {
+  position: fixed;
+  right: 0;
+  bottom: 25%;
+  width: 10px;
+  height: 80px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s ease;
+  will-change: width, box-shadow;
+}
+
+.lumina-restore-bar:hover {
+  width: 14px;
+  box-shadow: -3px 0 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Minimalist indicator icon */
+.lumina-restore-bar::before {
+  content: '';
+  width: 2px;
+  height: 28px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+
+.lumina-restore-bar:hover::before {
+  background: #0056D2;
+}
+
+.lumina-restore-bar::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  left: -20px;
+  right: 0;
+  cursor: pointer;
+}
+
+
+
+
+.lumina-side-btn:hover {
+  background: #fff;
+  color: var(--lumina-primary-color);
+  transform: scale(1.1);
+  box-shadow: none;
+}
+
+.lumina-side-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.9);
+  transition: transform 0.1s ease;
+}
+
+.lumina-side-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* --- Proofread Question Style --- */
+.lumina-chat-question.proofread-question,
+.lumina-chat-question[data-type="proofread"] {
+  background: rgba(255, 204, 0, 0.15) !important;
+  border: none !important;
+  box-shadow: none;
+  color: var(--lumina-text-primary);
+  /* Always expanded */
+  max-height: none !important;
+  /* Disable all effects that could cause visual flickering on redraw */
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+
+
+/* --- Translation Question Style --- */
+.lumina-translation-row {
+  display: flex;
+  align-items: center;
+  /* Center vertically */
+  gap: 12px;
+  width: 100%;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+  /* Align to right like normal questions */
+}
+
+.lumina-chat-question.translation-question,
+.lumina-chat-question[data-type="translation"] {
+  background: rgba(52, 199, 89, calc(0.15 + var(--lumina-glass-opacity, 0.75) * 0.05));
+  border: none;
+  box-shadow: none;
+  color: var(--lumina-text-primary);
+  margin-bottom: 0;
+  /* Reset margin inside row */
+}
+
+.lumina-chat-question.translation-question:hover,
+.lumina-chat-question[data-type="translation"]:hover {
+  background: rgba(52, 199, 89, calc(0.2 + var(--lumina-glass-opacity, 0.75) * 0.05));
+}
+
+.lumina-audio-btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Reuse side button style but maybe smaller or adjusted */
+.lumina-audio-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-audio-btn:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.1);
+  color: var(--lumina-primary-color);
+  transform: scale(1.1);
+}
+
+/* ========================================
+   WEB SEARCH UI - STEPPER & CITATIONS
+   ======================================== */
+
+/* Web Search Container */
+.lumina-web-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0px 0 8px 0;
+}
+
+/* Simple Searching Indicator (same style as Thinking...) */
+.lumina-searching-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0;
+}
+
+.lumina-searching-indicator span {
+  font-size: 1em !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.3px;
+  /* Shimmer effect - same as thinking */
+  background: linear-gradient(90deg,
+      var(--lumina-text-secondary) 0%,
+      var(--lumina-text-secondary) 40%,
+      var(--lumina-text-primary) 50%,
+      var(--lumina-text-secondary) 60%,
+      var(--lumina-text-secondary) 100%);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: lumina-shimmer 2s linear infinite;
+}
+
+/* Stepper Container */
+.lumina-search-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(var(--lumina-primary-rgb), 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(var(--lumina-primary-rgb), 0.1);
+}
+
+/* Individual Step */
+.lumina-search-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9em !important;
+  font-weight: 500 !important;
+  color: #000;
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+.lumina-search-step.active {
+  color: var(--lumina-primary-color);
+  font-weight: 500 !important;
+}
+
+.lumina-search-step.completed {
+  color: #000;
+  font-weight: 500 !important;
+}
+
+/* Step Icon */
+.lumina-step-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Loading Spinner for active step */
+.lumina-step-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(var(--lumina-primary-rgb), 0.2);
+  border-top-color: var(--lumina-primary-color);
+  border-radius: 50%;
+  animation: lumina-spin 0.8s linear infinite;
+}
+
+@keyframes lumina-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Checkmark for completed step */
+.lumina-step-check {
+  color: #34C759;
+}
+
+/* Step Label */
+.lumina-step-label {
+  flex: 1;
+  font-weight: 500 !important;
+  color: #000;
+}
+
+.lumina-step-query {
+  font-weight: 500 !important;
+  color: #000;
+}
+
+/* ========================================
+   CITATION BADGES
+   ======================================== */
+
+/* Citation inline badge */
+.lumina-citation {
+  display: inline-block;
+  text-align: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px 2px 5px;
+  margin: 0 2px;
+  font-size: 0.85em !important;
+  font-weight: 620 !important;
+  line-height: 18px;
+  color: var(--lumina-primary-color);
+  background: rgba(var(--lumina-primary-rgb), 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  vertical-align: middle;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+
+.lumina-citation:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.2);
+  transform: scale(1.1);
+}
+
+/* Citation Tooltip using ::before pseudo-element */
+.lumina-citation::before {
+  content: attr(data-title) "\A" attr(data-url);
+  white-space: pre-wrap;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  padding: 10px 12px;
+  background: rgba(var(--lumina-glass-base-rgb), 0.98);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  box-shadow: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  z-index: 1000;
+  text-align: left;
+  font-size: 0.85em !important;
+  font-weight: 500 !important;
+  line-height: 1.4;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-citation:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip Arrow */
+.lumina-citation::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(var(--lumina-glass-base-rgb), 0.98);
+  opacity: 0;
+  visibility: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  z-index: 1001;
+}
+
+.lumina-citation:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Legacy tooltip element (fallback, now using ::before) */
+.lumina-citation-tooltip {
+  display: none;
+}
+
+/* ========================================
+   SOURCE REFERENCES (Bottom)
+   ======================================== */
+
+.lumina-sources {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.lumina-sources-title {
+  font-size: 0.85em !important;
+  font-weight: 620 !important;
+  color: var(--lumina-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.lumina-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lumina-source-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-source-item:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.08);
+  transform: translateX(4px);
+}
+
+.lumina-source-num {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85em !important;
+  font-weight: 620 !important;
+  color: white;
+  background: var(--lumina-primary-color);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lumina-source-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lumina-source-name {
+  font-size: 0.92em !important;
+  font-weight: 500 !important;
+  color: var(--lumina-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-source-domain {
+  font-size: 0.85em !important;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-source-arrow {
+  color: var(--lumina-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* --- Translation Card (New Scientific Design) --- */
+
+.lumina-translation-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  gap: 0;
+  cursor: text;
+}
+
+.lumina-translation-block {
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  contain: layout;
+}
+
+/* Source (left): no left padding */
+.lumina-translation-block:first-child {
+  padding-left: 0;
+}
+
+/* Target (right): no right padding */
+.lumina-translation-block:last-child {
+  padding-right: 0;
+}
+
+.lumina-translation-card .lumina-answer-versions {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+}
+
+.lumina-translation-card .lumina-answer-versions .lumina-translation-block {
+  padding-right: 0;
+}
+
+.lumina-translation-divider {
+  flex-shrink: 0;
+  width: 1px;
+  align-self: stretch;
+  background-color: var(--lumina-text-secondary);
+  opacity: 0.15;
+  border-radius: 2px;
+  margin: 0 auto;
+}
+
+
+.lumina-translation-text {
+  font-size: 1em !important;
+  line-height: 1.65;
+  font-weight: 500 !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lumina-translation-source .lumina-translation-text {
+  font-family: "SF Pro Rounded", var(--lumina-font-family);
+}
+
+/* Sentence-level highlight (Google Translate style) */
+.lumina-trans-sentence {
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: text;
+  padding: 2px 2px;
+  margin: -2px -2px;
+  display: inline;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.lumina-trans-sentence.hovered {
+  background-color: rgba(79, 142, 247, 0.18);
+  color: inherit;
+}
+
+
+/* AI Insights (Nuance/Key Terms) */
+.lumina-translation-insights {
+  padding: 10px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lumina-insight-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.92em !important;
+}
+
+.lumina-insight-label {
+  font-weight: 620 !important;
+  color: var(--lumina-text-secondary);
+  text-transform: uppercase;
+  font-size: 0.85em !important;
+  letter-spacing: 0.05em;
+  min-width: 60px;
+}
+
+.lumina-insight-content {
+  color: var(--lumina-text-primary);
+  opacity: 0.9;
+}
+
+
+.lumina-mic-btn.recording {
+  background: #ef4444;
+  color: white;
+  animation: lumina-mic-pulse 1.5s infinite;
+}
+
+@keyframes lumina-mic-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-mic-btn {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .lumina-mic-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .lumina-mic-btn.recording {
+    background: #ef4444;
+  }
+}
+
+.lumina-model-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--lumina-text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: none;
+  min-width: 100% !important;
+}
+
+.lumina-model-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--lumina-text-primary);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* Dark mode adjustment if needed */
+@media (prefers-color-scheme: dark) {
+  .lumina-model-btn {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+
+  .lumina-model-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.lumina-current-model,
+.lumina-tools-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1em !important;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-model-btn svg {
+  opacity: 1;
+  /* Reset logic, Chevron handled by inline style or specific rule */
+  flex-shrink: 0;
+}
+
+/* Ensure Hover Effect Visible */
+.lumina-actions-menu>button:hover,
+.lumina-actions-menu .lumina-tools-toggle:hover,
+.lumina-actions-menu .lumina-model-btn:hover {
+  background: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Dropdown Menu */
+.lumina-model-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: 220px;
+  background: var(--lumina-bg);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: bottom right;
+  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lumina-model-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto !important;
+}
+
+/* Model Items */
+.lumina-model-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--lumina-text-primary);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+.lumina-model-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-model-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.lumina-model-item.active {
+  background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1));
+  color: var(--lumina-primary, #007aff);
+  font-weight: 500;
+}
+
+.lumina-model-item .model-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lumina-model-item .model-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-model-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* Override Model Selector Button to match Toggles style */
+.lumina-model-btn {
+  border-radius: 16px !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  box-shadow: none;
+  color: var(--lumina-text-secondary) !important;
+  padding: 4px 10px !important;
+  border: none !important;
+  max-width: 140px;
+}
+
+.lumina-model-btn:hover {
+  background: rgba(0, 0, 0, 0.12) !important;
+  color: var(--lumina-text-primary) !important;
+  transform: none !important;
+}
+
+/* Dark mode override */
+@media (prefers-color-scheme: dark) {
+  .lumina-model-btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .lumina-model-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+  }
+}
+
+/* Update Model Selector Style - Solid & Consistent Font */
+.lumina-model-btn {
+  font-weight: 500 !important;
+  background: #f2f2f2 !important;
+  /* Solid Light Gray */
+  color: var(--lumina-text-secondary) !important;
+  border: none !important;
+  box-shadow: none;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.lumina-model-btn:hover {
+  background: #e5e5e5 !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .lumina-model-btn {
+    background: #333333 !important;
+    /* Solid Dark Gray */
+    color: #cccccc !important;
+  }
+
+  .lumina-model-btn:hover {
+    background: #444444 !important;
+    color: #ffffff !important;
+  }
+}
+
+/* Dropdown - No Blur, Solid */
+.lumina-model-dropdown {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-model-dropdown {
+    background: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+    box-shadow: none;
+  }
+
+  .lumina-model-item:hover {
+    background: #333333 !important;
+  }
+}
+
+/* Fix font size for model button */
+.lumina-model-btn {
+  font-weight: 500 !important;
+  padding: 4px 10px !important;
+}
+
+/* Limit Dropdown Height & Hide Scrollbar */
+.lumina-model-dropdown {
+  max-height: 130px !important;
+  /* Adjust to fit ~3 items comfortable (each ~40px) */
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.lumina-model-dropdown::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Increase Dropdown Height for 3 Items */
+.lumina-model-dropdown {
+  max-height: 165px !important;
+  /* ~55px per item if multi-line */
+}
+
+/* Make Dropdown Items Compact */
+.lumina-model-item {
+  padding: 5px 8px !important;
+  gap: 6px !important;
+  min-height: auto !important;
+}
+
+.lumina-model-item .model-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0px !important;
+  line-height: normal !important;
+}
+
+.lumina-model-item .model-name {
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  line-height: 1.3 !important;
+}
+
+
+
+/* Force System Font for Model Selector (Override Spotlight Font) */
+.lumina-model-selector,
+.lumina-model-btn,
+.lumina-model-dropdown,
+.lumina-model-item {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Force Lumina Theme Font for Model Selector */
+.lumina-model-selector,
+.lumina-model-btn,
+.lumina-model-dropdown,
+.lumina-model-item,
+.lumina-model-item .model-name {
+  font-family: var(--lumina-font-family, sans-serif) !important;
+}
+
+/* Global Font Override for Lumina Components */
+.lumina-chat-popup,
+.lumina-chat-popup *,
+.lumina-chat-container,
+.lumina-quick-actions,
+.lumina-quick-actions *,
+.lumina-tool-button,
+.lumina-toast,
+.lumina-confirmation-modal,
+.lumina-model-selector,
+.lumina-model-dropdown,
+.lumina-model-btn,
+.lumina-model-item,
+.lumina-model-item * {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* Tools Menu Styles */
+.lumina-tools-wrapper,
+.lumina-model-selector {
+  position: relative;
+  display: block !important;
+  align-items: center;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.lumina-tools-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  padding: 0;
+}
+
+.lumina-tools-toggle:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--lumina-text-primary);
+}
+
+.lumina-tools-dropdown {
+  position: absolute;
+  bottom: 130%;
+  left: -13px;
+  background: #ffffff !important;
+  border: 1px solid var(--lumina-glass-border, #e0e0e0);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 4px;
+  display: flex !important;
+  flex-direction: column;
+  min-width: 180px;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+  transform-origin: bottom left;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-tools-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Invisible bridge to prevent dropdown from closing when moving mouse over gap */
+.lumina-tools-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+}
+
+.lumina-tool-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--lumina-text-primary);
+  font-family: var(--lumina-font-family) !important;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.lumina-tool-item svg {
+  display: none;
+}
+
+.lumina-tool-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.lumina-tool-item.active {
+  background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1)) !important;
+  color: var(--lumina-primary, #007aff) !important;
+  font-weight: 520 !important;
+}
+
+.lumina-tool-item svg {
+  color: var(--lumina-text-secondary);
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .lumina-tools-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .lumina-tools-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+
+  .lumina-tools-dropdown {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    box-shadow: none;
+  }
+
+  .lumina-tool-item {
+    color: #e0e0e0;
+  }
+
+  .lumina-tool-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Default Tools: Pill with Text */
+.lumina-tools-toggle {
+  width: auto !important;
+  padding: 4px 10px !important;
+  border-radius: 16px !important;
+  gap: 4px !important;
+}
+
+.lumina-tools-toggle span {
+  font-weight: 500;
+  display: block;
+}
+
+/* Compact Tools (When active tool exists): Icon Only */
+.lumina-tools-toggle.compact {
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  aspect-ratio: 1/1;
+}
+
+.lumina-tools-toggle.compact span {
+  display: none !important;
+}
+
+.lumina-tools-toggle {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 10px !important;
+  border-radius: 16px !important;
+  font-weight: 500 !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.lumina-tools-label {
+  display: inline;
+}
+
+/* When collapsed (tool is active), hide text */
+.lumina-tools-toggle.collapsed .lumina-tools-label {
+  display: none !important;
+}
+
+.lumina-tools-toggle.collapsed {
+  padding: 6px !important;
+  width: 28px !important;
+  height: 28px !important;
+  justify-content: center !important;
+}
+
+/* Keep the PLUS tools toggle circular (it also has .lumina-tools-toggle) */
+.lumina-plus-toggle.lumina-tools-toggle,
+#tools-toggle.lumina-plus-toggle {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  gap: 0 !important;
+  justify-content: center !important;
+  background: #f2f2f2 !important;
+}
+
+.lumina-plus-toggle.lumina-tools-toggle:hover,
+#tools-toggle.lumina-plus-toggle:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+/* --- Unified Tool Toggles (Proofread, AI, Translate) --- */
+.lumina-proofread-toggle,
+.lumina-googleai-toggle,
+.lumina-translate-toggle,
+.lumina-websource-toggle {
+  display: none;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 14px !important;
+  border-radius: 16px !important;
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  font-family: var(--lumina-font-family, inherit) !important;
+  width: auto !important;
+  height: 32px !important;
+  border: none !important;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Visibility when active (JS-controlled) */
+.lumina-proofread-toggle[style*="display: flex"],
+.lumina-googleai-toggle[style*="display: flex"],
+.lumina-translate-toggle[style*="display: flex"],
+.lumina-websource-toggle[style*="display: flex"] {
+  display: flex !important;
+}
+
+/* SVG icons hidden for cleaner look */
+.lumina-proofread-toggle svg,
+.lumina-googleai-toggle svg,
+.lumina-translate-toggle svg,
+.lumina-websource-toggle svg {
+  display: none !important;
+}
+
+/* Specific Tool Color Palettes */
+
+/* Proofread: Warm Yellow */
+.lumina-proofread-toggle {
+  background: rgba(255, 204, 0, 0.2) !important;
+  color: #a37a00 !important;
+}
+
+.lumina-proofread-toggle:hover {
+  background: rgba(255, 204, 0, 0.3) !important;
+}
+
+
+
+/* Translate: Soft Blue */
+.lumina-translate-toggle {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #2563eb !important;
+}
+
+.lumina-translate-toggle:hover {
+  background: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Web Source: Teal/Emerald */
+.lumina-websource-toggle {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #059669 !important;
+}
+
+.lumina-websource-toggle:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+}
+
+
+
+.lumina-actions-menu,
+.lumina-tools-dropdown,
+.lumina-model-dropdown {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="dark"] .lumina-actions-menu,
+[data-theme="dark"] .lumina-tools-dropdown,
+[data-theme="dark"] .lumina-model-dropdown {
+  background: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Force Submenus to Right */
+.lumina-actions-menu .lumina-tools-dropdown,
+.lumina-actions-menu .lumina-model-dropdown {
+  top: 0 !important;
+  bottom: auto !important;
+  left: 100% !important;
+  right: auto !important;
+  margin-left: 8px !important;
+  margin-bottom: 0 !important;
+  transform: none !important;
+}
+
+.lumina-actions-menu .lumina-tools-dropdown.active,
+.lumina-actions-menu .lumina-model-dropdown.active {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Scrollable Model Dropdown */
+.lumina-actions-menu .lumina-model-dropdown {
+  max-height: 134px !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+}
+
+.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.5);
+  border-radius: 4px;
+}
+
+
+.lumina-ask-btn-text {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1em;
+  font-weight: 520;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+#lumina-ask-input-popup,
+.lumina-ask-input-wrapper {
+  position: fixed;
+  display: none;
+  background: white;
+  padding: 4px 14px;
+  min-height: 34px;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2147483647;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  align-items: center;
+  gap: 0;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.lumina-ask-input-field {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 500;
+  padding: 4px 0;
+  width: 100%;
+  height: auto;
+  min-height: 24px;
+  color: #000;
+  box-sizing: border-box;
+  resize: none;
+  line-height: 1.4;
+  overflow-y: hidden;
+}
+
+/* Ask Selection Button */
+#lumina-ask-selection-btn {
+  position: fixed;
+  height: 34px;
+  transform: none !important;
+  transition: none !important;
+  padding: 0 14px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  color: #333333;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  cursor: pointer;
+  z-index: 2147483647;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+
+
+/* Explicit Hover Fallback - Ensure dropdowns show on hover even if JS fails */
+/* .lumina-model-selector:hover .lumina-model-dropdown, */
+.lumina-tools-wrapper:hover .lumina-tools-dropdown {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+/* Bridge gap between menu and dropdown to prevent hover loss */
+.lumina-tools-dropdown::before,
+.lumina-model-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -20px;
+  width: 25px;
+  background: transparent;
+  z-index: -1;
+}
+
+/* Old regenerate btn styles removed */
+
+
+/* Loading State (Red Pause) */
+.lumina-regenerate-btn.loading {
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+}
+
+.lumina-regenerate-btn.loading:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: #D70015;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .lumina-regenerate-btn {
+  background: #2C2C2E;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   POPUP SIDEBAR STYLES
+   ============================================ */
+
+/* Sidebar Toggle Handle (pill on left edge) */
+.lumina-popup-menu-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 3px;
+  width: 3px;
+  height: 50px;
+  background: #d4d4d4;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 100;
+  padding: 0;
+  transition: background-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Expanded hit area - reduced */
+.lumina-popup-menu-btn::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  left: -5px;
+  right: -15px;
+  z-index: 101;
+}
+
+.lumina-popup-menu-btn:hover {
+  width: 4px;
+  background: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  left: 3px;
+}
+
+.lumina-popup-menu-btn:active {
+  background: #888;
+}
+
+/* Sidebar Overlay */
+.lumina-popup-sidebar-overlay {
+  all: initial;
+  /* Reset everything */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+  z-index: 998;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  border-radius: inherit;
+  display: block;
+  /* Restore from initial */
+}
+
+.lumina-popup-sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Sidebar Panel */
+.lumina-popup-sidebar {
+  all: initial;
+  /* CRITICAL: Break all inheritance from host page */
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  bottom: 8px;
+  width: 45%;
+  background: #ffffff;
+  border-radius: 14px;
+  z-index: 999;
+  transform: translateX(calc(-100% - 16px));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  display: flex !important;
+  /* Restore from initial */
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 1em !important;
+  /* Inherit from currentPopup setting */
+}
+
+.lumina-popup-sidebar * {
+  box-sizing: border-box !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.lumina-popup-sidebar.active {
+  transform: translateX(0);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.lumina-popup-sidebar-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 14px !important;
+  font-weight: 620 !important;
+  font-size: 0.95em !important;
+  /* Relative to base */
+  color: #333 !important;
+  letter-spacing: -0.01em !important;
+  background: transparent !important;
+}
+
+.lumina-popup-sidebar-close {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-popup-sidebar-close:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.lumina-popup-sidebar-close svg {
+  width: 11px;
+  height: 11px;
+}
+
+.lumina-popup-sidebar-search {
+  position: relative;
+  padding: 0px 10px 8px 10px;
+}
+
+.lumina-popup-search-icon {
+  position: absolute;
+  left: 20px;
+  top: 9px;
+  color: #999;
+  pointer-events: none;
+}
+
+.lumina-popup-sidebar-search input {
+  all: initial;
+  /* Reset input specifically */
+  display: block;
+  width: 100% !important;
+  padding: 8px 12px 8px 30px !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: #f5f5f5 !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.85em !important;
+  /* Scales with setting */
+  color: #333 !important;
+  outline: none !important;
+  transition: background 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.lumina-popup-sidebar-search input::placeholder {
+  color: #aaa;
+}
+
+.lumina-popup-sidebar-search input:focus {
+  background: #efefef;
+}
+
+.lumina-popup-search-clear {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(calc(-50% - 4px));
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.lumina-popup-search-clear:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #666;
+}
+
+.lumina-popup-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+.lumina-popup-sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lumina-popup-sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+.lumina-popup-sidebar-footer {
+  padding: 8px 10px;
+}
+
+.lumina-popup-new-chat-btn {
+  display: flex !important;
+  width: 100% !important;
+  padding: 9px 12px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: #f5f5f5 !important;
+  color: #555 !important;
+  cursor: pointer !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.85em !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+.lumina-popup-new-chat-btn:hover {
+  background: #ebebeb;
+  color: #333;
+}
+
+.lumina-popup-new-chat-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* History Item */
+.lumina-popup-history-item {
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.lumina-popup-history-item:hover {
+  background: #f5f5f5;
+}
+
+.lumina-popup-history-item.active {
+  background: #f0f0f0;
+}
+
+.lumina-popup-history-title {
+  font-size: 0.9em !important;
+  font-weight: 500 !important;
+  color: #333 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin-bottom: 2px !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.4 !important;
+}
+
+.lumina-popup-history-item .lumina-popup-history-date {
+  font-size: 0.75em !important;
+  color: #999 !important;
+  font-weight: 400 !important;
+  display: block !important;
+}
+
+.lumina-popup-history-empty {
+  text-align: center;
+  padding: 28px 14px;
+  color: #aaa;
+  font-size: 11px;
+}
+
+.lumina-popup-history-empty p:first-child {
+  font-weight: 500;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+/* Highlight animation for search results */
+@keyframes lumina-highlight {
+  0% {
+    background: rgba(0, 86, 210, 0.2);
+  }
+
+  100% {
+    background: transparent;
+  }
+}
+
+/* Dark mode */
+[data-theme="dark"] .lumina-popup-sidebar {
+  background: #1C1C1E;
+}
+
+[data-theme="dark"] .lumina-popup-sidebar-header {
+  color: #fff;
+}
+
+[data-theme="dark"] .lumina-popup-sidebar-close {
+  background: #2C2C2E;
+  color: #999;
+}
+
+[data-theme="dark"] .lumina-popup-sidebar-close:hover {
+  background: #3C3C3E;
+  color: #fff;
+}
+
+[data-theme="dark"] .lumina-popup-sidebar-search input {
+  background: #2C2C2E;
+  color: #fff;
+}
+
+[data-theme="dark"] .lumina-popup-sidebar-search input:focus {
+  background: #3C3C3E;
+}
+
+[data-theme="dark"] .lumina-popup-new-chat-btn {
+  background: #2C2C2E;
+  color: #ccc;
+}
+
+[data-theme="dark"] .lumina-popup-new-chat-btn:hover {
+  background: #3C3C3E;
+  color: #fff;
+}
+
+[data-theme="dark"] .lumina-popup-history-item:hover {
+  background: #2C2C2E;
+}
+
+[data-theme="dark"] .lumina-popup-history-item.active {
+  background: #3C3C3E;
+}
+
+[data-theme="dark"] .lumina-popup-history-title {
+  color: #fff;
+}
+
+[data-theme="dark"] .lumina-popup-menu-btn {
+  background: #555;
+}
+
+[data-theme="dark"] .lumina-popup-menu-btn:hover {
+  background: #777;
+}
+
+[data-theme="dark"] .lumina-popup-sidebar-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* --- Spotlight Tabs --- */
+
+.spotlight-tabs-bar {
+  display: flex !important;
+  align-items: center;
+  background: #f3f3f3;
+  height: 40px;
+  -webkit-app-region: drag;
+}
+
+/* Tabs List Container */
+.spotlight-tabs-list {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-app-region: no-drag;
+  height: 100%;
+  padding: 0 8px;
+}
+
+.spotlight-tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Individual Tab */
+.spotlight-tab {
+  display: flex;
+  align-items: center;
+  flex: 1 1 200px;
+  min-width: 80px;
+  max-width: 220px;
+  height: 100%;
+  background: transparent;
+  border-radius: 12px;
+  color: #5f6368;
+  font-size: 12px;
+  font-weight: 520;
+  cursor: pointer;
+  position: relative;
+  transition: none;
+  user-select: none;
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: 0;
+  border-bottom: none;
+}
+
+/* Tab Group Indicator */
+.spotlight-tab-group-indicator {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  border-radius: 0 0 6px 6px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Vertical Separator for Inactive Tabs (Between Groups) */
+.spotlight-tab:not(.active)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background-color: #dfe1e5;
+  pointer-events: none;
+}
+
+/* Sub-Tab inside a Group */
+.spotlight-tab-sub {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  padding: 0 4px;
+  min-width: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s;
+}
+
+.spotlight-tab-sub:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Inactive split-group: disable individual sub-tab hover — the group-level hover handles it */
+.spotlight-tab.is-split:not(.active) .spotlight-tab-sub:hover {
+  background: transparent;
+}
+
+.spotlight-tab.active .spotlight-tab-sub:hover {
+  background: transparent;
+}
+
+/* Internal separator between sub-tabs */
+.spotlight-tab-sub+.spotlight-tab-sub::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.spotlight-tab:hover {
+  background: rgba(0, 0, 0, 0.05);
+  z-index: 1;
+}
+
+.spotlight-tab.active {
+  background: #ffffff;
+  color: #202124;
+  box-shadow: none;
+  z-index: 10;
+  position: relative;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+}
+
+/* No hover effect for active tabs */
+.spotlight-tab.active:hover {
+  background: #ffffff;
+  z-index: 10;
+}
+
+/* Flared Bottom Corners for Active Tab */
+.spotlight-tab.active::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -12px;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.spotlight-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: -12px;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px);
+  z-index: 1;
+  pointer-events: none;
+  display: block;
+}
+
+/* Tab Title */
+.spotlight-tab-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 6px;
+  font-size: 1em;
+}
+
+/* Close Button (x) */
+.spotlight-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: background-color 0.15s, color 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.spotlight-tab-sub:hover .spotlight-tab-close,
+.spotlight-tab.active .spotlight-tab-sub .spotlight-tab-close {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Each sub-tab shows its own close only when hovered */
+.spotlight-tab-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #202124;
+}
+
+.spotlight-tab-close svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  stroke-width: 2;
+}
+
+/* New Tab Button (+) */
+.spotlight-new-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #5f6368;
+  margin: 0 4px;
+  -webkit-app-region: no-drag;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.spotlight-new-tab-btn svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.2;
+}
+
+.spotlight-new-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #202124;
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .spotlight-tabs-bar {
+  background: #1e1e1e;
+  border-bottom: 1px solid #2d2d2d;
+}
+
+[data-theme="dark"] .spotlight-menu-btn {
+  color: #9aa0a6;
+}
+
+[data-theme="dark"] .spotlight-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-tab:not(.active)::after {
+  background-color: #3e3e42;
+}
+
+[data-theme="dark"] .spotlight-tab {
+  color: #9aa0a6;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .spotlight-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-tab.active {
+  background: #000000;
+  color: #e8eaed;
+  border: 1px solid #2d2d2d;
+  border-bottom: 1px solid #000000;
+  /* Seamless blend */
+}
+
+/* No hover effect for active tabs in dark mode */
+[data-theme="dark"] .spotlight-tab.active:hover {
+  background: #000000;
+  color: #e8eaed;
+}
+
+/* Dark Mode Flares */
+[data-theme="dark"] .spotlight-tab.active::before {
+  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px);
+}
+
+[data-theme="dark"] .spotlight-tab.active::after {
+  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px);
+}
+
+[data-theme="dark"] .lumina-chat-container {
+  background: #000000 !important;
+}
+
+[data-theme="dark"] .spotlight-new-tab-btn {
+  color: #9aa0a6;
+}
+
+[data-theme="dark"] .spotlight-new-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-tab-close {
+  color: #9aa0a6;
+}
+
+[data-theme="dark"] .spotlight-tab-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+[data-theme="dark"] .spotlight-tab.active .spotlight-tab-sub:hover {
+  background: transparent;
+}
+
+/* Drag & Drop Feedback for Tabs */
+.spotlight-tab.dragging-smooth {
+  opacity: 1;
+  background: #ffffff !important;
+  cursor: grabbing !important;
+  transition: transform 0ms !important;
+  /* Instant movement for dragged element */
+  border-radius: 12px 12px 0 0 !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  /* Allow events to pass through to siblings during drag-over checks if needed */
+}
+
+/* Maintain white flair for active tab while dragging */
+.spotlight-tab.active.dragging-smooth::before,
+.spotlight-tab.active.dragging-smooth::after {
+  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px) !important;
+}
+
+.spotlight-tab.active.dragging-smooth::after {
+  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px) !important;
+}
+
+[data-theme="dark"] .spotlight-tab.dragging-smooth {
+  background: #000000 !important;
+  box-shadow: none !important;
+}
+
+/* Maintain black flair for active tab while dragging in dark mode */
+[data-theme="dark"] .spotlight-tab.active.dragging-smooth::before,
+[data-theme="dark"] .spotlight-tab.active.dragging-smooth::after {
+  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px) !important;
+}
+
+[data-theme="dark"] .spotlight-tab.active.dragging-smooth::after {
+  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px) !important;
+}
+
+/* Other tabs during drag should animate smoothly */
+.spotlight-tab:not(.dragging-smooth) {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s;
+}
+
+.spotlight-tab.drag-over {
+  background: rgba(0, 86, 210, 0.1) !important;
+  outline: 1px dashed #0056D2;
+  outline-offset: -2px;
+}
+
+/* Web Source Iframes */
+[data-theme="dark"] .lumina-websource-container {
+  background: #1c1c1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .spotlight-tab.drag-over {
+  background: rgba(10, 132, 255, 0.15) !important;
+  outline: 1px dashed #0A84FF;
+}
+
+/* Group merge preview: shown on both dragged tab and target tab during hover */
+.spotlight-tab.group-merge-preview {
+  background: #ffffff !important;
+  outline: 2px solid rgba(0, 86, 210, 0.55);
+  outline-offset: -2px;
+  border-radius: 12px 12px 0 0 !important;
+  z-index: 15;
+}
+
+/* Hide flares when group merge preview is active */
+.spotlight-tab.group-merge-preview::before,
+.spotlight-tab.group-merge-preview::after {
+  display: none !important;
+}
+
+[data-theme="dark"] .spotlight-tab.group-merge-preview {
+  background: #000000 !important;
+  outline: 2px solid rgba(10, 132, 255, 0.6);
+  outline-offset: -2px;
+}
+
+/* --- Ultra-Premium Web Source Iframe Loading Animation --- */
+.lumina-websource-container,
+.lumina-translation-container {
+  position: relative !important;
+  transition: box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+.lumina-translation-container {
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme="dark"] .lumina-websource-container,
+[data-theme="dark"] .lumina-translation-container {
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+
+/* Thin border loading animation (matches chat input style) */
+.lumina-websource-container.is-loading::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  padding: 1px !important;
+  background: linear-gradient(var(--lumina-primary-color),
+      #00D2FF,
+      var(--lumina-primary-color)) !important;
+  background-size: 100% 200% !important;
+  border-radius: 13px !important;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  mask-composite: exclude !important;
+  -webkit-mask-composite: destination-out !important;
+  animation: lumina-border-rotate 1.5s infinite linear !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+  opacity: 0.7 !important;
+  will-change: background-position;
+}
+
+@keyframes lumina-border-rotate {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 0% 200%;
+  }
+}
+
+.lumina-websource-container iframe {
+  transition: opacity 0.5s ease-in-out;
+  opacity: 1;
+  z-index: 3 !important;
+}
+
+.lumina-websource-container.is-loading iframe {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hibernating state to prevent layout jumps */
+.lumina-websource-container.is-lazy-unloaded {
+  background: rgba(var(--lumina-primary-rgb), 0.02) !important;
+  border: 1px dashed var(--lumina-glass-border) !important;
+}
+
+/* Fix Mac trackpad 'jerk' when scrolling over iframes */
+.lumina-is-scrolling .lumina-websource-container iframe {
+  pointer-events: none !important;
+}
