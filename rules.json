@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "priority": 100,
+        "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+                { "header": "X-Frame-Options", "operation": "remove" },
+                { "header": "Frame-Options", "operation": "remove" },
+                { "header": "Content-Security-Policy", "operation": "remove" },
+                { "header": "X-Content-Security-Policy", "operation": "remove" },
+                { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+                { "header": "Cross-Origin-Resource-Policy", "operation": "remove" },
+                { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+                { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+                { "header": "Permissions-Policy", "operation": "remove" }
+            ]
+        },
+        "condition": {
+            "urlFilter": "*",
+            "resourceTypes": ["main_frame", "sub_frame", "xmlhttprequest", "stylesheet", "font"]
+        }
+    },
+    {
+        "id": 2,
+        "priority": 110,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                { "header": "Referer", "operation": "set", "value": "https://translate.google.com/" },
+                { "header": "Origin", "operation": "set", "value": "https://translate.google.com" }
+            ],
+            "responseHeaders": [
+                { "header": "X-Frame-Options", "operation": "remove" },
+                { "header": "Content-Security-Policy", "operation": "remove" },
+                { "header": "Permissions-Policy", "operation": "remove" }
+            ]
+        },
+        "condition": {
+            "urlFilter": "*://translate.google.com/*",
+            "resourceTypes": ["xmlhttprequest", "sub_frame"]
+        }
+    }
+]
