@@ -10,7 +10,7 @@ Lumina là một Chrome Extension mạnh mẽ, đưa các mô hình ngôn ngữ 
 ## Tính năng cốt lõi
 
 - **Hỗ trợ đa nền tảng AI**: Kết nối linh hoạt với **Google Gemini**, **Groq**, **Cerebras**, hoặc chạy trực tiếp các mô hình nội bộ qua **Ollama**.
-- **Lumina Chat Side-panel**: Cửa sổ chat nổi có thể gọi ra bất cứ lúc nào qua phím tắt. Hỗ trợ kéo thả hình ảnh (Vision) và dán file trực tiếp để phân tích.
+- **Lumina Chat Side-panel**: Cửa sổ chat nổi có thể gọi ra bất cứ lúc nào qua phím tắt. Hỗ trợ kéo thả hình ảnh và dán file trực tiếp để phân tích.
 - **Smart Selection Menu**: Chỉ cần bôi đen văn bản, menu thông minh sẽ hiện ra để bạn: Giải thích thuật ngữ, Dịch thuật, hoặc Sửa lỗi ngữ pháp ngay lập tức.
 - **Hệ thống phím tắt linh hoạt**: Tính năng "đắt giá" nhất giúp bạn tối ưu mọi thao tác (Mở Chat, Tra cứu nhanh, Phân tích văn bản) qua phím tắt, giúp làm việc với AI siêu tốc mà không cần chạm vào chuột.
 - **Tùy chỉnh System Prompt**: Tự do thiết lập để AI trả lời chính xác theo đúng văn phong cá nhân hóa của riêng bạn.
