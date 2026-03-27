@@ -1,40 +1,36 @@
 <div>
-  <h1>Lumina Extension 🧠</h1>
-  <p>Trợ lý AI đa năng, bảo mật và siêu tốc ngay trên trình duyệt.</p>
+  <h1>Lumina Extension</h1>
+  <p>Your versatile, secure, and lightning-fast AI assistant right in your browser.</p>
 </div>
 
-## Giới thiệu tổng quan
+## Overview
 
-Lumina là một Chrome Extension mạnh mẽ, đưa các mô hình ngôn ngữ lớn (LLM) hàng đầu thế giới vào thẳng trải nghiệm lướt web hàng ngày của bạn. Không chỉ dừng lại ở việc chat, Lumina được thiết kế để hỗ trợ bạn tra cứu, dịch thuật, tóm tắt kiến thức với tốc độ phản hồi cực nhanh.
+Lumina is a powerful Chrome Extension that brings the world's leading Large Language Models (LLMs) directly into your daily web browsing experience. More than just a chatbot, Lumina is designed to help you search, translate, and summarize knowledge with ultra-fast response times.
 
-## Tính năng cốt lõi
+## Core Features
 
-- **Hỗ trợ đa nền tảng AI**: Kết nối linh hoạt với **Google Gemini**, **Groq**, **Cerebras**, hoặc chạy trực tiếp các mô hình nội bộ qua **Ollama**.
-- **Lumina Chat Side-panel**: Cửa sổ chat nổi có thể gọi ra bất cứ lúc nào qua phím tắt. Hỗ trợ kéo thả hình ảnh (Vision) và dán file trực tiếp để phân tích.
-- **Smart Selection Menu**: Chỉ cần bôi đen văn bản, menu thông minh sẽ hiện ra để bạn: Giải thích thuật ngữ, Dịch thuật, hoặc Sửa lỗi ngữ pháp ngay lập tức.
-- **Hệ thống phím tắt linh hoạt**: Tính năng "đắt giá" nhất giúp bạn tối ưu mọi thao tác (Mở Chat, Tra cứu nhanh, Phân tích văn bản) qua phím tắt, giúp làm việc với AI siêu tốc mà không cần chạm vào chuột.
-- **Tùy chỉnh System Prompt**: Tự do thiết lập để AI trả lời chính xác theo đúng văn phong cá nhân hóa của riêng bạn.
-- **Tích hợp Anki Management**: Tự động tạo và đồng bộ hóa thẻ học (Flashcards) trực tiếp vào ứng dụng Anki. Giúp bạn tạo thẻ nhanh chóng mà không phải thiết lập phức tạp.
-- **Key Rotation (Chống giới hạn)**: Cho phép nhập nhiều API Key cùng lúc. Hệ thống sẽ tự động xoay chuyển giữa các key để tránh bị dính Rate Limit khi sử dụng cường độ cao.
-- **Quyền riêng tư tuyệt đối**: Toàn bộ API Key và lịch sử chat đều được lưu trữ trực tiếp trên trình duyệt của bạn, không thông qua bất kỳ server trung gian nào.
+- **Multi-Platform AI Support**: Flexible connection to **Google Gemini**, **Groq**, **Cerebras**, or direct local model execution via **Ollama**.
+- **Lumina Chat Side-panel**: A floating chat window accessible anytime via shortcuts. Supports image drag-and-drop (Vision) and direct file pasting for analysis.
+- **Smart Selection Menu**: Simply highlight any text to reveal an intelligent menu for instant: Explanation, Translation, or Grammar Correction.
+- **Flexible Shortcut System**: A "premium" feature that optimizes every action (Open Chat, Quick Search, Text Analysis) through shortcuts, enabling ultra-fast AI interaction without touching your mouse.
+- **Customizable System Prompts**: Free setup to make the AI respond precisely in your own personalized style.
+- **Integrated Anki Management**: Automatically generate and synchronize flashcards directly to the Anki app. Create cards quickly without complex configuration.
+- **Key Rotation (Anti-Rate Limit)**: Allows multiple API keys to be entered simultaneously. The system automatically rotates between keys to avoid rate limits during high-intensity use.
+- **Absolute Privacy**: All API keys and chat history are stored directly in your browser, bypassing any intermediate servers.
 
-## Hướng dẫn cài đặt
+## Installation Guide
 
-1. **Tải mã nguồn**: Clone hoặc tải bộ code này về máy tính.
-2. **Cài đặt Extension**:
-   - Truy cập `chrome://extensions/` trên Google Chrome.
-   - Bật **Developer mode** (Chế độ nhà phát triển) ở góc trên bên phải.
-   - Bấm **Load unpacked** (Tải tiện ích đã giải nén) và chọn thư mục `Lumina`.
-3. **Cấu hình**:
-   - Nhấn vào icon Lumina trên thanh công cụ.
-   - Tại mục **Providers**, hãy thêm API Key (Gemini, Groq, Cerebras...) để bắt đầu.
-   - Tại mục **Shortcuts**, tùy chỉnh các tổ hợp phím tắt để tối ưu hóa việc gọi AI theo thói quen của riêng bạn.
+1. **Download Source**: Clone or download this code repository to your computer.
+2. **Install Extension**:
+   - Navigate to `chrome://extensions/` in Google Chrome.
+   - Enable **Developer mode** in the top-right corner.
+   - Click **Load unpacked** and select the `Lumina` folder.
+3. **Configuration**:
+   - Click the Lumina icon in the toolbar.
+   - under **Providers**, add your API keys (Gemini, Groq, Cerebras...) to begin.
+   - Under **Shortcuts**, customize your key combinations to optimize AI invocation based on your habits.
 
-## Cách sử dụng
+## How to Use
 
-- **Tương tác văn bản**: Chỉ cần bôi đen văn bản và nhấn phím tắt (thiết lập trong cài đặt) để hiện ngay Popup kết quả từ AI.
-- **Chat trực tiếp**: Nhấn vào thanh bên (Side-panel) để bắt đầu trò chuyện hoặc phân tích sâu hơn.
-
----
-
-*Phát triển bởi DinhBinh*
+- **Text Interaction**: Simply highlight text and press your configured shortcut to instantly display the AI result popup.
+- **Direct Chat**: Click the sidebar (Side-panel) to start a conversation or perform deeper analysis.
