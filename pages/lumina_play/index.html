@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lumina Movies - Duyệt phim Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="player.css">
+    <style>
+        /* Tinh chỉnh riêng cho trang chủ */
+        .search-results-info {
+            margin-bottom: 2rem;
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            display: none;
+        }
+        .search-results-info.active {
+            display: block;
+        }
+        .search-results-info span {
+            color: var(--primary);
+            font-weight: 700;
+        }
+        main {
+            padding-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo">LUMINA <span style="color:white; font-weight:300">PLAY</span></a>
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm phim bạn yêu thích...">
+        </div>
+    </header>
+
+    <main>
+        <!-- Bộ lọc phim -->
+        <div class="filter-bar">
+            <select id="selectCategory">
+                <option value="">Tất cả Thể loại</option>
+            </select>
+            <select id="selectCountry">
+                <option value="">Tất cả Quốc gia</option>
+            </select>
+            <select id="selectYear">
+                <option value="">Tất cả Năm</option>
+            </select>
+        </div>
+
+        <div class="search-results-info" id="searchInfo">
+            Tìm thấy <span>0</span> kết quả cho: "<span id="searchKey"></span>"
+        </div>
+        
+        <div class="section-header">
+            <h2 id="list-title">Phim Mới Cập Nhật</h2>
+        </div>
+
+        <div id="loader" class="loader"><div class="spinner"></div></div>
+        
+        <div class="movie-grid" id="movieGrid">
+            <!-- Movie cards will be injected here -->
+        </div>
+    </main>
+
+    <script src="index.js"></script>
+</body>
+</html>

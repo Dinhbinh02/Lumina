@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const openLuminaPlayBtn = document.getElementById('openLuminaPlayBtn');
   if (openLuminaPlayBtn) {
     openLuminaPlayBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL('pages/play/index.html') });
+      chrome.tabs.create({ url: 'https://lumina-play.vercel.app/' });
     });
   }
 
@@ -366,23 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveProviderBtn = document.getElementById('saveProviderBtn');
 
 
-  // Web Sources Elements
-  const customSourcesListEl = document.getElementById('customSourcesList');
-  const addSourceBtn = document.getElementById('addSourceBtn');
-  const sourceForm = document.getElementById('sourceForm');
-  const sourceFormId = document.getElementById('sourceFormId');
-  const sourceFormName = document.getElementById('sourceFormName');
-  const sourceFormUrl = document.getElementById('sourceFormUrl');
-  const sourceFormCss = document.getElementById('sourceFormCss');
-  const sourceFormHeight = document.getElementById('sourceFormHeight');
-  const sourceFormShortcut = document.getElementById('sourceFormShortcut');
-  const sourceFormSelector = document.getElementById('sourceFormSelector');
-  const sourceFormZoom = document.getElementById('sourceFormZoom');
-  const cancelSourceBtn = document.getElementById('cancelSourceBtn');
-  const saveSourceBtn = document.getElementById('saveSourceBtn');
-  const resetSourcesBtn = document.getElementById('resetSourcesBtn');
 
-  let customSources = [];
 
   // Audio Speed Listener
   if (audioSpeedInput) {
@@ -716,158 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // --- Web Sources Management ---
-  function renderCustomSources() {
-    if (!customSourcesListEl) return;
 
-    if (!customSources || customSources.length === 0) {
-      customSourcesListEl.innerHTML = '<div class="chain-empty-state">No custom sources added yet.</div>';
-      return;
-    }
-
-    customSourcesListEl.innerHTML = customSources.map((s, index) => `
-      <div class="chain-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
-        <div class="chain-number">${index + 1}</div>
-        <div class="chain-info" style="flex: 1; overflow: hidden;">
-          <div class="chain-model-name" style="font-weight: 600;">${escapeHtml(s.name)}</div>
-          <div class="chain-provider-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--text-secondary);">${escapeHtml(s.url)}</div>
-        </div>
-        <div class="chain-controls" style="margin-left: auto; display: flex; gap: 4px;">
-          <button class="chain-btn remove" data-action="delete-source" data-index="${index}" title="Delete">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    customSourcesListEl.querySelectorAll('.chain-item').forEach((item, idx) => {
-      item.addEventListener('click', (e) => {
-        if (!e.target.closest('button')) {
-          const s = customSources[idx];
-          sourceFormId.value = idx;
-          sourceFormName.value = s.name;
-          sourceFormUrl.value = s.url;
-          sourceFormHeight.value = s.height || '';
-          sourceFormCss.value = s.css || '';
-          if (sourceFormSelector) sourceFormSelector.value = s.selector || '';
-          if (sourceFormZoom) sourceFormZoom.value = s.zoom || '';
-
-          if (s.shortcut) {
-            sourceFormShortcut.dataset.key = JSON.stringify(s.shortcut);
-            sourceFormShortcut.textContent = s.shortcut.display || 'None';
-          } else {
-            sourceFormShortcut.dataset.key = '';
-            sourceFormShortcut.textContent = 'None';
-          }
-
-          sourceForm.style.display = 'block';
-          addSourceBtn.style.display = 'none';
-          sourceFormName.focus();
-        }
-      });
-    });
-
-    customSourcesListEl.querySelectorAll('[data-action="delete-source"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const index = parseInt(btn.dataset.index);
-        if (confirm('Are you sure you want to delete this source?')) {
-          customSources.splice(index, 1);
-          saveOptions();
-          renderCustomSources();
-        }
-      });
-    });
-  }
-
-  if (addSourceBtn) {
-    addSourceBtn.addEventListener('click', () => {
-      sourceFormId.value = '';
-      sourceFormName.value = '';
-      sourceFormUrl.value = '';
-      sourceFormHeight.value = '';
-      sourceFormCss.value = '';
-      if (sourceFormSelector) sourceFormSelector.value = '';
-      if (sourceFormZoom) sourceFormZoom.value = '';
-      sourceFormShortcut.dataset.key = '';
-      sourceFormShortcut.textContent = 'None';
-      sourceForm.style.display = 'block';
-      addSourceBtn.style.display = 'none';
-      sourceFormName.focus();
-    });
-  }
-
-  if (cancelSourceBtn) {
-    cancelSourceBtn.addEventListener('click', () => {
-      sourceForm.style.display = 'none';
-      addSourceBtn.style.display = 'flex';
-    });
-  }
-
-  if (resetSourcesBtn) {
-    resetSourcesBtn.addEventListener('click', () => {
-      if (confirm('Reset all web sources to defaults? Your custom sources will be removed.')) {
-        customSources = (LUMINA_DEFAULTS ? [...LUMINA_DEFAULTS.customSources] : []);
-        saveOptions();
-        renderCustomSources();
-        updateStatus('Sources reset to defaults.', 'success');
-      }
-    });
-  }
-
-  if (saveSourceBtn) {
-    saveSourceBtn.addEventListener('click', () => {
-      const name = sourceFormName.value.trim();
-      const url = sourceFormUrl.value.trim();
-      const height = sourceFormHeight.value.trim();
-      const css = sourceFormCss.value.trim();
-      const selector = sourceFormSelector ? sourceFormSelector.value.trim() : '';
-      const zoomRaw = sourceFormZoom ? sourceFormZoom.value.trim() : '';
-      const zoom = zoomRaw ? Math.min(200, Math.max(10, parseInt(zoomRaw))) : 100;
-      const shortcut = sourceFormShortcut.dataset.key ? JSON.parse(sourceFormShortcut.dataset.key) : null;
-
-      if (!name || !url) {
-        updateStatus('Please fill in Name and URL.', 'error');
-        return;
-      }
-
-      const index = sourceFormId.value;
-      const existingSource = index !== '' ? customSources[parseInt(index)] : null;
-
-      const newSource = {
-        id: existingSource ? existingSource.id : (name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now()),
-        name,
-        url,
-        height: height ? Math.min(100, Math.max(20, parseInt(height))) : 80,
-        css,
-        selector,
-        zoom,
-        shortcut
-      };
-
-      if (index !== '') {
-        customSources[parseInt(index)] = newSource;
-      } else {
-        customSources.push(newSource);
-      }
-
-      saveOptions();
-      renderCustomSources();
-      sourceForm.style.display = 'none';
-      addSourceBtn.style.display = 'flex';
-      updateStatus('Source saved successfully!', 'success');
-
-      // Broadcast update to all tabs so open iframes update immediately
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach(tab => {
-          chrome.tabs.sendMessage(tab.id, {
-            action: 'update_websource',
-            source: newSource
-          }).catch(() => { });
-        });
-      });
-    });
-  }
 
 
 
@@ -1604,7 +1437,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Load saved settings
-  chrome.storage.local.get(['globalDefaults', 'customSources', 'modelChains', 'advancedParamsByModel', 'provider', 'visionProvider', 'voiceProvider', 'voiceModel', 'model', 'visionModel', 'googleApiKey', 'googleCx', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'maxContextTokens', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'transProvider', 'transModelProvider', 'transModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId'], (items) => {
+  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'visionProvider', 'voiceProvider', 'voiceModel', 'model', 'visionModel', 'googleApiKey', 'googleCx', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'maxContextTokens', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'transProvider', 'transModelProvider', 'transModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId'], (items) => {
     // Wait for providers to be loaded
     setTimeout(() => {
       // --- Load Advanced Params ---
@@ -1633,23 +1466,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderChainList('vision');
 
 
-      // --- Load Web Sources ---
-      customSources = items.customSources || [];
 
-      // Cleanup: Remove Google Translate and DeepL if they exist
-      customSources = customSources.filter(src => src.id !== 'google_translate' && src.id !== 'deepl');
-
-      // Merge in any missing default sources (by id) so new defaults auto-appear
-      const defaultSources = (LUMINA_DEFAULTS ? LUMINA_DEFAULTS.customSources : []) || [];
-      defaultSources.forEach(def => {
-        if (!customSources.some(s => s.id === def.id)) {
-          customSources.push(def);
-        }
-      });
-
-      chrome.storage.local.set({ customSources: customSources });
-
-      renderCustomSources();
 
       // Initialize SortableJS
       if (typeof Sortable !== 'undefined') {
@@ -1974,8 +1791,7 @@ document.addEventListener('DOMContentLoaded', () => {
         transProvider: transProvider,
         transModelProvider: transModelProviderInput?.dataset?.providerId || '',
         transModel: transModelInput ? transModelInput.value : '',
-        audioSpeed: audioSpeed,
-        customSources: customSources
+        audioSpeed: audioSpeed
       };
 
       // Save Google API credentials for image search

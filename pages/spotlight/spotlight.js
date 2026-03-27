@@ -82,6 +82,7 @@ let spotlightAskInputDiv = null;
 let spotlightAskSelectionText = '';
 let spotlightAskSelectionRange = null;
 let spotlightAskSourcePane = 'primary'; // 'primary' | 'secondary'
+let spotlightDictLauncherBtn = null;
 let groupCounter = 1;
 
 // Track whether the last key pressed was a modifier that was pressed alone (no combo)
@@ -124,9 +125,9 @@ function isSelectionInsideEditable() {
         let node = sel.anchorNode;
         while (node && node !== document.documentElement) {
             if (node.nodeType === 1) {
-                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName) || 
-                    node.isContentEditable || 
-                    node.getAttribute('contenteditable') === 'true' || 
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName) ||
+                    node.isContentEditable ||
+                    node.getAttribute('contenteditable') === 'true' ||
                     node.getAttribute('role') === 'textbox'
                 ) {
                     return true;
@@ -135,18 +136,18 @@ function isSelectionInsideEditable() {
             node = node.parentNode || (node.host && node.host.nodeType === 1 ? node.host : null);
         }
     }
-    
+
     // 2. Check focused element
     const active = document.activeElement;
     if (active && (
-        ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(active.tagName) || 
-        active.isContentEditable || 
-        active.getAttribute('contenteditable') === 'true' || 
+        ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(active.tagName) ||
+        active.isContentEditable ||
+        active.getAttribute('contenteditable') === 'true' ||
         active.getAttribute('role') === 'textbox'
     )) {
         return true;
     }
-    
+
     return false;
 }
 
@@ -265,9 +266,7 @@ function normalizeTabs() {
 }
 
 async function initTabs() {
-    // 1. Ensure history is migrated FIRST so searches for sessionIds succeed
-    await migrateOldHistory();
-
+    // 1. Ensure history elements are clean on reload
     const tabsBar = document.getElementById('tabs-bar');
     if (tabsBar) tabsBar.style.display = 'flex';
 
@@ -345,7 +344,7 @@ async function initTabs() {
                 tabs.push(tab);
             }
 
-            // Determine groups BEFORE loading histories to avoid loading orphaned tabs
+            // Determine groups
             if (data.spotlight_tab_groups && data.spotlight_tab_groups.length > 0) {
                 tabGroups = data.spotlight_tab_groups;
                 tabGroups.forEach(g => {
@@ -388,9 +387,6 @@ async function initTabs() {
                 if (t.historyEl) t.historyEl.remove();
                 return false;
             });
-
-            // Load histories only for surviving tabs
-            await Promise.all(tabs.map(tab => tab.sessionId ? loadHistoryIntoTab(tab) : Promise.resolve()));
 
             // Normalize AFTER both tabs and tabGroups are loaded so IDs stay in sync
             normalizeTabs();
@@ -480,198 +476,9 @@ async function initTabs() {
     }, true);
 }
 
-// New helper to load history for a specific tab
-async function loadHistoryIntoTab(tab) {
-    if (!tab.sessionId) return;
 
-    try {
-        // 1. Fetch metadata
-        const data = await chrome.storage.local.get([SPOTLIGHT_HISTORY_KEY]);
-        const sessions = data[SPOTLIGHT_HISTORY_KEY] || {};
-        const chatMeta = sessions[tab.sessionId];
-        
-        if (chatMeta) {
-            // 2. Fetch full content from separate key OR fallback to meta for legacy
-            const sessionKey = `lumina_session_${tab.sessionId}`;
-            const contentResult = await chrome.storage.local.get([sessionKey]);
-            const messages = contentResult[sessionKey] || chatMeta.messages || [];
-            
-            if (messages.length > 0) {
-                renderSessionIntoTab(tab, { ...chatMeta, messages });
-            }
-        }
-    } catch (e) {
-        console.error('[Spotlight] loadHistoryIntoTab failed:', e);
-    }
-}
 
-// Synchronous render — no storage I/O, accepts session object directly
-function renderSessionIntoTab(tab, session) {
-    if (!session || !session.messages) return;
-    const historyEl = tab.historyEl;
-    const tChatUI = tab.chatUIInstance;
 
-    historyEl.innerHTML = '';
-    tChatUI.currentEntryDiv = null;
-    tChatUI.currentAnswerDiv = null;
-
-    for (let i = 0; i < session.messages.length; i++) {
-        const msg = session.messages[i];
-        if (msg.type === 'question') {
-            tChatUI.appendQuestion(msg.content, msg.images || msg.files || [], {
-                editable: true,
-                skipMargin: true,
-                entryType: msg.metadata?.entryType || 'qa'
-            });
-
-            if (i + 1 < session.messages.length && session.messages[i + 1].type === 'answer') {
-                const answerMsg = session.messages[i + 1];
-                const entryDiv = tChatUI.currentEntryDiv;
-
-                if (answerMsg.versions && Array.isArray(answerMsg.versions) && answerMsg.versions.length > 1) {
-                    const versionsContainer = document.createElement('div');
-                    versionsContainer.className = 'lumina-answer-versions';
-
-                    const activeIndex = answerMsg.versions.length - 1;
-
-                    answerMsg.versions.forEach((vContent, idx) => {
-                        const versionDiv = document.createElement('div');
-                        versionDiv.className = 'lumina-answer-version' + (idx === activeIndex ? ' active' : '');
-                        versionDiv.dataset.versionIndex = idx;
-
-                        const answerDiv = document.createElement('div');
-                        answerDiv.className = 'lumina-chat-answer';
-                        if (typeof vContent === 'string' && vContent.trim().startsWith('<')) {
-                            answerDiv.innerHTML = vContent;
-                        } else {
-                            answerDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(vContent || '') : (vContent || '');
-                        }
-
-                        processAnswerDiv(answerDiv);
-                        versionDiv.appendChild(answerDiv);
-                        versionsContainer.appendChild(versionDiv);
-                    });
-
-                    const navContainer = document.createElement('div');
-                    navContainer.className = 'lumina-answer-nav';
-                    navContainer.innerHTML = `
-                        <button class="lumina-answer-nav-btn nav-prev" ${activeIndex === 0 ? 'disabled' : ''}>
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                        </button>
-                        <span class="lumina-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                        <button class="lumina-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? 'disabled' : ''}>
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                        </button>
-                    `;
-
-                    navContainer.querySelector('.nav-prev').addEventListener('click', () => showAnswerVersion(entryDiv, 'prev'));
-                    navContainer.querySelector('.nav-next').addEventListener('click', () => showAnswerVersion(entryDiv, 'next'));
-
-                    versionsContainer.appendChild(navContainer); // Add navContainer to versionsContainer
-                    
-                    const existingSep = entryDiv.querySelector(':scope > .lumina-dict-separator');
-                    if (existingSep) {
-                        entryDiv.insertBefore(versionsContainer, existingSep);
-                    } else {
-                        entryDiv.appendChild(versionsContainer);
-                        const separator = document.createElement('div');
-                        separator.className = 'lumina-dict-separator';
-                        entryDiv.appendChild(separator);
-                    }
-                } else {
-                    const answerDiv = tChatUI.createAnswerDiv();
-                    if (answerDiv) {
-                        if (typeof answerMsg.content === 'string' && answerMsg.content.trim().startsWith('<')) {
-                            answerDiv.innerHTML = answerMsg.content;
-                        } else {
-                            answerDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(answerMsg.content || '') : (answerMsg.content || '');
-                        }
-                        processAnswerDiv(answerDiv);
-                    }
-                }
-                tChatUI.finishAnswer(true);
-                i++;
-            }
-        } else if (msg.type === 'answer') {
-            const answerDiv = tChatUI.createAnswerDiv();
-            if (answerDiv) {
-                if (typeof msg.content === 'string' && msg.content.trim().startsWith('<')) {
-                    answerDiv.innerHTML = msg.content;
-                } else {
-                    if (typeof marked !== 'undefined') {
-                        answerDiv.innerHTML = marked.parse(msg.content || '');
-                    } else {
-                        answerDiv.textContent = msg.content || '';
-                    }
-                }
-                processAnswerDiv(answerDiv);
-            }
-            tChatUI.finishAnswer(true);
-        } else if (msg.type === 'translation' || msg.type === 'entry') {
-            const div = document.createElement('div');
-            div.className = 'lumina-dict-entry';
-
-            const entryType = msg.type === 'translation'
-                ? 'translation'
-                : (msg.entryType || msg.metadata?.entryType || 'entry');
-
-            div.dataset.entryType = entryType;
-
-            if (msg.type === 'translation') {
-                // If the saved HTML already has the new structure, use it.
-                // Otherwise reconstruct from content or wrap existing card.
-                const html = msg.html || msg.content || '';
-                if (html.includes('translation-question')) {
-                    div.innerHTML = html;
-                } else if (html.includes('lumina-translation-card')) {
-                    // Wrap existing card in header and container
-                    div.innerHTML = `
-                        <div class="lumina-chat-question translation-question">Translate</div>
-                        <div class="lumina-translation-container">
-                            ${html}
-                        </div>
-                    `;
-                } else {
-                    // Fallback for very old entries (just text)
-                    div.innerHTML = `
-                        <div class="lumina-chat-question translation-question">Translate</div>
-                        <div class="lumina-translation-container">
-                             <div class="lumina-translation-card">
-                                <div class="lumina-translation-block">
-                                    <div class="lumina-translation-source">
-                                        <div class="lumina-translation-text">${msg.content?.source || ''}</div>
-                                    </div>
-                                </div>
-                                <div class="lumina-translation-divider"></div>
-                                <div class="lumina-translation-block">
-                                    <div class="lumina-translation-target">
-                                        <div class="lumina-translation-text">${msg.content?.target || html}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            } else {
-                div.innerHTML = msg.html || msg.content || '';
-            }
-
-            if (!div.querySelector('.lumina-chat-answer')) {
-                // ... logic handled by chatUI.appendQuestion ...
-            }
-
-            historyEl.appendChild(div);
-            processAnswerDiv(div);
-        }
-    }
-
-    // Apply min-height to last entry so it fills the viewport (Gemini-style)
-    const allRestoredEntries = historyEl.querySelectorAll('.lumina-dict-entry');
-    const lastRestoredEntry = allRestoredEntries.length > 0 ? allRestoredEntries[allRestoredEntries.length - 1] : null;
-    if (lastRestoredEntry) {
-        requestAnimationFrame(() => tChatUI.setInitialEntryHeight(lastRestoredEntry));
-    }
-}
 
 function createTab(switchToIt = true) {
     tabCounter++;
@@ -815,7 +622,7 @@ function switchGroup(groupIndex) {
         const oldGroup = tabGroups[activeGroupIndex];
         const oldPrimary = tabs.find(t => t.id === oldGroup.tabIds[0]);
         const oldSecondary = oldGroup.tabIds.length > 1 ? tabs.find(t => t.id === oldGroup.tabIds[1]) : null;
-        
+
         if (oldPrimary && sharedInputUI?.getInputState) oldPrimary.inputState = sharedInputUI.getInputState();
         if (oldSecondary && sharedInputUISecondary?.getInputState) oldSecondary.inputStateSecondary = sharedInputUISecondary.getInputState();
     }
@@ -902,13 +709,6 @@ function switchGroup(groupIndex) {
             if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
         }
         syncTabUI(primaryTab);
-    }
-
-    // Keep currentSessionId in sync with the active primary tab so
-    // saveCurrentSession() always writes to the correct session on
-    // beforeunload / periodic auto-save.
-    if (primaryTab?.sessionId) {
-        currentSessionId = primaryTab.sessionId;
     }
 
     renderTabs();
@@ -1601,26 +1401,49 @@ function initSpotlightAskSelection() {
     // Create button
     spotlightAskBtn = document.createElement('div');
     spotlightAskBtn.id = 'lumina-ask-selection-btn';
-    spotlightAskBtn.innerHTML = `<span class="lumina-ask-btn-text">Ask Lumina</span>`;
+    spotlightAskBtn.innerHTML = `
+        <div class="lumina-dict-launcher-part">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </div>
+        <div class="lumina-ask-part">
+            Ask
+        </div>
+    `;
+    
+    // Wire the sub-element to the global variable for mousedown checks
+    spotlightDictLauncherBtn = spotlightAskBtn.querySelector('.lumina-dict-launcher-part');
+
     spotlightAskBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        showSpotlightAskInput();
+        const dictPart = e.target.closest('.lumina-dict-launcher-part');
+        const askPart = e.target.closest('.lumina-ask-part');
+
+        if (dictPart) {
+            const word = spotlightAskSelectionText;
+            const x = parseInt(spotlightAskBtn.style.left);
+            const y = parseInt(spotlightAskBtn.style.top) + 42; // slightly more offset
+            showSpotlightDictionaryPopup(word, x, y);
+            hideSpotlightAskPopup();
+        } else if (askPart || e.target === spotlightAskBtn) {
+            showSpotlightAskInput();
+        }
     });
     document.body.appendChild(spotlightAskBtn);
 
     // Show button on text selection inside chat scroll areas
     document.addEventListener('mouseup', (e) => {
-        if (!askSelectionPopupEnabled) return;
         if (spotlightAskBtn && spotlightAskBtn.contains(e.target)) return;
         if (spotlightAskInputDiv && spotlightAskInputDiv.contains(e.target)) return;
 
-        setTimeout(() => {
+        if (window.mouseupTimer) clearTimeout(window.mouseupTimer);
+        window.mouseupTimer = setTimeout(() => {
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
 
             if (!text) {
                 if (!spotlightAskInputDiv || spotlightAskInputDiv.style.display !== 'flex') {
                     hideSpotlightAskPopup();
+                    hideSpotlightDictLauncher();
                 }
                 return;
             }
@@ -1633,18 +1456,7 @@ function initSpotlightAskSelection() {
             const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
             if (!range) return;
 
-            // Only trigger when selection is inside a chat scroll pane
-            const chatAreas = document.querySelectorAll('.lumina-chat-scroll-content');
-            let inChatArea = false;
-            for (const area of chatAreas) {
-                if (area.contains(range.commonAncestorContainer)) {
-                    inChatArea = true;
-                    break;
-                }
-            }
-            if (!inChatArea) return;
-
-            // Detect which pane the selection is in
+            // Detect which pane the selection is in (for Ask routing)
             const commonNode = range.commonAncestorContainer;
             const secondaryPane = document.getElementById('pane-secondary');
             spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -1659,20 +1471,20 @@ function initSpotlightAskSelection() {
             if (!rects.length) return;
 
             const firstRect = rects[0];
-            const btnHeight = 34;
             const margin = 5;
-            let top = firstRect.top - btnHeight - margin;
-            let left = firstRect.left;
 
-            if (top < 10) top = firstRect.bottom + margin;
-
-            spotlightAskBtn.style.visibility = 'hidden';
+            // Show the combined unified toolbar
             spotlightAskBtn.style.display = 'flex';
-            const btnWidth = spotlightAskBtn.offsetWidth;
-            spotlightAskBtn.style.visibility = '';
+            spotlightAskBtn.style.visibility = 'hidden';
+            const btnW = spotlightAskBtn.offsetWidth;
+            const btnH = spotlightAskBtn.offsetHeight || 36;
+            spotlightAskBtn.style.visibility = 'visible';
 
-            const viewportWidth = window.innerWidth;
-            if (left + btnWidth > viewportWidth - 10) left = Math.max(10, viewportWidth - btnWidth - 10);
+            let top = firstRect.top - btnH - margin;
+            let left = firstRect.left;
+            if (top < 10) top = firstRect.bottom + margin;
+            const vw = window.innerWidth;
+            if (left + btnW > vw - 10) left = Math.max(10, vw - btnW - 10);
             if (left < 10) left = 10;
 
             spotlightAskBtn.style.left = left + 'px';
@@ -1680,20 +1492,8 @@ function initSpotlightAskSelection() {
 
             // Start tracking scroll
             startSpotlightAskScrollTracking();
-        }, 0);
-    });
-
-    // Hide when clicking outside
-    document.addEventListener('mousedown', (e) => {
-        if (spotlightAskBtn && spotlightAskBtn.contains(e.target)) return;
-        if (spotlightAskInputDiv && spotlightAskInputDiv.contains(e.target)) return;
-
-        const inputVisible = spotlightAskInputDiv && spotlightAskInputDiv.style.display === 'flex';
-        const btnVisible = spotlightAskBtn && spotlightAskBtn.style.display === 'flex';
-        if (inputVisible || btnVisible) {
-            hideSpotlightAskPopup();
-        }
-    });
+        }, 80); // Increased delay for stability
+    }, true);
 }
 
 function showSpotlightAskInput() {
@@ -1734,7 +1534,7 @@ let spotlightAskScrollHandler = null;
 
 function startSpotlightAskScrollTracking() {
     if (spotlightAskScrollHandler) return;
-    
+
     spotlightAskScrollHandler = () => {
         requestAnimationFrame(updateSpotlightAskPosition);
     };
@@ -1800,6 +1600,10 @@ function updateSpotlightAskPosition() {
 
 // Initialize
 async function init() {
+    console.log('[Spotlight Debug] init() starting');
+    // Immediate: Initialize search selection UI so listeners work regardless of tab loading
+    initSpotlightAskSelection();
+
     // 1. Inject shared input bar HTML FIRST so LuminaChatUI can find it
     const inputAreaPrimary = document.getElementById('input-area-primary');
     const inputAreaSecondary = document.getElementById('input-area-secondary');
@@ -1898,7 +1702,6 @@ async function init() {
     setupSidebar();
 
     // Initialize ask-selection button for text selected inside spotlight
-    initSpotlightAskSelection();
 
     // Listen for live preview from options
     // Listen for live preview from options and system commands
@@ -2096,10 +1899,6 @@ function setupPort() {
 
                 // Clear streaming tab
                 streamingTab = null;
-
-                // Save session after UI updates complete (defer to next tick)
-                // forceTimestamp=true: streaming completed = real content changed (new answer or regeneration)
-                setTimeout(() => saveCurrentSession(true), 0);
             }
         });
 
@@ -2193,23 +1992,15 @@ async function handleSubmit(text, images, extra = {}, targetTab = null) {
 
     // Support tool modes from extra (for dropdown tools)
     if (extra.mode === 'translate') {
-        const hTrans = async (txt) => {
-            await targetChatUI.handleTranslation(txt);
-            saveCurrentSession(true);
-        };
-        await hTrans(text);
+        await targetChatUI.handleTranslation(text);
         return;
     }
 
     if (extra.mode === 'websource') {
-        const hWeb = (txt, src) => {
-            // Apply to all sync tabs
-            tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
-                t.chatUIInstance.openWebSource(src, txt);
-            });
-            saveCurrentSession(true);
-        };
-        hWeb(text, extra.source);
+        // Apply to all sync tabs
+        tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
+            t.chatUIInstance.openWebSource(extra.source, text);
+        });
         return;
     }
 
@@ -2310,7 +2101,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null) {
 // Handle translation requests - use shared LuminaChatUI method
 async function handleTranslation(text) {
     await chatUI.handleTranslation(text);
-    saveCurrentSession(true);
+
 }
 
 // Global keyboard listeners (not handled by LuminaChatUI)
@@ -2742,7 +2533,7 @@ function resetChat() {
 
     if (isSecondaryTarget) {
         // Reset secondary pane
-        saveCurrentSession();
+
 
         if (chatUISecondary) {
             chatUISecondary.clearHistory();
@@ -2773,7 +2564,7 @@ function resetChat() {
 
     } else {
         // Reset primary pane
-        saveCurrentSession();
+
 
         chatUI.clearHistory();
         if (chatUI.inputEl) {
@@ -2791,17 +2582,11 @@ function resetChat() {
             activeTab.sessionId = newSessionId;
             activeTab.scrollTop = -1;
 
-            // Sync global currentSessionId
-            currentSessionId = newSessionId;
 
             // Refresh UI and save state
             renderTabs();
             saveTabsState();
 
-            // Persist the current session ID to storage for reload
-            try {
-                chrome.storage.local.set({ spotlight_current_session: currentSessionId });
-            } catch (e) { }
         }
 
         // Hide regenerate button for new chat
@@ -2955,7 +2740,7 @@ function triggerRegenerate(targetUI = null) {
         if (transSource) {
             const sourceText = transSource.textContent.trim();
             originalQuestion = `Translate this text: "${sourceText}"`;
-            
+
             // Store for cache update later
             if (tUI) {
                 tUI._regenSourceText = sourceText;
@@ -3143,14 +2928,15 @@ async function handleRegenerate(entryElement, questionText, targetUI = null) {
     }
 
     if (_sc) {
-        const viewportHeight = _sc.clientHeight || _sc.offsetHeight;
-        if (viewportHeight > 0) {
-            // Clear min-height on all other entries
+        const container = document.querySelector('.lumina-chat-container') || document.body;
+        const inputWrapper = document.querySelector('.lumina-chat-input-wrapper');
+        const allE = Array.from(_sc.querySelectorAll('.lumina-dict-entry'));
+        const idx = allE.indexOf(entryElement);
+
+        if (LuminaChatUI.applyViewportMinHeight(entryElement, container, inputWrapper, idx)) {
             _sc.querySelectorAll('.lumina-dict-entry').forEach(e => {
                 if (e !== entryElement) e.style.removeProperty('min-height');
             });
-            // Fixed 10px buffer
-            entryElement.style.setProperty('min-height', (viewportHeight - 10) + 'px', 'important');
         }
         if (_regenTargetScroll !== null) {
             _sc.scrollTop = _regenTargetScroll;
@@ -3186,7 +2972,7 @@ async function handleRegenerate(entryElement, questionText, targetUI = null) {
         // Setup UI state for streaming to receiving container
         // If translation, we might need to find the answer div inside the new translation block later,
         // but ChatUI.appendChunk will create it if missing inside the .active version.
-        tUI.currentAnswerDiv = null; 
+        tUI.currentAnswerDiv = null;
         tUI.loadingDiv = document.getElementById(loadingId);
 
         // Prepare message
@@ -3504,903 +3290,103 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
-// --- Sidebar Functionality ---
-let currentSessionId = null;
-let currentSearchQuery = '';
-const SPOTLIGHT_HISTORY_KEY = 'lumina_chat_sessions';
-const OLD_SPOTLIGHT_HISTORY_KEY = 'spotlight_chat_sessions';
-const POPUP_HISTORY_KEY = 'lumina_popup_sessions';
-const SPOTLIGHT_HISTORY_BATCH_SIZE = 30;
-let spotlightHistoryCache = [];
-let spotlightHistoryRendered = 0;
-let spotlightHistoryQuery = '';
 
-// Migrate old history to new shared key (comprehensive migration)
-async function migrateOldHistory() {
-    try {
-        const data = await chrome.storage.local.get([
-            OLD_SPOTLIGHT_HISTORY_KEY,
-            SPOTLIGHT_HISTORY_KEY,
-            'chat_history',
-            POPUP_HISTORY_KEY
-        ]);
 
-        const legacyGlobal = data['chat_history'] || [];
-        const oldSpotlight = data[OLD_SPOTLIGHT_HISTORY_KEY];
-        const currentSpotlight = data[SPOTLIGHT_HISTORY_KEY] || {};
-        const currentPopup = data[POPUP_HISTORY_KEY] || {};
 
-        let hasNewData = false;
-        const merged = { ...currentSpotlight };
-
-        // 1. Migrate from 'chat_history' (The 361 chats)
-        if (Array.isArray(legacyGlobal) && legacyGlobal.length > 0) {
-
-            legacyGlobal.forEach(history => {
-                const id = history.sessionId || ('session_' + (history.timestamp || Date.now()) + '_' + Math.random().toString(36).substr(2, 5));
-                if (!merged[id]) {
-                    merged[id] = {
-                        id: id,
-                        title: history.title || 'Migrated Chat',
-                        messages: history.messages || [],
-                        createdAt: history.timestamp || Date.now(),
-                        updatedAt: history.timestamp || Date.now()
-                    };
-                    hasNewData = true;
-                }
-            });
-        }
-
-        // 2. Migrate from old spotlight key if exists
-        if (oldSpotlight && Object.keys(oldSpotlight).length > 0) {
-            Object.assign(merged, oldSpotlight);
-            hasNewData = true;
-        }
-
-        // 3. Sync with Popup history if they are different
-        if (Object.keys(currentPopup).length > 0) {
-            let syncCount = 0;
-            Object.entries(currentPopup).forEach(([id, session]) => {
-                if (!merged[id]) {
-                    merged[id] = session;
-                    syncCount++;
-                    hasNewData = true;
-                }
-            });
-
-        }
-
-        if (hasNewData) {
-            await chrome.storage.local.set({
-                [SPOTLIGHT_HISTORY_KEY]: merged
-            });
-
-            // Cleanup legacy keys to avoid re-running
-            await chrome.storage.local.remove([
-                OLD_SPOTLIGHT_HISTORY_KEY,
-                'chat_history',
-                POPUP_HISTORY_KEY
-            ]);
-
-
-            // Reload history list if sidebar is open
-            if (document.getElementById('spotlight-sidebar')?.classList.contains('active')) {
-                loadChatHistory(currentSearchQuery);
-            }
-        }
-    } catch (e) {
-        console.error('[Spotlight] Migration failed:', e);
-    }
-}
-
-// Run migration on load
-migrateOldHistory();
-
-function setupSidebar() {
-    const menuBtn = document.getElementById('menu-btn');
-    const sidebar = document.getElementById('spotlight-sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const closeBtn = document.getElementById('sidebar-close-btn');
-
-    if (!menuBtn || !sidebar || !overlay) return;
-
-    // Toggle sidebar
-    menuBtn.addEventListener('click', () => {
-        openSidebar();
-    });
-
-    // Close sidebar
-    closeBtn?.addEventListener('click', closeSidebar);
-    overlay.addEventListener('click', closeSidebar);
-
-    // Search input
-    const searchInput = document.getElementById('sidebar-search-input');
-    const clearBtn = document.getElementById('sidebar-search-clear');
-
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            currentSearchQuery = e.target.value;
-            // Toggle clear button
-            if (clearBtn) {
-                clearBtn.style.display = e.target.value ? 'flex' : 'none';
-            }
-            currentSearchQuery = e.target.value.trim();
-            loadChatHistory(currentSearchQuery);
-        });
-    }
-
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            if (searchInput) {
-                searchInput.value = '';
-                searchInput.focus();
-            }
-            clearBtn.style.display = 'none';
-            currentSearchQuery = '';
-            loadChatHistory('');
-        });
-    }
-
-    // Generate or load current session ID
-    loadCurrentSession();
-}
-
-function openSidebar() {
-    const sidebar = document.getElementById('spotlight-sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const searchInput = document.getElementById('sidebar-search-input');
-    const clearBtn = document.getElementById('sidebar-search-clear');
-
-    sidebar?.classList.add('active');
-    overlay?.classList.add('active');
-
-    // Restore search input value
-    if (searchInput) {
-        searchInput.value = currentSearchQuery;
-    }
-
-    if (clearBtn) {
-        clearBtn.style.display = currentSearchQuery ? 'flex' : 'none';
-    }
-
-    // Load history with current search query
-    loadChatHistory(currentSearchQuery);
-}
-
-function closeSidebar() {
-    const sidebar = document.getElementById('spotlight-sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-
-    sidebar?.classList.remove('active');
-    overlay?.classList.remove('active');
-    sidebarTargetTabId = null;
-}
-
-async function loadCurrentSession() {
-    // Session is managed by tabs. Ensure global currentSessionId matches active tab.
-    const activeTab = tabs[activeTabIndex];
-    if (activeTab && activeTab.sessionId) {
-        currentSessionId = activeTab.sessionId;
-    } else if (!currentSessionId) {
-        currentSessionId = 'session_' + Date.now();
-        if (activeTab) activeTab.sessionId = currentSessionId;
-    }
-
-    await chrome.storage.local.set({ spotlight_current_session: currentSessionId });
-}
-
-async function loadChatHistory(searchQuery = '') {
-    const historyList = document.getElementById('sidebar-history-list');
-    if (!historyList) return;
-
-    spotlightHistoryQuery = searchQuery;
-    attachSpotlightHistoryClick(historyList);
-    attachSpotlightHistoryLazyLoad(historyList);
-
-    try {
-        const data = await chrome.storage.local.get([SPOTLIGHT_HISTORY_KEY]);
-        const sessions = data[SPOTLIGHT_HISTORY_KEY] || {};
-
-        let sessionArray = Object.entries(sessions)
-            .map(([id, session]) => ({ id, ...session }))
-            .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-        // Filter by search query (search questions / title)
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            sessionArray = sessionArray.filter(session => {
-                const titleMatch = session.title && session.title.toLowerCase().includes(query);
-                const searchIndexMatch = session.searchIndex && session.searchIndex.toLowerCase().includes(query);
-                const legacyMessagesMatch = session.messages && session.messages.some(msg =>
-                    msg.type === 'question' &&
-                    msg.content.toLowerCase().includes(query)
-                );
-                return titleMatch || searchIndexMatch || legacyMessagesMatch;
-            });
-        }
-
-        spotlightHistoryCache = sessionArray;
-        renderSpotlightHistory(true);
-    } catch (e) {
-        console.error('[Spotlight] Failed to load chat history:', e);
-        historyList.innerHTML = '<div class="spotlight-history-empty">Failed to load history</div>';
-    }
-}
-
-function attachSpotlightHistoryClick(historyList) {
-    if (historyList.__luminaHistoryClickBound) return;
-    historyList.__luminaHistoryClickBound = true;
-    historyList.addEventListener('click', (e) => {
-        const item = e.target.closest('.spotlight-history-item');
-        if (!item) return;
-        const sessionId = item.dataset.sessionId;
-        // If sidebar was opened from a specific tab double-click, load into that tab
-        if (sidebarTargetTabId) {
-            const targetTab = tabs.find(t => t.id === sidebarTargetTabId);
-            if (targetTab) {
-                closeSidebar();
-                switchTabToSession(targetTab, sessionId, spotlightHistoryQuery);
-                return;
-            }
-        }
-        if (sessionId !== currentSessionId || spotlightHistoryQuery) {
-            switchToSession(sessionId, spotlightHistoryQuery);
-        } else {
-            // Same session, no query — scroll to show the newest (last) entry
-            const historyEl = chatUI?.historyEl;
-            if (historyEl) {
-                const allEntries = historyEl.querySelectorAll('.lumina-dict-entry');
-                if (allEntries.length > 0) {
-                    const lastEntry = allEntries[allEntries.length - 1];
-                    chatUI.adjustEntryMargin(lastEntry, 'auto');
-                }
-            }
-        }
-        closeSidebar();
-    });
-}
-
-function attachSpotlightHistoryLazyLoad(historyList) {
-    if (historyList.__luminaHistoryLazyBound) return;
-    historyList.__luminaHistoryLazyBound = true;
-    historyList.addEventListener('scroll', () => {
-        if (spotlightHistoryQuery) return; // Search should render all
-        const nearBottom = historyList.scrollTop + historyList.clientHeight >= historyList.scrollHeight - 120;
-        if (nearBottom) renderSpotlightHistory(false);
-    });
-}
-
-function renderSpotlightHistory(reset) {
-    const historyList = document.getElementById('sidebar-history-list');
-    if (!historyList) return;
-
-    if (reset) {
-        historyList.scrollTop = 0;
-        spotlightHistoryRendered = 0;
-        historyList.innerHTML = '';
-    }
-
-    if (spotlightHistoryCache.length === 0) {
-        historyList.innerHTML = `
-            <div class="spotlight-history-empty">
-                <p>${spotlightHistoryQuery ? 'No results found' : 'No chat history yet'}</p>
-                <p style="margin-top: 8px; font-size: 11px;">${spotlightHistoryQuery ? 'Try a different search term' : 'Your conversations will appear here'}</p>
-            </div>
-        `;
-        return;
-    }
-
-    const shouldRenderAll = !!spotlightHistoryQuery;
-    const nextCount = shouldRenderAll
-        ? spotlightHistoryCache.length
-        : Math.min(spotlightHistoryRendered + SPOTLIGHT_HISTORY_BATCH_SIZE, spotlightHistoryCache.length);
-
-    const slice = spotlightHistoryCache.slice(spotlightHistoryRendered, nextCount);
-    const html = slice.map(session => {
-        const isActive = session.id === currentSessionId;
-        const date = session.updatedAt ? formatDate(session.updatedAt) : 'Unknown';
-        const title = session.title || 'New Tab';
-
-        return `
-            <div class="spotlight-history-item ${isActive ? 'active' : ''}" data-session-id="${session.id}">
-                <div class="spotlight-history-title">${escapeHtml(title)}</div>
-                <div class="spotlight-history-date">${date}</div>
-            </div>
-        `;
-    }).join('');
-
-    historyList.insertAdjacentHTML('beforeend', html);
-    spotlightHistoryRendered = nextCount;
-}
-
-// Helper to process answer div (highlight, math, links)
-function processAnswerDiv(container) {
-    if (typeof LuminaChatUI !== 'undefined') {
-        LuminaChatUI.processContainer(container);
-    }
-}
-
-async function switchTabToSession(targetTab, sessionId, searchQuery = null) {
-    if (!targetTab) return;
-
-    try {
-        // Save the CURRENT (previous) session before switching away — capture before any mutation
-        const prevSessionId = currentSessionId;
-        const prevHistoryEl = chatUI?.historyEl;
-        if (prevSessionId && prevHistoryEl) {
-            saveSessionForPane(prevSessionId, prevHistoryEl); // no await — non-blocking
-        }
-
-        // Use cached session data for zero-latency render
-        const cachedSession = spotlightHistoryCache.find(s => s.id === sessionId);
-        let session = cachedSession;
-
-        if (!session) return;
-
-        // Fetch full content from separate key if not present (Partitioned Storage)
-        if (!session.messages) {
-            const sessionKey = `lumina_session_${sessionId}`;
-            const contentResult = await chrome.storage.local.get([sessionKey]);
-            session.messages = contentResult[sessionKey] || [];
-        }
-
-        if (!session.messages) return;
-
-        // Update tab metadata
-        targetTab.sessionId = sessionId;
-        if (session.title) targetTab.title = session.title;
-
-        // Render synchronously — no I/O latency
-        renderSessionIntoTab(targetTab, session);
-
-        // Determine which pane this tab is in and wire up correctly
-        const isPrimary = targetTab === tabs[activeTabIndex];
-        const isSecondary = isSplitMode && targetTab === tabs[secondaryActiveTabIndex];
-
-        if (isPrimary) {
-            currentSessionId = sessionId;
-            chatUI = targetTab.chatUIInstance;
-        } else if (isSecondary) {
-            chatUISecondary = targetTab.chatUIInstance;
-        } else {
-            const targetGroupIndex = tabGroups.findIndex(g => g.tabIds.includes(targetTab.id));
-            if (targetGroupIndex >= 0) switchGroup(targetGroupIndex);
-            currentSessionId = sessionId;
-        }
-
-            // Scroll / margin handling — defer so layout is settled
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                // Reset disableAutoScroll so setInitialEntryHeight can scroll
-                if (targetTab.chatUIInstance) targetTab.chatUIInstance.disableAutoScroll = false;
-
-                const allEntries = targetTab.historyEl.querySelectorAll('.lumina-dict-entry');
-                if (allEntries.length > 0) {
-                    const lastEntry = allEntries[allEntries.length - 1];
-                    if (!searchQuery) {
-                        if (targetTab.chatUIInstance) {
-                            targetTab.chatUIInstance.setInitialEntryHeight(lastEntry);
-                        } else {
-                            lastEntry.scrollIntoView({ behavior: 'auto', block: 'start' });
-                        }
-                    }
-                    if (searchQuery) {
-                        const query = searchQuery.toLowerCase();
-                        for (const entry of allEntries) {
-                            const questionEl = entry.querySelector('.lumina-chat-question');
-                            if (questionEl && questionEl.textContent.toLowerCase().includes(query)) {
-                                const prevEntry = entry.previousElementSibling;
-                                if (prevEntry?.classList.contains('lumina-dict-entry')) {
-                                    const separator = prevEntry.querySelector('.lumina-dict-separator');
-                                    if (separator) separator.scrollIntoView({ behavior: 'auto', block: 'start' });
-                                } else {
-                                    targetTab.historyEl.scrollTop = 0;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
-        });
-
-        renderTabs();
-        saveTabsState();
-        chrome.storage.local.set({ spotlight_current_session: currentSessionId });
-        // (previous session already saved at the top of this function — no need to save again)
-    } catch (e) {
-        console.error('[Spotlight] switchTabToSession failed:', e);
-    }
-}
-
-async function switchToSession(sessionId, searchQuery = null) {
-
-    try {
-        // Save current session first
-        await saveCurrentSession();
-
-        // Get session metadata from index
-        const data = await chrome.storage.local.get([SPOTLIGHT_HISTORY_KEY]);
-        const sessions = data[SPOTLIGHT_HISTORY_KEY] || {};
-        const session = sessions[sessionId];
-
-        if (session) {
-            // Fetch full content from separate key if not present (Partitioned Storage)
-            if (!session.messages) {
-                const sessionKey = `lumina_session_${sessionId}`;
-                const contentResult = await chrome.storage.local.get([sessionKey]);
-                session.messages = contentResult[sessionKey] || [];
-            }
-        }
-
-        if (session && session.messages) {
-            currentSessionId = sessionId;
-            await chrome.storage.local.set({ spotlight_current_session: sessionId });
-
-            // Update Tab Metadata - Sync titles across all tabs in this session
-            const currentTab = tabs[activeTabIndex];
-            if (currentTab) {
-                currentTab.sessionId = sessionId;
-            }
-
-            if (session.title) {
-                tabs.forEach(t => {
-                    if (t.sessionId === sessionId) {
-                        t.title = session.title;
-                    }
-                });
-            }
-
-            renderTabs();
-            saveTabsState();
-
-            // Clear current chat
-            const chatHistoryEl = chatUI.historyEl;
-            if (chatHistoryEl) {
-                chatHistoryEl.innerHTML = '';
-
-                // Reset chatUI state
-                if (chatUI) {
-                    chatUI.currentEntryDiv = null;
-                    chatUI.currentAnswerDiv = null;
-                }
-
-                // Render messages
-                for (let i = 0; i < session.messages.length; i++) {
-                    const msg = session.messages[i];
-
-
-                    if (msg.type === 'question') {
-                        // Create entry with question
-                        const questionDiv = chatUI.appendQuestion(msg.content, msg.images || msg.files || [], {
-                            editable: true,
-                            skipMargin: true,
-                            entryType: msg.metadata?.entryType || 'qa'
-                        });
-
-                        const editable = questionDiv.querySelector('[contenteditable]');
-                        if (editable) {
-                            attachQuestionListeners(editable);
-                        }
-
-                        // Check if next message is an answer
-                        if (i + 1 < session.messages.length && session.messages[i + 1].type === 'answer') {
-                            const answerMsg = session.messages[i + 1];
-                            const entryDiv = chatUI.currentEntryDiv;
-
-                            if (answerMsg.versions && Array.isArray(answerMsg.versions) && answerMsg.versions.length > 1) {
-                                const versionsContainer = document.createElement('div');
-                                versionsContainer.className = 'lumina-answer-versions';
-
-                                // Default to the latest version as requested by user
-                                const activeIndex = answerMsg.versions.length - 1;
-
-                                answerMsg.versions.forEach((vContent, idx) => {
-                                    const versionDiv = document.createElement('div');
-                                    versionDiv.className = 'lumina-answer-version' + (idx === activeIndex ? ' active' : '');
-                                    versionDiv.dataset.versionIndex = idx;
-
-                                    const answerDiv = document.createElement('div');
-                                    answerDiv.className = 'lumina-chat-answer';
-
-                                    // Versions are usually saved as HTML blocks
-                                    if (typeof vContent === 'string' && vContent.trim().startsWith('<')) {
-                                        answerDiv.innerHTML = vContent;
-                                    } else {
-                                        answerDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(vContent || '') : (vContent || '');
-                                    }
-
-                                    // Post-process the div (highlighting, math, links)
-                                    processAnswerDiv(answerDiv);
-
-                                    versionDiv.appendChild(answerDiv);
-                                    versionsContainer.appendChild(versionDiv);
-                                });
-
-                                // Create nav pill
-                                const navContainer = document.createElement('div');
-                                navContainer.className = 'lumina-answer-nav';
-                                navContainer.innerHTML = `
-                                    <button class="lumina-answer-nav-btn nav-prev" ${activeIndex === 0 ? 'disabled' : ''}>
-                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                                    </button>
-                                    <span class="lumina-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                                    <button class="lumina-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? 'disabled' : ''}>
-                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                                    </button>
-                                `;
-
-                                // Attach listeners
-                                navContainer.querySelector('.nav-prev').addEventListener('click', () => showAnswerVersion(entryDiv, 'prev'));
-                                navContainer.querySelector('.nav-next').addEventListener('click', () => showAnswerVersion(entryDiv, 'next'));
-
-                                versionsContainer.appendChild(navContainer);
-                                
-                                const existingSep = entryDiv.querySelector(':scope > .lumina-dict-separator');
-                                if (existingSep) {
-                                    entryDiv.insertBefore(versionsContainer, existingSep);
-                                } else {
-                                    entryDiv.appendChild(versionsContainer);
-                                    const separator = document.createElement('div');
-                                    separator.className = 'lumina-dict-separator';
-                                    entryDiv.appendChild(separator);
-                                }
-                            } else {
-                                // Single answer logic
-                                const answerDiv = chatUI.createAnswerDiv();
-                                if (answerDiv) {
-                                    if (typeof answerMsg.content === 'string' && answerMsg.content.trim().startsWith('<')) {
-                                        answerDiv.innerHTML = answerMsg.content;
-                                    } else {
-                                        if (typeof marked !== 'undefined') {
-                                            answerDiv.innerHTML = marked.parse(answerMsg.content || '');
-                                        } else {
-                                            answerDiv.textContent = answerMsg.content || '';
-                                        }
-                                    }
-                                    processAnswerDiv(answerDiv);
-                                }
-                            }
-                            chatUI.finishAnswer(true); // Skip margin adjustment
-                            i++; // Skip the answer in next iteration
-                        }
-                    } else if (msg.type === 'answer') {
-                        // Handle standalone answer (fallback)
-                        const answerDiv = chatUI.createAnswerDiv();
-                        if (answerDiv) {
-                            answerDiv.innerHTML = msg.content;
-                            processAnswerDiv(answerDiv);
-                        }
-                        chatUI.finishAnswer(true);
-                    } else if (msg.type === 'translation' || msg.type === 'entry') {
-                        const div = document.createElement('div');
-                        div.className = 'lumina-dict-entry lumina-fade-in';
-
-                        const entryType = msg.type === 'translation'
-                            ? 'translation'
-                            : (msg.entryType || msg.metadata?.entryType || 'entry');
-
-                        div.dataset.entryType = entryType;
-                        div.innerHTML = msg.html || msg.content || '';
-
-                        if (!div.querySelector('.lumina-dict-separator')) {
-                            const separator = document.createElement('div');
-                            separator.className = 'lumina-dict-separator';
-                            div.appendChild(separator);
-                        }
-
-                        // Attach listeners to any questions in translation/entry
-                        div.querySelectorAll('.lumina-chat-question [contenteditable="true"]').forEach(editable => {
-                            attachQuestionListeners(editable);
-                        });
-
-                        chatHistoryEl.appendChild(div);
-                    }
-                }
-
-                // Final UI Polish — defer to next frame so browser has laid out the entries
-                requestAnimationFrame(() => {
-                    chatUI.clearEntryMargins();
-                    // Always clear disableAutoScroll when manually switching sessions
-                    chatUI.disableAutoScroll = false;
-                    const allEntries = chatHistoryEl.querySelectorAll('.lumina-dict-entry');
-
-                    if (allEntries.length > 0) {
-                        const lastEntry = allEntries[allEntries.length - 1];
-
-                        if (searchQuery) {
-                            // Search: scroll to first matching entry
-                            const query = searchQuery.toLowerCase();
-                            let scrolled = false;
-                            for (const entry of allEntries) {
-                                const questionEl = entry.querySelector('.lumina-chat-question');
-                                if (questionEl && questionEl.textContent.toLowerCase().includes(query)) {
-                                    chatUI.adjustEntryMargin(entry, 'none');
-                                    const prevEntry = entry.previousElementSibling;
-                                    if (prevEntry && prevEntry.classList.contains('lumina-dict-entry')) {
-                                        const separator = prevEntry.querySelector('.lumina-dict-separator');
-                                        if (separator) separator.scrollIntoView({ behavior: 'auto', block: 'start' });
-                                    } else {
-                                        chatHistoryEl.scrollTop = 0;
-                                    }
-                                    scrolled = true;
-                                    break;
-                                }
-                            }
-                            if (!scrolled) chatUI.setInitialEntryHeight(lastEntry);
-                        } else {
-                            // No search — show newest (last) entry via setInitialEntryHeight
-                            chatUI.setInitialEntryHeight(lastEntry);
-                            // Retry after 150ms in case layout hadn't settled on first rAF
-                            setTimeout(() => {
-                                const entries2 = chatHistoryEl.querySelectorAll('.lumina-dict-entry');
-                                if (entries2.length > 0) {
-                                    const last2 = entries2[entries2.length - 1];
-                                    const sc = chatUI.getScrollContainer?.();
-                                    if (sc && sc.scrollTop < sc.scrollHeight - sc.clientHeight - 5) {
-                                        chatUI.setInitialEntryHeight(last2);
-                                    }
-                                }
-                            }, 150);
-                        }
-
-                        const regenBtn = document.getElementById('lumina-regenerate-btn');
-                        if (regenBtn) regenBtn.style.display = 'flex';
-                    }
-                });
-            }
-        } else {
-        }
-    } catch (e) {
-        console.error('[Spotlight] Failed to switch session:', e);
-    }
-}
-
-async function startNewChat() {
-    // Save current session first
-    await saveCurrentSession();
-
-    // Create new session
-    currentSessionId = 'session_' + Date.now();
-    await chrome.storage.local.set({ spotlight_current_session: currentSessionId });
-
-    // Update current tab's session link
-    const activeTab = tabs[activeTabIndex];
-    if (activeTab) {
-        activeTab.sessionId = currentSessionId;
-        activeTab.title = 'New Tab';
-        renderTabs();
-        saveTabsState();
-    }
-
-    // Clear chat
-    const chatHistory = chatUI?.historyEl;
-    if (chatHistory) {
-        chatHistory.innerHTML = '';
-    }
-
-    // Focus input
-    chatUI?.inputEl?.focus();
-}
-
-async function saveSessionForPane(sessionId, historyEl, forceTimestamp = false) {
-    if (!sessionId || !historyEl) return;
-
-    try {
-        const messages = [];
-        const entries = historyEl.querySelectorAll('.lumina-dict-entry');
-
-        entries.forEach(entry => {
-            const entryType = entry.dataset.entryType;
-
-            // Non-QA lookup entries (translation / image lookup / dictionary) - save as HTML blocks
-            // These entries may now have a .lumina-chat-question header if they are translations
-            if (entryType === 'translation' || entry.querySelector('.lumina-translation-card')) {
-                messages.push({
-                    type: 'translation',
-                    content: entry.innerHTML
-                });
-                return;
-            }
-            if (entryType === 'image-lookup' || entry.querySelector('.lumina-image-card')) {
-                messages.push({
-                    type: 'entry',
-                    entryType: 'image-lookup',
-                    html: entry.innerHTML
-                });
-                return;
-            }
-            if (entryType === 'dictionary' || entryType === 'lookup' || entry.querySelector('.lumina-dict-word')) {
-                messages.push({
-                    type: 'entry',
-                    entryType: entryType || 'dictionary',
-                    html: entry.innerHTML
-                });
-                return;
-            }
-
-            const questionEl = entry.querySelector('.lumina-chat-question');
-
-            // Get question - it's in .lumina-chat-question
-            if (questionEl) {
-                // Get text content (might have an editable div inside)
-                const editableDiv = questionEl.querySelector('[contenteditable]');
-                const textContent = editableDiv ? editableDiv.textContent.trim() : (questionEl.querySelector('.lumina-translation-text')?.textContent.trim() || questionEl.textContent.trim());
-
-                if (textContent) {
-                    messages.push({
-                        type: 'question',
-                        content: textContent,
-                        metadata: { entryType: entryType }
-                    });
-                }
-            }
-
-            // Get answer - it's in .lumina-chat-answer or .lumina-answer-versions
-            const versionsContainer = entry.querySelector('.lumina-answer-versions');
-            const answerEl = entry.querySelector('.lumina-chat-answer');
-
-            if (versionsContainer) {
-                const versions = versionsContainer.querySelectorAll('.lumina-answer-version');
-                const activeVersion = versionsContainer.querySelector('.lumina-answer-version.active');
-                const activeIndex = activeVersion ? parseInt(activeVersion.dataset.versionIndex) || 0 : 0;
-
-                const versionContents = [];
-                versions.forEach((v) => {
-                    const answerInVersion = v.querySelector('.lumina-chat-answer');
-                    if (answerInVersion) {
-                        versionContents.push(answerInVersion.innerHTML);
-                    }
-                });
-
-                messages.push({
-                    type: 'answer',
-                    content: versionContents[activeIndex] || '',
-                    versions: versionContents.length > 0 ? versionContents : null,
-                    activeVersionIndex: activeIndex
-                });
-            } else if (answerEl) {
-                messages.push({
-                    type: 'answer',
-                    content: answerEl.innerHTML
-                });
-            }
-        });
-
-        if (messages.length === 0) return;
-
-        // Get latest source for title (question or translation)
-        const titleSources = messages.filter(m => m.type === 'question' || m.type === 'translation');
-        const latestSource = titleSources[titleSources.length - 1];
-        let title = 'New Tab';
-        if (latestSource) {
-            if (latestSource.type === 'translation') {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = latestSource.content;
-                const sourceText = tempDiv.querySelector('.lumina-translation-text')?.textContent.trim();
-                title = sourceText ? `Translate: ${sourceText}` : 'Translation';
-            } else {
-                title = latestSource.content;
-            }
-        }
-        title = title.substring(0, 50);
-
-        // Get min-height of the last entry to restore later
-        const lastEntry = entries[entries.length - 1];
-        const lastEntryMargin = lastEntry ? lastEntry.style.minHeight : null;
-
-        // Partitioned Storage Optimization:
-        // 1. Save HEAVY content to its own unique key
-        const sessionKey = `lumina_session_${sessionId}`;
-        await chrome.storage.local.set({ [sessionKey]: messages });
-
-        // 2. Save LIGHTWEIGHT metadata to the main index
-        const data = await chrome.storage.local.get([SPOTLIGHT_HISTORY_KEY]);
-        const sessions = data[SPOTLIGHT_HISTORY_KEY] || {};
-
-        const existingSession = sessions[sessionId];
-        const updatedAt = (forceTimestamp) ? Date.now() : (existingSession?.updatedAt ?? Date.now());
-
-        sessions[sessionId] = {
-            title,
-            updatedAt,
-            lastEntryMargin,
-            searchIndex: messages.filter(m => m.type === 'question').map(m => m.content).join(' ').substring(0, 500), // Cap at 500 chars for metadata searchability
-            // We store NOTHING heavy in the index anymore
-            hasContent: true 
+/**
+ * Ported Dictionary Launcher for Spotlight
+ */
+function initSpotlightDictLauncher() {
+    if (!spotlightDictLauncherBtn) {
+        spotlightDictLauncherBtn = document.createElement('div');
+        spotlightDictLauncherBtn.className = 'lumina-dict-launcher';
+        spotlightDictLauncherBtn.style.position = 'fixed';
+        spotlightDictLauncherBtn.style.display = 'none';
+        spotlightDictLauncherBtn.style.zIndex = '10001';
+        document.body.appendChild(spotlightDictLauncherBtn);
+
+        spotlightDictLauncherBtn.onclick = (e) => {
+            e.stopPropagation();
+            const word = spotlightDictLauncherBtn.dataset.word;
+            console.log('[Spotlight Debug] Launcher clicked for word:', word);
+
+            const x = parseInt(spotlightDictLauncherBtn.style.left);
+            const y = parseInt(spotlightDictLauncherBtn.style.top) + 38;
+
+            showSpotlightDictionaryPopup(word, x, y);
+            hideSpotlightDictLauncher();
         };
-
-        // Sync tab title
-        const matchingTab = tabs.find(t => t.sessionId === sessionId);
-        if (matchingTab && matchingTab.title !== title) {
-            matchingTab.title = title;
-            renderTabs();
-            saveTabsState();
-        }
-
-        // Limit index size
-        const sortedEntries = Object.entries(sessions)
-            .sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
-            
-        if (sortedEntries.length > 999) {
-            const extra = sortedEntries.slice(999);
-            const extraKeys = extra.map(([id]) => `lumina_session_${id}`);
-            await chrome.storage.local.remove(extraKeys);
-        }
-
-        const trimmedSessions = Object.fromEntries(sortedEntries.slice(0, 999));
-        await chrome.storage.local.set({ [SPOTLIGHT_HISTORY_KEY]: trimmedSessions });
-
-    } catch (e) {
-        console.error('[Spotlight] Failed to save session:', e);
     }
+
+    spotlightDictLauncherBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
 }
 
-let _saveTabSessionTimeout = null;
-async function saveCurrentSession(forceTimestamp = false) {
-    if (!currentSessionId) return;
-
-    // Debounce to prevent heavy JSON stringify during AI generation or rapid typing
-    if (_saveTabSessionTimeout && !forceTimestamp) {
-        return; // Already pending
-    }
-
-    if (!forceTimestamp) {
-        _saveTabSessionTimeout = setTimeout(async () => {
-            _saveTabSessionTimeout = null;
-            await _doSaveSession();
-        }, 2000);
-        return;
-    }
-
-    if (_saveTabSessionTimeout) {
-        clearTimeout(_saveTabSessionTimeout);
-        _saveTabSessionTimeout = null;
-    }
-    await _doSaveSession(forceTimestamp);
+function showSpotlightDictLauncher(x, y, word) {
+    initSpotlightDictLauncher();
+    spotlightDictLauncherBtn.dataset.word = word;
+    spotlightDictLauncherBtn.style.left = x + 'px';
+    spotlightDictLauncherBtn.style.top = y + 'px';
+    spotlightDictLauncherBtn.style.display = 'flex';
+    console.log('[Spotlight Debug] Showing Dict Launcher at:', x, y, 'word:', word);
 }
 
-async function _doSaveSession(forceTimestamp = false) {
-    // Save primary pane
-    if (chatUI?.historyEl) {
-        await saveSessionForPane(currentSessionId, chatUI.historyEl, forceTimestamp);
+function hideSpotlightDictLauncher() {
+    if (spotlightDictLauncherBtn) spotlightDictLauncherBtn.style.display = 'none';
+}
+
+function showSpotlightDictionaryPopup(word, x, y) {
+    console.log('[Spotlight Debug] Opening Dictionary Popup for:', word);
+    // Port of the dictionary popup logic or message background to handle it
+    // For now, we can use the existing chatUI if it supports it, 
+    // but typically spotlight logic is different.
+    // I'll implement a basic iframe popup for dictionary.
+
+    // Check if there's an existing popup
+    const existing = document.getElementById('lumina-spotlight-dict-popup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'lumina-spotlight-dict-popup';
+    popup.className = 'lumina-dict-popup lumina-mode-dictionary';
+    popup.style.position = 'fixed';
+    popup.style.top = y + 'px';
+    popup.style.left = x + 'px';
+    popup.style.zIndex = '10002';
+    popup.style.width = '420px';
+    popup.style.height = '420px';
+    popup.style.background = 'white';
+    popup.style.borderRadius = '12px';
+    popup.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+    popup.style.overflow = 'hidden';
+    popup.style.border = '1px solid rgba(0,0,0,0.1)';
+
+    popup.innerHTML = `
+        <iframe src="https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word)}" 
+                style="width: 100%; height: 100%; border: none; background: white;"></iframe>
+    `;
+
+    document.body.appendChild(popup);
+}
+
+// Add global listener for mousedown to hide both in Spotlight
+window.addEventListener('mousedown', (e) => {
+    // Clear any pending mouseup show commands to prevent race conditions
+    if (window.mouseupTimer) {
+        clearTimeout(window.mouseupTimer);
     }
-    // Save secondary pane when in split mode
-    if (isSplitMode && secondaryActiveTabIndex !== -1) {
-        const secondaryTab = tabs[secondaryActiveTabIndex];
-        if (secondaryTab?.sessionId && chatUISecondary?.historyEl) {
-            await saveSessionForPane(secondaryTab.sessionId, chatUISecondary.historyEl, forceTimestamp);
-        }
+
+    const path = e.composedPath();
+    const isInsideAskBtn = spotlightAskBtn && path.some(el => el === spotlightAskBtn || el.id === 'lumina-ask-selection-btn');
+    const isInsideAskInput = spotlightAskInputDiv && path.some(el => el === spotlightAskInputDiv || el.id === 'lumina-ask-input-popup');
+    const isInsideDictLauncher = spotlightDictLauncherBtn && path.some(el => el === spotlightDictLauncherBtn || (el.classList && el.classList.contains && el.classList.contains('lumina-dict-launcher-part')));
+    const isInsideDictPopup = document.getElementById('lumina-spotlight-dict-popup')?.contains(e.target) || 
+                              path.some(el => (el.id === 'lumina-spotlight-dict-popup') || (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')));
+
+    if (!isInsideAskBtn && !isInsideAskInput) {
+        hideSpotlightAskPopup();
     }
-}
-
-// Auto-save session periodically and on window close
-setInterval(() => saveCurrentSession(), 30000); // Every 30s
-
-window.addEventListener('beforeunload', () => {
-    saveCurrentSession();
-});
-
-function formatDate(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-
+    
+    if (!isInsideDictLauncher && !isInsideDictPopup) {
+        document.getElementById('lumina-spotlight-dict-popup')?.remove();
+    }
+}, true);

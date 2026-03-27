@@ -8,18 +8,8 @@ importScripts('./youtube.js');
 // Default settings
 const DEFAULTS = LUMINA_DEFAULTS;
 
-// Pending iframe injections: key = `${tabId}_${normalizedUrl}`
-const pendingInjections = new Map();  // key: `${tabId}_${url}` → injection data
-const tabInjectionKeys = new Map();   // key: tabId → Set of pendingInjections keys
-
-// Clean up all injection data when a tab is closed
+// Clean up per-tab session tracking
 chrome.tabs.onRemoved.addListener((tabId) => {
-    const keys = tabInjectionKeys.get(tabId);
-    if (keys) {
-        for (const k of keys) pendingInjections.delete(k);
-        tabInjectionKeys.delete(tabId);
-    }
-    // Clean up per-tab session tracking
     chrome.storage.local.get(['lumina_tab_sessions'], result => {
         const tabSessions = result.lumina_tab_sessions || {};
         if (tabSessions[tabId]) {
@@ -29,161 +19,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     });
 });
 
-// Listen for frame navigation and inject early (document_start equivalent)
-chrome.webNavigation.onCommitted.addListener((details) => {
-    if (details.frameId === 0) return; // Skip main frame, only subframes (iframes)
-    const key = `${details.tabId}_${details.url}`;
-    const injection = pendingInjections.get(key);
-    if (!injection) return;
-    // Do NOT delete — keep for subsequent frame reloads (same tab + url)
 
-    const target = { tabId: details.tabId, frameIds: [details.frameId] };
-
-    // Inject everything via a single executeScript with injectImmediately:true
-    // (insertCSS does NOT support injectImmediately, so it runs at document_idle — too late)
-    const hasCss = !!injection.css;
-    const hasZoom = injection.zoom && injection.zoom !== 100;
-    const hasSel = !!injection.selector;
-    if (hasCss || hasZoom || hasSel) {
-        chrome.scripting.executeScript({
-            target,
-            injectImmediately: true,
-            func: (cssForced, zoom, selector) => {
-                // ---- CSS: inject <style> tag + enforce via inline styles with MutationObserver ----
-                if (cssForced) {
-                    // Step 1: inject <style> tag as early as possible
-                    const injectStyleTag = () => {
-                        let existing = document.getElementById('__lumina_css__');
-                        if (!existing) {
-                            existing = document.createElement('style');
-                            existing.id = '__lumina_css__';
-                            (document.head || document.documentElement).appendChild(existing);
-                        }
-                        existing.textContent = cssForced;
-                    };
-                    if (document.head) {
-                        injectStyleTag();
-                    } else {
-                        document.addEventListener('DOMContentLoaded', injectStyleTag, { once: true });
-                    }
-
-                    // Step 2: Parse CSS into rules [{selector, props: [{prop, val}]}]
-                    // This lets us enforce rules as inline styles — inline !important beats everything
-                    const parseRules = (css) => {
-                        const rules = [];
-                        // Remove comments
-                        const clean = css.replace(/\/\*[\s\S]*?\*\//g, '');
-                        const ruleRegex = /([^{]+)\{([^}]+)\}/g;
-                        let m;
-                        while ((m = ruleRegex.exec(clean)) !== null) {
-                            const sel = m[1].trim();
-                            const body = m[2];
-                            const props = [];
-                            const declRegex = /([\w-]+)\s*:\s*([^;]+?)(?:\s*!important)?\s*(?:;|$)/g;
-                            let d;
-                            while ((d = declRegex.exec(body)) !== null) {
-                                props.push({ prop: d[1].trim(), val: d[2].trim() });
-                            }
-                            if (sel && props.length) rules.push({ sel, props });
-                        }
-                        return rules;
-                    };
-
-                    const rules = parseRules(cssForced);
-
-                    // Apply inline !important styles to all elements matching each rule
-                    const enforceRules = (root) => {
-                        const doc = root || document;
-                        for (const rule of rules) {
-                            let elements;
-                            try { elements = doc.querySelectorAll(rule.sel); } catch (e) { continue; }
-                            for (const el of elements) {
-                                for (const { prop, val } of rule.props) {
-                                    el.style.setProperty(prop, val, 'important');
-                                }
-                            }
-                        }
-                    };
-
-                    // Run immediately if DOM already available
-                    if (document.readyState !== 'loading') {
-                        enforceRules();
-                    }
-
-                    // rAF polling: enforce on every animation frame for 8 seconds after load.
-                    // This beats any page JS that sets padding/styles via setTimeout/rAF itself,
-                    // because we always run AFTER them and overwrite with inline !important.
-                    const pollStart = Date.now();
-                    const pollDuration = 8000;
-                    const poll = () => {
-                        enforceRules();
-                        if (Date.now() - pollStart < pollDuration) {
-                            requestAnimationFrame(poll);
-                        }
-                    };
-                    // Start polling after DOMContentLoaded so elements exist
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(poll), { once: true });
-                    } else {
-                        requestAnimationFrame(poll);
-                    }
-
-                    // MutationObserver: still watch for dynamic changes after the 8s window
-                    const mo = new MutationObserver((mutations) => {
-                        let needsEnforce = false;
-                        for (const mut of mutations) {
-                            if (mut.type === 'childList' && mut.addedNodes.length) { needsEnforce = true; break; }
-                            if (mut.type === 'attributes' && (mut.attributeName === 'class' || mut.attributeName === 'style')) { needsEnforce = true; break; }
-                        }
-                        if (needsEnforce) enforceRules();
-                    });
-                    const startObserver = () => {
-                        mo.observe(document.documentElement, {
-                            childList: true, subtree: true,
-                            attributes: true, attributeFilter: ['class', 'style']
-                        });
-                    };
-                    if (document.documentElement) {
-                        startObserver();
-                    } else {
-                        document.addEventListener('DOMContentLoaded', startObserver, { once: true });
-                    }
-                }
-
-                // ---- Zoom (inline style, beats any stylesheet) ----
-                if (zoom && zoom !== 100) {
-                    document.documentElement.style.setProperty('zoom', String(zoom / 100), 'important');
-                }
-
-                // ---- Selector isolation — needs DOM to query ----
-                if (selector) {
-                    const run = () => {
-                        const el = document.querySelector(selector);
-                        if (!el) return;
-                        let style = document.getElementById('__lumina_selector_iso__');
-                        if (!style) {
-                            style = document.createElement('style');
-                            style.id = '__lumina_selector_iso__';
-                            (document.head || document.documentElement).appendChild(style);
-                        }
-                        style.textContent = 'html,body{margin:0!important;padding:0!important;overflow:auto!important;background:#fff!important}body>*{display:none!important}';
-                        let node = el;
-                        while (node && node !== document.body) {
-                            node.style.setProperty('display', 'block', 'important');
-                            node = node.parentElement;
-                        }
-                    };
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', run, { once: true });
-                    } else {
-                        run();
-                    }
-                }
-            },
-            args: [injection.cssForced || '', injection.zoom || 100, injection.selector || '']
-        }).catch(() => {});
-    }
-});
 
 // Register content scripts for all sites
 async function checkAndRegisterScripts() {
@@ -211,6 +47,8 @@ async function checkAndRegisterScripts() {
                     "lib/utils/constants.js",
                     "lib/utils/chat_ui.js",
                     "lib/utils/chat_history.js",
+                    "lib/utils/cambridge_parser.js",
+                    "lib/utils/laban_parser.js",
                     "scripts/content.js"
                 ],
                 runAt: 'document_idle',
@@ -1230,80 +1068,47 @@ async function searchImages(query, apiKey, cx) {
 // --- Message Listener ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-    if (request.action === 'prepare_iframe_injection') {
-        // Fix for extension pages (like Spotlight) where sender.tab might be undefined.
-        // We attempt to get tabId from sender, or fall back to finding it.
-        const processInjection = (tabId) => {
-            if (!tabId || !request.frameUrl) return;
-            // Force !important on every CSS declaration
-            const forceImportant = (rawCss) => (rawCss || '').replace(
-                /([a-zA-Z-]+)\s*:\s*([^;!}{][^;!}{]*?)(\s*!important)?\s*([;}])/g,
-                (_, prop, val, _imp, end) => `${prop}: ${val.trim()} !important${end}`
-            );
-            const injKey = `${tabId}_${request.frameUrl}`;
-            pendingInjections.set(injKey, {
-                css: request.css || '',
-                cssForced: forceImportant(request.css || ''),
-                selector: request.selector || '',
-                zoom: request.zoom || 100
-            });
-            // Track key under tabId so we can clean up when the tab is closed
-            if (!tabInjectionKeys.has(tabId)) tabInjectionKeys.set(tabId, new Set());
-            tabInjectionKeys.get(tabId).add(injKey);
-        };
+    if (request.action === 'pasteDictationText') {
+        pasteDictationText(request.text);
+    }
 
-        const senderTabId = sender.tab && sender.tab.id;
-        if (senderTabId) {
-            processInjection(senderTabId);
-        } else if (sender.url && sender.url.startsWith('chrome-extension://')) {
-            // Search for the tab with this URL in all windows
-            chrome.tabs.query({ url: sender.url }, (tabs) => {
-                if (tabs && tabs.length > 0) {
-                    processInjection(tabs[0].id);
-                }
-            });
-        }
+    if (request.action === 'fetch_cambridge' && request.word) {
+        const url = `https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(request.word.toLowerCase().trim().replace(/\s+/g, '-'))}`;
+        
+        // We use a custom fetch here with User-Agent to avoid blocking if necessary
+        fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(html => sendResponse({ success: true, html }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+        
         return true; // Keep channel open
     }
 
-    if (request.action === 'inject_iframe_css') {
-        const tabId = sender.tab && sender.tab.id;
-        if (tabId) injectIframeCss(tabId, request.css, request.frameUrl);
-        else if (sender.url?.startsWith('chrome-extension://')) {
-            chrome.tabs.query({ url: sender.url }, (tabs) => tabs?.[0] && injectIframeCss(tabs[0].id, request.css, request.frameUrl));
-        }
+    if (request.action === 'fetch_laban' && request.word) {
+        const url = `https://dict.laban.vn/find?type=1&query=${encodeURIComponent(request.word.trim())}`;
+        
+        fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(html => sendResponse({ success: true, html }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+        
         return true;
     }
 
-    if (request.action === 'inject_iframe_zoom') {
-        const tabId = sender.tab && sender.tab.id;
-        if (tabId) injectIframeZoom(tabId, request.zoom, request.frameUrl);
-        else if (sender.url?.startsWith('chrome-extension://')) {
-            chrome.tabs.query({ url: sender.url }, (tabs) => tabs?.[0] && injectIframeZoom(tabs[0].id, request.zoom, request.frameUrl));
-        }
-        return true;
-    }
-
-    if (request.action === 'get_zoom') {
-        const tabId = sender.tab && sender.tab.id;
-        if (tabId) {
-            chrome.tabs.getZoom(tabId, (zoom) => {
-                sendResponse(zoom || 1);
-            });
-        } else {
-            sendResponse(1);
-        }
-        return true;
-    }
-
-    if (request.action === 'inject_iframe_selector') {
-        const tabId = sender.tab && sender.tab.id;
-        if (tabId) injectIframeSelector(tabId, request.selector, request.frameUrl);
-        else if (sender.url?.startsWith('chrome-extension://')) {
-            chrome.tabs.query({ url: sender.url }, (tabs) => tabs?.[0] && injectIframeSelector(tabs[0].id, request.selector, request.frameUrl));
-        }
-        return true;
-    }
     if (request.action === 'translate') {
         translateText(request.text, request.targetLang).then(sendResponse).catch(err => sendResponse({ error: err.message }));
         return true;
@@ -1749,6 +1554,11 @@ Your task is to analyze the user's selected text and generate the SINGLE BEST ke
             }
             sendResponse({ success: true, count: keysToRemove.length });
         })();
+        return true;
+    }
+
+    if (request.action === 'open_spotlight_from_popup') {
+        createSpotlightWindow();
         return true;
     }
 });
@@ -3206,183 +3016,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 });
 
-// --- Injection Helpers and Storage Sync ---
 
-function injectIframeCss(tabId, css, frameUrl) {
-    if (!tabId || !frameUrl) return;
-    let frameHost;
-    try { frameHost = new URL(frameUrl).hostname; } catch(e) { return; }
-    chrome.scripting.executeScript({
-        target: { tabId, allFrames: true },
-        func: (cssText, host) => {
-            const current = window.location.hostname;
-            if (current !== host && !current.endsWith('.' + host) && !host.endsWith('.' + current)) return;
-
-            // Prepend a default fix for scroll chaining and layout jumps (common on Google AI / Search)
-            // Targeting * ensures grid containers with their own overflow don't trap the scroll.
-            const defaultFix = `
-                html, body { overflow-anchor: none !important; }
-                * { overscroll-behavior: auto !important; }
-            `;
-
-            const force = (raw) => (raw || '').replace(/([a-zA-Z-]+)\s*:\s*([^;!}{][^;!}{]*?)(\s*!important)?\s*([;}])/g, (_, p, v, _i, e) => `${p}: ${v.trim()} !important${e}`);
-            const forced = defaultFix + force(cssText);
-
-            if (document.adoptedStyleSheets !== undefined) {
-                try {
-                    const sheet = new CSSStyleSheet();
-                    sheet.replaceSync(forced);
-                    document.adoptedStyleSheets = [...document.adoptedStyleSheets.filter(s => !s.__lumina__), Object.assign(sheet, { __lumina__: true })];
-                    return;
-                } catch(e) {}
-            }
-            let style = document.getElementById('__lumina_source_css__');
-            if (!style) { style = document.createElement('style'); style.id = '__lumina_source_css__'; document.head.appendChild(style); }
-            style.textContent = forced;
-        },
-        args: [css || '', frameHost]
-    }).catch(() => {});
-}
-
-function injectIframeZoom(tabId, zoom, frameUrl) {
-    if (!tabId || !frameUrl) return;
-    let frameHost;
-    try { frameHost = new URL(frameUrl).hostname; } catch(e) { return; }
-    const zoomPct = Math.min(200, Math.max(10, zoom || 100));
-    chrome.scripting.executeScript({
-        target: { tabId, allFrames: true },
-        func: (z, host) => {
-            const current = window.location.hostname;
-            if (current !== host && !current.endsWith('.' + host) && !host.endsWith('.' + current)) return;
-
-            const html = document.documentElement;
-            const ratio = z / 100;
-
-            // Reset previously applied styles
-            html.style.removeProperty('zoom');
-            html.style.removeProperty('transform');
-            html.style.removeProperty('transform-origin');
-            html.style.removeProperty('width');
-            html.style.removeProperty('height');
-
-            if (z === 100) return;
-
-            // Prefer 'zoom' as it handles layout better for scrolling
-            html.style.setProperty('zoom', String(ratio), 'important');
-
-            // Fallback to transform scale if zoom isn't effectively applied or causes issues
-            const actualZoom = getComputedStyle(html).zoom;
-            if (!actualZoom || actualZoom === '1' || actualZoom === 'normal') {
-                html.style.setProperty('transform', `scale(${ratio})`, 'important');
-                html.style.setProperty('transform-origin', 'top left', 'important');
-                
-                // When using transform:scale, we need to compensate dimensions
-                html.style.setProperty('width', (100 / ratio) + '%', 'important');
-                html.style.setProperty('height', (100 / ratio) + '%', 'important');
-            }
-        },
-        args: [zoomPct, frameHost]
-    }).catch(() => {});
-}
-
-function injectIframeSelector(tabId, selector, frameUrl) {
-    if (!tabId || !selector || !frameUrl) return;
-    let frameHost;
-    try { frameHost = new URL(frameUrl).hostname; } catch(e) { return; }
-    chrome.scripting.executeScript({
-        target: { tabId, allFrames: true },
-        func: (sel, host) => {
-            const current = window.location.hostname;
-            if (current !== host && !current.endsWith('.' + host) && !host.endsWith('.' + current)) return;
-
-            const el = document.querySelector(sel);
-            if (!el) return;
-
-            // Mark the target and all its ancestors
-            let node = el;
-            while (node && node.nodeType === 1) {
-                node.classList.add('lumina-selector-path');
-                node = node.parentElement;
-            }
-
-            const styleId = '__lumina_selector_iso__';
-            let style = document.getElementById(styleId);
-            if (!style) {
-                style = document.createElement('style');
-                style.id = styleId;
-                document.head.appendChild(style);
-            }
-
-            // High-precision isolation:
-            // 1. Hide siblings of any element on the path to our target.
-            // 2. DO NOT force 'display: block' on ancestors, to preserve Grid/Flex context.
-            // 3. Ensure ancestors don't clip the content.
-            style.textContent = `
-                html, body {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    overflow: auto !important;
-                    height: auto !important;
-                    background: #fff !important;
-                }
-                
-                /* Hide siblings of the target path */
-                body > *:not(.lumina-selector-path),
-                .lumina-selector-path > *:not(.lumina-selector-path) {
-                    display: none !important;
-                }
-
-                /* Ensure path visibility and reset constraints */
-                .lumina-selector-path {
-                    visibility: visible !important;
-                    opacity: 1 !important;
-                    position: static !important;
-                    height: auto !important;
-                    min-height: 0 !important;
-                    max-height: none !important;
-                    overflow: visible !important;
-                }
-
-                /* If the target is a grid/flex container, keep it functional */
-                ${sel}.lumina-selector-path {
-                    display: revert !important;
-                }
-            `;
-        },
-        args: [selector, frameHost]
-    }).catch(() => {});
-}
-
-// Watch for shortcut/source changes and sync to active iFrames
-chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes.customSources) {
-        const newSources = changes.customSources.newValue || [];
-        const forceImportant = (rawCss) => (rawCss || '').replace(
-            /([a-zA-Z-]+)\s*:\s*([^;!}{][^;!}{]*?)(\s*!important)?\s*([;}])/g,
-            (_, prop, val, _imp, end) => `${prop}: ${val.trim()} !important${end}`
-        );
-
-        for (const [injKey, data] of pendingInjections.entries()) {
-            const parts = injKey.split('_');
-            const tabId = parseInt(parts[0]);
-            const frameUrl = parts.slice(1).join('_');
-
-            const source = newSources.find(s => {
-                const base = (s.url || '').split('{{str}}')[0];
-                return base && frameUrl.startsWith(base);
-            });
-
-            if (source) {
-                data.css = source.css || '';
-                data.cssForced = forceImportant(source.css || '');
-                data.selector = source.selector || '';
-                data.zoom = source.zoom || 100;
-
-                // Push new styles immediately to all matching frames in that tab
-                injectIframeCss(tabId, source.css, frameUrl);
-                injectIframeZoom(tabId, source.zoom, frameUrl);
-                if (source.selector) injectIframeSelector(tabId, source.selector, frameUrl);
-            }
-        }
-    }
-});

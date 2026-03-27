@@ -160,6 +160,8 @@ function getPageZoom() {
 
 
 let currentPopup = null;
+let currentDictPopup = null;
+let dictLauncherBtn = null;
 let askSelectionPopupBtn = null;
 let askSelectionInputDiv = null;
 let askSelectionPopupEnabled = false;
@@ -337,27 +339,32 @@ document.addEventListener('mouseup', (e) => {
     setTimeout(() => {
         if (isExtensionDisabled) return;
 
-        const isInsidePopup = currentPopup && path.some(el => el === currentPopup);
-        const selectedText = selection.toString().trim();
+        const isInsidePopup = luminaShadowRoot && path.some(el => el === luminaShadowRoot || (el.classList && el.classList.contains && el.classList.contains('lumina-dict-popup')));
+        const currentSelection = getActiveSelection(true);
+        const selectedText = currentSelection ? currentSelection.toString().trim() : '';
 
         // Fast selection check first (toString is O(1) in Chrome)
         if (!selectedText && !isInsidePopup) {
             if (askSelectionInputDiv && askSelectionInputDiv.style.display === 'flex') {
-                hideAskSelectionPopup();
+                hideAskSelectionPopup('selection empty');
             }
+            hideDictLauncher();
             return;
         }
 
-        const isInsideAskBtn = askSelectionPopupBtn && path.some(el => el === askSelectionPopupBtn);
-        const isInsideAskInput = askSelectionInputDiv && path.some(el => {
-            try { return el === askSelectionInputDiv || (askSelectionInputDiv.contains && askSelectionInputDiv.contains(el)); } catch (e) { return false; }
-        });
+        const isInsideAskBtn = path.some(el => (el.id === 'lumina-ask-selection-btn') || (el.classList && el.classList.contains && el.classList.contains('lumina-ask-part')) || el === askSelectionPopupBtn);
+        const isInsideAskInput = path.some(el => (el.id === 'lumina-ask-input-popup') || (el.classList && el.classList.contains && el.classList.contains('lumina-ask-input-field')) || el === askSelectionInputDiv);
+        const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && (el.classList.contains('lumina-dict-launcher-part') || el.classList.contains('lumina-dict-launcher')));
+        const isInsideDictPopup = path.some(el => (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')) || el === currentDictPopup);
 
         if (isInsideAskBtn) return;
 
-        // Hide existing input if new selection starts anywhere outside
-        if (selectedText.length > 0 && askSelectionInputDiv && askSelectionInputDiv.style.display === 'flex' && !isInsideAskInput) {
-            hideAskSelectionPopup();
+        // Hide existing input if new selection starts anywhere outside (but not if clicking the tool itself)
+        if (selectedText.length > 0 && !isInsideAskInput && !isInsideAskBtn && !isInsideDictLauncher) {
+            if (askSelectionInputDiv && askSelectionInputDiv.style.display === 'flex') {
+                hideAskSelectionPopup('new selection started elsewhere');
+            }
+            hideDictLauncher();
         }
 
         // ── In-popup selection: show Ask Lumina button for text selected inside chat history ──
@@ -374,8 +381,8 @@ document.addEventListener('mouseup', (e) => {
                     if (scrollEl) {
                         let node = range.commonAncestorContainer;
                         let inScroll = false;
-                        try { 
-                            inScroll = scrollEl.contains(node) || node.contains(scrollEl); 
+                        try {
+                            inScroll = scrollEl.contains(node) || node.contains(scrollEl);
                         } catch (_) { }
                         console.log('[Lumina Debug] inScroll:', inScroll, 'nodeTagName:', node.tagName || 'TEXT', 'nodeType:', node.nodeType);
                         if (inScroll || isChatMode) { // Fallback to isChatMode if we're sure we're in popup
@@ -399,64 +406,78 @@ document.addEventListener('mouseup', (e) => {
                                 if (left < 10) left = 10;
                                 askSelectionPopupBtn.style.left = left + 'px';
                                 askSelectionPopupBtn.style.top = top + 'px';
-                                console.log('[Lumina Debug] Positioned button in popup:', top, left);
+                                console.log('[Lumina Debug] Positioned Ask button in popup:', top, left);
 
+                                askSelectionPopupBtn.dataset.word = selectedText;
                                 startAskPopupScrollTracking();
                             }
-                            return;
                         }
                     }
                 }
             }
-            return;
         }
 
-        const text = getSmartSelectionText();
+        const text = currentSelection ? currentSelection.toString().trim() : '';
+        const isCollapsed = !currentSelection || currentSelection.isCollapsed;
 
-        const activesel = getActiveSelection();
+        const activesel = currentSelection;
         const selAnchor = (activesel && activesel.rangeCount > 0) ? activesel.getRangeAt(0).commonAncestorContainer : null;
-        const isSelectionInsidePopup = selAnchor && luminaShadowRoot && (() => { try { return luminaShadowRoot.contains(selAnchor); } catch (e) { return false; } })();
+        const isSelectionInsidePopup = !!isInsidePopup;
 
-        if (text.length > 0 && !isSelectionInsidePopup && !isSelectionInsideEditable()) {
-            if (askSelectionPopupEnabled) showAskSelectionPopup(clientX, clientY);
+        if (!isCollapsed && text.length > 0 && !isSelectionInsidePopup && !isSelectionInsideEditable()) {
+            // Show the combined unified selection toolbar for web pages
+            showAskSelectionPopup(clientX, clientY);
+            console.log('[Lumina Debug] Showing Unified Selection Toolbar');
+        } else if (isInsidePopup && !isCollapsed && text.length > 0) {
+            // Already handled by in-popup selection logic above
+            console.log('[Lumina Debug] Selection inside popup - keeping button visible');
         } else {
             const isAskInputCurrentlyVisible = askSelectionInputDiv && askSelectionInputDiv.style.display === 'flex';
-            if (isAskInputCurrentlyVisible) {
-                const isClickInsideAskInput = isInsideAskInput || (askSelectionInputDiv && askSelectionInputDiv.contains && askSelectionInputDiv.contains(target));
-                if (!isClickInsideAskInput) {
-                    hideAskSelectionPopup();
+            const isDictPopupCurrentlyVisible = !!currentDictPopup;
+            
+            if (isAskInputCurrentlyVisible || isDictPopupCurrentlyVisible) {
+                // DON'T hide if we clicked either the input OR the button OR the dictionary popup
+                const isInsideDictPopup = path.some(el => (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')) || el === currentDictPopup);
+                const isClickInsideTool = isInsideAskInput || isInsideAskBtn || isInsideDictPopup || isInsideDictLauncher;
+                
+                if (!isClickInsideTool) {
+                    hideAskSelectionPopup('click outside tools');
+                    removeDictPopup();
+                    hideDictLauncher();
                 }
-            } else if (askSelectionPopupBtn && askSelectionPopupBtn.style.display !== 'none') {
-                hideAskSelectionPopup();
+            } else if (!isInsideAskBtn && !isInsideDictLauncher) {
+                hideAskSelectionPopup('cleanup (not a tool click)');
+                hideDictLauncher();
+                removeDictPopup();
             }
         }
-    }, 10);
+    }, 50); // Increased delay to let browser stabilize selection after click
 }, true); // Use CAPTURE phase to ensure we see the event even if the page stops propagation
 
-// Hide when clicking outside
-document.addEventListener('mousedown', (e) => {
+// Double-click is now handled via mouseup selection logic above
+
+window.addEventListener('mousedown', (e) => {
+    // Clear any pending mouseup show commands to prevent race conditions
+    if (window.mouseupTimer) {
+        clearTimeout(window.mouseupTimer);
+    }
+
     const path = e.composedPath();
-    const isInsideAskBtn = askSelectionPopupBtn && path.some(el => el === askSelectionPopupBtn);
-    const isInsideAskInput = askSelectionInputDiv && path.some(el => el === askSelectionInputDiv);
-    const clickTarget = e.target;
+    // Use ID and class-based checks in path for maximum robustness inside Shadow DOM
+    const isInsideAskBtn = path.some(el => (el.id === 'lumina-ask-selection-btn') || el === askSelectionPopupBtn);
+    const isInsideAskInput = path.some(el => (el.id === 'lumina-ask-input-popup') || el === askSelectionInputDiv);
+    const isInsideDictPopup = path.some(el => (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')) || el === currentDictPopup);
+    const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && el.classList.contains('lumina-dict-launcher-part'));
 
-    const isInsideAskBtnOrChild = isInsideAskBtn || (askSelectionPopupBtn && askSelectionPopupBtn.contains && askSelectionPopupBtn.contains(clickTarget));
-    const isInsideAskInputOrChild = isInsideAskInput || (askSelectionInputDiv && askSelectionInputDiv.contains && askSelectionInputDiv.contains(clickTarget));
-
-    const isInPathOfAskInput = askSelectionInputDiv && path.some(el => {
-        try {
-            return el === askSelectionInputDiv || (askSelectionInputDiv.contains && askSelectionInputDiv.contains(el));
-        } catch (e) {
-            return false;
-        }
-    });
-
-    const shouldReallyHideAskPopup = !isInsideAskBtnOrChild && !isInsideAskInputOrChild && !isInPathOfAskInput;
-
-    if (shouldReallyHideAskPopup) {
+    if (!isInsideAskBtn && !isInsideAskInput) {
         hideAskSelectionPopup();
     }
-});
+
+    if (!isInsideDictLauncher && !isInsideDictPopup) {
+        removeDictPopup();
+        hideDictLauncher();
+    }
+}, true);
 
 // Load setting
 chrome.storage.local.get(['askSelectionPopupEnabled'], (result) => {
@@ -479,11 +500,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
             }
         }
         if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
-        if (changes.customSources) customSources = changes.customSources.newValue || [];
-        
+
         // Font size settings (compensated for page zoom)
         if (changes.fontSize || changes.fontSizeByDomain || changes.globalDefaults) {
-             chrome.storage.local.get(['fontSize', 'fontSizeByDomain', 'globalDefaults'], (items) => {
+            chrome.storage.local.get(['fontSize', 'fontSizeByDomain', 'globalDefaults'], (items) => {
                 const currentDomain = window.location.hostname;
                 let fontSize = 13;
                 if (items.fontSizeByDomain && items.fontSizeByDomain[currentDomain]) {
@@ -492,7 +512,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
                     const baseSize = items.globalDefaults?.fontSize || items.fontSize || 13;
                     fontSize = baseSize / (typeof getPageZoom === 'function' ? getPageZoom() : 1);
                 }
-                
+
                 document.documentElement.style.setProperty('--lumina-fontSize', fontSize + 'px', 'important');
                 if (currentPopup) currentPopup.style.setProperty('font-size', fontSize + 'px', 'important');
                 if (askSelectionPopupBtn) askSelectionPopupBtn.style.setProperty('font-size', fontSize + 'px', 'important');
@@ -508,7 +528,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
             }
         }
     }
-    
+
     // 2. Popup UI & Constraints (sync/local)
     if (currentPopup) {
         if (changes.fontSize) {
@@ -558,57 +578,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     // Handle live websource height/CSS update
-    if (request.action === 'update_websource') {
-        const src = request.source;
-        if (!src || !luminaShadowRoot) return;
-        const containers = luminaShadowRoot.querySelectorAll(`.lumina-websource-container[data-source-id="${src.id}"]`);
-        containers.forEach(container => {
-            // Update height
-            const heightPct = Math.min(100, Math.max(20, src.height || 80));
-            container.dataset.sourceHeightPct = String(heightPct);
-            const scrollContainer = container.closest('.lumina-messages-container') ||
-                container.closest('.lumina-chat-container') ||
-                container.parentElement;
-            const containerH = scrollContainer ? (scrollContainer.clientHeight || scrollContainer.offsetHeight) : 0;
-            const newH = containerH > 0 ? Math.round(containerH * heightPct / 100) : Math.round(400 * heightPct / 100);
-            container.style.height = newH + 'px';
 
-            // Update custom CSS via background script (for cross-origin iframes)
-            if (src.css) {
-                const frameUrl = container.dataset.sourceUrl;
-                if (frameUrl) {
-                    chrome.runtime.sendMessage({
-                        action: 'inject_iframe_css',
-                        css: src.css,
-                        frameUrl
-                    }).catch(() => { });
-                }
-            }
-
-            // Re-apply selector isolation if set
-            if (src.selector) {
-                const frameUrl = container.dataset.sourceUrl;
-                if (frameUrl) {
-                    chrome.runtime.sendMessage({
-                        action: 'inject_iframe_selector',
-                        selector: src.selector,
-                        frameUrl
-                    }).catch(() => { });
-                }
-            }
-
-            // Re-apply zoom
-            const frameUrl = container.dataset.sourceUrl;
-            if (frameUrl) {
-                chrome.runtime.sendMessage({
-                    action: 'inject_iframe_zoom',
-                    zoom: src.zoom || 100,
-                    frameUrl
-                }).catch(() => { });
-            }
-        });
-        return;
-    }
 
     // Handle visual settings update - apply to current popup immediately
     if (request.action === 'settings_updated') {
@@ -833,16 +803,10 @@ chrome.storage.local.get(['shortcuts'], (items) => {
     }
 });
 
-let questionMappings = [];
-let customSources = [];
-
-// Load saved mappings and sources
-chrome.storage.local.get(['questionMappings', 'customSources'], (items) => {
+// Load saved mappings
+chrome.storage.local.get(['questionMappings'], (items) => {
     if (items.questionMappings) {
         questionMappings = items.questionMappings;
-    }
-    if (items.customSources) {
-        customSources = items.customSources;
     }
 });
 
@@ -1358,62 +1322,7 @@ document.addEventListener('keydown', async (event) => {
         }
     }
 
-    // Web Source Shortcuts (Trigger iframe with selected text)
-    if (customSources && customSources.length > 0) {
-        if (!isSelectionInsideEditable()) {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
 
-            if (text && text.length > 0) {
-                const source = customSources.find(s => {
-                    if (!s.shortcut) return false;
-                    const config = s.shortcut;
-
-                    if (!!config.ctrlKey !== event.ctrlKey) return false;
-                    if (!!config.altKey !== event.altKey) return false;
-                    if (!!config.shiftKey !== event.shiftKey) return false;
-                    if (!!config.metaKey !== event.metaKey) return false;
-
-                    if (config.key === 'Shift' || config.key === 'Control' || config.key === 'Alt' || config.key === 'Meta') {
-                        return event.key === config.key;
-                    }
-
-                    return event.key.toLowerCase() === config.key.toLowerCase() || event.code === config.code;
-                });
-
-                if (source) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
-
-                    // Create/Show popup
-                    if (text && text.length > 0) {
-                        const selection = getActiveSelection();
-                        if (selection && selection.rangeCount > 0) {
-                            currentRange = selection.getRangeAt(0);
-                        }
-                    }
-
-                    if (!currentPopup) {
-                        showChatPopup(text);
-                    } else if (isMinimized) {
-                        restorePopup(!isPinned);
-                    } else {
-                        updatePopupPosition();
-                    }
-
-                    // Trigger the web source using the chat UI class
-                    if (typeof LuminaChatUI !== 'undefined') {
-                        const ui = new LuminaChatUI(currentPopup);
-                        ui.openWebSource(source, text);
-                        window.getSelection().removeAllRanges();
-                        hideAskSelectionPopup();
-                    }
-                    return;
-                }
-            }
-        }
-    }
 
     // If the ask-selection button is visible and a shortcut other than askLumina fires,
     // hide the button so it doesn't overlap the popup that is about to open.
@@ -2247,6 +2156,16 @@ document.addEventListener('mousedown', (event) => {
         // Close popup when clicking outside (chat history replaces minimize feature)
         minimizePopup();
     }
+
+    if (currentDictPopup && !isInsideDictPopup) {
+        removeDictPopup();
+    }
+
+    // Handle launcher dismissal
+    const isInsideLauncher = path.some(el => el === dictLauncherBtn);
+    if (dictLauncherBtn && !isInsideLauncher) {
+        hideDictLauncher();
+    }
 });
 
 let popupDirection = null; // 'above' or 'below'
@@ -2344,6 +2263,13 @@ function removePopup(showLauncher = true) {
     }
 }
 
+function removeDictPopup() {
+    if (currentDictPopup) {
+        currentDictPopup.remove();
+        currentDictPopup = null;
+    }
+}
+
 let isMouseOverPopup = false;
 
 function createPopupElement(skipInitialPosition = false) {
@@ -2359,6 +2285,8 @@ function createPopupElement(skipInitialPosition = false) {
     // Always use the standard popup class
     const popup = document.createElement('div');
     popup.className = 'lumina-dict-popup';
+    popup.style.padding = '0'; // Allow header to bleed to edges
+    popup.style.overflow = 'hidden'; // Ensure header border-radius is respected
     // Static styles (transition, opacity, zoom) are defined in CSS
 
     // Track mouse over state for auto-focus
@@ -2376,12 +2304,7 @@ function createPopupElement(skipInitialPosition = false) {
     initShadowDOM();
     luminaShadowRoot.appendChild(popup);
 
-    // Create a dedicated drag handle at the very top (30px height)
-    if (!popup.querySelector('.lumina-drag-handle')) {
-        const dragHandle = document.createElement('div');
-        dragHandle.className = 'lumina-drag-handle';
-        popup.appendChild(dragHandle); // Put it at the front (high z-index)
-    }
+
 
     currentPopup = popup;
 
@@ -2420,7 +2343,7 @@ function createPopupElement(skipInitialPosition = false) {
             const selectedText = selection ? selection.toString().trim() : '';
             if (!selectedText || isSelectionInsideEditable()) {
                 if (!askSelectionInputDiv || askSelectionInputDiv.style.display !== 'flex') {
-                    hideAskSelectionPopup();
+                    hideAskSelectionPopup('dictionary popup selection empty');
                 }
                 return;
             }
@@ -2503,6 +2426,353 @@ function createPopupElement(skipInitialPosition = false) {
     makeDraggable(popup);
 
     return popup;
+}
+
+/**
+ * Renders structured Cambridge Dictionary data into a beautiful UI.
+ */
+function renderCambridgeData(data, container) {
+    if (!data || !data.entries || data.entries.length === 0) {
+        container.innerHTML = `<div class="lumina-cambridge-loading">No results found for "${data.word}"</div>`;
+        return;
+    }
+
+    const cambridgeContainer = document.createElement('div');
+    cambridgeContainer.className = 'lumina-cambridge-container lumina-chat-scroll-content';
+
+    // Word Header
+    const header = document.createElement('div');
+    header.className = 'lumina-cambridge-word-header';
+    header.innerHTML = `
+        <h1 class="lumina-cambridge-word">${data.word.toLowerCase()}</h1>
+        <div class="lumina-cambridge-pronunciation"></div>
+    `;
+
+    const pronList = header.querySelector('.lumina-cambridge-pronunciation');
+    const firstEntry = data.entries[0];
+    const prons = [
+        { region: 'uk', data: firstEntry.uk },
+        { region: 'us', data: firstEntry.us }
+    ];
+
+    prons.forEach(p => {
+        if (p.data && (p.data.ipa || p.data.audio)) {
+            const item = document.createElement('div');
+            item.className = 'lumina-cambridge-pron-item';
+            
+            let html = `<span class="lumina-cambridge-region">${p.region}</span>`;
+            if (p.data.ipa) html += `<span class="lumina-cambridge-ipa">/${p.data.ipa}/</span>`;
+            if (p.data.audio) {
+                html += `
+                    <div class="lumina-cambridge-audio-btn" title="Listen ${p.region.toUpperCase()}">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                    </div>
+                `;
+            }
+            item.innerHTML = html;
+            
+            if (p.data.audio) {
+                item.querySelector('.lumina-cambridge-audio-btn').onclick = () => {
+                    const audio = new Audio(p.data.audio);
+                    audio.play().catch(e => console.error('[Lumina] Audio failed:', e));
+                };
+            }
+            pronList.appendChild(item);
+        }
+    });
+
+    cambridgeContainer.appendChild(header);
+
+    // Add Vietnamese Translation if available from Laban
+    if (data.labanData && data.labanData.entries?.length > 0) {
+        const viDiv = document.createElement('div');
+        viDiv.className = 'lumina-cambridge-vi';
+        
+        let meanings = [];
+        data.labanData.entries.forEach(entry => {
+            if (entry.definitions) {
+                entry.definitions.forEach(d => {
+                    if (d.meaning) meanings.push(d.meaning);
+                });
+            }
+        });
+        
+        if (meanings.length > 0) {
+            let viHtml = '<div class="lumina-cambridge-vi-list">';
+            const uniqueMeanings = [...new Set(meanings)];
+            uniqueMeanings.slice(0, 4).forEach(m => {
+                viHtml += `<div class="lumina-cambridge-vi-item"><span class="lumina-bullet">•</span> ${m}</div>`;
+            });
+            viHtml += '</div>';
+            viDiv.innerHTML = viHtml;
+            cambridgeContainer.appendChild(viDiv);
+        }
+    }
+
+    // Filter duplicate POS in a clever way or group them
+    const seenSenses = new Set();
+
+    data.entries.forEach(entry => {
+        const entryEl = document.createElement('div');
+        entryEl.className = 'lumina-cambridge-entry';
+
+        const posTag = document.createElement('div');
+        posTag.className = 'lumina-cambridge-pos';
+        posTag.textContent = entry.pos;
+        entryEl.appendChild(posTag);
+
+        entry.senses.forEach(sense => {
+            // Avoid duplicate definitions if any (happens sometimes with the scraper)
+            const senseKey = `${entry.pos}-${sense.indicator}-${sense.definitions[0]?.meaning}`;
+            if (seenSenses.has(senseKey)) return;
+            seenSenses.add(senseKey);
+
+            const senseEl = document.createElement('div');
+            senseEl.className = 'lumina-cambridge-sense';
+            
+            if (sense.indicator) {
+                const indicator = document.createElement('span');
+                indicator.className = 'lumina-cambridge-indicator';
+                indicator.textContent = sense.indicator;
+                senseEl.appendChild(indicator);
+            }
+
+            sense.definitions.forEach(def => {
+                const defEl = document.createElement('div');
+                defEl.className = 'lumina-cambridge-definition-item';
+                
+                const meaning = document.createElement('div');
+                meaning.className = 'lumina-cambridge-meaning';
+                meaning.textContent = def.meaning;
+                defEl.appendChild(meaning);
+
+                if (def.examples && def.examples.length > 0) {
+                    def.examples.slice(0, 1).forEach(ex => {
+                        const exDiv = document.createElement('div');
+                        exDiv.className = 'lumina-cambridge-example';
+                        exDiv.textContent = ex;
+                        defEl.appendChild(exDiv);
+                    });
+                }
+                senseEl.appendChild(defEl);
+            });
+            entryEl.appendChild(senseEl);
+        });
+        cambridgeContainer.appendChild(entryEl);
+    });
+
+    // Minimal Browse
+    if (data.browse && data.browse.length > 0) {
+        const browseEl = document.createElement('div');
+        browseEl.className = 'lumina-cambridge-browse';
+        browseEl.innerHTML = `<div class="lumina-cambridge-browse-list"></div>`;
+        const list = browseEl.querySelector('.lumina-cambridge-browse-list');
+        data.browse.slice(0, 8).forEach(b => {
+            const a = document.createElement('a');
+            a.className = 'lumina-cambridge-browse-item';
+            a.href = '#';
+            a.textContent = b.text;
+            a.onclick = (e) => {
+                e.preventDefault();
+                container.innerHTML = '';
+                fetchAndRenderCambridge(b.text, container);
+            };
+            list.appendChild(a);
+        });
+        cambridgeContainer.appendChild(browseEl);
+    }
+
+    container.innerHTML = '';
+    container.appendChild(cambridgeContainer);
+}
+
+/**
+ * Fetches data from background and renders it.
+ */
+function fetchAndRenderCambridge(word, container, isFallbackAttempt = false) {
+    container.innerHTML = `<div class="lumina-cambridge-loading"></div>`;
+
+    // Fetch Cambridge and ZIM (Vietnamese) in parallel
+    const cambridgePromise = new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'fetch_cambridge', word: word }, resolve);
+    });
+
+    const labanPromise = new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'fetch_laban', word: word }, resolve);
+    });
+
+    Promise.all([cambridgePromise, labanPromise]).then(([camResponse, labanResponse]) => {
+        if (camResponse && camResponse.success && camResponse.html) {
+            try {
+                const data = CambridgeParser.parse(camResponse.html);
+                if (!data.word) data.word = word;
+
+                // Add Laban data to our dictionary data object
+                if (labanResponse && labanResponse.success && labanResponse.html) {
+                    data.labanData = LabanParser.parse(labanResponse.html);
+                }
+
+                // SPECIAL FALLBACK: If no entries but a suggestion exists, follow it automatically once
+                if (data.entries.length === 0 && data.suggestion && !isFallbackAttempt) {
+                    console.log('[Lumina] No results, attempting fallback to suggestion:', data.suggestion.text);
+                    fetchAndRenderCambridge(data.suggestion.text, container, true);
+                    return;
+                }
+
+                renderCambridgeData(data, container);
+            } catch (e) {
+                console.error('[Lumina] Parse error:', e);
+                container.innerHTML = `<div class="lumina-cambridge-loading">Error parsing results: ${e.message}</div>`;
+            }
+        } else {
+            console.error('[Lumina] Fetch error:', camResponse?.error);
+            container.innerHTML = `<div class="lumina-cambridge-loading">Failed to fetch dictionary.</div>`;
+        }
+    });
+}
+
+/**
+ * Creates a specialized dictionary popup that loads external dictionary data (e.g. Cambridge)
+ */
+function createDictPopupElement(word, x, y) {
+    if (currentDictPopup) {
+        removeDictPopup();
+    }
+
+    initShadowDOM();
+
+    const popup = document.createElement('div');
+    popup.className = 'lumina-dict-popup lumina-mode-dictionary';
+
+    // Dynamic height based on content, capped at 360px
+    const width = 400;
+    const maxHeight = 360;
+
+    popup.style.width = width + 'px';
+    popup.style.height = maxHeight + 'px'; // Fixed height
+    popup.style.maxHeight = maxHeight + 'px';
+    // Glassmorphism and dark mode support from styles.css (lumina-mode-dictionary class)
+    popup.style.display = 'flex';
+    popup.style.flexDirection = 'column';
+    popup.style.padding = '0';
+    popup.style.overflow = 'hidden';
+    popup.style.opacity = '0';
+    popup.style.pointerEvents = 'auto';
+    popup.dataset.theme = document.documentElement.getAttribute('data-theme') || 'light';
+
+    popup.dataset.theme = document.documentElement.getAttribute('data-theme') || 'light';
+
+    // Content Area (Wrapper for the scrollable container)
+    const contentArea = document.createElement('div');
+    contentArea.className = 'lumina-dict-content-area';
+    contentArea.style.flex = '1';
+    contentArea.style.minHeight = '0'; 
+    contentArea.style.display = 'flex';
+    contentArea.style.flexDirection = 'column';
+    contentArea.style.justifyContent = 'flex-start';
+    contentArea.style.alignItems = 'stretch';
+    contentArea.style.overflow = 'hidden'; 
+    contentArea.style.position = 'relative';
+    popup.appendChild(contentArea);
+
+    currentDictPopup = popup;
+    luminaShadowRoot.appendChild(popup);
+
+    // Fetch and Render
+    fetchAndRenderCambridge(word, contentArea);
+
+    // Position near the selection
+    const margin = 8;
+    let posX = x;
+    let posY = y + margin;
+
+    // Use current range bounds if available for precise "Below" positioning
+    if (currentRange) {
+        const rect = currentRange.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+            posX = rect.left;
+            posY = rect.bottom + margin;
+        }
+    }
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let finalLeft = posX;
+    let finalTop = posY;
+
+    // Horizontal bounds
+    if (finalLeft + width > vw - 10) finalLeft = vw - width - 10;
+    if (finalLeft < 10) finalLeft = 10;
+
+    // Vertical bounds: Always try to stay below. 
+    // If it hits the bottom border, push it up (this will cover the text as requested)
+    if (finalTop + maxHeight > vh - 10) {
+        finalTop = vh - maxHeight - 10;
+    }
+    // Ensure it doesn't go off the top edge
+    if (finalTop < 10) finalTop = 10;
+
+    popup.style.left = finalLeft + 'px';
+    popup.style.top = finalTop + 'px';
+
+    makeDraggable(popup);
+
+    requestAnimationFrame(() => {
+        popup.style.opacity = '1';
+    });
+
+    currentDictPopup = popup;
+    return popup;
+}
+
+/**
+ * Initializes the small dictionary launcher icon (Definition Layer)
+ */
+function initDictLauncher() {
+    if (!dictLauncherBtn) {
+        initShadowDOM();
+        dictLauncherBtn = document.createElement('div');
+        dictLauncherBtn.className = 'lumina-dict-launcher';
+        dictLauncherBtn.style.display = 'none';
+        luminaShadowRoot.appendChild(dictLauncherBtn);
+    }
+
+    dictLauncherBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+    `;
+
+    dictLauncherBtn.onclick = (e) => {
+        e.stopPropagation();
+        const word = sanitizeDictionaryQuery(dictLauncherBtn.dataset.word);
+        const x = parseInt(dictLauncherBtn.style.left);
+        const y = parseInt(dictLauncherBtn.style.top) + 38;
+        createDictPopupElement(word, x, y);
+        hideDictLauncher();
+    };
+
+    luminaShadowRoot.appendChild(dictLauncherBtn);
+}
+
+function showDictLauncher(x, y, word) {
+    initDictLauncher();
+
+    dictLauncherBtn.dataset.word = word;
+    dictLauncherBtn.style.left = (x - 16) + 'px'; // Center of 32px icon
+    dictLauncherBtn.style.top = (y - 38) + 'px'; // Above selection
+    dictLauncherBtn.style.display = 'flex';
+
+    // Auto-hide after 5 seconds if not clicked
+    clearTimeout(window.dictLauncherTimer);
+    window.dictLauncherTimer = setTimeout(hideDictLauncher, 5000);
+}
+
+function hideDictLauncher() {
+    if (dictLauncherBtn) {
+        dictLauncherBtn.style.display = 'none';
+    }
 }
 
 function applyPopupStyles(popup, skipInitialPosition = false) {
@@ -2635,7 +2905,7 @@ function updatePopupPosition() {
         popupWidth = parseInt(localStorage.getItem('lumina_popupWidth'), 10) || 380;
     }
     if (!popupHeight) {
-        popupHeight = 400;
+        popupHeight = 360;
     }
 
     let rect = null;
@@ -2783,43 +3053,36 @@ function adjustEntryMargin(entry, behavior = 'none') {
  * @param {HTMLElement} entry - The new entry element
  * @param {boolean} smooth - Unused (kept for call-site compatibility)
  */
-function setInitialEntryHeight(entry, smooth = false) {
+function setInitialEntryHeight(entry, skipScroll = false) {
     if (!currentPopup || !entry) return;
 
     const scrollContainer = currentPopup.querySelector('.lumina-chat-scroll-content') || currentPopup;
     if (!scrollContainer) return;
 
-    // Calculate scroll target BEFORE any DOM changes so rects are still accurate
-    let targetScrollTop = null;
+    // Set min-height so the entry fills the viewport; clear it from all others.
+    const container = currentPopup.querySelector('.lumina-chat-container') || currentPopup;
+    const inputWrapper = currentPopup.querySelector('.lumina-chat-input-wrapper');
     const allEntries = scrollContainer.querySelectorAll('.lumina-dict-entry');
     const currentIndex = Array.from(allEntries).indexOf(entry);
 
-    if (currentIndex > 0) {
-        const previousEntry = allEntries[currentIndex - 1];
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const prevRect = previousEntry.getBoundingClientRect();
-        targetScrollTop = (prevRect.bottom - containerRect.top) + scrollContainer.scrollTop;
-    }
-
-    // Set min-height so the entry fills the viewport; clear it from all others.
-    // Subtract separator's margin-bottom so it doesn't extend beyond the viewport.
-    // The first entry gets an extra 10px to feel less cramped on initial open.
-    const viewportHeight = scrollContainer.clientHeight || scrollContainer.offsetHeight;
-    if (viewportHeight > 0) {
-        // Fixed 10px buffer instead of reading separator margins
-        entry.style.setProperty('min-height', (viewportHeight - 10) + 'px', 'important');
+    if (LuminaChatUI.applyViewportMinHeight(entry, container, inputWrapper, currentIndex)) {
+        // IMPORTANT: Clear other margins FIRST so we calculate the target on a stable layout
         clearEntryMargins(entry);
 
-        // Scroll synchronously — no setTimeout, everything in one paint frame
-        if (targetScrollTop !== null) {
-            const maxScroll = scrollContainer.scrollHeight - viewportHeight;
+        // ONLY scroll if not skipped
+        if (!skipScroll) {
+            // Calculate scroll target AFTER DOM changes for accuracy (Centralized in ChatUI)
+            const historyEl = currentPopup.querySelector('.lumina-chat-history') || currentPopup;
+            const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(entry, scrollContainer, historyEl);
+
+            const containerHeight = container.clientHeight || container.offsetHeight;
+            const inputHeight = inputWrapper ? (inputWrapper.offsetHeight || 0) : 0;
+            const maxScroll = scrollContainer.scrollHeight - (containerHeight - inputHeight);
             scrollContainer.scrollTop = Math.min(targetScrollTop, maxScroll);
-        } else {
-            scrollContainer.scrollTop = 0;
         }
     } else {
         // Popup dimensions not yet applied (async storage callback) — retry after layout settles
-        setTimeout(() => setInitialEntryHeight(entry, smooth), 80);
+        setTimeout(() => setInitialEntryHeight(entry, skipScroll), 80);
     }
 }
 
@@ -3228,46 +3491,7 @@ function attachPlayButtonListeners(containerElement) {
  */
 function getPopupShellHTML(historyContent = '', autofocusInput = false) {
     return `
-    <div class="lumina-popup-sidebar" id="popup-sidebar">
-        <div class="lumina-popup-sidebar-header">
-            <span>Chat History</span>
-            <button class="lumina-popup-sidebar-close" id="popup-sidebar-close">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="lumina-popup-sidebar-search">
-            <svg class="lumina-popup-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input type="text" id="popup-sidebar-search" placeholder="Search questions..." />
-            <button class="lumina-popup-search-clear" id="popup-sidebar-search-clear" style="display: none;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-            </button>
-        </div>
-        <div class="lumina-popup-sidebar-content" id="popup-history-list">
-        </div>
-        <div class="lumina-popup-sidebar-footer">
-            <button class="lumina-popup-new-chat-btn" id="popup-new-chat-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 5v14M5 12h14" />
-                </svg>
-                New Chat
-            </button>
-        </div>
-    </div>
-
-    <div class="lumina-popup-sidebar-overlay" id="popup-sidebar-overlay"></div>
-
     <div class="lumina-chat-container lumina-fade-in">
-      <!-- Sidebar Toggle Handle -->
-      <button class="lumina-popup-menu-btn" id="popup-menu-btn"></button>
-
       <div class="lumina-chat-scroll-content">
         <div class="lumina-chat-history">${historyContent}</div>
       </div>
@@ -3345,6 +3569,7 @@ function renderPartialTranslationPopup(text) {
     attachPopupSidebarListeners(currentPopup);
     updatePopupPosition();
     addWindowControls(currentPopup);
+    setInitialEntryHeight(dictEntry);
     return dictEntry;
 }
 
@@ -3369,7 +3594,7 @@ function appendResult(data) {
     container.appendChild(div);
 
     // Apply initial height and smooth scroll (duration defined in smoothScrollTo)
-    setInitialEntryHeight(div, true);
+    setInitialEntryHeight(div, false);
 
     attachPlayButtonListeners(div);
     attachSynonymListeners(div);
@@ -3432,7 +3657,7 @@ function appendPartialTranslation(text) {
     attachPlayButtonListeners(div);
 
     // Apply initial height and smooth scroll (duration defined in smoothScrollTo)
-    setInitialEntryHeight(div, true);
+    setInitialEntryHeight(div, false);
     return div; // Return element for later update
 }
 
@@ -3481,9 +3706,8 @@ function updatePartialTranslation(element, resultData) {
         LuminaChatUI.balanceTranslationCard(element);
     }
 
-    // Scroll after translation completes
     // (min-height already set when partial entry was created; setInitialEntryHeight re-applies after DOM update)
-    requestAnimationFrame(() => setInitialEntryHeight(element));
+    requestAnimationFrame(() => setInitialEntryHeight(element, true));
 
     // Save to permanent history
     if (typeof ChatHistoryManager !== 'undefined') {
@@ -3651,342 +3875,15 @@ function showChatPopup(contextText = '') {
 
 // --- Popup Sidebar Functions ---
 function attachPopupSidebarListeners(popup) {
-    const menuBtn = popup.querySelector('#popup-menu-btn');
-    const sidebar = popup.querySelector('#popup-sidebar');
-    const overlay = popup.querySelector('#popup-sidebar-overlay');
-    const closeBtn = popup.querySelector('#popup-sidebar-close');
-    const newChatBtn = popup.querySelector('#popup-new-chat-btn');
-    const searchInput = popup.querySelector('#popup-sidebar-search');
-    const clearBtn = popup.querySelector('#popup-sidebar-search-clear');
-
-    if (!menuBtn || !sidebar || !overlay) return;
-
-    menuBtn.addEventListener('click', () => openPopupSidebar(popup));
-    closeBtn?.addEventListener('click', () => closePopupSidebar(popup));
-    overlay.addEventListener('click', () => closePopupSidebar(popup));
-
-    newChatBtn?.addEventListener('click', () => {
-        popupSearchQuery = '';
-        startNewPopupChat(popup);
-        closePopupSidebar(popup);
-    });
-
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            const val = searchInput.value;
-            if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
-            popupSearchQuery = val;
-            loadPopupChatHistory(popup, val);
-        });
-    }
-
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            if (searchInput) {
-                searchInput.value = '';
-                searchInput.focus();
-            }
-            clearBtn.style.display = 'none';
-            popupSearchQuery = '';
-            loadPopupChatHistory(popup, '');
-        });
-    }
+    // History sidebar removed to improve performance
 }
 
 function openPopupSidebar(popup) {
-    const sidebar = popup.querySelector('#popup-sidebar');
-    const overlay = popup.querySelector('#popup-sidebar-overlay');
-    const searchInput = popup.querySelector('#popup-sidebar-search');
-    const clearBtn = popup.querySelector('#popup-sidebar-search-clear');
-
-    sidebar?.classList.add('active');
-    overlay?.classList.add('active');
-
-    if (searchInput) searchInput.value = popupSearchQuery;
-    if (clearBtn) clearBtn.style.display = popupSearchQuery ? 'flex' : 'none';
-
-    loadPopupChatHistory(popup, popupSearchQuery);
+    // Disabled
 }
 
 function closePopupSidebar(popup) {
-    const sidebar = popup.querySelector('#popup-sidebar');
-    const overlay = popup.querySelector('#popup-sidebar-overlay');
-
-    sidebar?.classList.remove('active');
-    overlay?.classList.remove('active');
-}
-
-async function loadPopupChatHistory(popup, searchQuery = '') {
-    const historyList = popup.querySelector('#popup-history-list');
-    if (!historyList) return;
-
-    const state = getPopupHistoryState(popup);
-    state.query = searchQuery;
-    attachPopupHistoryClick(popup, historyList);
-    attachPopupHistoryLazyLoad(popup, historyList);
-
-    try {
-        const historyKey = (typeof ChatHistoryManager !== 'undefined') ? ChatHistoryManager.STORAGE_KEY : 'lumina_chat_sessions';
-        const data = await chrome.storage.local.get([historyKey]);
-        const sessions = data[historyKey] || {};
-
-        let sessionArray = Object.entries(sessions)
-            .map(([id, session]) => {
-                // Optimization: Don't keep heavy message objects in RAM just for the list view
-                // We only need id, title, and updatedAt for the history sidebar
-                return {
-                    id: id,
-                    title: session.title || 'New Chat',
-                    updatedAt: session.updatedAt || session.createdAt || 0,
-                    // Keep messages only if searching, or remove them to save RAM
-                    _hasKeyword: searchQuery ? (session.messages || []).some(msg =>
-                        msg.type === 'question' &&
-                        msg.content.toLowerCase().includes(searchQuery.toLowerCase())
-                    ) : true
-                };
-            })
-            .filter(s => s._hasKeyword)
-            .sort((a, b) => b.updatedAt - a.updatedAt);
-
-        state.items = sessionArray;
-        renderPopupHistory(popup, historyList, true);
-    } catch (e) {
-        console.error('[Popup] Failed to load chat history:', e);
-        historyList.innerHTML = '<div class="lumina-popup-history-empty">Failed to load history</div>';
-    }
-}
-
-function getPopupHistoryState(popup) {
-    if (!popupHistoryState.has(popup)) {
-        popupHistoryState.set(popup, { items: [], rendered: 0, query: '' });
-    }
-    return popupHistoryState.get(popup);
-}
-
-function attachPopupHistoryClick(popup, historyList) {
-    if (historyList.__luminaHistoryClickBound) return;
-    historyList.__luminaHistoryClickBound = true;
-    historyList.addEventListener('click', (e) => {
-        const item = e.target.closest('.lumina-popup-history-item');
-        if (!item) return;
-        const sessionId = item.dataset.sessionId;
-        const currentId = (typeof ChatHistoryManager !== 'undefined') ? ChatHistoryManager.currentSessionId : null;
-        const state = getPopupHistoryState(popup);
-        if (sessionId !== currentId || state.query) {
-            switchPopupSession(popup, sessionId, state.query);
-        } else {
-            // Same session, no query — scroll to show the newest (last) entry
-            const chatHistory = popup.querySelector('.lumina-chat-history');
-            if (chatHistory) {
-                const allEntries = chatHistory.querySelectorAll('.lumina-dict-entry');
-                if (allEntries.length > 0) {
-                    const lastEntry = allEntries[allEntries.length - 1];
-                    requestAnimationFrame(() => alignEntryToPreviousSeparatorTop(popup, lastEntry));
-                }
-            }
-        }
-        closePopupSidebar(popup);
-    });
-}
-
-function attachPopupHistoryLazyLoad(popup, historyList) {
-    if (historyList.__luminaHistoryLazyBound) return;
-    historyList.__luminaHistoryLazyBound = true;
-    historyList.addEventListener('scroll', () => {
-        const state = getPopupHistoryState(popup);
-        if (state.query) return;
-        const nearBottom = historyList.scrollTop + historyList.clientHeight >= historyList.scrollHeight - 120;
-        if (nearBottom) renderPopupHistory(popup, historyList, false);
-    });
-}
-
-function renderPopupHistory(popup, historyList, reset) {
-    const state = getPopupHistoryState(popup);
-    if (reset) {
-        state.rendered = 0;
-        historyList.scrollTop = 0;
-        historyList.innerHTML = '';
-    }
-
-    if (!state.items || state.items.length === 0) {
-        historyList.innerHTML = `
-            <div class="lumina-popup-history-empty">
-                <p>${state.query ? 'No results found' : 'No chat history yet'}</p>
-                <p style="margin-top: 8px; font-size: 11px;">${state.query ? 'Try a different search term' : 'Your conversations will appear here'}</p>
-            </div>
-        `;
-        return;
-    }
-
-    const shouldRenderAll = !!state.query;
-    const nextCount = shouldRenderAll
-        ? state.items.length
-        : Math.min(state.rendered + POPUP_HISTORY_BATCH_SIZE, state.items.length);
-
-    const slice = state.items.slice(state.rendered, nextCount);
-    const html = slice.map(session => {
-        const currentId = (typeof ChatHistoryManager !== 'undefined') ? ChatHistoryManager.currentSessionId : null;
-        const isActive = session.id === currentId;
-        const date = session.updatedAt ? formatPopupDate(session.updatedAt) : 'Unknown';
-        const title = (session.title || 'New Chat').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-        return `
-            <div class="lumina-popup-history-item ${isActive ? 'active' : ''}" data-session-id="${session.id}">
-                <div class="lumina-popup-history-title">${title}</div>
-                <div class="lumina-popup-history-date">${date}</div>
-            </div>
-        `;
-    }).join('');
-
-    historyList.insertAdjacentHTML('beforeend', html);
-    state.rendered = nextCount;
-}
-
-async function switchPopupSession(popup, sessionId, searchQuery = null) {
-    try {
-        if (typeof ChatHistoryManager !== 'undefined') await ChatHistoryManager.saveCurrentChat();
-
-        const historyKey = (typeof ChatHistoryManager !== 'undefined') ? ChatHistoryManager.STORAGE_KEY : 'lumina_chat_sessions';
-        const data = await chrome.storage.local.get([historyKey]);
-        const sessions = data[historyKey] || {};
-        const session = sessions[sessionId];
-
-        if (session && session.messages) {
-            if (typeof ChatHistoryManager !== 'undefined') ChatHistoryManager.currentSessionId = sessionId;
-
-            const chatHistory = popup.querySelector('.lumina-chat-history');
-            if (chatHistory) {
-                chatHistory.innerHTML = '';
-
-                let i = 0;
-                while (i < session.messages.length) {
-                    const msg = session.messages[i];
-
-                    if (msg.type === 'question') {
-                        const entryDiv = document.createElement('div');
-                        entryDiv.className = 'lumina-dict-entry';
-                        entryDiv.dataset.entryType = msg.metadata?.entryType || 'qa';
-
-                        const questionDiv = document.createElement('div');
-                        questionDiv.className = 'lumina-chat-question';
-                        const textDiv = document.createElement('div');
-                        textDiv.setAttribute('contenteditable', 'true');
-                        // Strip internal variables during history restore
-                        const restoredContent = msg.content.replace(/[("'\[]*\$Container[)"'\]]*\s*/gi, '').trim();
-                        textDiv.textContent = restoredContent;
-                        questionDiv.appendChild(textDiv);
-                        entryDiv.appendChild(questionDiv);
-
-                        i++;
-
-                        if (i < session.messages.length && session.messages[i].type === 'answer') {
-                            const answerMsg = session.messages[i];
-                            const answerDiv = document.createElement('div');
-                            answerDiv.className = 'lumina-chat-answer';
-                            let answerContent = answerMsg.content;
-
-                            if (answerContent.trim().startsWith('<')) {
-                                answerDiv.innerHTML = answerContent;
-                            } else if (typeof marked !== 'undefined') {
-                                answerDiv.innerHTML = marked.parse(answerContent);
-                            } else {
-                                answerDiv.textContent = answerContent;
-                            }
-
-                            answerDiv.querySelectorAll('a').forEach(link => {
-                                link.target = '_blank';
-                                link.rel = 'noopener noreferrer';
-                            });
-                            entryDiv.appendChild(answerDiv);
-                            i++;
-                        }
-
-                        const separator = document.createElement('div');
-                        separator.className = 'lumina-dict-separator';
-                        entryDiv.appendChild(separator);
-
-                        chatHistory.appendChild(entryDiv);
-                        if (typeof attachQuestionListeners === 'function') {
-                            attachQuestionListeners(questionDiv.querySelector('[contenteditable]'));
-                        }
-                        continue;
-                    }
-                    i++;
-                }
-
-                // Set min-height on last entry + scroll to correct position.
-                // For search results, scroll to matching entry; otherwise use setInitialEntryHeight
-                // which sets min-height AND scrolls so the previous separator is at top.
-                const allEntries = chatHistory.querySelectorAll('.lumina-dict-entry');
-                if (allEntries.length > 0) {
-                    const lastEntry = allEntries[allEntries.length - 1];
-                    const tUI = popup._luminaChatUI;
-
-                    if (searchQuery) {
-                        // Set min-height on last entry without scroll (scroll handled below)
-                        if (tUI) requestAnimationFrame(() => tUI.setInitialEntryHeight(lastEntry));
-                        else requestAnimationFrame(() => setInitialEntryHeight(lastEntry));
-
-                        const query = searchQuery.toLowerCase();
-                        for (const entry of allEntries) {
-                            const q = entry.querySelector('.lumina-chat-question');
-                            if (q && q.textContent.toLowerCase().includes(query)) {
-                                q.style.animation = 'lumina-highlight 1s ease';
-                                const prevEntry = entry.previousElementSibling;
-                                if (prevEntry && prevEntry.classList.contains('lumina-dict-entry')) {
-                                    const separator = prevEntry.querySelector('.lumina-dict-separator');
-                                    if (separator) separator.scrollIntoView({ behavior: 'auto', block: 'start' });
-                                } else {
-                                    chatHistory.scrollTop = 0;
-                                }
-                                break;
-                            }
-                        }
-                    } else {
-                        // setInitialEntryHeight handles both min-height and scroll
-                        if (tUI) {
-                            requestAnimationFrame(() => {
-                                tUI.setInitialEntryHeight(lastEntry);
-                                requestAnimationFrame(() => alignEntryToPreviousSeparatorTop(popup, lastEntry));
-                            });
-                        } else {
-                            requestAnimationFrame(() => {
-                                setInitialEntryHeight(lastEntry);
-                                requestAnimationFrame(() => alignEntryToPreviousSeparatorTop(popup, lastEntry));
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    } catch (e) {
-        console.error('[Popup] Failed to switch session:', e);
-    }
-}
-
-function startNewPopupChat(popup) {
-    if (typeof ChatHistoryManager !== 'undefined') ChatHistoryManager.startNewSession();
-    const chatHistory = popup.querySelector('.lumina-chat-history');
-    if (chatHistory) chatHistory.innerHTML = '';
-    const input = popup.querySelector('#chat-input');
-    if (input) input.focus();
-}
-
-// Redundant savePopupSession removed in favor of ChatHistoryManager.saveCurrentChat()
-
-function formatPopupDate(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Disabled
 }
 
 // (Auto-save periodically removed as it causes background lag on multi-tab setups.
@@ -5796,45 +5693,63 @@ async function handleProofreadFollowUp(instruction) {
 function addWindowControls(popup) {
     if (!popup) return;
 
-    // Ensure DRAG HANDLE exists (might have been wiped by innerHTML)
-    if (!popup.querySelector('.lumina-drag-handle')) {
-        const dragHandle = document.createElement('div');
-        dragHandle.className = 'lumina-drag-handle';
-        popup.appendChild(dragHandle);
-    }
+    // Remove legacy controls and drag handles if they exist
+    popup.querySelectorAll('.lumina-window-controls, .lumina-drag-handle, .lumina-popup-header, .lumina-popup-action-btn').forEach(el => el.remove());
 
-    // Check if controls already exist
-    if (popup.querySelector('.lumina-window-controls')) return;
-
-    // Scroll behavior logic removed - input now always visible
-
-    const controls = document.createElement('div');
-    controls.className = 'lumina-window-controls';
-    controls.innerHTML = `
-        <div class="lumina-window-btn lumina-btn-close">
-            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    // Create New Themed Header
+    const header = document.createElement('div');
+    header.className = 'lumina-popup-header';
+    header.innerHTML = `
+        <div class="lumina-popup-drag-region">
+            <span>Lumina</span>
+        </div>
+        <div class="lumina-popup-actions">
+            <button class="lumina-popup-action-btn lumina-minimize" title="Minimize">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14"/></svg>
+            </button>
+            <button class="lumina-popup-action-btn lumina-expand" title="Expand to Spotlight">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+            </button>
+            <button class="lumina-popup-action-btn lumina-close" title="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
         </div>
     `;
-    popup.appendChild(controls);
 
-    const closeBtn = controls.querySelector('.lumina-btn-close');
-    closeBtn.addEventListener('click', (e) => {
+    // Minimize
+    header.querySelector('.lumina-minimize').onclick = (e) => {
         e.stopPropagation();
-        removePopup();
-    });
+        minimizePopup();
+    };
 
-    // Note: minimize and new buttons removed per design request
-
-    // Regenerate button — wired via event delegation on the popup so it still works
-    // after the popup content is replaced (e.g. history restore).
-    popup.addEventListener('click', (e) => {
-        const btn = e.target.closest('#lumina-regenerate-btn, .lumina-regenerate-btn');
-        if (!btn) return;
-        // Only handle if not acting as a stop button
-        if (btn.dataset.mode === 'stop') return;
+    // Expand to Spotlight
+    header.querySelector('.lumina-expand').onclick = (e) => {
         e.stopPropagation();
-        triggerRegenerate();
-    });
+        chrome.runtime.sendMessage({ action: 'open_spotlight_from_popup' });
+        removePopup(true);
+    };
+
+    // Close
+    header.querySelector('.lumina-close').onclick = (e) => {
+        e.stopPropagation();
+        removePopup(true);
+    };
+
+    popup.prepend(header);
+
+    // Regenerate button delegation (maintained as it's useful)
+    if (!popup.__regenerateBound) {
+        popup.__regenerateBound = true;
+        popup.addEventListener('click', (e) => {
+            const btn = e.target.closest('#lumina-regenerate-btn, .lumina-regenerate-btn');
+            if (!btn) return;
+            if (btn.dataset.mode === 'stop') return;
+            e.stopPropagation();
+            triggerRegenerate();
+        });
+    }
 
     // Shortcut: Click inside popup to reset (if matches shortcut)
     popup.addEventListener('mousedown', async (e) => {
@@ -5860,19 +5775,23 @@ function addWindowControls(popup) {
                 e.preventDefault();
                 e.stopPropagation();
                 let isResizing = true;
-                let currentDir = e.target.dataset.dir;
-                let startX = e.clientX, startY = e.clientY;
+                const currentDir = e.target.dataset.dir;
+
+                // Strip transform FIRST so getBoundingClientRect() matches the CSS left/top we will set
+                popup.style.transition = 'none';
+                popup.style.removeProperty('transform');
+                popup.style.bottom = 'auto';
+                popup.style.right = 'auto';
+                popup.classList.remove('lumina-popup-expand');
+
                 const rect = popup.getBoundingClientRect();
+                let startX = e.clientX, startY = e.clientY;
                 let startWidth = rect.width, startHeight = rect.height;
                 let startTop = rect.top, startLeft = rect.left;
 
-                popup.style.transition = 'none';
-                popup.style.transform = 'none';
-                popup.classList.remove('lumina-popup-expand');
-                popup.style.setProperty('top', startTop + 'px', 'important');
+                // Pin the anchor edges in CSS so the popup doesn't drift
                 popup.style.setProperty('left', startLeft + 'px', 'important');
-                popup.style.bottom = 'auto';
-                popup.style.right = 'auto';
+                popup.style.setProperty('top', startTop + 'px', 'important');
 
                 function handleResize(ev) {
                     if (!isResizing) return;
@@ -5881,25 +5800,36 @@ function addWindowControls(popup) {
                     const MIN_W = 200, MIN_H = 200;
                     const MAX_W = Math.min(800, window.innerWidth - 40);
                     const MAX_H = Math.min(800, window.innerHeight - 40);
-                    let w = startWidth, h = startHeight, t = startTop, l = startLeft;
-                    if (currentDir.includes('e')) w = Math.min(Math.max(startWidth + deltaX, MIN_W), MAX_W);
-                    else if (currentDir.includes('w')) {
-                        w = Math.min(Math.max(startWidth - deltaX, MIN_W), MAX_W);
-                        l = startLeft + (startWidth - w);
+
+                    // Width changes
+                    if (currentDir.includes('e')) {
+                        const w = Math.min(Math.max(startWidth + deltaX, MIN_W), MAX_W);
+                        popup.style.setProperty('width', w + 'px', 'important');
+                        popup.style.setProperty('min-width', w + 'px', 'important');
+                        popup.style.setProperty('max-width', w + 'px', 'important');
+                    } else if (currentDir.includes('w')) {
+                        const w = Math.min(Math.max(startWidth - deltaX, MIN_W), MAX_W);
+                        const l = startLeft + (startWidth - w);
+                        popup.style.setProperty('width', w + 'px', 'important');
+                        popup.style.setProperty('min-width', w + 'px', 'important');
+                        popup.style.setProperty('max-width', w + 'px', 'important');
+                        popup.style.setProperty('left', l + 'px', 'important');
                     }
-                    if (currentDir.includes('s')) h = Math.min(Math.max(startHeight + deltaY, MIN_H), MAX_H);
-                    else if (currentDir.includes('n')) {
-                        h = Math.min(Math.max(startHeight - deltaY, MIN_H), MAX_H);
-                        t = startTop + (startHeight - h);
+
+                    // Height changes
+                    if (currentDir.includes('s')) {
+                        const h = Math.min(Math.max(startHeight + deltaY, MIN_H), MAX_H);
+                        popup.style.setProperty('height', h + 'px', 'important');
+                        popup.style.setProperty('min-height', h + 'px', 'important');
+                        popup.style.setProperty('max-height', h + 'px', 'important');
+                    } else if (currentDir.includes('n')) {
+                        const h = Math.min(Math.max(startHeight - deltaY, MIN_H), MAX_H);
+                        const t = startTop + (startHeight - h);
+                        popup.style.setProperty('height', h + 'px', 'important');
+                        popup.style.setProperty('min-height', h + 'px', 'important');
+                        popup.style.setProperty('max-height', h + 'px', 'important');
+                        popup.style.setProperty('top', t + 'px', 'important');
                     }
-                    popup.style.setProperty('width', w + 'px', 'important');
-                    popup.style.setProperty('height', h + 'px', 'important');
-                    popup.style.setProperty('min-width', w + 'px', 'important');
-                    popup.style.setProperty('max-width', w + 'px', 'important');
-                    popup.style.setProperty('min-height', h + 'px', 'important');
-                    popup.style.setProperty('max-height', h + 'px', 'important');
-                    popup.style.setProperty('left', l + 'px', 'important');
-                    popup.style.setProperty('top', t + 'px', 'important');
                 }
                 function stopResize() {
                     isResizing = false;
@@ -5919,22 +5849,6 @@ function addWindowControls(popup) {
         });
     }
 
-    if (popup._hasPopupListeners) return;
-    popup._hasPopupListeners = true;
-
-    popup.addEventListener('click', (e) => {
-        const btn = e.target.closest('#lumina-regenerate-btn, .lumina-regenerate-btn');
-        if (!btn || btn.dataset.mode === 'stop') return;
-        e.stopPropagation();
-        triggerRegenerate();
-    });
-
-    popup.addEventListener('mousedown', async (e) => {
-        if (matchesShortcut(e, 'resetChat')) {
-            e.preventDefault(); e.stopPropagation();
-            await resetChatFunc(popup);
-        }
-    });
 }
 
 function minimizePopup() {
@@ -5962,6 +5876,73 @@ function minimizePopup() {
     createRestoreBar();
 }
 
+/**
+ * Makes the restore bar draggable horizontally along the bottom
+ */
+function makeRestoreBarDraggable(el) {
+    let isDragging = false;
+    let startX = 0;
+    let initialLeft = 0;
+
+    const onMouseDown = (e) => {
+        isDragging = false; // Reset dragging flag on mouse down
+        startX = e.clientX;
+        const rect = el.getBoundingClientRect();
+        initialLeft = rect.left;
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const onMouseMove = (e) => {
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 5) {
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+            // Prevent text selection while dragging
+            document.body.style.userSelect = 'none';
+        }
+
+        if (isDragging) {
+            let left = initialLeft + dx;
+            const vw = window.innerWidth;
+            const width = el.offsetWidth;
+
+            // Constrain within viewport
+            if (left < 0) left = 0;
+            if (left + width > vw) left = vw - width;
+
+            el.style.left = left + 'px';
+            el.style.transform = 'none'; // Remove centering transform if any
+        }
+    };
+
+    const onMouseUp = () => {
+        if (isDragging) {
+            // Save position to storage
+            const left = el.style.left;
+            chrome.storage.local.set({ restoreBarLeft: left });
+            
+            // Re-enable text selection
+            document.body.style.userSelect = '';
+        }
+        
+        el.style.cursor = 'grab';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    
+    // Prevent restoration filter on click if it was a drag
+    el.addEventListener('click', (e) => {
+        if (isDragging) {
+            e.stopImmediatePropagation();
+            isDragging = false;
+        }
+    }, true);
+}
+
 function createRestoreBar() {
     if (isExtensionDisabled) return;
     // Remove existing bar if any
@@ -5972,9 +5953,26 @@ function createRestoreBar() {
     restoreBar = document.createElement('div');
     restoreBar.className = 'lumina-restore-bar';
     restoreBar.style.pointerEvents = 'auto';
+    restoreBar.style.cursor = 'grab';
+
+    restoreBar.style.visibility = 'hidden';
+
+    // Position from storage
+    chrome.storage.local.get(['restoreBarLeft'], (res) => {
+        if (res.restoreBarLeft && restoreBar) {
+            restoreBar.style.left = res.restoreBarLeft;
+            restoreBar.style.transform = 'none';
+        }
+        if (restoreBar) {
+            restoreBar.style.visibility = 'visible';
+        }
+    });
 
     initShadowDOM();
     luminaShadowRoot.appendChild(restoreBar);
+
+    // Make it draggable
+    makeRestoreBarDraggable(restoreBar);
 
     // Click to restore
     restoreBar.addEventListener('click', () => restorePopup(false));
@@ -6650,15 +6648,15 @@ async function handleRegenerate(entryElement, questionText, options = {}) {
 
     // 5. Set min-height = viewport (entry fills screen), clear from others, scroll to target
     if (_sc) {
-        const viewportHeight = _sc.clientHeight || _sc.offsetHeight;
-        if (viewportHeight > 0) {
+        const container = currentPopup.querySelector('.lumina-chat-container') || currentPopup;
+        const inputWrapper = currentPopup.querySelector('.lumina-chat-input-wrapper');
+        const allE = Array.from(_sc.querySelectorAll('.lumina-dict-entry'));
+        const idx = allE.indexOf(entryElement);
+
+        if (LuminaChatUI.applyViewportMinHeight(entryElement, container, inputWrapper, idx)) {
             _sc.querySelectorAll('.lumina-dict-entry').forEach(e => {
                 if (e !== entryElement) e.style.removeProperty('min-height');
             });
-            const anySep = _sc.querySelector('.lumina-dict-separator');
-            const sepMarginBottom = anySep ? (parseFloat(getComputedStyle(anySep).marginBottom) || 0) : 10;
-
-            entryElement.style.setProperty('min-height', (viewportHeight - sepMarginBottom) + 'px', 'important');
         }
         if (_regenTargetScroll !== null) {
             _sc.scrollTop = _regenTargetScroll;
@@ -6999,6 +6997,18 @@ function getSmartSelectionText() {
 }
 
 /**
+ * Sanitizes text selection for dictionary lookups by removing leading/trailing punctuation
+ * and excess whitespace. Example: "take it for granted," -> "take it for granted"
+ */
+function sanitizeDictionaryQuery(text) {
+    if (!text) return '';
+    // Trim and then remove non-alphanumeric trailing/leading characters
+    // (keeping inner ones like '-'). Using unicode aware regex if possible, 
+    // but basic punctuation check is safer for now.
+    return text.toString().trim().replace(/^[^a-zA-Z0-9'"]+|[^a-zA-Z0-9'"]+$/g, '');
+}
+
+/**
  * Get the sentence containing the current selection
  */
 function getSentenceContext() {
@@ -7163,6 +7173,11 @@ document.addEventListener('copy', (e) => {
 initShadowDOM();
 
 async function initAskSelectionPopup() {
+    // 1. Prevent accumulation: Remove existing buttons and inputs from Shadow DOM
+    if (luminaShadowRoot) {
+        luminaShadowRoot.querySelectorAll('#lumina-ask-selection-btn, #lumina-ask-input-popup').forEach(el => el.remove());
+    }
+    
     // Wait for styles to be loaded in shadow root
     if (window.luminaStylesLoaded) {
         await window.luminaStylesLoaded;
@@ -7238,14 +7253,16 @@ async function initAskSelectionPopup() {
     askSelectionPopupBtn.id = 'lumina-ask-selection-btn';
     askSelectionPopupBtn.style.pointerEvents = 'auto'; // Enable interaction
     askSelectionPopupBtn.innerHTML = `
-        <span class="lumina-ask-btn-text">Ask Lumina</span>
+        <div class="lumina-dict-launcher-part">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </div>
+        <div class="lumina-ask-part">
+            Ask
+        </div>
     `;
-    // Styles are defined in CSS via #lumina-ask-selection-btn
 
     // Apply User Font Size Setting (with zoom compensation)
     applyAskSelectionStyles();
-
-    // Hover effects are handled by CSS :hover
 
     // Crucial: Prevent default on mousedown to stop Safari from clearing the text selection
     askSelectionPopupBtn.addEventListener('mousedown', (e) => {
@@ -7256,7 +7273,19 @@ async function initAskSelectionPopup() {
     askSelectionPopupBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        showAskInput();
+
+        const dictPart = e.target.closest('.lumina-dict-launcher-part');
+        const askPart = e.target.closest('.lumina-ask-part');
+
+        if (dictPart) {
+            const word = sanitizeDictionaryQuery(askSelectionText);
+            const x = parseInt(askSelectionPopupBtn.style.left);
+            const y = parseInt(askSelectionPopupBtn.style.top) + 38;
+            createDictPopupElement(word, x, y);
+            hideAskSelectionPopup();
+        } else if (askPart || e.target === askSelectionPopupBtn) {
+            showAskInput();
+        }
     });
 
     luminaShadowRoot.appendChild(askSelectionPopupBtn);
@@ -7416,13 +7445,13 @@ function startAskPopupScrollTracking() {
     console.log('[Lumina Debug] startAskPopupScrollTracking called');
     if (askPopupScrollTrackingRAF) {
         console.log('[Lumina Debug] already tracking');
-        return; 
+        return;
     }
 
     const tick = () => {
         const btnVisible = askSelectionPopupBtn && askSelectionPopupBtn.style.display === 'flex';
         const inputVisible = askSelectionInputDiv && askSelectionInputDiv.style.display === 'flex';
-        
+
         if (!btnVisible && !inputVisible) {
             stopAskPopupScrollTracking();
             return;
@@ -7474,9 +7503,11 @@ function updateAskPopupPosition() {
 
     // console.log('[Lumina Debug] Position Update:', source, 'rect.top:', rect.top, 'rect.left:', rect.left);
 
-    // Additional check: if scrolled out of the .lumina-chat-scroll-content, we should hide it
+    // Additional check: if scrolled out of the scrollable area INSIDE the popup, we should hide it
     let isVisibleInScrollParent = true;
-    if (currentPopup && luminaShadowRoot) {
+    const isSelectionInPopup = currentPopup && currentPopup.contains(currentRange.commonAncestorContainer);
+    
+    if (isSelectionInPopup) {
         const scrollEl = currentPopup.querySelector('.lumina-chat-scroll-content');
         if (scrollEl) {
             const scrollRect = scrollEl.getBoundingClientRect();
@@ -7484,7 +7515,6 @@ function updateAskPopupPosition() {
             if (rect.bottom < scrollRect.top || rect.top > scrollRect.bottom) {
                 isVisibleInScrollParent = false;
             }
-            // console.log('[Lumina Debug] scrollEl check:', isVisibleInScrollParent, 'scrollRect.top:', scrollRect.top, 'scrollRect.bottom:', scrollRect.bottom);
         }
     }
 
@@ -7546,7 +7576,8 @@ function updateAskPopupPosition() {
     }
 }
 
-function hideAskSelectionPopup() {
+function hideAskSelectionPopup(reason) {
+    if (reason) console.log('[Lumina Debug] hideAskSelectionPopup called. Reason:', reason);
     if (askSelectionPopupBtn) askSelectionPopupBtn.style.display = 'none';
     if (askSelectionInputDiv) askSelectionInputDiv.style.display = 'none';
     stopAskPopupScrollTracking();
