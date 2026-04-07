@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đang xem phim - Lumina Movies</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="player.css">
+</head>
+<body style="background: #000">
+    <header>
+        <a href="index.html" class="logo">LUMINA <span style="color:white; font-weight:300">PLAY</span></a>
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm phim khác...">
+        </div>
+    </header>
+
+    <div class="player-container">
+        <div id="loader" class="loader active" style="position: absolute; z-index: 10;"><div class="spinner"></div></div>
+        <video id="video" controls playsinline autoplay></video>
+    </div>
+
+    <div class="movie-info-hero">
+        <h1 id="current-title">Đang tải...</h1>
+        <p id="current-desc"></p>
+        <div id="episodes" class="episodes-container"></div>
+    </div>
+
+    <script src="player.js"></script>
+</body>
+</html>

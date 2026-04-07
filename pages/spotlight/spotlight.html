@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina</title>
+    <link rel="stylesheet" href="../../assets/styles/styles.css">
+    <link rel="stylesheet" href="../../lib/katex/katex.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            width: 100%;
+            min-width: 0 !important;
+        }
+
+        body {
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            min-width: 0 !important;
+            display: flex;
+
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.8125em;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .lumina-chat-container {
+            width: 100% !important;
+            flex: 1 !important;
+            height: auto !important;
+            max-height: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            display: flex;
+            flex-direction: column;
+            background: #FFFFFF !important;
+            font-family: 'Montserrat', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        .lumina-chat-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Montserrat', sans-serif;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 10px 10px 0 10px;
+        }
+
+        .lumina-chat-scroll-content::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        .lumina-input-container {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .lumina-hover-trigger {
+            display: none;
+        }
+
+        .lumina-chat-input-wrapper {
+            position: relative !important;
+            bottom: auto !important;
+            left: auto !important;
+            right: auto !important;
+            padding: 0 10px 10px 10px;
+            pointer-events: auto !important;
+            width: 100%;
+            background: #FFFFFF !important;
+        }
+
+        #input-area {
+            overflow: visible !important;
+            z-index: 1000 !important;
+            position: relative !important;
+        }
+
+        .lumina-chat-input {
+            font-size: 0.8125em !important;
+        }
+
+        .lumina-translation-text,
+        .lumina-translation-card,
+        .lumina-proofread-card,
+        .lumina-proofread-text {
+            font-family: 'Montserrat', sans-serif !important;
+        }
+
+        /* Split View Styles */
+        .spotlight-main-area {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .spotlight-pane {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+            background: #fff;
+        }
+
+        #pane-primary {
+            flex: 1;
+            /* Default full width */
+        }
+
+        #pane-secondary {
+            border-left: none;
+            position: relative;
+        }
+
+        #pane-secondary::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 15%;
+            height: 70%;
+            width: 1px;
+            background: #e8e8e8;
+        }
+
+        .spotlight-pane-divider {
+            width: 14px;
+            height: 100%;
+            cursor: col-resize;
+            background: transparent;
+            position: relative;
+            z-index: 100;
+            margin: 0 -7px;
+            transition: background 0.18s;
+        }
+
+        .spotlight-pane-divider:hover,
+        .spotlight-pane-divider.dragging {
+            background: transparent;
+        }
+
+        .spotlight-pane-divider::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 15%;
+            height: 70%;
+            width: 1px;
+            background: #ececec;
+            transform: translateX(-50%);
+            transition: background 0.18s, width 0.18s;
+        }
+
+        .spotlight-pane-divider:hover::after,
+        .spotlight-pane-divider.dragging::after {
+            background: rgba(0, 86, 210, 0.35);
+            width: 2px;
+        }
+
+        .spotlight-pane-divider.snapped::after {
+            background: rgba(0, 86, 210, 0.85);
+            width: 3px;
+            top: 10%;
+            height: 80%;
+        }
+
+        /* Resizing Overlay to prevent iframe/selection issues */
+        .spotlight-resizing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            cursor: col-resize;
+            display: none;
+        }
+
+        /* Drop Zone Visuals */
+        .spotlight-tab.drop-target-split::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            right: 0;
+            background: rgba(0, 86, 210, 0.1);
+            border-left: 2px dashed #0056D2;
+            z-index: 20;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+
+    <div class="spotlight-tabs-bar" id="tabs-bar" style="display: none;">
+
+        <div class="spotlight-tabs-list" id="tabs-list">
+            <button class="spotlight-new-tab-btn" id="new-tab-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="spotlight-main-area" id="spotlight-main-area">
+        <div class="spotlight-pane" id="pane-primary">
+            <div class="lumina-chat-container">
+                <div class="lumina-chat-scroll-content" id="chat-history">
+                </div>
+            </div>
+            <div class="lumina-chat-input-container" id="input-area-primary">
+            </div>
+        </div>
+
+        <div class="spotlight-pane-divider" id="pane-divider" style="display: none;"></div>
+
+        <div class="spotlight-pane" id="pane-secondary" style="display: none;">
+            <div class="lumina-chat-container">
+                <!-- Secondary chat history will be moved here -->
+            </div>
+            <div class="lumina-chat-input-container" id="input-area-secondary">
+            </div>
+        </div>
+    </div>
+
+    <div class="spotlight-resizing-overlay" id="resizing-overlay"></div>
+
+    <input type="file" id="file-input" multiple style="display: none;">
+
+    <script src="../../lib/katex/katex.min.js"></script>
+    <script src="../../lib/katex/auto-render.min.js"></script>
+    <script src="../../lib/marked.min.js"></script>
+    <script src="../../lib/highlight.min.js"></script>
+    <script src="../../lib/utils/constants.js"></script>
+    <script src="../../lib/utils/selection_utils.js"></script>
+    <script src="../../lib/utils/cambridge_parser.js"></script>
+    <script src="../../lib/utils/dictionary_popup.js"></script>
+    <script src="../../lib/utils/common.js"></script>
+    <script src="spotlight.js"></script>
+</body>
+
+</html>

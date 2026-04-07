@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Lumina Settings</title>
+  <script src="../../lib/utils/Sortable.min.js"></script>
+  <script src="../../lib/utils/constants.js"></script>
+
+  <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <h1>Lumina</h1>
+          <button type="button" id="openSpotlightWebAppBtn" title="Open Sidepanel"
+            style="width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; color: var(--text-primary);cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="site-toggle-wrapper">
+          <span id="siteToggleLabel">Enabled</span>
+          <label class="switch">
+            <input type="checkbox" id="siteToggle" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item active" data-section="ai-config">
+          <div class="sidebar-nav-item-icon">⚙️</div>
+          Configuration
+        </div>
+
+        <div class="sidebar-nav-item" data-section="shortcuts">
+          <div class="sidebar-nav-item-icon">⌨️</div>
+          Shortcuts
+        </div>
+
+
+        <div class="sidebar-nav-item" data-section="anki-management">
+          <div class="sidebar-nav-item-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round" style="color: #00A9FF; transform: rotate(-20deg);">
+              <path d="M12 2l2.75 6.25h6.75l-5.25 4.25 1.75 6.75-6-4.25-6 4.25 1.75-6.75-5.25-4.25h6.75L12 2z"></path>
+            </svg>
+          </div>
+          Anki Management
+        </div>
+
+        <div class="sidebar-nav-item" id="openLuminaPlayBtn">
+          <div class="sidebar-nav-item-icon">🎬</div>
+          Lumina Play
+        </div>
+
+        <div class="sidebar-nav-item" data-section="account">
+          <div class="sidebar-nav-item-icon">👤</div>
+          Account & Sync
+        </div>
+
+      </nav>
+
+      <!-- Sidebar Footers Container -->
+      <div style="flex-shrink: 0; border-top: 1px solid var(--border-color); margin-top: 10px;">
+
+        <!-- Model Usage Counter -->
+        <div class="sidebar-footer" id="modelUsageFooter"
+          style="padding: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>📊</span>
+          <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <span id="modelUsageName"
+              style="color: var(--text-secondary); font-weight: 520; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">MODEL</span>
+            <span id="modelUsageCount" style="font-weight: 520; color: var(--text-primary);">0
+              requests
+              today</span>
+            <span id="modelUsageReset" style="color: var(--text-secondary); opacity: 0.7;">Resets 7:00 AM (UTC+7)</span>
+          </div>
+        </div>
+
+      </div>
+    </div> <!-- Closes Sidebar -->
+
+    <div class="main-content">
+      <!-- Configuration Section -->
+      <div class="content-section active" id="ai-config">
+        <div class="section-header">
+          <h2>Configuration</h2>
+        </div>
+
+        <!-- Provider Management -->
+        <div class="glass-card">
+          <div class="section-title">🔑 AI Provider<span class="info-tooltip"
+              data-tooltip="Add API keys to the providers below, then select a model to start using.">i</span></div>
+
+          <!-- Provider List -->
+          <div id="providerList" class="provider-list">
+            <!-- Providers will be rendered here -->
+          </div>
+
+          <!-- Add Provider Button -->
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="addProviderBtn" class="add-provider-btn" style="flex: 1;">
+              + Add Provider
+            </button>
+            <button type="button" id="checkApiKeysBtn" class="add-provider-btn"
+              style="flex: 1; background: var(--primary-color); color: white;">
+              🔍 Check API Keys
+            </button>
+          </div>
+
+          <!-- API Key Check Results -->
+          <div id="apiKeyResults" style="display: none; margin-bottom: 16px;">
+            <div id="apiKeyStatusTitle" style="font-weight: 600; margin-bottom: 8px;">API Key Status:</div>
+            <div id="apiKeyResultsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          </div>
+
+          <!-- Add/Edit Provider Form (hidden by default) -->
+          <div id="providerForm" class="provider-form" style="display: none;">
+            <input type="hidden" id="providerFormId">
+            <div class="form-group">
+              <label for="providerFormName">Name <span class="text-required">*</span></label>
+              <input type="text" id="providerFormName" placeholder="e.g. My Groq, Local LLM">
+            </div>
+            <input type="hidden" id="providerFormType" value="openai">
+            <div class="form-group">
+              <label for="providerFormEndpoint">Endpoint URL <span class="text-required">*</span></label>
+              <input type="text" id="providerFormEndpoint"
+                placeholder="e.g. https://api.groq.com/openai/v1/chat/completions">
+
+            </div>
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label for="providerFormApiKey" style="margin-bottom: 0;">API Key</label>
+                <a id="providerApiKeyLink" href="#" target="_blank"
+                  style="color: var(--primary-color); display: none; text-decoration: none;">Get API
+                  Key</a>
+              </div>
+              <input type="text" id="providerFormApiKey" placeholder="Enter your API key...">
+              <div class="provider-api-hint" style="color: var(--text-secondary); margin-top: 6px;">
+                Multiple keys separated by commas. Auto-switches on rate limit.
+              </div>
+            </div>
+            <div class="provider-form-actions">
+              <button type="button" id="cancelProviderBtn" class="btn-secondary">Cancel</button>
+              <button type="button" id="saveProviderBtn" class="btn-primary">Save Provider</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card mt-16">
+          <div class="section-title">📝 Model Management</div>
+
+          <!-- Model List -->
+          <label>Available Models <span class="info-tooltip"
+              data-tooltip="Add any models you want to use here. You can pick which one to use when chatting.">i</span></label>
+          <div id="textChainList" class="chain-list">
+            <div class="chain-empty-state">No models added. Add one below.</div>
+          </div>
+
+          <!-- Add to Chain -->
+          <label class="mt-16">Add New Model</label>
+          <div class="add-chain-area flex gap-12 items-end">
+            <div class="form-group form-group-provider">
+              <label for="textChainProvider" class="label-small">Provider</label>
+              <input type="text" id="textChainProvider" autocomplete="off" placeholder="Select..."
+                class="input-readonly" readonly>
+              <div id="textChainProviderList" class="dropdown-list"></div>
+            </div>
+            <div class="form-group form-group-model">
+              <label for="textChainModel" class="label-small">Model</label>
+              <input type="text" id="textChainModel" autocomplete="off" class="input-element-bg">
+              <div id="textChainModelList" class="dropdown-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Features -->
+        <div class="glass-card mt-16">
+          <div class="section-title">🧠 Smart Features</div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Read webpage</span>
+              <span class="feature-desc">Include current webpage content in every chat request for better
+                context.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="readWebpage">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Grounding with Google Search</span>
+              <span class="feature-desc">Enable Gemini grounding via Google Search for fresher, more verifiable answers.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="enableGrounding">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Voice Dictation Configuration -->
+        <div class="glass-card mt-16">
+          <div class="section-title">🎙️ Dictation</div>
+
+          <label>Select Dictation Model<span class="info-tooltip"
+              data-tooltip="Select a model for speech-to-text transcription.">i</span></label>
+          <div class="dictation-area">
+            <div class="form-group form-group-provider">
+              <label for="voiceProvider" class="label-small">Provider</label>
+              <input type="text" id="voiceProvider" autocomplete="off" placeholder="Select..."
+                class="input-readonly input-element-bg" readonly>
+              <div id="voiceProviderList" class="dropdown-list"></div>
+            </div>
+            <div class="form-group form-group-model">
+              <label for="voiceModel" class="label-small">Model</label>
+              <input type="text" id="voiceModel" autocomplete="off" class="input-element-bg">
+              <div id="voiceModelList" class="dropdown-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dictionary & Translation Configuration -->
+        <div class="glass-card mt-16">
+          <div class="section-title">📖 Dictionary and Translation</div>
+
+          <div class="pref-grid" style="margin-bottom: 0;">
+            <div class="form-group">
+              <label>Translation Provider</label>
+              <select id="transProvider">
+                <option value="ai">Text Model</option>
+                <option value="deepl">DeepL</option>
+                <option value="google">Google</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Dictionary Source</label>
+              <select id="dictProvider">
+                <option value="cambridge">Cambridge (En-En)</option>
+                <option value="cambridge_en_vi">Cambridge (En-Vi)</option>
+                <option value="ai">AI Dictionary (Lumina)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- DeepL Config (Only visible when DeepL is selected) -->
+          <div id="deeplConfig"
+            style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+            <div class="info-note mb-16">
+              <div class="info-note-wrapper">
+                <span class="info-note-icon">💡</span>
+                <span class="info-note-text">DeepL provides high quality translations. Get your free API key at <a
+                    href="https://www.deepl.com/pro-api" target="_blank">deepl.com</a>.</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="deepLApiKey">DeepL API Key</label>
+              <input type="text" id="deepLApiKey" placeholder="Enter your DeepL API key..." class="input-element-bg">
+            </div>
+          </div>
+
+          <!-- AI Translation Model (Only visible when AI is selected) -->
+          <div id="aiTranslationConfig"
+            style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+            <label>Select Translation Model<span class="info-tooltip"
+                data-tooltip="Select a model for AI-powered translations.">i</span></label>
+            <div class="dictation-area">
+              <div class="form-group form-group-provider">
+                <label for="transModelProvider" class="label-small">Provider</label>
+                <input type="text" id="transModelProvider" autocomplete="off" placeholder="Select..."
+                  class="input-readonly input-element-bg" readonly>
+                <div id="transModelProviderList" class="dropdown-list"></div>
+              </div>
+              <div class="form-group form-group-model">
+                <label for="transModelInput" class="label-small">Model</label>
+                <input type="text" id="transModelInput" autocomplete="off" class="input-element-bg">
+                <div id="transModelList" class="dropdown-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Search Configuration -->
+        <div class="glass-card mt-16">
+          <div class="section-title">🔍 Image Lookup</div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Google API Key</span>
+              <span class="feature-desc"><a href="https://console.cloud.google.com/apis/credentials" target="_blank"
+                  class="text-link">Get Key from Cloud
+                  Console</a></span>
+            </div>
+            <input type="text" id="googleApiKey" class="input-fixed-200">
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Search Engine ID</span>
+              <span class="feature-desc"><a href="https://programmablesearchengine.google.com/" target="_blank"
+                  class="text-link">Create via Programmable Search</a></span>
+            </div>
+            <input type="text" id="googleCx" class="input-fixed-200">
+          </div>
+        </div>
+
+        <!-- Manual Instruction Card -->
+        <div class="glass-card mb-16" style="margin-bottom: 16px;">
+          <div class="section-title">🧠 Your instruction for Lumina</div>
+
+          <div class="info-note mb-16">
+            <div class="info-note-wrapper">
+              <span class="info-note-icon">💡</span>
+              <div class="info-note-text">
+                Add persistent instructions that Lumina will always follow in every conversation.
+              </div>
+            </div>
+          </div>
+
+          <!-- Instruction List -->
+          <div id="userFactsList" class="facts-list mb-16" style="max-height: 300px; overflow-y: auto;">
+            <!-- Facts will be rendered here -->
+          </div>
+
+          <!-- Add New Instruction -->
+          <div class="add-chain-area flex gap-8 items-end">
+            <div class="form-group form-group-model">
+              <label for="newFactInput" class="label-small">Add New Instruction</label>
+              <input type="text" id="newFactInput" placeholder="e.g. Always explain metaphors" class="input-element-bg">
+            </div>
+            <button type="button" id="addFactBtn" class="btn-primary btn-chain-add" title="Add Fact">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Appearance Card -->
+        <div class="glass-card mt-16">
+          <div class="section-title">🎨 Appearance</div>
+
+          <!-- Theme -->
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Theme</span>
+            </div>
+            <div class="radio-group" style="width: 240px;">
+              <label class="radio-option">
+                <input type="radio" name="theme" value="light" checked>
+                <span>Light</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="theme" value="dark">
+                <span>Dark</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="theme" value="auto">
+                <span>Auto</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Display Mode -->
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Display Mode</span>
+            </div>
+            <div class="radio-group" style="width: 240px;">
+              <label class="radio-option">
+                <input type="radio" name="displayMode" value="popup" checked>
+                <span>Popup</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="displayMode" value="sidepanel">
+                <span>Sidepanel</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dimensions & Font -->
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Popup Width</span>
+            </div>
+            <div class="range-wrapper">
+              <input type="range" id="popupWidth" min="200" max="800" step="10" value="500" class="flex-1">
+              <span id="widthValue" class="range-value">500px</span>
+            </div>
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Popup Height</span>
+            </div>
+            <div class="range-wrapper">
+              <input type="range" id="popupHeight" min="200" max="800" step="10" value="420" class="flex-1">
+              <span id="heightValue" class="range-value">420px</span>
+            </div>
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Font Size</span>
+            </div>
+            <div class="stepper-control">
+              <button type="button" id="decreaseFontSize" class="stepper-btn">
+                <svg width="12" height="2" viewBox="0 0 12 2" fill="none">
+                  <rect width="12" height="2" rx="1" fill="currentColor" />
+                </svg>
+              </button>
+              <div class="stepper-value-wrapper">
+                <input type="number" id="fontSize" min="10" max="30" step="0.5" value="13" readonly>
+                <span class="stepper-unit">px</span>
+              </div>
+              <button type="button" id="increaseFontSize" class="stepper-btn">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="5" width="2" height="12" rx="1" fill="currentColor" />
+                  <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Apply Defaults Button -->
+          <div style="padding-top: 8px; margin-top: 8px; display: flex; align-items: center; gap: 12px;">
+            <button type="button" id="resetSettingsBtn" class="btn-secondary"
+              style="width: 100px; flex-shrink: 0; height: 32px; padding: 0 12px;display: flex; align-items: center; justify-content: center; gap: 6px;">
+              Reset
+            </button>
+            <div style="flex: 1;"></div>
+            <button type="button" id="setGlobalDefaultsBtn" class="btn-primary"
+              style="width: 150px; flex-shrink: 0; height: 32px; padding: 0 12px;display: flex; align-items: center; justify-content: center; gap: 6px;">
+              Apply to all pages
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Account & Sync Section -->
+      <!-- Anki Management Section -->
+      <div class="content-section" id="anki-management">
+        <div class="section-header">
+          <h2 class="section-title">Anki Management</h2>
+        </div>
+
+        <div class="anki-instructions-card">
+          <h3 style="margin-bottom: 12px; font-weight: 600;">Getting Started</h3>
+          <ul class="instruction-list" style="padding-left: 0; list-style-type: none;">
+            <li style="margin-bottom: 12px;">
+              <strong>Step 1:</strong> Download and install Anki from
+              <a href="https://apps.ankiweb.net/#downloads" target="_blank"
+                style="color: var(--primary-color); text-decoration: none; font-weight: 500;">AnkiWeb</a>
+            </li>
+            <li style="margin-bottom: 12px;">
+              <strong>Step 2:</strong> Open Anki, go to <strong>Tools</strong> → <strong>Add-ons</strong> → <strong>Get
+                Add-ons...</strong>,
+              and enter code <span style="font-weight: bold; color: #0056d2;">2055492159</span> to install AnkiConnect.
+            </li>
+            <li style="margin-bottom: 12px;">
+              <strong>Step 3:</strong> Restart Anki app to apply changes.
+            </li>
+          </ul>
+          <p class="anki-warning" style="color: #f57c00; font-weight: 500; margin-top: 10px;">⚠️ Note: Always keep the
+            Anki
+            app running while using this feature.</p>
+        </div>
+
+        <div class="anki-action-row" style="display: flex; gap: 12px; margin-bottom: 32px;">
+          <button id="checkAnkiConnBtn" class="btn-secondary" style="flex: 1;">Check Connection</button>
+          <button id="openAnkiMgtBtn" class="btn-primary" style="flex: 1;">Open Anki Management</button>
+        </div>
+
+        <div class="anki-note-section" style="border-top: 1px solid var(--border-color); padding-top: 24px;">
+          <h3 style="margin-bottom: 8px; font-weight: 600;">Quick Add Words</h3>
+          <p class="section-subtitle">Enter words to add (separate by comma or newline)</p>
+          <div class="quick-note-wrapper" style="margin-top:12px;">
+            <textarea id="ankiQuickNote" placeholder="e.g. apple, banana, cherry..."
+              style="width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: #fff; font-family: inherit;resize: vertical;"></textarea>
+            <span id="ankiQuickNoteCount" class="card-count-badge">0 cards</span>
+          </div>
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button id="clearAnkiNoteBtn" class="btn-secondary"
+              style="flex: 0 0 auto; padding: 8px 20px;">Clear</button>
+            <button id="addToAnkiBtn" class="btn-primary" style="flex: 1;">Add to Anki</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-section" id="account">
+        <div class="section-header">
+          <h2>Account & Sync</h2>
+        </div>
+
+        <!-- Google Account Card -->
+        <div class="glass-card">
+          <div class="section-title">👤 Google Account</div>
+
+          <div class="form-row-item" style="margin-bottom: 20px;">
+            <div class="feature-info">
+              <span class="feature-label">Google Client ID</span>
+              <span class="feature-desc">Used for settings sync (get from Google Cloud Console)</span>
+            </div>
+            <input type="text" id="googleClientId" class="input-fixed-200" placeholder="Paste your Client ID here">
+          </div>
+
+          <div class="form-row-item"
+            style="margin-bottom: 24px; border-bottom: 1px dashed var(--border-color); padding-bottom: 16px;">
+            <div class="feature-info">
+              <span class="feature-label">GitHub Client ID</span>
+              <span class="feature-desc">Used for Lumina Play (sync watch history via Gist)</span>
+            </div>
+            <input type="text" id="githubClientId" class="input-fixed-200" placeholder="Paste your GH Client ID here">
+          </div>
+
+          <div id="auth-logged-out" style="display: block;">
+            <div class="info-note mb-16">
+              <div class="info-note-wrapper">
+                <span class="info-note-icon">✨</span>
+                <div class="info-note-text">
+                  Sign in with Google to sync your settings across devices.
+                </div>
+              </div>
+            </div>
+            <button id="googleLoginBtn" class="btn-primary"
+              style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4" />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853" />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05" />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335" />
+              </svg>
+              Sign in with Google
+            </button>
+          </div>
+
+          <div id="auth-logged-in" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+              <img id="userAvatar" src="" alt="Avatar"
+                style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+              <div>
+                <div id="userName" style="font-weight: 600;">User Name</div>
+                <div id="userEmail" style="color: var(--text-secondary);">user@example.com</div>
+              </div>
+            </div>
+            <button id="googleLogoutBtn" class="btn-secondary" style="width: 100%;">Sign Out</button>
+          </div>
+        </div>
+
+        <!-- Sync Card -->
+        <div class="glass-card mt-16" id="syncCard" style="opacity: 0.5; pointer-events: none;">
+          <div class="section-title">☁️ Data Sync</div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Sync Settings</span>
+              <span class="feature-desc">Sync providers, shortcuts, and preferences to cloud</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="syncUpBtn" class="btn-secondary" title="Upload to Cloud">
+                ↑ Upload
+              </button>
+              <button id="syncDownBtn" class="btn-secondary" title="Download from Cloud">
+                ↓ Download
+              </button>
+            </div>
+          </div>
+          <div id="syncStatus" style="color: var(--text-secondary); text-align: center; margin-top: 8px;"></div>
+        </div>
+
+        <!-- Manual Backup Card (File) -->
+        <div class="glass-card mt-16">
+          <div class="section-title">💾 Manual Backup (File)</div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Export / Import</span>
+              <span class="feature-desc">Backup settings to a local JSON file</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="exportSettingsBtn" class="btn-secondary" title="Save to computer">
+                Export to File
+              </button>
+              <input type="file" id="importSettingsFile" accept=".json" style="display: none;">
+              <button id="importSettingsBtn" class="btn-secondary" title="Restore from computer">
+                Import from File
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+
+      <!-- Shortcuts Section -->
+      <div class="content-section" id="shortcuts">
+        <div class="section-header">
+          <h2>Shortcuts</h2>
+        </div>
+
+        <div class="glass-card">
+          <div class="section-title">⌨️ Shortcuts Management</div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Open Popup</span>
+            </div>
+            <div class="shortcut-input" data-action="luminaChat" tabindex="0">
+              <span class="shortcut-key">`</span>
+            </div>
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">New Chat</span>
+            </div>
+            <div class="shortcut-input shortcut-small" data-action="resetChat" tabindex="0"></div>
+          </div>
+
+
+
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Translate</span>
+            </div>
+            <div class="shortcut-input" data-action="translate" tabindex="0">
+              <span class="shortcut-key">T</span>
+            </div>
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Image Search</span>
+            </div>
+            <div class="shortcut-input" data-action="image" tabindex="0">
+              <span class="shortcut-key">I</span>
+            </div>
+          </div>
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Text-to-Speech</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+              <div class="speed-input-wrapper">
+                <input type="number" id="audioSpeed" class="speed-number-input" min="0.5" max="3.0" step="0.05"
+                  value="1.0">
+                <span class="speed-unit">x</span>
+              </div>
+              <div class="shortcut-input-container"
+                style="position: relative; display: flex; align-items: center; gap: 8px;">
+                <div class="shortcut-input" data-action="audio" tabindex="0">
+                  <span class="shortcut-key">⇧</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+          <div class="form-row-item">
+            <div class="feature-info">
+              <span class="feature-label">Ask Lumina</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+              <button type="button" id="askSelectionPopupBtn" class="status-btn"
+                style="width: 70px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary);font-weight: 520; transition: all 0.2s ease;">
+                Hide
+              </button>
+              <div class="shortcut-input-container"
+                style="position: relative; display: flex; align-items: center; gap: 8px;">
+                <div class="shortcut-input" data-action="askLumina" tabindex="0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Mappings Card (merged from Mappings section) -->
+        <div class="glass-card">
+          <div class="section-title">
+            🔗 Custom Mappings
+            <span class="custom-mapping-hint"
+              style="margin-left: auto; text-transform: none; font-weight: 400; color: var(--text-secondary);">
+              Select text + Key to auto-ask
+            </span>
+          </div>
+
+          <div class="mapping-list-container">
+            <div id="questionMappingsList">
+              <!-- Rows will be injected here -->
+            </div>
+          </div>
+
+          <button id="addMappingBtn" class="apply-model-btn"
+            style="background: transparent; border: 1px dashed var(--border-color); color: var(--text-secondary); margin-top: 12px; font-weight: 520;">
+            + Add Mapping
+          </button>
+
+          <div class="info-note" style="margin-top: 16px;">
+            <div class="info-note-wrapper" style="align-items: flex-start;">
+              <span class="info-note-icon" style="margin-top: 2px;">💡</span>
+              <div class="info-note-text">
+                <div style="margin-bottom: 8px;"><strong>Available Variables</strong></div>
+                <div class="mapping-vars-grid" style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;">
+                  <code>$SelectedText</code>
+                  <span style="color: var(--text-secondary);">The highlighted text</span>
+                  <code>$Sentence</code>
+                  <span style="color: var(--text-secondary);">Full sentence containing selection</span>
+                  <code>$Paragraph</code>
+                  <span style="color: var(--text-secondary);">Full paragraph containing selection</span>
+                  <code>$Container</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+  <script src="../../lib/utils/memory.js"></script>
+  <script src="../../lib/utils/auth.js"></script>
+  <script src="options.js"></script>
+</body>
+
+</html>

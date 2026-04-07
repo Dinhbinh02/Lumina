@@ -1,0 +1,121 @@
+{
+  "manifest_version": 3,
+  "name": "Lumina",
+  "version": "1.0",
+  "description": "Trợ lý AI đa năng, bảo mật và siêu tốc ngay trên trình duyệt.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "webNavigation",
+    "offscreen",
+    "system.display",
+    "alarms",
+    "identity",
+    "tts",
+    "clipboardWrite",
+    "cookies",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "sidePanel"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "host_permissions": [
+    "<all_urls>",
+    "https://tactiq.io/*",
+    "https://lynote.ai/*"
+  ],
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    },
+    "default_title": "Lumina",
+    "default_popup": "pages/options/options.html"
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "commands": {
+    "open-lumina-chat": {
+      "suggested_key": {
+        "default": "Ctrl+Space",
+        "mac": "Alt+Space"
+      },
+      "description": "Open Lumina Chat",
+      "global": true
+    },
+    "new-chat": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Start a new conversation",
+      "global": true
+    },
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Toggle Side Panel",
+      "global": true
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "lib/utils/*",
+        "lib/utils/proxy.html",
+        "assets/*",
+        "assets/styles/*",
+        "lib/katex/*",
+        "lib/katex/fonts/*",
+        "lib/fonts/*",
+        "lib/edge-tts/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "options_ui": {
+    "page": "pages/options/options.html",
+    "open_in_tab": false
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "lib/utils/constants.js",
+        "lib/utils/cambridge_parser.js",
+        "lib/utils/oxford_parser.js",
+        "lib/utils/dictionary_popup.js",
+        "lib/utils/selection_utils.js",
+        "scripts/content.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ]
+}
