@@ -59,7 +59,7 @@
         "default": "Ctrl+Space",
         "mac": "Alt+Space"
       },
-      "description": "Open Lumina Chat",
+      "description": "Open Lumina Window",
       "global": true
     },
     "new-chat": {
@@ -75,7 +75,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Toggle Side Panel",
+       "description": "Open Lumina Side Panel",
       "global": true
     }
   },

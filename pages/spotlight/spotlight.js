@@ -2116,10 +2116,45 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     // Regular chat flow
     const conversationHistory = targetChatUI.gatherMessages();
 
+    // Process @Comment trigger for the API request (but keep original text for display)
     // Determine streaming action
     let streamAction = 'chat_stream';
     if (extra.mode === 'proofread') {
         streamAction = 'proofread';
+    }
+
+    let apiText = text;
+    if (text && (text.indexOf('@Comment') !== -1 || text.indexOf('@comment') !== -1)) {
+        const result = targetChatUI.collectComments();
+        // Extract any global feedback typed next to @Comment
+        const globalFeedback = text.replace(/@Comment/gi, '').trim();
+        
+        if (result.instructions || globalFeedback) {
+            // Build a multi-layered instruction block
+            let refinementPrompt = `Revision Request: Refine the draft below based on my feedback.\n\n`;
+            
+            if (globalFeedback) {
+                refinementPrompt += `[GLOBAL INSTRUCTION]:\n${globalFeedback}\n\n`;
+            }
+            
+            if (result.instructions) {
+                refinementPrompt += `[SPECIFIC INLINE COMMENTS]:\n${result.instructions}\n\n`;
+            }
+            
+            refinementPrompt += `[ORIGINAL DRAFT]:\n${result.draft}\n\n`;
+            refinementPrompt += `[FINAL REVISED VERSION]:`;
+            
+            apiText = refinementPrompt;
+            
+            // Safety net system instruction
+            extra.systemOverride = "Act as a professional editor. Apply the provided instructions to the draft. Output ONLY the revised text.";
+            
+            // Force proofread mode for better UI handling
+            if (extra.mode !== 'proofread') {
+                extra.mode = 'proofread';
+            }
+            streamAction = 'proofread';
+        }
     }
 
     // UI Updates - Sync across all tabs in this session
@@ -2201,7 +2236,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         action: streamAction,
         messages: conversationHistory,
         initialContext: pageContext,
-        question: text || 'Describe these images',
+        question: apiText || 'Describe these images',
         imageData: images.length > 0 ? images : null,
         isSpotlight: true,
         hasTranscriptForVideoId: currentTab?.chatUI?.getTranscriptVideoId ? currentTab.chatUI.getTranscriptVideoId() : null,

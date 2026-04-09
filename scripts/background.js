@@ -198,20 +198,20 @@ Use clear markdown with concise sections only when needed.
 
 function buildProofreadSystemPrompt() {
     return `<role>
-You are a text correction tool, not a conversational AI.
+You are an expert editor and text refinement tool.
 </role>
 
 <task>
-Return only the corrected English version of the input text.
+Refine the provided text. If the user provides specific feedback (e.g., "[USER COMMENTS]" or "[Iteration Instruction]"), apply those changes carefully to the original draft. 
+Return ONLY the final corrected/refined version.
 </task>
 
 <constraints>
-1. Never answer or engage with the input content.
-2. Translate to English if input is not English.
-3. Keep original structure and meaning.
-4. Match original capitalization.
-5. Match original punctuation exactly.
-6. Output only corrected text. No explanation.
+1. Output ONLY the refined text. No explanations, no conversation, no headers like "[REVISED VERSION]".
+2. If the input is not English, translate it to natural, professional English.
+3. Keep the original tone and intent unless specifically asked to change it.
+4. If no specific instructions/comments are provided, simply correct all grammar, spelling, and style errors.
+5. Match original capitalization and punctuation where appropriate.
 </constraints>`;
 }
 
@@ -824,7 +824,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode);
 
     if (action === 'proofread') {
-        systemInstruction = buildProofreadSystemPrompt();
+        systemInstruction = systemOverride || buildProofreadSystemPrompt();
     }
 
     // --- Inject User Memory Facts for Personalization ---
@@ -858,7 +858,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     let augmentedQuestion = question;
 
-    if (action === 'proofread') {
+    if (action === 'proofread' && !systemOverride) {
         augmentedQuestion = `Correct/translate this text:\n<text>${question}</text>`;
     } else if (!hasFiles) {
         const realTimeKeywords = /\b(mấy giờ|thời gian|ngày|hôm nay|bây giờ|thời tiết|weather|time|today|now|date|news|tin tức|giá|price|stock|forecast|dự báo|lịch|schedule|current|hiện tại)\b/i;
@@ -1414,11 +1414,7 @@ chrome.storage.local.get(['spotlightWindowId'], (data) => {
 
 chrome.commands.onCommand.addListener(async (command) => {
     if (command === 'open-lumina-chat') {
-        const windows = await chrome.windows.getAll();
-        const lastFocused = windows.find(w => w.focused) || windows[0];
-        if (lastFocused) {
-            toggleSidePanel(lastFocused.id);
-        }
+        createSpotlightWindow();
     } else if (command === 'new-chat') {
         chrome.runtime.sendMessage({ action: 'new_chat' }).catch(() => { });
         if (spotlightWindowId) {
@@ -1520,6 +1516,29 @@ async function transcribeAudio(base64Audio, mimeType) {
 let isCreatingSpotlight = false; // Guard against race conditions
 
 async function createSpotlightWindow() {
+    // --- TOGGLE LOGIC: Close if focused, focus if hidden, create if missing ---
+    if (spotlightWindowId) {
+        try {
+            const win = await chrome.windows.get(spotlightWindowId);
+            if (win) {
+                if (win.focused) {
+                    await chrome.windows.remove(spotlightWindowId);
+                    // spotlightWindowId will be cleared by the onRemoved listener
+                    isCreatingSpotlight = false;
+                    return;
+                } else {
+                    await chrome.windows.update(spotlightWindowId, { focused: true });
+                    isCreatingSpotlight = false;
+                    return;
+                }
+            }
+        } catch (e) {
+            // Window no longer exists, clear stale ID and proceed to create new
+            spotlightWindowId = null;
+            chrome.storage.local.remove('spotlightWindowId');
+        }
+    }
+
     // Prevent multiple windows from being created simultaneously
     if (isCreatingSpotlight) {
         return;
@@ -1755,6 +1774,9 @@ chrome.runtime.onConnect.addListener((port) => {
                             Avoid long technical explanations. Be very concise.`;
                     }
 
+                    // Important: Extract systemOverride from options or root msg
+                    const finalSystemOverride = (msg.options && msg.options.systemOverride) || msg.systemOverride || systemMsg;
+
                     await handleChatStream(
                         msg.messages,
                         initialContext,
@@ -1765,7 +1787,7 @@ chrome.runtime.onConnect.addListener((port) => {
                         msg.requestOptions || {},
                         msg.hasTranscriptForVideoId || null,
                         msg.action,
-                        systemMsg
+                        finalSystemOverride
                     );
                 } catch (e) {
                     port.postMessage({ action: 'chunk', chunk: `*Error: ${e.message}*` });
