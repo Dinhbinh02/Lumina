@@ -1494,9 +1494,12 @@ function setupWebSourceTracking() {
     // 3. Listen for url/title updates
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'complete' || changeInfo.title || changeInfo.url) {
-            if (currentBrowserTab && currentBrowserTab.id === tabId) {
+            // If the updated tab is active, we should always sync to capture transitions 
+            // from chrome:// pages (where currentBrowserTab was null) to normal web pages.
+            if (tab.active) {
                 syncCurrentBrowserTab();
             }
+            
             // Update pinned items if details changed
             const pinned = pinnedWebSources.find(p => p.tabId === tabId);
             if (pinned) {
@@ -1561,18 +1564,14 @@ function updateWebChips() {
         
         const sourcesToShow = [];
         
-        // Always try to show current tab first
+        // Only show current tab context to stay focused
         if (currentBrowserTab) {
             const isPinned = pinnedWebSources.some(p => p.tabId === currentBrowserTab.tabId);
             sourcesToShow.push({ ...currentBrowserTab, isPinned, isCurrent: true });
         }
 
-        // Add other pinned sources that are NOT the current tab
-        pinnedWebSources.forEach(pinned => {
-            if (!currentBrowserTab || pinned.tabId !== currentBrowserTab.tabId) {
-                sourcesToShow.push({ ...pinned, isPinned: true, isCurrent: false });
-            }
-        });
+        // We no longer show other pinned sources here to fulfill user request 
+        // to only show the chip of the current focused tab.
 
         sourcesToShow.forEach(source => {
             const chip = document.createElement('div');

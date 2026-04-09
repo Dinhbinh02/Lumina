@@ -3917,7 +3917,6 @@ button {
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   height: 100%;
-  padding: 0 8px;
 }
 
 .spotlight-tabs-list::-webkit-scrollbar {
