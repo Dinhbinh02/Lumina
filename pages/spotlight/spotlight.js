@@ -1576,10 +1576,32 @@ function updateWebChips() {
         sourcesToShow.forEach(source => {
             const chip = document.createElement('div');
             chip.className = `lumina-web-chip ${source.isPinned ? 'is-active' : ''}`;
-            chip.title = source.url;
+            chip.removeAttribute('title'); // Không dùng native title
+
+            // Tooltip delegation giống tag
+            chip.addEventListener('mouseenter', (e) => {
+                // Tooltip hiển thị text đầy đủ
+                if (window.LuminaChatUI && typeof LuminaChatUI.prototype._showTagTooltip === 'function') {
+                    LuminaChatUI.prototype._showTagTooltip(chip, source.title || '');
+                }
+            });
+            chip.addEventListener('mouseleave', (e) => {
+                if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
+                    LuminaChatUI.prototype._hideTagTooltip();
+                }
+            });
             
             const titleSpan = document.createElement('span');
-            titleSpan.textContent = source.title;
+            // Hiển thị dạng đầu ... cuối nếu quá dài
+            const maxLen = 18;
+            const title = source.title || '';
+            if (title.length > maxLen) {
+                const head = title.slice(0, 7).trim();
+                const tail = title.slice(-7).trim();
+                titleSpan.textContent = head + '...' + tail;
+            } else {
+                titleSpan.textContent = title;
+            }
             chip.appendChild(titleSpan);
 
             chip.onclick = (e) => {

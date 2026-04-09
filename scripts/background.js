@@ -12,34 +12,47 @@ const DEFAULTS = LUMINA_DEFAULTS;
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
 
 // Side Panel State Tracking
-let openSidePanelWindows = new Set();
+const sidePanelPorts = new Map(); // windowId -> chrome.runtime.Port
 
+// On startup, we might already have open panels (from a previous worker session)
 chrome.storage.session.get(['open_sidepanel_windows'], (result) => {
     if (result.open_sidepanel_windows) {
-        result.open_sidepanel_windows.forEach(id => openSidePanelWindows.add(id));
+        // We restore the keys into the Map. The value will be null until the panel re-connects,
+        // but .has(windowId) will correctly return true, allowing toggling to work.
+        result.open_sidepanel_windows.forEach(id => {
+            if (!sidePanelPorts.has(id)) {
+                sidePanelPorts.set(id, null);
+            }
+        });
     }
 });
 
+// Persist the list of open sidepanels into session storage for state stability
 function updateOpenSidePanelsSession() {
-    const windows = Array.from(openSidePanelWindows);
-    chrome.storage.session.set({ open_sidepanel_windows: windows });
+    const windowIds = Array.from(sidePanelPorts.keys());
+    chrome.storage.session.set({ open_sidepanel_windows: windowIds });
 }
 
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-sidepanel') {
         let connectedWindowId = null;
+        
         port.onMessage.addListener((msg) => {
-            if (msg.action === 'sidepanel_init' || msg.windowId) {
-                connectedWindowId = msg.windowId;
-                if (connectedWindowId) {
-                    openSidePanelWindows.add(connectedWindowId);
-                    updateOpenSidePanelsSession();
+            if (msg.windowId) {
+                // If this window already had a port, clear it
+                if (connectedWindowId && connectedWindowId !== msg.windowId) {
+                    sidePanelPorts.delete(connectedWindowId);
                 }
+                
+                connectedWindowId = msg.windowId;
+                sidePanelPorts.set(connectedWindowId, port);
+                updateOpenSidePanelsSession();
             }
         });
+
         port.onDisconnect.addListener(() => {
-            if (connectedWindowId) {
-                openSidePanelWindows.delete(connectedWindowId);
+            if (connectedWindowId && sidePanelPorts.get(connectedWindowId) === port) {
+                sidePanelPorts.delete(connectedWindowId);
                 updateOpenSidePanelsSession();
             }
         });
@@ -59,7 +72,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 async function toggleSidePanel(windowId) {
     if (!windowId) return;
-    if (openSidePanelWindows.has(windowId)) {
+    if (sidePanelPorts.has(windowId)) {
         if (chrome.sidePanel.close) {
             chrome.sidePanel.close({ windowId }).catch(() => { });
         } else {
@@ -1108,7 +1121,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case 'check_sidepanel_open': {
             const windowIdSync = sender.tab ? sender.tab.windowId : null;
-            sendResponse({ isOpen: !!(windowIdSync && openSidePanelWindows.has(windowIdSync)) });
+            sendResponse({ isOpen: !!(windowIdSync && sidePanelPorts.has(windowIdSync)) });
             return;
         }
 
@@ -1131,7 +1144,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     url: sender.tab.url
                 } : null;
                 
-                if (sourceTab && openSidePanelWindows.has(windowIdManual)) {
+                if (sourceTab && sidePanelPorts.has(windowIdManual)) {
                     chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab });
                 }
             }
@@ -1164,7 +1177,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     isInternal: isInternal
                 };
 
-                if (openSidePanelWindows.has(windowIdQuery)) {
+                if (sidePanelPorts.has(windowIdQuery)) {
                     chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, ...queryData });
                 } else {
                     chrome.storage.session.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData });
