@@ -78,7 +78,13 @@ let questionMappings = [];
 let askSelectionPopupEnabled = false;
 let advancedParamsByModel = {};
 let pinnedWebSources = []; // Array of { tabId, title, url }
+let webSourceSelectionsByPageTabId = {}; // browserTabId -> Array<{ tabId, title, url }>
 let currentBrowserTab = null; // Currently active browser tab
+let webTabPickerEl = null;
+let webTabPickerAnchorEl = null;
+let webTabPickerOutsideHandler = null;
+let webTabPickerKeyHandler = null;
+let webTabsTooltipEl = null;
 
 // Ask Selection (Spotlight internal)
 let spotlightAskSourcePane = 'primary';
@@ -114,6 +120,96 @@ function applyFontSize(size) {
     if (!size) return;
     document.body.style.setProperty('font-size', size + 'px', 'important');
     document.documentElement.style.setProperty('--lumina-fontSize', size + 'px', 'important');
+}
+
+const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
+
+function getCurrentWebSelectionKey() {
+    return currentBrowserTab && isWebPageUrl(currentBrowserTab.url) ? String(currentBrowserTab.tabId) : null;
+}
+
+function getWebSelectionStorageKey(pageTabId) {
+    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${String(pageTabId)}`;
+}
+
+function readWebSelectionFromStorage(pageTabId) {
+    try {
+        const rawValue = localStorage.getItem(getWebSelectionStorageKey(pageTabId));
+        if (!rawValue) return [];
+        const parsedValue = JSON.parse(rawValue);
+        return Array.isArray(parsedValue)
+            ? parsedValue.filter((source) => source && isWebPageUrl(source.url)).map((source) => ({
+                tabId: source.tabId,
+                title: source.title,
+                url: source.url
+            }))
+            : [];
+    } catch (error) {
+        console.warn('[Spotlight] Failed to read web selection from localStorage:', error);
+        return [];
+    }
+}
+
+function writeWebSelectionToStorage(pageTabId, selection) {
+    const key = getWebSelectionStorageKey(pageTabId);
+    const validSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url));
+
+    if (validSelection.length > 0) {
+        localStorage.setItem(key, JSON.stringify(validSelection.map((source) => ({
+            tabId: source.tabId,
+            title: source.title,
+            url: source.url
+        }))));
+    } else {
+        localStorage.removeItem(key);
+    }
+}
+
+function deleteWebSelectionFromStorage(pageTabId) {
+    localStorage.removeItem(getWebSelectionStorageKey(pageTabId));
+}
+
+function saveCurrentWebSelection() {
+    const key = getCurrentWebSelectionKey();
+    if (!key) return;
+
+    const selection = (pinnedWebSources || []).filter((source) => source && isWebPageUrl(source.url));
+    webSourceSelectionsByPageTabId[key] = selection.map((source) => ({
+        tabId: source.tabId,
+        title: source.title,
+        url: source.url
+    }));
+    writeWebSelectionToStorage(key, selection);
+}
+
+function loadCurrentWebSelection() {
+    const key = getCurrentWebSelectionKey();
+    const selection = key ? readWebSelectionFromStorage(key) : [];
+    webSourceSelectionsByPageTabId[key] = selection;
+    pinnedWebSources = selection.map((source) => ({
+        tabId: source.tabId,
+        title: source.title,
+        url: source.url
+    }));
+}
+
+function updateWebSelectionForTab(tabId, updater) {
+    const stringTabId = String(tabId);
+    const storageKeys = Object.keys(localStorage).filter((key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX));
+
+    storageKeys.forEach((storageKey) => {
+        const pageTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
+        const updatedSelection = readWebSelectionFromStorage(pageTabId)
+            .map((source) => updater(source, stringTabId))
+            .filter(Boolean);
+
+        writeWebSelectionToStorage(pageTabId, updatedSelection);
+        webSourceSelectionsByPageTabId[pageTabId] = updatedSelection;
+    });
+
+    if (getCurrentWebSelectionKey()) {
+        loadCurrentWebSelection();
+    }
 }
 
 /**
@@ -1500,124 +1596,468 @@ function setupWebSourceTracking() {
                 syncCurrentBrowserTab();
             }
             
-            // Update pinned items if details changed
-            const pinned = pinnedWebSources.find(p => p.tabId === tabId);
-            if (pinned) {
-                pinned.title = tab.title || pinned.title;
-                pinned.url = tab.url || pinned.url;
+            updateWebSelectionForTab(tabId, (source, sourceTabId) => {
+                if (String(source.tabId) !== sourceTabId) return source;
+                return {
+                    tabId: source.tabId,
+                    title: tab.title || source.title,
+                    url: tab.url || source.url
+                };
+            });
+
+            if ((pinnedWebSources || []).some((source) => String(source.tabId) === String(tabId))) {
                 updateWebChips();
+            }
+
+            if (webTabPickerEl) {
+                refreshWebTabPicker();
             }
         }
     });
 
     // 4. Listen for tab closure
     chrome.tabs.onRemoved.addListener((tabId) => {
-        pinnedWebSources = pinnedWebSources.filter(p => p.tabId !== tabId);
+        updateWebSelectionForTab(tabId, (source, sourceTabId) => {
+            if (String(source.tabId) === sourceTabId) return null;
+            return source;
+        });
+        deleteWebSelectionFromStorage(tabId);
+        delete webSourceSelectionsByPageTabId[String(tabId)];
+        pinnedWebSources = pinnedWebSources.filter((source) => String(source.tabId) !== String(tabId));
         updateWebChips();
     });
+}
+
+function isWebPageUrl(url) {
+    return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
 }
 
 function syncCurrentBrowserTab() {
     // BUG FIX: Current window is the Spotlight window. We need the LAST FOCUSED window (the webpage window).
     chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
         let activeTab = tabs[0];
+
+        saveCurrentWebSelection();
         
         // If the last focused window is THIS extension window (spotlight), 
         // we might need to look further back or just skip if none found.
-        if (activeTab && activeTab.url.startsWith('chrome-extension://')) {
+        if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
             // Find the most recent non-extension active tab
             chrome.windows.getAll({ populate: true }, (windows) => {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
                     .sort((a, b) => b.id - a.id); // Heuristic if lastFocused fails
                 
-                const realTab = sortedWindows.map(w => w.tabs.find(t => t.active)).find(t => t && !t.url.startsWith('chrome-extension://'));
+                const realTab = sortedWindows
+                    .map(w => w.tabs.find(t => t.active))
+                    .find(t => t && isWebPageUrl(t.url));
                 if (realTab) {
                     currentBrowserTab = {
                         tabId: realTab.id,
                         title: realTab.title || 'Untitled',
                         url: realTab.url
                     };
+                    loadCurrentWebSelection();
                     updateWebChips();
                 }
             });
             return;
         }
 
-        if (activeTab && !activeTab.url.startsWith('chrome://')) {
+        if (activeTab && isWebPageUrl(activeTab.url)) {
             currentBrowserTab = {
                 tabId: activeTab.id,
                 title: activeTab.title || 'Untitled',
                 url: activeTab.url
             };
+            loadCurrentWebSelection();
         } else {
             currentBrowserTab = null;
+            pinnedWebSources = [];
         }
         updateWebChips();
     });
 }
 
+function formatHeadTailTitle(text, maxLen = 18, headLen = 7, tailLen = 7) {
+    const safeText = (text || '').trim();
+    if (!safeText) return 'Untitled';
+    if (safeText.length <= maxLen) return safeText;
+    return `${safeText.slice(0, headLen).trim()}...${safeText.slice(-tailLen).trim()}`;
+}
+
+function closeWebTabPicker() {
+    if (webTabPickerOutsideHandler) {
+        document.removeEventListener('mousedown', webTabPickerOutsideHandler, true);
+        webTabPickerOutsideHandler = null;
+    }
+    if (webTabPickerKeyHandler) {
+        document.removeEventListener('keydown', webTabPickerKeyHandler, true);
+        webTabPickerKeyHandler = null;
+    }
+    if (webTabPickerEl) {
+        webTabPickerEl.remove();
+        webTabPickerEl = null;
+    }
+    webTabPickerAnchorEl = null;
+}
+
+function refreshWebTabPicker() {
+    const anchorEl = webTabPickerAnchorEl;
+    if (!anchorEl) return;
+
+    closeWebTabPicker();
+    openWebTabPicker(anchorEl);
+}
+
+function ensureWebTabsTooltip() {
+    if (webTabsTooltipEl) return;
+    webTabsTooltipEl = document.createElement('div');
+    webTabsTooltipEl.className = 'lumina-web-tabs-tooltip';
+    webTabsTooltipEl.style.position = 'fixed';
+    webTabsTooltipEl.style.zIndex = '2147483647';
+    webTabsTooltipEl.style.pointerEvents = 'none';
+    webTabsTooltipEl.style.display = 'none';
+    document.body.appendChild(webTabsTooltipEl);
+}
+
+function hideWebTabsTooltip() {
+    if (!webTabsTooltipEl) return;
+    webTabsTooltipEl.style.display = 'none';
+    webTabsTooltipEl.style.opacity = '0';
+}
+
+function showWebTabsTooltip(target, sources) {
+    if (!target || !Array.isArray(sources) || sources.length === 0) return;
+
+    ensureWebTabsTooltip();
+    webTabsTooltipEl.innerHTML = '';
+
+    sources.forEach((source, idx) => {
+        const item = document.createElement('div');
+        item.className = 'lumina-web-tabs-tooltip-item';
+        item.textContent = `${idx + 1}. ${source.title || source.url || 'Untitled'}`;
+        webTabsTooltipEl.appendChild(item);
+    });
+
+    const viewportPadding = 12;
+    webTabsTooltipEl.style.maxWidth = `${Math.max(240, Math.min(420, window.innerWidth - (viewportPadding * 2)))}px`;
+    webTabsTooltipEl.style.display = 'block';
+    webTabsTooltipEl.style.visibility = 'hidden';
+    webTabsTooltipEl.style.opacity = '0';
+
+    requestAnimationFrame(() => {
+        const rect = target.getBoundingClientRect();
+        const tooltipWidth = webTabsTooltipEl.offsetWidth;
+        const tooltipHeight = webTabsTooltipEl.offsetHeight;
+        const targetWidth = rect.width;
+
+        let topPosition = rect.top - tooltipHeight - 12;
+        if (topPosition < viewportPadding) {
+            topPosition = rect.bottom + 12;
+        }
+
+        const centeredLeft = rect.left + (targetWidth / 2) - (tooltipWidth / 2);
+        const clampedLeft = Math.max(viewportPadding, Math.min(centeredLeft, window.innerWidth - tooltipWidth - viewportPadding));
+
+        webTabsTooltipEl.style.left = `${clampedLeft}px`;
+        webTabsTooltipEl.style.top = `${topPosition}px`;
+        webTabsTooltipEl.style.visibility = 'visible';
+        webTabsTooltipEl.style.opacity = '1';
+    });
+}
+
+function openWebTabPicker(anchorEl) {
+    if (!anchorEl) return;
+
+    if (webTabPickerEl && webTabPickerAnchorEl === anchorEl) {
+        closeWebTabPicker();
+        return;
+    }
+
+    closeWebTabPicker();
+
+    chrome.tabs.query({ windowType: 'normal' }, (tabs) => {
+        const availableTabs = (tabs || [])
+            .filter((tab) => tab && isWebPageUrl(tab.url))
+            .map((tab) => ({
+                tabId: tab.id,
+                title: tab.title || 'Untitled',
+                url: tab.url,
+                isActive: !!tab.active
+            }));
+
+        const selectedIds = new Set(pinnedWebSources.map((source) => source.tabId));
+
+        const picker = document.createElement('div');
+        picker.className = 'lumina-web-tab-picker';
+
+        const header = document.createElement('div');
+        header.className = 'lumina-web-tab-picker-header';
+        header.textContent = 'Select tabs';
+        picker.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'lumina-web-tab-picker-list';
+
+        if (availableTabs.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'lumina-web-tab-picker-empty';
+            empty.textContent = 'No readable web tabs available';
+            list.appendChild(empty);
+        } else {
+            availableTabs.forEach((tab) => {
+                const row = document.createElement('label');
+                row.className = 'lumina-web-tab-picker-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'lumina-web-tab-picker-checkbox';
+                checkbox.value = String(tab.tabId);
+                checkbox.checked = selectedIds.has(tab.tabId);
+                checkbox.addEventListener('change', () => {
+                    const selectedSet = new Set(
+                        Array.from(list.querySelectorAll('.lumina-web-tab-picker-checkbox:checked')).map((item) => Number(item.value))
+                    );
+
+                    pinnedWebSources = availableTabs
+                        .filter((item) => selectedSet.has(item.tabId))
+                        .map((item) => ({
+                            tabId: item.tabId,
+                            title: item.title,
+                            url: item.url
+                        }));
+
+                    saveCurrentWebSelection();
+                    updateWebChips();
+                });
+
+                const textWrap = document.createElement('div');
+                textWrap.className = 'lumina-web-tab-picker-item-text';
+
+                const titleEl = document.createElement('div');
+                titleEl.className = 'lumina-web-tab-picker-item-title';
+                titleEl.textContent = tab.title;
+
+                const urlEl = document.createElement('div');
+                urlEl.className = 'lumina-web-tab-picker-item-url';
+                urlEl.textContent = tab.url;
+
+                textWrap.appendChild(titleEl);
+                textWrap.appendChild(urlEl);
+
+                row.appendChild(checkbox);
+                row.appendChild(textWrap);
+                list.appendChild(row);
+            });
+        }
+
+        picker.appendChild(list);
+
+        const actions = document.createElement('div');
+        actions.className = 'lumina-web-tab-picker-actions';
+
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'lumina-web-tab-picker-btn is-ghost';
+        clearBtn.textContent = 'Clear';
+        clearBtn.addEventListener('click', () => {
+            pinnedWebSources = [];
+            list.querySelectorAll('.lumina-web-tab-picker-checkbox').forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+            saveCurrentWebSelection();
+            updateWebChips();
+            closeWebTabPicker();
+        });
+
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.type = 'button';
+        selectAllBtn.className = 'lumina-web-tab-picker-btn is-primary';
+        selectAllBtn.textContent = 'Select All';
+        selectAllBtn.addEventListener('click', () => {
+            const checkboxList = list.querySelectorAll('.lumina-web-tab-picker-checkbox');
+            checkboxList.forEach((checkbox) => {
+                checkbox.checked = true;
+            });
+
+            pinnedWebSources = availableTabs.map((item) => ({
+                tabId: item.tabId,
+                title: item.title,
+                url: item.url
+            }));
+
+            saveCurrentWebSelection();
+            updateWebChips();
+        });
+
+        actions.appendChild(clearBtn);
+        actions.appendChild(selectAllBtn);
+        picker.appendChild(actions);
+
+        document.body.appendChild(picker);
+
+        const rect = anchorEl.getBoundingClientRect();
+        const wrapper = anchorEl.closest('.lumina-chat-input-wrapper') || anchorEl.closest('.lumina-input-container');
+        const preferredWidth = Math.min(wrapper ? wrapper.getBoundingClientRect().width : rect.width, window.innerWidth - 20);
+        picker.style.width = `${preferredWidth}px`;
+
+        const pickerHeight = picker.offsetHeight;
+        let left = Math.max(10, Math.min(rect.left, window.innerWidth - preferredWidth - 10));
+        let top = rect.bottom + 8;
+        if (top + pickerHeight > window.innerHeight - 12) {
+            top = Math.max(12, rect.top - pickerHeight - 8);
+        }
+
+        picker.style.left = `${left}px`;
+        picker.style.top = `${top}px`;
+
+        webTabPickerEl = picker;
+        webTabPickerAnchorEl = anchorEl;
+
+        webTabPickerOutsideHandler = (event) => {
+            if (!webTabPickerEl) return;
+            if (webTabPickerEl.contains(event.target) || (webTabPickerAnchorEl && webTabPickerAnchorEl.contains(event.target))) return;
+            closeWebTabPicker();
+        };
+
+        webTabPickerKeyHandler = (event) => {
+            if (event.key === 'Escape') {
+                closeWebTabPicker();
+            }
+        };
+
+        setTimeout(() => {
+            if (!webTabPickerEl) return;
+            document.addEventListener('mousedown', webTabPickerOutsideHandler, true);
+            document.addEventListener('keydown', webTabPickerKeyHandler, true);
+        }, 0);
+    });
+}
+
 function updateWebChips() {
+    hideWebTabsTooltip();
     const containers = document.querySelectorAll('.lumina-web-chips-container');
     containers.forEach(container => {
         container.innerHTML = '';
-        
-        const sourcesToShow = [];
-        
-        // Only show current tab context to stay focused
-        if (currentBrowserTab) {
-            const isPinned = pinnedWebSources.some(p => p.tabId === currentBrowserTab.tabId);
-            sourcesToShow.push({ ...currentBrowserTab, isPinned, isCurrent: true });
+
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'lumina-web-chip-add';
+        addButton.textContent = '+';
+        addButton.setAttribute('aria-label', 'Select web tabs');
+        addButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openWebTabPicker(addButton);
+        });
+        container.appendChild(addButton);
+
+        const selectedSources = pinnedWebSources.filter((source) => isWebPageUrl(source.url));
+        if (!currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) {
+            return;
         }
 
-        // We no longer show other pinned sources here to fulfill user request 
-        // to only show the chip of the current focused tab.
+        const currentIsSelected = selectedSources.some((source) => source.tabId === currentBrowserTab.tabId);
 
-        sourcesToShow.forEach(source => {
+        if (!currentIsSelected) {
             const chip = document.createElement('div');
-            chip.className = `lumina-web-chip ${source.isPinned ? 'is-active' : ''}`;
-            chip.removeAttribute('title'); // Không dùng native title
+            chip.className = 'lumina-web-chip';
+            chip.removeAttribute('title');
 
-            // Tooltip delegation giống tag
-            chip.addEventListener('mouseenter', (e) => {
-                // Tooltip hiển thị text đầy đủ
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = formatHeadTailTitle(currentBrowserTab.title || 'Untitled');
+            chip.appendChild(titleSpan);
+
+            chip.addEventListener('mouseenter', () => {
                 if (window.LuminaChatUI && typeof LuminaChatUI.prototype._showTagTooltip === 'function') {
-                    LuminaChatUI.prototype._showTagTooltip(chip, source.title || '');
+                    LuminaChatUI.prototype._showTagTooltip(chip, currentBrowserTab.title || '');
                 }
             });
-            chip.addEventListener('mouseleave', (e) => {
+
+            chip.addEventListener('mouseleave', () => {
+                hideWebTabsTooltip();
                 if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
                     LuminaChatUI.prototype._hideTagTooltip();
                 }
             });
-            
-            const titleSpan = document.createElement('span');
-            // Hiển thị dạng đầu ... cuối nếu quá dài
-            const maxLen = 18;
-            const title = source.title || '';
-            if (title.length > maxLen) {
-                const head = title.slice(0, 7).trim();
-                const tail = title.slice(-7).trim();
-                titleSpan.textContent = head + '...' + tail;
-            } else {
-                titleSpan.textContent = title;
-            }
-            chip.appendChild(titleSpan);
 
-            chip.onclick = (e) => {
-                e.stopPropagation();
-                toggleWebSourcePin(source);
-            };
+            chip.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleWebSourcePin(currentBrowserTab, true);
+            });
 
             container.appendChild(chip);
+            return;
+        }
+
+        const hasMultipleTabs = selectedSources.length > 1;
+        const source = hasMultipleTabs
+            ? {
+                tabId: 'summary',
+                title: `${selectedSources.length} Tabs`,
+                url: '',
+                isActive: true,
+                isSummary: true
+            }
+            : {
+                ...selectedSources[0],
+                isActive: true,
+                isSummary: false
+            };
+
+        const chip = document.createElement('div');
+        chip.className = `lumina-web-chip ${source.isActive ? 'is-active' : ''}`;
+        chip.removeAttribute('title');
+
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled');
+        chip.appendChild(titleSpan);
+
+        chip.addEventListener('mouseenter', () => {
+            if (hasMultipleTabs) {
+                showWebTabsTooltip(chip, selectedSources);
+                return;
+            }
+            if (window.LuminaChatUI && typeof LuminaChatUI.prototype._showTagTooltip === 'function') {
+                LuminaChatUI.prototype._showTagTooltip(chip, source.title || '');
+            }
         });
+
+        chip.addEventListener('mouseleave', () => {
+            hideWebTabsTooltip();
+            if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
+                LuminaChatUI.prototype._hideTagTooltip();
+            }
+        });
+
+        chip.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (hasMultipleTabs) {
+                openWebTabPicker(addButton);
+                return;
+            }
+            toggleWebSourcePin(currentBrowserTab);
+        });
+
+        container.appendChild(chip);
     });
 }
 
 function toggleWebSourcePin(source, forceState = null) {
+    if (!source || !isWebPageUrl(source.url)) return;
+
     const idx = pinnedWebSources.findIndex(p => p.tabId === source.tabId);
     if (idx > -1) {
-        if (forceState === true) return; // Already pinned
+        if (forceState === true) {
+            // Keep selected state but refresh tab metadata
+            pinnedWebSources[idx] = {
+                tabId: source.tabId,
+                title: source.title || pinnedWebSources[idx].title || 'Untitled',
+                url: source.url || pinnedWebSources[idx].url
+            };
+            updateWebChips();
+            return;
+        }
         // Unpin
         pinnedWebSources.splice(idx, 1);
     } else {
@@ -1629,6 +2069,7 @@ function toggleWebSourcePin(source, forceState = null) {
             url: source.url
         });
     }
+    saveCurrentWebSelection();
     updateWebChips();
 }
 
