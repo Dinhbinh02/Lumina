@@ -94,6 +94,8 @@ let handledQueryIds = new Set();
 
 // Track whether the last key pressed was a modifier that was pressed alone (no combo)
 let modifierKeyPressedAlone = false;
+let lastSubmitTime = 0;
+let lastSubmitText = "";
 
 const GROUP_COLORS = [
     '#4285f4', // Blue
@@ -1595,7 +1597,7 @@ function setupWebSourceTracking() {
             if (tab.active) {
                 syncCurrentBrowserTab();
             }
-            
+
             updateWebSelectionForTab(tabId, (source, sourceTabId) => {
                 if (String(source.tabId) !== sourceTabId) return source;
                 return {
@@ -1638,7 +1640,7 @@ function syncCurrentBrowserTab() {
         let activeTab = tabs[0];
 
         saveCurrentWebSelection();
-        
+
         // If the last focused window is THIS extension window (spotlight), 
         // we might need to look further back or just skip if none found.
         if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
@@ -1647,7 +1649,7 @@ function syncCurrentBrowserTab() {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
                     .sort((a, b) => b.id - a.id); // Heuristic if lastFocused fails
-                
+
                 const realTab = sortedWindows
                     .map(w => w.tabs.find(t => t.active))
                     .find(t => t && isWebPageUrl(t.url));
@@ -2091,6 +2093,7 @@ async function init() {
         inputAreaPrimary.innerHTML = LuminaChatUI.getChatInputHTML(true); // autofocus=true
         sharedInputUI = new LuminaChatUI(inputAreaPrimary, {
             isSpotlight: true,
+            isPrimaryInput: true,
             alwaysExpanded: true,
             onSubmit: (text, images, extra) => {
                 const activeTab = tabs[activeTabIndex];
@@ -2103,6 +2106,7 @@ async function init() {
         inputAreaSecondary.innerHTML = LuminaChatUI.getChatInputHTML(false);
         sharedInputUISecondary = new LuminaChatUI(inputAreaSecondary, {
             isSpotlight: true,
+            isPrimaryInput: true, // Also acts as a primary for its own container
             alwaysExpanded: true,
             onSubmit: (text, images, extra) => {
                 const activeTab = tabs[secondaryActiveTabIndex];
@@ -2160,7 +2164,7 @@ async function init() {
             }
             if (changes.readWebpage) readWebpageEnabled = !!changes.readWebpage.newValue;
             if (changes.advancedParamsByModel) advancedParamsByModel = changes.advancedParamsByModel.newValue || {};
-            
+
             // Handle Font Size changes (check both top-level and globalDefaults)
             if (changes.fontSize) {
                 applyFontSize(changes.fontSize.newValue);
@@ -2209,12 +2213,12 @@ async function init() {
                         return;
                     }
                     if (queryId) handledQueryIds.add(queryId);
-                    
+
                     // Automatically pin source tab if requested via shortcut (from external page)
                     if (sourceTab) {
                         toggleWebSourcePin(sourceTab, true);
                     }
-                    
+
                     handleSubmit(query, [], { mode: mode || 'qa' }, tabs[activeTabIndex], displayQuery);
                 }
             });
@@ -2246,12 +2250,12 @@ async function init() {
                 const currentTab = tabs[activeTabIndex];
                 if (currentTab) {
                     if (queryId) handledQueryIds.add(queryId);
-                    
+
                     // Automatically pin source tab if present in pending query
                     if (sourceTab) {
                         toggleWebSourcePin(sourceTab, true);
                     }
-                    
+
                     handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
                 } else {
                     setTimeout(checkReady, 30);
@@ -2510,6 +2514,18 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     const currentTab = targetTab || tabs[activeTabIndex];
     if (!currentTab) return;
 
+    // Prevention of duplicate submissions (tight loop protection)
+    const now = Date.now();
+    const isVeryClose = lastSubmitTime && (now - lastSubmitTime < 50);
+    const isDuplicateText = lastSubmitTime && (now - lastSubmitTime < 500) && lastSubmitText === text;
+    
+    if (isVeryClose || isDuplicateText) {
+        console.warn('[Lumina] Rapid submission suppressed:', { text, diff: now - lastSubmitTime });
+        return;
+    }
+    lastSubmitTime = now;
+    lastSubmitText = text;
+
     // Use the tab's specific chatUI instance
     const targetChatUI = currentTab.chatUIInstance;
 
@@ -2558,7 +2574,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         await targetChatUI.handleTranslation(text);
         return;
     }
-    
+
     if (extra.mode === 'dictionary' || (text && text.match(/^Define: /i))) {
         const word = displayQuery || (text ? text.replace(/^Define: /i, '').trim() : '');
         if (word) {
@@ -2590,27 +2606,27 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         const result = targetChatUI.collectComments();
         // Extract any global feedback typed next to @Comment
         const globalFeedback = text.replace(/@Comment/gi, '').trim();
-        
+
         if (result.instructions || globalFeedback) {
             // Build a multi-layered instruction block
             let refinementPrompt = `Revision Request: Refine the draft below based on my feedback.\n\n`;
-            
+
             if (globalFeedback) {
                 refinementPrompt += `[GLOBAL INSTRUCTION]:\n${globalFeedback}\n\n`;
             }
-            
+
             if (result.instructions) {
                 refinementPrompt += `[SPECIFIC INLINE COMMENTS]:\n${result.instructions}\n\n`;
             }
-            
+
             refinementPrompt += `[ORIGINAL DRAFT]:\n${result.draft}\n\n`;
             refinementPrompt += `[FINAL REVISED VERSION]:`;
-            
+
             apiText = refinementPrompt;
-            
+
             // Safety net system instruction
             extra.systemOverride = "Act as a professional editor. Apply the provided instructions to the draft. Output ONLY the revised text.";
-            
+
             // Force proofread mode for better UI handling
             if (extra.mode !== 'proofread') {
                 extra.mode = 'proofread';
@@ -2744,8 +2760,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 }
-
-
 
 // Handle translation requests - use shared LuminaChatUI method
 async function handleTranslation(text) {
@@ -2983,7 +2997,7 @@ function setupGlobalListeners() {
                         // Build full question with variable replacement
                         let fullQuestion;
                         const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph|\$Container/i.test(mapping.prompt);
-                        
+
                         if (hasVariables) {
                             fullQuestion = mapping.prompt
                                 .replace(/\$SelectedText|"SelectedText"/gi, selection.trim())
