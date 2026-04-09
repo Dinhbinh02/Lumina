@@ -17,10 +17,9 @@
       <div class="sidebar-header">
         <div class="sidebar-title">
           <h1>Lumina</h1>
-          <button type="button" id="openSpotlightWebAppBtn" title="Open Sidepanel"
-            style="width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; color: var(--text-primary);cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s;">
+          <button type="button" id="openSpotlightWebAppBtn" title="Open Sidepanel" class="sidepanel-toggle-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+              stroke-linecap="round" stroke-linejoin="round" class="sidepanel-toggle-icon">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="9" y1="3" x2="9" y2="21"></line>
             </svg>
@@ -38,7 +37,7 @@
       <nav class="sidebar-nav">
         <div class="sidebar-nav-item active" data-section="ai-config">
           <div class="sidebar-nav-item-icon">⚙️</div>
-          Configuration
+          General Settings
         </div>
 
         <div class="sidebar-nav-item" data-section="shortcuts">
@@ -50,7 +49,7 @@
         <div class="sidebar-nav-item" data-section="anki-management">
           <div class="sidebar-nav-item-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"
-              stroke-linecap="round" stroke-linejoin="round" style="color: #00A9FF; transform: rotate(-20deg);">
+              stroke-linecap="round" stroke-linejoin="round" class="anki-status-icon">
               <path d="M12 2l2.75 6.25h6.75l-5.25 4.25 1.75 6.75-6-4.25-6 4.25 1.75-6.75-5.25-4.25h6.75L12 2z"></path>
             </svg>
           </div>
@@ -64,41 +63,24 @@
 
         <div class="sidebar-nav-item" data-section="account">
           <div class="sidebar-nav-item-icon">👤</div>
-          Account & Sync
+          Cloud & Sync
         </div>
 
       </nav>
 
-      <!-- Sidebar Footers Container -->
-      <div style="flex-shrink: 0; border-top: 1px solid var(--border-color); margin-top: 10px;">
-
-        <!-- Model Usage Counter -->
-        <div class="sidebar-footer" id="modelUsageFooter"
-          style="padding: 12px; display: flex; align-items: center; gap: 8px;">
-          <span>📊</span>
-          <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-            <span id="modelUsageName"
-              style="color: var(--text-secondary); font-weight: 520; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">MODEL</span>
-            <span id="modelUsageCount" style="font-weight: 520; color: var(--text-primary);">0
-              requests
-              today</span>
-            <span id="modelUsageReset" style="color: var(--text-secondary); opacity: 0.7;">Resets 7:00 AM (UTC+7)</span>
-          </div>
-        </div>
-
-      </div>
     </div> <!-- Closes Sidebar -->
 
     <div class="main-content">
       <!-- Configuration Section -->
       <div class="content-section active" id="ai-config">
         <div class="section-header">
-          <h2>Configuration</h2>
+          <h2>General Settings</h2>
+          <p>Configure your AI providers, models, and smart interaction features.</p>
         </div>
 
         <!-- Provider Management -->
         <div class="glass-card">
-          <div class="section-title">🔑 AI Provider<span class="info-tooltip"
+          <div class="card-header">🔑 AI Provider<span class="info-tooltip"
               data-tooltip="Add API keys to the providers below, then select a model to start using.">i</span></div>
 
           <!-- Provider List -->
@@ -107,24 +89,23 @@
           </div>
 
           <!-- Add Provider Button -->
-          <div style="display: flex; gap: 8px;">
-            <button type="button" id="addProviderBtn" class="add-provider-btn" style="flex: 1;">
+          <div class="flex gap-8">
+            <button type="button" id="addProviderBtn" class="add-provider-btn flex-1">
               + Add Provider
             </button>
-            <button type="button" id="checkApiKeysBtn" class="add-provider-btn"
-              style="flex: 1; background: var(--primary-color); color: white;">
+            <button type="button" id="checkApiKeysBtn" class="add-provider-btn btn-primary-compact">
               🔍 Check API Keys
             </button>
           </div>
 
           <!-- API Key Check Results -->
-          <div id="apiKeyResults" style="display: none; margin-bottom: 16px;">
-            <div id="apiKeyStatusTitle" style="font-weight: 600; margin-bottom: 8px;">API Key Status:</div>
-            <div id="apiKeyResultsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          <div id="apiKeyResults" class="hidden mb-16">
+            <div id="apiKeyStatusTitle" class="text-semibold mb-8">API Key Status:</div>
+            <div id="apiKeyResultsList" class="flex-col gap-6"></div>
           </div>
 
           <!-- Add/Edit Provider Form (hidden by default) -->
-          <div id="providerForm" class="provider-form" style="display: none;">
+          <div id="providerForm" class="provider-form hidden">
             <input type="hidden" id="providerFormId">
             <div class="form-group">
               <label for="providerFormName">Name <span class="text-required">*</span></label>
@@ -138,14 +119,14 @@
 
             </div>
             <div class="form-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label for="providerFormApiKey" style="margin-bottom: 0;">API Key</label>
+              <div class="items-center-mb8">
+                <label for="providerFormApiKey" class="mb-0">API Key</label>
                 <a id="providerApiKeyLink" href="#" target="_blank"
-                  style="color: var(--primary-color); display: none; text-decoration: none;">Get API
+                  class="text-link-color hidden list-none">Get API
                   Key</a>
               </div>
               <input type="text" id="providerFormApiKey" placeholder="Enter your API key...">
-              <div class="provider-api-hint" style="color: var(--text-secondary); margin-top: 6px;">
+              <div class="provider-api-hint text-secondary-color mt-6">
                 Multiple keys separated by commas. Auto-switches on rate limit.
               </div>
             </div>
@@ -157,18 +138,13 @@
         </div>
 
         <div class="glass-card mt-16">
-          <div class="section-title">📝 Model Management</div>
-
-          <!-- Model List -->
-          <label>Available Models <span class="info-tooltip"
-              data-tooltip="Add any models you want to use here. You can pick which one to use when chatting.">i</span></label>
-          <div id="textChainList" class="chain-list">
-            <div class="chain-empty-state">No models added. Add one below.</div>
+          <div class="card-header">📝 Model Management<span class="info-tooltip"
+              data-tooltip="Search and add models you want to use here. You can pick which one to use when chatting.">i</span>
           </div>
 
           <!-- Add to Chain -->
-          <label class="mt-16">Add New Model</label>
-          <div class="add-chain-area flex gap-12 items-end">
+          <label class="mb-12 block text-semibold">Add New Model</label>
+          <div class="add-chain-area flex gap-12 items-end mb-20">
             <div class="form-group form-group-provider">
               <label for="textChainProvider" class="label-small">Provider</label>
               <input type="text" id="textChainProvider" autocomplete="off" placeholder="Select..."
@@ -177,190 +153,106 @@
             </div>
             <div class="form-group form-group-model">
               <label for="textChainModel" class="label-small">Model</label>
-              <input type="text" id="textChainModel" autocomplete="off" class="input-element-bg">
+              <input type="text" id="textChainModel" autocomplete="off" class="input-element-bg"
+                placeholder="Type or select model...">
               <div id="textChainModelList" class="dropdown-list"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Smart Features -->
-        <div class="glass-card mt-16">
-          <div class="section-title">🧠 Smart Features</div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Read webpage</span>
-              <span class="feature-desc">Include current webpage content in every chat request for better
-                context.</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="readWebpage">
-              <span class="slider round"></span>
-            </label>
-          </div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Grounding with Google Search</span>
-              <span class="feature-desc">Enable Gemini grounding via Google Search for fresher, more verifiable answers.</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="enableGrounding">
-              <span class="slider round"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Voice Dictation Configuration -->
-        <div class="glass-card mt-16">
-          <div class="section-title">🎙️ Dictation</div>
-
-          <label>Select Dictation Model<span class="info-tooltip"
-              data-tooltip="Select a model for speech-to-text transcription.">i</span></label>
-          <div class="dictation-area">
-            <div class="form-group form-group-provider">
-              <label for="voiceProvider" class="label-small">Provider</label>
-              <input type="text" id="voiceProvider" autocomplete="off" placeholder="Select..."
-                class="input-readonly input-element-bg" readonly>
-              <div id="voiceProviderList" class="dropdown-list"></div>
-            </div>
-            <div class="form-group form-group-model">
-              <label for="voiceModel" class="label-small">Model</label>
-              <input type="text" id="voiceModel" autocomplete="off" class="input-element-bg">
-              <div id="voiceModelList" class="dropdown-list"></div>
+          <!-- Model List container -->
+          <div class="mt-20">
+            <label class="mb-12 block text-semibold">Model list</label>
+            <div id="textChainList">
+              <div class="chain-empty-state">No models added yet. Select a model above to add it.</div>
             </div>
           </div>
         </div>
 
-        <!-- Dictionary & Translation Configuration -->
+        <!-- Intelligent Features -->
         <div class="glass-card mt-16">
-          <div class="section-title">📖 Dictionary and Translation</div>
+          <div class="card-header">🧠 Intelligent Features</div>
 
-          <div class="pref-grid" style="margin-bottom: 0;">
-            <div class="form-group">
-              <label>Translation Provider</label>
-              <select id="transProvider">
-                <option value="ai">Text Model</option>
-                <option value="deepl">DeepL</option>
-                <option value="google">Google</option>
-              </select>
-            </div>
 
-            <div class="form-group">
-              <label>Dictionary Source</label>
-              <select id="dictProvider">
-                <option value="cambridge">Cambridge (En-En)</option>
-                <option value="cambridge_en_vi">Cambridge (En-Vi)</option>
-                <option value="ai">AI Dictionary (Lumina)</option>
-              </select>
-            </div>
-          </div>
 
-          <!-- DeepL Config (Only visible when DeepL is selected) -->
-          <div id="deeplConfig"
-            style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-            <div class="info-note mb-16">
-              <div class="info-note-wrapper">
-                <span class="info-note-icon">💡</span>
-                <span class="info-note-text">DeepL provides high quality translations. Get your free API key at <a
-                    href="https://www.deepl.com/pro-api" target="_blank">deepl.com</a>.</span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="deepLApiKey">DeepL API Key</label>
-              <input type="text" id="deepLApiKey" placeholder="Enter your DeepL API key..." class="input-element-bg">
-            </div>
-          </div>
-
-          <!-- AI Translation Model (Only visible when AI is selected) -->
-          <div id="aiTranslationConfig"
-            style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-            <label>Select Translation Model<span class="info-tooltip"
-                data-tooltip="Select a model for AI-powered translations.">i</span></label>
+          <!-- Dictation Configuration -->
+          <div class="mt-24 border-top pt-24">
+            <label class="mb-12 block">🎙️ Dictation Select Model<span class="info-tooltip" data-tooltip="Select a model for speech-to-text transcription.">i</span></label>
             <div class="dictation-area">
               <div class="form-group form-group-provider">
-                <label for="transModelProvider" class="label-small">Provider</label>
-                <input type="text" id="transModelProvider" autocomplete="off" placeholder="Select..."
-                  class="input-readonly input-element-bg" readonly>
-                <div id="transModelProviderList" class="dropdown-list"></div>
+                <label for="voiceProvider" class="label-small">Provider</label>
+                <input type="text" id="voiceProvider" autocomplete="off" placeholder="Select..." class="input-readonly input-element-bg" readonly>
+                <div id="voiceProviderList" class="dropdown-list"></div>
               </div>
               <div class="form-group form-group-model">
-                <label for="transModelInput" class="label-small">Model</label>
-                <input type="text" id="transModelInput" autocomplete="off" class="input-element-bg">
-                <div id="transModelList" class="dropdown-list"></div>
+                <label for="voiceModel" class="label-small">Model</label>
+                <input type="text" id="voiceModel" autocomplete="off" class="input-element-bg">
+                <div id="voiceModelList" class="dropdown-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Dictionary Configuration -->
+          <div class="mt-24 border-top pt-24">
+            <div class="form-row-item no-border p-0 mb-16">
+              <div class="feature-info">
+                <span class="feature-label">📖 AI Dictionary Lookup Toolbar</span>
+                <span class="feature-desc">Show a floating toolbar when text is selected</span>
+              </div>
+              <button type="button" id="askSelectionPopupBtn" class="status-btn btn-status-toggle">
+                Enabled
+              </button>
+            </div>
+
+            <label class="mb-12 block text-semibold">Dictionary Lookup Model<span class="info-tooltip" data-tooltip="Select a specific model for AI-powered word definitions in popups.">i</span></label>
+            <div class="dictation-area">
+              <div class="form-group form-group-provider">
+                <label for="dictProvider" class="label-small">Provider</label>
+                <input type="text" id="dictProvider" autocomplete="off" placeholder="Select..." class="input-readonly input-element-bg" readonly>
+                <div id="dictProviderList" class="dropdown-list"></div>
+              </div>
+              <div class="form-group form-group-model">
+                <label for="dictModel" class="label-small">Model</label>
+                <input type="text" id="dictModel" autocomplete="off" class="input-element-bg">
+                <div id="dictModelList" class="dropdown-list"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Google Search Configuration -->
+
         <div class="glass-card mt-16">
-          <div class="section-title">🔍 Image Lookup</div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Google API Key</span>
-              <span class="feature-desc"><a href="https://console.cloud.google.com/apis/credentials" target="_blank"
-                  class="text-link">Get Key from Cloud
-                  Console</a></span>
-            </div>
-            <input type="text" id="googleApiKey" class="input-fixed-200">
-          </div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Search Engine ID</span>
-              <span class="feature-desc"><a href="https://programmablesearchengine.google.com/" target="_blank"
-                  class="text-link">Create via Programmable Search</a></span>
-            </div>
-            <input type="text" id="googleCx" class="input-fixed-200">
-          </div>
-        </div>
-
-        <!-- Manual Instruction Card -->
-        <div class="glass-card mb-16" style="margin-bottom: 16px;">
-          <div class="section-title">🧠 Your instruction for Lumina</div>
-
-          <div class="info-note mb-16">
-            <div class="info-note-wrapper">
-              <span class="info-note-icon">💡</span>
-              <div class="info-note-text">
-                Add persistent instructions that Lumina will always follow in every conversation.
-              </div>
-            </div>
-          </div>
-
-          <!-- Instruction List -->
-          <div id="userFactsList" class="facts-list mb-16" style="max-height: 300px; overflow-y: auto;">
-            <!-- Facts will be rendered here -->
+          <div class="card-header">💡 Persistent Instructions<span class="info-tooltip"
+              data-tooltip="Add persistent instructions that Lumina will always follow in every conversation.">i</span>
           </div>
 
           <!-- Add New Instruction -->
-          <div class="add-chain-area flex gap-8 items-end">
-            <div class="form-group form-group-model">
-              <label for="newFactInput" class="label-small">Add New Instruction</label>
-              <input type="text" id="newFactInput" placeholder="e.g. Always explain metaphors" class="input-element-bg">
+          <div class="mb-20">
+            <label class="mb-12 block text-semibold">Add New Instruction</label>
+            <div class="form-group">
+              <input type="text" id="newFactInput" placeholder="e.g. Always explain metaphors"
+                class="input-element-bg">
             </div>
-            <button type="button" id="addFactBtn" class="btn-primary btn-chain-add" title="Add Fact">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
-            </button>
+          </div>
+
+          <!-- Instructions List -->
+          <div class="mt-20">
+            <label class="mb-12 block text-semibold">Instruction list</label>
+            <div id="userFactsList" class="facts-list scroll-auto max-h-300">
+              <div class="chain-empty-state">No instructions yet. Add new instruction above.</div>
+            </div>
           </div>
         </div>
 
         <!-- Appearance Card -->
         <div class="glass-card mt-16">
-          <div class="section-title">🎨 Appearance</div>
+          <div class="card-header">🎨 Appearance</div>
 
           <!-- Theme -->
           <div class="form-row-item">
             <div class="feature-info">
               <span class="feature-label">Theme</span>
             </div>
-            <div class="radio-group" style="width: 240px;">
+            <div class="radio-group w-240">
               <label class="radio-option">
                 <input type="radio" name="theme" value="light" checked>
                 <span>Light</span>
@@ -373,44 +265,6 @@
                 <input type="radio" name="theme" value="auto">
                 <span>Auto</span>
               </label>
-            </div>
-          </div>
-
-          <!-- Display Mode -->
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Display Mode</span>
-            </div>
-            <div class="radio-group" style="width: 240px;">
-              <label class="radio-option">
-                <input type="radio" name="displayMode" value="popup" checked>
-                <span>Popup</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="displayMode" value="sidepanel">
-                <span>Sidepanel</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Dimensions & Font -->
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Popup Width</span>
-            </div>
-            <div class="range-wrapper">
-              <input type="range" id="popupWidth" min="200" max="800" step="10" value="500" class="flex-1">
-              <span id="widthValue" class="range-value">500px</span>
-            </div>
-          </div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Popup Height</span>
-            </div>
-            <div class="range-wrapper">
-              <input type="range" id="popupHeight" min="200" max="800" step="10" value="420" class="flex-1">
-              <span id="heightValue" class="range-value">420px</span>
             </div>
           </div>
 
@@ -436,19 +290,6 @@
               </button>
             </div>
           </div>
-
-          <!-- Apply Defaults Button -->
-          <div style="padding-top: 8px; margin-top: 8px; display: flex; align-items: center; gap: 12px;">
-            <button type="button" id="resetSettingsBtn" class="btn-secondary"
-              style="width: 100px; flex-shrink: 0; height: 32px; padding: 0 12px;display: flex; align-items: center; justify-content: center; gap: 6px;">
-              Reset
-            </button>
-            <div style="flex: 1;"></div>
-            <button type="button" id="setGlobalDefaultsBtn" class="btn-primary"
-              style="width: 150px; flex-shrink: 0; height: 32px; padding: 0 12px;display: flex; align-items: center; justify-content: center; gap: 6px;">
-              Apply to all pages
-            </button>
-          </div>
         </div>
 
       </div>
@@ -457,48 +298,47 @@
       <!-- Anki Management Section -->
       <div class="content-section" id="anki-management">
         <div class="section-header">
-          <h2 class="section-title">Anki Management</h2>
+          <h2 class="card-header">Anki Management</h2>
         </div>
 
         <div class="anki-instructions-card">
-          <h3 style="margin-bottom: 12px; font-weight: 600;">Getting Started</h3>
-          <ul class="instruction-list" style="padding-left: 0; list-style-type: none;">
-            <li style="margin-bottom: 12px;">
+          <h3 class="title-semibold-mb12">Getting Started</h3>
+          <ul class="instruction-list list-unstyled">
+            <li class="mb-12">
               <strong>Step 1:</strong> Download and install Anki from
               <a href="https://apps.ankiweb.net/#downloads" target="_blank"
-                style="color: var(--primary-color); text-decoration: none; font-weight: 500;">AnkiWeb</a>
+                class="text-medium-primary no-underline">AnkiWeb</a>
             </li>
-            <li style="margin-bottom: 12px;">
+            <li class="mb-12">
               <strong>Step 2:</strong> Open Anki, go to <strong>Tools</strong> → <strong>Add-ons</strong> → <strong>Get
                 Add-ons...</strong>,
-              and enter code <span style="font-weight: bold; color: #0056d2;">2055492159</span> to install AnkiConnect.
+              and enter code <span class="anki-code">2055492159</span> to install AnkiConnect.
             </li>
-            <li style="margin-bottom: 12px;">
+            <li class="mb-12">
               <strong>Step 3:</strong> Restart Anki app to apply changes.
             </li>
           </ul>
-          <p class="anki-warning" style="color: #f57c00; font-weight: 500; margin-top: 10px;">⚠️ Note: Always keep the
+          <p class="anki-warning">⚠️ Note: Always keep the
             Anki
             app running while using this feature.</p>
         </div>
 
-        <div class="anki-action-row" style="display: flex; gap: 12px; margin-bottom: 32px;">
-          <button id="checkAnkiConnBtn" class="btn-secondary" style="flex: 1;">Check Connection</button>
-          <button id="openAnkiMgtBtn" class="btn-primary" style="flex: 1;">Open Anki Management</button>
+        <div class="anki-action-row mb-32 flex gap-12">
+          <button id="checkAnkiConnBtn" class="btn-secondary flex-1">Check Connection</button>
+          <button id="openAnkiMgtBtn" class="btn-primary flex-1">Open Anki Management</button>
         </div>
 
-        <div class="anki-note-section" style="border-top: 1px solid var(--border-color); padding-top: 24px;">
-          <h3 style="margin-bottom: 8px; font-weight: 600;">Quick Add Words</h3>
+        <div class="anki-note-section border-top pt-24">
+          <h3 class="title-semibold-mb8">Quick Add Words</h3>
           <p class="section-subtitle">Enter words to add (separate by comma or newline)</p>
-          <div class="quick-note-wrapper" style="margin-top:12px;">
+          <div class="quick-note-wrapper mt-12">
             <textarea id="ankiQuickNote" placeholder="e.g. apple, banana, cherry..."
-              style="width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: #fff; font-family: inherit;resize: vertical;"></textarea>
+              class="anki-textarea"></textarea>
             <span id="ankiQuickNoteCount" class="card-count-badge">0 cards</span>
           </div>
-          <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button id="clearAnkiNoteBtn" class="btn-secondary"
-              style="flex: 0 0 auto; padding: 8px 20px;">Clear</button>
-            <button id="addToAnkiBtn" class="btn-primary" style="flex: 1;">Add to Anki</button>
+          <div class="flex gap-12 mt-16">
+            <button id="clearAnkiNoteBtn" class="btn-secondary btn-secondary-small">Clear</button>
+            <button id="addToAnkiBtn" class="btn-primary flex-1">Add to Anki</button>
           </div>
         </div>
       </div>
@@ -508,107 +348,55 @@
           <h2>Account & Sync</h2>
         </div>
 
-        <!-- Google Account Card -->
+        <!-- Cloud & Sync -->
         <div class="glass-card">
-          <div class="section-title">👤 Google Account</div>
+          <div class="card-header">☁️ Cloud & Backup</div>
 
-          <div class="form-row-item" style="margin-bottom: 20px;">
-            <div class="feature-info">
-              <span class="feature-label">Google Client ID</span>
-              <span class="feature-desc">Used for settings sync (get from Google Cloud Console)</span>
-            </div>
-            <input type="text" id="googleClientId" class="input-fixed-200" placeholder="Paste your Client ID here">
-          </div>
-
-          <div class="form-row-item"
-            style="margin-bottom: 24px; border-bottom: 1px dashed var(--border-color); padding-bottom: 16px;">
-            <div class="feature-info">
-              <span class="feature-label">GitHub Client ID</span>
-              <span class="feature-desc">Used for Lumina Play (sync watch history via Gist)</span>
-            </div>
-            <input type="text" id="githubClientId" class="input-fixed-200" placeholder="Paste your GH Client ID here">
-          </div>
-
-          <div id="auth-logged-out" style="display: block;">
-            <div class="info-note mb-16">
-              <div class="info-note-wrapper">
-                <span class="info-note-icon">✨</span>
-                <div class="info-note-text">
-                  Sign in with Google to sync your settings across devices.
+          <!-- Account info -->
+          <div class="mb-24">
+            <div id="auth-logged-out" class="block">
+              <div class="info-note mb-16">
+                <div class="info-note-wrapper">
+                  <span class="info-note-icon">✨</span>
+                  <div class="info-note-text">Sign in to sync your settings across devices.</div>
                 </div>
               </div>
+              <button id="googleLoginBtn" class="btn-primary w-full">Sign in with Google</button>
             </div>
-            <button id="googleLoginBtn" class="btn-primary"
-              style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;">
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4" />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853" />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05" />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335" />
-              </svg>
-              Sign in with Google
-            </button>
-          </div>
-
-          <div id="auth-logged-in" style="display: none;">
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-              <img id="userAvatar" src="" alt="Avatar"
-                style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
-              <div>
-                <div id="userName" style="font-weight: 600;">User Name</div>
-                <div id="userEmail" style="color: var(--text-secondary);">user@example.com</div>
+            <div id="auth-logged-in" class="hidden">
+              <div class="user-profile-header mb-16">
+                <img id="userAvatar" src="" alt="Avatar" class="user-avatar">
+                <div>
+                  <div id="userName" class="text-semibold">User Name</div>
+                  <div id="userEmail" class="text-secondary-color">user@example.com</div>
+                </div>
               </div>
-            </div>
-            <button id="googleLogoutBtn" class="btn-secondary" style="width: 100%;">Sign Out</button>
-          </div>
-        </div>
-
-        <!-- Sync Card -->
-        <div class="glass-card mt-16" id="syncCard" style="opacity: 0.5; pointer-events: none;">
-          <div class="section-title">☁️ Data Sync</div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Sync Settings</span>
-              <span class="feature-desc">Sync providers, shortcuts, and preferences to cloud</span>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button id="syncUpBtn" class="btn-secondary" title="Upload to Cloud">
-                ↑ Upload
-              </button>
-              <button id="syncDownBtn" class="btn-secondary" title="Download from Cloud">
-                ↓ Download
-              </button>
+              <button id="googleLogoutBtn" class="btn-secondary w-full">Sign Out</button>
             </div>
           </div>
-          <div id="syncStatus" style="color: var(--text-secondary); text-align: center; margin-top: 8px;"></div>
-        </div>
 
-        <!-- Manual Backup Card (File) -->
-        <div class="glass-card mt-16">
-          <div class="section-title">💾 Manual Backup (File)</div>
-
-          <div class="form-row-item">
+          <!-- Sync actions -->
+          <div class="form-row-item border-top pt-20" id="syncCard">
             <div class="feature-info">
-              <span class="feature-label">Export / Import</span>
-              <span class="feature-desc">Backup settings to a local JSON file</span>
+              <span class="feature-label">Cloud Sync</span>
+              <span class="feature-desc">Sync providers and shortcuts to your account</span>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button id="exportSettingsBtn" class="btn-secondary" title="Save to computer">
-                Export to File
-              </button>
-              <input type="file" id="importSettingsFile" accept=".json" style="display: none;">
-              <button id="importSettingsBtn" class="btn-secondary" title="Restore from computer">
-                Import from File
-              </button>
+            <div class="flex gap-8">
+              <button id="syncUpBtn" class="btn-secondary">Upload</button>
+              <button id="syncDownBtn" class="btn-secondary">Download</button>
+            </div>
+          </div>
+
+          <!-- Manual backup -->
+          <div class="form-row-item border-top pt-20">
+            <div class="feature-info">
+              <span class="feature-label">File Backup</span>
+              <span class="feature-desc">Export or Import settings via JSON file</span>
+            </div>
+            <div class="flex gap-8">
+              <button id="exportSettingsBtn" class="btn-secondary">Export</button>
+              <input type="file" id="importSettingsFile" accept=".json" class="hidden">
+              <button id="importSettingsBtn" class="btn-secondary">Import</button>
             </div>
           </div>
         </div>
@@ -626,11 +414,11 @@
         </div>
 
         <div class="glass-card">
-          <div class="section-title">⌨️ Shortcuts Management</div>
+          <div class="card-header">⌨️ Shortcuts Management</div>
 
           <div class="form-row-item">
             <div class="feature-info">
-              <span class="feature-label">Open Popup</span>
+              <span class="feature-label">Open Sidepanel</span>
             </div>
             <div class="shortcut-input" data-action="luminaChat" tabindex="0">
               <span class="shortcut-key">`</span>
@@ -656,27 +444,16 @@
             </div>
           </div>
 
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Image Search</span>
-            </div>
-            <div class="shortcut-input" data-action="image" tabindex="0">
-              <span class="shortcut-key">I</span>
-            </div>
-          </div>
 
           <div class="form-row-item">
             <div class="feature-info">
               <span class="feature-label">Text-to-Speech</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
-              <div class="speed-input-wrapper">
-                <input type="number" id="audioSpeed" class="speed-number-input" min="0.5" max="3.0" step="0.05"
-                  value="1.0">
-                <span class="speed-unit">x</span>
-              </div>
-              <div class="shortcut-input-container"
-                style="position: relative; display: flex; align-items: center; gap: 8px;">
+            <div class="flex-center-gap12-mlauto">
+              <input type="number" id="audioSpeed" class="speed-number-input" min="0.5" max="3.0" step="0.05"
+                value="1.0">
+              <span class="speed-unit">x</span>
+              <div class="rel-flex-center-gap8">
                 <div class="shortcut-input" data-action="audio" tabindex="0">
                   <span class="shortcut-key">⇧</span>
                 </div>
@@ -690,13 +467,8 @@
             <div class="feature-info">
               <span class="feature-label">Ask Lumina</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
-              <button type="button" id="askSelectionPopupBtn" class="status-btn"
-                style="width: 70px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary);font-weight: 520; transition: all 0.2s ease;">
-                Hide
-              </button>
-              <div class="shortcut-input-container"
-                style="position: relative; display: flex; align-items: center; gap: 8px;">
+            <div class="flex-center-gap12-mlauto">
+              <div class="rel-flex-center-gap8">
                 <div class="shortcut-input" data-action="askLumina" tabindex="0"></div>
               </div>
             </div>
@@ -705,10 +477,9 @@
 
         <!-- Custom Mappings Card (merged from Mappings section) -->
         <div class="glass-card">
-          <div class="section-title">
+          <div class="card-header">
             🔗 Custom Mappings
-            <span class="custom-mapping-hint"
-              style="margin-left: auto; text-transform: none; font-weight: 400; color: var(--text-secondary);">
+            <span class="card-title-hint">
               Select text + Key to auto-ask
             </span>
           </div>
@@ -719,28 +490,10 @@
             </div>
           </div>
 
-          <button id="addMappingBtn" class="apply-model-btn"
-            style="background: transparent; border: 1px dashed var(--border-color); color: var(--text-secondary); margin-top: 12px; font-weight: 520;">
+          <button id="addMappingBtn" class="apply-model-btn dashed-btn mt-12">
             + Add Mapping
           </button>
 
-          <div class="info-note" style="margin-top: 16px;">
-            <div class="info-note-wrapper" style="align-items: flex-start;">
-              <span class="info-note-icon" style="margin-top: 2px;">💡</span>
-              <div class="info-note-text">
-                <div style="margin-bottom: 8px;"><strong>Available Variables</strong></div>
-                <div class="mapping-vars-grid" style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;">
-                  <code>$SelectedText</code>
-                  <span style="color: var(--text-secondary);">The highlighted text</span>
-                  <code>$Sentence</code>
-                  <span style="color: var(--text-secondary);">Full sentence containing selection</span>
-                  <code>$Paragraph</code>
-                  <span style="color: var(--text-secondary);">Full paragraph containing selection</span>
-                  <code>$Container</code>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -748,6 +501,192 @@
   </div>
 
   <div id="status" class="status"></div>
+
+  <!-- Templates for dynamic UI elements -->
+  <template id="providerItemTemplate">
+    <div class="provider-item">
+      <div class="provider-item-content">
+        <div class="provider-item-info">
+          <div class="provider-item-name"></div>
+          <div class="provider-item-endpoint"></div>
+        </div>
+        <span class="provider-badge"></span>
+        <div class="provider-item-actions">
+          <button class="provider-edit-btn">Edit</button>
+          <button class="provider-delete-btn btn-danger">Delete</button>
+        </div>
+      </div>
+      <div class="provider-item-form-container"></div>
+    </div>
+  </template>
+
+  <template id="chainItemTemplate">
+    <div class="chain-item">
+      <div class="chain-number"></div>
+      <div class="chain-info">
+        <div class="chain-model-name"></div>
+        <div class="chain-provider-name"></div>
+      </div>
+      <div class="chain-controls">
+        <button class="chain-btn configure" title="Configure Parameters">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+        <button class="chain-btn remove" title="Remove">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="chain-item-params-container"></div>
+    </div>
+  </template>
+
+  <template id="chainParamsTemplate">
+    <div class="chain-params-panel">
+      <div class="form-group mb-12">
+        <label class="flex justify-between text-12">
+          Temperature
+          <span class="temp-value text-secondary"></span>
+        </label>
+        <input type="range" class="param-temperature" min="0" max="2" step="0.1">
+      </div>
+      <div class="form-group mb-12">
+        <label class="flex justify-between text-12">
+          Top P
+          <span class="topp-value text-secondary"></span>
+        </label>
+        <input type="range" class="param-topp" min="0" max="1" step="0.05">
+      </div>
+      <div class="form-group mb-12">
+        <label class="flex justify-between text-12">
+          Thinking Level
+          <span class="thinking-level-value text-secondary"></span>
+        </label>
+        <select class="param-thinking-level">
+          <option value="none">None</option>
+          <option value="minimal">Minimal</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="form-group mb-0">
+        <label class="flex justify-between items-center text-12">
+          Custom Parameters
+          <button type="button" class="btn-secondary add-custom-param">+ Add</button>
+        </label>
+        <div class="custom-params-list"></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="customParamRowTemplate">
+    <div class="custom-param-row">
+      <input type="text" class="custom-param-key" placeholder="Key">
+      <input type="text" class="custom-param-value" placeholder="Value">
+      <button type="button" class="remove-custom-param">×</button>
+    </div>
+  </template>
+  
+  <!-- Mapping Row Template -->
+  <template id="mappingRowTemplate">
+    <div class="mapping-item">
+      <div class="mapping-number"></div>
+      <div class="mapping-info">
+        <div class="shortcut-input mapping-key-input" tabindex="0">
+          <span style="color: var(--text-secondary); font-style: italic;">None</span>
+        </div>
+        <span class="mapping-arrow">→</span>
+        <div class="mapping-prompt-wrapper">
+          <span class="lumina-selected-text-tag">"SelectedText"</span>
+          <input type="text" class="mapping-prompt" placeholder="Custom prompt (e.g. Translate to Vietnamese)...">
+        </div>
+      </div>
+      <div class="mapping-controls">
+        <button class="mapping-btn remove mapping-delete-btn" title="Delete Mapping">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="mapping-item-params-container"></div>
+    </div>
+  </template>
+
+  <!-- User Fact Item Template -->
+  <template id="userFactItemTemplate">
+    <div class="fact-item">
+      <span class="fact-index"></span>
+      <input type="text" class="fact-text">
+      <button class="fact-remove-btn"><span>×</span></button>
+    </div>
+  </template>
+
+  <!-- Suggestion Item Template -->
+
+  <!-- Shortcut None Template -->
+  <template id="shortcutNoneTemplate">
+    <span style="color: var(--text-secondary); font-style: italic;">None</span>
+  </template>
+
+  <!-- Shortcut Recording Template -->
+  <template id="shortcutRecordingTemplate">
+    <span style="color: var(--primary-color); font-weight: 520;">Press a key...</span>
+  </template>
+
+  <!-- Shortcut Key Segment Template -->
+  <template id="shortcutKeySegmentTemplate">
+    <span class="shortcut-key"></span>
+  </template>
+
+  <!-- Button State Templates -->
+  <template id="appliedStateTemplate">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+    Applied!
+  </template>
+
+  <template id="signingInStateTemplate">
+    Signing in...
+  </template>
+
+  <!-- Custom Param Row Template -->
+  <template id="customParamRowTemplate">
+    <div class="custom-param-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+      <input type="text" class="custom-param-key" placeholder="key" style="flex: 1; font-size: 0.75em;">
+      <span style="color: var(--text-secondary);">=</span>
+      <input type="text" class="custom-param-value" placeholder="value" style="flex: 1; font-size: 0.75em;">
+      <button type="button" class="remove-param-btn" style="padding: 4px 8px; font-size: 0.6875em; background: var(--error-color, #f44336); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+    </div>
+  </template>
+
+  <!-- Provider Dropdown Option Template -->
+  <template id="providerDropdownOptionTemplate">
+    <option value=""></option>
+  </template>
+
+  <!-- Empty List State Template -->
+  <template id="emptyListStateTemplate">
+    <div class="chain-empty-state">No models added. Add one above.</div>
+  </template>
+
+  <!-- API Key Result Item Template -->
+  <template id="apiKeyResultItemTemplate">
+    <div class="api-key-result-item" style="margin-bottom: 8px;">
+      <div class="api-key-result-header" style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 520;">
+        <span class="api-key-result-icon"></span>
+        <span class="api-key-result-name"></span>
+        <span class="api-key-result-status" style="margin-left: auto;"></span>
+      </div>
+      <div class="api-key-result-failed-info" style="margin-top: 4px;"></div>
+    </div>
+  </template>
+
+  <!-- Failed Key Info Template -->
+  <template id="failedKeyInfoTemplate">
+    <div style="font-size: 11px; color: #FF3B30; margin-left: 20px; font-family: monospace;">
+      • <code style="background: rgba(255,59,48,0.1); padding: 2px 6px; border-radius: 4px;" class="failed-key-name"></code> → <span class="failed-key-status"></span>
+    </div>
+  </template>
+
   <script src="../../lib/utils/memory.js"></script>
   <script src="../../lib/utils/auth.js"></script>
   <script src="options.js"></script>

@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // --- Fast Theme Load ---
   const applyTheme = (theme) => {
     let mode = theme;
     if (theme === 'auto') {
@@ -8,19 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.setAttribute('data-theme', mode);
   };
 
-  const applyOptionsTypography = (fontSizePx = 13) => {
-    const size = Number(fontSizePx);
-    const normalized = Number.isFinite(size) && size > 0 ? size : 13;
-    document.documentElement.style.fontSize = `${normalized}px`;
-    document.documentElement.style.setProperty('--font-family-base', "'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif");
-    document.documentElement.style.setProperty('--font-weight-base', '400');
-    document.documentElement.style.setProperty('--font-size-base', '1em');
-  };
 
   chrome.storage.local.get(['theme'], (result) => {
     applyTheme(result.theme || 'auto');
   });
-  // -------------------------
+
+  // Global state for model lists
+  let availableModels = [];
+  let availableVoiceModels = [];
+  let availableDictModels = [];
 
   // Sidebar Navigation Logic
   const sidebarNavItems = document.querySelectorAll('.sidebar-nav-item');
@@ -322,28 +317,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const providerSelect = document.getElementById('provider');
   const modelInput = document.getElementById('model');
   const modelList = document.getElementById('modelList');
-  const visionProviderSelect = document.getElementById('visionProvider');
+
 
   // Define mappings elements globally for scope access
   const mappingsList = document.getElementById('questionMappingsList');
   const addMappingBtn = document.getElementById('addMappingBtn');
-  const visionModelInput = document.getElementById('visionModel');
-  const visionModelList = document.getElementById('visionModelList');
   const voiceProviderInput = document.getElementById('voiceProvider');
   const voiceProviderList = document.getElementById('voiceProviderList');
   const voiceModelInput = document.getElementById('voiceModel');
   const voiceModelList = document.getElementById('voiceModelList');
-  const googleApiKeyInput = document.getElementById('googleApiKey');
-  const googleCxInput = document.getElementById('googleCx');
+
+  const dictProviderInput = document.getElementById('dictProvider');
+  const dictProviderList = document.getElementById('dictProviderList');
+  const dictModelInput = document.getElementById('dictModel');
+  const dictModelList = document.getElementById('dictModelList');
+
+
   const fontSizeInput = document.getElementById('fontSize');
   const decreaseFontSizeBtn = document.getElementById('decreaseFontSize');
   const increaseFontSizeBtn = document.getElementById('increaseFontSize');
-  const popupWidthInput = document.getElementById('popupWidth');
-  const widthValue = document.getElementById('widthValue');
-  const popupHeightInput = document.getElementById('popupHeight');
-  const heightValue = document.getElementById('heightValue');
   const askSelectionPopupBtn = document.getElementById('askSelectionPopupBtn');
-  let isAskSelectionPopupEnabled = false;
+  let isAskSelectionPopupEnabled = true;
   const statusDiv = document.getElementById('status');
   const siteToggle = document.getElementById('siteToggle');
   const siteToggleLabel = document.getElementById('siteToggleLabel');
@@ -360,14 +354,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const googleClientIdInput = document.getElementById('googleClientId');
   const githubClientIdInput = document.getElementById('githubClientId');
 
-  // Translation Provider Elements
-  const transProviderRadios = document.getElementsByName('transProvider');
-  const deeplConfig = document.getElementById('deeplConfig');
-  const aiTranslationConfig = document.getElementById('aiTranslationConfig');
-  const transModelProviderInput = document.getElementById('transModelProvider');
-  const transModelProviderList = document.getElementById('transModelProviderList');
-  const transModelInput = document.getElementById('transModelInput');
-  const transModelList = document.getElementById('transModelList');
 
   // Provider Management elements
   const providerListEl = document.getElementById('providerList');
@@ -456,34 +442,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = new URL(urlStr);
       currentHostname = url.hostname;
 
-      chrome.storage.local.get(['disabledDomains', 'fontSizeByDomain', 'popupDimensionsByDomain'], (items) => {
+      chrome.storage.local.get(['disabledDomains'], (items) => {
         const disabledDomains = items.disabledDomains || [];
         const isEnabled = !disabledDomains.includes(currentHostname);
 
         siteToggle.checked = isEnabled;
         siteToggleLabel.textContent = currentHostname;
-
-        // Labels removed in HTML as per user request
-
-        // Apply domain-specific values (overwriting whatever the global load set)
-        const fontSizeByDomain = items.fontSizeByDomain || {};
-        if (fontSizeByDomain[currentHostname]) {
-          fontSizeInput.value = fontSizeByDomain[currentHostname];
-        }
-        applyOptionsTypography(parseFloat(fontSizeInput?.value || 13));
-
-        const popupDimensionsByDomain = items.popupDimensionsByDomain || {};
-        if (popupDimensionsByDomain[currentHostname]) {
-          const dims = popupDimensionsByDomain[currentHostname];
-          if (dims.width) {
-            popupWidthInput.value = dims.width;
-            widthValue.textContent = dims.width + 'px';
-          }
-          if (dims.height) {
-            popupHeightInput.value = dims.height;
-            heightValue.textContent = dims.height + 'px';
-          }
-        }
       });
     } catch (e) {
       siteToggle.disabled = true;
@@ -537,47 +501,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   }
 
-  // Use shared PROVIDERS constant from libs/constants.js
   const PROVIDERS = LUMINA_PROVIDERS;
 
   // Render provider list
   function renderProviders() {
     if (!providerListEl) return;
 
-    if (providers.length === 0) {
-      providerListEl.innerHTML = '<div class="provider-empty">No providers added yet. Add one above to get started.</div>';
-      return;
+    // Move form back to original container before clearing innerHTML
+    // to prevent the element from being destroyed
+    const originalParent = providerListEl.parentElement;
+    if (originalParent && providerForm) {
+      originalParent.appendChild(providerForm);
     }
 
-    providerListEl.innerHTML = providers.map(p => {
+    providerListEl.innerHTML = '';
+
+    providers.forEach(p => {
       const isDefault = p.id === 'groq-default' || p.id === 'gemini-default' || p.id === 'cerebras-default' || p.id === 'mistral-default' || p.id === 'openrouter-default';
       const badge = isDefault ? 'default' : 'custom';
       const badgeClass = isDefault ? 'provider-item-badge-default' : 'provider-item-badge-custom';
-      const deleteBtn = isDefault
-        ? ''
-        : `<button class="provider-delete-btn" data-id="${p.id}">Delete</button>`;
 
-      return `
-      <div class="provider-item" data-id="${p.id}">
-        <div class="provider-item-info">
-          <div class="provider-item-name">${escapeHtml(p.name)}</div>
-          <div class="provider-item-endpoint">${escapeHtml(p.endpoint)}</div>
-        </div>
-        <span class="${badgeClass}">${badge}</span>
-        <div class="provider-item-actions">
-          <button class="provider-edit-btn" data-id="${p.id}">Edit</button>
-          ${deleteBtn}
-        </div>
-      </div>
-      `;
-    }).join('');
+      const template = document.getElementById('providerItemTemplate');
+      const clone = template.content.cloneNode(true);
+      const item = clone.querySelector('.provider-item');
 
-    // Add event listeners
-    providerListEl.querySelectorAll('.provider-edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => editProvider(btn.dataset.id));
-    });
-    providerListEl.querySelectorAll('.provider-delete-btn').forEach(btn => {
-      btn.addEventListener('click', () => deleteProvider(btn.dataset.id));
+      item.dataset.id = p.id;
+      item.querySelector('.provider-item-name').textContent = p.name;
+      item.querySelector('.provider-item-endpoint').textContent = p.endpoint;
+
+      const badgeEl = item.querySelector('.provider-badge');
+      badgeEl.textContent = badge;
+      badgeEl.classList.add(badgeClass);
+
+      item.querySelector('.provider-edit-btn').addEventListener('click', () => editProvider(p.id));
+
+      const deleteBtn = item.querySelector('.provider-delete-btn');
+      if (isDefault) {
+        deleteBtn.remove();
+      } else {
+        deleteBtn.addEventListener('click', () => deleteProvider(p.id));
+      }
+
+      providerListEl.appendChild(clone);
     });
   }
 
@@ -597,17 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Vision AI provider dropdown
-    if (visionProviderSelect) {
-      const currentVal = visionProviderSelect.value;
-      visionProviderSelect.innerHTML = '<option value="">Same as Text AI</option>';
-      providers.forEach(p => {
-        visionProviderSelect.innerHTML += `<option value="${p.id}">${escapeHtml(p.name)}</option>`;
-      });
-      if (currentVal && providers.find(p => p.id === currentVal)) {
-        visionProviderSelect.value = currentVal;
-      }
-    }
   }
 
   // Show add provider form
@@ -620,10 +574,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hide Get API Key link for new provider
     const apiKeyLink = document.getElementById('providerApiKeyLink');
-    if (apiKeyLink) apiKeyLink.style.display = 'none';
+    if (apiKeyLink) apiKeyLink.classList.add('hidden');
 
-    providerForm.style.display = 'block';
-    addProviderBtn.style.display = 'none';
+    // Move form back to original container if it was inside an item
+    const originalParent = providerListEl.parentElement;
+    if (originalParent) originalParent.appendChild(providerForm);
+
+    providerForm.classList.remove('hidden');
+    addProviderBtn.classList.add('hidden');
     providerFormName.focus();
   }
 
@@ -652,14 +610,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (linkUrl) {
         apiKeyLink.href = linkUrl;
-        apiKeyLink.style.display = 'inline-block';
+        apiKeyLink.classList.remove('hidden');
       } else {
-        apiKeyLink.style.display = 'none';
+        apiKeyLink.classList.add('hidden');
       }
     }
 
-    providerForm.style.display = 'block';
-    addProviderBtn.style.display = 'none';
+    // Inline editing logic: move form into the item
+    const item = providerListEl.querySelector(`.provider-item[data-id="${id}"]`);
+    if (item) {
+      // Hide all other item contents to avoid clutter (optional, but requested/implied)
+      providerListEl.querySelectorAll('.provider-item-content').forEach(c => c.classList.remove('hidden'));
+
+      const content = item.querySelector('.provider-item-content');
+      const formContainer = item.querySelector('.provider-item-form-container');
+
+      if (content && formContainer) {
+        content.classList.add('hidden');
+        formContainer.appendChild(providerForm);
+        providerForm.classList.remove('hidden');
+      }
+    }
+
+    addProviderBtn.classList.add('hidden');
     providerFormName.focus();
   }
 
@@ -712,8 +685,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Hide provider form
   function hideProviderForm() {
-    providerForm.style.display = 'none';
-    addProviderBtn.style.display = 'block';
+    // Show all item contents and reset form placeholders
+    providerListEl.querySelectorAll('.provider-item-content').forEach(c => c.classList.remove('hidden'));
+
+    // Move form back to original container
+    const originalParent = providerListEl.parentElement;
+    if (originalParent) originalParent.appendChild(providerForm);
+
+    providerForm.classList.add('hidden');
+    addProviderBtn.classList.remove('hidden');
   }
 
   async function initializeProviders() {
@@ -799,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkApiKeysBtn.addEventListener('click', async () => {
       checkApiKeysBtn.disabled = true;
       checkApiKeysBtn.textContent = '⏳ Checking...';
-      apiKeyResults.style.display = 'block';
+      apiKeyResults.classList.remove('hidden');
       apiKeyResultsList.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px;">Checking all providers...</div>';
 
       const results = [];
@@ -879,30 +859,42 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Render results
-      apiKeyResultsList.innerHTML = results.map(r => {
+      apiKeyResultsList.innerHTML = '';
+      results.forEach(r => {
+        const itemTemplate = document.getElementById('apiKeyResultItemTemplate');
+        const itemClone = itemTemplate.content.cloneNode(true);
+        const itemDiv = itemClone.querySelector('.api-key-result-item');
+
         let color, icon;
         if (r.status === 'ok') { color = '#34C759'; icon = '✅'; }
         else if (r.status === 'partial') { color = '#FF9500'; icon = '⚠️'; }
         else if (r.status === 'skip') { color = '#8E8E93'; icon = '⏭️'; }
         else { color = '#FF3B30'; icon = '❌'; }
 
-        let failedInfo = '';
+        itemDiv.style.borderLeft = `3px solid ${color}`;
+        itemDiv.style.background = 'var(--surface-bg)';
+        itemDiv.style.padding = '8px 12px';
+        itemDiv.style.borderRadius = '8px';
+
+        itemDiv.querySelector('.api-key-result-icon').textContent = icon;
+        itemDiv.querySelector('.api-key-result-name').textContent = r.name;
+        const statusEl = itemDiv.querySelector('.api-key-result-status');
+        statusEl.textContent = r.message;
+        statusEl.style.color = color;
+
         if (r.failedKeys && r.failedKeys.length > 0) {
-          failedInfo = r.failedKeys.map(fk =>
-            `<div style="font-size: 11px; color: #FF3B30; margin-left: 20px; font-family: monospace;">• <code style="background: rgba(255,59,48,0.1); padding: 2px 6px; border-radius: 4px;">${fk.key}</code> → ${fk.status}</div>`
-          ).join('');
+          const failedList = itemDiv.querySelector('.api-key-result-failed-info');
+          r.failedKeys.forEach(fk => {
+            const failedTemplate = document.getElementById('failedKeyInfoTemplate');
+            const failedClone = failedTemplate.content.cloneNode(true);
+            failedClone.querySelector('.failed-key-name').textContent = fk.key;
+            failedClone.querySelector('.failed-key-status').textContent = fk.status;
+            failedList.appendChild(failedClone);
+          });
         }
 
-        return `
-          <div style="padding: 8px 12px; background: var(--surface-bg); border-radius: 8px; border-left: 3px solid ${color};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: 520;">${icon} ${r.name}</span>
-              <span style="font-size: 12px; color: ${color};">${r.message}</span>
-            </div>
-            ${failedInfo}
-          </div>
-        `;
-      }).join('');
+        apiKeyResultsList.appendChild(itemClone);
+      });
 
       checkApiKeysBtn.disabled = false;
       checkApiKeysBtn.textContent = '🔍 Check API Keys';
@@ -910,22 +902,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let textChain = [];
-  let visionChain = [];
   let currentlyConfiguringModel = null;
   let currentlyConfiguringProvider = null;
   let advancedParamsByModel = {};
   let isSelectingModel = false; // Flag to prevent blur from hiding dropdown during selection
 
   const textChainListEl = document.getElementById('textChainList');
-  const visionChainListEl = document.getElementById('visionChainList');
   const textChainProviderInput = document.getElementById('textChainProvider');
   const textChainProviderList = document.getElementById('textChainProviderList');
   const textChainModelInput = document.getElementById('textChainModel');
-  const visionChainProviderSelect = document.getElementById('visionChainProvider');
-  const visionChainModelInput = document.getElementById('visionChainModel');
 
   const textChainModelList = document.getElementById('textChainModelList');
-  const visionChainModelList = document.getElementById('visionChainModelList');
 
   // Provider dropdown for text chain (custom dropdown)
   if (textChainProviderInput && textChainProviderList) {
@@ -961,7 +948,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Fetch models for the selected provider
             const prov = getProviderById(item.dataset.value);
-            if (prov) fetchModelsForProvider(prov, '', false, false, false, 'textChainModelList', 'textChainModel');
+            if (prov) fetchModelsForProvider(prov, {
+              targetListId: 'textChainModelList',
+              targetInputId: 'textChainModel'
+            });
           });
         });
       }
@@ -980,7 +970,13 @@ document.addEventListener('DOMContentLoaded', () => {
     textChainModelInput.addEventListener('focus', () => {
       const providerId = textChainProviderInput?.dataset?.providerId;
       const prov = providerId ? getProviderById(providerId) : null;
-      if (prov) fetchModelsForProvider(prov, textChainModelInput.value, false, false, false, 'textChainModelList', 'textChainModel');
+      if (prov) {
+        fetchModelsForProvider(prov, {
+          selectedModel: textChainModelInput.value,
+          targetListId: 'textChainModelList',
+          targetInputId: 'textChainModel'
+        });
+      }
       if (textChainModelList) textChainModelList.style.display = 'block';
     });
     textChainModelInput.addEventListener('input', () => {
@@ -999,185 +995,174 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Vision Chain Provider (custom dropdown)
-  const visionChainProviderInput = document.getElementById('visionChainProvider');
-  const visionChainProviderList = document.getElementById('visionChainProviderList');
 
-  if (visionChainProviderInput && visionChainProviderList) {
-    // Initially disable model input until provider is selected
-    if (visionChainModelInput) {
-      visionChainModelInput.disabled = true;
-      visionChainModelInput.placeholder = 'Select provider first...';
-    }
 
-    visionChainProviderInput.addEventListener('click', () => {
-      const isVisible = visionChainProviderList.style.display === 'block';
-      visionChainProviderList.style.display = isVisible ? 'none' : 'block';
-
-      if (!isVisible) {
-        visionChainProviderList.innerHTML = providers.map(p =>
-          `<div class="dropdown-item" data-value="${p.id}">${escapeHtml(p.name)}</div>`
-        ).join('');
-
-        visionChainProviderList.querySelectorAll('.dropdown-item').forEach(item => {
-          item.addEventListener('click', () => {
-            visionChainProviderInput.value = item.textContent;
-            visionChainProviderInput.dataset.providerId = item.dataset.value;
-            visionChainProviderList.style.display = 'none';
-
-            // Enable model input
-            if (visionChainModelInput) {
-              visionChainModelInput.disabled = false;
-              visionChainModelInput.placeholder = 'Type or select model...';
-            }
-
-            const prov = getProviderById(item.dataset.value);
-            if (prov) fetchModelsForProvider(prov, '', true, false, false, 'visionChainModelList', 'visionChainModel');
-          });
-        });
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!visionChainProviderInput.contains(e.target) && !visionChainProviderList.contains(e.target)) {
-        visionChainProviderList.style.display = 'none';
-      }
-    });
-  }
-
-  if (visionChainModelInput) {
-    visionChainModelInput.addEventListener('focus', () => {
-      const providerId = visionChainProviderInput?.dataset?.providerId;
-      const prov = providerId ? getProviderById(providerId) : null;
-      if (prov) fetchModelsForProvider(prov, visionChainModelInput.value, true, false, false, 'visionChainModelList', 'visionChainModel');
-      if (visionChainModelList) visionChainModelList.style.display = 'block';
-    });
-    visionChainModelInput.addEventListener('input', () => {
-      const query = visionChainModelInput.value.toLowerCase();
-      const filtered = availableVisionModels.filter(m => m.toLowerCase().includes(query));
-      renderDropdown(filtered, visionChainModelInput, visionChainModelList);
-      if (visionChainModelList) visionChainModelList.style.display = 'block';
-    });
-    visionChainModelInput.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (!isSelectingModel && visionChainModelList) visionChainModelList.style.display = 'none';
-      }, 200);
-    });
-  }
-
-  function renderChainList(type) {
-    const listEl = type === 'text' ? textChainListEl : visionChainListEl;
-    const chain = type === 'text' ? textChain : visionChain;
+  function renderChainList() {
+    const listEl = textChainListEl;
+    const chain = textChain;
 
     if (!listEl) return;
 
     if (!chain || chain.length === 0) {
-      listEl.innerHTML = `<div class="chain-empty-state">No models added. ${type === 'text' ? 'Add one below.' : 'Add one below.'}</div>`;
+      listEl.innerHTML = '';
+      const template = document.getElementById('emptyListStateTemplate');
+      const clone = template.content.cloneNode(true);
+      const emptyDiv = clone.querySelector('.chain-empty-state');
+      if (emptyDiv) {
+        emptyDiv.textContent = `No models added. Add one above.`;
+      }
+      listEl.appendChild(clone);
       return;
     }
 
-    listEl.innerHTML = chain.map((item, index) => {
+    listEl.innerHTML = '';
+
+    chain.forEach((item, index) => {
       const provider = providers.find(p => p.id === item.providerId);
       const providerName = provider ? provider.name : 'Unknown Provider';
       const isSelected = currentlyConfiguringModel === item.model && currentlyConfiguringProvider === item.providerId;
-      const activeClass = isSelected ? 'border-color: var(--primary-color); background: var(--sidebar-hover);' : '';
 
-      // Get saved params for this model
-      const modelKey = `${item.providerId}:${item.model}`;
-      const savedParams = advancedParamsByModel[modelKey] || {};
-      const temp = savedParams.temperature !== undefined ? savedParams.temperature : 1;
-      const topP = savedParams.topP !== undefined ? savedParams.topP : 1;
-      const maxTokensValue = savedParams.maxTokens !== undefined ? savedParams.maxTokens : "";
-      const maxTokensDisplay = savedParams.maxTokens !== undefined ? savedParams.maxTokens : "Not Set";
-      const customParams = savedParams.customParams || {};
+      const template = document.getElementById('chainItemTemplate');
+      const clone = template.content.cloneNode(true);
+      const chainItem = clone.querySelector('.chain-item');
 
-      // Inline params panel HTML (only shown when selected)
-      const paramsPanel = isSelected ? `
-        <div class="chain-params-panel" style="width: 100%; box-sizing: border-box; margin-top: 12px; padding: 12px; background: var(--element-bg); border-radius: 12px; border: 1px solid var(--border-color);">
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="display: flex; justify-content: space-between; font-size: 12px;">
-              Temperature
-              <span class="temp-value" style="color: var(--text-secondary);">${temp}</span>
-            </label>
-            <input type="range" class="param-temperature" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}" min="0" max="2" step="0.1" value="${temp}"
-              style="width: 100%; accent-color: var(--primary-color);">
-          </div>
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="display: flex; justify-content: space-between; font-size: 12px;">
-              Top P
-              <span class="topp-value" style="color: var(--text-secondary);">${topP}</span>
-            </label>
-            <input type="range" class="param-topp" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}" min="0" max="1" step="0.05" value="${topP}"
-              style="width: 100%; accent-color: var(--primary-color);">
-          </div>
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="display: flex; justify-content: space-between; font-size: 12px;">
-              Max Request Tokens
-              <span class="max-tokens-value" style="color: var(--text-secondary);">${maxTokensDisplay}</span>
-            </label>
-            <input type="number" class="param-max-tokens" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}" min="128" max="128000" step="128" value="${maxTokensValue}"
-              style="width: 100%; padding: 6px 8px; font-size: 11px; background: var(--element-bg); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); margin-top: 4px;">
-          </div>
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="display: flex; justify-content: space-between; font-size: 12px;">
-              Thinking Level
-              <span class="thinking-level-value" style="color: var(--text-secondary);">${savedParams.thinkingLevel === 'none' ? 'None' : (savedParams.thinkingLevel || 'None')}</span>
-            </label>
-            <select class="param-thinking-level" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}"
-              style="width: 100%; padding: 6px 8px; font-size: 11px; background: var(--element-bg); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); margin-top: 4px;">
-              <option value="none" ${(!savedParams.thinkingLevel || savedParams.thinkingLevel === 'none') ? 'selected' : ''}>None</option>
-              <option value="minimal" ${savedParams.thinkingLevel === 'minimal' ? 'selected' : ''}>Minimal</option>
-              <option value="low" ${savedParams.thinkingLevel === 'low' ? 'selected' : ''}>Low</option>
-              <option value="medium" ${savedParams.thinkingLevel === 'medium' ? 'selected' : ''}>Medium</option>
-              <option value="high" ${savedParams.thinkingLevel === 'high' ? 'selected' : ''}>High</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              Custom Parameters
-              <button type="button" class="btn-secondary add-custom-param" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}"
-                style="padding: 2px 8px; font-size: 10px;">+ Add</button>
-            </label>
-            <div class="custom-params-list" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}" style="margin-top: 8px;">
-              ${Object.entries(customParams).map(([key, value]) => `
-                <div style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center;">
-                  <input type="text" class="custom-param-key" value="${escapeHtml(key)}" placeholder="Key" style="flex: 1; padding: 6px 8px; font-size: 11px; background: var(--element-bg); border: 1px solid var(--border-color); border-radius: 4px;">
-                  <input type="text" class="custom-param-value" value="${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}" placeholder="Value" style="flex: 1; padding: 6px 8px; font-size: 11px; background: var(--element-bg); border: 1px solid var(--border-color); border-radius: 4px;">
-                  <button type="button" class="remove-custom-param" style="padding: 4px 8px; font-size: 10px; background: var(--border-color); border: none; border-radius: 4px; cursor: pointer;">×</button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-      ` : '';
+      chainItem.dataset.index = index;
+      chainItem.dataset.type = 'text';
+      chainItem.dataset.model = item.model;
+      chainItem.dataset.provider = item.providerId;
 
-      return `
-          <div class="chain-item" data-index="${index}" data-type="${type}" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}" style="display: flex; flex-direction: column; ${activeClass}">
-             <div class="chain-item-header" style="display: flex; align-items: center; gap: 10px; width: 100%;">
-               <div class="chain-number">${index + 1}</div>
-               <div class="chain-info" style="flex: 1;">
-                  <div class="chain-model-name">${escapeHtml(item.model)}</div>
-                  <div class="chain-provider-name">${escapeHtml(providerName)}</div>
-               </div>
-               <div class="chain-controls" style="margin-left: auto;">
-                  <button class="chain-btn configure ${isSelected ? 'active' : ''}" data-action="configure" data-model="${escapeHtml(item.model)}" data-provider="${item.providerId}" title="Configure Parameters">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                  </button>
-                  <button class="chain-btn remove" data-action="remove" data-type="${type}" data-index="${index}" title="Remove">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
-               </div>
-             </div>
-             ${paramsPanel}
-          </div>
-          `;
-    }).join('');
+
+      chainItem.querySelector('.chain-number').textContent = index + 1;
+      chainItem.querySelector('.chain-model-name').textContent = item.model;
+      chainItem.querySelector('.chain-provider-name').textContent = providerName;
+
+      const configureBtn = chainItem.querySelector('.configure');
+      if (isSelected) configureBtn.classList.add('active');
+      configureBtn.addEventListener('click', () => configureModelParams(item.model, item.providerId));
+
+      const removeBtn = chainItem.querySelector('.remove');
+      removeBtn.addEventListener('click', () => removeChainItem('text', index));
+
+      if (isSelected) {
+        // Get saved params for this model
+        const modelKey = `${item.providerId}:${item.model}`;
+        const savedParams = advancedParamsByModel[modelKey] || {};
+        const temp = savedParams.temperature !== undefined ? savedParams.temperature : 1;
+        const topP = savedParams.topP !== undefined ? savedParams.topP : 1;
+        const maxTokensValue = savedParams.maxTokens !== undefined ? savedParams.maxTokens : "";
+        const maxTokensDisplay = savedParams.maxTokens !== undefined ? savedParams.maxTokens : "Not Set";
+        const customParams = savedParams.customParams || {};
+
+        const paramsTemplate = document.getElementById('chainParamsTemplate');
+        const paramsClone = paramsTemplate.content.cloneNode(true);
+        const paramsPanel = paramsClone.querySelector('.chain-params-panel');
+
+        // Setup sliders and values
+        const tempSlider = paramsPanel.querySelector('.param-temperature');
+        tempSlider.value = temp;
+        paramsPanel.querySelector('.temp-value').textContent = temp;
+        tempSlider.addEventListener('input', (e) => {
+          paramsPanel.querySelector('.temp-value').textContent = e.target.value;
+        });
+        tempSlider.addEventListener('change', (e) => {
+          saveInlineParam(item.providerId, item.model, 'temperature', parseFloat(e.target.value));
+        });
+
+        const topPSlider = paramsPanel.querySelector('.param-topp');
+        topPSlider.value = topP;
+        paramsPanel.querySelector('.topp-value').textContent = topP;
+        topPSlider.addEventListener('input', (e) => {
+          paramsPanel.querySelector('.topp-value').textContent = e.target.value;
+        });
+        topPSlider.addEventListener('change', (e) => {
+          saveInlineParam(item.providerId, item.model, 'topP', parseFloat(e.target.value));
+        });
+
+        // Tokens setting removed
+
+        const thinkingSelect = paramsPanel.querySelector('.param-thinking-level');
+        thinkingSelect.value = savedParams.thinkingLevel || 'none';
+        paramsPanel.querySelector('.thinking-level-value').textContent = (savedParams.thinkingLevel === 'none' || !savedParams.thinkingLevel) ? 'None' : savedParams.thinkingLevel;
+        thinkingSelect.addEventListener('change', (e) => {
+          const val = e.target.value;
+          paramsPanel.querySelector('.thinking-level-value').textContent = val === 'none' ? 'None' : val;
+          saveInlineParam(item.providerId, item.model, 'thinkingLevel', val === 'none' ? undefined : val);
+        });
+
+        const customParamsList = paramsPanel.querySelector('.custom-params-list');
+        Object.entries(customParams).forEach(([k, v]) => {
+          addCustomParamRow(customParamsList, item.model, item.providerId, k, v);
+        });
+
+        paramsPanel.querySelector('.add-custom-param').addEventListener('click', () => {
+          addCustomParamRow(customParamsList, item.model, item.providerId);
+        });
+
+        chainItem.querySelector('.chain-item-params-container').appendChild(paramsClone);
+      }
+
+      listEl.appendChild(clone);
+    });
   }
 
-  function addToChain(type) {
-    const providerInput = type === 'text' ? textChainProviderInput : visionChainProviderInput;
-    const modelInput = type === 'text' ? textChainModelInput : visionChainModelInput;
+  function addCustomParamRow(listEl, modelName, providerId, key = '', value = '') {
+    const template = document.getElementById('customParamRowTemplate');
+    const clone = template.content.cloneNode(true);
+    const row = clone.querySelector('.custom-param-row');
 
-    // For both text and vision chain, use dataset.providerId
+    const kInput = row.querySelector('.custom-param-key');
+    const vInput = row.querySelector('.custom-param-value');
+
+    kInput.value = key;
+    vInput.value = typeof value === 'object' ? JSON.stringify(value) : String(value);
+
+    const save = () => {
+      const customParams = {};
+      listEl.querySelectorAll('.custom-param-row').forEach(r => {
+        const k = r.querySelector('.custom-param-key').value.trim();
+        const v = r.querySelector('.custom-param-value').value.trim();
+        if (k) {
+          let pVal = v;
+          if (v === 'true') pVal = true;
+          else if (v === 'false') pVal = false;
+          else if (!isNaN(v) && v !== '') pVal = parseFloat(v);
+          else if (v.startsWith('{') || v.startsWith('[')) {
+            try { pVal = JSON.parse(v); } catch (e) { }
+          }
+          customParams[k] = pVal;
+        }
+      });
+      saveInlineParam(providerId, modelName, 'customParams', customParams);
+    };
+
+    kInput.addEventListener('blur', save);
+    vInput.addEventListener('blur', save);
+    row.querySelector('.remove-custom-param').addEventListener('click', () => {
+      row.remove();
+      save();
+    });
+
+    listEl.appendChild(clone);
+  }
+
+  function configureModelParams(modelName, providerId) {
+    if (!modelName) return;
+
+    if (currentlyConfiguringModel === modelName && currentlyConfiguringProvider === providerId) {
+      currentlyConfiguringModel = null;
+      currentlyConfiguringProvider = null;
+    } else {
+      currentlyConfiguringModel = modelName;
+      currentlyConfiguringProvider = providerId;
+    }
+
+    renderChainList();
+  }
+
+  function addToChain() {
+    const providerInput = textChainProviderInput;
+    const modelInput = textChainModelInput;
+
     const providerId = providerInput?.dataset?.providerId;
     const model = modelInput.value.trim();
 
@@ -1192,48 +1177,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const newItem = { providerId, model };
 
-    if (type === 'text') {
-      textChain.unshift(newItem); // Add to beginning
-      renderChainList('text');
-      saveModelChains();
-      // Clear inputs and disable model
-      modelInput.value = '';
-      modelInput.disabled = true;
-      modelInput.placeholder = 'Select provider first...';
-      if (providerInput) {
-        providerInput.value = '';
-        delete providerInput.dataset.providerId;
-      }
-    } else {
-      visionChain.unshift(newItem); // Add to beginning
-      renderChainList('vision');
-      saveModelChains();
-      // Clear inputs and disable model
-      modelInput.value = '';
-      modelInput.disabled = true;
-      modelInput.placeholder = 'Select provider first...';
-      if (providerInput) {
-        providerInput.value = '';
-        delete providerInput.dataset.providerId;
-      }
+    textChain.unshift(newItem); // Add to beginning
+    renderChainList();
+    saveModelChains();
+    // Clear inputs and disable model
+    modelInput.value = '';
+    modelInput.disabled = true;
+    modelInput.placeholder = 'Select provider first...';
+    if (providerInput) {
+      providerInput.value = '';
+      delete providerInput.dataset.providerId;
     }
   }
 
   function removeChainItem(type, index) {
-    if (type === 'text') {
-      textChain.splice(index, 1);
-      renderChainList('text');
-    } else {
-      visionChain.splice(index, 1);
-      renderChainList('vision');
-    }
+    textChain.splice(index, 1);
+    renderChainList();
     saveModelChains();
   }
 
   function saveModelChains() {
     const chains = {
-      text: textChain,
-      vision: visionChain
+      text: textChain
     };
 
     // Backward compatibility: Update legacy single-model fields with the first item in textChain
@@ -1241,10 +1206,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textChain.length > 0) {
       legacyUpdate.provider = textChain[0].providerId;
       legacyUpdate.model = textChain[0].model;
-    }
-    if (visionChain.length > 0) {
-      legacyUpdate.visionProvider = visionChain[0].providerId;
-      legacyUpdate.visionModel = visionChain[0].model;
     }
 
     chrome.storage.local.set({
@@ -1267,155 +1228,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update UI selection (this will show/hide the params panel)
-    renderChainList('text');
-    renderChainList('vision');
-
-    // Setup inline param listeners after render
-    setupInlineParamListeners();
+    renderChainList();
   }
 
-  // Setup event listeners for inline params panel
   function setupInlineParamListeners() {
-    // Temperature sliders
-    document.querySelectorAll('.param-temperature').forEach(slider => {
-      slider.addEventListener('input', (e) => {
-        const value = parseFloat(e.target.value);
-        const panel = e.target.closest('.chain-params-panel');
-        panel.querySelector('.temp-value').textContent = value;
-      });
-      slider.addEventListener('change', (e) => {
-        const model = e.target.dataset.model;
-        const provider = e.target.dataset.provider;
-        const value = parseFloat(e.target.value);
-        saveInlineParam(provider, model, 'temperature', value);
-      });
-    });
-
-    // Top P sliders
-    document.querySelectorAll('.param-topp').forEach(slider => {
-      slider.addEventListener('input', (e) => {
-        const value = parseFloat(e.target.value);
-        const panel = e.target.closest('.chain-params-panel');
-        panel.querySelector('.topp-value').textContent = value;
-      });
-      slider.addEventListener('change', (e) => {
-        const model = e.target.dataset.model;
-        const provider = e.target.dataset.provider;
-        const value = parseFloat(e.target.value);
-        saveInlineParam(provider, model, 'topP', value);
-      });
-    });
-
-    // Max tokens inputs
-    document.querySelectorAll('.param-max-tokens').forEach(input => {
-      input.addEventListener('input', (e) => {
-        const val = e.target.value.trim();
-        const value = parseInt(val, 10);
-        const panel = e.target.closest('.chain-params-panel');
-        if (panel) {
-          panel.querySelector('.max-tokens-value').textContent = (!isNaN(value) && val !== "") ? value : "Not Set";
-        }
-      });
-      input.addEventListener('change', (e) => {
-        const model = e.target.dataset.model;
-        const provider = e.target.dataset.provider;
-        const val = e.target.value.trim();
-        if (val === "") {
-          saveInlineParam(provider, model, 'maxTokens', undefined);
-        } else {
-          const value = parseInt(val, 10);
-          if (!isNaN(value)) {
-            saveInlineParam(provider, model, 'maxTokens', value);
-          }
-        }
-      });
-    });
-
-    // Thinking level selects
-    document.querySelectorAll('.param-thinking-level').forEach(select => {
-      select.addEventListener('change', (e) => {
-        const model = e.target.dataset.model;
-        const provider = e.target.dataset.provider;
-        const value = e.target.value;
-        const panel = e.target.closest('.chain-params-panel');
-        if (panel) {
-          panel.querySelector('.thinking-level-value').textContent = value === 'none' ? 'None' : (value || 'None');
-        }
-        saveInlineParam(provider, model, 'thinkingLevel', value || undefined);
-      });
-    });
-
-    // Add custom param buttons
-    document.querySelectorAll('.add-custom-param').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const model = e.target.dataset.model;
-        const provider = e.target.dataset.provider;
-        const list = document.querySelector(`.custom-params-list[data-model="${model}"][data-provider="${provider}"]`);
-        if (list) {
-          const row = document.createElement('div');
-          row.style.cssText = 'display: flex; gap: 8px; margin-bottom: 4px; align-items: center;';
-          row.innerHTML = `
-            <input type="text" class="custom-param-key" placeholder="Key" style="flex: 1; padding: 6px 8px; font-size: 0.6875em; background: var(--element-bg); border: 1px solid var(--border-color); border-radius: 4px;">
-            <input type="text" class="custom-param-value" placeholder="Value" style="flex: 1; padding: 6px 8px; font-size: 0.6875em; background: var(--element-bg); border: 1px solid var(--border-color); border-radius: 4px;">
-            <button type="button" class="remove-custom-param" style="padding: 4px 8px; font-size: 0.625em; background: var(--border-color); border: none; border-radius: 4px; cursor: pointer;">×</button>
-          `;
-          list.appendChild(row);
-          setupCustomParamRowListeners(row, provider, model);
-        }
-      });
-    });
-
-    // Setup listeners for existing custom param rows
-    document.querySelectorAll('.custom-params-list').forEach(list => {
-      const model = list.dataset.model;
-      const provider = list.dataset.provider;
-      list.querySelectorAll('div').forEach(row => {
-        setupCustomParamRowListeners(row, provider, model);
-      });
-    });
-  }
-
-  function setupCustomParamRowListeners(row, provider, model) {
-    const keyInput = row.querySelector('.custom-param-key');
-    const valueInput = row.querySelector('.custom-param-value');
-    const removeBtn = row.querySelector('.remove-custom-param');
-    const list = row.closest('.custom-params-list'); // Cache list reference before row could be removed
-
-    const saveCustomParams = () => {
-      if (!list) return; // Safety check
-      const customParams = {};
-      list.querySelectorAll('div').forEach(r => {
-        const k = r.querySelector('.custom-param-key')?.value?.trim();
-        const v = r.querySelector('.custom-param-value')?.value?.trim();
-        if (k) {
-          // Try to parse as number, boolean, or JSON object
-          let parsedValue = v;
-          if (v === 'true') parsedValue = true;
-          else if (v === 'false') parsedValue = false;
-          else if (!isNaN(v) && v !== '') parsedValue = parseFloat(v);
-          else if (v.startsWith('{') || v.startsWith('[')) {
-            try { parsedValue = JSON.parse(v); } catch (e) { }
-          }
-          customParams[k] = parsedValue;
-        }
-      });
-      saveInlineParam(provider, model, 'customParams', customParams);
-    };
-
-    if (keyInput) {
-      keyInput.addEventListener('blur', saveCustomParams);
-      keyInput.addEventListener('focusout', saveCustomParams); // Add extra safety for blur bypass
-    }
-    if (valueInput) {
-      valueInput.addEventListener('blur', saveCustomParams);
-      valueInput.addEventListener('focusout', saveCustomParams);
-    }
-    if (removeBtn) {
-      removeBtn.addEventListener('click', () => {
-        row.remove();
-        saveCustomParams();
-      });
-    }
+    // No longer needed as listeners are attached during clone
   }
 
   function saveInlineParam(providerId, modelName, paramName, value) {
@@ -1429,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Delegation for remove and configure buttons
-  [textChainListEl, visionChainListEl].forEach(el => {
+  [textChainListEl].forEach(el => {
     if (el) {
       el.addEventListener('click', (e) => {
         const btn = e.target.closest('.chain-btn');
@@ -1459,11 +1276,6 @@ document.addEventListener('DOMContentLoaded', () => {
       delete textChainProviderInput.dataset.providerId;
     }
 
-    // Vision chain provider - custom dropdown (no default selection)
-    if (visionChainProviderInput) {
-      visionChainProviderInput.value = '';
-      delete visionChainProviderInput.dataset.providerId;
-    }
   }
 
   // Initialize providers and populate dropdowns
@@ -1474,7 +1286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Load options from storage
-  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'visionProvider', 'voiceProvider', 'voiceModel', 'model', 'visionModel', 'googleApiKey', 'googleCx', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'maxContextTokens', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'transProvider', 'dictProvider', 'transModelProvider', 'transModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'readWebpage', 'enableGrounding'], (items) => {
+  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'voiceProvider', 'voiceModel', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode'], (items) => {
     // Wait for providers to be loaded
     setTimeout(() => {
       // --- Load Advanced Params ---
@@ -1485,18 +1297,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // --- Load Model Chains ---
       if (items.modelChains) {
         textChain = items.modelChains.text || [];
-        visionChain = items.modelChains.vision || [];
       }
 
-      renderChainList('text');
-      renderChainList('vision');
+      renderChainList();
 
 
 
 
       // Initialize SortableJS
       if (typeof Sortable !== 'undefined') {
-        const createSortable = (el, type) => {
+        const createSortable = (el) => {
           if (!el) return;
           new Sortable(el, {
             animation: 150,
@@ -1504,21 +1314,19 @@ document.addEventListener('DOMContentLoaded', () => {
             ghostClass: 'chain-item-ghost',
             onEnd: function (evt) {
               // Update array order after drag
-              const chain = type === 'text' ? textChain : visionChain;
+              const chain = textChain;
               const item = chain.splice(evt.oldIndex, 1)[0];
               chain.splice(evt.newIndex, 0, item);
 
               // Re-render to update numbers
-              renderChainList(type);
+              renderChainList();
               saveModelChains();
             }
           });
         };
-        createSortable(document.getElementById('textChainList'), 'text');
-        createSortable(document.getElementById('visionChainList'), 'vision');
+        createSortable(document.getElementById('textChainList'));
       }
 
-      updateModelUsageStats();
 
       // Voice provider - custom dropdown (for options UI)
       if (items.voiceProvider && voiceProviderInput) {
@@ -1537,6 +1345,23 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceModelInput.value = items.voiceModel;
       }
 
+      // Dictionary provider - custom dropdown (for options UI)
+      if (items.dictProvider && dictProviderInput) {
+        const prov = getProviderById(items.dictProvider);
+        if (prov) {
+          dictProviderInput.value = prov.name;
+          dictProviderInput.dataset.providerId = items.dictProvider;
+          // Enable model input
+          if (dictModelInput) {
+            dictModelInput.disabled = false;
+            dictModelInput.placeholder = 'Type or select model...';
+          }
+        }
+      }
+      if (items.dictModel && dictModelInput) {
+        dictModelInput.value = items.dictModel;
+      }
+
       if (audioSpeedInput) {
         audioSpeedInput.value = (items.audioSpeed || 1.0).toFixed(2);
       }
@@ -1549,8 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 200);
 
-    if (items.googleApiKey) googleApiKeyInput.value = items.googleApiKey;
-    if (items.googleCx) googleCxInput.value = items.googleCx;
+
     if (items.deepLApiKey && deepLApiKeyInput) deepLApiKeyInput.value = items.deepLApiKey;
 
     if (items.googleClientId && googleClientIdInput) googleClientIdInput.value = items.googleClientId;
@@ -1559,47 +1383,13 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('gh_client_id', items.githubClientId);
     }
 
-    // Load Translation and Dictionary Providers
-    const savedTransProvider = items.transProvider || 'ai';
-    const transSelect = document.getElementById('transProvider');
-    if (transSelect) transSelect.value = savedTransProvider;
-    updateTransProviderUI(savedTransProvider);
-
-    const savedDictProvider = items.dictProvider || 'cambridge';
-    const dictSelect = document.getElementById('dictProvider');
-    if (dictSelect) dictSelect.value = savedDictProvider;
-
-    // Load Translation Model (for AI)
-    if (items.transModelProvider && transModelProviderInput) {
-      const prov = getProviderById(items.transModelProvider);
-      if (prov) {
-        transModelProviderInput.value = prov.name;
-        transModelProviderInput.dataset.providerId = items.transModelProvider;
-        if (transModelInput) {
-          transModelInput.disabled = false;
-          transModelInput.placeholder = 'Type or select model...';
-        }
-      }
-    }
-    if (items.transModel && transModelInput) {
-      transModelInput.value = items.transModel;
-    }
 
     // Global Defaults
     const globalDefaults = items.globalDefaults || {};
     const defaultFontSize = globalDefaults.fontSize || items.fontSize || 13;
-    const defaultWidth = globalDefaults.width || items.popupWidth || 500;
-    const defaultHeight = globalDefaults.height || items.popupHeight || 500;
 
     // Font Size - start with global default (domain-specific applied later)
     fontSizeInput.value = defaultFontSize;
-    applyOptionsTypography(parseFloat(defaultFontSize));
-
-    // Popup Dimensions - start with global defaults (domain-specific applied later)
-    popupWidthInput.value = defaultWidth;
-    widthValue.textContent = defaultWidth + 'px';
-    popupHeightInput.value = defaultHeight;
-    heightValue.textContent = defaultHeight + 'px';
 
     // Load Response Language
     const savedLanguage = items.responseLanguage || 'vi';
@@ -1607,23 +1397,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (langRadio) langRadio.checked = true;
 
     // Load Selection Popup setting
+    isAskSelectionPopupEnabled = items.askSelectionPopupEnabled !== undefined ? items.askSelectionPopupEnabled : true;
     updateAskSelectionPopupBtnUI();
 
     // Load Read webpage setting
-    const readWebpageCheckbox = document.getElementById('readWebpage');
-    if (readWebpageCheckbox) {
-      readWebpageCheckbox.checked = items.readWebpage !== undefined ? items.readWebpage : (LUMINA_DEFAULTS.readWebpage || false);
-      readWebpageCheckbox.addEventListener('change', saveOptions);
-    }
 
-    const enableGroundingCheckbox = document.getElementById('enableGrounding');
-    if (enableGroundingCheckbox) {
-      enableGroundingCheckbox.checked = items.enableGrounding !== undefined ? items.enableGrounding : (LUMINA_DEFAULTS.enableGrounding || false);
-      enableGroundingCheckbox.addEventListener('change', saveOptions);
-    }
 
     // Load Auto-hide Input setting
     const autoHideInputEnabledCheckbox = document.getElementById('autoHideInputEnabled');
+    if (autoHideInputEnabledCheckbox) {
+      autoHideInputEnabledCheckbox.checked = items.autoHideInputEnabled !== undefined ? items.autoHideInputEnabled : false;
+      autoHideInputEnabledCheckbox.addEventListener('change', saveOptions);
+    }
 
     // Load temperature and topP
     if (items.temperature !== undefined) {
@@ -1646,19 +1431,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeRadio) themeRadio.checked = true;
     applyTheme(savedTheme);
 
-    // Load Display Mode
-    const savedDisplayMode = items.displayMode || 'popup';
-    const displayModeRadio = document.querySelector(`input[name="displayMode"][value="${savedDisplayMode}"]`);
-    if (displayModeRadio) displayModeRadio.checked = true;
-
-    // Load Memory Settings
-    const memoryThreshold = items.memoryThreshold || 14;
-    const compactionSize = items.compactionSize || 10;
 
     const memThreshInput = document.getElementById('memoryThreshold');
     const compSizeInput = document.getElementById('compactionSize');
     const memThreshVal = document.getElementById('memoryThresholdValue');
     const compSizeVal = document.getElementById('compactionSizeValue');
+    const maxTokensInput = document.getElementById('maxTokens');
+    const maxTokensVal = document.getElementById('maxTokensValue');
+
+    const memoryThreshold = items.memoryThreshold || 14;
+    const compactionSize = items.compactionSize || 10;
+    const maxTokens = items.maxTokens !== undefined ? items.maxTokens : null;
 
     if (memThreshInput) {
       memThreshInput.value = memoryThreshold;
@@ -1704,9 +1487,6 @@ document.addEventListener('DOMContentLoaded', () => {
       compSizeInput.addEventListener('change', handleCompSizeChange);
     }
 
-    const maxTokens = items.maxContextTokens;
-    const maxTokensInput = document.getElementById('maxContextTokens');
-    const maxTokensVal = document.getElementById('maxContextTokensValue');
 
     if (maxTokensInput) {
       if (maxTokens === null || maxTokens === undefined || maxTokens === '') {
@@ -1728,17 +1508,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Load Question Mappings
-    const savedMappings = items.questionMappings || [];
-    // mappingsList is global
-
-    if (mappingsList) {
-      mappingsList.innerHTML = '';
-      savedMappings.forEach((m, index) => {
-        // Handle both legacy (m.key string) and new (m.keyData object) formats
-        const k = m.keyData || m.key;
-
-        renderMappingRow(k, m.prompt);
-      });
+    if (typeof loadQuestionMappings === 'function') {
+      loadQuestionMappings(items);
     }
 
     // Mark settings as loaded - initial load will happen at end of file
@@ -1752,23 +1523,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Auto-save function
   function saveOptions() {
+    if (!window._dictPlusSettingsLoaded) return;
     const provider = providerSelect ? providerSelect.value : '';  // Legacy
     const model = modelInput ? modelInput.value : '';             // Legacy
-    const visionProvider = visionProviderSelect ? visionProviderSelect.value : ''; // Legacy
-    const visionModel = visionModelInput ? visionModelInput.value : '';           // Legacy
     const fontSize = fontSizeInput ? fontSizeInput.value : '13';
-    const popupWidth = popupWidthInput ? popupWidthInput.value : '360';
-    const popupHeight = popupHeightInput ? popupHeightInput.value : '400';
     const responseLanguage = document.querySelector('input[name="responseLanguage"]:checked')?.value || 'vi';
     const theme = document.querySelector('input[name="theme"]:checked')?.value || 'auto';
-    const transProvider = document.getElementById('transProvider')?.value || 'ai';
-    const dictProvider = document.getElementById('dictProvider')?.value || 'cambridge';
-    const displayMode = document.querySelector('input[name="displayMode"]:checked')?.value || 'popup';
-    const readWebpage = document.getElementById('readWebpage')?.checked || false;
-    const enableGrounding = document.getElementById('enableGrounding')?.checked || false;
 
     applyTheme(theme);
-    applyOptionsTypography(parseFloat(fontSize));
 
     // Collect shortcuts
     const shortcuts = {};
@@ -1782,82 +1544,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const audioSpeed = parseFloat(audioSpeedInput ? audioSpeedInput.value : 1.0);
 
-    // First get existing fontSizeByDomain, popupDimensionsByDomain, and globalDefaults to update them
-    chrome.storage.local.get(['fontSizeByDomain', 'popupDimensionsByDomain', 'globalDefaults'], (existing) => {
-      let fontSizeByDomain = existing.fontSizeByDomain || {};
-      let popupDimensionsByDomain = existing.popupDimensionsByDomain || {};
+    // First get existing globalDefaults to update them
+    chrome.storage.local.get(['globalDefaults'], (existing) => {
       let globalDefaults = existing.globalDefaults || {};
-
-      // Always save font size per-domain
-      if (currentHostname) {
-        fontSizeByDomain[currentHostname] = parseFloat(fontSize);
-
-        // Always save popup dimensions per-domain
-        popupDimensionsByDomain[currentHostname] = {
-          width: parseInt(popupWidth),
-          height: parseInt(popupHeight)
-        };
-      }
+      
+      // Update global defaults
+      globalDefaults.fontSize = parseFloat(fontSize);
+      globalDefaults.theme = theme;
 
       // Collect Question Mappings
-      const questionMappings = [];
-      document.querySelectorAll('.mapping-row').forEach((row, index) => {
+      const questionMappingsExport = [];
+      document.querySelectorAll('.mapping-item').forEach((row) => {
         const keyInput = row.querySelector('.mapping-key-input');
-        const prompt = row.querySelector('.mapping-prompt').value.trim();
+        const promptInput = row.querySelector('.mapping-prompt');
+        const prompt = promptInput ? promptInput.value.trim() : '';
 
-        // Allow saving clearing to None (empty keyData)
-        if (keyInput && prompt) {
+        if (keyInput) {
           try {
-            const keyData = keyInput.dataset.key ? JSON.parse(keyInput.dataset.key) : null;
-            questionMappings.push({ keyData, prompt });
-          } catch (e) { console.error('Error parsing key data', e); }
+            const keyStr = keyInput.dataset.key;
+            const keyData = (keyStr && keyStr !== '') ? JSON.parse(keyStr) : null;
+            // Save the row even if key/prompt are empty so the row persists on reload
+            questionMappingsExport.push({ keyData, prompt });
+          } catch (e) {
+            console.error('Error parsing key data', e);
+            // Fallback: save row even if key is malformed (shouldn't happen)
+            questionMappingsExport.push({ keyData: null, prompt });
+          }
         }
       });
 
       const settings = {
-        provider: provider,  // Provider ID
-        model: model,        // Model name
-        visionProvider: visionProvider,  // Provider ID (or empty for same as text)
-        visionModel: visionModel,
+        provider: provider,
+        model: model,
         voiceProvider: voiceProviderInput?.dataset?.providerId || '',
         voiceModel: voiceModelInput ? voiceModelInput.value : '',
-        questionMappings: questionMappings,
+        dictProvider: dictProviderInput?.dataset?.providerId || '',
+        dictModel: dictModelInput ? dictModelInput.value : '',
+        questionMappings: questionMappingsExport,
         fontSize: fontSize, // Global default
-        fontSizeByDomain: fontSizeByDomain,
-        popupDimensionsByDomain: popupDimensionsByDomain,
         globalDefaults: globalDefaults,
-        popupWidth: popupWidth,
-        popupHeight: popupHeight,
         compactionSize: parseInt(document.getElementById('compactionSize')?.value, 10) || 10,
-        readWebpage: readWebpage,
-        enableGrounding: enableGrounding,
-        maxContextTokens: (() => {
-          const raw = document.getElementById('maxContextTokens')?.value;
-          const trimmed = typeof raw === 'string' ? raw.trim() : '';
-          if (!trimmed) return null;
-          const parsed = parseInt(trimmed, 10);
-          return Number.isFinite(parsed) ? parsed : null;
-        })(),
         responseLanguage: responseLanguage,
         theme: theme,
         shortcuts: shortcuts,
-        displayMode: displayMode,
         askSelectionPopupEnabled: isAskSelectionPopupEnabled,
-        transProvider: transProvider,
-        dictProvider: dictProvider,
-        transModelProvider: transModelProviderInput?.dataset?.providerId || '',
-        transModel: transModelInput ? transModelInput.value : '',
-        audioSpeed: audioSpeed
+        autoHideInputEnabled: document.getElementById('autoHideInputEnabled')?.checked || false,
+        audioSpeed: audioSpeed,
+        memoryThreshold: parseInt(document.getElementById('memoryThreshold')?.value, 10) || 14,
+        maxTokens: document.getElementById('maxTokens')?.value || null
       };
 
-      // Save Google API credentials for image search
-      settings.googleApiKey = googleApiKeyInput.value;
-      settings.googleCx = googleCxInput.value;
 
-      // Save DeepL API key for translation
-      if (deepLApiKeyInput) {
-        settings.deepLApiKey = deepLApiKeyInput.value;
-      }
+
 
       // Save OAuth Client IDs
       if (googleClientIdInput) settings.googleClientId = googleClientIdInput.value;
@@ -1871,8 +1609,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.local.set(settings, () => {
         // Sync critical settings to localStorage for synchronous access
         try {
-          localStorage.setItem('lumina_popupWidth', popupWidth);
-          localStorage.setItem('lumina_popupHeight', popupHeight);
+          // Popup dimensions sync removed
         } catch (e) {
           console.warn('Failed to sync to localStorage:', e);
         }
@@ -1897,10 +1634,7 @@ document.addEventListener('DOMContentLoaded', () => {
               settings: {
                 fontSize: fontSize,
                 fontSizeByDomain: fontSizeByDomain,
-                popupDimensionsByDomain: popupDimensionsByDomain,
                 globalDefaults: globalDefaults,
-                popupWidth: popupWidth,
-                popupHeight: popupHeight,
                 theme: theme,
               }
             }).catch(() => { /* Tab might not have content script */ });
@@ -1912,24 +1646,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add auto-save listeners to all inputs
   const inputs = [
     providerSelect, modelInput,
-    visionProviderSelect, visionModelInput,
-    googleApiKeyInput, googleCxInput,
+
     deepLApiKeyInput,
     fontSizeInput,
-    popupWidthInput, popupHeightInput,
   ].filter(Boolean); // Filter out nulls explicitly
 
   function updateAskSelectionPopupBtnUI() {
     if (!askSelectionPopupBtn) return;
     if (isAskSelectionPopupEnabled) {
-      askSelectionPopupBtn.textContent = 'Show';
-      askSelectionPopupBtn.style.color = 'var(--text-primary)';
-      askSelectionPopupBtn.style.background = 'var(--element-bg)';
-      askSelectionPopupBtn.style.borderColor = 'var(--border-color)';
+      askSelectionPopupBtn.textContent = 'Enabled';
+      askSelectionPopupBtn.style.color = '#fff';
+      askSelectionPopupBtn.style.background = '#28a745'; // Green for enabled
+      askSelectionPopupBtn.style.borderColor = '#28a745';
       askSelectionPopupBtn.style.boxShadow = 'none';
       askSelectionPopupBtn.style.fontWeight = '600';
     } else {
-      askSelectionPopupBtn.textContent = 'Hide';
+      askSelectionPopupBtn.textContent = 'Disabled';
       askSelectionPopupBtn.style.color = 'var(--text-secondary)';
       askSelectionPopupBtn.style.background = 'var(--card-bg)';
       askSelectionPopupBtn.style.borderColor = 'var(--border-color)';
@@ -1968,31 +1700,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Translation Provider Logic
-  function updateTransProviderUI(provider) {
-    if (deeplConfig) {
-      deeplConfig.style.display = provider === 'deepl' ? 'block' : 'none';
-    }
-    if (aiTranslationConfig) {
-      aiTranslationConfig.style.display = provider === 'ai' ? 'block' : 'none';
-    }
-  }
-
-  // Update Translation Provider UI
-  const transProviderSelect = document.getElementById('transProvider');
-  if (transProviderSelect) {
-    transProviderSelect.addEventListener('change', (e) => {
-      updateTransProviderUI(e.target.value);
-      saveOptions();
-    });
-  }
-
-  // Dictionary Provider Listener
-  const dictProviderSelect = document.getElementById('dictProvider');
-  if (dictProviderSelect) {
-    dictProviderSelect.addEventListener('change', () => {
-      saveOptions();
-    });
-  }
 
   // Add auto-save listeners for radio buttons
   document.querySelectorAll('input[name="theme"]').forEach(radio => {
@@ -2003,9 +1710,6 @@ document.addEventListener('DOMContentLoaded', () => {
     radio.addEventListener('change', saveOptions);
   });
 
-  document.querySelectorAll('input[name="displayMode"]').forEach(radio => {
-    radio.addEventListener('change', saveOptions);
-  });
 
   if (providerSelect) {
     providerSelect.addEventListener('change', () => {
@@ -2015,7 +1719,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Fetch models for the selected provider
       const provider = getProviderById(providerId);
       if (provider) {
-        fetchModelsForProvider(provider, modelInput.value);
+        fetchModelsForProvider(provider, {
+          selectedModel: modelInput.value
+        });
       } else {
         availableModels = [];
         renderDropdown([], modelInput, modelList);
@@ -2050,12 +1756,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setupDropdown(modelInput, modelList, () => availableModels);
-  setupDropdown(visionModelInput, visionModelList, () => {
-    // If vision provider is set and different, use vision models
-    const visionProvider = visionProviderSelect ? visionProviderSelect.value : '';
-    return visionProvider ? availableVisionModels : availableModels;
-  });
   setupDropdown(voiceModelInput, voiceModelList, () => availableVoiceModels);
+  setupDropdown(dictModelInput, dictModelList, () => availableDictModels);
 
   function renderDropdown(models, inputElement, listElement) {
     listElement.innerHTML = '';
@@ -2100,8 +1802,7 @@ document.addEventListener('DOMContentLoaded', () => {
           currentlyConfiguringProvider = null;
           // Refresh chain lists to remove highlight
           if (typeof renderChainList === 'function') {
-            renderChainList('text');
-            renderChainList('vision');
+            renderChainList();
           }
         }
 
@@ -2112,9 +1813,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Auto-add for Chain UI (Model Management)
         if (inputElement.id === 'textChainModel') {
-          addToChain('text');
-        } else if (inputElement.id === 'visionChainModel') {
-          addToChain('vision');
+          addToChain();
         }
 
         // Reset flag after a short delay
@@ -2126,22 +1825,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Vision provider change listener
-  if (visionProviderSelect) {
-    visionProviderSelect.addEventListener('change', () => {
-      const providerId = visionProviderSelect.value;
-      saveOptions();
-
-      // Fetch models for the selected vision provider
-      const provider = getProviderById(providerId);
-      if (provider) {
-        fetchModelsForProvider(provider, visionModelInput.value, true);
-      } else {
-        availableVisionModels = [];
-        renderDropdown([], visionModelInput, visionModelList);
-      }
-    });
-  }
 
   // Voice provider custom dropdown
   if (voiceProviderInput && voiceProviderList) {
@@ -2175,7 +1858,9 @@ document.addEventListener('DOMContentLoaded', () => {
             saveOptions();
             const provider = getProviderById(item.dataset.value);
             if (provider) {
-              fetchModelsForProvider(provider, '', false, true);
+              fetchModelsForProvider(provider, {
+                isVoice: true
+              });
             }
           });
         });
@@ -2200,7 +1885,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const provider = providerId ? getProviderById(providerId) : null;
       if (provider) {
         // Refresh list on focus
-        fetchModelsForProvider(provider, voiceModelInput.value, false, true);
+        fetchModelsForProvider(provider, {
+          selectedModel: voiceModelInput.value,
+          isVoice: true
+        });
       }
       if (voiceModelList) voiceModelList.style.display = 'block';
     });
@@ -2219,39 +1907,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Translation Model provider custom dropdown
-  if (transModelProviderInput && transModelProviderList) {
+  // Dictionary provider custom dropdown
+  if (dictProviderInput && dictProviderList) {
     // Initially disable model input until provider is selected
-    if (transModelInput && !transModelProviderInput.dataset.providerId) {
-      transModelInput.disabled = true;
-      transModelInput.placeholder = 'Select provider first...';
+    if (dictModelInput && !dictProviderInput.dataset.providerId) {
+      dictModelInput.disabled = true;
+      dictModelInput.placeholder = 'Select provider first...';
     }
 
-    transModelProviderInput.addEventListener('click', () => {
-      const isVisible = transModelProviderList.style.display === 'block';
-      transModelProviderList.style.display = isVisible ? 'none' : 'block';
+    dictProviderInput.addEventListener('click', () => {
+      const isVisible = dictProviderList.style.display === 'block';
+      dictProviderList.style.display = isVisible ? 'none' : 'block';
 
       if (!isVisible) {
-        transModelProviderList.innerHTML = providers.map(p =>
+        dictProviderList.innerHTML = providers.map(p =>
           `<div class="dropdown-item" data-value="${p.id}">${escapeHtml(p.name)}</div>`
         ).join('');
 
-        transModelProviderList.querySelectorAll('.dropdown-item').forEach(item => {
+        dictProviderList.querySelectorAll('.dropdown-item').forEach(item => {
           item.addEventListener('click', () => {
-            transModelProviderInput.value = item.textContent;
-            transModelProviderInput.dataset.providerId = item.dataset.value;
-            transModelProviderList.style.display = 'none';
+            dictProviderInput.value = item.textContent;
+            dictProviderInput.dataset.providerId = item.dataset.value;
+            dictProviderList.style.display = 'none';
 
             // Enable model input
-            if (transModelInput) {
-              transModelInput.disabled = false;
-              transModelInput.placeholder = 'Type or select model...';
+            if (dictModelInput) {
+              dictModelInput.disabled = false;
+              dictModelInput.placeholder = 'Type or select model...';
             }
 
             saveOptions();
             const provider = getProviderById(item.dataset.value);
             if (provider) {
-              fetchModelsForProvider(provider, '', false, false, true);
+              fetchModelsForProvider(provider, {
+                isDict: true
+              });
             }
           });
         });
@@ -2259,64 +1949,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', (e) => {
-      if (!transModelProviderInput.contains(e.target) && !transModelProviderList.contains(e.target)) {
-        transModelProviderList.style.display = 'none';
+      if (!dictProviderInput.contains(e.target) && !dictProviderList.contains(e.target)) {
+        dictProviderList.style.display = 'none';
       }
     });
   }
 
-  // Translation model input listeners
-  if (transModelInput) {
-    transModelInput.addEventListener('change', () => {
+  // Dictionary model input listeners
+  if (dictModelInput) {
+    dictModelInput.addEventListener('change', () => {
       saveOptions();
     });
 
-    transModelInput.addEventListener('focus', () => {
-      const providerId = transModelProviderInput?.dataset?.providerId;
+    dictModelInput.addEventListener('focus', () => {
+      const providerId = dictProviderInput?.dataset?.providerId;
       const provider = providerId ? getProviderById(providerId) : null;
       if (provider) {
         // Refresh list on focus
-        fetchModelsForProvider(provider, transModelInput.value, false, false, true);
+        fetchModelsForProvider(provider, {
+          selectedModel: dictModelInput.value,
+          isDict: true
+        });
       }
-      if (transModelList) transModelList.style.display = 'block';
+      if (dictModelList) dictModelList.style.display = 'block';
     });
 
-    transModelInput.addEventListener('input', () => {
-      const query = transModelInput.value.toLowerCase();
-      const filtered = availableTransModels.filter(m => m.toLowerCase().includes(query));
-      renderDropdown(filtered, transModelInput, transModelList);
-      if (transModelList) transModelList.style.display = 'block';
+    dictModelInput.addEventListener('input', () => {
+      const query = dictModelInput.value.toLowerCase();
+      // Use the appropriate model cache based on context
+      const modelsToFilter = availableDictModels || [];
+      const filtered = modelsToFilter.filter(m => m.toLowerCase().includes(query));
+      renderDropdown(filtered, dictModelInput, dictModelList);
+      if (dictModelList) dictModelList.style.display = 'block';
     });
 
-    transModelInput.addEventListener('blur', () => {
+    dictModelInput.addEventListener('blur', () => {
       setTimeout(() => {
-        if (!isSelectingModel && transModelList) transModelList.style.display = 'none';
+        if (!isSelectingModel && dictModelList) dictModelList.style.display = 'none';;
       }, 200);
     });
   }
 
-  let availableModels = [];
-  let availableVisionModels = [];
-  let availableVoiceModels = [];
-  let availableTransModels = [];
-
   // Fetch models for a dynamic provider
-  async function fetchModelsForProvider(provider, selectedModel, isVision = false, isVoice = false, isTrans = false, targetListId = null, targetInputId = null) {
+  async function fetchModelsForProvider(provider, options = {}) {
     if (!provider) return;
+
+    // Destructure options with defaults
+    const {
+      selectedModel = '',
+      isVision = false,
+      isVoice = false,
+      isTrans = false,
+      isDict = false,
+      targetListId = null,
+      targetInputId = null,
+      customTarget = false
+    } = options;
 
     // Determine target elements
     let listId = targetListId;
     let inputId = targetInputId;
+
     if (!listId) {
-      if (isTrans) listId = 'transModelList';
+      if (isDict) listId = 'dictModelList';
       else if (isVoice) listId = 'voiceModelList';
-      else if (isVision) listId = 'visionModelList';
       else listId = 'modelList';
     }
     if (!inputId) {
-      if (isTrans) inputId = 'transModelInput';
+      if (isDict) inputId = 'dictModel';
       else if (isVoice) inputId = 'voiceModel';
-      else if (isVision) inputId = 'visionModel';
       else inputId = 'model';
     }
 
@@ -2356,12 +2057,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Update global arrays
-      if (isTrans) {
-        availableTransModels = models;
+      if (isDict) {
+        availableDictModels = models;
       } else if (isVoice) {
         availableVoiceModels = models;
-      } else if (isVision) {
-        availableVisionModels = models;
       } else {
         availableModels = models;
       }
@@ -2370,7 +2069,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const inputEl = document.getElementById(inputId);
       const listEl = document.getElementById(listId);
-      renderDropdown(models, inputEl, listEl);
+      renderModelDropdown(listEl, inputEl, models);
 
       // Show dropdown if input is currently focused
       if (inputEl && document.activeElement === inputEl && listEl) {
@@ -2386,7 +2085,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Fallback
       const inputEl = document.getElementById(inputId);
       const listEl = document.getElementById(listId);
-      renderDropdown([], inputEl, listEl);
+      renderModelDropdown(listEl, inputEl, []);
     }
   }
 
@@ -2411,6 +2110,15 @@ document.addEventListener('DOMContentLoaded', () => {
       div.addEventListener('mousedown', () => {
         input.value = m;
         list.style.display = 'none';
+
+        // Auto-add for Chain UI (Model Management)
+        if (input.id === 'textChainModel') {
+          addToChain();
+        }
+
+        // Notify that model changed (for saving)
+        document.dispatchEvent(new CustomEvent('modelChanged'));
+        saveOptions();
       });
       list.appendChild(div);
     });
@@ -2479,59 +2187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function fetchVisionModels(provider, apiKey, selectedModel) {
-    try {
-      const firstKey = apiKey.split(',')[0].trim();
-      let models = [];
-      if (provider === 'groq') {
-        const response = await fetch(PROVIDERS.groq.modelsUrl, {
-          headers: { 'Authorization': `Bearer ${firstKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data.map(m => m.id);
-        }
-      } else if (provider === 'gemini') {
-        const response = await fetch(`${PROVIDERS.gemini.modelsUrl}?key=${firstKey}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.models) {
-            models = data.models.map(m => m.name.replace('models/', ''));
-          }
-        }
-      } else if (provider === 'openrouter') {
-        const response = await fetch(PROVIDERS.openrouter.modelsUrl, {
-          headers: { 'Authorization': `Bearer ${firstKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data) {
-            models = data.data.map(m => m.id);
-          }
-        }
-      }
-
-      availableVisionModels = models;
-    } catch (e) {
-      console.error('Failed to fetch vision models', e);
-      availableVisionModels = [];
-    }
-  }
-
-  if (popupWidthInput) {
-    popupWidthInput.addEventListener('input', () => {
-      widthValue.textContent = popupWidthInput.value + 'px';
-      saveOptions();
-    });
-  }
-
-  if (popupHeightInput) {
-    popupHeightInput.addEventListener('input', () => {
-      heightValue.textContent = popupHeightInput.value + 'px';
-      saveOptions();
-    });
-  }
-
   // Temperature and Top P sliders
   if (temperatureInput) {
     temperatureInput.addEventListener('input', () => {
@@ -2551,17 +2206,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Custom Params with validation
   function addCustomParamRow(key = '', value = '') {
-    if (!customParamsList) return; // Guard against null element
-    const row = document.createElement('div');
-    row.className = 'custom-param-row';
-    row.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: center;';
-    row.innerHTML = `
-      <input type="text" class="custom-param-key" placeholder="key" value="${key}" style="flex: 1; font-size: 0.75em;">
-      <span style="color: var(--text-secondary);">=</span>
-      <input type="text" class="custom-param-value" placeholder="value" value="${value}" style="flex: 1; font-size: 0.75em;">
-      <button type="button" class="remove-param-btn" style="padding: 4px 8px; font-size: 0.6875em; background: var(--error-color, #f44336); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
-    `;
-    customParamsList.appendChild(row);
+    if (!customParamsList) return;
+    const template = document.getElementById('customParamRowTemplate');
+    const clone = template.content.cloneNode(true);
+    const row = clone.querySelector('.custom-param-row');
+
+    const keyInput = row.querySelector('.custom-param-key');
+    const valueInput = row.querySelector('.custom-param-value');
+    const removeBtn = row.querySelector('.remove-param-btn');
+
+    keyInput.value = key;
+    valueInput.value = value;
+
+    removeBtn.addEventListener('click', () => {
+      row.remove();
+      const targetModel = currentlyConfiguringModel || modelInput?.value?.trim();
+      if (targetModel) saveAdvancedParamsForCurrentModel(targetModel);
+    });
+
+    customParamsList.appendChild(clone);
   }
 
   function getCustomParamsJSON() {
@@ -2793,6 +2456,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentRecordingInput = null;
   let recordingPressedCodes = new Set(); // track codes held during recording
   let recordingHadInput = false;    // true once a key/mouse shortcut is actually saved
+  let suppressNextShortcutClick = null;
 
   // Format key display name
   function getKeyDisplay(event) {
@@ -2911,42 +2575,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render shortcut display
   function renderShortcutDisplay(inputEl, keyData) {
-    // Add unique ID for debugging
     if (!inputEl.dataset.debugId) {
       inputEl.dataset.debugId = 'input_' + Math.random().toString(36).substr(2, 9);
     }
 
+    inputEl.innerHTML = '';
+
     if (!keyData) {
-      inputEl.innerHTML = '<span style="color: var(--text-secondary); font-style: italic;">None</span>';
+      const template = document.getElementById('shortcutNoneTemplate');
+      inputEl.appendChild(template.content.cloneNode(true));
       inputEl.dataset.key = '';
       return;
     }
 
     const normalizedKeyData = normalizeShortcutForOS(keyData);
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
-    const parts = [];
+    const addPart = (text) => {
+      const template = document.getElementById('shortcutKeySegmentTemplate');
+      const clone = template.content.cloneNode(true);
+      const span = clone.querySelector('.shortcut-key');
+      span.textContent = text;
+      inputEl.appendChild(clone);
+    };
 
-    // If the main key IS a modifier, we don't want to show it in the modifier list separately
+    if (normalizedKeyData.ctrlKey && normalizedKeyData.key !== 'Control') addPart(isMac ? '⌃' : 'Ctrl');
+    if (normalizedKeyData.altKey && normalizedKeyData.key !== 'Alt') addPart(isMac ? '⌥' : 'Alt');
+    if (normalizedKeyData.shiftKey && normalizedKeyData.key !== 'Shift') addPart(isMac ? '⇧' : 'Shift');
+    if (normalizedKeyData.metaKey && normalizedKeyData.key !== 'Meta') addPart(isMac ? '⌘' : 'Win');
 
-    const isModifierKey = ['Control', 'Alt', 'Shift', 'Meta'].includes(normalizedKeyData.key);
-
-    // Only show modifier symbols if they are NOT the main key being pressed
-    // Use display as-is from keyData (already set by getKeyDisplay, which includes L/R distinction)
     let display = normalizedKeyData.display;
-
-    // Override display for Space key (show "Space" instead of blank)
     if (normalizedKeyData.key === ' ' || normalizedKeyData.code === 'Space') display = 'Space';
+    addPart(display);
 
-    // Remove + at the end if it exists (for safety, though logic above shouldn't add it if main key is modifier)
-
-    if (normalizedKeyData.ctrlKey && normalizedKeyData.key !== 'Control') parts.push(isMac ? '<span class="shortcut-key">⌃</span>' : '<span class="shortcut-key">Ctrl</span>');
-    if (normalizedKeyData.altKey && normalizedKeyData.key !== 'Alt') parts.push(isMac ? '<span class="shortcut-key">⌥</span>' : '<span class="shortcut-key">Alt</span>');
-    if (normalizedKeyData.shiftKey && normalizedKeyData.key !== 'Shift') parts.push(isMac ? '<span class="shortcut-key">⇧</span>' : '<span class="shortcut-key">Shift</span>');
-    if (normalizedKeyData.metaKey && normalizedKeyData.key !== 'Meta') parts.push(isMac ? '<span class="shortcut-key">⌘</span>' : '<span class="shortcut-key">Win</span>');
-
-    parts.push(`<span class="shortcut-key">${display}</span>`);
-
-    inputEl.innerHTML = parts.join('');
     inputEl.dataset.key = JSON.stringify(normalizedKeyData);
   }
 
@@ -2960,7 +2621,9 @@ document.addEventListener('DOMContentLoaded', () => {
     recordingHadInput = false;
     recordingPressedCodes.clear();
     inputEl.classList.add('recording');
-    inputEl.innerHTML = '<span style="color: var(--primary-color); font-weight: 520;">Press a key...</span>';
+    inputEl.innerHTML = '';
+    const template = document.getElementById('shortcutRecordingTemplate');
+    inputEl.appendChild(template.content.cloneNode(true));
   }
 
   // Stop recording
@@ -2984,23 +2647,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function recordMouseShortcut(inputEl, button, modifiers = {}) {
+    const code = 'Mouse' + button;
+
+    const keyData = {
+      code: code,
+      key: code,
+      display: getKeyDisplay({ code: code }),
+      ctrlKey: !!modifiers.ctrlKey,
+      altKey: !!modifiers.altKey,
+      shiftKey: !!modifiers.shiftKey,
+      metaKey: !!modifiers.metaKey
+    };
+
+    renderShortcutDisplay(inputEl, keyData);
+    recordingHadInput = true;
+    suppressNextShortcutClick = inputEl;
+    setTimeout(() => {
+      if (suppressNextShortcutClick === inputEl) {
+        suppressNextShortcutClick = null;
+      }
+    }, 0);
+
+    stopRecording(inputEl, false);
+    saveOptions();
+  }
+
   // Show live preview of modifiers being pressed
   function showModifierPreview(e) {
     if (!currentRecordingInput) return;
 
     // Use standard symbols for live preview
-    const parts = [];
-    if (e.ctrlKey) parts.push(isMac ? '<span class="shortcut-key">⌃</span>' : '<span class="shortcut-key">Ctrl</span>');
-    if (e.altKey) parts.push(isMac ? '<span class="shortcut-key">⌥</span>' : '<span class="shortcut-key">Alt</span>');
-    if (e.shiftKey) parts.push(isMac ? '<span class="shortcut-key">⇧</span>' : '<span class="shortcut-key">Shift</span>');
-    if (e.metaKey) parts.push(isMac ? '<span class="shortcut-key">⌘</span>' : '<span class="shortcut-key">Win</span>');
-
-    // If only modifiers are pressed, show them. 
-
-    if (parts.length > 0) {
-      currentRecordingInput.innerHTML = parts.join('');
+    if (hasModifiers) {
+      // already added segments
     } else {
-      currentRecordingInput.innerHTML = '<span style="color: var(--primary-color); font-weight: 520;">Press a key...</span>';
+      currentRecordingInput.innerHTML = '';
+      const template = document.getElementById('shortcutRecordingTemplate');
+      currentRecordingInput.appendChild(template.content.cloneNode(true));
     }
   }
 
@@ -3035,7 +2718,18 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       e.stopPropagation(); // Stop bubbling
 
+      if (suppressNextShortcutClick === input) {
+        suppressNextShortcutClick = null;
+        return;
+      }
+
       startRecording(input);
+    });
+
+    input.addEventListener('contextmenu', (e) => {
+      if (currentRecordingInput === input) {
+        e.preventDefault();
+      }
     });
 
     // Focus also starts recording, BUT we debounce/check if it's already active to avoid fighting with click
@@ -3074,14 +2768,22 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mousedown', (e) => {
     if (!currentRecordingInput) return;
 
-    // If clicking on a shortcut input, let its own click handler manage recording
-    if (e.target.classList.contains('shortcut-input') || e.target.closest?.('.shortcut-input')) return;
+    const shortcutTarget = e.target.classList.contains('shortcut-input')
+      ? e.target
+      : e.target.closest?.('.shortcut-input');
+
+    // If clicking a different shortcut input, let that input's own click handler manage it.
+    if (shortcutTarget && shortcutTarget !== currentRecordingInput) return;
 
     // Prevent default actions (like losing focus or context menu)
     e.preventDefault();
     e.stopPropagation();
 
-    if (e.button === 0) {
+    if (shortcutTarget !== currentRecordingInput) {
+      if (e.button !== 0) {
+        return;
+      }
+
       const input = currentRecordingInput;
       // Left click outside = cancel and reset shortcut to None
       renderShortcutDisplay(input, null);
@@ -3095,25 +2797,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Other mouse buttons: record as shortcut
-    const code = 'Mouse' + e.button;
-
-    const keyData = {
-      code: code,
-      key: code,
-      display: getKeyDisplay({ code: code }),
-      ctrlKey: e.ctrlKey,
-      altKey: e.altKey,
-      shiftKey: e.shiftKey,
-      metaKey: e.metaKey
-    };
-
-    renderShortcutDisplay(currentRecordingInput, keyData);
-    recordingHadInput = true;
-
-    // Finish recording
-    stopRecording(currentRecordingInput, false);
-    saveOptions();
+    // Mouse buttons on the active shortcut input are recorded as shortcuts.
+    recordMouseShortcut(currentRecordingInput, e.button, e);
   }, true);
 
   // Keyboard events
@@ -3222,170 +2907,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  function refreshMappingNumbers() {
+    const mappingsList = document.getElementById('questionMappingsList');
+    if (!mappingsList) return;
+    mappingsList.querySelectorAll('.mapping-item').forEach((item, index) => {
+      const numberEl = item.querySelector('.mapping-number');
+      if (numberEl) numberEl.textContent = index + 1;
+    });
+  }
+
   function renderMappingRow(keyDataOrSimpleKey = null, prompt = '') {
+    const mappingsList = document.getElementById('questionMappingsList');
     if (!mappingsList) return;
 
-    const div = document.createElement('div');
-    div.className = 'mapping-row';
-
-    // Handle legacy simple key (string) vs new object
+    // Support both old {key: "Q"} and new {keyData: {...}}
     let keyData = null;
     if (keyDataOrSimpleKey) {
       if (typeof keyDataOrSimpleKey === 'string') {
-        // Migration for simple string keys
-        const k = keyDataOrSimpleKey.toUpperCase();
-        keyData = { key: k, code: 'Key' + k, display: k };
+        keyData = { key: keyDataOrSimpleKey };
       } else {
-        // Clone the object to prevent reference sharing
-        keyData = JSON.parse(JSON.stringify(keyDataOrSimpleKey));
+        keyData = keyDataOrSimpleKey;
       }
     }
 
-    div.innerHTML = `
-          <div class="shortcut-input mapping-key-input" tabindex="0" style="width: 60px; margin-right: 8px;"></div>
-          <div style="flex: 1; position: relative;">
-            <input type="text" class="mapping-prompt" placeholder="Prompt (e.g. Explain this:)">
-            <div class="mapping-suggestions dropdown-list"></div>
-          </div>
-          <button class="mapping-delete" title="Remove">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-      `;
+    const template = document.getElementById('mappingRowTemplate');
+    const clone = template.content.cloneNode(true);
+    const div = clone.querySelector('.mapping-item');
 
-    const input = div.querySelector('.mapping-key-input');
+    const keyDisplay = div.querySelector('.mapping-key-input');
     const promptInput = div.querySelector('.mapping-prompt');
-    const deleteBtn = div.querySelector('.mapping-delete');
+    const deleteBtn = div.querySelector('.mapping-delete-btn');
 
-    // Set value explicitly to handle special characters/quotes
+    if (keyData) {
+      renderShortcutDisplay(keyDisplay, keyData);
+    }
     if (prompt) {
       promptInput.value = prompt;
     }
 
-    // Initialize display
-    renderShortcutDisplay(input, keyData);
-
-    // Add recording listeners (copied from init loop)
-    input.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startRecording(input);
-    });
-    input.addEventListener('focus', () => {
-      startRecording(input);
-    });
-    input.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (currentRecordingInput === input) {
-          if (!recordingHadInput) {
-            renderShortcutDisplay(input, null);
-            saveOptions();
-            stopRecording(input, false);
-          } else {
-            stopRecording(input, true);
-          }
-        }
-      }, 100);
+    keyDisplay.addEventListener('click', () => {
+      startRecording(keyDisplay);
     });
 
-    const suggestionsEl = div.querySelector('.mapping-suggestions');
-    const variables = ['$SelectedText', '$Sentence', '$Paragraph', '$PageTitle', '$URL'];
-
-    promptInput.addEventListener('input', () => {
-      saveOptions();
-      updateSuggestions();
-    });
-
-    promptInput.addEventListener('click', updateSuggestions);
-
-    // Hide suggestions on blur (delayed to allow clicks)
-    promptInput.addEventListener('blur', () => {
-      setTimeout(() => { suggestionsEl.style.display = 'none'; }, 200);
-    });
-
-    let selectedIndex = -1;
-    promptInput.addEventListener('keydown', (e) => {
-      if (suggestionsEl.style.display === 'block') {
-        const items = suggestionsEl.querySelectorAll('.dropdown-item');
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          selectedIndex = (selectedIndex + 1) % items.length;
-          updateSelection(items);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-          updateSelection(items);
-        } else if (e.key === 'Enter' && selectedIndex !== -1) {
-          e.preventDefault();
-          items[selectedIndex].click();
-        } else if (e.key === 'Escape') {
-          suggestionsEl.style.display = 'none';
-        }
-      }
-    });
-
-    function updateSelection(items) {
-      items.forEach((item, idx) => {
-        item.style.background = (idx === selectedIndex) ? 'var(--sidebar-hover)' : 'transparent';
-      });
-    }
-
-    function updateSuggestions() {
-      const val = promptInput.value;
-      const pos = promptInput.selectionStart;
-      const before = val.substring(0, pos);
-
-      // Find the start of the current variable trigger (last $)
-      const dollarIndex = before.lastIndexOf('$');
-
-      if (dollarIndex !== -1) {
-        // Check if there's a space between $ and cursor
-        const search = before.substring(dollarIndex + 1);
-        if (search.includes(' ')) {
-          suggestionsEl.style.display = 'none';
-          return;
-        }
-
-        const filtered = variables.filter(v =>
-          v.toLowerCase().startsWith('$' + search.toLowerCase())
-        );
-
-        if (filtered.length > 0) {
-          selectedIndex = -1; // Reset selection index
-          suggestionsEl.innerHTML = filtered.map(v => `
-            <div class="dropdown-item" style="padding: 8px 12px; font-size: 0.8125em; font-family: monospace;">${v}</div>
-          `).join('');
-          suggestionsEl.style.display = 'block';
-
-          // Click handler for suggestion items
-          suggestionsEl.querySelectorAll('.dropdown-item').forEach((item, idx) => {
-            item.onclick = (e) => {
-              e.stopPropagation();
-              const selectedVar = filtered[idx];
-              const after = val.substring(pos);
-              const newVal = val.substring(0, dollarIndex) + selectedVar + after;
-              promptInput.value = newVal;
-              promptInput.focus();
-              const newPos = dollarIndex + selectedVar.length;
-              promptInput.setSelectionRange(newPos, newPos);
-              suggestionsEl.style.display = 'none';
-              saveOptions();
-            };
-          });
-        } else {
-          suggestionsEl.style.display = 'none';
-        }
-      } else {
-        suggestionsEl.style.display = 'none';
-      }
-    }
+    promptInput.addEventListener('input', saveOptions);
 
     deleteBtn.addEventListener('click', () => {
       div.remove();
+      refreshMappingNumbers();
       saveOptions();
     });
 
     mappingsList.appendChild(div);
+    refreshMappingNumbers();
   }
+
 
   // Load Question Mappings (Moved logic here to use the updated render function)
   function loadQuestionMappings(items) {
@@ -3398,6 +2973,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = m.keyData || m.key;
         renderMappingRow(data, m.prompt);
       });
+      refreshMappingNumbers();
     }
   }
 
@@ -3406,70 +2982,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addMappingBtn) {
     addMappingBtn.addEventListener('click', () => {
       renderMappingRow();
+      saveOptions(); // Trigger save so the new row is persisted immediately
     });
   }
 
 
 
-  // --- Model Usage Counter Logic ---
-  async function updateModelUsageStats() {
-    // Re-query elements in case they weren't ready earlier (though they should be)
-    const usageFooter = document.getElementById('modelUsageFooter');
-    const usageName = document.getElementById('modelUsageName');
-    const usageCount = document.getElementById('modelUsageCount');
-
-    if (!usageFooter || !usageCount) {
-      console.warn('Lumina: Model usage footer elements not found in DOM');
-      return;
-    }
-
-    try {
-      const data = await chrome.storage.local.get(['dailyModelStats', 'model', 'modelChains', 'lastUsedModelId']);
-      let activeModelId = data.lastUsedModelId;
-
-      // 1. Fallback: Try to get the first model from the text chain
-      if (!activeModelId && data.modelChains && data.modelChains.text && data.modelChains.text.length > 0) {
-        activeModelId = data.modelChains.text[0].model;
-      }
-
-      // 2. Fallback to legacy single model if chain is empty
-      if (!activeModelId) {
-        activeModelId = data.model;
-      }
-
-      // If still no model, hide
-      if (!activeModelId) {
-        usageFooter.style.display = 'none';
-        return;
-      }
-
-      // Show footer (use flex to match layout)
-      usageFooter.style.display = 'flex';
-
-      const today = new Date().toISOString().split('T')[0];
-      const stats = data.dailyModelStats;
-
-      let count = 0;
-      if (stats && stats.date === today && stats.counts) {
-        count = stats.counts[activeModelId] || 0;
-      }
-
-      if (usageName) usageName.textContent = activeModelId;
-      usageCount.textContent = `${count} requests today`;
-    } catch (e) {
-      console.error('[Lumina] Error updating usage stats:', e);
-    }
-  }
-
-  // Initial update
-  updateModelUsageStats();
 
   // Listen for changes
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
-      if (changes.dailyModelStats || changes.model || changes.provider || changes.modelChains || changes.lastUsedModelId) {
-        updateModelUsageStats();
-      }
       // Refresh facts list when memory changes
       if (changes.user_memory) {
         renderUserFacts();
@@ -3489,101 +3011,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const memory = await UserMemory.load();
     const facts = memory.facts || [];
 
+    userFactsList.innerHTML = '';
+
     if (facts.length === 0) {
-      userFactsList.innerHTML = `
-        <div style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 0.8125em;">
-          No instructions yet. Add new instruction below.
-        </div>
-      `;
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'chain-empty-state';
+      emptyDiv.textContent = 'No instructions yet. Add new instruction above.';
+      userFactsList.appendChild(emptyDiv);
       return;
     }
 
-    userFactsList.innerHTML = facts.map((fact, index) => `
-      <div class="fact-item" data-index="${index}" style="
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        background: var(--input-bg);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        margin-bottom: 8px;
-        transition: all 0.2s ease;
-      ">
-        <span style="color: var(--primary-color); font-weight: 600; width: 20px; flex-shrink: 0; font-size: 0.75em;">${index + 1}</span>
-        <input type="text" class="fact-text" value="${escapeHtml(fact)}" style="
-          flex: 1;
-          border: none;
-          background: transparent;
-          font-size: 0.8125em;
-          color: var(--text-primary);
-          outline: none;
-          padding: 4px;
-          box-shadow: none;
-        ">
-        <button class="fact-remove-btn" data-index="${index}" style="
-          width: 24px;
-          height: 24px;
-          border: 1px solid var(--border-color);
-          background: transparent;
-          border-radius: 4px;
-          cursor: pointer;
-          color: var(--text-secondary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-          padding: 0;
-        " title="Remove instruction">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-    `).join('');
+    facts.forEach((fact, index) => {
+      const template = document.getElementById('userFactItemTemplate');
+      const clone = template.content.cloneNode(true);
+      const item = clone.querySelector('.fact-item');
 
-    // Add event listeners for edit and remove
-    userFactsList.querySelectorAll('.fact-text').forEach(input => {
+      item.querySelector('.fact-index').textContent = index + 1;
+      const input = item.querySelector('.fact-text');
+      input.value = fact;
+
       input.addEventListener('blur', async () => {
-        const index = parseInt(input.closest('.fact-item').dataset.index);
-        const newValue = input.value.trim();
-        if (newValue) {
-          await UserMemory.updateFact(index, newValue);
+        const newVal = input.value.trim();
+        if (newVal === '') {
+          await UserMemory.removeFact(index);
+          renderUserFacts();
+        } else if (newVal !== facts[index]) {
+          await UserMemory.updateFact(index, newVal);
+          renderUserFacts();
         }
       });
+
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           input.blur();
         }
       });
-    });
 
-    userFactsList.querySelectorAll('.fact-remove-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const index = parseInt(btn.dataset.index);
+      item.querySelector('.fact-remove-btn').addEventListener('click', async () => {
         await UserMemory.removeFact(index);
         renderUserFacts();
       });
+
+      userFactsList.appendChild(clone);
     });
   }
 
   // Add new fact
-  if (addFactBtn && newFactInput) {
-    addFactBtn.addEventListener('click', async () => {
-      const fact = newFactInput.value.trim();
-      if (fact) {
-        await UserMemory.addFact(fact);
-        newFactInput.value = '';
-        renderUserFacts();
-      }
-    });
-
-    newFactInput.addEventListener('keydown', (e) => {
+  if (newFactInput) {
+    newFactInput.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        addFactBtn.click();
+        const fact = newFactInput.value.trim();
+        if (fact) {
+          await UserMemory.addFact(fact);
+          newFactInput.value = '';
+          renderUserFacts();
+        }
       }
     });
   }
@@ -3594,64 +3078,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (setGlobalDefaultsBtn) {
     setGlobalDefaultsBtn.addEventListener('click', () => {
-      const fontSize = parseFloat(fontSizeInput.value) || 13;
-      const width = parseInt(popupWidthInput.value) || 500;
-      const height = parseInt(popupHeightInput.value) || 420;
-      const theme = document.querySelector('input[name="theme"]:checked')?.value || 'light';
+    const fontSize = parseFloat(fontSizeInput.value) || 13;
+    const theme = document.querySelector('input[name="theme"]:checked')?.value || 'light';
 
-      const defaults = {
-        fontSize: fontSize,
-        width: width,
-        height: height,
-        theme: theme
-      };
+    const defaults = {
+      fontSize: fontSize,
+      theme: theme
+    };
 
-      chrome.storage.local.set({
-        globalDefaults: defaults,
-        fontSizeByDomain: {},
-        popupDimensionsByDomain: {},
-        theme: theme,
-        fontSize: fontSize,
-        popupWidth: width,
-        popupHeight: height
-      }, () => {
-        // Show feedback
-        const originalText = setGlobalDefaultsBtn.innerHTML;
-        const checkIcon = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+    chrome.storage.local.set({
+      globalDefaults: defaults,
+      fontSizeByDomain: {},
+      theme: theme,
+      fontSize: fontSize
+    }, () => {
+      // Show feedback
+      const originalHTML = setGlobalDefaultsBtn.innerHTML;
+      setGlobalDefaultsBtn.innerHTML = '';
+      const template = document.getElementById('appliedStateTemplate');
+      if (template) {
+        setGlobalDefaultsBtn.appendChild(template.content.cloneNode(true));
+      }
+      setGlobalDefaultsBtn.classList.add('btn-applied');
 
-        setGlobalDefaultsBtn.innerHTML = `${checkIcon}Applied!`;
-
-        // Style: feedback colors
-        setGlobalDefaultsBtn.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
-        setGlobalDefaultsBtn.style.borderColor = '#10B981';
-        setGlobalDefaultsBtn.style.color = '#000';
-
-
-        // Broadcast update to all tabs
-        chrome.tabs.query({}, (tabs) => {
-          tabs.forEach((tab) => {
-            if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https')) && tab.id) {
-              chrome.tabs.sendMessage(tab.id, {
-                action: 'settings_updated',
-                settings: {
-                  globalDefaults: defaults,
-                  popupWidth: width,
-                  popupHeight: height,
-                  fontSize: fontSize,
-                  theme: theme,
-                  fontSizeByDomain: {},
-                  popupDimensionsByDomain: {}
-                }
-              }).catch(() => { }); // Ignore errors
-            }
-          });
+      // ... Broadcast logic ...
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https')) && tab.id) {
+            chrome.tabs.sendMessage(tab.id, {
+              action: 'settings_updated',
+              settings: {
+                globalDefaults: defaults,
+                fontSize: fontSize,
+                theme: theme,
+                fontSizeByDomain: {}
+              }
+            }).catch(() => { }); // Ignore errors
+          }
         });
+      });
 
         setTimeout(() => {
-          setGlobalDefaultsBtn.innerHTML = originalText;
-          setGlobalDefaultsBtn.style.backgroundColor = '';
-          setGlobalDefaultsBtn.style.borderColor = '';
-          setGlobalDefaultsBtn.style.color = '';
+          setGlobalDefaultsBtn.innerHTML = originalHTML;
+          setGlobalDefaultsBtn.classList.remove('btn-applied');
         }, 1500);
       });
     });
@@ -3660,21 +3129,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetSettingsBtn) {
     resetSettingsBtn.addEventListener('click', () => {
       const defaultFontSize = 13;
-      const defaultWidth = 500;
-      const defaultHeight = 420;
       const defaultTheme = 'light';
       const defaultAudioSpeed = 1.0;
 
       // Update UI Inputs
       if (fontSizeInput) fontSizeInput.value = defaultFontSize;
-      if (popupWidthInput) {
-        popupWidthInput.value = defaultWidth;
-        if (widthValue) widthValue.textContent = defaultWidth + 'px';
-      }
-      if (popupHeightInput) {
-        popupHeightInput.value = defaultHeight;
-        if (heightValue) heightValue.textContent = defaultHeight + 'px';
-      }
       if (audioSpeedInput) audioSpeedInput.value = defaultAudioSpeed;
 
       const radio = document.querySelector(`input[name="theme"][value="${defaultTheme}"]`);
@@ -3682,21 +3141,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Apply theme immediately
       applyTheme(defaultTheme);
-      applyOptionsTypography(defaultFontSize);
 
       // Save to storage (resetting both global and domain-specific for these values)
       chrome.storage.local.set({
         fontSize: defaultFontSize,
-        popupWidth: defaultWidth,
-        popupHeight: defaultHeight,
         theme: defaultTheme,
         audioSpeed: defaultAudioSpeed,
         fontSizeByDomain: {},
-        popupDimensionsByDomain: {},
         globalDefaults: {
           fontSize: defaultFontSize,
-          width: defaultWidth,
-          height: defaultHeight,
           theme: defaultTheme,
           audioSpeed: defaultAudioSpeed
         }
@@ -3712,11 +3165,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 action: 'settings_updated',
                 settings: {
                   fontSize: defaultFontSize,
-                  popupWidth: defaultWidth,
-                  popupHeight: defaultHeight,
                   theme: defaultTheme,
-                  fontSizeByDomain: {},
-                  popupDimensionsByDomain: {}
+                  fontSizeByDomain: {}
                 }
               }).catch(() => { });
             }
@@ -3754,8 +3204,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateAuthUI(isAuthenticated, user) {
     if (isAuthenticated && user) {
-      if (authLoggedOut) authLoggedOut.style.display = 'none';
-      if (authLoggedIn) authLoggedIn.style.display = 'block';
+      if (authLoggedOut) authLoggedOut.classList.add('hidden');
+      if (authLoggedIn) authLoggedIn.classList.remove('hidden');
       if (userAvatar) userAvatar.src = user.picture;
       if (userName) userName.textContent = user.name;
       if (userEmail) userEmail.textContent = user.email;
@@ -3774,8 +3224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     } else {
-      if (authLoggedOut) authLoggedOut.style.display = 'block';
-      if (authLoggedIn) authLoggedIn.style.display = 'none';
+      if (authLoggedOut) authLoggedOut.classList.remove('hidden');
+      if (authLoggedIn) authLoggedIn.classList.add('hidden');
 
       // Disable Sync Card
       if (syncCard) {
@@ -3790,9 +3240,10 @@ document.addEventListener('DOMContentLoaded', () => {
     googleLoginBtn.addEventListener('click', async () => {
       try {
         googleLoginBtn.disabled = true;
-        // Save original HTML
         const originalHTML = googleLoginBtn.innerHTML;
-        googleLoginBtn.innerHTML = 'Signing in...';
+        googleLoginBtn.innerHTML = '';
+        const template = document.getElementById('signingInStateTemplate');
+        googleLoginBtn.appendChild(template.content.cloneNode(true));
 
         const user = await LuminaAuth.login();
         updateStatus('Signed in successfully', 'success');
@@ -3801,7 +3252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         googleLoginBtn.innerHTML = originalHTML;
       } catch (e) {
         console.error(e);
-        alert('Sign in failed: ' + e.message);
+        updateStatus('Sign in failed: ' + e.message, 'error');
         googleLoginBtn.innerHTML = 'Sign in with Google'; // Fallback
       } finally {
         googleLoginBtn.disabled = false;

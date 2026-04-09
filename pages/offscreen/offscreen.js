@@ -1,9 +1,15 @@
-import { EdgeTTS } from '../../lib/edge-tts/edge-tts.js';
+// import { EdgeTTS } from '../../lib/edge-tts/edge-tts.js';
 
 let currentAudio = null;
 let currentAudioResolve = null; // Resolve callback for the active playSound promise
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // 0. Heartbeat check
+    if (request.action === 'offscreen_ping') {
+        sendResponse({ success: true });
+        return false;
+    }
+
     // 1. New Handler: Edge TTS
     if (request.action === 'offscreen_playEdgeTTS') {
         playEdgeTTS(request.text, request.voice, request.speed)
@@ -32,6 +38,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
+
     // Stop Handlers
     if (request.action === 'offscreen_stopAudio' || request.action === 'offscreen_stopGoogleAudio') {
         stopCurrentAudio(); // also resolves any hanging playSound promise
@@ -40,37 +47,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+
+// ... Audio functions unchanged ...
 async function playEdgeTTS(text, voice = 'en-US-AriaNeural', speed = 1.0) {
     stopCurrentAudio();
-
-    try {
-        const tts = new EdgeTTS();
-
-        let rateStr = '0%';
-        if (speed !== 1.0) {
-            // Convert speed (0.5 to 2.0) to percentage string
-            // 1.0 -> 0%
-            // 2.0 -> +100%
-            // 0.5 -> -50%
-            const percentage = Math.round((speed - 1.0) * 100);
-            rateStr = (percentage >= 0 ? '+' : '') + percentage + '%';
-        }
-
-        await tts.synthesize(text, voice, {
-            rate: rateStr,
-            pitch: '+0Hz',
-            volume: '100%'
-        });
-
-        const audioData = tts.getAudioData();
-        const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        await playSound(audioUrl);
-
-    } catch (e) {
-        throw e;
-    }
+    throw new Error('EdgeTTS not available (dependency missing)');
 }
 
 async function playAudio(url, speed) {
@@ -88,8 +69,6 @@ function stopCurrentAudio() {
         currentAudio.pause();
         currentAudio = null;
     }
-    // Resolve any hanging playSound promise so callers aren't stuck forever
-    // (paused audio never fires onended, which would leave the promise pending)
     if (currentAudioResolve) {
         currentAudioResolve();
         currentAudioResolve = null;
@@ -101,7 +80,7 @@ function playSound(url, speed = 1.0) {
         const audio = new Audio(url);
         audio.playbackRate = speed;
         currentAudio = audio;
-        currentAudioResolve = resolve; // track so stopCurrentAudio can resolve it
+        currentAudioResolve = resolve;
 
         audio.onended = () => {
             currentAudio = null;

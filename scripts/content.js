@@ -3,7 +3,8 @@
 let fontStyleElement = null;
 
 function injectFonts() {
-    if (fontStyleElement) return;
+    // Check both local variable and DOM to prevent duplicates from multiple script runs
+    if (fontStyleElement || document.getElementById('lumina-fonts')) return;
 
     // Use Google Fonts CDN for reliable cross-page loading
     const fontCss = `
@@ -19,11 +20,15 @@ function injectFonts() {
         document.head.appendChild(fontStyleElement);
     } else {
         // Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', () => {
-            if (document.head && fontStyleElement && !fontStyleElement.parentNode) {
-                document.head.appendChild(fontStyleElement);
+        const headObserver = new MutationObserver(() => {
+            if (document.head) {
+                if (!document.getElementById('lumina-fonts')) {
+                    document.head.appendChild(fontStyleElement);
+                }
+                headObserver.disconnect();
             }
         });
+        headObserver.observe(document.documentElement, { childList: true });
     }
 }
 
@@ -192,20 +197,19 @@ function triggerSidePanelQuery(query, displayQuery = null, mode = 'qa') {
 }
 
 function initShadowDOM() {
-    if (luminaHost) return;
-
-    luminaHost = document.createElement('div');
-    luminaHost.id = 'lumina-host';
-    // Host is fixed covering 0x0 but acts as container. 
-    // pointer-events: none ensures it doesn't block page interactions.
-    // Children needs pointer-events: auto.
-    luminaHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; font-family: sans-serif; font-size: 16px; line-height: normal; color: black;';
+    // Check DOM first to prevent duplicates (especially with manifest.json + dynamic registration)
+    if (luminaHost || document.getElementById('lumina-host') || document.getElementById('lumina-shadow-host')) return;
 
     // 1. Shadow root creation
-    const container = document.createElement('div');
-    container.id = 'lumina-shadow-host';
-    luminaShadowRoot = container.attachShadow({ mode: 'open' });
-    document.documentElement.appendChild(container);
+    luminaHost = document.createElement('div');
+    luminaHost.id = 'lumina-shadow-host';
+    luminaHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; overflow: visible;';
+    
+    // Set initial font-size from storage
+    applyAskSelectionStyles();
+
+    luminaShadowRoot = luminaHost.attachShadow({ mode: 'open' });
+    document.documentElement.appendChild(luminaHost);
 
     // 2. Add styles to shadow root
     const link = document.createElement('link');
@@ -321,7 +325,7 @@ window.addEventListener('mousedown', (e) => {
 
 // Load setting
 chrome.storage.local.get(['askSelectionPopupEnabled', 'readWebpage'], (result) => {
-    askSelectionPopupEnabled = result.askSelectionPopupEnabled ?? false;
+    askSelectionPopupEnabled = result.askSelectionPopupEnabled ?? true;
     readWebpageEnabled = result.readWebpage ?? false;
     // LuminaSelection is initialized in initShadowDOM; nothing extra needed here
 });
@@ -342,21 +346,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
         // Font size settings (compensated for page zoom)
         if (changes.fontSize || changes.fontSizeByDomain || changes.globalDefaults) {
-            chrome.storage.local.get(['fontSize', 'fontSizeByDomain', 'globalDefaults'], (items) => {
-                const currentDomain = window.location.hostname;
-                let fontSize = 13;
-                if (items.fontSizeByDomain && items.fontSizeByDomain[currentDomain]) {
-                    fontSize = items.fontSizeByDomain[currentDomain];
-                } else {
-                    const baseSize = items.globalDefaults?.fontSize || items.fontSize || 13;
-                    fontSize = baseSize / (typeof getPageZoom === 'function' ? getPageZoom() : 1);
-                }
-
-                if (luminaHost) {
-                    luminaHost.style.setProperty('font-size', fontSize + 'px', 'important');
-                }
-                document.documentElement.style.setProperty('--lumina-fontSize', fontSize + 'px', 'important');
-            });
+            applyAskSelectionStyles();
         }
 
         // Theme sync
@@ -365,14 +355,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
                 cachedTheme = null;
                 if (typeof updateTheme === 'function') updateTheme();
             }
-        }
-    }
-
-    // Multi-window sync for global visual settings
-    if (changes.globalDefaults) {
-        const fs = changes.globalDefaults.newValue.fontSize;
-        if (luminaHost) {
-            luminaHost.style.setProperty('font-size', fs + 'px', 'important');
         }
     }
 });
@@ -768,7 +750,7 @@ document.addEventListener('keydown', async (event) => {
 
                     // Check if prompt implies translation
                     const promptLower = mapping.prompt.toLowerCase();
-                    const hasVariables = /\$(SelectedText|Sentence|Paragraph|Container)/i.test(mapping.prompt);
+                    const hasVariables = /\$(SelectedText|Sentence|Paragraph|Container)|"SelectedText"/i.test(mapping.prompt);
 
                     const isTranslation =
                         promptLower.includes('dịch') ||
@@ -789,20 +771,20 @@ document.addEventListener('keydown', async (event) => {
                     if (hasVariables) {
                         const containerContent = getSmartClimbedContext();
                         fullQuestion = fullQuestion
-                            .replace(/\$SelectedText/gi, text.trim())
+                            .replace(/\$SelectedText|"SelectedText"/gi, text.trim())
                             .replace(/\$Sentence/gi, () => getSentenceContext())
                             .replace(/\$Paragraph/gi, () => getParagraphContext())
                             .replace(/\$Container/gi, containerContent);
                         // Display version: omit $Container and surrounding punctuation/spaces
                         displayQuestion = mapping.prompt
-                            .replace(/\$SelectedText/gi, text.trim())
+                            .replace(/\$SelectedText|"SelectedText"/gi, text.trim())
                             .replace(/\$Sentence/gi, () => getSentenceContext())
                             .replace(/\$Paragraph/gi, () => getParagraphContext())
                             .replace(/[("'\[]*\$Container[)"'\]]*\s*/gi, '')
                             .trim();
                     } else {
-                        // Fallback to old behavior if no variables
-                        fullQuestion = `${mapping.prompt} "${text.trim()}"`;
+                        // Fallback logic: place selection FIRST to match UI layout [SelectedText] [Input]
+                        fullQuestion = `"${text.trim()}" ${mapping.prompt}`;
                         displayQuestion = fullQuestion;
                     }
 
@@ -822,7 +804,7 @@ document.addEventListener('keydown', async (event) => {
     if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
 
     if (window.LuminaSelection && LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
-        if (['luminaChat', 'audio', 'image', 'translate'].some(action => matchesShortcut(event, action))) {
+        if (['luminaChat', 'audio', 'translate'].some(action => matchesShortcut(event, action))) {
             LuminaSelection.hide();
         }
     }
@@ -895,34 +877,7 @@ document.addEventListener('keydown', async (event) => {
 
     // NOTE: Audio shortcut for modifier-only keys (like Shift alone) is handled in keyup listener below
 
-    // Image Lookup
-    if (matchesShortcut(event, 'image')) {
-        if (isSelectionInsideEditable()) return;
 
-        const selection = window.getSelection();
-        const text = selection.toString().trim();
-
-        if (text.length > 0) {
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-
-            // Determine prompt based on context
-            let prompt = "Tìm kiếm hình ảnh cho";
-            if (readWebpageEnabled) {
-                prompt = "Dựa vào nội dung trang web, hãy tìm kiếm hình ảnh và giải thích cho";
-            }
-
-            const fullQuestion = `${prompt} "${text}"`;
-            const displayQuestion = `Image Search: ${text}`;
-
-            // Always redirect to Side Panel
-            triggerSidePanelQuery(fullQuestion, displayQuestion);
-            window.getSelection().removeAllRanges();
-            if (window.LuminaSelection) LuminaSelection.hide();
-            return;
-        }
-    }
 
 
 
@@ -1297,10 +1252,8 @@ let isTicking = false;
 
 
 function applyAskSelectionStyles() {
-    if (!askSelectionPopupBtn && !askSelectionInputDiv) return;
     chrome.storage.local.get(['fontSize', 'fontSizeByDomain', 'globalDefaults'], (items) => {
         const currentDomain = window.location.hostname;
-        const zoom = getPageZoom();
         let baseFontSize = 13; // Default
 
         if (items.fontSizeByDomain && items.fontSizeByDomain[currentDomain]) {
@@ -1311,9 +1264,12 @@ function applyAskSelectionStyles() {
             baseFontSize = items.fontSize;
         }
 
+        const adjustedFontSize = baseFontSize;
+
         if (luminaHost) {
-            luminaHost.style.setProperty('font-size', baseFontSize + 'px', 'important');
+            luminaHost.style.setProperty('font-size', adjustedFontSize + 'px', 'important');
         }
+        document.documentElement.style.setProperty('--lumina-fontSize', adjustedFontSize + 'px', 'important');
     });
 }
 
@@ -1328,7 +1284,6 @@ function updateTheme() {
 
         const isDark = preferredTheme === 'dark';
         if (luminaHost) isDark ? luminaHost.setAttribute('data-theme', 'dark') : luminaHost.removeAttribute('data-theme');
-        if (askSelectionPopupBtn) isDark ? askSelectionPopupBtn.setAttribute('data-theme', 'dark') : askSelectionPopupBtn.removeAttribute('data-theme');
 
         const overlays = luminaShadowRoot ? luminaShadowRoot.querySelectorAll('.lumina-spotlight-overlay') : [];
         overlays.forEach(el => isDark ? el.setAttribute('data-theme', 'dark') : el.removeAttribute('data-theme'));
@@ -1725,6 +1680,95 @@ document.addEventListener('copy', (e) => {
         // Silently fail to let default browser copy proceed
     }
 }, true);
+
+
+/**
+ * Robust "Reader Mode" style extraction.
+ * Identifies the main content by scoring containers based on text density,
+ * class names, and relationship to other elements.
+ */
+function extractMainContent(doc = document) {
+    const docClone = doc.cloneNode(true);
+
+    // 1. Remove obvious noise immediately
+    const blacklistedSelectors = [
+        'nav', 'footer', 'header', 'aside', 'script', 'style', 'iframe', 'noscript',
+        'form', 'svg', 'canvas', '.ads', '.sidebar', '.menu', '.footer', '.header',
+        '.ad-box', '.social-share', '.comments', '[id^="lumina-"]', '[class^="lumina-"]'
+    ];
+    blacklistedSelectors.forEach(s => {
+        docClone.querySelectorAll(s).forEach(el => el.remove());
+    });
+
+    // 2. Score potential main containers
+    const candidates = [];
+    const elements = docClone.querySelectorAll('div, article, section, main');
+    
+    elements.forEach(el => {
+        // Skip small fragments
+        const text = el.innerText.trim();
+        if (text.length < 100) return;
+
+        // Calculate link density
+        const links = el.querySelectorAll('a');
+        let linkLength = 0;
+        links.forEach(a => linkLength += a.innerText.length);
+        const linkDensity = linkLength / text.length;
+        if (linkDensity > 0.4) return; // Too many links = navigation/list
+
+        // Base score on text length
+        let score = Math.floor(text.length / 100);
+
+        // Bonus/Penalty based on class/id
+        const weightString = (el.className + ' ' + el.id).toLowerCase();
+        if (/(article|content|main|body|post|entry|text|story)/i.test(weightString)) score += 25;
+        if (/(comment|sidebar|footer|header|nav|menu|share|meta|promo|ad|tags)/i.test(weightString)) score -= 50;
+
+        candidates.push({ element: el, score: score });
+    });
+
+    // Sort by score
+    candidates.sort((a, b) => b.score - a.score);
+
+    // 3. Select best candidate or fallback to body
+    let bestEl = candidates.length > 0 ? candidates[0].element : docClone.body;
+    
+    // Final cleaning of the best candidate
+    // Remove paragraphs that are likely non-content (e.g. "Follow us on Twitter")
+    bestEl.querySelectorAll('p, li').forEach(sub => {
+        const subText = sub.innerText.trim();
+        if (subText.length < 5) {
+            sub.remove();
+            return;
+        }
+        // Link density check for paragraphs
+        const subLinks = sub.querySelectorAll('a');
+        let slLen = 0;
+        subLinks.forEach(a => slLen += a.innerText.length);
+        if (slLen > subText.length * 0.5) sub.remove();
+    });
+
+    let finalText = bestEl.innerText || bestEl.textContent || "";
+    finalText = finalText
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n\s*\n/g, '\n\n')
+        .trim();
+
+    return {
+        url: window.location.href,
+        title: document.title,
+        content: finalText
+    };
+}
+
+function luminaEstimateTokens(text) {
+    if (!text) return 0;
+    return Math.ceil(text.length / 3);
+}
+
+// Assign to window for external calling via executeScript
+window.luminaExtractMainContent = extractMainContent;
+window.luminaEstimateTokens = luminaEstimateTokens;
 
 initShadowDOM();
 })();

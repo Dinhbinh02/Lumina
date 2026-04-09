@@ -76,8 +76,9 @@ let port = null;
 let shortcuts = {};
 let questionMappings = [];
 let askSelectionPopupEnabled = false;
-let readWebpageEnabled = false;
 let advancedParamsByModel = {};
+let pinnedWebSources = []; // Array of { tabId, title, url }
+let currentBrowserTab = null; // Currently active browser tab
 
 // Ask Selection (Spotlight internal)
 let spotlightAskSourcePane = 'primary';
@@ -112,6 +113,7 @@ function fileToDataURL(file) {
 function applyFontSize(size) {
     if (!size) return;
     document.body.style.setProperty('font-size', size + 'px', 'important');
+    document.documentElement.style.setProperty('--lumina-fontSize', size + 'px', 'important');
 }
 
 /**
@@ -1426,6 +1428,13 @@ function initSpotlightAskSelection() {
                     : activeTabIndex;
                 const targetTab = tabs[targetTabIdx];
                 handleSubmit(query, [], { mode: isDictionary ? 'dictionary' : 'qa' }, targetTab || null, displayQuery);
+            },
+            onTranslate: (text) => {
+                const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
+                    ? secondaryActiveTabIndex
+                    : activeTabIndex;
+                const targetTab = tabs[targetTabIdx];
+                handleSubmit(text, [], { mode: 'translate' }, targetTab || null, text);
             }
         });
     }
@@ -1441,13 +1450,18 @@ function initSpotlightAskSelection() {
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
 
-            if (!askSelectionPopupEnabled || text.length === 0) {
+            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+            if (!range) {
                 if (window.LuminaSelection) LuminaSelection.hide();
                 return;
             }
 
-            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-            if (!range) return;
+            // Always allow selection in proofread entries for commenting
+            const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
+            if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
+                if (window.LuminaSelection) LuminaSelection.hide();
+                return;
+            }
 
             // Detect which pane the selection is in
             const commonNode = range.commonAncestorContainer;
@@ -1459,8 +1473,142 @@ function initSpotlightAskSelection() {
             if (window.LuminaSelection) {
                 LuminaSelection.show(e.clientX, e.clientY, text, range);
             }
-        }, 80);
-    }, true);
+        }, 10);
+    });
+}
+
+/**
+ * Web Source Chips Logic
+ * --------------------------------------------------------------------------
+ */
+
+function setupWebSourceTracking() {
+    // 1. Initial sync
+    syncCurrentBrowserTab();
+
+    // 2. Listen for tab activation
+    chrome.tabs.onActivated.addListener(() => {
+        syncCurrentBrowserTab();
+    });
+
+    // 3. Listen for url/title updates
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        if (changeInfo.status === 'complete' || changeInfo.title || changeInfo.url) {
+            if (currentBrowserTab && currentBrowserTab.id === tabId) {
+                syncCurrentBrowserTab();
+            }
+            // Update pinned items if details changed
+            const pinned = pinnedWebSources.find(p => p.tabId === tabId);
+            if (pinned) {
+                pinned.title = tab.title || pinned.title;
+                pinned.url = tab.url || pinned.url;
+                updateWebChips();
+            }
+        }
+    });
+
+    // 4. Listen for tab closure
+    chrome.tabs.onRemoved.addListener((tabId) => {
+        pinnedWebSources = pinnedWebSources.filter(p => p.tabId !== tabId);
+        updateWebChips();
+    });
+}
+
+function syncCurrentBrowserTab() {
+    // BUG FIX: Current window is the Spotlight window. We need the LAST FOCUSED window (the webpage window).
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+        let activeTab = tabs[0];
+        
+        // If the last focused window is THIS extension window (spotlight), 
+        // we might need to look further back or just skip if none found.
+        if (activeTab && activeTab.url.startsWith('chrome-extension://')) {
+            // Find the most recent non-extension active tab
+            chrome.windows.getAll({ populate: true }, (windows) => {
+                const sortedWindows = windows
+                    .filter(w => w.type === 'normal')
+                    .sort((a, b) => b.id - a.id); // Heuristic if lastFocused fails
+                
+                const realTab = sortedWindows.map(w => w.tabs.find(t => t.active)).find(t => t && !t.url.startsWith('chrome-extension://'));
+                if (realTab) {
+                    currentBrowserTab = {
+                        tabId: realTab.id,
+                        title: realTab.title || 'Untitled',
+                        url: realTab.url
+                    };
+                    updateWebChips();
+                }
+            });
+            return;
+        }
+
+        if (activeTab && !activeTab.url.startsWith('chrome://')) {
+            currentBrowserTab = {
+                tabId: activeTab.id,
+                title: activeTab.title || 'Untitled',
+                url: activeTab.url
+            };
+        } else {
+            currentBrowserTab = null;
+        }
+        updateWebChips();
+    });
+}
+
+function updateWebChips() {
+    const containers = document.querySelectorAll('.lumina-web-chips-container');
+    containers.forEach(container => {
+        container.innerHTML = '';
+        
+        const sourcesToShow = [];
+        
+        // Always try to show current tab first
+        if (currentBrowserTab) {
+            const isPinned = pinnedWebSources.some(p => p.tabId === currentBrowserTab.tabId);
+            sourcesToShow.push({ ...currentBrowserTab, isPinned, isCurrent: true });
+        }
+
+        // Add other pinned sources that are NOT the current tab
+        pinnedWebSources.forEach(pinned => {
+            if (!currentBrowserTab || pinned.tabId !== currentBrowserTab.tabId) {
+                sourcesToShow.push({ ...pinned, isPinned: true, isCurrent: false });
+            }
+        });
+
+        sourcesToShow.forEach(source => {
+            const chip = document.createElement('div');
+            chip.className = `lumina-web-chip ${source.isPinned ? 'is-active' : ''}`;
+            chip.title = source.url;
+            
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = source.title;
+            chip.appendChild(titleSpan);
+
+            chip.onclick = (e) => {
+                e.stopPropagation();
+                toggleWebSourcePin(source);
+            };
+
+            container.appendChild(chip);
+        });
+    });
+}
+
+function toggleWebSourcePin(source, forceState = null) {
+    const idx = pinnedWebSources.findIndex(p => p.tabId === source.tabId);
+    if (idx > -1) {
+        if (forceState === true) return; // Already pinned
+        // Unpin
+        pinnedWebSources.splice(idx, 1);
+    } else {
+        if (forceState === false) return; // Already unpinned
+        // Pin
+        pinnedWebSources.push({
+            tabId: source.tabId,
+            title: source.title,
+            url: source.url
+        });
+    }
+    updateWebChips();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1536,6 +1684,7 @@ async function init() {
             applyFontSize(items.globalDefaults.fontSize);
         }
         setupGlobalListeners();
+        setupWebSourceTracking(); // New: Initialize tab tracking
     });
 
     // Listen for settings changes
@@ -1549,7 +1698,11 @@ async function init() {
             }
             if (changes.readWebpage) readWebpageEnabled = !!changes.readWebpage.newValue;
             if (changes.advancedParamsByModel) advancedParamsByModel = changes.advancedParamsByModel.newValue || {};
-            if (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.fontSize) {
+            
+            // Handle Font Size changes (check both top-level and globalDefaults)
+            if (changes.fontSize) {
+                applyFontSize(changes.fontSize.newValue);
+            } else if (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.fontSize) {
                 applyFontSize(changes.globalDefaults.newValue.fontSize);
             }
         }
@@ -1588,13 +1741,25 @@ async function init() {
         } else if (request.action === 'ask_sidepanel') {
             chrome.windows.getCurrent((win) => {
                 if (win.id === request.windowId) {
-                    const { query, displayQuery, queryId, mode } = request;
+                    const { query, displayQuery, queryId, mode, sourceTab } = request;
                     if (queryId && handledQueryIds.has(queryId)) {
                         console.log('[Spotlight] Ignoring duplicate query via message:', queryId);
                         return;
                     }
                     if (queryId) handledQueryIds.add(queryId);
+                    
+                    // Automatically pin source tab if requested via shortcut (from external page)
+                    if (sourceTab) {
+                        toggleWebSourcePin(sourceTab, true);
+                    }
+                    
                     handleSubmit(query, [], { mode: mode || 'qa' }, tabs[activeTabIndex], displayQuery);
+                }
+            });
+        } else if (request.action === 'pin_web_source') {
+            chrome.windows.getCurrent((win) => {
+                if (win.id === request.windowId && request.source) {
+                    toggleWebSourcePin(request.source, true);
                 }
             });
         }
@@ -1610,8 +1775,8 @@ async function init() {
             chrome.storage.session.remove([key]);
 
             // Allow full initialisation before submitting
-            setTimeout(() => {
-                const { query, displayQuery, queryId, mode } = data;
+            const checkReady = () => {
+                const { query, displayQuery, queryId, mode, sourceTab } = data;
                 if (queryId && handledQueryIds.has(queryId)) {
                     console.log('[Spotlight] Ignoring duplicate query via storage:', queryId);
                     return;
@@ -1619,9 +1784,18 @@ async function init() {
                 const currentTab = tabs[activeTabIndex];
                 if (currentTab) {
                     if (queryId) handledQueryIds.add(queryId);
+                    
+                    // Automatically pin source tab if present in pending query
+                    if (sourceTab) {
+                        toggleWebSourcePin(sourceTab, true);
+                    }
+                    
                     handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
+                } else {
+                    setTimeout(checkReady, 30);
                 }
-            }, 800);
+            };
+            checkReady();
         }
     });
 
@@ -1989,90 +2163,37 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    let maxTokens = null; // null means "No Limit"
-    if (tabModel && advancedParamsByModel) {
-        // Search for matching model entry
-        for (const key in advancedParamsByModel) {
-            if (key.endsWith(`:${tabModel.model}`)) {
-                const params = advancedParamsByModel[key];
-                if (params.maxTokens !== undefined && params.maxTokens !== "" && params.maxTokens !== null) {
-                    maxTokens = params.maxTokens;
-                    break;
-                }
-            }
-        }
-    }
-    const SAFETY_BUFFER = 300;
-    const effectiveLimit = maxTokens !== null ? Math.max(128, Number(maxTokens) - SAFETY_BUFFER) : null;
 
-    const estimateFn = (typeof window.luminaEstimateTokens === 'function')
-        ? window.luminaEstimateTokens
-        : (t => Math.ceil((t || "").length / 3));
-
-    // --- Priority-based budget allocation ---
-    // Priority: System prompt (BUFFER) > Question > History > Web content
-
-    // Step 1: Reserve question tokens (2nd priority)
-    const questionTokens = estimateFn(text);
-
-    // Step 2: Trim history to fit budget remaining after question
-    const historyBudget = effectiveLimit !== null ? Math.max(0, effectiveLimit - questionTokens) : null;
-    if (historyBudget !== null && historyBudget === 0) {
-        conversationHistory.length = 0; // clear all history if no budget
-    } else if (historyBudget !== null) {
-        if (typeof window.luminaTruncateHistoryWindow === 'function') {
-            // Apply budget window truncation
-            const truncated = window.luminaTruncateHistoryWindow(conversationHistory, historyBudget);
-            conversationHistory.length = 0;
-            conversationHistory.push(...truncated);
-        } else {
-            console.warn('[Spotlight] Missing shared truncation utility in common.js!');
-        }
-    }
-
-    // Count actual history tokens after trimming
-    let historyTokens = 0;
-    conversationHistory.forEach(msg => { historyTokens += estimateFn(msg.content); });
-
-    // Step 3: Web content gets whatever is left after question + history (lowest priority)
-    if (shouldReadPage) {
+    // --- CONTEXT GATHERING ---
+    if (pinnedWebSources.length > 0) {
         try {
-            const activeTabs = await new Promise(resolve => chrome.tabs.query({ active: true, lastFocusedWindow: true }, resolve));
-            if (activeTabs && activeTabs[0] && !activeTabs[0].url.startsWith("chrome://") && !activeTabs[0].url.startsWith("edge://")) {
-                const results = await chrome.scripting.executeScript({
-                    target: { tabId: activeTabs[0].id },
-                    func: () => {
-                        return typeof window.luminaExtractMainContent === 'function'
-                            ? window.luminaExtractMainContent()
-                            : null;
-                    }
-                });
-                if (results && results[0] && results[0].result) {
-                    const ctx = results[0].result;
-                    let pageContent = ctx.content || "";
-
-                    if (effectiveLimit !== null) {
-                        const webBudget = Math.max(0, effectiveLimit - questionTokens - historyTokens);
-                        if (webBudget <= 0) {
-                            pageContent = ""; // exclude - lowest priority
-                        } else if (pageContent.length > webBudget * 3) {
-                            pageContent = pageContent.substring(0, webBudget * 3) + "... [nội dung trang bị cắt bớt để vừa giới hạn token]";
+            const results = await Promise.all(pinnedWebSources.map(async (source) => {
+                try {
+                    const tabResults = await chrome.scripting.executeScript({
+                        target: { tabId: source.tabId },
+                        func: () => {
+                            return typeof window.luminaExtractMainContent === 'function'
+                                ? window.luminaExtractMainContent()
+                                : null;
                         }
-                    }
-
-                    if (pageContent) {
-                        pageContext = `Title: ${ctx.title}\nURL: ${ctx.url}\nContent:\n${pageContent}`;
-                    }
+                    });
+                    if (tabResults && tabResults[0] && tabResults[0].result) return tabResults[0].result;
+                } catch (e) {
+                    console.warn(`[Spotlight] Could not read tab ${source.tabId}:`, e);
                 }
+                return null;
+            }));
+
+            const validResults = results.filter(r => r !== null);
+            if (validResults.length > 0) {
+                const pieces = validResults.map(ctx => {
+                    return `[Source: ${ctx.title} (${ctx.url})]\n\n${ctx.content}`;
+                });
+                pageContext = pieces.join("\n\n---\n\n");
             }
         } catch (err) {
-            console.error("[Spotlight] Failed to read active tab:", err);
+            console.error("[Spotlight] Failed to read pinned tabs:", err);
         }
-    }
-
-    // Step 4: Only truncate question if it alone exceeds the entire limit (absolute last resort)
-    if (effectiveLimit !== null && questionTokens > effectiveLimit) {
-        text = text.substring(0, effectiveLimit * 3) + "\n... [câu hỏi bị cắt bớt do vượt giới hạn token]";
     }
 
     // Prepare message
@@ -2336,15 +2457,7 @@ function setupGlobalListeners() {
             }
 
 
-            // Image Lookup shortcut
-            if (matchesShortcut(event, 'image', shortcuts)) {
-                event.preventDefault();
-                event.stopPropagation();
-                handleSubmit(`Find images for: "${selection}"`, []);
-                window.getSelection().removeAllRanges();
-                if (window.LuminaSelection) LuminaSelection.hide();
-                return;
-            }
+
 
             // Custom Mappings
             if (questionMappings && questionMappings.length > 0) {
@@ -2372,14 +2485,17 @@ function setupGlobalListeners() {
 
                         // Build full question with variable replacement
                         let fullQuestion;
-                        if (mapping.prompt.includes('$SelectedText') || mapping.prompt.includes('$Sentence') || mapping.prompt.includes('$Paragraph') || mapping.prompt.includes('$Container')) {
+                        const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph|\$Container/i.test(mapping.prompt);
+                        
+                        if (hasVariables) {
                             fullQuestion = mapping.prompt
-                                .replace(/\$SelectedText/gi, selection.trim())
+                                .replace(/\$SelectedText|"SelectedText"/gi, selection.trim())
                                 .replace(/\$Sentence/gi, selection.trim())
                                 .replace(/\$Paragraph/gi, selection.trim())
                                 .replace(/\$Container/gi, selection.trim());
                         } else {
-                            fullQuestion = `${mapping.prompt} "${selection.trim()}"`;
+                            // Fallback logic: place selection FIRST to match UI layout [SelectedText] [Input]
+                            fullQuestion = `"${selection.trim()}" ${mapping.prompt}`;
                         }
 
                         handleSubmit(fullQuestion, []);
@@ -2489,13 +2605,7 @@ function setupGlobalListeners() {
                     } else {
                         stopSpotlightAudio();
                     }
-                } else if (action === 'image') {
-                    const selection = window.getSelection().toString().trim();
-                    if (selection) {
-                        handleSubmit(`Find images for: "${selection}"`, []);
-                        window.getSelection().removeAllRanges();
-                        if (window.LuminaSelection) LuminaSelection.hide();
-                    }
+
                 } else if (action === 'luminaChat') {
                     // handled by content.js
                 } else if (action === 'askLumina') {
@@ -2869,7 +2979,7 @@ function matchesShortcut(event, actionName, shortcuts) {
     const DEFAULT_SHORTCUTS = {
         regenerate: { code: 'KeyR', key: 'r' },
         translate: { code: 'KeyT', key: 't' },
-        image: { code: 'KeyI', key: 'i' },
+
         audio: { code: 'ShiftLeft', key: 'Shift', shiftKey: true }
     };
 

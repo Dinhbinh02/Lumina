@@ -57,46 +57,34 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     });
 });
 
-
-
-// Register content scripts for all sites
-async function checkAndRegisterScripts() {
-    try {
-        const scriptId = 'lumina-all-sites';
-
-        let scripts = [];
-        try {
-            scripts = await chrome.scripting.getRegisteredContentScripts();
-        } catch (e) {
-            console.warn('[Lumina] Could not check registered scripts:', e);
+async function toggleSidePanel(windowId) {
+    if (!windowId) return;
+    if (openSidePanelWindows.has(windowId)) {
+        if (chrome.sidePanel.close) {
+            chrome.sidePanel.close({ windowId }).catch(() => { });
+        } else {
+            chrome.sidePanel.setOptions({ windowId, enabled: false }, () => {
+                chrome.sidePanel.setOptions({
+                    windowId,
+                    enabled: true,
+                    path: 'pages/spotlight/spotlight.html?sidepanel=1'
+                });
+            });
         }
-
-        const alreadyRegistered = scripts.some(s => s.id === scriptId);
-
-        if (!alreadyRegistered) {
-            await chrome.scripting.registerContentScripts([{
-                id: scriptId,
-                matches: ['<all_urls>'],
-                js: [
-                    "lib/katex/katex.min.js",
-                    "lib/katex/auto-render.min.js",
-                    "lib/marked.min.js",
-                    "lib/highlight.min.js",
-                    "lib/utils/constants.js",
-                    "lib/utils/common.js",
-                    "lib/utils/chat_history.js",
-                    "lib/utils/cambridge_parser.js",
-                    "scripts/content.js"
-                ],
-                runAt: 'document_idle',
-                persistAcrossSessions: true
-            }]);
-        }
-    } catch (err) {
+    } else {
+        chrome.sidePanel.open({ windowId }).catch(() => { });
     }
 }
 
-checkAndRegisterScripts();
+
+// Registration of content scripts is handled via manifest.json for regular websites.
+// Direct injection is ONLY needed for existing tabs during installation, which should be done via scripting.executeScript instead of persistent registration.
+async function checkAndRegisterScripts() {
+    // This function is now deprecated to avoid duplicate execution with manifest.json
+}
+
+// Removing immediate call to avoid duplicates
+// checkAndRegisterScripts();
 
 // Display Mode Management
 function updateDisplayMode(mode) {
@@ -209,7 +197,7 @@ Use clear markdown with concise sections only when needed.
 }
 
 function buildProofreadSystemPrompt() {
-        return `<role>
+    return `<role>
 You are a text correction tool, not a conversational AI.
 </role>
 
@@ -227,75 +215,56 @@ Return only the corrected English version of the input text.
 </constraints>`;
 }
 
-function buildTranslationSystemPrompt(targetLanguage, originalText) {
-        return `<role>
-You are a professional translation assistant.
-</role>
-
-<task>
-Translate the provided text into ${targetLanguage}.
-</task>
-
-<constraints>
-1. Maintain exactly the same number of sentences as the source.
-2. Translate sentence-by-sentence with 1:1 alignment.
-3. Do not combine, split, or omit sentences.
-4. Keep meaning natural and fluent.
-</constraints>
-
-<output_format>
-Return strictly valid JSON:
-{
-    "type": "sentence",
-    "original": "${originalText.replace(/"/g, '\\"')}",
-    "translation": "Translated text with sentence-by-sentence alignment"
-}
-</output_format>`;
-}
-
 function buildDictionarySystemPrompt(word) {
-        return `<role>
-You are a professional lexicographer and linguist.
-</role>
+    return `You are a world-class lexicographer and expert linguist for Cambridge and Oxford University Press.
+Provide a professional, high-fidelity dictionary entry for the English word or phrase: "${word}".
 
-<task>
-Provide a detailed dictionary entry for the English word or phrase: "${word}".
-</task>
+### Structure Guidelines (Follow Cambridge Standards):
+1. **Multiple Entries**: If the word has multiple parts of speech (e.g., "run" as verb and noun), provide distinct entries for each.
+2. **Senses & Indicators**: Group definitions into logical "Senses" with a capitalized, concise "Indicator" descriptor (e.g., MOVEMENT, ANALYTICAL INSTRUMENT). Use spaces, NOT underscores.
+3. **Definitions**: Clear, academic English definitions.
+   - **Phonetic Standards (MANDATORY)**:
+     - **UK (Received Pronunciation)**: Use /e/ for the "short e" sound (e.g., manifest, chemical, resin). Use /ɒ/ for "short o" (hot). Use /ə/ or /ɪ/ for unstressed vowels. NEVER use /ɛ/ for UK English.
+     - **US (General American)**: Use /ɛ/ for the "short e" sound. Use /ɑ/ for "short o". Use /ə/ or /ʌ/ as appropriate.
+     - **Rhoticity**: Ensure UK is non-rhotic (e.g., /ə/ or /ɔː/ instead of /ɚ/ or /ɔːr/) and US is rhotic.
+   - **Self-Correction Logic**: Before outputting the JSON, mentally verify: "Does the UK IPA use /e/? Does the US IPA use /ɛ/? Are they distinct strings?"
+   - **Examples of Regional Variance expected**:
+     - "chemicals": UK: /ˈkem.ɪ.kəlz/, US: /ˈkɛm.ɪ.kəlz/
+     - "manifest": UK: /ˈmæn.ɪ.fest/, US: /ˈmæn.ə.fɛst/
+     - "water": UK: /ˈwɔː.tər/, US: /ˈwɑː.t̬ɚ/
+     - "schedule": UK: /ˈʃed.juːl/, US: /ˈskedʒ.uːl/
+     - "can't": UK: /kɑːnt/, US: /kænt/
 
-<constraints>
-1. Follow a Cambridge/Oxford-like structure.
-2. Support multiple entries for different parts of speech.
-3. Provide clear definitions in English.
-4. Vietnamese translations must be Vietnamese only.
-5. Include 1-2 high-quality examples per definition.
-6. Audio URLs must be empty strings.
-7. Output only JSON, no markdown or explanations.
-</constraints>
-
-<output_format>
+### JSON Schema (STRICT):
 {
+    "dialect_verification": "Self-verify rules: UK MUST use /e/ (not /ɛ/). US MUST use /ɛ/. Check rhoticity differences (water UK: /r/ null, US: /r/ present).",
     "word": "${word}",
     "entries": [
         {
-            "pos": "noun",
-            "uk": { "ipa": "/.../", "audio": "" },
-            "us": { "ipa": "/.../", "audio": "" },
+            "pos": "noun/verb/adjective/etc.",
+            "uk": { "ipa": "...", "audio": "" },
+            "us": { "ipa": "...", "audio": "" },
             "senses": [
                 {
-                    "indicator": "TEST",
+                    "indicator": "UPPERCASE INDICATOR",
                     "definitions": [
-                        {
-                            "meaning": "...",
-                            "translation": "...",
-                            "examples": ["..."]
-                        }
+                        { "meaning": "English definition" }
                     ]
                 }
             ]
         }
     ]
 }
-</output_format>`;
+
+- **Examples of Regional Variance expected**:
+  - "headspace": UK: /ˈhed.speɪs/, US: /ˈhɛd.speɪs/
+  - "chemicals": UK: /ˈkem.ɪ.kəlz/, US: /ˈkɛm.ɪ.kəlz/
+  - "manifest": UK: /ˈmæn.ɪ.fest/, US: /ˈmæn.ə.fɛst/
+  - "water": UK: /ˈwɔː.tər/, US: /ˈwɑː.t̬ɚ/
+  - "schedule": UK: /ˈʃed.juːl/, US: /ˈskedʒ.uːl/
+
+- Output ONLY valid JSON starting with { and ending with }.
+- No markdown wrappers, no explanations outside the JSON.`;
 }
 
 // Get Gemini API key
@@ -311,20 +280,224 @@ async function getGeminiApiKey() {
 }
 
 // Model Chain Management
-async function getModelChain() {
-    const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel']);
+function detectMediaType(item) {
+    if (!item) return null;
+    if (typeof item === 'string') {
+        const v = item.toLowerCase();
+        if (v.startsWith('data:video/')) return 'video';
+        if (v.startsWith('data:application/pdf')) return 'pdf';
+        if (v.startsWith('data:image/')) return 'image';
+        if (/\.(mp4|mov|webm|mkv)(\?|$)/i.test(v)) return 'video';
+        if (/\.pdf(\?|$)/i.test(v)) return 'pdf';
+        return 'image';
+    }
+    if (typeof item === 'object') {
+        const mimeType = (item.mimeType || '').toLowerCase();
+        const dataUrl = (item.dataUrl || '').toLowerCase();
+        const previewUrl = (item.previewUrl || '').toLowerCase();
+        if (mimeType.startsWith('video/') || dataUrl.startsWith('data:video/')) return 'video';
+        if (mimeType.includes('pdf') || dataUrl.startsWith('data:application/pdf')) return 'pdf';
+        if (mimeType.startsWith('image/') || dataUrl.startsWith('data:image/')) return 'image';
+        if (/\.(mp4|mov|webm|mkv)(\?|$)/i.test(previewUrl)) return 'video';
+        if (/\.pdf(\?|$)/i.test(previewUrl)) return 'pdf';
+        return 'image';
+    }
+    return null;
+}
 
-    // 1. Build the full list from modelChains (no ordering dependency)
-    let chain = [];
-    if (data.modelChains && data.modelChains['text'] && data.modelChains['text'].length > 0) {
-        chain = [...data.modelChains['text']];
-    } else {
-        // Legacy fallback
-        chain = [{ providerId: data.provider, model: data.model }];
+function inferGeminiMediaResolution(msgs, currentImageData, currentQuestion) {
+    const allAttachments = [];
+    for (const msg of (msgs || [])) {
+        const files = msg?.files || msg?.images;
+        if (Array.isArray(files)) allAttachments.push(...files);
+    }
+    if (Array.isArray(currentImageData)) allAttachments.push(...currentImageData);
+    else if (currentImageData) allAttachments.push(currentImageData);
+
+    let hasImage = false, hasPdf = false, hasVideo = false;
+    for (const item of allAttachments) {
+        const mediaType = detectMediaType(item);
+        if (mediaType === 'image') hasImage = true;
+        if (mediaType === 'pdf') hasPdf = true;
+        if (mediaType === 'video') hasVideo = true;
+    }
+    const textHeavyVideoRegex = /\b(ocr|text-heavy|subtitle|subtitles|caption|captions|read text|small text|tiny text|screen text|nhan dien chu|nhận diện chữ|doc chu|đọc chữ|phu de|phụ đề)\b/i;
+    const isTextHeavyVideo = textHeavyVideoRegex.test(currentQuestion || '');
+    if (hasVideo && isTextHeavyVideo) return 'MEDIA_RESOLUTION_HIGH';
+    if (hasImage) return 'MEDIA_RESOLUTION_HIGH';
+    if (hasPdf) return 'MEDIA_RESOLUTION_MEDIUM';
+    if (hasVideo) return 'MEDIA_RESOLUTION_LOW';
+    return null;
+}
+
+const SUPPORTED_MIME_TYPES = new Set([
+    'image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif', 'image/gif',
+    'video/mp4', 'video/mpeg', 'video/mov', 'video/quicktime', 'video/avi', 'video/x-flv', 'video/flv', 'video/mpg', 'video/webm', 'video/wmv', 'video/3gpp',
+    'audio/wav', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/mpeg', 'audio/m4a',
+    'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain', 'text/html', 'text/css', 'text/javascript', 'text/csv', 'text/markdown',
+    'text/x-python', 'text/x-java', 'text/x-c', 'text/x-cpp', 'text/x-shellscript', 'application/json', 'application/xml'
+]);
+
+const MIME_ALIASES = {
+    'application/javascript': 'text/javascript', 'text/x-python-script': 'text/x-python', 'application/x-javascript': 'text/javascript'
+};
+
+function normalizeMimeType(mimeType) {
+    const mt = String(mimeType || '').toLowerCase().trim();
+    return MIME_ALIASES[mt] || mt;
+}
+
+function isSupportedAttachmentMime(mimeType) {
+    const mt = normalizeMimeType(mimeType);
+    return !!mt && SUPPORTED_MIME_TYPES.has(mt);
+}
+
+function isTextAttachmentMime(mimeType) {
+    const mt = normalizeMimeType(mimeType);
+    return mt.startsWith('text/') || mt === 'application/json' || mt === 'application/xml';
+}
+
+function getBase64FromAttachment(item) {
+    if (!item || typeof item !== 'object') return '';
+    if (item.data) return item.data;
+    if (item.dataUrl) {
+        const matches = item.dataUrl.match(/^data:([^;]+);base64,(.+)$/i);
+        if (matches) return matches[2];
+    }
+    return '';
+}
+
+function decodeBase64Utf8(base64) {
+    if (!base64) return '';
+    try {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return new TextDecoder('utf-8').decode(bytes);
+    } catch (_) { return ''; }
+}
+
+function processAttachments(attachments) {
+    const parts = [];
+    const unsupported = [];
+    if (!attachments || !Array.isArray(attachments)) return { parts, unsupported };
+    for (const item of attachments) {
+        if (typeof item === 'string') {
+            if (item.startsWith('data:text/')) {
+                const matches = item.match(/^data:([^;]+);base64,(.+)$/i);
+                const decoded = matches ? decodeBase64Utf8(matches[2]) : '';
+                if (decoded) parts.push({ type: "text", text: `[Attached text file]\n${decoded.slice(0, 12000)}` });
+            } else { parts.push({ type: "image_url", image_url: { url: item, detail: "auto" } }); }
+        } else if (typeof item === 'object') {
+            const mimeType = normalizeMimeType(item.mimeType || '');
+            const itemName = item.name || 'Unnamed file';
+            if (mimeType && !isSupportedAttachmentMime(mimeType)) { unsupported.push({ name: itemName, mimeType }); continue; }
+            if (isTextAttachmentMime(mimeType)) {
+                const textContent = decodeBase64Utf8(getBase64FromAttachment(item));
+                if (textContent) parts.push({ type: "text", text: `[Attached file: ${itemName} (${mimeType})]\n${textContent.slice(0, 12000)}` });
+                continue;
+            }
+            if (mimeType.startsWith('audio/')) {
+                let base64Data = item.data;
+                if (!base64Data && item.dataUrl) {
+                    const matches = item.dataUrl.match(/^data:(.+?);base64,(.+)$/);
+                    if (matches) base64Data = matches[2];
+                }
+                if (base64Data) {
+                    let format = mimeType.split('/')[1] || 'wav';
+                    if (format === 'mpeg') format = 'mp3';
+                    parts.push({ type: "input_audio", input_audio: { data: base64Data, format } });
+                }
+            } else {
+                let url = item.dataUrl || item.previewUrl;
+                if (!url && mimeType && item.data) url = `data:${mimeType};base64,${item.data}`;
+                if (url) parts.push({ type: "image_url", image_url: { url, detail: item.detail || "auto" } });
+            }
+        }
+    }
+    return { parts, unsupported };
+}
+
+async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
+    const { model, endpoint, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, isStreaming = true } = params;
+    const openaiMessages = [{ role: 'system', content: sysPrompt }];
+    for (const msg of msgs) {
+        const attachments = msg.files || msg.images;
+        if (attachments && attachments.length > 0) {
+            const parts = [];
+            if (msg.text) parts.push({ type: "text", text: msg.text });
+            const processed = processAttachments(attachments);
+            parts.push(...processed.parts);
+            if (processed.unsupported.length > 0) {
+                parts.push({ type: "text", text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+            }
+            openaiMessages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: parts });
+        } else {
+            openaiMessages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: msg.text });
+        }
     }
 
-    // 2. If the user has a lastUsedModel preference, move that entry to the front
-    if (data.lastUsedModel && data.lastUsedModel.model) {
+    if (imageData && imageData.length > 0) {
+        const parts = [{ type: "text", text: currentQ }];
+        const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
+        const processed = processAttachments(currentAttachments);
+        parts.push(...processed.parts);
+        openaiMessages.push({ role: 'user', content: parts });
+    } else {
+        openaiMessages.push({ role: 'user', content: currentQ });
+    }
+
+    const openaiBody = {
+        model, messages: openaiMessages, temperature, top_p: topP,
+        stream: isStreaming,
+        ...(isStreaming ? { stream_options: { include_usage: true } } : {}),
+        ...parsedCustomParams
+    };
+
+    if (normalizedThinkingLevel === 'none') {
+        if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) openaiBody.reasoning_effort = 'none';
+    } else if (normalizedThinkingLevel) {
+        openaiBody.reasoning_effort = normalizedThinkingLevel;
+    } else if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) {
+        openaiBody.reasoning_effort = 'none';
+    }
+
+    if (isGeminiOpenAIEndpoint(endpoint)) {
+        if (reasoningMode) {
+            if (!openaiBody.extra_body) openaiBody.extra_body = {};
+            if (!openaiBody.extra_body.google) openaiBody.extra_body.google = {};
+            openaiBody.extra_body.google.thinking_config = { include_thoughts: true };
+        }
+        const isGroundingSupported = /gemini-[3-9]/i.test(model);
+    }
+
+    return { url: endpoint, body: openaiBody };
+}
+
+async function getModelChain(type = 'text') {
+    const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
+
+    // 1. Build the full list from modelChains or single selection
+    let chain = [];
+    if (data.modelChains && data.modelChains[type] && data.modelChains[type].length > 0) {
+        chain = [...data.modelChains[type]];
+    } else if (type === 'dictionary' && data.dictProvider && data.dictModel) {
+        chain = [{ providerId: data.dictProvider, model: data.dictModel }];
+    } else {
+        // Fallback to text chain if specific chain not found
+        if (data.modelChains && data.modelChains['text'] && data.modelChains['text'].length > 0) {
+            chain = [...data.modelChains['text']];
+        } else {
+            // Legacy fallback
+            chain = [{ providerId: data.provider, model: data.model }];
+        }
+    }
+
+    // 2. If the user has a lastUsedModel preference, move that entry to the front (only for generic text tasks)
+    if (type === 'text' && data.lastUsedModel && data.lastUsedModel.model) {
         const { providerId: lastPId, model: lastModel } = data.lastUsedModel;
         const idx = chain.findIndex(item => item.providerId === lastPId && item.model === lastModel);
         if (idx > 0) {
@@ -365,32 +538,6 @@ function getTodayString() {
     return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 }
 
-// Helper to manage exhausted keys (Rate Limited 429)
-async function getExhaustedState(groupKey) {
-    const today = getTodayString();
-    const storageKey = `exhausted_${groupKey}`;
-    try {
-        const data = await chrome.storage.local.get([storageKey]);
-        const state = data[storageKey];
-        if (state && state.date === today) {
-            return state.indices || [];
-        }
-    } catch (e) { }
-    return [];
-}
-
-async function markKeyExhausted(groupKey, index) {
-    const today = getTodayString();
-    const storageKey = `exhausted_${groupKey}`;
-    const indices = await getExhaustedState(groupKey);
-    if (!indices.includes(index)) {
-        indices.push(index);
-        await chrome.storage.local.set({
-            [storageKey]: { date: today, indices: indices }
-        });
-        console.warn(`[Lumina] Globally marked key ${index} as PERMANENTLY exhausted for today (${groupKey})`);
-    }
-}
 
 async function fetchWithRotation(keys, requestFn, options = {}) {
     if (!keys || keys.length === 0) {
@@ -416,7 +563,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
 
     // Helper: detect rate-limit or request-too-large from a response
     const isRateLimitOrTooLarge = async (response) => {
-        if (response.status === 429) return true;
+        if (response.status === 429 || response.status === 503) return true;
         if (response.status === 400 || response.status === 413) {
             try {
                 const clone = response.clone();
@@ -456,62 +603,6 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
     throw new Error("All API keys failed or were rate limited in this cycle.");
 }
 
-// Grounding models - use shared constant
-const GROUNDING_MODELS = LUMINA_GROUNDING_MODELS;
-
-// --- Gemini Grounding with Model + Key Rotation ---
-async function fetchGroundingWithRotation(keys, requestFn) {
-    if (!keys || keys.length === 0) throw new Error("No Gemini Grounding API Keys provided.");
-
-    const groupKey = 'ground_rot_' + keys.join(',').substring(0, 32).replace(/[^a-zA-Z0-9]/g, '');
-    const stateKey = 'grounding_rotation_state';
-    const today = getTodayString();
-
-    const exhaustedIndices = await getExhaustedState(groupKey);
-
-    // Load persisted state
-    let state = { keyIndex: 0, modelIndex: 0, date: today };
-    try {
-        const data = await chrome.storage.local.get([stateKey]);
-        if (data[stateKey] && data[stateKey].date === today) state = data[stateKey];
-    } catch (e) { }
-
-    const totalKeys = keys.length;
-    const totalModels = GROUNDING_MODELS.length;
-    const maxAttempts = totalKeys * totalModels;
-
-    let { keyIndex, modelIndex } = state;
-
-    for (let attempts = 0; attempts < maxAttempts; attempts++) {
-        const currentKeyIndex = (keyIndex + Math.floor(attempts / totalModels)) % totalKeys;
-        const currentModelIndex = (modelIndex + (attempts % totalModels)) % totalModels;
-
-        if (exhaustedIndices.includes(currentKeyIndex)) continue;
-
-        const currentKey = keys[currentKeyIndex];
-        const currentModel = GROUNDING_MODELS[currentModelIndex];
-
-        try {
-            const response = await requestFn(currentKey, currentModel);
-
-            if (response.status === 429) {
-                console.warn(`[Lumina Grounding] Rate limited on key index ${currentKeyIndex}`);
-                await markKeyExhausted(groupKey, currentKeyIndex);
-                continue;
-            }
-
-            chrome.storage.local.set({
-                [stateKey]: { keyIndex: currentKeyIndex, modelIndex: currentModelIndex, date: today }
-            });
-
-            return { response, model: currentModel };
-        } catch (err) {
-            console.error(`[Lumina Grounding] Request failed:`, err);
-        }
-    }
-
-    throw new Error("All Gemini Grounding keys exhausted or rate limited.");
-}
 
 // --- Helper Functions for Provider Settings ---
 function getApiKeyForProvider(provider, keys) {
@@ -702,9 +793,8 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const thinkingLevel = modelParams.thinkingLevel || null;
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
-    const enableGrounding = !!globalSettings.enableGrounding;
 
-    // Parse custom params - handle both object and string format (for backwards compatibility)
+    // Parse custom params
     let parsedCustomParams = {};
     if (customParams) {
         if (typeof customParams === 'object') {
@@ -730,68 +820,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     const keys = getKeysArray(apiKey);
 
-    const detectMediaType = (item) => {
-        if (!item) return null;
-
-        if (typeof item === 'string') {
-            const v = item.toLowerCase();
-            if (v.startsWith('data:video/')) return 'video';
-            if (v.startsWith('data:application/pdf')) return 'pdf';
-            if (v.startsWith('data:image/')) return 'image';
-            if (/\.(mp4|mov|webm|mkv)(\?|$)/i.test(v)) return 'video';
-            if (/\.pdf(\?|$)/i.test(v)) return 'pdf';
-            return 'image';
-        }
-
-        if (typeof item === 'object') {
-            const mimeType = (item.mimeType || '').toLowerCase();
-            const dataUrl = (item.dataUrl || '').toLowerCase();
-            const previewUrl = (item.previewUrl || '').toLowerCase();
-
-            if (mimeType.startsWith('video/') || dataUrl.startsWith('data:video/')) return 'video';
-            if (mimeType.includes('pdf') || dataUrl.startsWith('data:application/pdf')) return 'pdf';
-            if (mimeType.startsWith('image/') || dataUrl.startsWith('data:image/')) return 'image';
-            if (/\.(mp4|mov|webm|mkv)(\?|$)/i.test(previewUrl)) return 'video';
-            if (/\.pdf(\?|$)/i.test(previewUrl)) return 'pdf';
-            return 'image';
-        }
-
-        return null;
-    };
-
-    const inferGeminiMediaResolution = (msgs, currentImageData, currentQuestion) => {
-        const allAttachments = [];
-        for (const msg of (msgs || [])) {
-            const files = msg?.files || msg?.images;
-            if (Array.isArray(files)) allAttachments.push(...files);
-        }
-        if (Array.isArray(currentImageData)) {
-            allAttachments.push(...currentImageData);
-        } else if (currentImageData) {
-            allAttachments.push(currentImageData);
-        }
-
-        let hasImage = false;
-        let hasPdf = false;
-        let hasVideo = false;
-
-        for (const item of allAttachments) {
-            const mediaType = detectMediaType(item);
-            if (mediaType === 'image') hasImage = true;
-            if (mediaType === 'pdf') hasPdf = true;
-            if (mediaType === 'video') hasVideo = true;
-        }
-
-        const textHeavyVideoRegex = /\b(ocr|text-heavy|subtitle|subtitles|caption|captions|read text|small text|tiny text|screen text|nhan dien chu|nhận diện chữ|doc chu|đọc chữ|phu de|phụ đề)\b/i;
-        const isTextHeavyVideo = textHeavyVideoRegex.test(currentQuestion || '');
-
-        if (hasVideo && isTextHeavyVideo) return 'MEDIA_RESOLUTION_HIGH';
-        if (hasImage) return 'MEDIA_RESOLUTION_HIGH';
-        if (hasPdf) return 'MEDIA_RESOLUTION_MEDIUM';
-        if (hasVideo) return 'MEDIA_RESOLUTION_LOW';
-        return null;
-    };
-
     const reasoningMode = !!globalSettings.reasoningMode;
     let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode);
 
@@ -812,42 +840,28 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     let fullMessages = [...messages];
 
-    // Inject Page Context if available (as the first User message)
+    // Inject Page Context if available
     if (initialContext && initialContext.trim().length > 0) {
-        // 1. Optimize for token efficiency (collapse whitespace/newlines)
         let processedContext = optimizeContextString(initialContext);
         
-        // 2. Strict truncation based on user setting (No automatic fallback)
-        const maxChars = parseInt(globalSettings.maxContextTokens);
-        if (!isNaN(maxChars) && maxChars > 0) {
-            processedContext = processedContext.slice(0, maxChars);
-        }
-
-        // 3. Professional XML tagging for clear document boundaries (Best Practice)
+        // Prepend context to the VERY beginning of history for grounding
         fullMessages.unshift({
             role: 'user',
-            text: `<context>\n${processedContext}\n</context>\n\n[Instruction]: Use the provided context above (the current webpage content) as reference material to answer subsequent questions.`
+            text: `[Context - Current Webpage Content]:\n${processedContext}\n\n[Instruction]: Use the above context to answer subsequent questions.`
         });
 
-        // Add a model acknowledgement to keep chat structure balanced (User -> Model -> User)
         fullMessages.splice(1, 0, {
             role: 'model',
-            text: "Understood. I have absorbed the provided context and will use it as ground truth for your questions."
+            text: "Understood. I have reviewed the page content. How can I help?"
         });
     }
 
-    // Only inject Time & Location for questions that might need real-time data
     let augmentedQuestion = question;
 
-    // For proofread: wrap text explicitly so the model treats it as text-to-correct,
-    // not as a question to answer.
     if (action === 'proofread') {
         augmentedQuestion = `Correct/translate this text:\n<text>${question}</text>`;
     } else if (!hasFiles) {
-        // Keywords that suggest real-time info might be needed
         const realTimeKeywords = /\b(mấy giờ|thời gian|ngày|hôm nay|bây giờ|thời tiết|weather|time|today|now|date|news|tin tức|giá|price|stock|forecast|dự báo|lịch|schedule|current|hiện tại)\b/i;
-
-        // Only add time/location if:
         const needsRealTimeContext = realTimeKeywords.test(question) ||
             (messages.length === 0 && question.length > 50);
 
@@ -855,282 +869,25 @@ async function executeChatRequest(config, messages, initialContext, question, po
             const now = new Date();
             const timeString = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
             const dateString = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-            // Use a clearer format that indicates this is reference metadata
             augmentedQuestion = `[Reference - Current Time: ${timeString}, ${dateString}]\n\nUser Question: ${question}`;
         }
     }
 
-    const SUPPORTED_MIME_TYPES = new Set([
-        // Images
-        'image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif', 'image/gif',
-        // Video
-        'video/mp4', 'video/mpeg', 'video/mov', 'video/quicktime', 'video/avi', 'video/x-flv', 'video/flv', 'video/mpg', 'video/webm', 'video/wmv', 'video/3gpp',
-        // Audio
-        'audio/wav', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/mpeg', 'audio/m4a',
-        // Documents & text
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain', 'text/html', 'text/css', 'text/javascript', 'text/csv', 'text/markdown',
-        'text/x-python', 'text/x-java', 'text/x-c', 'text/x-cpp', 'text/x-shellscript', 'application/json', 'application/xml'
-    ]);
-
-    const MIME_ALIASES = {
-        'application/javascript': 'text/javascript',
-        'text/x-python-script': 'text/x-python',
-        'application/x-javascript': 'text/javascript'
+    // Parameters for payload builder
+    const payloadParams = {
+        model,
+        endpoint,
+        temperature,
+        topP,
+        parsedCustomParams,
+        normalizedThinkingLevel,
+        isGemini25Model,
+        reasoningMode,
+        imageData
     };
-
-    const normalizeMimeType = (mimeType) => {
-        const mt = String(mimeType || '').toLowerCase().trim();
-        return MIME_ALIASES[mt] || mt;
-    };
-
-    const isSupportedAttachmentMime = (mimeType) => {
-        const mt = normalizeMimeType(mimeType);
-        return !!mt && SUPPORTED_MIME_TYPES.has(mt);
-    };
-
-    const isTextAttachmentMime = (mimeType) => {
-        const mt = normalizeMimeType(mimeType);
-        return mt.startsWith('text/') || mt === 'application/json' || mt === 'application/xml';
-    };
-
-    const getBase64FromAttachment = (item) => {
-        if (!item || typeof item !== 'object') return '';
-        if (item.data) return item.data;
-        if (item.dataUrl) {
-            const matches = item.dataUrl.match(/^data:([^;]+);base64,(.+)$/i);
-            if (matches) return matches[2];
-        }
-        return '';
-    };
-
-    const decodeBase64Utf8 = (base64) => {
-        if (!base64) return '';
-        try {
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            return new TextDecoder('utf-8').decode(bytes);
-        } catch (_) {
-            return '';
-        }
-    };
-
-    // Helper to process attachments for OpenAI-compatible APIs (Universal Standard)
-    const processAttachments = (attachments) => {
-        const parts = [];
-        const unsupported = [];
-        if (!attachments || !Array.isArray(attachments)) return { parts, unsupported };
-        for (const item of attachments) {
-            let url = '';
-            
-            if (typeof item === 'string') {
-                url = item;
-                if (url.startsWith('data:text/')) {
-                    const matches = url.match(/^data:([^;]+);base64,(.+)$/i);
-                    const decoded = matches ? decodeBase64Utf8(matches[2]) : '';
-                    if (decoded) {
-                        const snippet = decoded.slice(0, 12000);
-                        parts.push({ type: "text", text: `[Attached text file]\n${snippet}` });
-                    }
-                } else {
-                    parts.push({ type: "image_url", image_url: { url: url, detail: "auto" } });
-                }
-            } else if (typeof item === 'object') {
-                const mimeType = normalizeMimeType(item.mimeType || '');
-                const itemName = item.name || 'Unnamed file';
-
-                if (mimeType && !isSupportedAttachmentMime(mimeType)) {
-                    unsupported.push({ name: itemName, mimeType });
-                    continue;
-                }
-
-                if (isTextAttachmentMime(mimeType)) {
-                    const textContent = decodeBase64Utf8(getBase64FromAttachment(item));
-                    if (textContent) {
-                        const snippet = textContent.slice(0, 12000);
-                        parts.push({
-                            type: "text",
-                            text: `[Attached file: ${itemName} (${mimeType})]\n${snippet}`
-                        });
-                    }
-                    continue;
-                }
-                
-                // Audio formatting according to OpenAI standard supported by Gemini
-                if (mimeType.startsWith('audio/')) {
-                    let base64Data = item.data;
-                    if (!base64Data && item.dataUrl) {
-                        const matches = item.dataUrl.match(/^data:(.+?);base64,(.+)$/);
-                        if (matches) base64Data = matches[2];
-                    }
-                    
-                    if (base64Data) {
-                        let format = mimeType.split('/')[1] || 'wav';
-                        if (format === 'mpeg') format = 'mp3';
-                        parts.push({ 
-                            type: "input_audio", 
-                            input_audio: { data: base64Data, format: format } 
-                        });
-                    }
-                } 
-                // Images
-                else {
-                    url = item.dataUrl || item.previewUrl;
-                    if (!url && mimeType && item.data) {
-                        url = `data:${mimeType};base64,${item.data}`;
-                    }
-                    if (url) {
-                        // OpenAI specifies image payload
-                        parts.push({ type: "image_url", image_url: { url: url, detail: item.detail || "auto" } });
-                    }
-                }
-            }
-        }
-        return { parts, unsupported };
-    };
-
-    // Build API input based on provider
-    const buildApiPayload = async (msgs, currentQ, sysPrompt, activeKey) => {
-        // OpenAI-compatible API (Universal Standard)
-        const openaiMessages = [{ role: 'system', content: sysPrompt }];
-        for (const msg of msgs) {
-            const attachments = msg.files || msg.images;
-            if (attachments && attachments.length > 0) {
-                const parts = [];
-                if (msg.text) parts.push({ type: "text", text: msg.text });
-                const processedAttachments = processAttachments(attachments);
-                parts.push(...processedAttachments.parts);
-                if (processedAttachments.unsupported.length > 0) {
-                    const unsupportedSummary = processedAttachments.unsupported
-                        .map(item => `${item.name} (${item.mimeType})`)
-                        .join(', ');
-                    parts.push({
-                        type: "text",
-                        text: `[Note] The following attached files were skipped because this model/API does not support their MIME types: ${unsupportedSummary}`
-                    });
-                }
-                openaiMessages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: parts });
-            } else {
-                openaiMessages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: msg.text });
-            }
-        }
-
-        // Add input question + images
-        if (imageData && imageData.length > 0) {
-            const parts = [];
-            parts.push({ type: "text", text: currentQ });
-            const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
-            const processedCurrentAttachments = processAttachments(currentAttachments);
-            parts.push(...processedCurrentAttachments.parts);
-            if (processedCurrentAttachments.unsupported.length > 0) {
-                const unsupportedSummary = processedCurrentAttachments.unsupported
-                    .map(item => `${item.name} (${item.mimeType})`)
-                    .join(', ');
-                parts.push({
-                    type: "text",
-                    text: `[Note] The following attached files were skipped because this model/API does not support their MIME types: ${unsupportedSummary}`
-                });
-            }
-            openaiMessages.push({ role: 'user', content: parts });
-        } else {
-            openaiMessages.push({ role: 'user', content: currentQ });
-        }
-
-            // Use endpoint from provider config
-            const openaiBody = {
-                model: model,
-                messages: openaiMessages,
-                temperature,
-                top_p: topP,
-                stream: true,
-                stream_options: { include_usage: true },
-                ...parsedCustomParams
-            };
-
-            // Keep only one thinking path per request to avoid overlap conflicts.
-            // If UI is set to None for Gemini 2.5, explicitly disable thinking.
-            if (normalizedThinkingLevel === 'none') {
-                if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) {
-                    openaiBody.reasoning_effort = 'none';
-                }
-            } else if (normalizedThinkingLevel) {
-                openaiBody.reasoning_effort = normalizedThinkingLevel;
-            } else if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) {
-                // Backward compatibility: older saved "None" can be empty string.
-                // Gemini 2.5 is expected to disable thinking in this state.
-                openaiBody.reasoning_effort = 'none';
-            }
-
-            if (isGeminiOpenAIEndpoint(endpoint)) {
-                if (reasoningMode) {
-                    if (!openaiBody.extra_body) openaiBody.extra_body = {};
-                    if (!openaiBody.extra_body.google) openaiBody.extra_body.google = {};
-                    openaiBody.extra_body.google.thinking_config = { include_thoughts: true };
-                } else if (openaiBody.extra_body?.google?.thinking_config) {
-                    delete openaiBody.extra_body.google.thinking_config;
-                    if (Object.keys(openaiBody.extra_body.google).length === 0) {
-                        delete openaiBody.extra_body.google;
-                    }
-                    if (Object.keys(openaiBody.extra_body).length === 0) {
-                        delete openaiBody.extra_body;
-                    }
-                }
-            } else if (openaiBody.extra_body?.google?.thinking_config) {
-                // Not a Gemini endpoint - remove Google-specific config
-                delete openaiBody.extra_body.google.thinking_config;
-                if (Object.keys(openaiBody.extra_body.google).length === 0) {
-                    delete openaiBody.extra_body.google;
-                }
-                if (Object.keys(openaiBody.extra_body).length === 0) {
-                    delete openaiBody.extra_body;
-                }
-            }
-
-            if (openaiBody.extra_body?.google?.generation_config) {
-                delete openaiBody.extra_body.google.generation_config;
-                if (Object.keys(openaiBody.extra_body.google).length === 0) {
-                    delete openaiBody.extra_body.google;
-                }
-                if (Object.keys(openaiBody.extra_body).length === 0) {
-                    delete openaiBody.extra_body;
-                }
-            }
-
-            if (isGeminiOpenAIEndpoint(endpoint)) {
-                if (enableGrounding) {
-                    if (!openaiBody.extra_body) openaiBody.extra_body = {};
-                    if (!openaiBody.extra_body.google) openaiBody.extra_body.google = {};
-                    const tools = openaiBody.extra_body.google.tools;
-                    const toolList = Array.isArray(tools) ? tools : [];
-                    const hasGoogleSearchTool = toolList.some(t => t && typeof t === 'object' && t.google_search);
-                    if (!hasGoogleSearchTool) {
-                        toolList.push({ google_search: {} });
-                    }
-                    openaiBody.extra_body.google.tools = toolList;
-                }
-
-                // NOTE: Do not inject google.generation_config in chat/completions.
-                // Gemini OpenAI-compatible chat rejects this field with INVALID_ARGUMENT.
-            }
-
-            return {
-                url: endpoint,
-                body: openaiBody
-            };
-    };
-
-    // --- FIRST CALL (Initial or Tool Check) ---
 
     let response = await fetchWithRotation(keys, async (key) => {
-        const payload = await buildApiPayload(fullMessages, augmentedQuestion, systemInstruction, key);
+        const payload = await buildApiPayload(fullMessages, augmentedQuestion, systemInstruction, key, payloadParams);
         return fetch(payload.url, {
             method: 'POST',
             headers: {
@@ -1230,112 +987,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
 
     // --- Stream Finished. Check for tool call anywhere in content ---
-    const toolCallMatch = fullToolResponse.match(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/);
-
-    if (toolCallMatch) {
-        try {
-            const toolCall = JSON.parse(toolCallMatch[0]);
-
-            if (toolCall && toolCall.tool === 'search_web' && toolCall.args && toolCall.args.query) {
-                // 1. Notify UI - Start searching via Gemini Grounding
-                port.postMessage({
-                    action: 'web_search_status',
-                    status: 'searching',
-                    query: toolCall.args.query
-                });
-
-                // Find Gemini OpenAI-compatible provider by endpoint.
-                const providerData = await chrome.storage.local.get(['providers']);
-                const providerList = providerData.providers || [];
-                const geminiProvider = providerList.find(p => isGeminiOpenAIEndpoint(p.endpoint) && p.apiKey);
-                const groundingKeys = geminiProvider ? getKeysArray(geminiProvider.apiKey) : [];
-
-                if (groundingKeys.length === 0) {
-                    port.postMessage({ action: 'chunk', chunk: "> [System Error] Google Grounding requires a Gemini provider with API Key. Please add one in Options." });
-                    return;
-                }
-
-                // 2. Call Gemini with Grounding Tool using model + key rotation
-                const langPrompt = responseLanguage === 'en' ? "Answer in English." : "Answer in VIETNAMESE.";
-                const groundPrompt = `Use Google Search to answer this query: "${toolCall.args.query}".\n\nOriginal Question: ${question}\n\n${langPrompt} Answer directly and concisely.`;
-
-                try {
-                    const groundEndpoint = geminiProvider.endpoint || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-                    const { response: gResponse, model: groundingModel } = await fetchGroundingWithRotation(groundingKeys, async (key, modelName) => {
-                        const groundBody = {
-                            model: modelName,
-                            messages: [{ role: 'user', content: groundPrompt }],
-                            stream: true,
-                            extra_body: {
-                                google: {
-                                    tools: [{ google_search: {} }]
-                                }
-                            }
-                        };
-
-                        return fetch(groundEndpoint, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${key}`
-                            },
-                            body: JSON.stringify(groundBody)
-                        });
-                    }, requestOptions);
-
-                    if (!gResponse.ok) {
-                        const errText = await gResponse.text();
-                        console.error('[Lumina] Gemini Grounding Error:', errText);
-                        throw new Error(`Gemini Grounding Error: ${gResponse.status}`);
-                    }
-
-                    port.postMessage({
-                        action: 'web_search_status',
-                        status: 'analyzing',
-                        model: groundingModel
-                    });
-
-                    // 3. Stream Response (OpenAI-compatible SSE)
-                    const reader2 = gResponse.body.getReader();
-                    const decoder2 = new TextDecoder('utf-8');
-                    let buffer2 = '';
-
-                    while (true) {
-                        const { done: done2, value: value2 } = await reader2.read();
-                        if (done2) break;
-                        const chunk2 = decoder2.decode(value2, { stream: true });
-                        buffer2 += chunk2;
-
-                        const lines = buffer2.split('\n');
-                        buffer2 = lines.pop();
-                        for (const line of lines) {
-                            if (!line.startsWith('data: ')) continue;
-                            const payload = line.substring(6).trim();
-                            if (!payload || payload === '[DONE]') continue;
-                            try {
-                                const json = JSON.parse(payload);
-                                const delta = json.choices?.[0]?.delta?.content;
-                                if (delta) {
-                                    port.postMessage({ action: 'chunk', chunk: delta });
-                                }
-                            } catch (e) {
-                            }
-                        }
-                    }
-
-                    port.postMessage({ action: 'web_search_status', status: 'completed' });
-                } catch (err) {
-                    port.postMessage({ action: 'web_search_status', status: 'error', error: err.message });
-                    port.postMessage({ action: 'chunk', chunk: `\n> [Search Error]: ${err.message}` });
-                }
-            } else {
-                // If not a valid search tool call, just dump raw (fallback)
-                port.postMessage({ action: 'chunk', chunk: fullToolResponse });
-            }
-        } catch (e) {
-            port.postMessage({ action: 'chunk', chunk: fullToolResponse });
-        }
-    }
 }
 
 // --- AI Helper for One-off Completions ---
@@ -1393,29 +1044,7 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
     return result.choices?.[0]?.message?.content || '';
 }
 
-// --- Image Search Function ---
-async function searchImages(query, apiKey, cx) {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&searchType=image&num=4`;
 
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.items?.map(item => ({
-            link: item.link,
-            title: item.title,
-            thumbnail: item.image?.thumbnailLink || item.link,
-            contextLink: item.image?.contextLink
-        })) || [];
-    } catch (error) {
-        console.error('[Lumina] Image search error:', error);
-        throw error;
-    }
-}
 
 
 // --- Utility: Bridge Background Logs to Content Script ---
@@ -1425,9 +1054,9 @@ async function bridgeLog(...args) {
     try {
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab && tab.id) {
-            chrome.tabs.sendMessage(tab.id, { action: 'background_log', message: msg }).catch(() => {});
+            chrome.tabs.sendMessage(tab.id, { action: 'background_log', message: msg }).catch(() => { });
         }
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // --- Message Listener ---
@@ -1444,12 +1073,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
 
             const isCambridge = request.action === 'fetch_cambridge';
-            const url = isCambridge 
+            const url = isCambridge
                 ? `https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word.replace(/\s+/g, '-'))}`
-                : `https://www.oxfordlearnersdictionaries.com/definition/english/${encodeURIComponent(word)}?q=${encodeURIComponent(word)}`;
+                : `https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`;
 
             console.log(`[Lumina BG] Fetching ${request.action}:`, url);
-            
+
             fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow' })
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
@@ -1489,7 +1118,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case 'open_sidepanel': {
             const windowIdManual = sender.tab ? sender.tab.windowId : null;
-            if (windowIdManual) chrome.sidePanel.open({ windowId: windowIdManual }).catch(() => {});
+            if (windowIdManual) {
+                toggleSidePanel(windowIdManual);
+                
+                // Identify if this is internal toggle from the sidepanel itself
+                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
+                
+                // Automatically pin the current tab when side panel is opened via shortcut (from external page)
+                const sourceTab = (sender.tab && !isInternal) ? {
+                    tabId: sender.tab.id,
+                    title: sender.tab.title,
+                    url: sender.tab.url
+                } : null;
+                
+                if (sourceTab && openSidePanelWindows.has(windowIdManual)) {
+                    chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab });
+                }
+            }
             sendResponse({ success: true });
             return true;
         }
@@ -1497,12 +1142,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'open_sidepanel_with_query': {
             const windowIdQuery = sender.tab ? sender.tab.windowId : null;
             if (windowIdQuery) {
-                chrome.sidePanel.open({ windowId: windowIdQuery }).catch(() => {});
+                chrome.sidePanel.open({ windowId: windowIdQuery }).catch(() => { });
                 const queryId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+                
+                // Identify if this is an internal query from the spotlight/sidepanel itself
+                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
+                
+                // Only provide sourceTab for external web pages to avoid redundant pinning
+                const sourceTab = (sender.tab && !isInternal) ? {
+                    tabId: sender.tab.id,
+                    title: sender.tab.title,
+                    url: sender.tab.url
+                } : null;
+
+                const queryData = { 
+                    query: request.query, 
+                    displayQuery: request.displayQuery, 
+                    queryId, 
+                    mode: request.mode,
+                    sourceTab: sourceTab,
+                    isInternal: isInternal
+                };
+
                 if (openSidePanelWindows.has(windowIdQuery)) {
-                    chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, query: request.query, displayQuery: request.displayQuery, queryId, mode: request.mode });
+                    chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, ...queryData });
                 } else {
-                    chrome.storage.session.set({ [`pending_sidepanel_query_${windowIdQuery}`]: { query: request.query, displayQuery: request.displayQuery, queryId, mode: request.mode } });
+                    chrome.storage.session.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData });
                 }
             }
             sendResponse({ success: true });
@@ -1522,7 +1187,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
 
         case 'fetch_ai_dict':
-            fetchAIDict(request.word).then(sendResponse).catch(err => sendResponse({ success: false, error: err.message }));
+            fetchAIDict(request.word)
+                .then(result => sendResponse(result))
+                .catch(err => sendResponse({ success: false, error: err?.message || String(err) }));
             return true;
 
         case 'translate':
@@ -1662,25 +1329,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
 
-        case 'smart_image_lookup':
-            (async () => {
-                try {
-                    const query = await generateOneOffCompletion(request.text, "Extract clean image search keyword.");
-                    const items = await chrome.storage.local.get(['googleApiKey', 'googleCx']);
-                    if (!items.googleApiKey || !items.googleCx) { sendResponse({ error: 'Config missing' }); return; }
-                    const results = await searchImages(query, items.googleApiKey, items.googleCx);
-                    sendResponse({ results, query });
-                } catch (e) { sendResponse({ error: e.message }); }
-            })();
-            return true;
 
-        case 'search_images':
-            chrome.storage.local.get(['googleApiKey', 'googleCx'], async (items) => {
-                if (!items.googleApiKey || !items.googleCx) { sendResponse({ error: 'Config missing' }); return; }
-                try { const results = await searchImages(request.query, items.googleApiKey, items.googleCx); sendResponse({ results }); }
-                catch (e) { sendResponse({ error: e.message }); }
-            });
-            return true;
 
         case 'ai_completion':
             (async () => {
@@ -1733,7 +1382,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
 
         case 'fetchAudio':
-            fetchAudio(request.text, request.speed || 1.0).then(result => sendResponse(result)).catch(() => sendResponse({ type: null, chunks: [] }));
+            fetchAudio(request.text, request.speed || 1.0, request.lang).then(result => sendResponse(result)).catch(() => sendResponse({ type: null, chunks: [] }));
             return true;
 
         default:
@@ -1765,76 +1414,10 @@ chrome.storage.local.get(['spotlightWindowId'], (data) => {
 
 chrome.commands.onCommand.addListener(async (command) => {
     if (command === 'open-lumina-chat') {
-        // Early guard: prevent creating multiple windows if already in progress
-        if (isCreatingSpotlight) {
-            return;
-        }
-
-        try {
-            // If spotlightWindowId is null, try to load from storage (service worker may have restarted)
-            if (!spotlightWindowId) {
-                const stored = await chrome.storage.local.get(['spotlightWindowId']);
-                if (stored.spotlightWindowId) {
-                    spotlightWindowId = stored.spotlightWindowId;
-
-                }
-            }
-
-            if (spotlightWindowId) {
-                // Check if window still exists
-                const existingWindow = await new Promise(resolve => {
-                    chrome.windows.get(spotlightWindowId, { populate: true }, (win) => {
-                        if (chrome.runtime.lastError || !win) {
-                            resolve(null);
-                        } else {
-                            resolve(win);
-                        }
-                    });
-                });
-
-                if (existingWindow) {
-                    // Toggle: if window is already focused and normal/maximized, hide it (minimize)
-                    if (existingWindow.focused && (existingWindow.state === 'normal' || existingWindow.state === 'maximized')) {
-                        await chrome.windows.update(spotlightWindowId, { state: 'minimized' });
-                        return;
-                    }
-
-                    // Window exists - Always focus or restore
-                    if (existingWindow.state === 'minimized') {
-                        // Window is minimized → restore and focus
-                        await chrome.windows.update(spotlightWindowId, {
-                            focused: true,
-                            state: 'normal',
-                            drawAttention: true
-                        });
-                    } else {
-                        // Window exists (unfocused) → ensure focus
-                        await chrome.windows.update(spotlightWindowId, {
-                            focused: true,
-                            drawAttention: true
-                        });
-                    }
-
-                    // Clear text selection in the spotlight window
-                    if (existingWindow.tabs && existingWindow.tabs.length > 0) {
-                        chrome.tabs.sendMessage(existingWindow.tabs[0].id, { action: 'clear_selection' }).catch(() => {
-                            // Ignore errors if tab is not ready
-                        });
-                    }
-                } else {
-                    // Window was closed, reset ID and create new
-                    spotlightWindowId = null;
-                    await chrome.storage.local.remove('spotlightWindowId');
-                    await createSpotlightWindow();
-                }
-            } else {
-                await createSpotlightWindow();
-            }
-        } catch (error) {
-            console.error('[Lumina] Error handling spotlight command:', error);
-            // Reset state on error
-            spotlightWindowId = null;
-            isCreatingSpotlight = false;
+        const windows = await chrome.windows.getAll();
+        const lastFocused = windows.find(w => w.focused) || windows[0];
+        if (lastFocused) {
+            toggleSidePanel(lastFocused.id);
         }
     } else if (command === 'new-chat') {
         chrome.runtime.sendMessage({ action: 'new_chat' }).catch(() => { });
@@ -1848,22 +1431,8 @@ chrome.commands.onCommand.addListener(async (command) => {
         }
     } else if (command === 'toggle-side-panel') {
         chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
-            const windowId = currentWindow.id;
-            if (openSidePanelWindows.has(windowId)) {
-                if (chrome.sidePanel.close) {
-                    chrome.sidePanel.close({ windowId }).catch(console.error);
-                } else {
-                    // Fallback toggle for older Chrome versions: disable then re-enable
-                    chrome.sidePanel.setOptions({ windowId, enabled: false }, () => {
-                        chrome.sidePanel.setOptions({
-                            windowId,
-                            enabled: true,
-                            path: 'pages/spotlight/spotlight.html?sidepanel=1'
-                        });
-                    });
-                }
-            } else {
-                chrome.sidePanel.open({ windowId }).catch(console.error);
+            if (currentWindow && currentWindow.id) {
+                toggleSidePanel(currentWindow.id);
             }
         });
     }
@@ -2290,7 +1859,6 @@ chrome.runtime.onConnect.addListener((port) => {
                 // Detect language for TTS
                 const detectedLang = detectLanguage(text);
 
-
                 // --- 1. Prepare Google TTS Strategy ---
                 // Split text by sentences (. ? !)
                 const googleChunks = [];
@@ -2396,134 +1964,13 @@ chrome.runtime.onConnect.addListener((port) => {
 // --- Helper Functions (Dictionary & Translation) ---
 
 async function translateText(text, targetLang = 'vi') {
-    // --- DAILY CACHE SYSTEM DISABLED ---
-    const normalizedKey = `${text.toLowerCase().trim()}_${targetLang}`;
-
-    // Get settings
-    const settings = await chrome.storage.local.get(['transProvider', 'deepLApiKey', 'providers', 'provider', 'model', 'transModelProvider', 'transModel']);
-    const transProvider = settings.transProvider || 'ai';
-
-    // --- 1. AI Intelligent Translation ---
-    if (transProvider === 'ai') {
-        let chain;
-
-        // Use dedicated translation model if configured
-        if (settings.transModelProvider && settings.transModel) {
-            const provider = settings.providers?.find(p => p.id === settings.transModelProvider);
-            if (provider) {
-                chain = [{
-                    model: settings.transModel,
-                    providerType: provider.type,
-                    endpoint: provider.endpoint,
-                    apiKey: provider.apiKey
-                }];
-            }
-        }
-
-        // Fallback to text model chain
-        if (!chain) {
-            chain = await getModelChain('text');
-        }
-
-        if (!chain || chain.length === 0) {
-        } else {
-            for (let i = 0; i < chain.length; i++) {
-                const config = chain[i];
-                const { model, providerType: currentProvider, endpoint, apiKey } = config;
-                const keys = getKeysArray(apiKey);
-
-                const targetLanguage = targetLang === 'vi' ? 'Vietnamese' : targetLang;
-                                const systemPrompt = buildTranslationSystemPrompt(targetLanguage, text);
-
-                // --- TRACK USAGE ---
-                if (model) incrementModelUsage(model);
-                // -------------------
-
-                try {
-                    const result = await fetchWithRotation(keys, async (key) => {
-                        const body = {
-                            model: model,
-                            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: text }],
-                            temperature: 0.3,
-                            response_format: { type: "json_object" }
-                        };
-                        return fetch(endpoint, {
-                            method: 'POST',
-                            body: JSON.stringify(body),
-                            headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' }
-                        });
-                    });
-
-                    if (result.ok) {
-                        const json = await result.json();
-                        let rawText = json.choices?.[0]?.message?.content || '';
-
-                        // Parse JSON
-                        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                        const data = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(rawText);
-
-                        // Fallback if data is malformed
-                        if (!data.translation) data.translation = text;
-
-                        data.type = 'sentence'; // Enforce type
-                        data.showAudio = true;
-                        // Force ensure original text
-                        if (!data.original) data.original = text;
-
-                        // --- SAVE TO DAILY CACHE DISABLED ---
-                        return data; // Success!
-                    }
-                } catch (e) {
-                    if (e.message === 'RATE_LIMIT_EXHAUSTED') {
-                        console.warn(`[Lumina] Translation model ${model} hit rate limit. Rotating...`);
-                        continue;
-                    }
-                    console.error(`[Lumina] Translation failed on model ${model}:`, e);
-                    continue;
-                }
-            }
-        }
-    }
-
-    // --- 2. DeepL Translation ---
-    if (transProvider === 'deepl' && settings.deepLApiKey) {
-        // (Existing DeepL Logic)
-        try {
-            const deepLApiKey = settings.deepLApiKey;
-            const isFreePlan = deepLApiKey.endsWith(':fx');
-            const apiEndpoint = isFreePlan ? 'https://api-free.deepl.com/v2/translate' : 'https://api.deepl.com/v2/translate';
-
-            const deepLLangMap = { 'vi': 'VI', 'en': 'EN', 'ja': 'JA' }; // Add more if needed
-            const deepLTargetLang = deepLLangMap[targetLang.toLowerCase()] || targetLang.toUpperCase();
-
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: { 'Authorization': `DeepL-Auth-Key ${deepLApiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: [text], target_lang: deepLTargetLang })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const result = {
-                    type: 'sentence',
-                    original: text,
-                    translation: data.translations?.[0]?.text || text,
-                    showAudio: true
-                };
-
-                return result;
-            }
-        } catch (e) {
-            console.error('[Lumina] DeepL failed:', e);
-        }
-    }
-
-    // --- 3. Google Translate (Fallback) ---
+    // --- Google Translate Only ---
     const fromLang = 'auto';
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
 
     try {
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         let translatedText = data[0].map(item => item[0]).join('');
 
@@ -2534,11 +1981,21 @@ async function translateText(text, targetLang = 'vi') {
         }
 
         // Create final result
-        const result = { type: 'sentence', original: text, translation: translatedText, fromProvider: 'google', showAudio: true };
+        const result = {
+            type: 'sentence',
+            original: text,
+            translation: translatedText,
+            fromProvider: 'google',
+            showAudio: true
+        };
         return result;
     } catch (e) {
         console.error('[Lumina] Google Translate failed:', e);
-        return { type: 'sentence', original: text, translation: text + " (Translation failed)" };
+        return {
+            type: 'sentence',
+            original: text,
+            translation: text + " (Translation failed)"
+        };
     }
 }
 
@@ -2649,7 +2106,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
         // ----------------------------------
 
         // 1. Load global settings for params (shared across models)
-        const globalSettings = await chrome.storage.local.get(['responseLanguage', 'advancedParamsByModel', 'enableGrounding']);
+        const globalSettings = await chrome.storage.local.get(['responseLanguage', 'advancedParamsByModel']);
 
         // 2. Get Chain
         let chain = await getModelChain();
@@ -2888,7 +2345,7 @@ async function stopGoogleAudioOffscreen() {
 // Logic:
 //   1-2 words  → fire Oxford + Google in parallel; use Oxford if it succeeds, else Google
 //   3+ words   → try Google with full text; if 400 Bad Request → split by sentence and retry
-async function fetchAudio(text, speed = 1.0) {
+async function fetchAudio(text, speed = 1.0, forcedLang = null) {
     if (!text) return { type: null, chunks: [] };
 
     let normalizedText = text.trim();
@@ -2928,7 +2385,7 @@ async function fetchAudio(text, speed = 1.0) {
         return langMap[dominant[0]] || 'en-GB';
     };
 
-    const lang = detectLanguage(normalizedText);
+    const lang = forcedLang || detectLanguage(normalizedText);
 
     // Helper: fetch one URL → base64 data URI. Throws on any HTTP error.
     const fetchToBase64 = async (url, opts = {}) => {
@@ -2950,7 +2407,7 @@ async function fetchAudio(text, speed = 1.0) {
     // Helper: build Google TTS URL
     const googleUrl = (q) => {
         const cleaned = stripListPrefix(q);
-        return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleaned)}&tl=${lang}&total=1&idx=0&textlen=${cleaned.length}&client=tw-ob&prev=input&ttsspeed=${speed}`;
+        return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleaned)}&tl=${lang}&total=1&idx=0&textlen=${cleaned.length}&client=gtx&prev=input&ttsspeed=${speed}`;
     };
 
     // Helper: split text into chunks that are short enough for Google TTS (~200 chars each).
@@ -3048,52 +2505,83 @@ async function fetchAudio(text, speed = 1.0) {
  * Fetches structured dictionary data from AI
  */
 async function fetchAIDict(word) {
-    const chain = await getModelChain('text');
+    const chain = await getModelChain('dictionary');
     if (!chain || chain.length === 0) {
         throw new Error('No AI model configured for dictionary.');
     }
 
-        const systemPrompt = buildDictionarySystemPrompt(word);
+    const systemPrompt = buildDictionarySystemPrompt(word);
 
+    // IMPORTANT: To ensure consistency with the chat flow and bypass potential 503 errors 
+    // often caused by non-streaming requests in Gemini OpenAI endpoints, we use streaming 
+    // internally and collect the result.
     for (let i = 0; i < chain.length; i++) {
         const config = chain[i];
-        const { model, providerType: currentProvider, endpoint, apiKey } = config;
+        const { model, endpoint, apiKey } = config;
         const keys = getKeysArray(apiKey);
 
         if (model) incrementModelUsage(model);
 
+        const payloadParams = {
+            model,
+            endpoint,
+            temperature: 0.1,
+            topP: 1.0,
+            parsedCustomParams: { response_format: { type: "json_object" } },
+            normalizedThinkingLevel: 'none',
+            isGemini25Model: /gemini-2\.5/i.test(model),
+            reasoningMode: false,
+            imageData: null,
+            isStreaming: true // Use streaming for stability
+        };
+
         try {
             const response = await fetchWithRotation(keys, async (key) => {
-                const body = {
-                    model: model,
-                    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: word }],
-                    temperature: 0.3,
-                    response_format: { type: "json_object" }
-                };
-
-                return fetch(endpoint, {
+                const payload = await buildApiPayload([], word, systemPrompt, key, payloadParams);
+                return fetch(payload.url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${key}`
+                        ...(key ? { 'Authorization': `Bearer ${key}` } : {})
                     },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(payload.body)
                 });
             });
 
-            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-
-            const data = await response.json();
-            let resultStr = "";
-
-            if (data.choices && data.choices[0]?.message?.content) {
-                resultStr = data.choices[0].message.content;
-            } else {
-                throw new Error("No data choices in OpenAI response");
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`HTTP error ${response.status}: ${errText}`);
             }
 
-            // Extract JSON from response (handle markdown blocks)
-            let jsonStr = resultStr.trim();
+            // Collect stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let fullText = '';
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    const cleanLine = line.trim();
+                    if (!cleanLine || cleanLine === 'data: [DONE]') continue;
+                    if (cleanLine.startsWith('data: ')) {
+                        try {
+                            const json = JSON.parse(cleanLine.substring(6));
+                            const content = json.choices?.[0]?.delta?.content || "";
+                            fullText += content;
+                        } catch (e) { }
+                    }
+                }
+            }
+
+            // Clean up result
+            let jsonStr = fullText.trim();
             if (jsonStr.startsWith('```')) {
                 jsonStr = jsonStr.replace(/^```json\n?|```$/g, '').trim();
             }
@@ -3106,5 +2594,3 @@ async function fetchAIDict(word) {
         }
     }
 }
-
-
