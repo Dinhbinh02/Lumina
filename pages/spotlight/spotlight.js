@@ -96,6 +96,7 @@ let handledQueryIds = new Set();
 let modifierKeyPressedAlone = false;
 let lastSubmitTime = 0;
 let lastSubmitText = "";
+let readWebpageEnabled = false;
 
 const GROUP_COLORS = [
     '#4285f4', // Blue
