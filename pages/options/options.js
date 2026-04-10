@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers = {};
               } else {
                 // OpenAI-compatible uses Bearer token
-                testUrl = provider.endpoint.replace('/chat/completions', '/models');
+                testUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/models');
                 headers = { 'Authorization': `Bearer ${key}` };
               }
 
@@ -991,6 +991,19 @@ document.addEventListener('DOMContentLoaded', () => {
           textChainModelList.style.display = 'none';
         }
       }, 200);
+    });
+
+    textChainModelInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (textChainModelList) {
+        textChainModelList.style.display = 'none';
+      }
+
+      addToChain();
     });
   }
 
@@ -1990,6 +2003,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function normalizeOpenAICompatibleEndpoint(endpoint, targetPath) {
+    if (typeof endpoint !== 'string') return endpoint;
+
+    const trimmed = endpoint.trim().replace(/\/+$/, '');
+    if (!trimmed) return trimmed;
+
+    const knownSuffixes = ['/chat/completions', '/models', '/audio/transcriptions'];
+    for (const suffix of knownSuffixes) {
+      if (trimmed.endsWith(suffix)) {
+        return trimmed.slice(0, -suffix.length) + targetPath;
+      }
+    }
+
+    if (trimmed.endsWith('/v1') || trimmed.endsWith('/v1beta/openai') || trimmed.endsWith('/openai/v1')) {
+      return `${trimmed}${targetPath}`;
+    }
+
+    return `${trimmed}${targetPath}`;
+  }
+
   // Fetch models for a dynamic provider
   async function fetchModelsForProvider(provider, options = {}) {
     if (!provider) return;
@@ -2028,7 +2061,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('[Lumina Options] Fetching models for provider:', provider.name, 'type:', provider.type, 'endpoint:', provider.endpoint, 'hasKey:', !!firstKey);
 
       // OpenAI-compatible API
-      let modelsUrl = provider.endpoint.replace('/chat/completions', '/models');
+      let modelsUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/models');
 
       // Adjust for Groq specifically
       if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) {

@@ -175,11 +175,35 @@ let isExtensionDisabled = false;
 let luminaHost = null;
 let luminaShadowRoot = null;
 
+function isRuntimeAvailable() {
+    return typeof chrome !== 'undefined' && !!chrome.runtime && !!chrome.runtime.id;
+}
+
+function safeRuntimeSendMessage(message, callback) {
+    if (!isRuntimeAvailable()) return false;
+
+    try {
+        chrome.runtime.sendMessage(message, callback);
+        return true;
+    } catch (error) {
+        const messageText = String(error?.message || error || '');
+        if (!messageText.includes('Extension context invalidated')) {
+            console.warn('[Lumina content] sendMessage failed:', error);
+        }
+        return false;
+    }
+}
+
 function isSidePanelOpen() {
     return new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'check_sidepanel_status' }, (response) => {
+        const sent = safeRuntimeSendMessage({ action: 'check_sidepanel_status' }, (response) => {
+            if (chrome.runtime?.lastError) {
+                resolve(false);
+                return;
+            }
             resolve(!!(response && response.open));
         });
+        if (!sent) resolve(false);
     });
 }
 
@@ -188,7 +212,7 @@ function isSidePanelOpen() {
  * Replaces the old floating popup logic.
  */
 function triggerSidePanelQuery(query, displayQuery = null, mode = 'qa') {
-    chrome.runtime.sendMessage({
+    safeRuntimeSendMessage({
         action: 'open_sidepanel_with_query',
         query: query,
         displayQuery: displayQuery || query,
@@ -527,6 +551,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
 
 let shortcuts = { ...DEFAULT_SHORTCUTS };
+let questionMappings = [];
 
 // Load saved shortcuts
 chrome.storage.local.get(['shortcuts'], (items) => {
@@ -669,7 +694,7 @@ document.addEventListener('keyup', async (event) => {
         event.stopImmediatePropagation();
 
         // Always use side panel
-        chrome.runtime.sendMessage({ action: 'open_sidepanel' });
+        safeRuntimeSendMessage({ action: 'open_sidepanel' });
         return;
     }
 });
@@ -816,7 +841,7 @@ document.addEventListener('keydown', async (event) => {
         event.stopImmediatePropagation();
 
         // Always open side panel
-        chrome.runtime.sendMessage({ action: 'open_sidepanel' });
+        safeRuntimeSendMessage({ action: 'open_sidepanel' });
         return;
     }
 
@@ -904,7 +929,7 @@ document.addEventListener('keydown', async (event) => {
             if (window.LuminaSelection) LuminaSelection.hide();
 
             // Always open side panel for translation
-            chrome.runtime.sendMessage({
+            safeRuntimeSendMessage({
                 action: 'open_sidepanel_with_query',
                 query: `translate: ${text}`
             });

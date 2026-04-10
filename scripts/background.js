@@ -165,6 +165,26 @@ function isGeminiOpenAIEndpoint(endpoint) {
     return typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com/v1beta/openai');
 }
 
+function normalizeOpenAICompatibleEndpoint(endpoint, targetPath) {
+    if (typeof endpoint !== 'string') return endpoint;
+
+    const trimmed = endpoint.trim().replace(/\/+$/, '');
+    if (!trimmed) return trimmed;
+
+    const knownSuffixes = ['/chat/completions', '/models', '/audio/transcriptions'];
+    for (const suffix of knownSuffixes) {
+        if (trimmed.endsWith(suffix)) {
+            return trimmed.slice(0, -suffix.length) + targetPath;
+        }
+    }
+
+    if (trimmed.endsWith('/v1') || trimmed.endsWith('/v1beta/openai') || trimmed.endsWith('/openai/v1')) {
+        return `${trimmed}${targetPath}`;
+    }
+
+    return `${trimmed}${targetPath}`;
+}
+
 /**
  * Optimizes a context string by collapsing redundant newlines and whitespace.
  * This maximizes token efficiency across all model providers.
@@ -499,7 +519,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         const isGroundingSupported = /gemini-[3-9]/i.test(model);
     }
 
-    return { url: endpoint, body: openaiBody };
+    return { url: normalizeOpenAICompatibleEndpoint(endpoint, '/chat/completions'), body: openaiBody };
 }
 
 async function getModelChain(type = 'text') {
@@ -941,11 +961,25 @@ async function executeChatRequest(config, messages, initialContext, question, po
     if (!response.ok) {
         const errorText = await response.text();
         let errorData;
-        try { errorData = JSON.parse(errorText); } catch (e) { errorData = { error: { message: errorText } }; }
-        console.error('[Lumina] API Error:', errorData);
+        try {
+            errorData = JSON.parse(errorText);
+        } catch (e) {
+            errorData = { raw: errorText };
+        }
+        console.error('[Lumina] API Error:', {
+            endpoint,
+            status: response.status,
+            statusText: response.statusText,
+            errorData
+        });
 
         // Detect "Request too large" / TPM rate limit → trigger chain fallback
-        const errMsg = errorData?.error?.message || errorText || '';
+        const errMsg =
+            (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
+            (typeof errorData?.message === 'string' && errorData.message.trim()) ||
+            (typeof errorText === 'string' && errorText.trim()) ||
+            '';
+        const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${endpoint}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
         if (
             response.status === 429 ||
             /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)
@@ -953,7 +987,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             throw new Error('RATE_LIMIT_EXHAUSTED');
         }
 
-        throw new Error(errMsg || 'Failed to fetch from AI provider');
+        throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
     }
 
     console.log(streamLogPrefix, 'response ok', {
@@ -1488,7 +1522,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             }
                             for (const key of keys) {
                                 try {
-                                    const endpoint = provider.endpoint || 'https://api.groq.com/openai/v1/chat/completions';
+                                    const endpoint = normalizeOpenAICompatibleEndpoint(provider.endpoint || 'https://api.groq.com/openai/v1/chat/completions', '/chat/completions');
                                     const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { 'Authorization': `Bearer ${key}` } : {}) }, body: JSON.stringify({ model: modelToUse, messages: [{ role: 'system', content: 'You are a memory consolidation assistant.' }, { role: 'user', content: prompt }], temperature: 0.3, max_tokens: 8192 }) });
                                     if (!response.ok) continue;
                                     const result = await response.json();
@@ -1696,7 +1730,7 @@ async function transcribeAudio(base64Audio, mimeType) {
         formData.append('response_format', 'text');
 
         // Build API endpoint
-        let transcriptionUrl = provider.endpoint.replace('/chat/completions', '/audio/transcriptions');
+        let transcriptionUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/audio/transcriptions');
 
         // For Groq specifically
         if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) {

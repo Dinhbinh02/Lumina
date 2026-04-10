@@ -117,6 +117,14 @@ button {
   flex-shrink: 0;
 }
 
+.lumina-dictionary-logo {
+  width: 17px;
+  height: 17px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .lumina-svg-icon {
   display: inline-block;
   flex-shrink: 0;
@@ -137,11 +145,6 @@ button {
 .lumina-icon-copy-alt {
   -webkit-mask-image: url("../icons/lumina/copy-alt.svg");
   mask-image: url("../icons/lumina/copy-alt.svg");
-}
-
-.lumina-icon-dictionary {
-  -webkit-mask-image: url("../icons/lumina/dictionary-alt.svg");
-  mask-image: url("../icons/lumina/dictionary-alt.svg");
 }
 
 .lumina-icon-file-edit {
