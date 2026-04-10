@@ -439,7 +439,7 @@ function processAttachments(attachments) {
 }
 
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
-    const { model, endpoint, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, isStreaming = true } = params;
+    const { model, endpoint, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
     const openaiMessages = [{ role: 'system', content: sysPrompt }];
     for (const msg of msgs) {
         const attachments = msg.files || msg.images;
@@ -473,6 +473,14 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         ...(isStreaming ? { stream_options: { include_usage: true } } : {}),
         ...parsedCustomParams
     };
+
+    // Respect explicit maxTokens from request/model params unless custom token fields are already set.
+    const hasCustomTokenLimit = Object.prototype.hasOwnProperty.call(openaiBody, 'max_tokens')
+        || Object.prototype.hasOwnProperty.call(openaiBody, 'max_completion_tokens')
+        || Object.prototype.hasOwnProperty.call(openaiBody, 'max_output_tokens');
+    if (!hasCustomTokenLimit && Number.isFinite(maxTokens) && maxTokens > 0) {
+        openaiBody.max_tokens = maxTokens;
+    }
 
     if (normalizedThinkingLevel === 'none') {
         if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) openaiBody.reasoning_effort = 'none';
@@ -796,6 +804,7 @@ async function fetchPageContent(url) {
 
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
+    const streamLogPrefix = `[Lumina BG][${action}]`;
 
     // Per-model params from global settings
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
@@ -807,6 +816,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[model] || {};
     const temperature = requestOptions.temperature ?? modelParams.temperature ?? 1.0;
     const topP = modelParams.topP ?? 1.0;
+    const maxTokens = requestOptions.maxTokens ?? modelParams.maxTokens ?? null;
     const thinkingLevel = modelParams.thinkingLevel || null;
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
@@ -843,6 +853,18 @@ async function executeChatRequest(config, messages, initialContext, question, po
     if (action === 'proofread') {
         systemInstruction = systemOverride || buildProofreadSystemPrompt();
     }
+
+    console.log(streamLogPrefix, 'start', {
+        model,
+        provider: currentProvider,
+        endpoint,
+        messageCount: messages?.length || 0,
+        hasContext: !!(initialContext && initialContext.trim().length > 0),
+        questionLength: question ? question.length : 0,
+        maxTokens,
+        hasFiles,
+        isSpotlight
+    });
 
     // --- Inject User Memory Facts for Personalization ---
     try {
@@ -896,6 +918,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         endpoint,
         temperature,
         topP,
+        maxTokens,
         parsedCustomParams,
         normalizedThinkingLevel,
         isGemini25Model,
@@ -933,55 +956,211 @@ async function executeChatRequest(config, messages, initialContext, question, po
         throw new Error(errMsg || 'Failed to fetch from AI provider');
     }
 
+    console.log(streamLogPrefix, 'response ok', {
+        status: response.status,
+        contentType: response.headers.get('content-type')
+    });
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
 
     let buffer = '';
     let fullToolResponse = '';
+    let emittedChunks = 0;
+    let lastFinishReason = null;
+    let sawDoneSignal = false;
+    let lastUsage = null;
 
     // Universal reasoning field detection
     let isInReasoning = false;
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
+    const collectDeltasFromPayload = (payloadStr, textDeltas) => {
+        if (!payloadStr) return false;
+        const trimmedPayload = payloadStr.trim();
+        if (!trimmedPayload) return false;
 
-        // --- Stream Parser Logic (OpenAI Standard SSE) ---
-        const textDeltas = [];
-        buffer += chunk;
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // Keep the last incomplete line in buffer
+        if (trimmedPayload === '[DONE]' || trimmedPayload.includes('[DONE]')) {
+            sawDoneSignal = true;
+            return true;
+        }
+
+        try {
+            const json = JSON.parse(trimmedPayload);
+            const choice = json.choices?.[0] || json.candidates?.[0] || {};
+            const delta = choice.delta || {};
+            const finishReason = choice.finish_reason
+                || choice.finishReason
+                || json.finish_reason
+                || json.finishReason
+                || null;
+
+            if (json.usage) {
+                lastUsage = json.usage;
+            }
+
+            if (finishReason) {
+                lastFinishReason = finishReason;
+                console.log(streamLogPrefix, 'finish_reason', { finishReason });
+            }
+
+            let content = delta.content;
+            if (Array.isArray(content)) {
+                content = content
+                    .map((part) => {
+                        if (typeof part === 'string') return part;
+                        if (part && typeof part.text === 'string') return part.text;
+                        if (part && typeof part.content === 'string') return part.content;
+                        return '';
+                    })
+                    .join('');
+            }
+            if (!content && typeof choice.message?.content === 'string') {
+                content = choice.message.content;
+            }
+
+            let reasoning = delta.reasoning || delta.reasoning_content || delta.reasoningContent || '';
+            if (Array.isArray(reasoning)) {
+                reasoning = reasoning
+                    .map((part) => {
+                        if (typeof part === 'string') return part;
+                        if (part && typeof part.text === 'string') return part.text;
+                        if (part && typeof part.content === 'string') return part.content;
+                        return '';
+                    })
+                    .join('');
+            }
+
+            if (typeof reasoning === 'string' && reasoning.length > 0) {
+                // Start <think> tag if not already in reasoning mode
+                if (!isInReasoning) {
+                    textDeltas.push('<think>');
+                    isInReasoning = true;
+                }
+                textDeltas.push(reasoning);
+            }
+
+            if (typeof content === 'string' && content.length > 0) {
+                // End </think> tag if transitioning from reasoning to content
+                if (isInReasoning) {
+                    textDeltas.push('</think>');
+                    isInReasoning = false;
+                }
+                textDeltas.push(content);
+            }
+
+            return true;
+        } catch (e) {
+            // Ignore non-json payloads from keepalive/comment events.
+            return false;
+        }
+    };
+
+    const processSSEEvent = (rawEvent, textDeltas) => {
+        if (!rawEvent) return;
+        const lines = rawEvent.split(/\r?\n/);
+        const dataLines = [];
 
         for (const line of lines) {
-            if (line.trim() === '' || line.includes('[DONE]')) continue;
-            if (line.startsWith('data: ')) {
-                try {
-                    const json = JSON.parse(line.substring(6));
-                    const delta = json.choices?.[0]?.delta || {};
-                    const content = delta.content;
-                    // Universal reasoning detection: check reasoning, reasoning_content
-                    const reasoning = delta.reasoning || delta.reasoning_content;
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
+            if (!trimmed.startsWith('data:')) continue;
+            dataLines.push(trimmed.slice(5).trimStart());
+        }
 
-                    if (reasoning) {
-                        // Start <think> tag if not already in reasoning mode
-                        if (!isInReasoning) {
-                            textDeltas.push('<think>');
-                            isInReasoning = true;
-                        }
-                        textDeltas.push(reasoning);
-                    }
+        if (dataLines.length === 0) return;
 
-                    if (content) {
-                        // End </think> tag if transitioning from reasoning to content
-                        if (isInReasoning) {
-                            textDeltas.push('</think>');
-                            isInReasoning = false;
-                        }
-                        textDeltas.push(content);
-                    }
-                } catch (e) { }
+        const combinedPayload = dataLines.join('\n').trim();
+        const parsedCombined = collectDeltasFromPayload(combinedPayload, textDeltas);
+        if (!parsedCombined && dataLines.length > 1) {
+            // Fallback: some providers may emit one payload per data line.
+            dataLines.forEach((payloadLine) => {
+                collectDeltasFromPayload(payloadLine, textDeltas);
+            });
+        }
+    };
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            const flushChunk = decoder.decode();
+            if (flushChunk) {
+                buffer += flushChunk;
             }
+
+            // Flush the final buffered line that may not end with a newline.
+            const tailDeltas = [];
+            const trailingBufferLength = buffer ? buffer.length : 0;
+            while (buffer && buffer.length > 0) {
+                const lfIdx = buffer.indexOf('\n\n');
+                const crlfIdx = buffer.indexOf('\r\n\r\n');
+                let splitIdx = -1;
+                let splitLen = 0;
+
+                if (crlfIdx !== -1 && (lfIdx === -1 || crlfIdx < lfIdx)) {
+                    splitIdx = crlfIdx;
+                    splitLen = 4;
+                } else if (lfIdx !== -1) {
+                    splitIdx = lfIdx;
+                    splitLen = 2;
+                }
+
+                if (splitIdx === -1) break;
+                const rawEvent = buffer.slice(0, splitIdx);
+                buffer = buffer.slice(splitIdx + splitLen);
+                processSSEEvent(rawEvent, tailDeltas);
+            }
+
+            if (buffer && buffer.trim().length > 0) {
+                processSSEEvent(buffer, tailDeltas);
+                buffer = '';
+            }
+
+            for (const text of tailDeltas) {
+                fullToolResponse += text;
+                const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
+                if (filteredText.length > 0) {
+                    emittedChunks += 1;
+                    port.postMessage({ action: 'chunk', chunk: filteredText });
+                }
+            }
+
+            console.log(streamLogPrefix, 'reader done', {
+                emittedChunks,
+                fullToolResponseLength: fullToolResponse.length,
+                isInReasoning,
+                lastFinishReason,
+                sawDoneSignal,
+                usage: lastUsage || null,
+                trailingBufferLength,
+                flushedTailDeltas: tailDeltas.length
+            });
+            break;
+        }
+        const chunk = decoder.decode(value, { stream: true });
+
+        // --- Stream Parser Logic (OpenAI-compatible SSE event parser) ---
+        const textDeltas = [];
+        buffer += chunk;
+
+        while (buffer && buffer.length > 0) {
+            const lfIdx = buffer.indexOf('\n\n');
+            const crlfIdx = buffer.indexOf('\r\n\r\n');
+            let splitIdx = -1;
+            let splitLen = 0;
+
+            if (crlfIdx !== -1 && (lfIdx === -1 || crlfIdx < lfIdx)) {
+                splitIdx = crlfIdx;
+                splitLen = 4;
+            } else if (lfIdx !== -1) {
+                splitIdx = lfIdx;
+                splitLen = 2;
+            }
+
+            if (splitIdx === -1) break;
+
+            const rawEvent = buffer.slice(0, splitIdx);
+            buffer = buffer.slice(splitIdx + splitLen);
+            processSSEEvent(rawEvent, textDeltas);
         }
 
         // --- Collect all content for tool detection ---
@@ -990,6 +1169,14 @@ async function executeChatRequest(config, messages, initialContext, question, po
             // Filter out tool call JSON before streaming to UI
             const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
             if (filteredText.length > 0) {
+                emittedChunks += 1;
+                if (emittedChunks <= 3 || emittedChunks % 10 === 0) {
+                    console.log(streamLogPrefix, 'chunk', {
+                        emittedChunks,
+                        chunkLength: filteredText.length,
+                        preview: filteredText.slice(0, 120)
+                    });
+                }
                 port.postMessage({ action: 'chunk', chunk: filteredText });
             }
         }
@@ -1002,6 +1189,15 @@ async function executeChatRequest(config, messages, initialContext, question, po
         fullToolResponse += '</think>';
         isInReasoning = false;
     }
+
+    console.log(streamLogPrefix, 'finished', {
+        emittedChunks,
+        fullToolResponseLength: fullToolResponse.length,
+        hadOpenReasoningTag: false,
+        lastFinishReason,
+        sawDoneSignal,
+        usage: lastUsage || null
+    });
 
     // --- Stream Finished. Check for tool call anywhere in content ---
 }
@@ -1771,6 +1967,14 @@ chrome.windows.onRemoved.addListener((windowId) => {
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-chat-stream') {
         port.onMessage.addListener(async (msg) => {
+            console.log('[Lumina BG][stream] request', {
+                action: msg.action,
+                messageCount: msg.messages?.length || 0,
+                questionLength: msg.question ? msg.question.length : 0,
+                hasContext: !!(msg.initialContext && msg.initialContext.trim().length > 0),
+                hasImages: !!(msg.imageData && msg.imageData.length),
+                isSpotlight: !!msg.isSpotlight
+            });
             if (msg.action === 'chat_stream' || msg.action === 'proofread' || msg.action === 'dict_stream') {
                 try {
                     let question = msg.question;
@@ -1806,9 +2010,18 @@ chrome.runtime.onConnect.addListener((port) => {
                         msg.action,
                         finalSystemOverride
                     );
+                    console.log('[Lumina BG][stream] request complete', {
+                        action: msg.action,
+                        questionLength: question ? question.length : 0
+                    });
                 } catch (e) {
+                    console.error('[Lumina BG][stream] request error', {
+                        action: msg.action,
+                        error: e?.message || String(e)
+                    });
                     port.postMessage({ action: 'chunk', chunk: `*Error: ${e.message}*` });
                 } finally {
+                    console.log('[Lumina BG][stream] sending done', { action: msg.action });
                     port.postMessage({ action: 'done' });
                 }
             }

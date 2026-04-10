@@ -106,6 +106,7 @@ let webTabPickerAnchorEl = null;
 let webTabPickerOutsideHandler = null;
 let webTabPickerKeyHandler = null;
 let webTabsTooltipEl = null;
+let minHeightReflowRaf = null;
 
 // Ask Selection (Spotlight internal)
 let spotlightAskSourcePane = 'primary';
@@ -547,6 +548,7 @@ async function initTabs() {
                 const historyData = await chrome.storage.local.get([historyKey]);
                 if (historyData[historyKey]) {
                     historyEl.innerHTML = historyData[historyKey];
+                    normalizeRestoredHistory(historyEl);
                     // Re-process for math/highlighting/translations
                     historyEl.querySelectorAll('.lumina-chat-answer').forEach(ans => {
                         LuminaChatUI.processContainer(ans);
@@ -704,7 +706,7 @@ async function initTabs() {
             resetChat();
             return;
         }
-        if ((e.metaKey || e.ctrlKey) && !isNaN(parseInt(e.key))) {
+        if (!isSidePanel && (e.metaKey || e.ctrlKey) && !isNaN(parseInt(e.key))) {
             const index = parseInt(e.key) - 1;
             if (index >= 0 && index < 9) {
                 e.preventDefault();
@@ -813,6 +815,7 @@ function duplicateTab(index) {
 
     // Copy current content for instant display (shared sessionId, no storage copy needed)
     newHistory.innerHTML = sourceTab.historyEl.innerHTML;
+    normalizeRestoredHistory(newHistory);
     newTab.chatUIInstance.clearEntryMargins();
 
     if (streamingTab && streamingTab.id === sourceTab.id) {
@@ -974,6 +977,26 @@ function switchGroup(groupIndex) {
 
     renderTabs();
     saveTabsState();
+}
+
+function activateSubTab(groupIndex, targetTabId) {
+    if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
+
+    const group = tabGroups[groupIndex];
+    if (!group || !Array.isArray(group.tabIds) || group.tabIds.length === 0) return;
+
+    const targetIndex = group.tabIds.indexOf(targetTabId);
+    if (targetIndex === -1) {
+        switchGroup(groupIndex);
+        return;
+    }
+
+    if (targetIndex > 0) {
+        const [movedTabId] = group.tabIds.splice(targetIndex, 1);
+        group.tabIds.unshift(movedTabId);
+    }
+
+    switchGroup(groupIndex);
 }
 
 function syncTabUI(tab, isSecondary = false) {
@@ -1286,6 +1309,53 @@ function saveTabsState() {
     });
 }
 
+function normalizeRestoredHistory(historyEl) {
+    if (!historyEl) return;
+
+    historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
+        const row = entry.querySelector(':scope > .lumina-question-row');
+        if (!row) return;
+
+        const entryType = entry.dataset.entryType || 'qa';
+        let questionEl = row.querySelector('.lumina-chat-question') || row.querySelector('[data-entry-type]');
+        if (!questionEl) return;
+
+        const pinBtn = row.querySelector('.lumina-question-pin-btn');
+        const wasPinned = questionEl.classList.contains('is-pinned-question') ||
+            (pinBtn && (pinBtn.classList.contains('is-active') || pinBtn.getAttribute('aria-pressed') === 'true'));
+        const rawText = questionEl.dataset.rawText || questionEl.textContent.trim();
+
+        questionEl.className = `lumina-chat-question ${entryType}-question`;
+        questionEl.dataset.entryType = entryType;
+        questionEl.removeAttribute('contenteditable');
+        questionEl.classList.remove('lumina-question-editing', 'lumina-answer-editing');
+        if (wasPinned) {
+            questionEl.classList.add('is-pinned-question');
+        }
+
+        const existingToolbar = questionEl.querySelector('.lumina-question-edit-toolbar, .lumina-answer-edit-toolbar');
+        if (existingToolbar) existingToolbar.remove();
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'lumina-question-content';
+        contentDiv.innerHTML = rawText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+
+        questionEl.innerHTML = '';
+        questionEl.appendChild(contentDiv);
+
+        row.classList.remove('lumina-question-row-editing');
+        if (pinBtn) {
+            pinBtn.classList.toggle('is-active', !!wasPinned);
+            pinBtn.setAttribute('aria-pressed', wasPinned ? 'true' : 'false');
+            pinBtn.style.display = '';
+        }
+    });
+}
+
 let isDragging = false;
 let startX = 0;
 let draggedElement = null;
@@ -1430,7 +1500,10 @@ function renderTabs() {
                         handleMouseUp();
                     } else if (isInactiveTab) {
                         // Simple click on inactive tab — switch to it
-                        switchGroup(groupIndex);
+                        activateSubTab(groupIndex, tabId);
+                    } else if (isSplitGroup) {
+                        // In split mode, clicking a sub-tab should make that sub-tab active.
+                        activateSubTab(groupIndex, tabId);
                     }
                 };
 
@@ -1818,11 +1891,16 @@ function syncCurrentBrowserTab() {
     });
 }
 
-function formatHeadTailTitle(text, maxLen = 18, headLen = 7, tailLen = 7) {
-    const safeText = (text || '').trim();
+function formatHeadTailTitle(text) {
+    const safeText = (text || '').trim().replace(/\s+/g, ' ');
     if (!safeText) return 'Untitled';
-    if (safeText.length <= maxLen) return safeText;
-    return `${safeText.slice(0, headLen).trim()}...${safeText.slice(-tailLen).trim()}`;
+
+    const words = safeText.split(' ');
+    if (words.length <= 4) return safeText;
+
+    const head = words.slice(0, 2).join(' ');
+    const tail = words.slice(-2).join(' ');
+    return `${head}... ${tail}`;
 }
 
 function closeWebTabPicker() {
@@ -2116,9 +2194,7 @@ function updateWebChips() {
         const [pageTabId, spotlightTabId] = scopeKey.split('::');
         const selectedSources = getWebSelectionForScope(pageTabId, spotlightTabId);
 
-        const currentIsSelected = selectedSources.some((source) => source.tabId === currentBrowserTab.tabId);
-
-        if (!currentIsSelected) {
+        if (selectedSources.length === 0) {
             const chip = document.createElement('div');
             chip.className = 'lumina-web-chip';
             chip.removeAttribute('title');
@@ -2195,10 +2271,40 @@ function updateWebChips() {
                 openWebTabPicker(addButton, scopeKey);
                 return;
             }
-            toggleWebSourcePin(currentBrowserTab, null, scopeKey);
+            toggleWebSourcePin(source, null, scopeKey);
         });
 
         container.appendChild(chip);
+    });
+
+    scheduleVisibleTabsMinHeightReflow();
+}
+
+function scheduleVisibleTabsMinHeightReflow() {
+    if (minHeightReflowRaf) {
+        cancelAnimationFrame(minHeightReflowRaf);
+        minHeightReflowRaf = null;
+    }
+
+    minHeightReflowRaf = requestAnimationFrame(() => {
+        minHeightReflowRaf = null;
+
+        const visibleTabIndexes = [activeTabIndex];
+        if (isSplitMode && secondaryActiveTabIndex >= 0) {
+            visibleTabIndexes.push(secondaryActiveTabIndex);
+        }
+
+        visibleTabIndexes.forEach((index) => {
+            const tab = tabs[index];
+            if (!tab?.historyEl || typeof tab.chatUIInstance?.setInitialEntryHeight !== 'function') return;
+
+            const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+            if (!allEntries.length) return;
+
+            const latestEntry = allEntries[allEntries.length - 1];
+
+            tab.chatUIInstance.setInitialEntryHeight(latestEntry, true);
+        });
     });
 }
 
@@ -2551,6 +2657,11 @@ function setupPort() {
             }
 
             if (msg.error) {
+                console.error('[Lumina Stream] error', {
+                    tabId: streamingTab?.id || null,
+                    sessionId: streamingTab?.sessionId || null,
+                    error: msg.error
+                });
                 affectedTabs.forEach(tab => {
                     const targetUI = tab.chatUIInstance;
                     targetUI.removeLoading();
@@ -2580,6 +2691,19 @@ function setupPort() {
 
             // Handle streaming chunks
             if (msg.action === 'chunk' && msg.chunk) {
+                if (streamDebugState) {
+                    streamDebugState.chunkCount += 1;
+                    streamDebugState.lastChunkAt = Date.now();
+                    if (streamDebugState.chunkCount <= 3 || streamDebugState.chunkCount % 10 === 0) {
+                        console.log('[Lumina Stream] chunk', {
+                            tabId: streamDebugState.tabId,
+                            sessionId: streamDebugState.sessionId,
+                            chunkCount: streamDebugState.chunkCount,
+                            chunkLength: msg.chunk.length,
+                            preview: msg.chunk.slice(0, 120)
+                        });
+                    }
+                }
                 affectedTabs.forEach(tab => {
                     // Only scroll the tab that submitted — other shared-session tabs scroll independently
                     const skipScroll = tab.id !== streamingTab?.id;
@@ -2589,6 +2713,12 @@ function setupPort() {
 
             // Handle stream completion
             if (msg.action === 'done') {
+                console.log('[Lumina Stream] done', {
+                    tabId: streamDebugState?.tabId || streamingTab?.id || null,
+                    sessionId: streamDebugState?.sessionId || streamingTab?.sessionId || null,
+                    chunkCount: streamDebugState?.chunkCount || 0,
+                    durationMs: streamDebugState?.startedAt ? (Date.now() - streamDebugState.startedAt) : null
+                });
                 // done message received — finishAnswer called below
                 affectedTabs.forEach(tab => {
                     const targetUI = tab.chatUIInstance;
@@ -2648,11 +2778,17 @@ function setupPort() {
                 saveTabsState();
                 // Clear streaming tab
                 streamingTab = null;
+                streamDebugState = null;
             }
         });
 
         port.onDisconnect.addListener(() => {
             // Disconnected from background
+            console.warn('[Lumina Stream] port disconnect', {
+                tabId: streamDebugState?.tabId || streamingTab?.id || null,
+                sessionId: streamDebugState?.sessionId || streamingTab?.sessionId || null,
+                chunkCount: streamDebugState?.chunkCount || 0
+            });
             port = null; // Mark as invalid immediately to force reconnection on next use
 
             // Clean up any pending regen scroll lock
@@ -2680,6 +2816,7 @@ function setupPort() {
                 }
             }
             streamingTab = null;
+            streamDebugState = null;
         });
 
     } catch (e) {
@@ -2690,6 +2827,7 @@ function setupPort() {
 
 // Handle message submission (called by LuminaChatUI)
 let streamingTab = null; // Track which tab initiated the request
+let streamDebugState = null;
 
 async function handleSubmit(text, images, extra = {}, targetTab = null, displayQuery = null) {
     const currentTab = targetTab || tabs[activeTabIndex];
@@ -2749,10 +2887,30 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
     // Track streaming session
     streamingTab = currentTab;
+    streamDebugState = {
+        tabId: currentTab.id,
+        sessionId: currentTab.sessionId,
+        startedAt: Date.now(),
+        chunkCount: 0,
+        lastChunkAt: null,
+        textLength: text ? text.length : 0,
+        displayLength: displayQuery ? displayQuery.length : 0,
+        imageCount: images ? images.length : 0,
+        mode: extra.mode || 'qa'
+    };
+    console.log('[Lumina Stream] submit', {
+        tabId: streamDebugState.tabId,
+        sessionId: streamDebugState.sessionId,
+        mode: streamDebugState.mode,
+        textLength: streamDebugState.textLength,
+        displayLength: streamDebugState.displayLength,
+        imageCount: streamDebugState.imageCount
+    });
 
     // Support tool modes from extra (for dropdown tools)
     if (extra.mode === 'translate') {
         await targetChatUI.handleTranslation(text);
+        saveTabsState();
         return;
     }
 
@@ -2760,6 +2918,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         const word = displayQuery || (text ? text.replace(/^Define: /i, '').trim() : '');
         if (word) {
             await targetChatUI.handleDictionary(word);
+            saveTabsState();
             return;
         }
     }
@@ -2863,6 +3022,15 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         ? getWebSelectionForScope(currentBrowserTab.tabId, currentTab.id)
         : [];
 
+    console.log('[Lumina Stream] context', {
+        tabId: currentTab.id,
+        sessionId: currentTab.sessionId,
+        webSourceCount: webSourceScope.length,
+        pageContextChars: pageContext.length,
+        shouldReadPage,
+        currentBrowserTabId: currentBrowserTab?.tabId || null
+    });
+
     if (webSourceScope.length > 0) {
         try {
             const results = await Promise.all(webSourceScope.map(async (source) => {
@@ -2905,7 +3073,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         hasTranscriptForVideoId: currentTab?.chatUI?.getTranscriptVideoId ? currentTab.chatUI.getTranscriptVideoId() : null,
         options: extra,
         requestOptions: {
-            ...(tabModel ? { tabModel: { providerId: tabModel.providerId, model: tabModel.model } } : {})
+            ...(tabModel ? { tabModel: { providerId: tabModel.providerId, model: tabModel.model } } : {}),
+            ...((extra.maxTokens !== undefined && extra.maxTokens !== null && extra.maxTokens !== '')
+                ? { maxTokens: Number(extra.maxTokens) }
+                : {})
         }
     };
 

@@ -1192,6 +1192,36 @@ button {
   border: 1.5px solid var(--lumina-primary-color) !important;
 }
 
+.lumina-question-row.lumina-question-row-editing {
+  gap: 0 !important;
+  align-items: flex-start !important;
+}
+
+.lumina-question-row.lumina-question-row-editing>.lumina-question-pin-btn {
+  display: none !important;
+}
+
+.lumina-chat-question.lumina-answer-editing {
+  align-self: stretch !important;
+  max-width: none !important;
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  overflow: visible !important;
+  border: 1.5px solid var(--lumina-brand-color, #007AFF) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  transition: border-color 0.2s ease !important;
+  background: var(--lumina-chat-bg, #ffffff) !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+  z-index: 10;
+  position: relative;
+  box-sizing: border-box !important;
+}
+
+.lumina-chat-question.lumina-answer-editing::after {
+  display: none !important;
+}
+
 [data-theme="dark"] .lumina-question-pin-btn {
   background: #fff !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -1248,6 +1278,22 @@ button {
   border-color: transparent;
 }
 
+.lumina-chat-question>.lumina-question-content,
+.lumina-chat-question.expanded>.lumina-question-content {
+  outline: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  max-height: 158px !important;
+  overflow-y: auto !important;
+  cursor: default !important;
+  line-height: 1.65 !important;
+}
+
+.lumina-chat-question>.lumina-question-content[contenteditable="true"],
+.lumina-chat-question.expanded>.lumina-question-content[contenteditable="true"],
 .lumina-chat-question>div[contenteditable="true"],
 .lumina-chat-question.expanded>div[contenteditable="true"] {
   outline: none !important;
@@ -4453,7 +4499,7 @@ button {
   box-shadow: none !important;
   display: none;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   animation: lumina-menu-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: top left;
 }
@@ -4482,17 +4528,16 @@ button {
   gap: 10px !important;
   padding: 8px 10px !important;
   border-radius: 10px !important;
-  font-size: 1em !important;
+  font-size: 0.9em !important;
   color: var(--lumina-text-primary) !important;
   cursor: pointer !important;
   transition: background 0.15s ease, transform 0.1s ease;
   user-select: none !important;
   background: #fff !important;
-  border: 1px solid #e0e0e0 !important;
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.04) !important;
+  border: none !important;
+  box-shadow: none !important;
   width: 100% !important;
   text-align: left !important;
-  box-shadow: none !important;
 }
 
 .lumina-context-menu-item:hover {
@@ -5051,7 +5096,6 @@ button {
   border: 1.5px dashed var(--lumina-border-color);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
-  max-width: 150px;
 }
 
 .lumina-web-chip.lumina-pinned-question-chip {
