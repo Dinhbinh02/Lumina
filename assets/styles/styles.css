@@ -109,6 +109,71 @@ button {
   shape-rendering: geometricPrecision !important;
 }
 
+.lumina-translate-logo {
+  width: 17px;
+  height: 17px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.lumina-svg-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.lumina-icon-copy {
+  -webkit-mask-image: url("../icons/lumina/copy.svg");
+  mask-image: url("../icons/lumina/copy.svg");
+}
+
+.lumina-icon-copy-alt {
+  -webkit-mask-image: url("../icons/lumina/copy-alt.svg");
+  mask-image: url("../icons/lumina/copy-alt.svg");
+}
+
+.lumina-icon-dictionary {
+  -webkit-mask-image: url("../icons/lumina/dictionary-alt.svg");
+  mask-image: url("../icons/lumina/dictionary-alt.svg");
+}
+
+.lumina-icon-file-edit {
+  -webkit-mask-image: url("../icons/lumina/file-edit.svg");
+  mask-image: url("../icons/lumina/file-edit.svg");
+}
+
+.lumina-icon-language {
+  -webkit-mask-image: url("../icons/lumina/language.svg");
+  mask-image: url("../icons/lumina/language.svg");
+}
+
+.lumina-icon-plus {
+  -webkit-mask-image: url("../icons/lumina/plus.svg");
+  mask-image: url("../icons/lumina/plus.svg");
+}
+
+.lumina-icon-refresh {
+  -webkit-mask-image: url("../icons/lumina/refresh.svg");
+  mask-image: url("../icons/lumina/refresh.svg");
+}
+
+.lumina-icon-text-check {
+  -webkit-mask-image: url("../icons/lumina/text-check.svg");
+  mask-image: url("../icons/lumina/text-check.svg");
+}
+
+.lumina-icon-thumbtack {
+  -webkit-mask-image: url("../icons/lumina/thumbtack.svg");
+  mask-image: url("../icons/lumina/thumbtack.svg");
+}
+
 .lumina-drag-handle {
   display: none !important;
 }
@@ -139,6 +204,16 @@ button {
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
+.lumina-dict-launcher-part,
+.lumina-translate-launcher-part {
+  color: #1d1d1f !important;
+}
+
+[data-theme="dark"] .lumina-dict-launcher-part,
+[data-theme="dark"] .lumina-translate-launcher-part {
+  color: #f5f5f7 !important;
+}
+
 .lumina-dict-launcher-part {
   display: flex !important;
   align-items: center !important;
@@ -163,7 +238,7 @@ button {
   height: 28px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  border-radius: 0 !important;
+  border-radius: 8px !important;
 }
 
 .lumina-ask-part {
@@ -203,6 +278,28 @@ button {
 .lumina-translate-launcher-part svg {
   width: 17px !important;
   height: 17px !important;
+}
+
+.lumina-translate-launcher-part .lumina-translate-logo {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.lumina-dict-launcher-part .lumina-svg-icon,
+.lumina-translate-launcher-part .lumina-svg-icon,
+.lumina-ask-part .lumina-svg-icon {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.lumina-context-menu-item .lumina-svg-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.lumina-context-menu-item:hover .lumina-svg-icon {
+  opacity: 1;
 }
 
 .lumina-comment-part {
@@ -301,6 +398,15 @@ button {
   font-size: var(--lumina-fontSize, 13px) !important;
 }
 
+.lumina-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  touch-action: none;
+  overscroll-behavior: none;
+  pointer-events: auto;
+}
+
 [data-theme="dark"] #lumina-ask-input-popup {
   background: #1c1c1e !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
@@ -366,15 +472,14 @@ button {
 }
 
 [data-theme="dark"] .lumina-selected-text-tag {
-  color: #5ea9ff !important;
+  border: none !important;
 }
-
 
 /* Custom Popup Tooltip */
 .lumina-ask-tooltip {
   position: fixed;
   background: rgba(0, 0, 0, 0.85) !important;
-  color: #fff !important;
+  opacity: 0 !important;
   padding: 8px 12px !important;
   border-radius: 8px !important;
   font-size: 0.9em !important;
@@ -386,6 +491,7 @@ button {
   opacity: 0;
   transition: opacity 0.2s ease;
   backdrop-filter: blur(4px) !important;
+  opacity: 1 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   display: none;
   white-space: normal !important;
@@ -837,7 +943,7 @@ button {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   overflow-anchor: auto;
-  padding: 10px !important;
+  padding: 10px 10px 16px 10px !important;
   max-width: 740px;
   margin: 0 auto;
   width: 100%;
@@ -860,15 +966,10 @@ button {
   background: rgba(0, 0, 0, calc(0.05 + var(--lumina-glass-opacity, 0.75) * 0.03));
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  margin-bottom: 0 !important;
   box-shadow: none;
   font-weight: 500 !important;
   border-radius: 16px;
-  max-width: 100%;
-  box-sizing: border-box;
-  line-height: 1.5;
-  font-style: italic;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .lumina-chat-context:hover {
@@ -1027,9 +1128,89 @@ button {
   flex-direction: column !important;
   outline: none !important;
   transition: background-color 0.12s ease, color 0.12s ease !important;
-  margin-bottom: 10px !important;
+  margin-bottom: 0 !important;
   position: relative !important;
   overflow: hidden !important;
+}
+
+.lumina-question-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+}
+
+.lumina-question-row>.lumina-chat-question {
+  min-width: 0 !important;
+}
+
+.lumina-question-pin-btn {
+  position: relative !important;
+  margin-top: 8px !important;
+  flex: 0 0 auto !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  outline: none !important;
+  appearance: none !important;
+  background: #fff !important;
+  color: var(--lumina-text-secondary) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+
+.lumina-question-row:hover>.lumina-question-pin-btn,
+.lumina-question-pin-btn.is-active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.lumina-question-row:focus-within>.lumina-question-pin-btn {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.lumina-question-pin-btn:hover {
+  opacity: 1 !important;
+  background: #fff !important;
+  color: var(--lumina-primary-color) !important;
+}
+
+.lumina-question-pin-btn.is-active {
+  opacity: 1 !important;
+  background: rgba(0, 86, 210, 0.08) !important;
+  color: var(--lumina-primary-color) !important;
+  border: 1.5px solid var(--lumina-primary-color) !important;
+}
+
+[data-theme="dark"] .lumina-question-pin-btn {
+  background: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f5f5f7 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .lumina-question-pin-btn:hover {
+  background: #fff !important;
+}
+
+[data-theme="dark"] .lumina-question-pin-btn.is-active {
+  background: rgba(0, 86, 210, 0.16) !important;
+  border: 1.5px solid var(--lumina-primary-color) !important;
+}
+
+.lumina-question-pin-btn .lumina-svg-icon {
+  width: 13px !important;
+  height: 13px !important;
 }
 
 [data-theme="dark"] .lumina-chat-question {
@@ -3356,6 +3537,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--lumina-text-primary);
+  font-size: 0.9em;
 }
 
 .lumina-model-btn svg {
@@ -3412,6 +3594,7 @@ button {
   cursor: pointer;
   width: 100%;
   transition: background 0.15s;
+  font-size: 0.9em;
 }
 
 .lumina-model-item:hover {
@@ -3587,20 +3770,33 @@ button {
 .lumina-tool-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   padding: 6px 10px;
   border: none;
   background: transparent;
   color: var(--lumina-text-primary);
-  font-weight: 500;
+  font-weight: 520;
   cursor: pointer;
   border-radius: 8px;
   text-align: left;
   width: 100%;
+  font-size: 0.9em;
 }
 
 .lumina-tool-item svg {
   display: none;
+}
+
+.lumina-tool-item .lumina-svg-icon,
+.lumina-tool-item .lumina-tool-translate-logo {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.lumina-tool-item .lumina-tool-translate-logo {
+  display: block;
+  object-fit: contain;
 }
 
 .lumina-tool-item:hover {
@@ -4246,10 +4442,11 @@ button {
 .lumina-context-menu {
   position: fixed;
   z-index: 100000;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.10);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-radius: 14px;
   padding: 6px;
   min-width: 180px;
@@ -4290,8 +4487,9 @@ button {
   cursor: pointer !important;
   transition: background 0.15s ease, transform 0.1s ease;
   user-select: none !important;
-  background: transparent !important;
-  border: none !important;
+  background: #fff !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.04) !important;
   width: 100% !important;
   text-align: left !important;
   box-shadow: none !important;
@@ -4306,16 +4504,6 @@ button {
 .lumina-context-menu-item:active {
   transform: scale(0.98);
   box-shadow: none !important;
-}
-
-.lumina-context-menu-separator {
-  height: 1px;
-  background: rgba(0, 0, 0, 0.06);
-  margin: 4px 8px;
-}
-
-[data-theme="dark"] .lumina-context-menu-separator {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .lumina-context-menu-item svg {
@@ -4404,19 +4592,17 @@ button {
   transform: translateX(-50%) !important;
   display: flex !important;
   gap: 2px !important;
-  background: rgba(255, 255, 255, 0.75) !important;
+  background: #ffffff !important;
   padding: 4px !important;
   border-radius: 14px !important;
   z-index: 2147483647 !important;
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-dict-tabs {
-  background: rgba(40, 40, 42, 0.75) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
   box-shadow: none !important;
 }
 
@@ -4866,6 +5052,30 @@ button {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   max-width: 150px;
+}
+
+.lumina-web-chip.lumina-pinned-question-chip {
+  margin-left: auto;
+  max-width: 240px;
+  border-style: solid;
+  border-color: var(--lumina-primary-color);
+  color: var(--lumina-primary-color);
+  background: rgba(0, 86, 210, 0.05);
+  gap: 6px;
+}
+
+.lumina-web-chip.lumina-pinned-question-chip:hover {
+  background: rgba(0, 86, 210, 0.09);
+  border-color: var(--lumina-primary-color);
+}
+
+[data-theme="dark"] .lumina-web-chip.lumina-pinned-question-chip {
+  background: rgba(0, 86, 210, 0.16);
+}
+
+.lumina-web-chip.lumina-pinned-question-chip .lumina-svg-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .lumina-web-chip-add {

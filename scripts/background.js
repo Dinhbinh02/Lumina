@@ -73,6 +73,10 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 async function toggleSidePanel(windowId) {
     if (!windowId) return;
     if (sidePanelPorts.has(windowId)) {
+        // Clear tracked state immediately so a stale port/session entry does not block the next open toggle.
+        sidePanelPorts.delete(windowId);
+        updateOpenSidePanelsSession();
+
         if (chrome.sidePanel.close) {
             chrome.sidePanel.close({ windowId }).catch(() => { });
         } else {

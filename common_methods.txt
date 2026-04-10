@@ -1,0 +1,158 @@
+    constructor(container, options = {}) {
+            (this.options.isSpotlight && !this.options.isPrimaryInput ? null : (document.querySelector('.lumina-chat-input') || document.querySelector('#chat-input')));
+    initListeners(container) {
+                        setTimeout(() => {
+    _setupHistoryDelegation() {
+    _setupMemoryManager() {
+                        clearTimeout(this.memoryTimers.get(container));
+    getScrollContainer() {
+    _scheduleLowPriority(task, timeout = 300) {
+        setTimeout(task, 24);
+    _isNearBottom(threshold = 120) {
+    _snapToBottomIfNeeded(shouldSnap) {
+    _setupAutoScrollGuard() {
+        bind();
+        requestAnimationFrame(bind);
+    _setupSelectionRenderGuard() {
+    _flushPendingStreamRender() {
+    appendQuestion(text, images = [], options = {}) {
+            requestAnimationFrame(() => {
+    createAnswerDiv() {
+    appendChunk(chunk, skipScroll = false) {
+            setTimeout(() => {
+    _doRender(answerDiv, skipScroll = false) {
+                    setTimeout(() => {
+            setTimeout(() => { this._scrollThrottled = false; }, 100);
+    finishAnswer(skipMargin = false, skipScroll = false) {
+            requestAnimationFrame(() => this.scrollToBottom());
+    adjustEntryMargin(entry, behavior = 'none') {
+    clearEntryMargins(excludeEntry = null) {
+    _extractContext(rawText) {
+    _showTagTooltip(target, text) {
+        requestAnimationFrame(() => {
+    _hideTagTooltip() {
+    _handleQuestionRecheck(userInput, editable) {
+    setInitialEntryHeight(entry, skipScroll = false, preAppendScroll = 0, forceScroll = false) {
+            setTimeout(() => this.setInitialEntryHeight(entry, skipScroll), 80);
+    appendError(text) {
+    getLoadingHTML() {
+    showLoading() {
+        requestAnimationFrame(() => this.scrollToBottom(true));
+    removeLoading() {
+    showSearching() {
+    removeSearching() {
+    handleWebSearchStatus(msg) {
+    handleYoutubeStatus(msg) {
+                resolve(true);
+    _createAttachmentId() {
+    _addPreparedFile(fileObj) {
+    _syncSelectedImagesFromAttachments() {
+    _isXlsxFile(file) {
+    _isDocxFile(file) {
+    _parseWorkbookRelationships(xml) {
+    _parseSharedStrings(xml) {
+    _sheetXmlToCsv(sheetXml, sharedStrings) {
+    _columnRefToIndex(ref) {
+    _escapeCsv(value) {
+    _docxXmlToText(xml) {
+    _findEocdOffset(view) {
+    _decodeUtf8(bytes) {
+    _bytesToBase64(bytes) {
+    _bytesToDataUrl(bytes, mimeType) {
+    _textToDataUrl(text, mimeType) {
+    _mimeFromExtension(path) {
+    addImage(dataUrl) {
+    removeFile(index) {
+    clearImages() {
+    renderFilePreviews() {
+    _smoothScrollTo(targetScrollTop, _durationUnused = 1250) {
+            cancelAnimationFrame(this._scrollAnimationId);
+    scrollToBottom(force = false) {
+    clearHistory() {
+    escapeHTMLAttr(str) {
+        requestAnimationFrame(() => {
+            applyWidth(50, false);
+                applyWidth(mid, false);
+                    (currentDiff === minDiff && currentTotal < minTotalLines) ||
+                    (currentDiff === minDiff && currentTotal === minTotalLines && Math.abs(mid - 50) < Math.abs(bestWidth - 50));
+            applyWidth(bestWidth, true);
+    appendPartialTranslation(text) {
+        requestAnimationFrame(() => {
+    updatePartialTranslation(element, data) {
+        requestAnimationFrame(() => LuminaChatUI._setupTranslationHighlight(element));
+            requestAnimationFrame(() => this.scrollToBottom());
+    appendPartialDictionary(word) {
+        requestAnimationFrame(() => {
+    updatePartialDictionary(element, data) {
+            requestAnimationFrame(() => this.scrollToBottom());
+    renderDictionaryEntry(data) {
+        wrapSentences(sourceTextEl, sourceSentences);
+        wrapSentences(targetTextEl, targetSentences);
+                clearAll();
+    collectComments(contextEntry = null) {
+    gatherMessages() {
+                    (Array.isArray(entry._luminaImages) ? entry._luminaImages : []);
+    getTranscriptVideoId() {
+    setupInputBar() {
+        setInterval(() => this.refreshReadPageTitle(), 5000);
+                requestAnimationFrame(() => {
+            checkExpand();
+                removeActiveModes();
+                setTranslate(true);
+                removeActiveModes();
+                setProofread(true);
+                        removeActiveModes();
+            debouncedCheckExpand();
+                setTimeout(() => { this._marginThrottled = false; }, 150);
+                    setTimeout(() => inputContainer.classList.remove('lumina-sending'), 900);
+                    removeActiveModes();
+                checkExpand();
+                toggleTools();
+                    toggleTools(false);
+            setProofread(false); setTranslate(false);
+            checkExpand();
+                checkExpand();
+        setupTool('[data-action="proofread"]', '#proofread-toggle', () => { setProofread(true); }, 'Enter text to proofread...');
+        setupTool('[data-action="translate"]', '#translate-toggle', () => { setTranslate(true); }, 'Enter text to translate...');
+    _setupFileDragDrop(dropZone, input) {
+            setDragState(true);
+            setDragState(true);
+            setDragState(false);
+    getInputState() {
+    restoreInputState(state) {
+    _setupMentions() {
+                    selectItem(p);
+            hidePopup();
+                            renderPopup(matches);
+            hidePopup();
+                renderPopup(matches);
+                renderPopup(matches);
+                selectItem(matches[selectedIndex]);
+                hidePopup();
+                hidePopup();
+    _updateContainerState() {
+    _setupModelSelector(popup) {
+        fetchAndRender();
+    _setupMicButton(btn, input) {
+    _getMaxTokens() {
+    _handleSubmit() {
+            setTimeout(() => inputContainer.classList.remove('lumina-sending'), 900);
+    _fileToDataURL(file) {
+    _resolveImagePreviewSrc(item, src) {
+    _createObjectUrlFromDataUrl(dataUrl) {
+    _createObjectUrl(blobOrFile) {
+    _revokeObjectUrl(url) {
+    showStopButton(onStop = null) {
+    hideStopButton() {
+    _initContextMenu() {
+    _showContextMenu(x, y, targetAnswer) {
+    _hideContextMenu() {
+    enterAnswerEditMode(answerDiv) {
+    exitAnswerEditMode(answerDiv, save = false) {
+                setTimeout(resolve, 1);
+                    renderMathInElement(container, {
+                setTimeout(() => {
+                    execCommandFallback(text);
+    showImagePreview(src) {
+            setTimeout(() => overlay.remove(), 250);
+        requestAnimationFrame(() => {

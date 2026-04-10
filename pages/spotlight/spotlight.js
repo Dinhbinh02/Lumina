@@ -64,6 +64,27 @@ function getHoveredInputEl() {
     return sharedInputUI?.inputEl;
 }
 
+function getShortcutTargetTab() {
+    if (isSplitMode && hoveredPane === 'secondary' && secondaryActiveTabIndex >= 0) {
+        return tabs[secondaryActiveTabIndex] || null;
+    }
+    return tabs[activeTabIndex] || null;
+}
+
+function redirectToPinnedQuestion() {
+    const targetTab = getShortcutTargetTab();
+    const targetUI = targetTab?.chatUIInstance;
+    if (!targetUI) return;
+
+    if (typeof targetUI.refreshPinnedQuestionState === 'function') {
+        targetUI.refreshPinnedQuestionState();
+    }
+
+    if (typeof targetUI._scrollToPinnedQuestion === 'function') {
+        targetUI._scrollToPinnedQuestion();
+    }
+}
+
 let isSplitMode = false; // Derived from active group
 let secondaryActiveTabIndex = -1; // Derived from active group
 let resizerDragging = false;
@@ -127,17 +148,42 @@ function applyFontSize(size) {
 
 const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
 
+function getSpotlightTabIdForPane(container) {
+    if (!container) return null;
+
+    const pane = container.closest('.spotlight-pane');
+    if (pane && pane.id === 'pane-secondary') {
+        return secondaryActiveTabIndex >= 0 && tabs[secondaryActiveTabIndex] ? tabs[secondaryActiveTabIndex].id : null;
+    }
+
+    return activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
+}
+
+function getWebSelectionScopeKey(pageTabId, spotlightTabId) {
+    if (pageTabId == null || spotlightTabId == null) return null;
+    return `${String(pageTabId)}::${String(spotlightTabId)}`;
+}
+
+function getCurrentWebSelectionKeyForContainer(container) {
+    if (!currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) return null;
+    const spotlightTabId = getSpotlightTabIdForPane(container);
+    if (!spotlightTabId) return null;
+    return getWebSelectionScopeKey(currentBrowserTab.tabId, spotlightTabId);
+}
+
 function getCurrentWebSelectionKey() {
-    return currentBrowserTab && isWebPageUrl(currentBrowserTab.url) ? String(currentBrowserTab.tabId) : null;
+    if (!currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) return null;
+    const tab = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex] : null;
+    return tab ? getWebSelectionScopeKey(currentBrowserTab.tabId, tab.id) : null;
 }
 
-function getWebSelectionStorageKey(pageTabId) {
-    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${String(pageTabId)}`;
+function getWebSelectionStorageKey(pageTabId, spotlightTabId) {
+    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${String(pageTabId)}::${String(spotlightTabId)}`;
 }
 
-function readWebSelectionFromStorage(pageTabId) {
+function readWebSelectionFromStorage(pageTabId, spotlightTabId) {
     try {
-        const rawValue = localStorage.getItem(getWebSelectionStorageKey(pageTabId));
+        const rawValue = localStorage.getItem(getWebSelectionStorageKey(pageTabId, spotlightTabId));
         if (!rawValue) return [];
         const parsedValue = JSON.parse(rawValue);
         return Array.isArray(parsedValue)
@@ -153,8 +199,8 @@ function readWebSelectionFromStorage(pageTabId) {
     }
 }
 
-function writeWebSelectionToStorage(pageTabId, selection) {
-    const key = getWebSelectionStorageKey(pageTabId);
+function writeWebSelectionToStorage(pageTabId, spotlightTabId, selection) {
+    const key = getWebSelectionStorageKey(pageTabId, spotlightTabId);
     const validSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url));
 
     if (validSelection.length > 0) {
@@ -169,26 +215,62 @@ function writeWebSelectionToStorage(pageTabId, selection) {
 }
 
 function deleteWebSelectionFromStorage(pageTabId) {
-    localStorage.removeItem(getWebSelectionStorageKey(pageTabId));
+    const prefix = `${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${String(pageTabId)}::`;
+    Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith(prefix)) {
+            localStorage.removeItem(key);
+        }
+    });
 }
 
-function saveCurrentWebSelection() {
-    const key = getCurrentWebSelectionKey();
-    if (!key) return;
+function getWebSelectionForScope(pageTabId, spotlightTabId) {
+    const scopeKey = getWebSelectionScopeKey(pageTabId, spotlightTabId);
+    if (!scopeKey) return [];
 
-    const selection = (pinnedWebSources || []).filter((source) => source && isWebPageUrl(source.url));
-    webSourceSelectionsByPageTabId[key] = selection.map((source) => ({
+    if (!Object.prototype.hasOwnProperty.call(webSourceSelectionsByPageTabId, scopeKey)) {
+        webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(pageTabId, spotlightTabId);
+    }
+
+    return webSourceSelectionsByPageTabId[scopeKey] || [];
+}
+
+function saveWebSelectionForScope(pageTabId, spotlightTabId, selection) {
+    const scopeKey = getWebSelectionScopeKey(pageTabId, spotlightTabId);
+    if (!scopeKey) return;
+
+    const normalizedSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url)).map((source) => ({
         tabId: source.tabId,
         title: source.title,
         url: source.url
     }));
-    writeWebSelectionToStorage(key, selection);
+
+    webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
+    writeWebSelectionToStorage(pageTabId, spotlightTabId, normalizedSelection);
 }
 
-function loadCurrentWebSelection() {
-    const key = getCurrentWebSelectionKey();
-    const selection = key ? readWebSelectionFromStorage(key) : [];
-    webSourceSelectionsByPageTabId[key] = selection;
+function saveCurrentWebSelection(spotlightTabId = null) {
+    if (!currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) return;
+
+    const targetTabId = spotlightTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
+    if (!targetTabId) return;
+
+    const scopedSelection = getWebSelectionForScope(currentBrowserTab.tabId, targetTabId);
+    saveWebSelectionForScope(currentBrowserTab.tabId, targetTabId, scopedSelection);
+}
+
+function loadCurrentWebSelection(spotlightTabId = null) {
+    if (!currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) {
+        pinnedWebSources = [];
+        return;
+    }
+
+    const targetTabId = spotlightTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
+    if (!targetTabId) {
+        pinnedWebSources = [];
+        return;
+    }
+
+    const selection = getWebSelectionForScope(currentBrowserTab.tabId, targetTabId);
     pinnedWebSources = selection.map((source) => ({
         tabId: source.tabId,
         title: source.title,
@@ -198,16 +280,17 @@ function loadCurrentWebSelection() {
 
 function updateWebSelectionForTab(tabId, updater) {
     const stringTabId = String(tabId);
-    const storageKeys = Object.keys(localStorage).filter((key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX));
+    const storageKeys = Object.keys(localStorage).filter((key) => key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${stringTabId}::`));
 
     storageKeys.forEach((storageKey) => {
-        const pageTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
-        const updatedSelection = readWebSelectionFromStorage(pageTabId)
+        const rawScope = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
+        const [pageTabId, spotlightTabId] = rawScope.split('::');
+        const updatedSelection = readWebSelectionFromStorage(pageTabId, spotlightTabId)
             .map((source) => updater(source, stringTabId))
             .filter(Boolean);
 
-        writeWebSelectionToStorage(pageTabId, updatedSelection);
-        webSourceSelectionsByPageTabId[pageTabId] = updatedSelection;
+        writeWebSelectionToStorage(pageTabId, spotlightTabId, updatedSelection);
+        webSourceSelectionsByPageTabId[getWebSelectionScopeKey(pageTabId, spotlightTabId)] = updatedSelection;
     });
 
     if (getCurrentWebSelectionKey()) {
@@ -215,10 +298,6 @@ function updateWebSelectionForTab(tabId, updater) {
     }
 }
 
-/**
- * Checks if the current selection or the active element is inside an editable context.
- * This prevents global shortcuts from firing while the user is typing or selecting text in inputs.
- */
 function isSelectionInsideEditable() {
     const sel = window.getSelection();
     // 1. Check selection nodes
@@ -264,8 +343,8 @@ function bindHistoryScroll(tab) {
         const nearBottom = scrollHeight - (scrollTop + viewHeight) <= 20;
 
         if (nearBottom) {
-            // Use sentinel to restore exact bottom even if margins reflow on reload
-            tab.scrollTop = 9999999;
+            tab.scrollTop = scrollTop;
+            tab.isAtBottom = true;
             tab.scrollAnchorIndex = null;
             tab.scrollAnchorOffset = null;
             // User is at bottom — allow auto-scroll again
@@ -273,6 +352,7 @@ function bindHistoryScroll(tab) {
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = false;
         } else {
             tab.scrollTop = scrollTop;
+            tab.isAtBottom = false;
             // User has scrolled up — lock auto-scroll for this tab
             tab.userScrolledUp = true;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = true;
@@ -310,21 +390,48 @@ function restoreScrollPosition(tab) {
     const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
     if (entries.length === 0) return;
 
+    if (tab.scrollTop != null && tab.scrollTop !== -1) {
+        tab.historyEl.scrollTop = tab.scrollTop;
+        return;
+    }
+
+    if (tab.isAtBottom) {
+        tab.historyEl.scrollTop = tab.historyEl.scrollHeight;
+        return;
+    }
+
     if (tab.scrollAnchorIndex != null && tab.scrollAnchorIndex < entries.length) {
         const anchor = entries[tab.scrollAnchorIndex];
         const offset = tab.scrollAnchorOffset || 0;
         tab.historyEl.scrollTop = anchor.offsetTop + offset;
-        return;
     }
+}
 
-    if (tab.scrollTop != null && tab.scrollTop !== -1) {
-        tab.historyEl.scrollTop = tab.scrollTop;
-    }
+function restoreLatestScrollPosition(tab) {
+    if (!tab || !tab.historyEl) return;
+    const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+    if (entries.length === 0) return;
+
+    const latestEntry = entries[entries.length - 1];
+    const scrollContainer = tab.historyEl;
+    const style = window.getComputedStyle(scrollContainer);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const entryRect = latestEntry.getBoundingClientRect();
+    const targetScrollTop = scrollContainer.scrollTop + (entryRect.top - containerRect.top) - paddingTop;
+
+    scrollContainer.scrollTop = Math.max(0, targetScrollTop);
 }
 
 function scheduleScrollRestore(tab) {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+            if (tab?.restoreLatestOnOpen) {
+                restoreLatestScrollPosition(tab);
+                tab.restoreLatestOnOpen = false;
+                return;
+            }
+
             restoreScrollPosition(tab);
             setTimeout(() => {
                 restoreScrollPosition(tab);
@@ -459,9 +566,13 @@ async function initTabs() {
                     id: meta.id,
                     title: meta.title || 'New Tab',
                     sessionId: meta.sessionId,
-                    scrollTop: meta.scrollTop || 9999999,
-                    scrollAnchorIndex: meta.scrollAnchorIndex || null,
-                    scrollAnchorOffset: meta.scrollAnchorOffset || null,
+                    scrollTop: (typeof meta.scrollTop === 'number' && meta.scrollTop > 999999)
+                        ? -1
+                        : (meta.scrollTop ?? -1),
+                    scrollAnchorIndex: meta.scrollAnchorIndex ?? null,
+                    scrollAnchorOffset: meta.scrollAnchorOffset ?? null,
+                    isAtBottom: meta.isAtBottom ?? (typeof meta.scrollTop === 'number' && meta.scrollTop > 999999),
+                    restoreLatestOnOpen: true,
                     historyEl: historyEl,
                     chatUIInstance: new LuminaChatUI(container, {
                         isSpotlight: true,
@@ -628,6 +739,8 @@ function createTab(switchToIt = true) {
         historyEl: newHistory,
         chatUIInstance: null,
         scrollTop: -1,
+        isAtBottom: false,
+        restoreLatestOnOpen: true,
         sessionId: 'session_' + Date.now() + Math.random().toString(36).substr(2, 5),
         selectedModel: null
     };
@@ -688,7 +801,9 @@ function duplicateTab(index) {
             skipInputSetup: true,
             onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
         }),
-        scrollTop: 9999999,
+        scrollTop: sourceTab.scrollTop ?? -1,
+        isAtBottom: !!sourceTab.isAtBottom,
+        restoreLatestOnOpen: true,
         sessionId: sourceTab.sessionId, // Share same session so messages sync between panes
         selectedModel: sourceTab.selectedModel ? { ...sourceTab.selectedModel } : null
     };
@@ -748,6 +863,12 @@ function duplicateTab(index) {
 function switchGroup(groupIndex) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
 
+    const previousGroup = (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) ? tabGroups[activeGroupIndex] : null;
+    const previousPrimaryTab = previousGroup ? tabs.find(t => t.id === previousGroup.tabIds[0]) : null;
+    const previousSecondaryTab = previousGroup && previousGroup.tabIds.length > 1
+        ? tabs.find(t => t.id === previousGroup.tabIds[1])
+        : null;
+
     // Save live input states before switching away from current group
     if (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) {
         const oldGroup = tabGroups[activeGroupIndex];
@@ -757,6 +878,9 @@ function switchGroup(groupIndex) {
         if (oldPrimary && sharedInputUI?.getInputState) oldPrimary.inputState = sharedInputUI.getInputState();
         if (oldSecondary && sharedInputUISecondary?.getInputState) oldSecondary.inputStateSecondary = sharedInputUISecondary.getInputState();
     }
+
+    previousPrimaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
+    previousSecondaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
 
     // Hide all existing
     tabs.forEach(t => {
@@ -802,6 +926,7 @@ function switchGroup(groupIndex) {
             if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
         }
         syncTabUI(primaryTab);
+        primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
 
         // Mount secondary
         const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
@@ -818,6 +943,7 @@ function switchGroup(groupIndex) {
             if (typeof sharedInputUISecondary.refreshModelSelector === 'function') sharedInputUISecondary.refreshModelSelector();
         }
         syncTabUI(secondaryTab, true);
+        secondaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
 
     } else {
         secondaryActiveTabIndex = -1;
@@ -840,7 +966,11 @@ function switchGroup(groupIndex) {
             if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
         }
         syncTabUI(primaryTab);
+        primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
     }
+
+    loadCurrentWebSelection(primaryTab?.id || null);
+    updateWebChips();
 
     renderTabs();
     saveTabsState();
@@ -857,11 +987,7 @@ function syncTabUI(tab, isSecondary = false) {
     if (allEntries.length > 0) {
         const lastEntry = allEntries[allEntries.length - 1];
         requestAnimationFrame(() => {
-            const isLatestEntryMode = (tab.scrollTop > 999999 || tab.scrollTop === -1) && !tab.userScrolledUp;
-            tab.chatUIInstance.adjustEntryMargin(lastEntry, isLatestEntryMode ? 'auto' : 'none');
-            if (isLatestEntryMode) {
-                tab.chatUIInstance.scrollToBottom();
-            }
+            tab.chatUIInstance.adjustEntryMargin(lastEntry, 'none');
         });
     }
 
@@ -1136,9 +1262,10 @@ function saveTabsState() {
         id: tab.id,
         title: tab.title,
         sessionId: tab.sessionId,
-        scrollTop: tab.historyEl ? tab.historyEl.scrollTop : (tab.scrollTop || -1),
+        scrollTop: tab.historyEl ? tab.historyEl.scrollTop : (tab.scrollTop ?? -1),
         scrollAnchorIndex: tab.scrollAnchorIndex,
-        scrollAnchorOffset: tab.scrollAnchorOffset
+        scrollAnchorOffset: tab.scrollAnchorOffset,
+        isAtBottom: !!tab.isAtBottom
     }));
 
     chrome.storage.local.set({
@@ -1153,7 +1280,8 @@ function saveTabsState() {
     // Save history content for each tab separately using sessionId
     tabs.forEach(tab => {
         if (tab.historyEl && tab.sessionId) {
-            chrome.storage.local.set({ [`spotlight_history_${tab.sessionId}`]: tab.historyEl.innerHTML });
+            const historyHTML = tab.chatUIInstance?.serializeHistoryHTML?.() || tab.historyEl.innerHTML;
+            chrome.storage.local.set({ [`spotlight_history_${tab.sessionId}`]: historyHTML });
         }
     });
 }
@@ -1608,9 +1736,7 @@ function setupWebSourceTracking() {
                 };
             });
 
-            if ((pinnedWebSources || []).some((source) => String(source.tabId) === String(tabId))) {
-                updateWebChips();
-            }
+            updateWebChips();
 
             if (webTabPickerEl) {
                 refreshWebTabPicker();
@@ -1625,7 +1751,11 @@ function setupWebSourceTracking() {
             return source;
         });
         deleteWebSelectionFromStorage(tabId);
-        delete webSourceSelectionsByPageTabId[String(tabId)];
+        Object.keys(webSourceSelectionsByPageTabId).forEach((scopeKey) => {
+            if (scopeKey.startsWith(`${String(tabId)}::`)) {
+                delete webSourceSelectionsByPageTabId[scopeKey];
+            }
+        });
         pinnedWebSources = pinnedWebSources.filter((source) => String(source.tabId) !== String(tabId));
         updateWebChips();
     });
@@ -1662,6 +1792,9 @@ function syncCurrentBrowserTab() {
                     };
                     loadCurrentWebSelection();
                     updateWebChips();
+                    if (webTabPickerEl) {
+                        refreshWebTabPicker();
+                    }
                 }
             });
             return;
@@ -1679,6 +1812,9 @@ function syncCurrentBrowserTab() {
             pinnedWebSources = [];
         }
         updateWebChips();
+        if (webTabPickerEl) {
+            refreshWebTabPicker();
+        }
     });
 }
 
@@ -1770,7 +1906,7 @@ function showWebTabsTooltip(target, sources) {
     });
 }
 
-function openWebTabPicker(anchorEl) {
+function openWebTabPicker(anchorEl, scopeKey = null) {
     if (!anchorEl) return;
 
     if (webTabPickerEl && webTabPickerAnchorEl === anchorEl) {
@@ -1790,7 +1926,12 @@ function openWebTabPicker(anchorEl) {
                 isActive: !!tab.active
             }));
 
-        const selectedIds = new Set(pinnedWebSources.map((source) => source.tabId));
+        const selectionKey = scopeKey || getCurrentWebSelectionKey();
+        const selectedSources = selectionKey ? (() => {
+            const [pageTabId, spotlightTabId] = selectionKey.split('::');
+            return getWebSelectionForScope(pageTabId, spotlightTabId);
+        })() : [];
+        const selectedIds = new Set(selectedSources.map((source) => source.tabId));
 
         const picker = document.createElement('div');
         picker.className = 'lumina-web-tab-picker';
@@ -1823,7 +1964,7 @@ function openWebTabPicker(anchorEl) {
                         Array.from(list.querySelectorAll('.lumina-web-tab-picker-checkbox:checked')).map((item) => Number(item.value))
                     );
 
-                    pinnedWebSources = availableTabs
+                    const nextSelection = availableTabs
                         .filter((item) => selectedSet.has(item.tabId))
                         .map((item) => ({
                             tabId: item.tabId,
@@ -1831,7 +1972,11 @@ function openWebTabPicker(anchorEl) {
                             url: item.url
                         }));
 
-                    saveCurrentWebSelection();
+                    if (selectionKey) {
+                        const [pageTabId, spotlightTabId] = selectionKey.split('::');
+                        saveWebSelectionForScope(pageTabId, spotlightTabId, nextSelection);
+                        pinnedWebSources = nextSelection.map((item) => ({ ...item }));
+                    }
                     updateWebChips();
                 });
 
@@ -1865,11 +2010,14 @@ function openWebTabPicker(anchorEl) {
         clearBtn.className = 'lumina-web-tab-picker-btn is-ghost';
         clearBtn.textContent = 'Clear';
         clearBtn.addEventListener('click', () => {
-            pinnedWebSources = [];
+            if (selectionKey) {
+                const [pageTabId, spotlightTabId] = selectionKey.split('::');
+                saveWebSelectionForScope(pageTabId, spotlightTabId, []);
+                pinnedWebSources = [];
+            }
             list.querySelectorAll('.lumina-web-tab-picker-checkbox').forEach((checkbox) => {
                 checkbox.checked = false;
             });
-            saveCurrentWebSelection();
             updateWebChips();
             closeWebTabPicker();
         });
@@ -1884,13 +2032,17 @@ function openWebTabPicker(anchorEl) {
                 checkbox.checked = true;
             });
 
-            pinnedWebSources = availableTabs.map((item) => ({
+            const nextSelection = availableTabs.map((item) => ({
                 tabId: item.tabId,
                 title: item.title,
                 url: item.url
             }));
 
-            saveCurrentWebSelection();
+            if (selectionKey) {
+                const [pageTabId, spotlightTabId] = selectionKey.split('::');
+                saveWebSelectionForScope(pageTabId, spotlightTabId, nextSelection);
+                pinnedWebSources = nextSelection.map((item) => ({ ...item }));
+            }
             updateWebChips();
         });
 
@@ -1944,6 +2096,8 @@ function updateWebChips() {
     containers.forEach(container => {
         container.innerHTML = '';
 
+        const scopeKey = getCurrentWebSelectionKeyForContainer(container);
+
         const addButton = document.createElement('button');
         addButton.type = 'button';
         addButton.className = 'lumina-web-chip-add';
@@ -1951,14 +2105,16 @@ function updateWebChips() {
         addButton.setAttribute('aria-label', 'Select web tabs');
         addButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            openWebTabPicker(addButton);
+            openWebTabPicker(addButton, scopeKey);
         });
         container.appendChild(addButton);
 
-        const selectedSources = pinnedWebSources.filter((source) => isWebPageUrl(source.url));
-        if (!currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) {
+        if (!scopeKey || !currentBrowserTab || !isWebPageUrl(currentBrowserTab.url)) {
             return;
         }
+
+        const [pageTabId, spotlightTabId] = scopeKey.split('::');
+        const selectedSources = getWebSelectionForScope(pageTabId, spotlightTabId);
 
         const currentIsSelected = selectedSources.some((source) => source.tabId === currentBrowserTab.tabId);
 
@@ -1986,7 +2142,7 @@ function updateWebChips() {
 
             chip.addEventListener('click', (event) => {
                 event.stopPropagation();
-                toggleWebSourcePin(currentBrowserTab, true);
+                toggleWebSourcePin(currentBrowserTab, true, scopeKey);
             });
 
             container.appendChild(chip);
@@ -2036,43 +2192,51 @@ function updateWebChips() {
         chip.addEventListener('click', (event) => {
             event.stopPropagation();
             if (hasMultipleTabs) {
-                openWebTabPicker(addButton);
+                openWebTabPicker(addButton, scopeKey);
                 return;
             }
-            toggleWebSourcePin(currentBrowserTab);
+            toggleWebSourcePin(currentBrowserTab, null, scopeKey);
         });
 
         container.appendChild(chip);
     });
 }
 
-function toggleWebSourcePin(source, forceState = null) {
+function toggleWebSourcePin(source, forceState = null, scopeKey = null) {
     if (!source || !isWebPageUrl(source.url)) return;
 
-    const idx = pinnedWebSources.findIndex(p => p.tabId === source.tabId);
+    const resolvedScopeKey = scopeKey || getCurrentWebSelectionKey();
+    if (!resolvedScopeKey) return;
+
+    const [pageTabId, spotlightTabId] = resolvedScopeKey.split('::');
+    const currentSelection = getWebSelectionForScope(pageTabId, spotlightTabId);
+
+    const idx = currentSelection.findIndex(p => p.tabId === source.tabId);
     if (idx > -1) {
         if (forceState === true) {
             // Keep selected state but refresh tab metadata
-            pinnedWebSources[idx] = {
+            currentSelection[idx] = {
                 tabId: source.tabId,
-                title: source.title || pinnedWebSources[idx].title || 'Untitled',
-                url: source.url || pinnedWebSources[idx].url
+                title: source.title || currentSelection[idx].title || 'Untitled',
+                url: source.url || currentSelection[idx].url
             };
+            saveWebSelectionForScope(pageTabId, spotlightTabId, currentSelection);
             updateWebChips();
             return;
         }
         // Unpin
-        pinnedWebSources.splice(idx, 1);
+        currentSelection.splice(idx, 1);
     } else {
         if (forceState === false) return; // Already unpinned
         // Pin
-        pinnedWebSources.push({
+        currentSelection.push({
             tabId: source.tabId,
             title: source.title,
             url: source.url
         });
     }
-    saveCurrentWebSelection();
+    saveWebSelectionForScope(pageTabId, spotlightTabId, currentSelection);
+    pinnedWebSources = currentSelection.map((item) => ({ ...item }));
     updateWebChips();
 }
 
@@ -2082,6 +2246,22 @@ function toggleWebSourcePin(source, forceState = null) {
 async function init() {
     if (isInitializing) return;
     isInitializing = true;
+
+    if (window.LuminaSelection?.hide) {
+        try {
+            window.LuminaSelection.hide();
+        } catch (e) {
+            console.warn('[Spotlight] Failed to hide stale selection popup:', e);
+        }
+    }
+    document.querySelectorAll('.lumina-overlay-backdrop').forEach(el => el.remove());
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    document.querySelectorAll('.lumina-chat-scroll-content').forEach(el => {
+        if (el.style.overflow === 'hidden') {
+            el.style.overflow = '';
+        }
+    });
 
     // Immediate: Initialize search selection UI so listeners work regardless of tab loading
     initSpotlightAskSelection();
@@ -2679,9 +2859,13 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
 
     // --- CONTEXT GATHERING ---
-    if (pinnedWebSources.length > 0) {
+    const webSourceScope = currentBrowserTab && isWebPageUrl(currentBrowserTab.url)
+        ? getWebSelectionForScope(currentBrowserTab.tabId, currentTab.id)
+        : [];
+
+    if (webSourceScope.length > 0) {
         try {
-            const results = await Promise.all(pinnedWebSources.map(async (source) => {
+            const results = await Promise.all(webSourceScope.map(async (source) => {
                 try {
                     const tabResults = await chrome.scripting.executeScript({
                         target: { tabId: source.tabId },
@@ -2812,6 +2996,13 @@ function setupGlobalListeners() {
     }
 
     document.addEventListener('keydown', (event) => {
+        const activeElement = document.activeElement;
+        const isEditing = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+
         // Track modifier-only presses
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
             modifierKeyPressedAlone = true;
@@ -2819,18 +3010,16 @@ function setupGlobalListeners() {
             modifierKeyPressedAlone = false;
         }
 
-        // Check for configurable resetChat shortcut
-        const resetShortcut = shortcuts.resetChat;
-        if (resetShortcut) {
-            const matchCode = event.code === resetShortcut.code;
-            const matchCtrl = !!resetShortcut.ctrlKey === event.ctrlKey;
-            const matchAlt = !!resetShortcut.altKey === event.altKey;
-            const matchShift = !!resetShortcut.shiftKey === event.shiftKey;
-            const matchMeta = !!resetShortcut.metaKey === event.metaKey;
+        if (!isEditing) {
+            const shortcutActions = Object.keys(shortcuts);
+            for (const action of shortcutActions) {
+                const shortcut = shortcuts[action];
+                if (!shortcut) continue;
+                if (!isShortcutMatchImmediate(event, shortcut)) continue;
 
-            if (matchCode && matchCtrl && matchAlt && matchShift && matchMeta) {
                 event.preventDefault();
-                resetChat();
+                event.stopPropagation();
+                dispatchConfiguredShortcutAction(action);
                 return;
             }
         }
@@ -2872,7 +3061,6 @@ function setupGlobalListeners() {
             }
         }
 
-        const activeElement = document.activeElement;
         const selection = window.getSelection().toString().trim();
         const inputEl = getHoveredInputEl();
 
@@ -2887,8 +3075,33 @@ function setupGlobalListeners() {
             return;
         }
 
-        // Auto-focus input for typing
-        const isEditing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName) || activeElement.isContentEditable;
+        if (event.key === 'Enter') {
+            const activeEl = document.activeElement;
+            const isEditing = activeEl && (
+                activeEl.tagName === 'INPUT' ||
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable
+            );
+
+            if (!isEditing) {
+                const targetInput = getHoveredInputEl();
+                const targetChatUI = targetInput === sharedInputUISecondary?.inputEl ? chatUISecondary : chatUI;
+                const hasInputText = !!targetInput && targetInput.value.trim().length > 0;
+
+                if (hasInputText && targetChatUI && typeof targetChatUI._handleSubmit === 'function') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    targetChatUI._handleSubmit();
+                    return;
+                }
+
+                if (targetInput) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
+            }
+        }
 
         // Bypass standard browser/system shortcuts (only pure Ctrl/Cmd + key, not Ctrl+Shift combinations)
         if ((event.ctrlKey || event.metaKey) && !event.shiftKey && ['r', 't', 'n', 'w', 'l', 'f', 'p', 's', 'c', 'x', 'z', 'y'].includes(event.key.toLowerCase())) {
@@ -3095,50 +3308,15 @@ function setupGlobalListeners() {
         }
     }, true);
 
-    // Keyup handler: fires lone-modifier shortcuts (e.g. ShiftRight alone → audio playback)
-    document.addEventListener('keyup', (event) => {
-        if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) return;
-        if (!modifierKeyPressedAlone) return;
-
-        // Check all configured shortcuts that are lone-modifier type
-        const shortcutActions = Object.keys(shortcuts);
-        for (const action of shortcutActions) {
-            const sc = shortcuts[action];
-            if (!sc || !['Control', 'Alt', 'Shift', 'Meta'].includes(sc.key)) continue;
-            if (isShortcutMatch(event, sc)) {
-                event.preventDefault();
-                // Dispatch the shortcut action
-                if (action === 'audio') {
-                    const selection = window.getSelection().toString().trim();
-                    if (selection) {
-                        stopSpotlightAudio();
-                        _spotlightAudioAborted = false;
-                        playSpotlightAudio(selection);
-                    } else {
-                        stopSpotlightAudio();
-                    }
-
-                } else if (action === 'luminaChat') {
-                    // handled by content.js
-                } else if (action === 'askLumina') {
-                    if (text && range && window.LuminaSelection) {
-                        spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
-                            ? 'secondary' : 'primary';
-
-                        LuminaSelection.show(0, 0, text, range);
-                        LuminaSelection.showInput();
-                        window.getSelection().removeAllRanges();
-                    }
-                } else if (action === 'resetChat') {
-                    resetChat();
-                }
-                break;
-            }
-        }
-    }, true);
-
     // Reset chat with configured mouse shortcut (if any)
     document.addEventListener('mousedown', (event) => {
+        const redirectShortcut = shortcuts.redirect;
+        if (redirectShortcut && isShortcutMatch(event, redirectShortcut)) {
+            event.preventDefault();
+            redirectToPinnedQuestion();
+            return;
+        }
+
         const resetShortcut = shortcuts.resetChat;
         if (!resetShortcut) return;
 
@@ -3247,6 +3425,9 @@ function setupRegenerateButtons() {
 document.addEventListener('DOMContentLoaded', init);
 
 window.addEventListener('beforeunload', () => {
+    tabs.forEach((tab) => {
+        tab.chatUIInstance?.cancelAllAnswerEdits?.();
+    });
     if (activeTabIndex >= 0) {
         const activeTab = tabs[activeTabIndex];
         if (activeTab && activeTab.historyEl) {
@@ -3484,6 +3665,54 @@ function isShortcutMatch(event, shortcut) {
     }
 
     return ctrlMatch && shiftMatch && altMatch && metaMatch;
+}
+
+function isShortcutMatchImmediate(event, shortcut) {
+    if (!shortcut) return false;
+
+    const isModifierShortcut = ['Control', 'Alt', 'Shift', 'Meta'].includes(shortcut.key);
+    if (!isModifierShortcut) return isShortcutMatch(event, shortcut);
+
+    if (event.type !== 'keydown' || event.repeat) return false;
+    if (event.key !== shortcut.key) return false;
+
+    const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
+    if (isSideSpecific && shortcut.code !== event.code) return false;
+
+    return true;
+}
+
+function dispatchConfiguredShortcutAction(action) {
+    if (action === 'audio') {
+        const selection = window.getSelection().toString().trim();
+        if (selection) {
+            stopSpotlightAudio();
+            _spotlightAudioAborted = false;
+            playSpotlightAudio(selection);
+        } else {
+            stopSpotlightAudio();
+        }
+    } else if (action === 'luminaChat') {
+        // handled by content.js
+    } else if (action === 'askLumina') {
+        const sel = window.getSelection();
+        const text = sel ? sel.toString().trim() : '';
+        const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+        if (!text || !range || !window.LuminaSelection) return;
+
+        const commonNode = range.commonAncestorContainer;
+        const secondaryPane = document.getElementById('pane-secondary');
+        spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+            ? 'secondary' : 'primary';
+
+        LuminaSelection.show(0, 0, text, range);
+        LuminaSelection.showInput();
+        sel.removeAllRanges();
+    } else if (action === 'resetChat') {
+        resetChat();
+    } else if (action === 'redirect') {
+        redirectToPinnedQuestion();
+    }
 }
 
 // Helper: Match named shortcut
