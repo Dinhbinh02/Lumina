@@ -7,7 +7,7 @@
       <img src="https://img.shields.io/badge/status-active-brightgreen?logo=github" alt="Status" />
     </a>
     <a href="https://github.com/Dinhbinh02/Lumina/blob/main/LICENSE">
-      <img src="https://img.shields.io/badge/license-Non--Commercial-orange.svg" alt="License" />
+      <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
     </a>
     <img src="https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4" alt="Manifest V3" />
   </p>
@@ -85,4 +85,4 @@ Contributions are welcome.
 
 ## License
 
-This project is licensed under the Lumina Non-Commercial License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
