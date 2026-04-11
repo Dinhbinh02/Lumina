@@ -10,4 +10,4 @@ pnpm-debug.log*
 .env
 .env.*
 .vscode/
-.idea/
+.idea/_metadata/

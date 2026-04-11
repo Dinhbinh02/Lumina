@@ -1,21 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
-
-:host {
-  all: initial;
-  display: block !important;
-}
-
-* {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-  font-family: var(--lumina-font-family);
-  font-size: 1em;
-  font-weight: 520;
-}
-
-*::-webkit-scrollbar {
-  display: none !important;
-}
+/* ====================
+   VARIABLES & RESET
+   ==================== */
 
 :host,
 body,
@@ -33,69 +18,50 @@ button {
 
 :root,
 :host {
-
   --lumina-glass-opacity: 1.0;
   --lumina-glass-base-rgb: 255, 255, 255;
   --lumina-icon-stroke-weight: 1.8;
-
   --lumina-glass-bg: #FFFFFF;
   --lumina-glass-bg-light: #F5F5F7;
   --lumina-glass-border: rgba(0, 0, 0, 0.1);
-
   --lumina-blur-primary: none;
   --lumina-blur-secondary: none;
   --lumina-blur-tertiary: none;
-
   --lumina-shadow-primary: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   --lumina-shadow-secondary: 0 4px 16px rgba(0, 0, 0, 0.12);
   --lumina-shadow-tertiary: 0 2px 8px rgba(0, 0, 0, 0.1);
   --lumina-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
   --lumina-shadow-focus: 0 0 0 3px rgba(var(--lumina-primary-rgb), 0.4);
-
   --lumina-primary-color: #0056D2;
   --lumina-primary-rgb: 0, 86, 210;
   --lumina-text-primary: #000000;
   --lumina-text-secondary: #444444;
   --lumina-text-tertiary: #757575;
-
   --lumina-radius-lg: 24px;
   --lumina-radius-md: 16px;
   --lumina-radius-sm: 12px;
-
   --lumina-input-bg: #FFFFFF;
-
   --lumina-border-color: rgba(0, 0, 0, 0.12);
   --lumina-font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 [data-theme="dark"],
 :host([data-theme="dark"]) {
-
   --lumina-glass-base-rgb: 0, 0, 0;
-
   --lumina-text-primary: #FFFFFF;
   --lumina-text-secondary: #A1A1A6;
-
   --lumina-text-tertiary: #6E6E73;
-
   --lumina-primary-color: #0A84FF;
-
   --lumina-primary-rgb: 10, 132, 255;
-
   --lumina-glass-border: rgba(255, 255, 255, 0.1);
   --lumina-glass-bg: #000000;
   --lumina-glass-bg-light: #1C1C1E;
   --lumina-input-bg: #1C1C1E;
   --lumina-card-bg: #1C1C1E;
-
   --lumina-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 1);
   --lumina-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.8);
   --lumina-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.05);
   --lumina-border-color: rgba(255, 255, 255, 0.2);
-}
-
-.lumina-hidden {
-  display: none !important;
 }
 
 /* Global SVG Consistency */
@@ -109,20 +75,248 @@ button {
   shape-rendering: geometricPrecision !important;
 }
 
-.lumina-translate-logo {
-  width: 17px;
-  height: 17px;
-  display: block;
-  object-fit: contain;
-  flex-shrink: 0;
+#lumina-ask-selection-btn {
+  all: initial;
+  position: absolute !important;
+  display: none;
+  visibility: hidden;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  z-index: 2147483647 !important;
+  overflow: hidden !important;
+  height: 28px !important;
+  animation: lumina-pop-in 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family: var(--lumina-font-family) !important;
+  font-size: var(--lumina-fontSize, 13px) !important;
+  line-height: normal !important;
 }
 
-.lumina-dictionary-logo {
-  width: 17px;
-  height: 17px;
-  display: block;
-  object-fit: contain;
-  flex-shrink: 0;
+[data-theme="dark"] #lumina-ask-selection-btn {
+  background: #1c1c1e !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Show comment parts only when in comment mode */
+#lumina-ask-selection-btn.lumina-comment-mode .lumina-comment-part {
+  display: flex !important;
+}
+
+/* Hide other parts when in comment mode */
+#lumina-ask-selection-btn.lumina-comment-mode .lumina-dict-launcher-part,
+#lumina-ask-selection-btn.lumina-comment-mode .lumina-translate-launcher-part,
+#lumina-ask-selection-btn.lumina-comment-mode .lumina-ask-part {
+  display: none !important;
+}
+
+/* Comment Highlighting */
+.lumina-comment-highlight {
+  background-color: #fff9c4 !important;
+  /* Pale yellow */
+  cursor: help !important;
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+
+/* Comment Tooltip */
+.lumina-comment-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: #333;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  max-width: 250px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: var(--lumina-font-family);
+  line-height: 1.4;
+}
+
+/* Custom SelectedText Tag - Now a text-like prefix */
+.lumina-selected-text-tag {
+  display: inline-block !important;
+  background: transparent !important;
+  color: #0076d6 !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 4px 0 0 !important;
+  font-size: 1em !important;
+  font-weight: 620 !important;
+  user-select: none !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+  font-family: inherit !important;
+  max-width: 130px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  top: -1px !important;
+  line-height: inherit !important;
+}
+
+/* Custom Popup Tooltip */
+.lumina-ask-tooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.85) !important;
+  opacity: 0 !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 0.9em !important;
+  max-width: 320px !important;
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  line-height: 1.5 !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  backdrop-filter: blur(4px) !important;
+  opacity: 1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  display: none;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  box-sizing: border-box !important;
+}
+
+/* File Chips in History */
+.lumina-attached-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--lumina-glass-bg);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--lumina-glass-border);
+  color: var(--lumina-text-primary);
+  max-width: 200px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  vertical-align: top;
+}
+
+/* File Previews in Input Bar */
+.lumina-image-preview-item.is-file {
+  width: auto !important;
+  min-width: 156px !important;
+  max-width: 240px !important;
+  padding: 10px 12px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  column-gap: 10px;
+  background: #f0f4ff;
+  border: 1px solid #e2eafd;
+  border-radius: 16px;
+  min-height: 60px;
+  box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Dictionary Popup Styles */
+.lumina-dictionary-popup {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  background: var(--lumina-bg-primary, #ffffff) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 1px solid var(--lumina-glass-border, rgba(0, 0, 0, 0.1)) !important;
+  pointer-events: auto !important;
+  transform: translateZ(0) !important;
+  will-change: transform, opacity !important;
+}
+
+.lumina-dict-body {
+  flex: 1 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  background: transparent !important;
+  border-top-left-radius: 14px !important;
+  border-top-right-radius: 14px !important;
+}
+
+/* Data rendering in popup */
+.lumina-dict-popup-item {
+  margin-bottom: 20px !important;
+}
+
+/* Answer & Question Editing Mode */
+.lumina-chat-answer.is-editing,
+.lumina-chat-question.is-editing {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: 1.5px solid var(--lumina-brand-color, #007AFF) !important;
+  transition: border-color 0.2s ease !important;
+  background: var(--lumina-chat-bg, #ffffff) !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+  z-index: 10;
+  position: relative;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  cursor: default !important;
+}
+
+.lumina-chat-question.is-editing::after {
+  display: none !important;
+}
+
+.lumina-question-row-editing {
+  justify-content: flex-start !important;
+}
+
+/* Proofread Comment Highlights & Tags */
+.lumina-proofread-comment-highlight {
+  background-color: rgba(255, 193, 7, 0.2) !important;
+  border-bottom: 2px solid rgba(255, 193, 7, 0.4) !important;
+  cursor: help !important;
+  transition: background-color 0.2s !important;
+}
+
+/* Web Content Chips */
+.lumina-web-chips-container {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 0 0px 8px 0px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+
+:host {
+  all: initial;
+  display: block !important;
+}
+
+/* ====================
+   BASE UI COMPONENTS
+   ==================== */
+
+.lumina-web-chip.is-active {
+  border: 1.5px solid var(--lumina-primary-color);
+  color: var(--lumina-primary-color);
+  background: rgba(0, 86, 210, 0.05);
+  opacity: 1;
+}
+
+[data-theme="dark"] .lumina-web-chip.is-active {
+  background: rgba(0, 86, 210, 0.15);
 }
 
 .lumina-svg-icon {
@@ -152,11 +346,6 @@ button {
   mask-image: url("../icons/lumina/file-edit.svg");
 }
 
-.lumina-icon-language {
-  -webkit-mask-image: url("../icons/lumina/language.svg");
-  mask-image: url("../icons/lumina/language.svg");
-}
-
 .lumina-icon-plus {
   -webkit-mask-image: url("../icons/lumina/plus.svg");
   mask-image: url("../icons/lumina/plus.svg");
@@ -177,113 +366,8 @@ button {
   mask-image: url("../icons/lumina/thumbtack.svg");
 }
 
-.lumina-drag-handle {
-  display: none !important;
-}
-
-#lumina-ask-selection-btn {
-  all: initial;
-  position: absolute !important;
-  display: none;
-  visibility: hidden;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  background: #ffffff !important;
-  border-radius: 12px !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  z-index: 2147483647 !important;
-  overflow: hidden !important;
-  height: 28px !important;
-  animation: lumina-pop-in 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  font-family: var(--lumina-font-family) !important;
-  font-size: var(--lumina-fontSize, 13px) !important;
-  line-height: normal !important;
-}
-
-[data-theme="dark"] #lumina-ask-selection-btn {
-  background: #1c1c1e !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-.lumina-dict-launcher-part,
-.lumina-translate-launcher-part {
-  color: #1d1d1f !important;
-}
-
-[data-theme="dark"] .lumina-dict-launcher-part,
-[data-theme="dark"] .lumina-translate-launcher-part {
-  color: #f5f5f7 !important;
-}
-
-.lumina-dict-launcher-part {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 8px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  border-radius: 8px !important;
-  border-right: none !important;
-}
-
-[data-theme="dark"] .lumina-dict-launcher-part {
-  border-right: none !important;
-}
-
-.lumina-translate-launcher-part {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 8px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  border-radius: 8px !important;
-}
-
-.lumina-ask-part {
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 10px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  font-size: 1em !important;
-  font-weight: 520 !important;
-  color: #1d1d1f !important;
-  transition: all 0.2s ease !important;
-  letter-spacing: -0.01em !important;
-  font-family: inherit !important;
-  white-space: nowrap !important;
-  min-width: max-content !important;
-  border-radius: 8px !important;
-}
-
-[data-theme="dark"] .lumina-ask-part {
-  color: #f5f5f7 !important;
-}
-
-.lumina-dict-launcher-part:hover,
-.lumina-translate-launcher-part:hover,
-.lumina-ask-part:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="dark"] .lumina-dict-launcher-part:hover,
-[data-theme="dark"] .lumina-translate-launcher-part:hover,
-[data-theme="dark"] .lumina-ask-part:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
 .lumina-dict-launcher-part svg,
 .lumina-translate-launcher-part svg {
-  width: 17px !important;
-  height: 17px !important;
-}
-
-.lumina-translate-launcher-part .lumina-translate-logo {
   width: 17px !important;
   height: 17px !important;
 }
@@ -305,79 +389,141 @@ button {
   opacity: 1;
 }
 
-.lumina-comment-part {
+.lumina-file-icon svg {
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-thinking-icon svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.lumina-question-pin-btn .lumina-svg-icon {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.lumina-attach-toggle svg {
+  margin-right: 0;
+}
+
+.lumina-file-icon-inline svg {
+  width: 14px;
+  height: 14px;
+}
+
+.lumina-image-preview-item.is-file .lumina-image-remove svg {
+  width: 9px;
+  height: 9px;
+}
+
+.lumina-preview-close svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  opacity: 1;
+}
+
+.lumina-spotlight-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.lumina-model-btn svg {
+  opacity: 1;
+  flex-shrink: 0;
+}
+
+.lumina-model-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.lumina-tool-item svg {
+  display: none;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-tool-item .lumina-svg-icon,
+.lumina-tool-item .lumina-tool-translate-logo {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.lumina-proofread-toggle svg,
+.lumina-googleai-toggle svg,
+.lumina-translate-toggle svg {
   display: none !important;
-  align-items: center !important;
-  padding: 0 10px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  font-size: 1em !important;
-  font-weight: 520 !important;
-  color: #1d1d1f !important;
-  transition: all 0.2s ease !important;
-  letter-spacing: -0.01em !important;
-  font-family: inherit !important;
-  white-space: nowrap !important;
-  min-width: max-content !important;
-  border-radius: 8px !important;
 }
 
-[data-theme="dark"] .lumina-comment-part {
-  color: #f5f5f7 !important;
+.spotlight-tab-close svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  stroke-width: 2;
 }
 
-.lumina-comment-part:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
+.spotlight-new-tab-btn svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.2;
 }
 
-[data-theme="dark"] .lumina-comment-part:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+.lumina-context-menu-item svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
 }
 
-/* Show comment parts only when in comment mode */
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-comment-part {
-  display: flex !important;
+.lumina-context-menu-item:hover svg {
+  opacity: 1;
+  color: inherit;
 }
 
-/* Hide other parts when in comment mode */
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-dict-launcher-part,
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-translate-launcher-part,
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-ask-part {
-  display: none !important;
+.lumina-dict-resizer-right {
+  position: absolute !important;
+  right: -3px !important;
+  top: 0 !important;
+  width: 8px !important;
+  height: 100% !important;
+  cursor: ew-resize !important;
+  z-index: 2147483647 !important;
 }
 
-/* Comment Highlighting */
-.lumina-comment-highlight {
-  background-color: #fff9c4 !important;
-  /* Pale yellow */
-  cursor: help !important;
-  border-radius: 2px;
-  transition: background-color 0.2s;
+.lumina-dict-resizer-bottom {
+  position: absolute !important;
+  bottom: -3px !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 8px !important;
+  cursor: ns-resize !important;
+  z-index: 2147483647 !important;
 }
 
-.lumina-comment-highlight:hover {
-  background-color: #fff176 !important;
-  /* Slightly darker on hover */
+.lumina-dict-resizer-corner {
+  position: absolute !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+  cursor: nwse-resize !important;
+  z-index: 2147483647 !important;
 }
 
-/* Comment Tooltip */
-.lumina-comment-tooltip {
-  position: fixed;
-  z-index: 10000;
-  background: #333;
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  max-width: 250px;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-family: var(--lumina-font-family);
-  line-height: 1.4;
+.lumina-web-chip.lumina-pinned-question-chip .lumina-svg-icon {
+  width: 12px;
+  height: 12px;
 }
+
+/* ====================
+   MAIN CHAT UI
+   ==================== */
 
 #lumina-ask-input-popup {
   all: initial;
@@ -399,15 +545,6 @@ button {
   transition: height 0.1s ease !important;
   font-family: 'Montserrat', sans-serif !important;
   font-size: var(--lumina-fontSize, 13px) !important;
-}
-
-.lumina-overlay-backdrop {
-  position: fixed;
-  inset: 0;
-  background: transparent;
-  touch-action: none;
-  overscroll-behavior: none;
-  pointer-events: auto;
 }
 
 [data-theme="dark"] #lumina-ask-input-popup {
@@ -446,332 +583,8 @@ button {
   word-break: break-all !important;
 }
 
-
-
 [data-theme="dark"] .lumina-ask-input-field {
   color: #f5f5f7 !important;
-}
-
-/* Custom SelectedText Tag - Now a text-like prefix */
-.lumina-selected-text-tag {
-  display: inline-block !important;
-  background: transparent !important;
-  color: #0076d6 !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 4px 0 0 !important;
-  font-size: 1em !important;
-  font-weight: 620 !important;
-  user-select: none !important;
-  cursor: pointer !important;
-  vertical-align: middle !important;
-  font-family: inherit !important;
-  max-width: 130px !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-  position: relative !important;
-  top: -1px !important;
-  line-height: inherit !important;
-}
-
-[data-theme="dark"] .lumina-selected-text-tag {
-  border: none !important;
-}
-
-/* Custom Popup Tooltip */
-.lumina-ask-tooltip {
-  position: fixed;
-  background: rgba(0, 0, 0, 0.85) !important;
-  opacity: 0 !important;
-  padding: 8px 12px !important;
-  border-radius: 8px !important;
-  font-size: 0.9em !important;
-  max-width: 320px !important;
-  z-index: 2147483647 !important;
-  pointer-events: none !important;
-  box-shadow: none !important;
-  line-height: 1.5 !important;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  backdrop-filter: blur(4px) !important;
-  opacity: 1 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  display: none;
-  white-space: normal !important;
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
-  box-sizing: border-box !important;
-}
-
-[data-theme="dark"] .lumina-ask-tooltip {
-  background: #f5f5f7 !important;
-  color: #1d1d1f !important;
-}
-
-.lumina-dict-launcher {
-  display: none !important;
-}
-
-.lumina-dict-launcher span {
-  display: none !important;
-}
-
-@keyframes lumina-pop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes lumina-fade-in-up {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.lumina-dict-word {
-  font-weight: 700 !important;
-  font-size: 1.6em !important;
-  color: var(--lumina-text-primary);
-  letter-spacing: -0.03em;
-  text-transform: lowercase !important;
-  display: inline-block;
-  line-height: 1.2 !important;
-  margin-top: -6px !important;
-}
-
-
-.lumina-dict-meanings {
-  margin-top: 12px;
-  font-weight: 500 !important;
-}
-
-.lumina-dict-meaning-item {
-  margin-bottom: 12px;
-  position: relative;
-}
-
-.lumina-dict-pos {
-  display: inline-block;
-  font-size: 0.85em !important;
-  font-weight: 620 !important;
-  color: var(--lumina-primary-color);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(var(--lumina-primary-rgb), 0.1);
-  padding: 1px 6px;
-  border-radius: 4px;
-  margin-right: 6px;
-  margin-bottom: 3px;
-  vertical-align: middle;
-}
-
-.lumina-dict-meaning-text {
-  font-weight: 520 !important;
-  color: var(--lumina-text-primary);
-  line-height: 1.65;
-  ;
-  display: inline;
-}
-
-.lumina-dict-meaning-text::first-letter {
-  text-transform: uppercase !important;
-}
-
-.lumina-dict-example {
-  font-style: italic;
-  color: var(--lumina-text-secondary);
-  margin-top: 6px;
-  padding-left: 12px;
-  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.4);
-  font-size: 0.92em !important;
-  font-weight: 500 !important;
-  line-height: 1.65;
-  ;
-}
-
-.lumina-dict-translation {
-  color: var(--lumina-text-secondary);
-  font-weight: 500 !important;
-}
-
-.lumina-dict-original-text {
-  color: var(--lumina-text-primary);
-  font-weight: 620 !important;
-  margin-bottom: 8px;
-  cursor: text;
-  width: 100%;
-}
-
-.lumina-dict-related-section {
-  margin-top: 16px;
-  padding: 0;
-  background: transparent;
-  border: none;
-}
-
-.lumina-dict-related-row {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 12px;
-  align-items: flex-start;
-}
-
-.lumina-dict-related-row:last-child {
-  margin-bottom: 0;
-}
-
-.lumina-dict-related-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 620 !important;
-  color: var(--lumina-text-tertiary);
-
-  font-size: 0.85em !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
-  user-select: none;
-}
-
-.lumina-dict-related-icon {
-  font-size: 1.1em;
-  line-height: 1;
-  font-weight: 500;
-  opacity: 0.7;
-}
-
-.lumina-dict-related-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  width: 100%;
-}
-
-.lumina-dict-synonym-item,
-.lumina-dict-antonym-item {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.92em !important;
-  font-weight: 500 !important;
-  cursor: pointer;
-  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  border: 1px solid transparent;
-  line-height: 1.4;
-}
-
-.lumina-dict-synonym-item {
-  background: rgba(52, 199, 89, 0.12);
-
-  color: #248a3d;
-  border-color: rgba(52, 199, 89, 0.15);
-}
-
-[data-theme="dark"] .lumina-dict-synonym-item {
-  background: rgba(48, 209, 88, 0.2);
-  color: #6ee788;
-  border-color: rgba(48, 209, 88, 0.15);
-}
-
-.lumina-dict-synonym-item:hover {
-  background: rgba(52, 199, 89, 0.2) !important;
-
-  border-color: rgba(52, 199, 89, 0.15) !important;
-  transform: translateY(-1px);
-  box-shadow: none;
-}
-
-[data-theme="dark"] .lumina-dict-synonym-item:hover {
-  background: rgba(48, 209, 88, 0.25) !important;
-  border-color: rgba(48, 209, 88, 0.15) !important;
-}
-
-.lumina-dict-antonym-item {
-  background: rgba(255, 59, 48, 0.12);
-
-  color: #d72b22;
-  border-color: rgba(255, 59, 48, 0.15);
-}
-
-[data-theme="dark"] .lumina-dict-antonym-item {
-  background: rgba(255, 69, 58, 0.2);
-  color: #ff6961;
-  border-color: rgba(255, 69, 58, 0.15);
-}
-
-.lumina-dict-antonym-item:hover {
-  background: rgba(255, 59, 48, 0.15);
-  transform: translateY(-1px);
-  box-shadow: none;
-}
-
-.lumina-dict-collocation-item {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.92em !important;
-  font-weight: 500 !important;
-  cursor: pointer;
-  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  border: 1px solid transparent;
-  line-height: 1.4;
-  background: rgba(0, 122, 255, 0.12);
-
-  color: #007aff;
-  border-color: rgba(0, 122, 255, 0.15);
-}
-
-[data-theme="dark"] .lumina-dict-collocation-item {
-  background: rgba(10, 132, 255, 0.2);
-  color: #64d2ff;
-  border-color: rgba(10, 132, 255, 0.15);
-}
-
-.lumina-dict-collocation-item:hover {
-  background: rgba(0, 122, 255, 0.15);
-  transform: translateY(-1px);
-  box-shadow: none;
-}
-
-.lumina-chat-attached-image {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid var(--border-color);
-}
-
-.lumina-chat-attached-file {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 0.92em !important;
-  color: var(--lumina-text-primary);
-  max-width: 200px;
-}
-
-.lumina-chat-attached-file span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .lumina-image-preview-item.is-file {
@@ -796,26 +609,12 @@ button {
   width: 100%;
 }
 
-.lumina-file-icon svg {
-  color: var(--lumina-text-secondary);
-}
-
 .lumina-file-name {
   width: 100%;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-
-
-
-.lumina-dict-separator {
-  visibility: hidden;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
-  margin: 10px 0;
 }
 
 .lumina-thinking-container {
@@ -831,10 +630,6 @@ button {
 .lumina-thinking-container:not(.appeared) {
   opacity: 1;
   animation: none;
-}
-
-.lumina-thinking-container.collapsed {
-  background: transparent;
 }
 
 .lumina-thinking-container:not(.collapsed) {
@@ -873,12 +668,6 @@ button {
   transform: rotate(-90deg);
 }
 
-.lumina-thinking-icon svg {
-  width: 12px;
-  height: 12px;
-  fill: currentColor;
-}
-
 .lumina-thinking-label {
   font-weight: 500 !important;
   letter-spacing: 0.3px;
@@ -886,25 +675,10 @@ button {
   transition: color 0.12s ease, opacity 0.12s ease;
 }
 
-.chain-item {
-  cursor: grab;
-}
-
-.chain-item:active {
-  cursor: grabbing;
-}
-
-.chain-item-ghost {
-  opacity: 0.5;
-  background: var(--sidebar-hover);
-  border: 1px dashed var(--primary-color);
-}
-
 .lumina-thinking-content {
   padding: 0 12px 12px 12px;
   font-size: 0.92em !important;
   line-height: 1.65;
-  ;
   color: var(--lumina-text-secondary);
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -920,9 +694,6 @@ button {
   opacity: 0;
   pointer-events: none;
 }
-
-
-
 
 .lumina-chat-container {
   position: relative;
@@ -953,13 +724,6 @@ button {
   position: relative;
 }
 
-.lumina-chat-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
 .lumina-chat-context {
   flex-shrink: 0;
   align-self: flex-end;
@@ -973,6 +737,7 @@ button {
   box-shadow: none;
   font-weight: 500 !important;
   border-radius: 16px;
+  position: relative;
 }
 
 .lumina-chat-context:hover {
@@ -1013,12 +778,6 @@ button {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.lumina-translation-card .lumina-answer-nav {
-  margin-left: 16px;
-  margin-bottom: 12px;
-  margin-top: 0px;
-}
-
 .lumina-answer-nav-btn {
   background: transparent;
   border: none;
@@ -1054,63 +813,14 @@ button {
   font-size: 0.85em !important;
 }
 
-.lumina-context-collapsed {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.lumina-context-collapsed:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.lumina-context-text {
-  flex: 1;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.lumina-context-remove {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  color: var(--lumina-text-secondary);
-}
-
 .lumina-chat-context:hover .lumina-context-remove {
   opacity: 1;
-}
-
-.lumina-context-remove:hover {
-  background: rgba(255, 59, 48, 0.8);
-  color: white;
-  transform: scale(1.1);
-}
-
-.lumina-chat-context {
-  position: relative;
 }
 
 .lumina-chat-history {
   display: flex;
   flex-direction: column;
   overflow-anchor: none;
-}
-
-.lumina-dict-entry {
-  display: flex;
-  flex-direction: column;
-  contain: layout style;
-  transform: translateZ(0);
 }
 
 .lumina-chat-question {
@@ -1134,6 +844,7 @@ button {
   margin-bottom: 0 !important;
   position: relative !important;
   overflow: hidden !important;
+  cursor: pointer !important;
 }
 
 .lumina-question-row {
@@ -1171,10 +882,17 @@ button {
   transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
 }
 
-.lumina-question-row:hover>.lumina-question-pin-btn,
+.lumina-question-row:hover>.lumina-question-pin-btn {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
 .lumina-question-pin-btn.is-active {
   opacity: 1 !important;
   pointer-events: auto !important;
+  background: rgba(0, 86, 210, 0.08) !important;
+  color: var(--lumina-primary-color) !important;
+  border: 1.5px solid var(--lumina-primary-color) !important;
 }
 
 .lumina-question-row:focus-within>.lumina-question-pin-btn {
@@ -1188,40 +906,7 @@ button {
   color: var(--lumina-primary-color) !important;
 }
 
-.lumina-question-pin-btn.is-active {
-  opacity: 1 !important;
-  background: rgba(0, 86, 210, 0.08) !important;
-  color: var(--lumina-primary-color) !important;
-  border: 1.5px solid var(--lumina-primary-color) !important;
-}
-
-.lumina-question-row.lumina-question-row-editing {
-  gap: 0 !important;
-  align-items: flex-start !important;
-}
-
 .lumina-question-row.lumina-question-row-editing>.lumina-question-pin-btn {
-  display: none !important;
-}
-
-.lumina-chat-question.lumina-answer-editing {
-  align-self: stretch !important;
-  max-width: none !important;
-  width: 100% !important;
-  flex: 1 1 auto !important;
-  overflow: visible !important;
-  border: 1.5px solid var(--lumina-brand-color, #007AFF) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  transition: border-color 0.2s ease !important;
-  background: var(--lumina-chat-bg, #ffffff) !important;
-  padding: 10px !important;
-  border-radius: 12px !important;
-  z-index: 10;
-  position: relative;
-  box-sizing: border-box !important;
-}
-
-.lumina-chat-question.lumina-answer-editing::after {
   display: none !important;
 }
 
@@ -1234,16 +919,6 @@ button {
 
 [data-theme="dark"] .lumina-question-pin-btn:hover {
   background: #fff !important;
-}
-
-[data-theme="dark"] .lumina-question-pin-btn.is-active {
-  background: rgba(0, 86, 210, 0.16) !important;
-  border: 1.5px solid var(--lumina-primary-color) !important;
-}
-
-.lumina-question-pin-btn .lumina-svg-icon {
-  width: 13px !important;
-  height: 13px !important;
 }
 
 [data-theme="dark"] .lumina-chat-question {
@@ -1269,13 +944,6 @@ button {
   background: linear-gradient(to bottom, transparent, rgba(60, 60, 60, 1)) !important;
 }
 
-.lumina-chat-question.proofread-question::after,
-.lumina-chat-question[data-type="proofread"]::after,
-.lumina-chat-question.translation-question::after,
-.lumina-chat-question[data-type="translation"]::after {
-  display: none !important;
-}
-
 .lumina-chat-question:not(.proofread-question):hover {
   background: #e9eef6;
   border-color: transparent;
@@ -1295,10 +963,8 @@ button {
   line-height: 1.65 !important;
 }
 
-.lumina-chat-question>.lumina-question-content[contenteditable="true"],
-.lumina-chat-question.expanded>.lumina-question-content[contenteditable="true"],
-.lumina-chat-question>div[contenteditable="true"],
-.lumina-chat-question.expanded>div[contenteditable="true"] {
+.is-editing .lumina-answer-content,
+.lumina-chat-question.is-editing .lumina-answer-content {
   outline: none !important;
   border: none !important;
   margin: 0 !important;
@@ -1393,6 +1059,7 @@ button {
   margin-bottom: 0.45em !important;
   line-height: 1.65 !important;
   padding-left: 0.2em !important;
+  margin: 4px 0;
 }
 
 .lumina-chat-answer li:last-child {
@@ -1409,14 +1076,6 @@ button {
   font-size: 0.92em !important;
   line-height: 1.65 !important;
   color: var(--lumina-text-secondary) !important;
-}
-
-.lumina-chat-answer .lumina-dict-scroll-area {
-  padding: 20px !important;
-  padding-bottom: 40px !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  box-sizing: border-box !important;
 }
 
 .lumina-chat-answer .lumina-table-wrap {
@@ -1477,58 +1136,9 @@ button {
   white-space: pre !important;
 }
 
-.lumina-code-block-wrap {
-  position: relative;
-  background: #e9eef6 !important;
-  border-radius: 12px !important;
-}
-
 [data-theme="dark"] .lumina-chat-answer pre,
 [data-theme="dark"] .lumina-code-block-wrap {
   background: rgba(255, 255, 255, 0.05) !important;
-}
-
-.lumina-code-copy-btn {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 7px;
-  background: rgba(0, 0, 0, 0.07);
-  color: #5f6368;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
-  flex-shrink: 0;
-  z-index: 2;
-}
-
-.lumina-code-copy-btn::before {
-  content: '';
-  position: absolute;
-  top: -32px;
-  left: -32px;
-  right: -8px;
-  bottom: -8px;
-  z-index: -1;
-  background: transparent;
-}
-
-.lumina-code-copy-btn:hover {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.13);
-  color: #3c4043;
-}
-
-.lumina-code-copy-btn.copied {
-  color: #188038;
-  background: rgba(24, 128, 56, 0.1);
-  opacity: 1;
 }
 
 .lumina-chat-answer pre code {
@@ -1541,87 +1151,11 @@ button {
   min-width: 100%;
 }
 
-.lumina-chat-answer pre code .hljs-keyword,
-.lumina-chat-answer pre code .hljs-operator,
-.lumina-chat-answer pre code .hljs-punctuation,
-.lumina-chat-answer pre code .hljs-selector-attr,
-.lumina-chat-answer pre code .hljs-selector-pseudo,
-.lumina-chat-answer pre code .hljs-tag .hljs-attr,
-.lumina-chat-answer pre code .hljs-attr {
-  color: #8430ce !important;
-}
-
-.lumina-chat-answer pre code .hljs-built_in,
-.lumina-chat-answer pre code .hljs-meta,
-.lumina-chat-answer pre code .hljs-meta .hljs-keyword,
-.lumina-chat-answer pre code .hljs-regexp,
-.lumina-chat-answer pre code .hljs-doctag {
-  color: #1967d2 !important;
-}
-
-.lumina-chat-answer pre code .hljs-string,
-.lumina-chat-answer pre code .hljs-symbol {
-  color: #188038 !important;
-}
-
-.lumina-chat-answer pre code .hljs-title,
-.lumina-chat-answer pre code .hljs-section,
-.lumina-chat-answer pre code .hljs-selector-class,
-.lumina-chat-answer pre code .hljs-selector-id,
-.lumina-chat-answer pre code .hljs-type,
-.lumina-chat-answer pre code .hljs-function,
-.lumina-chat-answer pre code .hljs-class .hljs-title,
-.lumina-chat-answer pre code .hljs-number,
-.lumina-chat-answer pre code .hljs-literal {
-  color: #996900 !important;
-}
-
-.lumina-chat-answer pre code .hljs-comment,
-.lumina-chat-answer pre code .hljs-quote,
-.lumina-chat-answer pre code .hljs-attribute,
-.lumina-chat-answer pre code .hljs-params,
-.lumina-chat-answer pre code .hljs-property {
-  color: #5f6368 !important;
-}
-
-.lumina-chat-answer pre code .hljs-comment,
-.lumina-chat-answer pre code .hljs-quote {
-  font-style: italic;
-}
-
-.lumina-chat-answer pre code .hljs-variable,
-.lumina-chat-answer pre code .hljs-template-variable,
-.lumina-chat-answer pre code .hljs-tag,
-.lumina-chat-answer pre code .hljs-selector-tag,
-.lumina-chat-answer pre code .hljs-name {
-  color: #d93025 !important;
-}
-
 .lumina-chat-answer ol,
 .lumina-chat-answer ul {
   margin: 0 0 8px 0;
   padding-left: 24px;
   list-style-position: outside;
-}
-
-.lumina-chat-answer li {
-  margin: 4px 0;
-}
-
-.lumina-chat-answer .katex {
-  font-weight: 500 !important;
-  text-rendering: optimizeLegibility;
-}
-
-.lumina-chat-answer .katex .text {
-  font-weight: 500 !important;
-}
-
-.lumina-chat-answer .katex-display {
-  margin: 0.8em 0 !important;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 4px 0;
 }
 
 .lumina-chat-answer .mord .mtight {
@@ -1700,37 +1234,9 @@ button {
   will-change: background-position, opacity;
 }
 
-.lumina-input-container.lumina-sending::after {
-  animation: lumina-send-flash 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes lumina-send-flash {
-  0% {
-    opacity: 0;
-    background-position: 0% 0%;
-  }
-
-  20% {
-    opacity: 1;
-    background-position: 0% 50%;
-  }
-
-  65% {
-    opacity: 1;
-    background-position: 0% 120%;
-  }
-
-  100% {
-    opacity: 0;
-    background-position: 0% 200%;
-  }
-}
-
-
 .lumina-input-container .lumina-chat-input {
   font-size: 1em !important;
 }
-
 
 .lumina-chat-input {
   width: 100% !important;
@@ -1776,6 +1282,20 @@ button {
   grid-row: 2;
   grid-column: 2;
   transform: translateZ(0);
+  flex-grow: 1;
+  border: none;
+  background: transparent;
+  min-height: 24px;
+  max-height: 200px;
+  padding: 4px 8px;
+  resize: none;
+  line-height: 1.4;
+  outline: none;
+  min-width: 0;
+  user-select: text;
+  -webkit-user-select: text;
+  field-sizing: content;
+  height: auto !important;
 }
 
 .lumina-input-bar:not(.expanded) .lumina-chat-input::placeholder {
@@ -1881,24 +1401,6 @@ button {
   grid-row: 2;
 }
 
-.lumina-input-bar .lumina-chat-input {
-  flex-grow: 1;
-  border: none;
-  background: transparent;
-  min-height: 24px;
-  max-height: 200px;
-  padding: 4px 8px;
-  resize: none;
-  line-height: 1.4;
-  outline: none;
-  min-width: 0;
-  user-select: text;
-  -webkit-user-select: text;
-
-  field-sizing: content;
-  height: auto !important;
-}
-
 .lumina-plus-toggle,
 .lumina-mic-btn,
 .lumina-regenerate-btn {
@@ -1914,7 +1416,6 @@ button {
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
-
   transform: translateZ(0);
 }
 
@@ -1925,67 +1426,10 @@ button {
   color: var(--lumina-text-primary);
 }
 
-.lumina-stop-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 50%;
-  background: #f2f2f2;
-  color: #FF3B30;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
-  flex-shrink: 0;
-  grid-area: trailing;
-  justify-self: end;
-}
-
-.lumina-stop-btn:hover {
-  background: rgba(255, 59, 48, 0.1);
-  color: #E02020;
-}
-
 .lumina-input-bar.expanded .lumina-stop-btn {
   grid-column: 4;
   grid-row: 2;
   justify-self: end;
-}
-
-.lumina-actions-dropdown-wrapper {
-  position: relative;
-  order: -1;
-}
-
-.lumina-actions-menu {
-  position: absolute !important;
-  bottom: 110% !important;
-  left: 0 !important;
-  background: #f2f2f2 !important;
-  backdrop-filter: none !important;
-  border: 1px solid var(--lumina-glass-border) !important;
-  box-shadow: none !important;
-  border-radius: 12px !important;
-  padding: 6px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  min-width: 160px !important;
-
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  pointer-events: none !important;
-  z-index: 9999 !important;
-}
-
-.lumina-actions-dropdown-wrapper.active .lumina-actions-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto !important;
 }
 
 .lumina-actions-menu>button,
@@ -2005,14 +1449,25 @@ button {
   transition: background 0.15s ease;
   font-weight: 500 !important;
   cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease;
 }
 
 .lumina-actions-menu>button:hover,
 .lumina-actions-menu .lumina-tools-toggle:hover,
 .lumina-actions-menu .lumina-model-btn:hover {
   background: rgba(0, 0, 0, 0.12) !important;
+}
+
+.lumina-mic-btn.recording {
+  background: #ef4444 !important;
+  color: white !important;
+  animation: lumina-mic-pulse 1.5s infinite !important;
+}
+
+.lumina-actions-dropdown-wrapper.active .lumina-actions-menu {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
 }
 
 .lumina-input-bar.has-active-tool .lumina-mic-btn {
@@ -2025,53 +1480,6 @@ button {
   height: auto;
   border-radius: 8px;
   justify-content: flex-start;
-}
-
-.lumina-attach-toggle svg {
-  margin-right: 0;
-}
-
-.lumina-attach-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: transparent;
-  color: #86868b;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.lumina-attach-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--lumina-text-primary);
-  transform: none;
-}
-
-.lumina-attach-btn svg {
-  stroke: currentColor;
-  stroke-width: 0;
-
-  fill: currentColor;
-}
-
-.lumina-image-preview-container {
-  padding: 8px 8px 0 8px;
-}
-
-.lumina-image-preview-container:empty {
-  display: none;
-  margin-bottom: 0;
-}
-
-.lumina-input-container.lumina-drag-over {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--lumina-accent) 40%, transparent 60%), 0 18px 36px rgba(0, 0, 0, 0.16);
-  transform: translateY(-2px);
-  transition: box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
-  background: color-mix(in srgb, var(--lumina-input-bg) 78%, rgba(255, 255, 255, 0.42) 22%) !important;
 }
 
 .lumina-input-container.lumina-drag-over .lumina-chat-input {
@@ -2090,89 +1498,10 @@ button {
   display: block !important;
 }
 
-.lumina-input-container.lumina-drag-over::before {
-  content: "Drop files here";
-  position: absolute;
-  inset: 6px;
-  border: 2px dashed color-mix(in srgb, var(--lumina-accent) 65%, #ffffff 35%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 11px;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--lumina-accent) 78%, #1f2937 22%);
-  background: color-mix(in srgb, var(--lumina-chat-bg) 55%, rgba(255, 255, 255, 0.72) 45%);
-  backdrop-filter: blur(6px);
-  pointer-events: none;
-  z-index: 4;
-}
-
 .lumina-input-container.lumina-drag-over .lumina-image-preview-container,
 .lumina-input-container.lumina-drag-over .lumina-input-bar>* {
   opacity: 0.45;
   filter: blur(0.2px);
-}
-
-[data-theme="dark"] .lumina-input-container.lumina-drag-over::before {
-  background: color-mix(in srgb, #0f172a 72%, transparent 28%);
-  color: color-mix(in srgb, var(--lumina-accent) 70%, #e2e8f0 30%);
-}
-
-.lumina-image-list {
-  display: flex;
-  gap: 6px;
-  overflow: hidden;
-  width: 100%;
-}
-
-.lumina-image-preview-item {
-  position: relative;
-  height: 60px;
-  flex: 0 1 60px;
-
-  min-width: 30px;
-
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.lumina-image-preview-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  cursor: pointer;
-}
-
-.lumina-image-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  opacity: 0;
-
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.lumina-image-preview-item:hover .lumina-image-remove {
-  opacity: 1;
-}
-
-.lumina-image-remove:hover {
-  background: rgba(0, 0, 0, 0.8);
-  transform: scale(1.1);
 }
 
 .lumina-chat-question-files {
@@ -2213,80 +1542,6 @@ button {
 .lumina-chat-question-files img:hover {
   transform: scale(1.02);
   opacity: 0.95;
-}
-
-/* File Chips in History */
-.lumina-attached-file-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--lumina-glass-bg);
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--lumina-glass-border);
-  color: var(--lumina-text-primary);
-  max-width: 200px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: none;
-  vertical-align: top;
-}
-
-.lumina-attached-file-chip:hover {
-  background: var(--lumina-sidebar-hover);
-  transform: none;
-  box-shadow: none;
-}
-
-.lumina-file-chip-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--lumina-accent);
-  flex-shrink: 0;
-}
-
-.lumina-file-chip-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  line-height: 1.2;
-}
-
-.lumina-file-chip-name {
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lumina-file-chip-type {
-  font-size: 10px;
-  opacity: 0.6;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* File Previews in Input Bar */
-.lumina-image-preview-item.is-file {
-  width: auto !important;
-  min-width: 156px !important;
-  max-width: 240px !important;
-  padding: 10px 12px !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-  column-gap: 10px;
-  background: #f0f4ff;
-  border: 1px solid #e2eafd;
-  border-radius: 16px;
-  min-height: 60px;
-  box-shadow: none;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .lumina-image-preview-item.is-file:hover {
@@ -2349,11 +1604,6 @@ button {
   opacity: 0.9;
 }
 
-.lumina-file-icon-inline svg {
-  width: 14px;
-  height: 14px;
-}
-
 .lumina-file-size-tag {
   display: inline-flex;
   align-items: center;
@@ -2394,38 +1644,9 @@ button {
   pointer-events: auto;
 }
 
-.lumina-image-preview-item.is-file .lumina-image-remove svg {
-  width: 9px;
-  height: 9px;
-}
-
 .lumina-image-preview-item.is-file .lumina-image-remove:hover {
   background: #e2eafd;
   color: #49576d;
-}
-
-.lumina-file-icon-inline.file-doc {
-  color: #2e5bbf;
-}
-
-.lumina-file-icon-inline.file-sheet {
-  color: #1f7a43;
-}
-
-.lumina-file-icon-inline.file-slides {
-  color: #c96516;
-}
-
-.lumina-file-icon-inline.file-pdf {
-  color: #c6312d;
-}
-
-.lumina-file-icon-inline.file-code {
-  color: #0f6b82;
-}
-
-.lumina-file-icon-inline.file-archive {
-  color: #7b4cb6;
 }
 
 [data-theme="dark"] .lumina-image-preview-item.is-file {
@@ -2444,6 +1665,1678 @@ button {
 
 [data-theme="dark"] .lumina-file-icon-inline {
   color: #9fb0cb;
+}
+
+.lumina-answer-version .lumina-typing-container {
+  margin-top: 10px;
+}
+
+.lumina-thinking-shimmer {
+  line-height: 1.65 !important;
+  letter-spacing: normal !important;
+  color: var(--lumina-text-primary);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.lumina-thinking-shimmer::after {
+  content: "";
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  animation: lumina-dots 1.5s steps(4, end) infinite;
+}
+
+.lumina-mic-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.lumina-model-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--lumina-text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: none;
+  min-width: 100% !important;
+  border-radius: 16px !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--lumina-text-secondary) !important;
+  padding: 4px 10px !important;
+  border: none !important;
+  max-width: 140px;
+  font-weight: 500 !important;
+}
+
+.lumina-model-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--lumina-text-primary);
+  transform: translateY(-1px);
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.12) !important;
+  color: var(--lumina-text-primary) !important;
+  transform: none !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+.lumina-current-model,
+.lumina-tools-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--lumina-text-primary);
+  font-size: 0.9em;
+}
+
+.lumina-model-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: 220px;
+  background: var(--lumina-bg);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: bottom right;
+  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  max-height: 130px !important;
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  max-height: 165px !important;
+}
+
+.lumina-model-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto !important;
+}
+
+.lumina-model-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--lumina-text-primary);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+  font-size: 0.9em;
+  padding: 5px 8px !important;
+  gap: 6px !important;
+  min-height: auto !important;
+}
+
+.lumina-model-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.lumina-model-item.active {
+  background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1));
+  color: var(--lumina-primary, #007aff);
+  font-weight: 500;
+}
+
+.lumina-model-item .model-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0px !important;
+  line-height: normal !important;
+}
+
+.lumina-model-item .model-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3 !important;
+}
+
+.lumina-model-dropdown::-webkit-scrollbar {
+  display: none !important;
+}
+
+.lumina-tools-wrapper,
+.lumina-model-selector {
+  position: relative;
+  display: block !important;
+  align-items: center;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.lumina-actions-menu,
+.lumina-tools-dropdown,
+.lumina-model-dropdown {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="dark"] .lumina-actions-menu,
+[data-theme="dark"] .lumina-tools-dropdown,
+[data-theme="dark"] .lumina-model-dropdown {
+  background: #1e1e1e !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+.lumina-actions-menu .lumina-tools-dropdown,
+.lumina-actions-menu .lumina-model-dropdown {
+  top: 0 !important;
+  bottom: auto !important;
+  left: 100% !important;
+  right: auto !important;
+  margin-left: 8px !important;
+  margin-bottom: 0 !important;
+  transform: none !important;
+}
+
+.lumina-actions-menu .lumina-tools-dropdown.active,
+.lumina-actions-menu .lumina-model-dropdown.active,
+.lumina-tools-dropdown.active {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+.lumina-actions-menu .lumina-model-dropdown {
+  max-height: 134px !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+}
+
+.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.5);
+  border-radius: 4px;
+}
+
+.lumina-tools-dropdown::before,
+.lumina-model-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -20px;
+  width: 25px;
+  background: transparent;
+  z-index: -1;
+}
+
+[data-theme="dark"] .lumina-chat-container {
+  background: #000000 !important;
+}
+
+.is-editing .lumina-answer-content {
+  outline: none !important;
+  min-height: 1.5em;
+  cursor: text;
+}
+
+.lumina-answer-edit-toolbar {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+  animation: luminaFadeIn 0.2s ease-out !important;
+}
+
+.lumina-web-chip.lumina-pinned-question-chip {
+  margin-left: auto;
+  max-width: 240px;
+  border-style: solid;
+  border-color: var(--lumina-primary-color);
+  color: var(--lumina-primary-color);
+  background: rgba(0, 86, 210, 0.05);
+  gap: 6px;
+}
+
+.lumina-web-chip.lumina-pinned-question-chip:hover {
+  background: rgba(0, 86, 210, 0.09);
+  border-color: var(--lumina-primary-color);
+}
+
+[data-theme="dark"] .lumina-web-chip.lumina-pinned-question-chip {
+  background: rgba(0, 86, 210, 0.16);
+}
+
+/* ====================
+   SPOTLIGHT INTERFACE
+   ==================== */
+
+.lumina-spotlight-wrapper {
+  font-size: inherit !important;
+  line-height: 21px !important;
+  letter-spacing: normal !important;
+  color: var(--lumina-text-primary) !important;
+  box-sizing: border-box !important;
+}
+
+.lumina-spotlight-bar {
+  width: 600px;
+  max-width: 90vw;
+  background: var(--lumina-input-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 16px;
+  border: 0.5px solid var(--lumina-glass-border);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+.lumina-spotlight-bar::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  padding: 1px !important;
+  background: linear-gradient(var(--lumina-primary-color),
+      #00D2FF,
+      var(--lumina-primary-color)) !important;
+  background-size: 100% 200% !important;
+  border-radius: 16px !important;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+  mask-composite: exclude !important;
+  -webkit-mask-composite: destination-out !important;
+  animation: lumina-border-rotate 1.5s infinite linear !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  opacity: 0.7 !important;
+  will-change: background-position;
+}
+
+.lumina-spotlight-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lumina-primary-color);
+}
+
+.lumina-spotlight-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1.69em !important;
+  color: var(--lumina-text-primary);
+  padding: 12px 8px;
+  outline: none;
+  font-weight: 500 !important;
+}
+
+.lumina-spotlight-input::placeholder {
+  color: #999;
+  font-weight: 300 !important;
+}
+
+.spotlight-tabs-bar {
+  display: flex !important;
+  align-items: center;
+  background: #f3f3f3;
+  height: 40px;
+  -webkit-app-region: drag;
+}
+
+.spotlight-tabs-list {
+  display: flex;
+  flex: 1;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: transparent;
+}
+
+.spotlight-tab.active {
+  background: #ffffff !important;
+  color: #202124 !important;
+  box-shadow: none !important;
+  z-index: 10 !important;
+  position: relative !important;
+  border-radius: 12px 12px 0 0 !important;
+  margin-bottom: -1px !important;
+  padding-bottom: 1px !important;
+}
+
+.spotlight-tab.active:hover {
+  background: #ffffff !important;
+  z-index: 10 !important;
+}
+
+.spotlight-tab.active::before {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: -12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.spotlight-tab.active::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  right: -12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  display: block !important;
+}
+
+[data-theme="dark"] .spotlight-tab.active {
+  background: #000000 !important;
+  color: #e8eaed !important;
+  border: 1px solid #2d2d2d !important;
+  border-bottom: 1px solid #000000 !important;
+}
+
+[data-theme="dark"] .spotlight-tab.active::before {
+  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px) !important;
+}
+
+[data-theme="dark"] .spotlight-tab.active::after {
+  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px) !important;
+}
+
+.spotlight-tabs-list {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-app-region: no-drag;
+  height: 100%;
+}
+
+.spotlight-tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.spotlight-tab {
+  display: flex;
+  align-items: center;
+  flex: 1 1 200px;
+  min-width: 80px;
+  max-width: 220px;
+  height: 100%;
+  background: transparent;
+  border-radius: 12px;
+  color: #5f6368;
+  cursor: pointer;
+  position: relative;
+  transition: none;
+  user-select: none;
+  letter-spacing: 0;
+  border-bottom: none;
+}
+
+.spotlight-tab:not(.active)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background-color: #dfe1e5;
+  pointer-events: none;
+}
+
+.spotlight-tab-sub {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  padding: 0 4px;
+  min-width: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s;
+}
+
+.spotlight-tab-sub:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.spotlight-tab.is-split:not(.active) .spotlight-tab-sub:hover {
+  background: transparent;
+}
+
+.spotlight-tab.active .spotlight-tab-sub:hover {
+  background: transparent;
+}
+
+.spotlight-tab-sub+.spotlight-tab-sub::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.spotlight-tab:hover {
+  background: rgba(0, 0, 0, 0.05);
+  z-index: 1;
+}
+
+.spotlight-tab-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 6px;
+}
+
+.spotlight-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: background-color 0.15s, color 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.spotlight-tab-sub:hover .spotlight-tab-close,
+.spotlight-tab.active .spotlight-tab-sub .spotlight-tab-close {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.spotlight-tab-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #202124;
+}
+
+.spotlight-new-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #5f6368;
+  margin: 0 4px;
+  -webkit-app-region: no-drag;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.spotlight-new-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #202124;
+}
+
+[data-theme="dark"] .spotlight-tabs-bar {
+  background: #1e1e1e;
+  border-bottom: 1px solid #2d2d2d;
+}
+
+[data-theme="dark"] .spotlight-tab:not(.active)::after {
+  background-color: #3e3e42;
+}
+
+[data-theme="dark"] .spotlight-tab {
+  color: #9aa0a6;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .spotlight-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-new-tab-btn {
+  color: #9aa0a6;
+}
+
+[data-theme="dark"] .spotlight-new-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-tab-close {
+  color: #9aa0a6;
+}
+
+[data-theme="dark"] .spotlight-tab-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+[data-theme="dark"] .spotlight-tab.active .spotlight-tab-sub:hover {
+  background: transparent;
+}
+
+.spotlight-tab:not(.dragging-smooth) {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s;
+}
+
+/* ====================
+   DICTIONARY & TRANSLATION
+   ==================== */
+
+.lumina-dict-tab-btn.active {
+  background: var(--lumina-primary-color, #0076d6) !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .lumina-dict-tab-btn.active {
+  background: var(--lumina-primary-color, #0076d6) !important;
+}
+
+.lumina-translate-logo {
+  width: 17px;
+  height: 17px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.lumina-dictionary-logo {
+  width: 17px;
+  height: 17px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.lumina-dict-launcher-part,
+.lumina-translate-launcher-part {
+  color: #1d1d1f !important;
+}
+
+[data-theme="dark"] .lumina-dict-launcher-part,
+[data-theme="dark"] .lumina-translate-launcher-part {
+  color: #f5f5f7 !important;
+}
+
+.lumina-dict-launcher-part {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+  height: 28px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border-radius: 8px !important;
+  border-right: none !important;
+}
+
+[data-theme="dark"] .lumina-dict-launcher-part {
+  border-right: none !important;
+}
+
+.lumina-translate-launcher-part {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+  height: 28px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border-radius: 8px !important;
+}
+
+.lumina-dict-launcher-part:hover,
+.lumina-translate-launcher-part:hover,
+.lumina-ask-part:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .lumina-dict-launcher-part:hover,
+[data-theme="dark"] .lumina-translate-launcher-part:hover,
+[data-theme="dark"] .lumina-ask-part:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-translate-launcher-part .lumina-translate-logo {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.lumina-dict-launcher {
+  display: none !important;
+}
+
+.lumina-dict-launcher span {
+  display: none !important;
+}
+
+.lumina-dict-word {
+  font-weight: 700 !important;
+  font-size: 1.6em !important;
+  color: var(--lumina-text-primary);
+  letter-spacing: -0.03em;
+  text-transform: lowercase !important;
+  display: inline-block;
+  line-height: 1.2 !important;
+  margin-top: -6px !important;
+}
+
+.lumina-dict-pos {
+  display: inline-block;
+  font-size: 0.85em !important;
+  font-weight: 620 !important;
+  color: var(--lumina-primary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(var(--lumina-primary-rgb), 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  margin-bottom: 3px;
+  vertical-align: middle;
+}
+
+.lumina-dict-meaning-text {
+  font-weight: 520 !important;
+  color: var(--lumina-text-primary);
+  line-height: 1.65;
+  display: inline;
+}
+
+.lumina-dict-meaning-text::first-letter {
+  text-transform: uppercase !important;
+}
+
+.lumina-dict-example {
+  font-style: italic;
+  color: var(--lumina-text-secondary);
+  margin-top: 6px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.4);
+  font-size: 0.92em !important;
+  font-weight: 500 !important;
+  line-height: 1.65;
+}
+
+.lumina-dict-translation {
+  color: var(--lumina-text-secondary);
+  font-weight: 500 !important;
+}
+
+.lumina-dict-separator {
+  visibility: hidden;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  margin: 10px 0;
+}
+
+.lumina-translation-card .lumina-answer-nav {
+  margin-left: 16px;
+  margin-bottom: 12px;
+  margin-top: 0px;
+}
+
+.lumina-dict-entry {
+  display: flex;
+  flex-direction: column;
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+.lumina-chat-question.proofread-question::after,
+.lumina-chat-question[data-type="proofread"]::after,
+.lumina-chat-question.translation-question::after,
+.lumina-chat-question[data-type="translation"]::after {
+  display: none !important;
+}
+
+.lumina-chat-answer .lumina-dict-scroll-area {
+  padding: 20px !important;
+  padding-bottom: 40px !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.lumina-translation-block .lumina-typing-container,
+.lumina-translation-target .lumina-typing-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lumina-chat-question.translation-question,
+.lumina-chat-question[data-type="translation"] {
+  background: rgba(52, 199, 89, calc(0.15 + var(--lumina-glass-opacity, 0.75) * 0.05));
+  border: none;
+  box-shadow: none;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-chat-question.translation-question:hover,
+.lumina-chat-question[data-type="translation"]:hover {
+  background: rgba(52, 199, 89, calc(0.2 + var(--lumina-glass-opacity, 0.75) * 0.05));
+}
+
+.lumina-translation-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  gap: 0;
+  cursor: text;
+}
+
+.lumina-translation-block {
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  contain: layout;
+}
+
+.lumina-translation-block:first-child {
+  padding-left: 0;
+}
+
+.lumina-translation-block:last-child {
+  padding-right: 0;
+}
+
+.lumina-translation-card .lumina-answer-versions {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+}
+
+.lumina-translation-card .lumina-answer-versions .lumina-translation-block {
+  padding-right: 0;
+}
+
+.lumina-translation-divider {
+  flex-shrink: 0;
+  width: 1px;
+  align-self: stretch;
+  background-color: var(--lumina-text-secondary);
+  opacity: 0.15;
+  border-radius: 2px;
+  margin: 0 auto;
+}
+
+.lumina-translation-text {
+  line-height: 1.65;
+  font-weight: 500 !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lumina-tool-item .lumina-tool-translate-logo {
+  display: block;
+  object-fit: contain;
+}
+
+.lumina-proofread-toggle,
+.lumina-googleai-toggle,
+.lumina-translate-toggle {
+  display: none;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 14px !important;
+  border-radius: 16px !important;
+  width: auto !important;
+  height: 32px !important;
+  border: none !important;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lumina-proofread-toggle[style*="display: flex"],
+.lumina-googleai-toggle[style*="display: flex"],
+.lumina-translate-toggle[style*="display: flex"] {
+  display: flex !important;
+}
+
+.lumina-translate-toggle {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #2563eb !important;
+}
+
+.lumina-translate-toggle:hover {
+  background: rgba(59, 130, 246, 0.25) !important;
+}
+
+.lumina-translation-container {
+  position: relative !important;
+  transition: box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  box-shadow: none !important;
+  contain: layout style;
+  transform: translateZ(0);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme="dark"] .lumina-translation-container {
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .lumina-dictionary-popup {
+  background: var(--lumina-bg-primary, #1c1c1e) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+.lumina-dict-scroll-area {
+  height: 100% !important;
+  overflow-y: auto !important;
+  padding: 12px !important;
+  box-sizing: border-box !important;
+  overscroll-behavior: contain !important;
+  will-change: transform !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.lumina-dict-scroll-area::after {
+  content: "" !important;
+  display: block !important;
+  height: 26px !important;
+  width: 100% !important;
+  pointer-events: none !important;
+}
+
+.lumina-dict-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lumina-dict-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+[data-theme="dark"] .lumina-dict-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lumina-dict-tabs {
+  position: absolute !important;
+  bottom: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  gap: 2px !important;
+  background: #ffffff !important;
+  padding: 4px !important;
+  border-radius: 14px !important;
+  z-index: 2147483647 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .lumina-dict-tabs {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
+}
+
+.lumina-dict-tab-btn {
+  padding: 6px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  font-size: 0.9em !important;
+  font-weight: 600 !important;
+  color: var(--lumina-text-secondary) !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s, color 0.2s !important;
+  white-space: nowrap !important;
+}
+
+.lumina-dict-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+[data-theme="dark"] .lumina-dict-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.lumina-dict-popup-meta {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  margin-bottom: 12px !important;
+}
+
+.lumina-dict-popup-item+.lumina-dict-popup-item {
+  margin-top: 24px !important;
+  border-top: 1px solid var(--lumina-glass-border, rgba(0, 0, 0, 0.08)) !important;
+  padding-top: 16px !important;
+}
+
+.lumina-dict-popup-sense {
+  margin-top: 16px !important;
+  padding-left: 14px !important;
+  border-left: 2px solid var(--lumina-primary-color, #0076d6) !important;
+  margin-bottom: 12px !important;
+  margin-top: 12px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.15);
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.lumina-dict-header-row {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+  margin-bottom: 4px !important;
+}
+
+.lumina-dict-popup-pos {
+  font-size: 1em !important;
+  text-transform: lowercase !important;
+  color: var(--lumina-primary-color, #0076d6) !important;
+  font-weight: 620 !important;
+  font-style: italic !important;
+}
+
+.lumina-dict-popup-meaning {
+  font-weight: 520 !important;
+  font-size: 1em !important;
+  line-height: 1.5 !important;
+  color: var(--lumina-text-primary) !important;
+  margin-bottom: 4px !important;
+  margin-bottom: 14px;
+}
+
+.lumina-dict-loading-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  gap: 12px !important;
+  color: var(--lumina-text-secondary) !important;
+  font-size: 0.9em !important;
+}
+
+.lumina-dict-popup-title {
+  font-size: 1.4em !important;
+  font-weight: 800 !important;
+  color: var(--lumina-text-primary) !important;
+  margin: 0 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.1 !important;
+}
+
+.lumina-dict-popup-prons {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  column-gap: 12px !important;
+  row-gap: 0 !important;
+  align-items: center !important;
+  margin-top: 2px !important;
+}
+
+.lumina-dict-pron-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.lumina-dict-pron-group.uk {
+  color: #0076d6 !important;
+}
+
+.lumina-dict-pron-group.us {
+  color: #d0021b !important;
+}
+
+.lumina-dict-lang {
+  font-size: 0.9em !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+}
+
+.lumina-dict-ipa {
+  font-family: "Noto Sans", "Lucida Sans Unicode", "Arial Unicode MS", sans-serif !important;
+  font-size: 1em !important;
+  letter-spacing: 0.02em !important;
+  font-weight: 520 !important;
+  color: var(--lumina-text-primary) !important;
+  line-height: 1.2 !important;
+  margin-top: -1px !important;
+}
+
+.lumina-dict-popup-audio {
+  background: transparent !important;
+  border: none !important;
+  padding: 4px !important;
+  cursor: pointer !important;
+  color: inherit !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  transition: all 0.2s !important;
+}
+
+.lumina-dict-popup-audio:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  transform: scale(1.1) !important;
+}
+
+[data-theme="dark"] .lumina-dict-popup-audio:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-dict-sense-indicator {
+  font-size: 0.9em !important;
+  font-weight: 700 !important;
+  color: var(--lumina-primary-color) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: 4px;
+  margin-left: -14px;
+  padding-left: 14px;
+  line-height: 1.2 !important;
+  display: block;
+  opacity: 0.9;
+}
+
+.lumina-dict-popup-meaning:last-child {
+  margin-bottom: 0;
+}
+
+/* ====================
+   ANIMATIONS
+   ==================== */
+
+@keyframes lumina-mic-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.lumina-fade-in {
+  animation: lumina-fade-in-anim 0s forwards;
+  opacity: 1;
+}
+
+@keyframes lumina-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+}
+
+@keyframes lumina-fade-in-up {
+  from {
+    opacity: 0;
+  }
+
+}
+
+@keyframes lumina-send-flash {
+  0% {
+    opacity: 0;
+    background-position: 0% 0%;
+  }
+
+}
+
+@keyframes previewContentFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+}
+
+@keyframes lumina-dots {
+  0% {
+    content: "";
+  }
+
+}
+
+@keyframes lumina-typing-bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+}
+
+@keyframes lumina-thinking-appear {
+  from {
+    opacity: 0;
+  }
+
+}
+
+@keyframes lumina-fade-in-anim {
+  to {
+    opacity: 1;
+  }
+
+}
+
+@keyframes lumina-scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+}
+
+@keyframes lumina-fade-in {
+  from {
+    opacity: 0;
+  }
+
+}
+
+@keyframes lumina-morph-spotlight {
+  0% {
+    width: 600px;
+    min-height: 60px;
+    max-height: 60px;
+    opacity: 1;
+    overflow: hidden;
+  }
+
+}
+
+@keyframes lumina-spin {
+  to {
+    transform: rotate(360deg);
+  }
+
+}
+
+@keyframes lumina-mic-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-mic-btn {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-model-btn {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-model-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-model-btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+}
+
+@media (prefers-color-scheme: dark) {
+  .lumina-tools-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+}
+
+@keyframes lumina-menu-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+
+}
+
+@keyframes luminaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ====================
+   LIBRARY STYLES (KaTeX/HLJS)
+   ==================== */
+
+.lumina-chat-answer pre code .hljs-keyword,
+.lumina-chat-answer pre code .hljs-operator,
+.lumina-chat-answer pre code .hljs-punctuation,
+.lumina-chat-answer pre code .hljs-selector-attr,
+.lumina-chat-answer pre code .hljs-selector-pseudo,
+.lumina-chat-answer pre code .hljs-tag .hljs-attr,
+.lumina-chat-answer pre code .hljs-attr {
+  color: #8430ce !important;
+}
+
+.lumina-chat-answer pre code .hljs-built_in,
+.lumina-chat-answer pre code .hljs-meta,
+.lumina-chat-answer pre code .hljs-meta .hljs-keyword,
+.lumina-chat-answer pre code .hljs-regexp,
+.lumina-chat-answer pre code .hljs-doctag {
+  color: #1967d2 !important;
+}
+
+.lumina-chat-answer pre code .hljs-string,
+.lumina-chat-answer pre code .hljs-symbol {
+  color: #188038 !important;
+}
+
+.lumina-chat-answer pre code .hljs-title,
+.lumina-chat-answer pre code .hljs-section,
+.lumina-chat-answer pre code .hljs-selector-class,
+.lumina-chat-answer pre code .hljs-selector-id,
+.lumina-chat-answer pre code .hljs-type,
+.lumina-chat-answer pre code .hljs-function,
+.lumina-chat-answer pre code .hljs-class .hljs-title,
+.lumina-chat-answer pre code .hljs-number,
+.lumina-chat-answer pre code .hljs-literal {
+  color: #996900 !important;
+}
+
+.lumina-chat-answer pre code .hljs-comment,
+.lumina-chat-answer pre code .hljs-quote,
+.lumina-chat-answer pre code .hljs-attribute,
+.lumina-chat-answer pre code .hljs-params,
+.lumina-chat-answer pre code .hljs-property {
+  color: #5f6368 !important;
+}
+
+.lumina-chat-answer pre code .hljs-comment,
+.lumina-chat-answer pre code .hljs-quote {
+  font-style: italic;
+}
+
+.lumina-chat-answer pre code .hljs-variable,
+.lumina-chat-answer pre code .hljs-template-variable,
+.lumina-chat-answer pre code .hljs-tag,
+.lumina-chat-answer pre code .hljs-selector-tag,
+.lumina-chat-answer pre code .hljs-name {
+  color: #d93025 !important;
+}
+
+.lumina-chat-answer .katex {
+  font-weight: 500 !important;
+  text-rendering: optimizeLegibility;
+}
+
+.lumina-chat-answer .katex .text {
+  font-weight: 500 !important;
+}
+
+.lumina-chat-answer .katex-display {
+  margin: 0.8em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+/* ====================
+   MISC
+   ==================== */
+
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  font-family: var(--lumina-font-family);
+  font-size: 1em;
+  font-weight: 520;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+}
+
+.lumina-hidden {
+  display: none !important;
+}
+
+.lumina-ask-part {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  height: 28px !important;
+  cursor: pointer !important;
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  color: #1d1d1f !important;
+  transition: all 0.2s ease !important;
+  letter-spacing: -0.01em !important;
+  font-family: inherit !important;
+  white-space: nowrap !important;
+  min-width: max-content !important;
+  border-radius: 8px !important;
+}
+
+[data-theme="dark"] .lumina-ask-part {
+  color: #f5f5f7 !important;
+}
+
+.lumina-comment-part {
+  display: none !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  height: 28px !important;
+  cursor: pointer !important;
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  color: #1d1d1f !important;
+  transition: all 0.2s ease !important;
+  letter-spacing: -0.01em !important;
+  font-family: inherit !important;
+  white-space: nowrap !important;
+  min-width: max-content !important;
+  border-radius: 8px !important;
+}
+
+[data-theme="dark"] .lumina-comment-part {
+  color: #f5f5f7 !important;
+}
+
+.lumina-comment-part:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .lumina-comment-part:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-comment-highlight:hover {
+  background-color: #fff176 !important;
+  /* Slightly darker on hover */
+  ;
+}
+
+.lumina-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  touch-action: none;
+  overscroll-behavior: none;
+  pointer-events: auto;
+}
+
+[data-theme="dark"] .lumina-selected-text-tag {
+  border: none !important;
+}
+
+[data-theme="dark"] .lumina-ask-tooltip {
+  background: #f5f5f7 !important;
+  color: #1d1d1f !important;
+}
+
+.chain-item {
+  cursor: grab;
+}
+
+.chain-item:active {
+  cursor: grabbing;
+}
+
+.chain-item-ghost {
+  opacity: 0.5;
+  background: var(--sidebar-hover);
+  border: 1px dashed var(--primary-color);
+}
+
+.lumina-context-collapsed {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.lumina-context-collapsed:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.lumina-context-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-context-remove:hover {
+  background: rgba(255, 59, 48, 0.8);
+  color: white;
+  transform: scale(1.1);
+}
+
+.lumina-code-block-wrap {
+  position: relative;
+  background: #e9eef6 !important;
+  border-radius: 12px !important;
+}
+
+.lumina-code-copy-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.07);
+  color: #5f6368;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.lumina-code-copy-btn::before {
+  content: '';
+  position: absolute;
+  top: -32px;
+  left: -32px;
+  right: -8px;
+  bottom: -8px;
+  z-index: -1;
+  background: transparent;
+}
+
+.lumina-code-copy-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.13);
+  color: #3c4043;
+}
+
+.lumina-stop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: #FF3B30;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+  grid-area: trailing;
+  justify-self: end;
+}
+
+.lumina-stop-btn:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: #E02020;
+}
+
+.lumina-actions-dropdown-wrapper {
+  position: relative;
+  order: -1;
+}
+
+.lumina-image-preview-container {
+  padding: 8px 8px 0 8px;
+}
+
+.lumina-image-preview-container:empty {
+  display: none;
+  margin-bottom: 0;
+}
+
+.lumina-image-list {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.lumina-image-preview-item {
+  position: relative;
+  height: 60px;
+  flex: 0 1 60px;
+  min-width: 30px;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.lumina-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lumina-image-preview-item:hover .lumina-image-remove {
+  opacity: 1;
+}
+
+.lumina-image-remove:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
 }
 
 .lumina-preview-container {
@@ -2480,14 +3373,6 @@ button {
   backdrop-filter: blur(12px) !important;
 }
 
-
-
-
-.lumina-preview-container.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 .lumina-preview-close {
   position: absolute;
   top: 12px;
@@ -2506,13 +3391,6 @@ button {
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   color: rgba(255, 255, 255, 0.9);
   z-index: 10;
-}
-
-.lumina-preview-close svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-  opacity: 1;
 }
 
 .lumina-preview-close:hover {
@@ -2539,18 +3417,6 @@ button {
   animation: previewContentFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes previewContentFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .lumina-preview-content::-webkit-scrollbar {
   display: none;
 }
@@ -2564,7 +3430,6 @@ button {
   border-radius: 16px;
   display: block;
   cursor: zoom-in;
-
   box-shadow: none;
 }
 
@@ -2573,15 +3438,6 @@ button {
   border-radius: 8px;
   max-width: none;
   max-height: none;
-}
-
-.lumina-preview-content.panning {
-  overflow: auto;
-  cursor: grab;
-}
-
-.lumina-preview-content.panning:active {
-  cursor: grabbing;
 }
 
 .lumina-image-card {
@@ -2669,47 +3525,8 @@ button {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-.lumina-typing-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
-  background: transparent;
-  border: 1px solid var(--lumina-glass-border);
-  border-radius: 16px;
-  opacity: 0;
-  animation: lumina-fade-in-up 0.3s ease forwards;
-  animation-delay: 0.1s;
-}
-
-.lumina-translation-block .lumina-typing-container,
-.lumina-translation-target .lumina-typing-container {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.lumina-answer-version .lumina-typing-container {
-  margin-top: 10px;
-}
-
 .lumina-loading-wrapper {
   padding: 0;
-}
-
-.lumina-thinking-shimmer {
-  line-height: 1.65 !important;
-  letter-spacing: normal !important;
-  color: var(--lumina-text-primary);
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.lumina-thinking-shimmer::after {
-  content: "";
-  display: inline-block;
-  width: 1.5em;
-  text-align: left;
-  animation: lumina-dots 1.5s steps(4, end) infinite;
 }
 
 .lumina-fetching-shimmer {
@@ -2727,109 +3544,10 @@ button {
   animation: lumina-dots 1.5s steps(4, end) infinite;
 }
 
-@keyframes lumina-dots {
-  0% {
-    content: "";
-  }
-
-  25% {
-    content: ".";
-  }
-
-  50% {
-    content: "..";
-  }
-
-  75% {
-    content: "...";
-  }
-}
-
-.lumina-typing-indicator {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.lumina-typing-indicator span {
-  display: block;
-  width: 4px;
-  height: 4px;
-
-  background-color: #888;
-  border-radius: 50%;
-  opacity: 0.8;
-
-  animation: lumina-typing-bounce 1.4s infinite ease-in-out both;
-}
-
-[data-theme="dark"] .lumina-typing-indicator span {
-  background-color: #AAA;
-}
-
-.lumina-typing-indicator span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.lumina-typing-indicator span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes lumina-typing-bounce {
-
-  0%,
-  80%,
-  100% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-
-  40% {
-    transform: scale(1.2);
-
-    opacity: 1;
-  }
-}
-
-@keyframes lumina-thinking-appear {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.lumina-fade-in {
-  animation: lumina-fade-in-anim 0s forwards;
-  opacity: 1;
-}
-
-@keyframes lumina-fade-in-anim {
-  to {
-    opacity: 1;
-  }
-}
-
-.lumina-proofread-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 4px;
-}
-
-.lumina-proofread-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .lumina-proofread-text {
   font-size: 1.14em !important;
   color: #202124;
   line-height: 1.65;
-  ;
   width: 100%;
   box-sizing: border-box;
   word-wrap: break-word;
@@ -2839,323 +3557,6 @@ button {
   padding: 10px;
   padding-right: 52px;
   background: transparent;
-}
-
-.lumina-proofread-actions {
-  position: absolute;
-  bottom: 9px;
-  right: 9px;
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  width: auto;
-  padding: 0;
-}
-
-.lumina-proofread-copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  color: #5f6368;
-  background-color: transparent;
-  transition: background-color 0.2s;
-}
-
-.lumina-proofread-copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.06);
-  color: #202124;
-}
-
-.lumina-proofread-copy-btn:active {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.lumina-proofread-copy-btn svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-
-
-
-.lumina-spotlight-wrapper {
-  font-size: inherit !important;
-
-  line-height: 21px !important;
-  letter-spacing: normal !important;
-  color: var(--lumina-text-primary) !important;
-  box-sizing: border-box !important;
-}
-
-.lumina-spotlight-bar {
-  width: 600px;
-  max-width: 90vw;
-  background: var(--lumina-input-bg);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-radius: 16px;
-  border: 0.5px solid var(--lumina-glass-border);
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  position: relative;
-  contain: layout style;
-  transform: translateZ(0);
-}
-
-.lumina-spotlight-bar::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: -1px !important;
-  padding: 1px !important;
-  background: linear-gradient(var(--lumina-primary-color),
-      #00D2FF,
-      var(--lumina-primary-color)) !important;
-  background-size: 100% 200% !important;
-  border-radius: 16px !important;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
-  mask-composite: exclude !important;
-  -webkit-mask-composite: destination-out !important;
-  animation: lumina-border-rotate 1.5s infinite linear !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
-  opacity: 0.7 !important;
-  will-change: background-position;
-}
-
-.lumina-spotlight-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--lumina-primary-color);
-}
-
-.lumina-spotlight-icon svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
-.lumina-spotlight-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 1.69em !important;
-  color: var(--lumina-text-primary);
-  padding: 12px 8px;
-  outline: none;
-  font-weight: 500 !important;
-}
-
-.lumina-spotlight-input::placeholder {
-  color: #999;
-  font-weight: 300 !important;
-}
-
-@keyframes lumina-scale-in {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes lumina-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes lumina-morph-spotlight {
-  0% {
-    width: 600px;
-    min-height: 60px;
-    max-height: 60px;
-    opacity: 1;
-    overflow: hidden;
-
-  }
-
-  100% {
-    width: 380px;
-    min-height: 100px;
-    max-height: 500px;
-
-    height: auto;
-    opacity: 1;
-  }
-}
-
-
-
-
-.lumina-window-controls {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: auto;
-  display: flex;
-  gap: 5px;
-  pointer-events: auto;
-  z-index: 20;
-  padding: 4px;
-  border-radius: 12px;
-  justify-content: flex-start;
-}
-
-.lumina-window-controls::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  z-index: -1;
-}
-
-.lumina-window-controls:hover .lumina-window-btn {
-  opacity: 1;
-}
-
-.lumina-window-btn {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  pointer-events: auto;
-  background: transparent;
-
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  color: transparent;
-  opacity: 0;
-
-  position: relative;
-}
-
-.lumina-window-btn:hover {
-  transform: none;
-}
-
-.lumina-btn-close {
-  background: #FF605C;
-}
-
-.lumina-window-btn svg {
-  width: 8px;
-  height: 8px;
-  fill: currentColor;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.lumina-window-controls:hover .lumina-window-btn svg {
-  opacity: 1;
-  color: rgba(0, 0, 0, 0.5);
-}
-
-
-
-
-.lumina-side-btn:hover {
-  background: #fff;
-  color: var(--lumina-primary-color);
-  transform: scale(1.1);
-  box-shadow: none;
-}
-
-.lumina-side-btn:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.9);
-  transition: transform 0.1s ease;
-}
-
-.lumina-side-btn svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-}
-
-.lumina-chat-question.proofread-question,
-.lumina-chat-question[data-type="proofread"] {
-  background: rgba(255, 204, 0, 0.15) !important;
-  border: none !important;
-  box-shadow: none;
-  color: var(--lumina-text-primary);
-
-  max-height: none !important;
-
-  transition: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.lumina-translation-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
-.lumina-chat-question.translation-question,
-.lumina-chat-question[data-type="translation"] {
-  background: rgba(52, 199, 89, calc(0.15 + var(--lumina-glass-opacity, 0.75) * 0.05));
-  border: none;
-  box-shadow: none;
-  color: var(--lumina-text-primary);
-}
-
-.lumina-chat-question.translation-question:hover,
-.lumina-chat-question[data-type="translation"]:hover {
-  background: rgba(52, 199, 89, calc(0.2 + var(--lumina-glass-opacity, 0.75) * 0.05));
-}
-
-.lumina-audio-btn-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lumina-audio-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--lumina-text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.lumina-audio-btn:hover {
-  background: rgba(var(--lumina-primary-rgb), 0.1);
-  color: var(--lumina-primary-color);
-  transform: scale(1.1);
 }
 
 .lumina-web-search {
@@ -3175,7 +3576,6 @@ button {
 .lumina-searching-indicator span {
   font-weight: 500 !important;
   letter-spacing: 0.3px;
-
   background: linear-gradient(90deg,
       var(--lumina-text-secondary) 0%,
       var(--lumina-text-secondary) 40%,
@@ -3209,11 +3609,6 @@ button {
   transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
-.lumina-search-step.active {
-  color: var(--lumina-primary-color);
-  font-weight: 500 !important;
-}
-
 .lumina-search-step.completed {
   color: #000;
   font-weight: 500 !important;
@@ -3226,21 +3621,6 @@ button {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.lumina-step-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(var(--lumina-primary-rgb), 0.2);
-  border-top-color: var(--lumina-primary-color);
-  border-radius: 50%;
-  animation: lumina-spin 0.8s linear infinite;
-}
-
-@keyframes lumina-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .lumina-step-check {
@@ -3333,10 +3713,6 @@ button {
   visibility: visible;
 }
 
-.lumina-citation-tooltip {
-  display: none;
-}
-
 .lumina-sources {
   margin-top: 16px;
   padding-top: 12px;
@@ -3407,69 +3783,6 @@ button {
   color: var(--lumina-text-secondary);
 }
 
-.lumina-source-arrow {
-  color: var(--lumina-text-tertiary);
-  flex-shrink: 0;
-}
-
-.lumina-translation-card {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  width: 100%;
-  gap: 0;
-  cursor: text;
-}
-
-.lumina-translation-block {
-  flex: 1;
-  min-width: 0;
-  padding: 0 10px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  contain: layout;
-}
-
-.lumina-translation-block:first-child {
-  padding-left: 0;
-}
-
-.lumina-translation-block:last-child {
-  padding-right: 0;
-}
-
-.lumina-translation-card .lumina-answer-versions {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding-left: 10px;
-}
-
-.lumina-translation-card .lumina-answer-versions .lumina-translation-block {
-  padding-right: 0;
-}
-
-.lumina-translation-divider {
-  flex-shrink: 0;
-  width: 1px;
-  align-self: stretch;
-  background-color: var(--lumina-text-secondary);
-  opacity: 0.15;
-  border-radius: 2px;
-  margin: 0 auto;
-}
-
-.lumina-translation-text {
-  line-height: 1.65;
-  font-weight: 500 !important;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 .lumina-trans-sentence {
   border-radius: 4px;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -3482,279 +3795,8 @@ button {
 }
 
 .lumina-trans-sentence.hovered {
-  background-color: rgba(79, 142, 247, 0.18);
-  color: inherit;
-}
-
-.lumina-translation-insights {
-  padding: 10px 0 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.lumina-insight-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 0.92em !important;
-}
-
-.lumina-insight-label {
-  font-weight: 620 !important;
-  color: var(--lumina-text-secondary);
-  text-transform: uppercase;
-  font-size: 0.85em !important;
-  letter-spacing: 0.05em;
-  min-width: 60px;
-}
-
-.lumina-insight-content {
-  color: var(--lumina-text-primary);
-  opacity: 0.9;
-}
-
-.lumina-mic-btn.recording {
-  background: #ef4444;
-  color: white;
-  animation: lumina-mic-pulse 1.5s infinite;
-}
-
-@keyframes lumina-mic-pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .lumina-mic-btn {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  .lumina-mic-btn:hover {
-    background: rgba(255, 255, 255, 0.18);
-  }
-
-  .lumina-mic-btn.recording {
-    background: #ef4444;
-  }
-}
-
-.lumina-model-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--lumina-text-secondary);
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: none;
-  min-width: 100% !important;
-}
-
-.lumina-model-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--lumina-text-primary);
-  transform: translateY(-1px);
-  box-shadow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .lumina-model-btn {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: none;
-  }
-
-  .lumina-model-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-}
-
-.lumina-current-model,
-.lumina-tools-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--lumina-text-primary);
-  font-size: 0.9em;
-}
-
-.lumina-model-btn svg {
-  opacity: 1;
-
-  flex-shrink: 0;
-}
-
-.lumina-actions-menu>button:hover,
-.lumina-actions-menu .lumina-tools-toggle:hover,
-.lumina-actions-menu .lumina-model-btn:hover {
-  background: rgba(0, 0, 0, 0.12) !important;
-}
-
-.lumina-model-dropdown {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  width: 220px;
-  background: var(--lumina-bg);
-  border-radius: 12px;
-  box-shadow: none;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px) scale(0.95);
-  transform-origin: bottom right;
-  transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.lumina-model-dropdown.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-  pointer-events: auto !important;
-}
-
-.lumina-model-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--lumina-text-primary);
-  text-align: left;
-  cursor: pointer;
-  width: 100%;
-  transition: background 0.15s;
-  font-size: 0.9em;
-}
-
-.lumina-model-item:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-  .lumina-model-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-}
-
-.lumina-model-item.active {
-  background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1));
-  color: var(--lumina-primary, #007aff);
-  font-weight: 500;
-}
-
-.lumina-model-item .model-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.lumina-model-item .model-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lumina-model-item svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  opacity: 0.8;
-}
-
-.lumina-model-btn {
-  border-radius: 16px !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-  box-shadow: none;
-  color: var(--lumina-text-secondary) !important;
-  padding: 4px 10px !important;
-  border: none !important;
-  max-width: 140px;
-}
-
-.lumina-model-btn:hover {
-  background: rgba(0, 0, 0, 0.12) !important;
-  color: var(--lumina-text-primary) !important;
-  transform: none !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  .lumina-model-btn {
-    background: rgba(255, 255, 255, 0.1) !important;
-    color: rgba(255, 255, 255, 0.8) !important;
-  }
-
-  .lumina-model-btn:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: #fff !important;
-  }
-}
-
-.lumina-model-btn {
-  font-weight: 500 !important;
-  padding: 4px 10px !important;
-}
-
-.lumina-model-dropdown {
-  max-height: 130px !important;
-
-  overflow-y: auto !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-.lumina-model-dropdown::-webkit-scrollbar {
-  display: none !important;
-}
-
-.lumina-model-dropdown {
-  max-height: 165px !important;
-
-}
-
-.lumina-model-item {
-  padding: 5px 8px !important;
-  gap: 6px !important;
-  min-height: auto !important;
-}
-
-.lumina-model-item .model-info {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0px !important;
-  line-height: normal !important;
-}
-
-.lumina-model-item .model-name {
-  line-height: 1.3 !important;
-}
-
-.lumina-tools-wrapper,
-.lumina-model-selector {
-  position: relative;
-  display: block !important;
-  align-items: center;
-  width: 100% !important;
-  margin: 0 !important;
+  background-color: rgba(79, 142, 247, 0.18) !important;
+  color: inherit !important;
 }
 
 .lumina-tools-toggle {
@@ -3770,11 +3812,21 @@ button {
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   padding: 0;
+  width: auto !important;
+  padding: 4px 10px !important;
+  border-radius: 16px !important;
+  gap: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  font-weight: 500 !important;
+  height: auto !important;
 }
 
 .lumina-tools-toggle:hover {
   background: rgba(0, 0, 0, 0.12);
   color: var(--lumina-text-primary);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
 .lumina-tools-dropdown {
@@ -3795,14 +3847,14 @@ button {
   transform: translateY(10px) scale(0.95);
   pointer-events: none;
   transform-origin: bottom left;
-  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
 }
 
-.lumina-tools-dropdown.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
+[data-theme="dark"] .lumina-tools-dropdown {
+  background: #1e1e1e !important;
+  border: 1px solid #333 !important;
+  box-shadow: none !important;
+  color: #fff !important;
 }
 
 .lumina-tools-dropdown::before {
@@ -3823,7 +3875,7 @@ button {
   padding: 6px 10px;
   border: none;
   background: transparent;
-  color: var(--lumina-text-primary);
+  color: #1a1a1b !important;
   font-weight: 520;
   cursor: pointer;
   border-radius: 8px;
@@ -3832,109 +3884,21 @@ button {
   font-size: 0.9em;
 }
 
-.lumina-tool-item svg {
-  display: none;
-}
-
-.lumina-tool-item .lumina-svg-icon,
-.lumina-tool-item .lumina-tool-translate-logo {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.lumina-tool-item .lumina-tool-translate-logo {
-  display: block;
-  object-fit: contain;
+[data-theme="dark"] .lumina-tool-item {
+  color: #e0e0e0 !important;
 }
 
 .lumina-tool-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
-.lumina-tool-item.active {
-  background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1)) !important;
-  color: var(--lumina-primary, #007aff) !important;
-}
-
-.lumina-tool-item svg {
-  color: var(--lumina-text-secondary);
-}
-
-@media (prefers-color-scheme: dark) {
-  .lumina-tools-toggle {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .lumina-tools-toggle:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-  }
-
-  .lumina-tools-dropdown {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    box-shadow: none;
-  }
-
-  .lumina-tool-item {
-    color: #e0e0e0;
-  }
-
-  .lumina-tool-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-}
-
-.lumina-tools-toggle {
-  width: auto !important;
-  padding: 4px 10px !important;
-  border-radius: 16px !important;
-  gap: 4px !important;
+[data-theme="dark"] .lumina-tool-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .lumina-tools-toggle span {
   font-weight: 500;
   display: block;
-}
-
-.lumina-tools-toggle.compact {
-  width: 24px !important;
-  height: 24px !important;
-  padding: 0 !important;
-  border-radius: 6px !important;
-  aspect-ratio: 1/1;
-}
-
-.lumina-tools-toggle.compact span {
-  display: none !important;
-}
-
-.lumina-tools-toggle {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 4px 10px !important;
-  border-radius: 16px !important;
-  font-weight: 500 !important;
-  width: auto !important;
-  height: auto !important;
-}
-
-.lumina-tools-label {
-  display: inline;
-}
-
-.lumina-tools-toggle.collapsed .lumina-tools-label {
-  display: none !important;
-}
-
-.lumina-tools-toggle.collapsed {
-  padding: 6px !important;
-  width: 28px !important;
-  height: 28px !important;
-  justify-content: center !important;
 }
 
 .lumina-plus-toggle.lumina-tools-toggle,
@@ -3954,35 +3918,6 @@ button {
   color: var(--lumina-text-primary) !important;
 }
 
-.lumina-proofread-toggle,
-.lumina-googleai-toggle,
-.lumina-translate-toggle {
-  display: none;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 4px 14px !important;
-  border-radius: 16px !important;
-  width: auto !important;
-  height: 32px !important;
-  border: none !important;
-  cursor: pointer;
-  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.lumina-proofread-toggle[style*="display: flex"],
-.lumina-googleai-toggle[style*="display: flex"],
-.lumina-translate-toggle[style*="display: flex"] {
-  display: flex !important;
-}
-
-.lumina-proofread-toggle svg,
-.lumina-googleai-toggle svg,
-.lumina-translate-toggle svg {
-  display: none !important;
-}
-
 .lumina-proofread-toggle {
   background: rgba(255, 204, 0, 0.2) !important;
   color: #a37a00 !important;
@@ -3992,76 +3927,6 @@ button {
   background: rgba(255, 204, 0, 0.3) !important;
 }
 
-.lumina-translate-toggle {
-  background: rgba(59, 130, 246, 0.15) !important;
-  color: #2563eb !important;
-}
-
-.lumina-translate-toggle:hover {
-  background: rgba(59, 130, 246, 0.25) !important;
-}
-
-.lumina-actions-menu,
-.lumina-tools-dropdown,
-.lumina-model-dropdown {
-  background: #ffffff !important;
-  backdrop-filter: none !important;
-}
-
-[data-theme="dark"] .lumina-actions-menu,
-[data-theme="dark"] .lumina-tools-dropdown,
-[data-theme="dark"] .lumina-model-dropdown {
-  background: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-}
-
-.lumina-actions-menu .lumina-tools-dropdown,
-.lumina-actions-menu .lumina-model-dropdown {
-  top: 0 !important;
-  bottom: auto !important;
-  left: 100% !important;
-  right: auto !important;
-  margin-left: 8px !important;
-  margin-bottom: 0 !important;
-  transform: none !important;
-}
-
-.lumina-actions-menu .lumina-tools-dropdown.active,
-.lumina-actions-menu .lumina-model-dropdown.active {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-.lumina-actions-menu .lumina-model-dropdown {
-  max-height: 134px !important;
-  overflow-y: auto !important;
-  scrollbar-width: thin;
-}
-
-.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar {
-  width: 4px;
-}
-
-.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.lumina-actions-menu .lumina-model-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(150, 150, 150, 0.5);
-  border-radius: 4px;
-}
-
-.lumina-ask-btn-text {
-  white-space: nowrap;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-
-
 .lumina-tools-wrapper:hover .lumina-tools-dropdown {
   display: flex !important;
   opacity: 1 !important;
@@ -4070,423 +3935,10 @@ button {
   pointer-events: auto !important;
 }
 
-.lumina-tools-dropdown::before,
-.lumina-model-dropdown::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -20px;
-  width: 25px;
-  background: transparent;
-  z-index: -1;
-}
-
-.lumina-regenerate-btn.loading {
-  background: rgba(255, 59, 48, 0.1);
-  color: #FF3B30;
-}
-
-.lumina-regenerate-btn.loading:hover {
-  background: rgba(255, 59, 48, 0.1);
-  color: #D70015;
-}
-
 [data-theme="dark"] .lumina-regenerate-btn {
   background: #2C2C2E;
   border-color: rgba(255, 255, 255, 0.15);
 }
-
-.spotlight-tabs-bar {
-  display: flex !important;
-  align-items: center;
-  background: #f3f3f3;
-  height: 40px;
-  -webkit-app-region: drag;
-}
-
-.spotlight-tabs-list {
-  display: flex;
-  flex: 1;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-app-region: no-drag;
-  height: 100%;
-}
-
-.spotlight-tabs-list::-webkit-scrollbar {
-  display: none;
-}
-
-.spotlight-tab {
-  display: flex;
-  align-items: center;
-  flex: 1 1 200px;
-  min-width: 80px;
-  max-width: 220px;
-  height: 100%;
-  background: transparent;
-  border-radius: 12px;
-  color: #5f6368;
-  cursor: pointer;
-  position: relative;
-  transition: none;
-  user-select: none;
-  letter-spacing: 0;
-  border-bottom: none;
-}
-
-.spotlight-tab-group-indicator {
-  position: absolute;
-  top: 0;
-  left: 12px;
-  right: 12px;
-  height: 2px;
-  border-radius: 0 0 6px 6px;
-  z-index: 5;
-  pointer-events: none;
-}
-
-.spotlight-tab:not(.active)::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background-color: #dfe1e5;
-  pointer-events: none;
-}
-
-.spotlight-tab-sub {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  height: 100%;
-  padding: 0 4px;
-  min-width: 0;
-  border-radius: 12px;
-  cursor: pointer;
-  position: relative;
-  transition: background-color 0.15s;
-}
-
-.spotlight-tab-sub:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.spotlight-tab.is-split:not(.active) .spotlight-tab-sub:hover {
-  background: transparent;
-}
-
-.spotlight-tab.active .spotlight-tab-sub:hover {
-  background: transparent;
-}
-
-.spotlight-tab-sub+.spotlight-tab-sub::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background-color: rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-}
-
-.spotlight-tab:hover {
-  background: rgba(0, 0, 0, 0.05);
-  z-index: 1;
-}
-
-.spotlight-tab.active {
-  background: #ffffff;
-  color: #202124;
-  box-shadow: none;
-  z-index: 10;
-  position: relative;
-  border-radius: 12px 12px 0 0;
-  margin-bottom: -1px;
-  padding-bottom: 1px;
-}
-
-.spotlight-tab.active:hover {
-  background: #ffffff;
-  z-index: 10;
-}
-
-.spotlight-tab.active::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: -12px;
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.spotlight-tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  right: -12px;
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px);
-  z-index: 1;
-  pointer-events: none;
-  display: block;
-}
-
-.spotlight-tab-title {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0 6px;
-}
-
-.spotlight-tab-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: #5f6368;
-  cursor: pointer;
-  padding: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: background-color 0.15s, color 0.15s, opacity 0.15s;
-  flex-shrink: 0;
-  margin-right: 2px;
-}
-
-.spotlight-tab-sub:hover .spotlight-tab-close,
-.spotlight-tab.active .spotlight-tab-sub .spotlight-tab-close {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.spotlight-tab-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #202124;
-}
-
-.spotlight-tab-close svg {
-  width: 16px;
-  height: 16px;
-  display: block;
-  stroke-width: 2;
-}
-
-.spotlight-new-tab-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: #5f6368;
-  margin: 0 4px;
-  -webkit-app-region: no-drag;
-  transition: background 0.15s;
-  flex-shrink: 0;
-  align-self: center;
-}
-
-.spotlight-new-tab-btn svg {
-  width: 26px;
-  height: 26px;
-  stroke-width: 1.2;
-}
-
-.spotlight-new-tab-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #202124;
-}
-
-[data-theme="dark"] .spotlight-tabs-bar {
-  background: #1e1e1e;
-  border-bottom: 1px solid #2d2d2d;
-}
-
-[data-theme="dark"] .spotlight-menu-btn {
-  color: #9aa0a6;
-}
-
-[data-theme="dark"] .spotlight-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e8eaed;
-}
-
-[data-theme="dark"] .spotlight-tab:not(.active)::after {
-  background-color: #3e3e42;
-}
-
-[data-theme="dark"] .spotlight-tab {
-  color: #9aa0a6;
-  border-color: transparent;
-}
-
-[data-theme="dark"] .spotlight-tab:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: #e8eaed;
-}
-
-[data-theme="dark"] .spotlight-tab.active {
-  background: #000000;
-  color: #e8eaed;
-  border: 1px solid #2d2d2d;
-  border-bottom: 1px solid #000000;
-
-}
-
-[data-theme="dark"] .spotlight-tab.active:hover {
-  background: #000000;
-  color: #e8eaed;
-}
-
-[data-theme="dark"] .spotlight-tab.active::before {
-  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px);
-}
-
-[data-theme="dark"] .spotlight-tab.active::after {
-  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px);
-}
-
-[data-theme="dark"] .lumina-chat-container {
-  background: #000000 !important;
-}
-
-[data-theme="dark"] .spotlight-new-tab-btn {
-  color: #9aa0a6;
-}
-
-[data-theme="dark"] .spotlight-new-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e8eaed;
-}
-
-[data-theme="dark"] .spotlight-tab-close {
-  color: #9aa0a6;
-}
-
-[data-theme="dark"] .spotlight-tab-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-[data-theme="dark"] .spotlight-tab.active .spotlight-tab-sub:hover {
-  background: transparent;
-}
-
-.spotlight-tab.dragging-smooth {
-  opacity: 1;
-  background: #ffffff !important;
-  cursor: grabbing !important;
-  transition: transform 0ms !important;
-
-  border-radius: 12px 12px 0 0 !important;
-  box-shadow: none !important;
-  pointer-events: none;
-
-}
-
-.spotlight-tab.active.dragging-smooth::before,
-.spotlight-tab.active.dragging-smooth::after {
-  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px) !important;
-}
-
-.spotlight-tab.active.dragging-smooth::after {
-  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px) !important;
-}
-
-[data-theme="dark"] .spotlight-tab.dragging-smooth {
-  background: #000000 !important;
-  box-shadow: none !important;
-}
-
-[data-theme="dark"] .spotlight-tab.active.dragging-smooth::before,
-[data-theme="dark"] .spotlight-tab.active.dragging-smooth::after {
-  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px) !important;
-}
-
-[data-theme="dark"] .spotlight-tab.active.dragging-smooth::after {
-  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px) !important;
-}
-
-.spotlight-tab:not(.dragging-smooth) {
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s;
-}
-
-.spotlight-tab.drag-over {
-  background: rgba(0, 86, 210, 0.1) !important;
-  outline: 1px dashed #0056D2;
-  outline-offset: -2px;
-}
-
-[data-theme="dark"] .spotlight-tab.drag-over {
-  background: rgba(10, 132, 255, 0.15) !important;
-  outline: 1px dashed #0A84FF;
-}
-
-.spotlight-tab.group-merge-preview {
-  background: #ffffff !important;
-  outline: 2px solid rgba(0, 86, 210, 0.55);
-  outline-offset: -2px;
-  border-radius: 12px 12px 0 0 !important;
-  z-index: 15;
-}
-
-.spotlight-tab.group-merge-preview::before,
-.spotlight-tab.group-merge-preview::after {
-  display: none !important;
-}
-
-[data-theme="dark"] .spotlight-tab.group-merge-preview {
-  background: #000000 !important;
-  outline: 2px solid rgba(10, 132, 255, 0.6);
-  outline-offset: -2px;
-}
-
-.lumina-translation-container {
-  position: relative !important;
-  transition: box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.07) !important;
-  box-shadow: none !important;
-  contain: layout style;
-  transform: translateZ(0);
-}
-
-.lumina-translation-container {
-  border-radius: 12px;
-  overflow: hidden;
-  padding: 7px 10px;
-  display: flex;
-  flex-direction: column;
-}
-
-[data-theme="dark"] .lumina-translation-container {
-  background: #000000;
-  border-color: rgba(255, 255, 255, 0.07) !important;
-  box-shadow: none !important;
-}
-
-
-
-
-
-
 
 .lumina-context-menu {
   position: fixed;
@@ -4511,18 +3963,6 @@ button {
   background: rgba(28, 28, 30, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: none !important;
-}
-
-@keyframes lumina-menu-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .lumina-context-menu-item {
@@ -4554,432 +3994,10 @@ button {
   box-shadow: none !important;
 }
 
-.lumina-context-menu-item svg {
-  width: 16px;
-  height: 16px;
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-
-.lumina-context-menu-item:hover svg {
-  opacity: 1;
-  color: inherit;
-}
-
-/* Dictionary Popup Styles */
-.lumina-dictionary-popup {
-  position: fixed !important;
-  z-index: 2147483647 !important;
-  background: var(--lumina-bg-primary, #ffffff) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  border: 1px solid var(--lumina-glass-border, rgba(0, 0, 0, 0.1)) !important;
-  pointer-events: auto !important;
-  /* Hardware Acceleration */
-  transform: translateZ(0) !important;
-  will-change: transform, opacity !important;
-}
-
-[data-theme="dark"] .lumina-dictionary-popup {
-  background: var(--lumina-bg-primary, #1c1c1e) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
-}
-
-.lumina-dict-body {
-  flex: 1 !important;
-  overflow: hidden !important;
-  position: relative !important;
-  background: transparent !important;
-  border-top-left-radius: 14px !important;
-  border-top-right-radius: 14px !important;
-}
-
-.lumina-dict-scroll-area {
-  height: 100% !important;
-  overflow-y: auto !important;
-  padding: 12px !important;
-  box-sizing: border-box !important;
-  overscroll-behavior: contain !important;
-  will-change: transform !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-.lumina-dict-scroll-area::after {
-  content: "" !important;
-  display: block !important;
-  height: 26px !important;
-  width: 100% !important;
-  pointer-events: none !important;
-}
-
-.lumina-dict-scroll-area::-webkit-scrollbar {
-  width: 6px;
-}
-
-.lumina-dict-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-
-[data-theme="dark"] .lumina-dict-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.lumina-dict-footer {
-  display: none !important;
-}
-
-.lumina-dict-tabs {
-  position: absolute !important;
-  bottom: 10px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  display: flex !important;
-  gap: 2px !important;
-  background: #ffffff !important;
-  padding: 4px !important;
-  border-radius: 14px !important;
-  z-index: 2147483647 !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: none !important;
-}
-
-[data-theme="dark"] .lumina-dict-tabs {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: none !important;
-}
-
-.lumina-dict-tab-btn {
-  padding: 6px 12px !important;
-  border: none !important;
-  background: transparent !important;
-  border-radius: 8px !important;
-  font-size: 0.9em !important;
-  font-weight: 600 !important;
-  color: var(--lumina-text-secondary) !important;
-  cursor: pointer !important;
-  transition: background-color 0.2s, color 0.2s !important;
-  white-space: nowrap !important;
-}
-
-.lumina-dict-tab-btn:hover {
-  background: rgba(0, 0, 0, 0.03) !important;
-  color: var(--lumina-text-primary) !important;
-}
-
-[data-theme="dark"] .lumina-dict-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
-}
-
-.lumina-dict-tab-btn.active {
-  background: var(--lumina-primary-color, #0076d6) !important;
-  color: #fff !important;
-}
-
-[data-theme="dark"] .lumina-dict-tab-btn.active {
-  background: var(--lumina-primary-color, #0076d6) !important;
-}
-
-
-
-.lumina-dict-resizer-right {
-  position: absolute !important;
-  right: -3px !important;
-  top: 0 !important;
-  width: 8px !important;
-  height: 100% !important;
-  cursor: ew-resize !important;
-  z-index: 2147483647 !important;
-}
-
-.lumina-dict-resizer-bottom {
-  position: absolute !important;
-  bottom: -3px !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 8px !important;
-  cursor: ns-resize !important;
-  z-index: 2147483647 !important;
-}
-
-.lumina-dict-resizer-corner {
-  position: absolute !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 16px !important;
-  height: 16px !important;
-  cursor: nwse-resize !important;
-  z-index: 2147483647 !important;
-}
-
-.lumina-dictionary-popup.is-resizing {
-  user-select: none !important;
-}
-
-/* Data rendering in popup */
-.lumina-dict-popup-item {
-  margin-bottom: 20px !important;
-}
-
-.lumina-dict-popup-meta {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  margin-bottom: 12px !important;
-}
-
-.lumina-dict-popup-item+.lumina-dict-popup-item {
-  margin-top: 24px !important;
-  border-top: 1px solid var(--lumina-glass-border, rgba(0, 0, 0, 0.08)) !important;
-  padding-top: 16px !important;
-}
-
-.lumina-dict-popup-sense {
-  margin-top: 16px !important;
-  padding-left: 14px !important;
-  border-left: 2px solid var(--lumina-primary-color, #0076d6) !important;
-  margin-bottom: 12px !important;
-}
-
-
-.lumina-dict-header-row {
-  display: flex !important;
-  align-items: baseline !important;
-  gap: 6px !important;
-  margin-bottom: 4px !important;
-}
-
-.lumina-dict-popup-pos {
-  font-size: 1em !important;
-  text-transform: lowercase !important;
-  color: var(--lumina-primary-color, #0076d6) !important;
-  font-weight: 620 !important;
-  font-style: italic !important;
-}
-
-.lumina-dict-popup-indicator {
-  font-weight: 700 !important;
-  font-size: 0.9em !important;
-  text-transform: uppercase !important;
-  color: var(--lumina-primary-color, #0076d6) !important;
-  margin-bottom: 6px !important;
-  letter-spacing: 0.03em !important;
-}
-
-.lumina-dict-popup-meaning {
-  font-weight: 520 !important;
-  font-size: 1em !important;
-  line-height: 1.5 !important;
-  color: var(--lumina-text-primary) !important;
-  margin-bottom: 4px !important;
-}
-
-.lumina-dict-def-num {
-  font-weight: 620 !important;
-  color: var(--lumina-primary-color) !important;
-  margin-right: 6px !important;
-}
-
-.lumina-dict-popup-translation {
-  color: var(--lumina-primary-color) !important;
-  font-size: 0.98em !important;
-  margin-top: 2px !important;
-}
-
-.lumina-dict-loading-state {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  height: 100% !important;
-  gap: 12px !important;
-  color: var(--lumina-text-secondary) !important;
-  font-size: 0.9em !important;
-}
-
 .lumina-loading-spinner.smaller {
   width: 24px !important;
   height: 24px !important;
   border-width: 2px !important;
-}
-
-.lumina-dict-popup-title {
-  font-size: 1.4em !important;
-  font-weight: 800 !important;
-  color: var(--lumina-text-primary) !important;
-  margin: 0 !important;
-  letter-spacing: -0.02em !important;
-  line-height: 1.1 !important;
-}
-
-.lumina-dict-popup-prons {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  column-gap: 12px !important;
-  row-gap: 0 !important;
-  align-items: center !important;
-  margin-top: 2px !important;
-}
-
-.lumina-dict-pron-group {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-
-.lumina-dict-pron-group.uk {
-  color: #0076d6 !important;
-}
-
-.lumina-dict-pron-group.us {
-  color: #d0021b !important;
-}
-
-.lumina-dict-lang {
-  font-size: 0.9em !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
-  text-transform: uppercase !important;
-}
-
-.lumina-dict-ipa {
-  font-family: "Noto Sans", "Lucida Sans Unicode", "Arial Unicode MS", sans-serif !important;
-  font-size: 1em !important;
-  letter-spacing: 0.02em !important;
-  font-weight: 520 !important;
-  color: var(--lumina-text-primary) !important;
-  line-height: 1.2 !important;
-  margin-top: -1px !important;
-}
-
-.lumina-dict-popup-audio {
-  background: transparent !important;
-  border: none !important;
-  padding: 4px !important;
-  cursor: pointer !important;
-  color: inherit !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 50% !important;
-  transition: all 0.2s !important;
-}
-
-.lumina-dict-popup-audio:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-  transform: scale(1.1) !important;
-}
-
-[data-theme="dark"] .lumina-dict-popup-audio:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.lumina-dict-def-num {
-  font-weight: 620 !important;
-  color: var(--lumina-primary-color) !important;
-  margin-right: 8px !important;
-  display: inline-block !important;
-}
-
-.lumina-dict-popup-sense {
-  margin-top: 12px;
-  padding-left: 14px;
-  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.15);
-  position: relative;
-  margin-bottom: 8px;
-}
-
-.lumina-dict-sense-indicator {
-  font-size: 0.9em !important;
-  font-weight: 700 !important;
-  color: var(--lumina-primary-color) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  margin-bottom: 4px;
-
-  margin-left: -14px;
-  padding-left: 14px;
-  line-height: 1.2 !important;
-  display: block;
-  opacity: 0.9;
-}
-
-.lumina-dict-popup-meaning {
-  margin-bottom: 14px;
-}
-
-.lumina-dict-popup-meaning:last-child {
-  margin-bottom: 0;
-}
-
-.lumina-dict-meaning-translation {
-  color: var(--lumina-primary-color) !important;
-  font-size: 0.98em !important;
-  margin-top: 4px !important;
-  font-weight: 500 !important;
-  opacity: 0.95;
-}
-
-.lumina-dict-meaning-examples {
-  margin-top: 8px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-}
-
-.lumina-dict-meaning-example {
-  font-style: italic !important;
-  color: var(--lumina-text-secondary) !important;
-  font-size: 0.95em !important;
-  line-height: 1.4 !important;
-  padding-left: 12px !important;
-  position: relative !important;
-}
-
-.lumina-dict-meaning-example::before {
-  content: "•" !important;
-  position: absolute !important;
-  left: 0 !important;
-  color: var(--lumina-glass-border) !important;
-  font-style: normal !important;
-}
-
-[data-theme="dark"] .lumina-dict-meaning-translation {
-  color: #60a5fa !important;
-}
-
-/* Answer Editing Mode */
-.lumina-chat-answer.lumina-answer-editing {
-  border: 1.5px solid var(--lumina-brand-color, #007AFF) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  transition: border-color 0.2s ease !important;
-  background: var(--lumina-chat-bg, #ffffff) !important;
-  padding: 10px !important;
-  border-radius: 12px !important;
-  z-index: 10;
-  position: relative;
-  box-sizing: border-box !important;
-}
-
-.lumina-answer-editing .lumina-answer-content {
-  outline: none !important;
-  min-height: 1.5em;
-  cursor: text;
-}
-
-.lumina-answer-edit-toolbar {
-  display: flex !important;
-  justify-content: flex-end !important;
-  gap: 8px !important;
-  margin-top: 8px !important;
-  pointer-events: auto !important;
-  user-select: none !important;
-  animation: luminaFadeIn 0.2s ease-out !important;
 }
 
 .lumina-edit-btn {
@@ -5010,81 +4028,6 @@ button {
   background: #0062cc !important;
 }
 
-@keyframes luminaFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Proofread Comment Highlights & Tags */
-.lumina-proofread-comment-highlight {
-  background-color: rgba(255, 193, 7, 0.2) !important;
-  border-bottom: 2px solid rgba(255, 193, 7, 0.4) !important;
-  cursor: help !important;
-  transition: background-color 0.2s !important;
-}
-
-.lumina-proofread-comment-highlight:hover {
-  background-color: rgba(255, 193, 7, 0.3) !important;
-}
-
-.lumina-input-tags-container {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 6px !important;
-  margin-bottom: 8px !important;
-  padding: 0 12px !important;
-}
-
-.lumina-input-tag {
-  display: flex !important;
-  align-items: center !important;
-  background: #f2f2f7 !important;
-  border: 1px solid #e5e5ea !important;
-  border-radius: 6px !important;
-  padding: 4px 8px !important;
-  font-size: 11px !important;
-  color: #007AFF !important;
-  font-weight: 500 !important;
-  max-width: 200px !important;
-}
-
-.lumina-input-tag span {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  margin-right: 6px !important;
-}
-
-.lumina-input-tag-close {
-  cursor: pointer !important;
-  opacity: 0.6 !important;
-  transition: opacity 0.2s !important;
-  display: flex !important;
-  align-items: center !important;
-}
-
-.lumina-input-tag-close:hover {
-  opacity: 1 !important;
-}
-
-/* Web Content Chips */
-.lumina-web-chips-container {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  padding: 0 0px 8px 0px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
 .lumina-web-chip {
   display: inline-flex;
   align-items: center;
@@ -5099,30 +4042,6 @@ button {
   border: 1.5px dashed var(--lumina-border-color);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
-}
-
-.lumina-web-chip.lumina-pinned-question-chip {
-  margin-left: auto;
-  max-width: 240px;
-  border-style: solid;
-  border-color: var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(0, 86, 210, 0.05);
-  gap: 6px;
-}
-
-.lumina-web-chip.lumina-pinned-question-chip:hover {
-  background: rgba(0, 86, 210, 0.09);
-  border-color: var(--lumina-primary-color);
-}
-
-[data-theme="dark"] .lumina-web-chip.lumina-pinned-question-chip {
-  background: rgba(0, 86, 210, 0.16);
-}
-
-.lumina-web-chip.lumina-pinned-question-chip .lumina-svg-icon {
-  width: 12px;
-  height: 12px;
 }
 
 .lumina-web-chip-add {
@@ -5155,10 +4074,6 @@ button {
   background: rgba(0, 86, 210, 0.05);
 }
 
-.lumina-web-chip-summary {
-  max-width: 170px;
-}
-
 .lumina-web-tab-picker {
   position: fixed;
   z-index: 2147483647;
@@ -5169,9 +4084,35 @@ button {
   overflow: hidden;
 }
 
-
 .lumina-web-tab-picker-header {
   display: none !important;
+}
+
+.lumina-chat-question.proofread-question,
+.lumina-chat-question[data-type="proofread"] {
+  background: #fff9e6 !important;
+  border: none !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+.lumina-chat-question.proofread-question:hover,
+.lumina-chat-question[data-type="proofread"]:hover {
+  background: #fff4d1 !important;
+}
+
+.lumina-chat-question.proofread-question.is-editing {
+  border: 1.5px solid #ffc107 !important;
+  background: var(--lumina-chat-bg, #ffffff) !important;
+}
+
+[data-theme="dark"] .lumina-chat-question.proofread-question,
+[data-theme="dark"] .lumina-chat-question[data-type="proofread"] {
+  background: #2a2618 !important;
+}
+
+[data-theme="dark"] .lumina-chat-question.proofread-question:hover,
+[data-theme="dark"] .lumina-chat-question[data-type="proofread"]:hover {
+  background: #363120 !important;
 }
 
 .lumina-web-tab-picker-list {
@@ -5306,18 +4247,6 @@ button {
   border-color: var(--lumina-text-secondary);
 }
 
-.lumina-web-chip.is-active {
-  border: 1.5px solid var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(0, 86, 210, 0.05);
-  /* Match primary but subtle */
-  opacity: 1;
-}
-
 [data-theme="dark"] .lumina-web-chip:hover {
   background: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .lumina-web-chip.is-active {
-  background: rgba(0, 86, 210, 0.15);
 }

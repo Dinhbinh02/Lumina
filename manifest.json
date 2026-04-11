@@ -111,6 +111,7 @@
         "lib/utils/cambridge_parser.js",
         "lib/utils/oxford_parser.js",
         "lib/utils/dictionary_popup.js",
+        "lib/utils/common.js",
         "lib/utils/selection_utils.js",
         "scripts/content.js"
       ],

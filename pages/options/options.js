@@ -1557,9 +1557,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const audioSpeed = parseFloat(audioSpeedInput ? audioSpeedInput.value : 1.0);
 
-    // First get existing globalDefaults to update them
-    chrome.storage.local.get(['globalDefaults'], (existing) => {
+    // First get existing settings to update them
+    chrome.storage.local.get(['globalDefaults', 'fontSizeByDomain'], (existing) => {
       let globalDefaults = existing.globalDefaults || {};
+      let fontSizeByDomain = existing.fontSizeByDomain || {};
       
       // Update global defaults
       globalDefaults.fontSize = parseFloat(fontSize);
@@ -1630,8 +1631,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Notify all tabs about changes
         chrome.tabs.query({}, (tabs) => {
           tabs.forEach(tab => {
-            // Only send to tabs with http/https URLs where content script runs
-            if (!tab.id || !tab.url || (!tab.url.startsWith('http://') && !tab.url.startsWith('https://'))) {
+            // Only send to tabs with http/https URLs or Lumina extension pages
+            const isLuminaPage = tab.url && tab.url.startsWith(chrome.runtime.getURL(''));
+            if (!tab.id || !tab.url || (!tab.url.startsWith('http://') && !tab.url.startsWith('https://') && !isLuminaPage)) {
               return;
             }
 
@@ -3137,7 +3139,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // ... Broadcast logic ...
       chrome.tabs.query({}, (tabs) => {
         tabs.forEach((tab) => {
-          if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https')) && tab.id) {
+          const isLuminaPage = tab.url && tab.url.startsWith(chrome.runtime.getURL(''));
+          if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https') || isLuminaPage) && tab.id) {
             chrome.tabs.sendMessage(tab.id, {
               action: 'settings_updated',
               settings: {

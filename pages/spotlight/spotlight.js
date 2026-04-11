@@ -131,20 +131,14 @@ const GROUP_COLORS = [
     '#ff33b5'  // Pink
 ];
 
-// Helper: Convert file to data URL
-function fileToDataURL(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-    });
-}
-
 // Helper: Apply font size
 function applyFontSize(size) {
-    if (!size) return;
-    document.body.style.setProperty('font-size', size + 'px', 'important');
-    document.documentElement.style.setProperty('--lumina-fontSize', size + 'px', 'important');
+    if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.applyFontSize === 'function') {
+        LuminaChatUI.applyFontSize(null, size);
+    } else {
+        document.body.style.setProperty('font-size', size + 'px', 'important');
+        document.documentElement.style.setProperty('--lumina-fontSize', size + 'px', 'important');
+    }
 }
 
 const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
@@ -2984,7 +2978,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
         if (!extra.isRecheck) {
             t.chatUIInstance.appendQuestion(text, images, {
-                editable: true,
+                editable: false,
                 skipMargin: skipMargin,
                 entryType: extra.mode || 'qa',
                 displayText: displayQuery
