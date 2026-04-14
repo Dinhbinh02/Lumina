@@ -2128,8 +2128,7 @@
   }
 
   .fact-text,
-  .chain-info,
-  .mapping-info {
+  .chain-info {
     flex: 1;
     font-size: 0.8125em;
     color: var(--text-primary);
@@ -2151,6 +2150,10 @@
   }
 
   .mapping-info {
+    flex: 1;
+    font-size: 0.8125em;
+    color: var(--text-primary);
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2241,12 +2244,12 @@
     padding: 0 10px;
     height: 36px;
     transition: all 0.2s;
+    overflow: visible;
   }
 
   .mapping-prompt-wrapper:focus-within {
     border-color: var(--primary-color);
     background: var(--card-bg);
-    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
   }
 
   .mapping-prompt {
@@ -2254,26 +2257,76 @@
     border: none !important;
     background: transparent !important;
     padding: 0 !important;
-    height: 100% !important;
-    outline: none !important;
     font-size: 13px;
     color: var(--text-primary);
     font-family: inherit;
+    outline: none !important;
+    white-space: nowrap;
+    overflow: hidden;
+    line-height: 36px;
   }
 
-  .lumina-selected-text-tag {
+  .mapping-prompt[contenteditable="true"]:empty:before {
+    content: attr(data-placeholder);
+    color: var(--text-tertiary);
+    cursor: text;
+  }
+
+  .lumina-mention-tag {
+    color: var(--sk-apple-blue, #0071e3) !important;
+    font-weight: 620;
     display: inline-block;
-    background: transparent;
-    color: var(--primary-color);
-    border: none;
     padding: 0;
-    margin: 0 6px 0 0;
+    user-select: all;
+  }
+
+
+  .lumina-selected-text-tag {
+    display: none;
+  }
+
+  /* Mention Popup Styles */
+  .lumina-mention-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 180px;
+    background: #ffffff !important;
+    border: 1px solid #d1d1d6 !important;
+    border-radius: 10px;
+    box-shadow: none !important;
+    z-index: 999999 !important;
+    display: none;
+    flex-direction: column;
+    padding: 6px;
+    margin-top: 8px;
+  }
+
+  .lumina-mention-popup.active {
+    display: flex;
+  }
+
+  .lumina-mention-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 600;
-    user-select: none;
-    white-space: nowrap;
-    position: relative;
-    top: 0;
+    color: #1d1d1f !important;
+    background: #ffffff !important;
+    transition: all 0.15s ease;
+  }
+
+  .lumina-mention-item span {
+    color: var(--sk-apple-blue, #0071e3) !important;
+    font-weight: 620;
+  }
+
+  .lumina-mention-item:hover,
+  .lumina-mention-item.selected {
+    background: rgba(0, 113, 227, 0.1) !important;
   }
 
   /* Utility classes for templates */

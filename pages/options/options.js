@@ -1571,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.mapping-item').forEach((row) => {
         const keyInput = row.querySelector('.mapping-key-input');
         const promptInput = row.querySelector('.mapping-prompt');
-        const prompt = promptInput ? promptInput.value.trim() : '';
+        const prompt = promptInput ? (promptInput.innerText || promptInput.textContent).trim() : '';
 
         if (keyInput) {
           try {
@@ -2942,6 +2942,151 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  function initMentionForInput(inputEl) {
+    const wrapper = inputEl.closest('.mapping-prompt-wrapper');
+    if (!wrapper) return;
+
+    let popup = wrapper.querySelector('.lumina-mention-popup');
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.className = 'lumina-mention-popup';
+      wrapper.appendChild(popup);
+    }
+
+    let selectedIndex = 0;
+    const options = [{ name: 'SelectedText' }];
+
+    const hidePopup = () => {
+      popup.classList.remove('active');
+    };
+
+    const renderPopup = (matches) => {
+      popup.innerHTML = '';
+      matches.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = `lumina-mention-item ${idx === selectedIndex ? 'selected' : ''}`;
+        div.innerHTML = `<span>${item.name}</span>`;
+        div.onclick = (e) => {
+          e.stopPropagation();
+          selectItem(item);
+        };
+        popup.appendChild(div);
+      });
+      popup.classList.add('active');
+      popup.dataset.matches = JSON.stringify(matches);
+    };
+
+    const selectItem = (item) => {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+      
+      const range = selection.getRangeAt(0);
+      let textNode = range.startContainer;
+      
+      // If cursor is at the end of a tag or in empty div
+      if (textNode.nodeType !== Node.TEXT_NODE) {
+        // Find the last text node or create one if empty
+        if (textNode.childNodes.length === 0) {
+          textNode.appendChild(document.createTextNode(''));
+          textNode = textNode.firstChild;
+        } else {
+          // Find the at trigger manually if needed, but usually we are in text
+          return hidePopup();
+        }
+      }
+
+      const val = textNode.textContent || '';
+      const offset = range.startOffset;
+      const textBefore = val.substring(0, offset);
+      const lastAt = textBefore.lastIndexOf('@');
+      
+      if (lastAt !== -1) {
+        range.setStart(textNode, lastAt);
+        range.setEnd(textNode, offset);
+        range.deleteContents();
+        
+        const tag = document.createElement('span');
+        tag.className = 'lumina-mention-tag';
+        tag.textContent = item.name;
+        tag.contentEditable = 'false';
+        
+        range.insertNode(tag);
+        
+        const nextNode = document.createTextNode(' ');
+        tag.after(nextNode);
+        
+        range.setStartAfter(nextNode);
+        range.setEndAfter(nextNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      
+      hidePopup();
+      inputEl.focus();
+      if (typeof saveOptions === 'function') saveOptions();
+    };
+
+    inputEl.addEventListener('input', (e) => {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return hidePopup();
+      const range = selection.getRangeAt(0);
+      const textNode = range.startContainer;
+      
+      if (textNode.nodeType !== Node.TEXT_NODE) {
+        return hidePopup();
+      }
+      
+      const val = textNode.textContent || '';
+      const offset = range.startOffset;
+      const textBefore = val.substring(0, offset);
+      const lastAt = textBefore.lastIndexOf('@');
+
+      if (lastAt !== -1) {
+        const query = textBefore.substring(lastAt + 1).toLowerCase();
+        if (!query.includes(' ')) {
+          const matches = options.filter(o => o.name.toLowerCase().includes(query));
+          if (matches.length > 0) {
+            selectedIndex = 0;
+            renderPopup(matches);
+            return;
+          }
+        }
+      }
+      hidePopup();
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !popup.classList.contains('active')) {
+        e.preventDefault(); // Prevent newlines in mapping prompt
+        return;
+      }
+
+      if (!popup.classList.contains('active')) return;
+      const matches = JSON.parse(popup.dataset.matches || '[]');
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % matches.length;
+        renderPopup(matches);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + matches.length) % matches.length;
+        renderPopup(matches);
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        if (matches[selectedIndex]) selectItem(matches[selectedIndex]);
+      } else if (e.key === 'Escape') {
+        hidePopup();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapper.contains(e.target)) {
+        hidePopup();
+      }
+    });
+  }
+
   function refreshMappingNumbers() {
     const mappingsList = document.getElementById('questionMappingsList');
     if (!mappingsList) return;
@@ -2977,7 +3122,19 @@ document.addEventListener('DOMContentLoaded', () => {
       renderShortcutDisplay(keyDisplay, keyData);
     }
     if (prompt) {
-      promptInput.value = prompt;
+      // Convert "SelectedText" string to tags visually
+      const parts = prompt.split('SelectedText');
+      promptInput.innerHTML = '';
+      parts.forEach((part, i) => {
+        if (part) promptInput.appendChild(document.createTextNode(part));
+        if (i < parts.length - 1) {
+          const tag = document.createElement('span');
+          tag.className = 'lumina-mention-tag';
+          tag.textContent = 'SelectedText';
+          tag.contentEditable = 'false';
+          promptInput.appendChild(tag);
+        }
+      });
     }
 
     keyDisplay.addEventListener('click', () => {
@@ -2985,6 +3142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     promptInput.addEventListener('input', saveOptions);
+    initMentionForInput(promptInput);
 
     deleteBtn.addEventListener('click', () => {
       div.remove();
@@ -3441,5 +3599,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Handle URL parameters (e.g., section navigation or mic permission request)
+  const urlParams = new URLSearchParams(window.location.search);
+  const sectionParam = urlParams.get('section');
+  if (sectionParam) {
+    switchSection(sectionParam);
+  }
+
+  if (urlParams.get('requestMic') === '1') {
+    console.log('[Options] Requesting mic permission via URL parameter');
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        console.log('[Options] Mic permission granted');
+        stream.getTracks().forEach(track => track.stop());
+      })
+      .catch(err => {
+        console.error('[Options] Mic permission denied:', err);
+      });
+  }
 });
 

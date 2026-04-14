@@ -31,8 +31,7 @@
   },
   "host_permissions": [
     "<all_urls>",
-    "https://tactiq.io/*",
-    "https://lynote.ai/*"
+    "https://tactiq.io/*"
   ],
   "icons": {
     "16": "assets/icons/icon16.png",
@@ -113,6 +112,7 @@
         "lib/utils/dictionary_popup.js",
         "lib/utils/common.js",
         "lib/utils/selection_utils.js",
+        "lib/utils/youtube_utils.js",
         "scripts/content.js"
       ],
       "run_at": "document_end",

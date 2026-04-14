@@ -18,12 +18,12 @@ button {
 
 :root,
 :host {
-  --lumina-glass-opacity: 1.0;
-  --lumina-glass-base-rgb: 255, 255, 255;
+  --lumina-ui-opacity: 1.0;
+  --lumina-ui-base-rgb: 255, 255, 255;
   --lumina-icon-stroke-weight: 1.8;
-  --lumina-glass-bg: #FFFFFF;
-  --lumina-glass-bg-light: #F5F5F7;
-  --lumina-glass-border: rgba(0, 0, 0, 0.1);
+  --lumina-ui-bg: #FFFFFF;
+  --lumina-ui-bg-light: #F5F5F7;
+  --lumina-ui-border: rgba(0, 0, 0, 0.1);
   --lumina-blur-primary: none;
   --lumina-blur-secondary: none;
   --lumina-blur-tertiary: none;
@@ -47,15 +47,15 @@ button {
 
 [data-theme="dark"],
 :host([data-theme="dark"]) {
-  --lumina-glass-base-rgb: 0, 0, 0;
+  --lumina-ui-base-rgb: 0, 0, 0;
   --lumina-text-primary: #FFFFFF;
   --lumina-text-secondary: #A1A1A6;
   --lumina-text-tertiary: #6E6E73;
   --lumina-primary-color: #0A84FF;
   --lumina-primary-rgb: 10, 132, 255;
-  --lumina-glass-border: rgba(255, 255, 255, 0.1);
-  --lumina-glass-bg: #000000;
-  --lumina-glass-bg-light: #1C1C1E;
+  --lumina-ui-border: rgba(255, 255, 255, 0.12);
+  --lumina-ui-bg: #000000;
+  --lumina-ui-bg-light: #1C1C1E;
   --lumina-input-bg: #1C1C1E;
   --lumina-card-bg: #1C1C1E;
   --lumina-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 1);
@@ -117,7 +117,7 @@ button {
 .lumina-comment-highlight {
   background-color: #fff9c4 !important;
   /* Pale yellow */
-  cursor: help !important;
+  cursor: text !important;
   border-radius: 2px;
   transition: background-color 0.2s;
 }
@@ -164,24 +164,23 @@ button {
 }
 
 /* Custom Popup Tooltip */
-.lumina-ask-tooltip {
+.lumina-tooltip {
   position: fixed;
-  background: rgba(0, 0, 0, 0.85) !important;
-  opacity: 0 !important;
-  padding: 8px 12px !important;
-  border-radius: 8px !important;
+  background: rgba(15, 15, 15, 0.9) !important;
+  color: #fff !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
   font-size: 0.9em !important;
   max-width: 320px !important;
   z-index: 2147483647 !important;
   pointer-events: none !important;
-  box-shadow: none !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
   line-height: 1.5 !important;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  backdrop-filter: blur(4px) !important;
-  opacity: 1 !important;
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   display: none;
+  opacity: 0;
+  transform: translateY(4px);
   white-space: normal !important;
   word-wrap: break-word !important;
   word-break: break-word !important;
@@ -189,15 +188,21 @@ button {
   box-sizing: border-box !important;
 }
 
+.lumina-tooltip.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* File Chips in History */
 .lumina-attached-file-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--lumina-glass-bg);
+  background: var(--lumina-ui-bg);
   padding: 8px 12px;
   border-radius: 12px;
-  border: 1px solid var(--lumina-glass-border);
+  border: 1px solid var(--lumina-ui-border);
   color: var(--lumina-text-primary);
   max-width: 200px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -233,7 +238,7 @@ button {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  border: 1px solid var(--lumina-glass-border, rgba(0, 0, 0, 0.1)) !important;
+  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1)) !important;
   pointer-events: auto !important;
   transform: translateZ(0) !important;
   will-change: transform, opacity !important;
@@ -308,16 +313,6 @@ button {
    BASE UI COMPONENTS
    ==================== */
 
-.lumina-web-chip.is-active {
-  border: 1.5px solid var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(0, 86, 210, 0.05);
-  opacity: 1;
-}
-
-[data-theme="dark"] .lumina-web-chip.is-active {
-  background: rgba(0, 86, 210, 0.15);
-}
 
 .lumina-svg-icon {
   display: inline-block;
@@ -366,6 +361,11 @@ button {
   mask-image: url("../icons/lumina/thumbtack.svg");
 }
 
+.lumina-icon-thumbtack-filled {
+  -webkit-mask-image: url("../icons/lumina/thumbtack-filled.svg");
+  mask-image: url("../icons/lumina/thumbtack-filled.svg");
+}
+
 .lumina-dict-launcher-part svg,
 .lumina-translate-launcher-part svg {
   width: 17px !important;
@@ -400,8 +400,8 @@ button {
 }
 
 .lumina-question-pin-btn .lumina-svg-icon {
-  width: 13px !important;
-  height: 13px !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 .lumina-attach-toggle svg {
@@ -730,7 +730,7 @@ button {
   color: var(--lumina-text-primary);
   padding: 10px 16px;
   margin-bottom: 6px;
-  background: rgba(0, 0, 0, calc(0.05 + var(--lumina-glass-opacity, 0.75) * 0.03));
+  background: rgba(0, 0, 0, calc(0.05 + var(--lumina-ui-opacity, 0.75) * 0.03));
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   margin-bottom: 0 !important;
@@ -741,7 +741,7 @@ button {
 }
 
 .lumina-chat-context:hover {
-  background: rgba(0, 0, 0, calc(0.08 + var(--lumina-glass-opacity, 0.75) * 0.03));
+  background: rgba(0, 0, 0, calc(0.08 + var(--lumina-ui-opacity, 0.75) * 0.03));
   border-color: rgba(0, 0, 0, 0.15);
 }
 
@@ -821,6 +821,7 @@ button {
   display: flex;
   flex-direction: column;
   overflow-anchor: none;
+  position: relative;
 }
 
 .lumina-chat-question {
@@ -845,6 +846,7 @@ button {
   position: relative !important;
   overflow: hidden !important;
   cursor: pointer !important;
+  margin-bottom: 10px !important;
 }
 
 .lumina-question-row {
@@ -863,13 +865,13 @@ button {
   position: relative !important;
   margin-top: 8px !important;
   flex: 0 0 auto !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 30px !important;
+  height: 30px !important;
   border-radius: 50% !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
   outline: none !important;
   appearance: none !important;
-  background: #fff !important;
+  background: transparent !important;
   color: var(--lumina-text-secondary) !important;
   box-shadow: none !important;
   display: flex !important;
@@ -890,9 +892,14 @@ button {
 .lumina-question-pin-btn.is-active {
   opacity: 1 !important;
   pointer-events: auto !important;
-  background: rgba(0, 86, 210, 0.08) !important;
+  background: transparent !important;
   color: var(--lumina-primary-color) !important;
-  border: 1.5px solid var(--lumina-primary-color) !important;
+  border: none !important;
+}
+
+.lumina-question-pin-btn.is-active .lumina-svg-icon {
+  -webkit-mask-image: url("../icons/lumina/thumbtack-filled.svg") !important;
+  mask-image: url("../icons/lumina/thumbtack-filled.svg") !important;
 }
 
 .lumina-question-row:focus-within>.lumina-question-pin-btn {
@@ -902,7 +909,7 @@ button {
 
 .lumina-question-pin-btn:hover {
   opacity: 1 !important;
-  background: #fff !important;
+  background: rgba(0, 86, 210, 0.05) !important;
   color: var(--lumina-primary-color) !important;
 }
 
@@ -911,14 +918,14 @@ button {
 }
 
 [data-theme="dark"] .lumina-question-pin-btn {
-  background: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: transparent !important;
+  border: none !important;
   color: #f5f5f7 !important;
   box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-question-pin-btn:hover {
-  background: #fff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .lumina-chat-question {
@@ -959,7 +966,7 @@ button {
   width: 100% !important;
   max-height: 158px !important;
   overflow-y: auto !important;
-  cursor: default !important;
+  cursor: pointer !important;
   line-height: 1.65 !important;
 }
 
@@ -983,7 +990,7 @@ button {
   line-height: 1.65 !important;
   max-width: 100% !important;
   word-wrap: break-word !important;
-  cursor: text !important;
+  cursor: initial !important;
 }
 
 .lumina-chat-answer p {
@@ -1159,7 +1166,7 @@ button {
 }
 
 .lumina-chat-answer .mord .mtight {
-  font-weight: 600 !important;
+  font-weight: 620 !important;
 }
 
 .lumina-chat-input-wrapper {
@@ -1187,7 +1194,7 @@ button {
   left: 0 !important;
   right: 0 !important;
   height: 40px !important;
-  background: linear-gradient(to bottom, transparent, rgb(var(--lumina-glass-base-rgb))) !important;
+  background: linear-gradient(to bottom, transparent, rgb(var(--lumina-ui-base-rgb))) !important;
   pointer-events: none !important;
   z-index: 1 !important;
 }
@@ -1197,7 +1204,7 @@ button {
   flex: 1;
   border-radius: 12px !important;
   background: var(--lumina-input-bg) !important;
-  border: 1.5px solid var(--lumina-glass-border) !important;
+  border: 1.5px solid var(--lumina-ui-border) !important;
   box-shadow: none !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1210,7 +1217,7 @@ button {
 }
 
 [data-theme="dark"] .lumina-input-container {
-  border-color: var(--lumina-glass-border) !important;
+  border-color: var(--lumina-ui-border) !important;
   box-shadow: none !important;
 }
 
@@ -1326,7 +1333,7 @@ button {
   width: 100% !important;
   height: 32px !important;
   padding: 0 10px !important;
-  background: #f2f2f2 !important;
+  background: transparent !important;
   border: none !important;
   border-radius: 16px !important;
   cursor: pointer;
@@ -1340,7 +1347,7 @@ button {
 }
 
 [data-theme="dark"] .lumina-input-bar .lumina-model-btn {
-  background: #2C2C2E !important;
+  background: transparent !important;
 }
 
 [data-theme="dark"] .lumina-input-bar .lumina-model-btn:hover {
@@ -1367,7 +1374,7 @@ button {
   right: auto !important;
   width: 220px !important;
   background: #ffffff !important;
-  border: 1px solid var(--lumina-glass-border) !important;
+  border: 1px solid var(--lumina-ui-border) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
   padding: 4px !important;
@@ -1411,7 +1418,7 @@ button {
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: #f2f2f2;
+  background: transparent !important;
   color: var(--lumina-text-secondary);
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
@@ -1422,8 +1429,14 @@ button {
 .lumina-plus-toggle:hover,
 .lumina-mic-btn:hover,
 .lumina-regenerate-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.05) !important;
   color: var(--lumina-text-primary);
+}
+
+.lumina-plus-toggle .lumina-svg-icon,
+.lumina-mic-btn .lumina-svg-icon {
+  width: 18px !important;
+  height: 18px !important;
 }
 
 .lumina-input-bar.expanded .lumina-stop-btn {
@@ -1533,7 +1546,7 @@ button {
   min-width: 40px;
   border-radius: 14px;
   object-fit: cover;
-  border: 1px solid var(--lumina-glass-border);
+  border: 1px solid var(--lumina-ui-border);
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -1671,7 +1684,7 @@ button {
   margin-top: 10px;
 }
 
-.lumina-thinking-shimmer {
+.lumina-thinking {
   line-height: 1.65 !important;
   letter-spacing: normal !important;
   color: var(--lumina-text-primary);
@@ -1679,7 +1692,7 @@ button {
   white-space: nowrap;
 }
 
-.lumina-thinking-shimmer::after {
+.lumina-thinking::after {
   content: "";
   display: inline-block;
   width: 1.5em;
@@ -1924,6 +1937,7 @@ button {
   color: var(--lumina-primary-color);
   background: rgba(0, 86, 210, 0.05);
   gap: 6px;
+  font-weight: 620;
 }
 
 .lumina-web-chip.lumina-pinned-question-chip:hover {
@@ -1954,7 +1968,7 @@ button {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-radius: 16px;
-  border: 0.5px solid var(--lumina-glass-border);
+  border: 0.5px solid var(--lumina-ui-border);
   padding: 8px;
   display: flex;
   align-items: center;
@@ -2433,6 +2447,7 @@ button {
   flex-direction: column;
   contain: layout style;
   transform: translateZ(0);
+  scroll-margin-top: 20px;
 }
 
 .lumina-chat-question.proofread-question::after,
@@ -2458,7 +2473,7 @@ button {
 
 .lumina-chat-question.translation-question,
 .lumina-chat-question[data-type="translation"] {
-  background: rgba(52, 199, 89, calc(0.15 + var(--lumina-glass-opacity, 0.75) * 0.05));
+  background: rgba(52, 199, 89, calc(0.15 + var(--lumina-ui-opacity, 0.75) * 0.05));
   border: none;
   box-shadow: none;
   color: var(--lumina-text-primary);
@@ -2466,7 +2481,7 @@ button {
 
 .lumina-chat-question.translation-question:hover,
 .lumina-chat-question[data-type="translation"]:hover {
-  background: rgba(52, 199, 89, calc(0.2 + var(--lumina-glass-opacity, 0.75) * 0.05));
+  background: rgba(52, 199, 89, calc(0.2 + var(--lumina-ui-opacity, 0.75) * 0.05));
 }
 
 .lumina-translation-card {
@@ -2649,7 +2664,7 @@ button {
   background: transparent !important;
   border-radius: 8px !important;
   font-size: 0.9em !important;
-  font-weight: 600 !important;
+  font-weight: 620 !important;
   color: var(--lumina-text-secondary) !important;
   cursor: pointer !important;
   transition: background-color 0.2s, color 0.2s !important;
@@ -2674,7 +2689,7 @@ button {
 
 .lumina-dict-popup-item+.lumina-dict-popup-item {
   margin-top: 24px !important;
-  border-top: 1px solid var(--lumina-glass-border, rgba(0, 0, 0, 0.08)) !important;
+  border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
   padding-top: 16px !important;
 }
 
@@ -2867,10 +2882,23 @@ button {
 }
 
 @keyframes lumina-dots {
-  0% {
+
+  0%,
+  20% {
     content: "";
   }
 
+  33% {
+    content: ".";
+  }
+
+  66% {
+    content: "..";
+  }
+
+  100% {
+    content: "...";
+  }
 }
 
 @keyframes lumina-typing-bounce {
@@ -3158,7 +3186,7 @@ button {
   border: none !important;
 }
 
-[data-theme="dark"] .lumina-ask-tooltip {
+[data-theme="dark"] .lumina-tooltip {
   background: #f5f5f7 !important;
   color: #1d1d1f !important;
 }
@@ -3349,8 +3377,7 @@ button {
   box-sizing: border-box !important;
   border-radius: 24px !important;
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Removed backdrop-filter for solid UI */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3370,7 +3397,7 @@ button {
   z-index: 10000 !important;
   border-radius: 0 !important;
   padding: 20px !important;
-  backdrop-filter: blur(12px) !important;
+  /* Removed backdrop-filter for solid UI */
 }
 
 .lumina-preview-close {
@@ -3672,7 +3699,7 @@ button {
   transform: translateX(-50%);
   width: 220px;
   padding: 10px 12px;
-  background: rgba(var(--lumina-glass-base-rgb), 0.98);
+  background: rgba(var(--lumina-ui-base-rgb), 0.98);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-radius: 10px;
@@ -3701,7 +3728,7 @@ button {
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: rgba(var(--lumina-glass-base-rgb), 0.98);
+  border-top-color: rgba(var(--lumina-ui-base-rgb), 0.98);
   opacity: 0;
   visibility: hidden;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
@@ -3807,7 +3834,7 @@ button {
   height: 32px;
   border-radius: 6px;
   border: none;
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
   color: var(--lumina-text-secondary);
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
@@ -3834,7 +3861,7 @@ button {
   bottom: 130%;
   left: -13px;
   background: #ffffff !important;
-  border: 1px solid var(--lumina-glass-border, #e0e0e0);
+  border: 1px solid var(--lumina-ui-border, #e0e0e0);
   box-shadow: none !important;
   border-radius: 12px;
   padding: 4px;
@@ -3909,7 +3936,7 @@ button {
   border-radius: 50% !important;
   gap: 0 !important;
   justify-content: center !important;
-  background: #f2f2f2 !important;
+  background: transparent !important;
 }
 
 .lumina-plus-toggle.lumina-tools-toggle:hover,
@@ -4004,7 +4031,7 @@ button {
   padding: 6px 14px !important;
   border-radius: 8px !important;
   font-size: 13px !important;
-  font-weight: 600 !important;
+  font-weight: 620 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   border: 1px solid transparent !important;
@@ -4039,9 +4066,41 @@ button {
   font-size: 0.9em;
   font-weight: 520;
   color: var(--lumina-text-secondary);
-  border: 1.5px dashed var(--lumina-border-color);
+  border: 1.5px solid var(--lumina-border-color);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+}
+
+.lumina-web-chip:hover {
+  border-color: var(--lumina-primary-color);
+  color: var(--lumina-primary-color);
+  background: rgba(var(--lumina-primary-rgb), 0.05);
+}
+
+.lumina-web-chip.is-active {
+  border-color: var(--lumina-primary-color);
+  color: var(--lumina-primary-color);
+  background: rgba(var(--lumina-primary-rgb), 0.05);
+  opacity: 1;
+}
+
+.lumina-web-chip.is-active:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.1);
+}
+
+[data-theme="dark"] .lumina-web-chip.is-active {
+  background: rgba(var(--lumina-primary-rgb), 0.15);
+}
+
+.lumina-web-chip.is-ghost {
+  border-style: dashed !important;
+  opacity: 0.6;
+}
+
+.lumina-web-chip.is-ghost:hover {
+  opacity: 1;
+  border-color: var(--lumina-primary-color);
+  color: var(--lumina-primary-color);
 }
 
 .lumina-web-chip-add {
@@ -4061,7 +4120,7 @@ button {
   -webkit-appearance: none !important;
   box-sizing: border-box !important;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 620;
   line-height: 1;
   padding: 0;
   flex: 0 0 auto;
@@ -4203,37 +4262,9 @@ button {
   background: var(--lumina-primary-color);
 }
 
-.lumina-web-tabs-tooltip {
-  position: fixed;
-  z-index: 2147483647;
-  max-height: 220px;
-  overflow-y: auto;
-  padding: 8px 10px;
-  border-radius: 9px;
-  background: rgba(28, 28, 30, 0.96);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: none;
-  line-height: 1.4;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.lumina-web-tabs-tooltip-item {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.82em;
-  max-width: 100%;
-}
 
 [data-theme="dark"] .lumina-web-tab-picker-item:hover {
   background: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .lumina-web-tabs-tooltip {
-  background: #f5f5f7;
-  color: #1d1d1f;
 }
 
 .lumina-web-chip span {
@@ -4242,11 +4273,581 @@ button {
   white-space: nowrap;
 }
 
-.lumina-web-chip:hover {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: var(--lumina-text-secondary);
+/* ====================
+   SPOTLIGHT HISTORY
+   ==================== */
+/* ====================
+   HISTORY TOGGLE BUTTON
+   ==================== */
+.lumina-history-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--lumina-text-secondary, #444);
+  cursor: pointer;
+  padding: 6px;
+  margin: 0 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
 }
 
-[data-theme="dark"] .lumina-web-chip:hover {
+[data-theme="dark"] .lumina-history-toggle-btn {
+  color: var(--lumina-text-secondary, #a1a1a6);
+}
+
+.lumina-history-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-primary, #000);
+}
+
+[data-theme="dark"] .lumina-history-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--lumina-text-primary, #fff);
+}
+
+.lumina-history-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ====================
+   HISTORY SIDEBAR
+   ==================== */
+.lumina-history-sidebar {
+  position: absolute;
+  top: 0;
+  left: -320px;
+  /* Hidden initially */
+  width: 320px;
+  height: 100%;
+  background: var(--lumina-ui-bg, #ffffff);
+  z-index: 2000;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: none;
+  border-right: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+}
+
+.lumina-history-sidebar.open {
+  transform: translateX(320px);
+}
+
+[data-theme="dark"] .lumina-history-sidebar {
+  background: var(--lumina-ui-bg-light, #1c1c1e);
+  box-shadow: none;
+  border-right: 1px solid var(--lumina-ui-border, rgba(255, 255, 255, 0.1));
+}
+
+.lumina-history-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 10px 10px 10px;
+}
+
+.lumina-history-sidebar-header h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--lumina-text-primary, #000);
+  margin: 0;
+}
+
+[data-theme="dark"] .lumina-history-sidebar-header h2 {
+  color: var(--lumina-text-primary, #fff);
+}
+
+.lumina-history-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--lumina-text-secondary, #666);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lumina-history-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-primary, #000);
+}
+
+[data-theme="dark"] .lumina-history-close-btn {
+  color: var(--lumina-text-secondary, #a1a1a6);
+}
+
+[data-theme="dark"] .lumina-history-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--lumina-text-primary, #fff);
+}
+
+.lumina-history-close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lumina-history-search-container {
+  padding: 0 10px 10px 10px;
+  position: relative;
+}
+
+[data-theme="dark"] .lumina-history-search-container {
+  border-bottom: 1px solid var(--lumina-ui-border, rgba(255, 255, 255, 0.08));
+}
+
+#lumina-history-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-primary, #000);
+  font-size: 0.9em;
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+[data-theme="dark"] #lumina-history-search-input {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--lumina-text-primary, #fff);
+}
+
+#lumina-history-search-input:focus {
+  outline: none;
+  background: var(--lumina-ui-bg, #fff);
+  border-color: var(--lumina-primary-color, #0056d2);
+  box-shadow: 0 0 0 3px rgba(0, 86, 210, 0.15);
+}
+
+[data-theme="dark"] #lumina-history-search-input:focus {
+  background: var(--lumina-ui-bg-light, #1c1c1e);
+  border-color: var(--lumina-primary-color, #0a84ff);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+}
+
+.lumina-history-search-container::before {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 16px;
+  width: 14px;
+  height: 14px;
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="%23757575" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+[data-theme="dark"] .lumina-history-search-container::before {
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="%23a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+}
+
+/* ====================
+   HISTORY LIST & ITEMS
+   ==================== */
+.lumina-history-list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 6px;
+  overflow-x: hidden;
+}
+
+.lumina-history-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lumina-history-list-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .lumina-history-list-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lumina-history-item {
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  user-select: none;
+  margin-bottom: 4px;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.lumina-history-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.lumina-history-item:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.lumina-history-item.is-active,
+.lumina-history-item.context-menu-active {
+  background: rgba(0, 86, 210, 0.06);
+  border-color: rgba(0, 86, 210, 0.1);
+}
+
+[data-theme="dark"] .lumina-history-item:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .lumina-history-item:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .lumina-history-item.is-active,
+[data-theme="dark"] .lumina-history-item.context-menu-active {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.2);
+}
+
+.lumina-history-item-title {
+  font-weight: 500;
+  color: var(--lumina-text-primary, #222);
+  font-size: 0.95em;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+[data-theme="dark"] .lumina-history-item-title {
+  color: var(--lumina-text-primary, #fff);
+}
+
+.lumina-history-item-title.renamed {
+  color: var(--lumina-primary-color, #0056d2);
+}
+
+[data-theme="dark"] .lumina-history-item-title.renamed {
+  color: var(--lumina-primary-color, #0a84ff);
+}
+
+.lumina-history-item-snippet {
+  font-size: 0.8em;
+  color: var(--lumina-text-tertiary, #777);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+[data-theme="dark"] .lumina-history-item-snippet {
+  color: var(--lumina-text-tertiary, #888);
+}
+
+.lumina-history-item-meta {
+  font-size: 0.75em;
+  color: var(--lumina-text-tertiary, #999);
+  display: flex;
+  justify-content: space-between;
+}
+
+[data-theme="dark"] .lumina-history-item-meta {
+  color: var(--lumina-text-tertiary, #777);
+}
+
+.lumina-history-empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--lumina-text-secondary, #666);
+  font-size: 0.9em;
+}
+
+[data-theme="dark"] .lumina-history-empty-state {
+  color: var(--lumina-text-secondary, #999);
+}
+
+/* ====================
+   FOOTER (USAGE & DELETE ALL)
+   ==================== */
+.lumina-history-sidebar-footer {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--lumina-ui-bg, #fafafa);
+}
+
+[data-theme="dark"] .lumina-history-sidebar-footer {
+  border-top: 1px solid var(--lumina-ui-border, rgba(255, 255, 255, 0.08));
+  background: var(--lumina-ui-bg-light, #151515);
+}
+
+.lumina-history-storage-info {
+  font-size: 0.75em;
+  color: var(--lumina-text-tertiary, #777);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 6px 12px;
+  border-radius: 12px;
+}
+
+[data-theme="dark"] .lumina-history-storage-info {
+  color: var(--lumina-text-tertiary, #888);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#storage-usage-text {
+  font-weight: 600;
+}
+
+.lumina-history-delete-all-btn {
+  background: rgba(229, 62, 62, 0.06);
+  border: none;
+  color: #e53e3e;
+  font-size: 0.8em;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.lumina-history-delete-all-btn:hover {
+  background: rgba(229, 62, 62, 0.12);
+}
+
+[data-theme="dark"] .lumina-history-delete-all-btn {
+  color: #fc8181;
+  background: rgba(252, 129, 129, 0.08);
+}
+
+[data-theme="dark"] .lumina-history-delete-all-btn:hover {
+  background: rgba(252, 129, 129, 0.15);
+}
+
+/* ====================
+   CONTEXT MENU
+   ==================== */
+.lumina-history-context-menu {
+  position: fixed;
+  background: var(--lumina-ui-bg, #ffffff);
+  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  z-index: 3000;
+  min-width: 160px;
+}
+
+[data-theme="dark"] .lumina-history-context-menu {
+  background: #252525;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.lumina-history-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--lumina-text-primary, #333);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+[data-theme="dark"] .lumina-history-menu-item {
+  color: var(--lumina-text-primary, #eee);
+}
+
+.lumina-history-menu-item:hover {
+  background: var(--lumina-primary-color, rgba(0, 86, 210, 0.08));
+  color: var(--lumina-primary-color, #0056d2);
+}
+
+[data-theme="dark"] .lumina-history-menu-item:hover {
+  background: rgba(10, 132, 255, 0.2);
+  color: var(--lumina-primary-color, #0a84ff);
+}
+
+.lumina-history-menu-divider {
+  height: 1px;
+  background: var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  margin: 4px 0;
+}
+
+[data-theme="dark"] .lumina-history-menu-divider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-history-menu-item.menu-danger {
+  color: #e53e3e;
+}
+
+[data-theme="dark"] .lumina-history-menu-item.menu-danger {
+  color: #fc8181;
+}
+
+.lumina-history-menu-item.menu-danger:hover {
+  background: rgba(229, 62, 62, 0.1);
+}
+
+[data-theme="dark"] .lumina-history-menu-item.menu-danger:hover {
+  background: rgba(252, 129, 129, 0.15);
+}
+
+.lumina-history-menu-item svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ====================
+   INLINE RENAME INPUT
+   ==================== */
+.lumina-history-rename-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.95em;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 2px 6px;
+  margin: -2px -6px 2px -6px;
+  /* Offset padding to keep layout stable */
+  background: var(--lumina-ui-bg, #fff);
+  color: var(--lumina-text-primary, #000);
+  border: 1px solid var(--lumina-primary-color, #0056d2);
+  border-radius: 4px;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 86, 210, 0.2);
+}
+
+[data-theme="dark"] .lumina-history-rename-input {
+  background: var(--lumina-ui-bg-light, #1c1c1e);
+  color: var(--lumina-text-primary, #fff);
+  border-color: var(--lumina-primary-color, #0a84ff);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
+}
+
+/* ====================
+   SEARCH LOADER
+   ==================== */
+.lumina-history-loader {
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.lumina-history-loader-bar {
+  width: 30%;
+  height: 100%;
+  background: var(--lumina-primary-color, #0056d2);
+  position: absolute;
+  left: -30%;
+  animation: lumina-history-loader-slide 1s infinite linear;
+  border-radius: 2px;
+}
+
+@keyframes lumina-history-loader-slide {
+  0% {
+    left: -30%;
+    width: 30%;
+  }
+
+  50% {
+    width: 50%;
+  }
+
+  100% {
+    left: 100%;
+    width: 30%;
+  }
+}
+
+[data-theme="dark"] .lumina-history-loader-bar {
+  background: var(--lumina-primary-color, #0a84ff);
+}
+
+/* ====================
+   OVERLAY
+   ==================== */
+.lumina-history-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  /* Removed backdrop-filter for solid UI */
+  z-index: 1500;
+  /* Below sidebar (2000) */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.lumina-history-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+[data-theme="dark"] .lumina-history-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.lumina-history-highlight {
+  background-color: rgba(255, 230, 0, 0.3);
+  color: inherit;
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+[data-theme="dark"] .lumina-history-highlight {
+  background-color: rgba(255, 215, 0, 0.4);
+  color: #fff;
+}
+
+/* ====================
+   SEND COMMENT BUTTON
+   ==================== */
+.lumina-send-comment-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--lumina-primary-color);
+  color: #ffffff !important;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--lumina-font-family);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: calc(100% - 32px);
+  box-shadow: var(--lumina-shadow-secondary);
+  margin-top: 10px;
+}
+
+.lumina-send-comment-btn:hover {
+  background-color: var(--lumina-primary-color);
+  filter: brightness(1.1);
+  box-shadow: var(--lumina-shadow-hover);
+}
+
+.lumina-send-comment-btn:active {
+  filter: brightness(0.95);
+}
+
+.lumina-send-comment-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
 }

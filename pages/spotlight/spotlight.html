@@ -217,7 +217,13 @@
 
 
     <div class="spotlight-tabs-bar" id="tabs-bar" style="display: none;">
-
+        <button class="lumina-history-toggle-btn" id="lumina-history-toggle-btn" title="Chat History">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
         <div class="spotlight-tabs-list" id="tabs-list">
             <button class="spotlight-new-tab-btn" id="new-tab-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision">
@@ -250,6 +256,53 @@
 
     <div class="spotlight-resizing-overlay" id="resizing-overlay"></div>
 
+    <div id="lumina-history-overlay" class="lumina-history-overlay"></div>
+
+    <!-- Chat History Sidebar -->
+    <div id="lumina-history-sidebar" class="lumina-history-sidebar">
+        <div class="lumina-history-sidebar-header">
+            <h2>Chat History</h2>
+            <button id="lumina-history-close-btn" class="lumina-history-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="lumina-history-search-container">
+            <input type="text" id="lumina-history-search-input" placeholder="Search questions..." autocomplete="off">
+            <div id="lumina-history-loader" class="lumina-history-loader" style="display: none;">
+                <div class="lumina-history-loader-bar"></div>
+            </div>
+        </div>
+        <div class="lumina-history-list-container" id="lumina-history-list-container">
+            <!-- Lazy-loaded history cards will appear here -->
+        </div>
+        <div class="lumina-history-sidebar-footer">
+            <div class="lumina-history-storage-info">
+                <span id="storage-usage-text">0 MB</span> used
+            </div>
+            <button id="lumina-history-delete-all-btn" class="lumina-history-delete-all-btn">Delete All</button>
+        </div>
+    </div>
+    
+    <!-- Custom Context Menu for History Items -->
+    <div id="lumina-history-context-menu" class="lumina-history-context-menu" style="display: none;">
+        <div class="lumina-history-menu-item" id="menu-rename">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Rename
+        </div>
+        <div class="lumina-history-menu-item" id="menu-duplicate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Duplicate
+        </div>
+        <div class="lumina-history-menu-divider"></div>
+        <div class="lumina-history-menu-item menu-danger" id="menu-delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            Delete
+        </div>
+    </div>
+
     <input type="file" id="file-input" multiple style="display: none;">
 
     <script src="../../lib/katex/katex.min.js"></script>
@@ -262,6 +315,8 @@
     <script src="../../lib/utils/oxford_parser.js"></script>
     <script src="../../lib/utils/dictionary_popup.js"></script>
     <script src="../../lib/utils/common.js"></script>
+    <script src="../../lib/utils/chat_history.js"></script>
+    <script src="../../lib/utils/history_panel.js"></script>
     <script src="spotlight.js"></script>
 </body>
 

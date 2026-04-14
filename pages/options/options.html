@@ -121,8 +121,7 @@
             <div class="form-group">
               <div class="items-center-mb8">
                 <label for="providerFormApiKey" class="mb-0">API Key</label>
-                <a id="providerApiKeyLink" href="#" target="_blank"
-                  class="text-link-color hidden list-none">Get API
+                <a id="providerApiKeyLink" href="#" target="_blank" class="text-link-color hidden list-none">Get API
                   Key</a>
               </div>
               <input type="text" id="providerFormApiKey" placeholder="Enter your API key...">
@@ -130,7 +129,7 @@
                 Multiple keys separated by commas. Auto-switches on rate limit.
               </div>
             </div>
-            <div class="provider-form-actions">
+            <div class="provider-api-form-actions">
               <button type="button" id="cancelProviderBtn" class="btn-secondary">Cancel</button>
               <button type="button" id="saveProviderBtn" class="btn-primary">Save Provider</button>
             </div>
@@ -176,11 +175,13 @@
 
           <!-- Dictation Configuration -->
           <div class="mt-24 border-top pt-24">
-            <label class="mb-12 block">🎙️ Dictation Select Model<span class="info-tooltip" data-tooltip="Select a model for speech-to-text transcription.">i</span></label>
+            <label class="mb-12 block">🎙️ Dictation Select Model<span class="info-tooltip"
+                data-tooltip="Select a model for speech-to-text transcription.">i</span></label>
             <div class="dictation-area">
               <div class="form-group form-group-provider">
                 <label for="voiceProvider" class="label-small">Provider</label>
-                <input type="text" id="voiceProvider" autocomplete="off" placeholder="Select..." class="input-readonly input-element-bg" readonly>
+                <input type="text" id="voiceProvider" autocomplete="off" placeholder="Select..."
+                  class="input-readonly input-element-bg" readonly>
                 <div id="voiceProviderList" class="dropdown-list"></div>
               </div>
               <div class="form-group form-group-model">
@@ -203,11 +204,13 @@
               </button>
             </div>
 
-            <label class="mb-12 block text-semibold">Dictionary Lookup Model<span class="info-tooltip" data-tooltip="Select a specific model for AI-powered word definitions in popups.">i</span></label>
+            <label class="mb-12 block text-semibold">Dictionary Lookup Model<span class="info-tooltip"
+                data-tooltip="Select a specific model for AI-powered word definitions in popups.">i</span></label>
             <div class="dictation-area">
               <div class="form-group form-group-provider">
                 <label for="dictProvider" class="label-small">Provider</label>
-                <input type="text" id="dictProvider" autocomplete="off" placeholder="Select..." class="input-readonly input-element-bg" readonly>
+                <input type="text" id="dictProvider" autocomplete="off" placeholder="Select..."
+                  class="input-readonly input-element-bg" readonly>
                 <div id="dictProviderList" class="dropdown-list"></div>
               </div>
               <div class="form-group form-group-model">
@@ -229,8 +232,7 @@
           <div class="mb-20">
             <label class="mb-12 block text-semibold">Add New Instruction</label>
             <div class="form-group">
-              <input type="text" id="newFactInput" placeholder="e.g. Always explain metaphors"
-                class="input-element-bg">
+              <input type="text" id="newFactInput" placeholder="e.g. Always explain metaphors" class="input-element-bg">
             </div>
           </div>
 
@@ -332,8 +334,7 @@
           <h3 class="title-semibold-mb8">Quick Add Words</h3>
           <p class="section-subtitle">Enter words to add (separate by comma or newline)</p>
           <div class="quick-note-wrapper mt-12">
-            <textarea id="ankiQuickNote" placeholder="e.g. apple, banana, cherry..."
-              class="anki-textarea"></textarea>
+            <textarea id="ankiQuickNote" placeholder="e.g. apple, banana, cherry..." class="anki-textarea"></textarea>
             <span id="ankiQuickNoteCount" class="card-count-badge">0 cards</span>
           </div>
           <div class="flex gap-12 mt-16">
@@ -541,10 +542,18 @@
       </div>
       <div class="chain-controls">
         <button class="chain-btn configure" title="Configure Parameters">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
         </button>
         <button class="chain-btn remove" title="Remove">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
       </div>
       <div class="chain-item-params-container"></div>
@@ -597,7 +606,7 @@
       <button type="button" class="remove-custom-param">×</button>
     </div>
   </template>
-  
+
   <!-- Mapping Row Template -->
   <template id="mappingRowTemplate">
     <div class="mapping-item">
@@ -608,8 +617,7 @@
         </div>
         <span class="mapping-arrow">→</span>
         <div class="mapping-prompt-wrapper">
-          <span class="lumina-selected-text-tag">"SelectedText"</span>
-          <input type="text" class="mapping-prompt" placeholder="Custom prompt (e.g. Translate to Vietnamese)...">
+          <div contenteditable="true" class="mapping-prompt" data-placeholder="Enter @ to add variables..."></div>
         </div>
       </div>
       <div class="mapping-controls">
@@ -652,7 +660,9 @@
 
   <!-- Button State Templates -->
   <template id="appliedStateTemplate">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="margin-right:6px;">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
     Applied!
   </template>
 
@@ -666,7 +676,8 @@
       <input type="text" class="custom-param-key" placeholder="key" style="flex: 1; font-size: 0.75em;">
       <span style="color: var(--text-secondary);">=</span>
       <input type="text" class="custom-param-value" placeholder="value" style="flex: 1; font-size: 0.75em;">
-      <button type="button" class="remove-param-btn" style="padding: 4px 8px; font-size: 0.6875em; background: var(--error-color, #f44336); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+      <button type="button" class="remove-param-btn"
+        style="padding: 4px 8px; font-size: 0.6875em; background: var(--error-color, #f44336); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
     </div>
   </template>
 
@@ -683,7 +694,8 @@
   <!-- API Key Result Item Template -->
   <template id="apiKeyResultItemTemplate">
     <div class="api-key-result-item" style="margin-bottom: 8px;">
-      <div class="api-key-result-header" style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 520;">
+      <div class="api-key-result-header"
+        style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 520;">
         <span class="api-key-result-icon"></span>
         <span class="api-key-result-name"></span>
         <span class="api-key-result-status" style="margin-left: auto;"></span>
@@ -695,7 +707,8 @@
   <!-- Failed Key Info Template -->
   <template id="failedKeyInfoTemplate">
     <div style="font-size: 11px; color: #FF3B30; margin-left: 20px; font-family: monospace;">
-      • <code style="background: rgba(255,59,48,0.1); padding: 2px 6px; border-radius: 4px;" class="failed-key-name"></code> → <span class="failed-key-status"></span>
+      • <code style="background: rgba(255,59,48,0.1); padding: 2px 6px; border-radius: 4px;"
+        class="failed-key-name"></code> → <span class="failed-key-status"></span>
     </div>
   </template>
 

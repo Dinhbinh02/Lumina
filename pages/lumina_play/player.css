@@ -4,7 +4,7 @@
     --surface: #1a1c22;
     --text: #ffffff;
     --text-dim: #a0a0a0;
-    --glass: rgba(255, 255, 255, 0.05);
+    --glass: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -25,8 +25,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(15, 16, 20, 0.9);
-    backdrop-filter: blur(10px);
+    background: rgb(26, 28, 34); /* Solid opaque surface */
+    /* Removed backdrop-filter for flat UI */
     padding: 1rem 5%;
     display: flex;
     justify-content: space-between;

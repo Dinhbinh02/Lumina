@@ -3,7 +3,7 @@ importScripts('../lib/marked.min.js');
 importScripts('../lib/utils/constants.js');
 importScripts('../lib/utils/memory.js');
 importScripts('../lib/utils/auth.js');
-importScripts('./youtube.js');
+
 
 // Default settings
 const DEFAULTS = LUMINA_DEFAULTS;
@@ -898,38 +898,18 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
 
     let fullMessages = [...messages];
-
-    // Inject Page Context if available
-    if (initialContext && initialContext.trim().length > 0) {
-        let processedContext = optimizeContextString(initialContext);
-        
-        // Prepend context to the VERY beginning of history for grounding
-        fullMessages.unshift({
-            role: 'user',
-            text: `[Context - Current Webpage Content]:\n${processedContext}\n\n[Instruction]: Use the above context to answer subsequent questions.`
-        });
-
-        fullMessages.splice(1, 0, {
-            role: 'model',
-            text: "Understood. I have reviewed the page content. How can I help?"
-        });
-    }
-
     let augmentedQuestion = question;
 
     if (action === 'proofread' && !systemOverride) {
+        // Wrap the user question in text tags for proofreading/translation
         augmentedQuestion = `Correct/translate this text:\n<text>${question}</text>`;
-    } else if (!hasFiles) {
-        const realTimeKeywords = /\b(mấy giờ|thời gian|ngày|hôm nay|bây giờ|thời tiết|weather|time|today|now|date|news|tin tức|giá|price|stock|forecast|dự báo|lịch|schedule|current|hiện tại)\b/i;
-        const needsRealTimeContext = realTimeKeywords.test(question) ||
-            (messages.length === 0 && question.length > 50);
+    }
 
-        if (needsRealTimeContext) {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-            const dateString = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            augmentedQuestion = `[Reference - Current Time: ${timeString}, ${dateString}]\n\nUser Question: ${question}`;
-        }
+    // Inject Page Context if available - Appended to the current question for better freshness & context switching
+    // This is done last to ensure it's not overwritten by specialized action logic
+    if (initialContext && initialContext.trim().length > 0) {
+        const processedContext = optimizeContextString(initialContext);
+        augmentedQuestion = `${processedContext}\n\n---\n\n${augmentedQuestion}`;
     }
 
     // Parameters for payload builder
@@ -1439,6 +1419,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(err => sendResponse({ success: false, error: err?.message || String(err) }));
             return true;
 
+        case 'open_options': {
+            let optionsUrl = chrome.runtime.getURL('pages/options/options.html');
+            if (request.section) optionsUrl += `?section=${request.section}`;
+            if (request.requestMic) optionsUrl += (optionsUrl.includes('?') ? '&' : '?') + 'requestMic=1';
+            
+            chrome.tabs.create({ url: optionsUrl });
+            return true;
+        }
+
         case 'translate':
             translateText(request.text, request.targetLang).then(sendResponse).catch(err => sendResponse({ error: err.message }));
             return true;
@@ -1642,33 +1631,49 @@ let spotlightWindowId = null;
 let spotlightInitialPosition = null;
 let spotlightHasMoved = false;
 
-// Load spotlightWindowId from storage on service worker startup (survives SW restarts)
-chrome.storage.local.get(['spotlightWindowId'], (data) => {
-    if (data.spotlightWindowId) {
-        // Verify the window still exists
-        chrome.windows.get(data.spotlightWindowId, (win) => {
-            if (chrome.runtime.lastError || !win) {
-                // Window no longer exists, clear storage
-                chrome.storage.local.remove('spotlightWindowId');
-                spotlightWindowId = null;
-            } else {
-                spotlightWindowId = data.spotlightWindowId;
-
-            }
-        });
+/**
+ * Robustly retrieves the current spotlight window ID, checking both memory and storage.
+ * This is crucial for MV3 where the service worker may restart.
+ */
+async function getSpotlightWindowId() {
+    if (spotlightWindowId) {
+        // Double check it still exists
+        try {
+            const win = await chrome.windows.get(spotlightWindowId);
+            if (win) return spotlightWindowId;
+        } catch (e) {
+            spotlightWindowId = null;
+        }
     }
-});
+
+    // Try storage
+    const data = await chrome.storage.local.get(['spotlightWindowId']);
+    if (data.spotlightWindowId) {
+        try {
+            const win = await chrome.windows.get(data.spotlightWindowId);
+            if (win) {
+                spotlightWindowId = data.spotlightWindowId;
+                return spotlightWindowId;
+            }
+        } catch (e) {
+            chrome.storage.local.remove('spotlightWindowId');
+        }
+    }
+    return null;
+}
+
 
 chrome.commands.onCommand.addListener(async (command) => {
     if (command === 'open-lumina-chat') {
         createSpotlightWindow();
     } else if (command === 'new-chat') {
         chrome.runtime.sendMessage({ action: 'new_chat' }).catch(() => { });
-        if (spotlightWindowId) {
-            chrome.windows.get(spotlightWindowId, { populate: true }, (win) => {
+        const currentId = await getSpotlightWindowId();
+        if (currentId) {
+            chrome.windows.get(currentId, { populate: true }, (win) => {
                 if (!chrome.runtime.lastError && win && win.tabs && win.tabs.length > 0) {
                     chrome.tabs.sendMessage(win.tabs[0].id, { action: 'new_chat' }).catch(() => { });
-                    chrome.windows.update(spotlightWindowId, { focused: true }).catch(() => { });
+                    chrome.windows.update(currentId, { focused: true }).catch(() => { });
                 }
             });
         }
@@ -1764,17 +1769,18 @@ let isCreatingSpotlight = false; // Guard against race conditions
 
 async function createSpotlightWindow() {
     // --- TOGGLE LOGIC: Close if focused, focus if hidden, create if missing ---
-    if (spotlightWindowId) {
+    const currentId = await getSpotlightWindowId();
+    if (currentId) {
         try {
-            const win = await chrome.windows.get(spotlightWindowId);
+            const win = await chrome.windows.get(currentId);
             if (win) {
                 if (win.focused) {
-                    await chrome.windows.remove(spotlightWindowId);
+                    await chrome.windows.remove(currentId);
                     // spotlightWindowId will be cleared by the onRemoved listener
                     isCreatingSpotlight = false;
                     return;
                 } else {
-                    await chrome.windows.update(spotlightWindowId, { focused: true });
+                    await chrome.windows.update(currentId, { focused: true });
                     isCreatingSpotlight = false;
                     return;
                 }
@@ -1957,8 +1963,18 @@ async function createSpotlightWindow() {
 }
 
 // Track window movement and resize
-chrome.windows.onBoundsChanged.addListener((window) => {
-    if (window.id === spotlightWindowId) {
+chrome.windows.onBoundsChanged.addListener(async (window) => {
+    // Determine if this is the spotlight window
+    let isSpotlight = (window.id === spotlightWindowId);
+    if (!isSpotlight && !spotlightWindowId) {
+        const data = await chrome.storage.local.get(['spotlightWindowId']);
+        if (data.spotlightWindowId === window.id) {
+            spotlightWindowId = window.id; // Restore memory state
+            isSpotlight = true;
+        }
+    }
+
+    if (isSpotlight) {
         // Check if window has moved from initial position
         if (spotlightInitialPosition) {
             const movedX = Math.abs(window.left - spotlightInitialPosition.left) > 5;
@@ -1987,8 +2003,19 @@ chrome.windows.onBoundsChanged.addListener((window) => {
 });
 
 // Track when spotlight window is manually closed
-chrome.windows.onRemoved.addListener((windowId) => {
-    if (windowId === spotlightWindowId) {
+chrome.windows.onRemoved.addListener(async (removedId) => {
+    // Check against memory
+    let isSpotlight = (removedId === spotlightWindowId);
+
+    // If memory is null (SW just restarted), check storage
+    if (!isSpotlight && !spotlightWindowId) {
+        const data = await chrome.storage.local.get(['spotlightWindowId']);
+        if (data.spotlightWindowId === removedId) {
+            isSpotlight = true;
+        }
+    }
+
+    if (isSpotlight) {
         spotlightWindowId = null;
         spotlightInitialPosition = null;
         spotlightHasMoved = false;
@@ -2337,7 +2364,6 @@ async function proofreadText(text) {
 // --- Main Chat Handler (New: Supports Model Chain) ---
 async function handleChatStream(messages, initialContext, question, port, imageData = null, isSpotlight = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null) {
     try {
-        // --- YouTube Context Extraction ---
         try {
             let activeUrl = port?.sender?.tab?.url;
             let activeTabId = port?.sender?.tab?.id;
@@ -2364,32 +2390,9 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                     }
                 }
             }
-
-            if (activeUrl && YoutubeUtils.isYouTubeVideo(activeUrl)) {
-                const videoId = YoutubeUtils.getVideoId(activeUrl);
-                if (videoId) {
-                    if (hasTranscriptForVideoId === videoId) {
-                        console.log(`[Lumina] Skipping transcript fetch for ${videoId} to save tokens, already in this chat session.`);
-                    } else {
-                        // Check persistent cache (async)
-                        const cached = await YoutubeUtils.getCachedTranscript(videoId);
-                        if (!cached) {
-                            // Notify start of fetching
-                            port.postMessage({ action: 'youtube_status', status: 'fetching' });
-                        }
-                        const transcript = await YoutubeUtils.fetchTranscript(videoId);
-                        if (transcript) {
-                            // Notify transcript ready - pass videoId so content script can log it
-                            port.postMessage({ action: 'youtube_status', status: 'ready', transcript: transcript, videoId: videoId });
-                            initialContext = (initialContext ? initialContext + "\n\n" : "") + transcript;
-                        }
-                    }
-                }
-            }
-        } catch (ytError) {
-            console.warn("[Lumina] Optional YouTube context extraction failed:", ytError);
+        } catch (e) {
+             console.warn("[Lumina] Optional context extraction failed:", e);
         }
-        // ----------------------------------
 
         // 1. Load global settings for params (shared across models)
         const globalSettings = await chrome.storage.local.get(['responseLanguage', 'advancedParamsByModel']);
@@ -2397,11 +2400,10 @@ async function handleChatStream(messages, initialContext, question, port, imageD
         // 2. Get Chain
         let chain = await getModelChain();
 
-        // Clean up history: Remove status messages from previous turns so AI doesn't mimic them
-        const statusMsgPattern = /_?Fetching YouTube transcript for video context\.\.\._?\n\n?/g;
+        // Clean up history
         const cleanMessages = (messages || []).map(m => {
             if ((m.role === 'assistant' || m.role === 'model') && typeof m.content === 'string') {
-                return { ...m, content: m.content.replace(statusMsgPattern, "").trim() };
+                return { ...m, content: m.content.trim() };
             }
             return m;
         });

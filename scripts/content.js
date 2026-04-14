@@ -615,7 +615,9 @@
         }
 
         // Protection for sites like YouTube: if focus is in Lumina, don't let shortcuts leak out
-        const active = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDeepActiveElement() : document.activeElement;
+        const active = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
+            ? LuminaChatUI.getDeepActiveElement()
+            : document.activeElement;
         const isLuminaInput = active && (
             active.closest('.lumina-dict-popup') ||
             active.closest('#lumina-ask-input-popup') ||
@@ -1708,13 +1710,52 @@
         }
     }, true);
 
+    /**
+     * YouTube Transcript Cache
+     * Stores transcript text captured from the DOM panel to provide fast access
+     * and persistence even if the panel is closed.
+     */
+    let youtubeTranscriptCache = {
+        videoId: null,
+        transcript: null,
+        status: 'idle'
+    };
+
+
 
     /**
      * Robust "Reader Mode" style extraction.
      * Identifies the main content by scoring containers based on text density,
      * class names, and relationship to other elements.
      */
-    function extractMainContent(doc = document) {
+    async function extractMainContent(doc = document) {
+        const url = window.location.href;
+        const isYouTube = typeof YoutubeUtils !== 'undefined' && YoutubeUtils.isYouTubeVideo(url);
+
+        let youtubeTranscript = "";
+        if (isYouTube) {
+            const videoId = YoutubeUtils.getVideoId(url);
+            if (videoId) {
+                // EXCLUSIVE LOGIC: Use DOM or Cache (both coming from the panel)
+                youtubeTranscript = YoutubeUtils.getTranscriptFromDOM();
+
+                // If panel is visible but no text, wait a bit for YouTube to populate it
+                if (!youtubeTranscript) {
+                    const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
+                    if (panel && panel.offsetParent !== null) {
+                        console.log('[Lumina] Transcript panel visible but empty, waiting for current content...');
+                        await new Promise(r => setTimeout(r, 1500));
+                        youtubeTranscript = YoutubeUtils.getTranscriptFromDOM();
+                    }
+                }
+
+                // Fallback to cache if DOM scan failed (e.g. user closed panel)
+                if (!youtubeTranscript && youtubeTranscriptCache.videoId === videoId) {
+                    youtubeTranscript = youtubeTranscriptCache.transcript;
+                }
+            }
+        }
+
         const docClone = doc.cloneNode(true);
 
         // 1. Remove obvious noise immediately
@@ -1732,21 +1773,16 @@
         const elements = docClone.querySelectorAll('div, article, section, main');
 
         elements.forEach(el => {
-            // Skip small fragments
             const text = el.innerText.trim();
             if (text.length < 100) return;
 
-            // Calculate link density
             const links = el.querySelectorAll('a');
             let linkLength = 0;
             links.forEach(a => linkLength += a.innerText.length);
             const linkDensity = linkLength / text.length;
-            if (linkDensity > 0.4) return; // Too many links = navigation/list
+            if (linkDensity > 0.4) return;
 
-            // Base score on text length
             let score = Math.floor(text.length / 100);
-
-            // Bonus/Penalty based on class/id
             const weightString = (el.className + ' ' + el.id).toLowerCase();
             if (/(article|content|main|body|post|entry|text|story)/i.test(weightString)) score += 25;
             if (/(comment|sidebar|footer|header|nav|menu|share|meta|promo|ad|tags)/i.test(weightString)) score -= 50;
@@ -1754,21 +1790,15 @@
             candidates.push({ element: el, score: score });
         });
 
-        // Sort by score
         candidates.sort((a, b) => b.score - a.score);
-
-        // 3. Select best candidate or fallback to body
         let bestEl = candidates.length > 0 ? candidates[0].element : docClone.body;
 
-        // Final cleaning of the best candidate
-        // Remove paragraphs that are likely non-content (e.g. "Follow us on Twitter")
         bestEl.querySelectorAll('p, li').forEach(sub => {
             const subText = sub.innerText.trim();
             if (subText.length < 5) {
                 sub.remove();
                 return;
             }
-            // Link density check for paragraphs
             const subLinks = sub.querySelectorAll('a');
             let slLen = 0;
             subLinks.forEach(a => slLen += a.innerText.length);
@@ -1781,8 +1811,14 @@
             .replace(/\n\s*\n/g, '\n\n')
             .trim();
 
+        finalText = `[Page Content]:\n${finalText}`;
+
+        if (youtubeTranscript) {
+            finalText = `${finalText}\n\n---\n\n[YouTube Video Transcript]:\n${youtubeTranscript}`;
+        }
+
         return {
-            url: window.location.href,
+            url: url,
             title: document.title,
             content: finalText
         };
@@ -1798,6 +1834,147 @@
     window.luminaEstimateTokens = luminaEstimateTokens;
 
     initShadowDOM();
+
+    // Initialize YouTube Background Fetcher
+    // YouTube Interval Management
+    let youtubeNavInterval = null;
+    let youtubeCacheInterval = null;
+
+    if (window.location.hostname.includes('youtube.com')) {
+        document.addEventListener('yt-navigate-finish', () => {
+            // Clear any existing intervals from previous video
+            if (youtubeNavInterval) clearInterval(youtubeNavInterval);
+            if (youtubeCacheInterval) clearInterval(youtubeCacheInterval);
+
+            // Wait for DOM to stabilize after navigation before auto-opening
+            setTimeout(() => {
+                autoOpenYouTubeTranscript();
+            }, 1000);
+        });
+
+        // Initial run
+        autoOpenYouTubeTranscript();
+    }
+
+    /**
+     * Automatically attempts to open the YouTube transcript panel.
+     * YouTube requires the panel to be open to reliably reflect segments in the DOM.
+     */
+    async function autoOpenYouTubeTranscript() {
+        if (!window.location.hostname.includes('youtube.com') || !window.location.pathname.includes('/watch')) return;
+
+        const checkAndClick = () => {
+            // 1. Check if already open and TRULY VISIBLE
+            const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
+            const isVisible = panel &&
+                panel.offsetParent !== null &&
+                panel.getAttribute('visibility') === 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED';
+
+            if (isVisible) {
+                console.log('[Lumina] Transcript panel is already open and expanded.');
+                return true;
+            }
+
+            // 2. Expand description if needed
+            const expandBtn = document.querySelector('#expand, #description-inline-expander .tp-yt-paper-button#expand, ytd-text-inline-expander #expand');
+            if (expandBtn && expandBtn.offsetParent !== null && (expandBtn.innerText.toLowerCase().includes('more') || expandBtn.innerText.toLowerCase().includes('thêm'))) {
+                console.log('[Lumina] Expanding description to find transcript button...');
+                expandBtn.click();
+            }
+
+            // 3. Find the "Show transcript" button
+            const selectors = [
+                'button[aria-label="Show transcript"]',
+                'ytd-button-renderer[aria-label="Show transcript"] button',
+                '.yt-spec-button-shape-next[aria-label="Show transcript"]',
+                'ytd-video-description-transcript-section-renderer button'
+            ];
+
+            let btn = null;
+            for (const sel of selectors) {
+                btn = document.querySelector(sel);
+                if (btn && btn.offsetParent !== null) break;
+            }
+
+            if (!btn) {
+                const buttons = Array.from(document.querySelectorAll('button, ytd-button-renderer, tp-yt-paper-button'));
+                btn = buttons.find(b => {
+                    if (b.offsetParent === null) return false;
+                    const txt = (b.innerText || b.textContent || '').toLowerCase();
+                    return txt.includes('show transcript') ||
+                        txt.includes('hiển thị bản ghi') ||
+                        txt.includes('transcript');
+                });
+            }
+
+            if (btn) {
+                console.log('[Lumina] Found "Show transcript" button. Clicking...');
+                btn.click();
+
+                setTimeout(() => {
+                    const collapseBtn = document.querySelector('ytd-text-inline-expander #collapse, #description-inline-expander #collapse, #collapse.ytd-text-inline-expander');
+                    if (collapseBtn && collapseBtn.offsetParent !== null) {
+                        console.log('[Lumina] Collapsing description...');
+                        collapseBtn.click();
+                    }
+                }, 500);
+
+                waitForSegmentsAndCache();
+                return true;
+            }
+            return false;
+        };
+
+        if (checkAndClick()) return;
+
+        let attempts = 0;
+        const maxAttempts = 20;
+        youtubeNavInterval = setInterval(() => {
+            attempts++;
+            if (checkAndClick() || attempts >= maxAttempts) {
+                clearInterval(youtubeNavInterval);
+                if (attempts < maxAttempts) {
+                    waitForSegmentsAndCache();
+                } else {
+                    console.warn('[Lumina] Could not auto-open transcript (button not found or hidden)');
+                }
+            }
+        }, 1000);
+
+        async function waitForSegmentsAndCache() {
+            const videoId = YoutubeUtils.getVideoId(window.location.href);
+            if (!videoId) return;
+
+            let cacheAttempts = 0;
+            const maxCacheAttempts = 15;
+
+            if (youtubeCacheInterval) clearInterval(youtubeCacheInterval);
+
+            youtubeCacheInterval = setInterval(() => {
+                cacheAttempts++;
+                const transcript = YoutubeUtils.getTranscriptFromDOM();
+
+                if (transcript && transcript.length > 0) {
+                    if (youtubeTranscriptCache.videoId === videoId && youtubeTranscriptCache.transcript === transcript) {
+                        clearInterval(youtubeCacheInterval);
+                        return;
+                    }
+
+                    youtubeTranscriptCache.videoId = videoId;
+                    youtubeTranscriptCache.transcript = transcript;
+                    youtubeTranscriptCache.status = 'completed';
+
+                    console.log(`[Lumina] Successfully captured transcript from DOM: ${transcript.length} chars`);
+                    console.log(`[Lumina] Transcript Preview (first 1000 chars):\n%c${transcript.substring(0, 1000)}...`, "color: #4CAF50; font-weight: bold; font-style: italic;");
+
+                    clearInterval(youtubeCacheInterval);
+                } else if (cacheAttempts >= maxCacheAttempts) {
+                    console.log('[Lumina] Timed out waiting for segments to populate in DOM panel.');
+                    clearInterval(youtubeCacheInterval);
+                }
+            }, 1000);
+        }
+    }
 })();
 
 
