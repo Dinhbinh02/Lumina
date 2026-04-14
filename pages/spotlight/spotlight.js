@@ -3088,30 +3088,49 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             const results = await Promise.all(webSourceScope.map(async (source) => {
                 try {
                     const tabResults = await chrome.scripting.executeScript({
-                        target: { tabId: source.tabId },
+                        target: { tabId: source.tabId, allFrames: true },
                         func: () => {
                             return typeof window.luminaExtractMainContent === 'function'
                                 ? window.luminaExtractMainContent()
                                 : null;
                         }
                     });
-                    if (tabResults && tabResults[0] && tabResults[0].result) return tabResults[0].result;
+                    return tabResults ? tabResults.map(tr => tr.result).filter(Boolean) : [];
                 } catch (e) {
                     console.warn(`[Spotlight] Could not read tab ${source.tabId}:`, e);
                 }
-                return null;
+                return [];
             }));
 
-            const validResults = results.filter(r => r !== null);
-            if (validResults.length > 0) {
-                const pieces = validResults.map((ctx, index) => {
-                    const header = validResults.length === 1 
+            // results is Array<Array<ContentObject>>
+            const flatResults = results.flat().filter(r => r && r.content);
+            
+            // Aggregate and deduplicate (avoid double-collecting from parent/child frames)
+            const uniqueResults = [];
+            const seenContents = new Set();
+
+            flatResults.forEach(ctx => {
+                const text = ctx.content.trim();
+                if (text.length < 100) return; // Skip trivial frames
+                
+                // Fingerprint the content to avoid overlap
+                const fingerprint = text.substring(0, 500);
+                if (seenContents.has(fingerprint)) return;
+                
+                uniqueResults.push(ctx);
+                seenContents.add(fingerprint);
+            });
+
+            if (uniqueResults.length > 0) {
+                const pieces = uniqueResults.map((ctx, index) => {
+                    const header = uniqueResults.length === 1 
                         ? '[Current Source]' 
-                        : `[Source ${index + 1}]: ${ctx.title}`;
+                        : `[Source ${index + 1}]: ${ctx.title || 'Subframe Content'}`;
                     return `${header}\n\n${ctx.content}`;
                 });
                 pageContext = pieces.join("\n\n---\n\n");
             }
+
         } catch (err) {
             console.error("[Spotlight] Failed to read pinned tabs:", err);
         }

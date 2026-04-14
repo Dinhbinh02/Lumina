@@ -1760,12 +1760,20 @@
 
         // 1. Remove obvious noise immediately
         const blacklistedSelectors = [
-            'nav', 'footer', 'header', 'aside', 'script', 'style', 'iframe', 'noscript',
+            'nav', 'footer', 'header', 'aside', 'script', 'style', 'noscript',
             'form', 'svg', 'canvas', '.ads', '.sidebar', '.menu', '.footer', '.header',
             '.ad-box', '.social-share', '.comments', '[id^="lumina-"]', '[class^="lumina-"]'
         ];
+        
+        // Specialized logic for SharePoint/Office Online to preserve viewer containers
+        const isOfficeDoc = url.includes('sharepoint.com') || url.includes('office.com') || url.includes('officeapps.live.com');
+        
         blacklistedSelectors.forEach(s => {
-            docClone.querySelectorAll(s).forEach(el => el.remove());
+            docClone.querySelectorAll(s).forEach(el => {
+                // Don't remove iframes on Office docs as they hold the content
+                if (s === 'iframe' && isOfficeDoc) return;
+                el.remove();
+            });
         });
 
         // 2. Score potential main containers
@@ -1790,10 +1798,17 @@
             candidates.push({ element: el, score: score });
         });
 
+        // 3. Select best container or fallback
         candidates.sort((a, b) => b.score - a.score);
         let bestEl = candidates.length > 0 ? candidates[0].element : docClone.body;
 
-        bestEl.querySelectorAll('p, li').forEach(sub => {
+        // Specialized check for Excel Online elements if standard scoring fails
+        if (isOfficeDoc && (!candidates.length || candidates[0].score < 10)) {
+            const excelContainer = docClone.querySelector('.ewa-grid-container, #WACViewPanel_Excel_MainElement, .WACViewPanel');
+            if (excelContainer) bestEl = excelContainer;
+        }
+
+        bestEl.querySelectorAll('p, li, .ewa-rtc-content').forEach(sub => {
             const subText = sub.innerText.trim();
             if (subText.length < 5) {
                 sub.remove();
