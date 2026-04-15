@@ -640,6 +640,14 @@ async function initTabs() {
                 switchGroup(Math.min(Math.max(0, savedIndex), tabGroups.length - 1));
             }
 
+            // Check for pending YouTube trigger AFTER tabs are ready
+            chrome.storage.local.get(['lumina_youtube_trigger'], (ytData) => {
+                if (ytData.lumina_youtube_trigger) {
+                    // Reduce delay for better responsiveness
+                    setTimeout(() => handleYouTubeTrigger(ytData.lumina_youtube_trigger), 100);
+                }
+            });
+
         } else {
             // No saved state, start fresh
             createTab(true);
@@ -2748,8 +2756,16 @@ function setupPort() {
                     targetUI.removeSearching();
                     targetUI.appendError(msg.error);
                     targetUI.currentAnswerDiv = null;
-                    targetUI.hideStopButton();
                 });
+                
+                if (sharedInputUI) {
+                    sharedInputUI.isGenerating = false;
+                    sharedInputUI._updateActionBtnState();
+                }
+                if (sharedInputUISecondary) {
+                    sharedInputUISecondary.isGenerating = false;
+                    sharedInputUISecondary._updateActionBtnState();
+                }
                 streamingTab = null;
                 return;
             }
@@ -2828,7 +2844,14 @@ function setupPort() {
                     // ─────────────────────────────────────────────────────────────────────────
 
                     requestAnimationFrame(() => {
-                        targetUI.hideStopButton();
+                        if (sharedInputUI) {
+                            sharedInputUI.isGenerating = false;
+                            sharedInputUI._updateActionBtnState();
+                        }
+                        if (sharedInputUISecondary) {
+                            sharedInputUISecondary.isGenerating = false;
+                            sharedInputUISecondary._updateActionBtnState();
+                        }
                         if (answerDiv) {
                             const entry = answerDiv.closest('.lumina-dict-entry');
                             if (entry) {
@@ -3007,7 +3030,29 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 
     // Regular chat flow
-    const conversationHistory = targetChatUI.gatherMessages();
+    let untilEntryId = null;
+    if (extra.isRecheck || extra.isRegenerate) {
+        untilEntryId = extra.entryId;
+        if (!untilEntryId) {
+            // Fallback: use last entry ID
+            const lastEntry = targetChatUI.historyEl.querySelector('.lumina-dict-entry:last-child');
+            untilEntryId = lastEntry ? lastEntry.dataset.entryId : null;
+        }
+    }
+
+    const conversationHistory = targetChatUI.gatherMessages(untilEntryId);
+
+    // If regeneration, we might need to use the old question text if the new text is empty
+    if (extra.isRegenerate && !text) {
+        const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : null;
+        if (targetEntry) {
+            const questionEl = targetEntry.querySelector('.lumina-chat-question');
+            if (questionEl) {
+                text = questionEl.dataset.rawText || questionEl.textContent.trim();
+                apiText = text;
+            }
+        }
+    }
 
     // Process @Comment trigger for the API request (but keep original text for display)
     // Determine streaming action
@@ -3024,21 +3069,30 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     syncTabs.forEach(t => {
         // Only scroll the tab that actually submitted — the other shared-session tab scrolls independently
         const skipMargin = t !== currentTab;
+        const ui = t.chatUIInstance;
 
-        if (!extra.isRecheck) {
-            t.chatUIInstance.appendQuestion(text, images, {
+        if (!extra.isRecheck && !extra.isRegenerate) {
+            ui.appendQuestion(text, images, {
                 editable: false,
                 skipMargin: skipMargin,
                 entryType: extra.mode || 'qa',
                 displayText: displayQuery
             });
-            t.chatUIInstance.showLoading();
+            ui.showLoading();
         } else {
-            // For synced secondary tabs, if there is a recheck event, we need to manually show loading 
-            // since common.js only did it for the primary tab that fired the event.
+            // For synced secondary tabs, if there is a recheck/regen event, we need to manually show loading 
             if (t !== currentTab) {
-                // Simplest sync for secondary tab: just mirror the HTML of the primary
+                // Mirror the history structure
                 t.historyEl.innerHTML = currentTab.historyEl.innerHTML;
+                ui._setupHistoryDelegation(t.historyEl);
+                ui.initListeners(t.historyEl);
+            }
+            
+            // Find the correct entry to show loading
+            const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
+            if (targetEntry) {
+                ui.clearAnswer(targetEntry);
+                ui.showLoading(targetEntry);
             }
         }
     });
@@ -3165,16 +3219,32 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         if (!port) throw new Error("Could not establish connection");
         port.postMessage(message);
 
-        // Show stop button on all sync tabs
-        syncTabs.forEach(t => {
-            t.chatUIInstance.showStopButton(() => {
-                if (port) {
-                    port.disconnect();
-                    port = null;
-                }
-                syncTabs.forEach(st => st.chatUIInstance.removeLoading());
-            });
-        });
+        const stopHandler = () => {
+            if (port) {
+                port.disconnect();
+                port = null;
+            }
+            syncTabs.forEach(st => st.chatUIInstance.removeLoading());
+            if (sharedInputUI) {
+                sharedInputUI.isGenerating = false;
+                sharedInputUI._updateActionBtnState();
+            }
+            if (sharedInputUISecondary) {
+                sharedInputUISecondary.isGenerating = false;
+                sharedInputUISecondary._updateActionBtnState();
+            }
+        };
+
+        if (sharedInputUI) {
+            sharedInputUI.isGenerating = true;
+            sharedInputUI.onStop = stopHandler;
+            sharedInputUI._updateActionBtnState();
+        }
+        if (sharedInputUISecondary) {
+            sharedInputUISecondary.isGenerating = true;
+            sharedInputUISecondary.onStop = stopHandler;
+            sharedInputUISecondary._updateActionBtnState();
+        }
     };
 
     try {
@@ -4185,7 +4255,7 @@ window.addEventListener('mousedown', (e) => {
     }
 }, true);
 
-// Listen for settings changes
+// Listen for settings changes and specialized triggers
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
         if (changes.readWebpage) {
@@ -4194,8 +4264,79 @@ chrome.storage.onChanged.addListener((changes, area) => {
         if (changes.askSelectionPopupEnabled) {
             askSelectionPopupEnabled = !!changes.askSelectionPopupEnabled.newValue;
         }
+        if (changes.lumina_youtube_trigger && changes.lumina_youtube_trigger.newValue) {
+            handleYouTubeTrigger(changes.lumina_youtube_trigger.newValue);
+        }
     }
 });
+
+/**
+ * Handles the "Ask Lumina" trigger from YouTube.
+ * Auto-pins the current tab as a web source and focuses the input.
+ */
+async function handleYouTubeTrigger(triggerInfo) {
+    console.log('[Spotlight YT] handleYouTubeTrigger calling with:', triggerInfo);
+    if (!triggerInfo || triggerInfo.action !== 'youtube_ask') return;
+
+    const activeTab = tabs && tabs[activeTabIndex];
+    console.log('[Spotlight YT] activeTabIndex:', activeTabIndex, 'activeTab exists:', !!activeTab);
+    
+    if (!activeTab) {
+        // Panel not fully ready yet — retry once after a short delay
+        setTimeout(() => handleYouTubeTrigger(triggerInfo), 200);
+        return;
+    }
+
+    // 1. Find the specific YouTube tab that triggered this
+    const handleFoundTab = (ytTab) => {
+        console.log('[Spotlight YT] Processing YouTube tab:', ytTab ? ytTab.id : 'NOT FOUND');
+        
+        if (ytTab) {
+            currentBrowserTab = {
+                tabId: ytTab.id,
+                title: ytTab.title || 'Untitled',
+                url: ytTab.url
+            };
+            
+            // 2. Auto-pin this source for the active spotlight tab
+            console.log('[Spotlight YT] Pinning to active tab:', activeTab.id);
+            toggleWebSourcePin(currentBrowserTab, true, activeTab.id);
+            
+            // Clear storage trigger after handling to prevent re-triggering on reload
+            chrome.storage.local.remove('lumina_youtube_trigger');
+        } else {
+            console.warn('[Spotlight YT] Could not find any corresponding YouTube tab.');
+        }
+    };
+
+    if (triggerInfo.tabId) {
+        console.log('[Spotlight YT] Using direct tabId from trigger:', triggerInfo.tabId);
+        chrome.tabs.get(triggerInfo.tabId, (tab) => {
+            if (chrome.runtime.lastError || !tab) {
+                console.log('[Spotlight YT] Direct tabId lookup failed, falling back to query...');
+                performTabQuery();
+            } else {
+                handleFoundTab(tab);
+            }
+        });
+    } else {
+        performTabQuery();
+    }
+
+    function performTabQuery() {
+        console.log('[Spotlight YT] Querying tabs to find videoId:', triggerInfo.videoId);
+        chrome.tabs.query({ currentWindow: false }, (tabs) => {
+            const ytTab = tabs.find(t => {
+                const url = t.url || '';
+                if (triggerInfo.videoId) {
+                    return url.includes(`v=${triggerInfo.videoId}`) || url.includes(`/shorts/${triggerInfo.videoId}`);
+                }
+                return url.includes('youtube.com/watch') || url.includes('youtube.com/shorts');
+            });
+            handleFoundTab(ytTab);
+        });
+    }
+}
 
 // Expose API for History Controller
 window.loadHistoryIntoNewTab = async function(messages, meta, historySessionId, targetIndex = null) {

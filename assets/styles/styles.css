@@ -2,6 +2,10 @@
    VARIABLES & RESET
    ==================== */
 
+* {
+  box-sizing: border-box;
+}
+
 :host,
 body,
 button {
@@ -220,7 +224,7 @@ button {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   column-gap: 10px;
-  background: #f0f4ff;
+  background: #E9EEF6;
   border: 1px solid #e2eafd;
   border-radius: 16px;
   min-height: 60px;
@@ -591,7 +595,7 @@ button {
   width: auto;
   min-width: 100px;
   max-width: 150px;
-  background: var(--input-bg);
+  background: #E9EEF6;
   border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -702,9 +706,11 @@ button {
   flex: 1;
   min-height: 0;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   background: transparent;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .lumina-chat-scroll-content {
@@ -722,6 +728,7 @@ button {
   margin: 0 auto;
   width: 100%;
   position: relative;
+  box-sizing: border-box;
 }
 
 .lumina-chat-context {
@@ -783,7 +790,7 @@ button {
   border: none;
   cursor: pointer;
   padding: 4px;
-  border-radius: 50%;
+  border-radius: 12px;
   color: var(--lumina-text-secondary);
   font-size: 0.92em;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
@@ -1241,15 +1248,13 @@ button {
   will-change: background-position, opacity;
 }
 
-.lumina-input-container .lumina-chat-input {
-  font-size: 1em !important;
-}
-
 .lumina-chat-input {
+  grid-row: 1;
+  grid-column: 1 / -1;
   width: 100% !important;
   border: none !important;
   background: transparent !important;
-  box-shadow: none;
+  box-shadow: none !important;
   line-height: 1.4 !important;
   letter-spacing: normal !important;
   outline: none !important;
@@ -1263,14 +1268,22 @@ button {
   min-height: 24px !important;
   height: auto;
   padding: 5px 6px 7px 6px !important;
+  height: auto !important;
+  margin: 4px 0;
+  transform: translateZ(0);
+  flex-grow: 1;
+  min-width: 0;
+  user-select: text;
+  -webkit-user-select: text;
+  field-sizing: content;
 }
 
 .lumina-input-bar {
   display: grid;
-  grid-template-columns: auto 1fr minmax(120px, 32%) auto;
-  grid-template-rows: auto 34px;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
   column-gap: 8px;
-  row-gap: 0;
+  row-gap: 8px;
   padding: 8px;
   align-items: end;
   position: relative;
@@ -1285,61 +1298,80 @@ button {
   gap: 8px;
 }
 
-.lumina-input-bar .lumina-chat-input {
-  grid-row: 2;
-  grid-column: 2;
-  transform: translateZ(0);
-  flex-grow: 1;
-  border: none;
-  background: transparent;
-  min-height: 24px;
-  max-height: 200px;
-  padding: 4px 8px;
-  resize: none;
-  line-height: 1.4;
-  outline: none;
-  min-width: 0;
-  user-select: text;
-  -webkit-user-select: text;
-  field-sizing: content;
-  height: auto !important;
+#upload-btn {
+  order: 1 !important;
 }
 
-.lumina-input-bar:not(.expanded) .lumina-chat-input::placeholder {
+#tools-wrapper {
+  order: 2 !important;
+}
+
+
+.lumina-input-bar .lumina-chat-input::placeholder {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
-.lumina-input-bar .lumina-model-selector {
+.lumina-input-bar .lumina-left-actions {
   grid-row: 2;
-  grid-column: 3;
-  height: 32px;
+  grid-column: 1;
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .lumina-input-bar .lumina-trailing-group {
   grid-row: 2;
-  grid-column: 4;
+  grid-column: 2;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.lumina-input-bar .lumina-model-selector {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Align the pill to the right */
+  min-width: 0 !important;
+  flex: 1; /* Take all space in the actions row to handle shrinking */
+  position: relative !important;
+  overflow: visible !important;
 }
 
 .lumina-input-bar .lumina-model-btn {
   display: flex !important;
   align-items: center !important;
-  width: 100% !important;
+  width: auto !important; /* Wrap content only */
+  max-width: 100% !important;
   height: 32px !important;
   padding: 0 10px !important;
   background: transparent !important;
   border: none !important;
-  border-radius: 16px !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  min-width: 0 !important;
   cursor: pointer;
   box-shadow: none !important;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   gap: 4px !important;
+}
+
+.lumina-model-btn svg,
+.lumina-model-btn .lumina-chevron {
+  flex-shrink: 0 !important;
+}
+
+.lumina-input-bar .lumina-current-model {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  text-align: left !important;
 }
 
 .lumina-input-bar .lumina-model-btn:hover {
@@ -1352,6 +1384,10 @@ button {
 
 [data-theme="dark"] .lumina-input-bar .lumina-model-btn:hover {
   background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-input-bar .lumina-model-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
 .lumina-input-bar .lumina-current-model {
@@ -1395,54 +1431,220 @@ button {
   pointer-events: auto;
 }
 
-.lumina-input-bar.expanded .lumina-chat-input {
-  grid-row: 1;
-  grid-column: 1 / -1;
-  margin-bottom: 8px;
-  display: block;
-}
 
-.lumina-input-bar.expanded .lumina-left-actions,
-.lumina-input-bar.expanded .lumina-model-selector,
-.lumina-input-bar.expanded .lumina-trailing-group {
-  grid-row: 2;
-}
-
-.lumina-plus-toggle,
-.lumina-mic-btn,
-.lumina-regenerate-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 50%;
+.lumina-upload-btn,
+.lumina-tools-toggle,
+.lumina-mic-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  border: none !important;
   background: transparent !important;
-  color: var(--lumina-text-secondary);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
-  flex-shrink: 0;
-  transform: translateZ(0);
+  color: var(--lumina-text-secondary) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  flex-shrink: 0 !important;
+  border-radius: 12px !important;
 }
 
-.lumina-plus-toggle:hover,
-.lumina-mic-btn:hover,
-.lumina-regenerate-btn:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--lumina-text-primary);
-}
-
-.lumina-plus-toggle .lumina-svg-icon,
-.lumina-mic-btn .lumina-svg-icon {
+.lumina-mic-btn svg {
   width: 18px !important;
   height: 18px !important;
 }
 
-.lumina-input-bar.expanded .lumina-stop-btn {
-  grid-column: 4;
-  grid-row: 2;
-  justify-self: end;
+.lumina-upload-btn,
+.lumina-mic-btn {
+  width: 32px !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+}
+
+.lumina-tools-toggle {
+  padding: 0 10px;
+  gap: 6px;
+  font-size: 0.9em;
+  font-weight: 520;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-tools-toggle.active {
+  color: #000 !important;
+  background: rgba(var(--lumina-primary-rgb), 0.2) !important;
+}
+
+.lumina-tools-toggle.active:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.2) !important;
+  color: #000 !important;
+}
+
+[data-theme="dark"] .lumina-tools-toggle.active {
+  color: #fff !important;
+  background: rgba(var(--lumina-primary-rgb), 0.3) !important;
+}
+
+[data-theme="dark"] .lumina-tools-toggle.active:hover {
+  background: rgba(var(--lumina-primary-rgb), 0.3) !important;
+  color: #fff !important;
+}
+
+.lumina-upload-btn:hover,
+.lumina-tools-toggle:hover,
+.lumina-mic-btn:hover,
+.lumina-action-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+[data-theme="dark"] .lumina-upload-btn:hover,
+[data-theme="dark"] .lumina-tools-toggle:hover,
+[data-theme="dark"] .lumina-mic-btn:hover,
+[data-theme="dark"] .lumina-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Tools Dropdown & Items */
+.lumina-tools-dropdown {
+  position: absolute !important;
+  bottom: 130% !important;
+  left: 0 !important;
+  background: #ffffff !important;
+  border: 1px solid var(--lumina-ui-border, #e0e0e0) !important;
+  border-radius: 12px !important;
+  padding: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 180px !important;
+  z-index: 10000 !important;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+  transform-origin: bottom left;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+
+[data-theme="dark"] .lumina-tools-dropdown {
+  background: #1e1e1e !important;
+  border: 1px solid #333 !important;
+  color: #fff !important;
+}
+
+.lumina-tools-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.lumina-tool-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--lumina-text-primary) !important;
+  font-weight: 520 !important;
+  cursor: pointer !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  width: 100% !important;
+  font-size: 13px !important;
+  transition: background 0.15s ease;
+}
+
+[data-theme="dark"] .lumina-tool-item {
+  color: #e0e0e0 !important;
+}
+
+.lumina-tool-item:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .lumina-tool-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-tools-toggle span {
+  font-weight: 520 !important;
+}
+
+/* Action Button Specific Styles */
+.lumina-action-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  width: 32px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: var(--lumina-ui-bg-hover, #eee) !important;
+  color: #fff !important;
+  cursor: default !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  flex-shrink: 0 !important;
+}
+
+[data-theme="dark"] .lumina-action-btn {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-action-btn.active.send,
+.lumina-action-btn.pause {
+  background: var(--lumina-primary-color, #007aff) !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3) !important;
+}
+
+.lumina-action-btn.active.send svg,
+.lumina-action-btn.pause svg {
+  filter: brightness(0) invert(1) !important;
+}
+
+.lumina-action-btn.pause {
+  background: #FF3B30 !important;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+}
+
+.lumina-action-btn.regenerate {
+  background: #ccc !important;
+  color: #fff !important;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .lumina-action-btn.regenerate {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.lumina-action-btn.regenerate:hover {
+  background: #bbb !important;
+  color: #000 !important;
+}
+
+.lumina-action-btn.active.regenerate svg,
+.lumina-action-btn.regenerate svg {
+  filter: none !important;
+  /* Use currentColor instead of inversion filter */
+}
+
+/* Unified Tool Colors */
+.lumina-tool-item.active {
+  color: var(--lumina-primary) !important;
+  background: rgba(0, 122, 255, 0.1) !important;
+}
+
+.lumina-tool-item.active span {
+  color: var(--lumina-primary) !important;
+}
+
+.lumina-proofread-toggle.active,
+.lumina-translate-toggle.active,
+.lumina-websource-toggle.active {
+  color: var(--lumina-primary) !important;
+  background: rgba(0, 122, 255, 0.1) !important;
+  border-color: transparent !important;
 }
 
 .lumina-actions-menu>button,
@@ -1460,7 +1662,7 @@ button {
   cursor: pointer !important;
   text-align: left;
   transition: background 0.15s ease;
-  font-weight: 500 !important;
+  font-weight: 520 !important;
   cursor: pointer;
 }
 
@@ -1638,7 +1840,7 @@ button {
   z-index: 10;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: rgba(250, 251, 255, 0.95);
   color: #49576d;
   display: flex;
@@ -1717,27 +1919,16 @@ button {
   font-weight: 500;
   transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: none;
-  min-width: 100% !important;
-  border-radius: 16px !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--lumina-text-secondary) !important;
-  padding: 4px 10px !important;
-  border: none !important;
-  max-width: 140px;
+  min-width: 0 !important;
+  max-width: 100% !important;
   font-weight: 500 !important;
 }
 
 .lumina-model-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--lumina-text-primary);
-  transform: translateY(-1px);
-  box-shadow: none;
-  background: rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
   color: var(--lumina-text-primary) !important;
   transform: none !important;
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #fff !important;
+  box-shadow: none !important;
 }
 
 .lumina-current-model,
@@ -2103,6 +2294,7 @@ button {
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   height: 100%;
+  padding: 0 12px;
 }
 
 .spotlight-tabs-list::-webkit-scrollbar {
@@ -2193,7 +2385,7 @@ button {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 12px;
   border: none;
   background: transparent;
   color: #5f6368;
@@ -2223,7 +2415,7 @@ button {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: 12px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -3220,7 +3412,7 @@ button {
   right: 6px;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
@@ -3287,7 +3479,7 @@ button {
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 50%;
+  border-radius: 12px;
   background: #f2f2f2;
   color: #FF3B30;
   cursor: pointer;
@@ -3346,7 +3538,7 @@ button {
   right: 4px;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: rgba(0, 0, 0, 0.6);
   color: white;
   display: flex;
@@ -3406,7 +3598,7 @@ button {
   right: 12px;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -3787,7 +3979,7 @@ button {
   font-weight: 620 !important;
   color: white;
   background: var(--lumina-primary-color);
-  border-radius: 50%;
+  border-radius: 12px;
   flex-shrink: 0;
 }
 
@@ -3826,124 +4018,7 @@ button {
   color: inherit !important;
 }
 
-.lumina-tools-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--lumina-text-secondary);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  padding: 0;
-  width: auto !important;
-  padding: 4px 10px !important;
-  border-radius: 16px !important;
-  gap: 4px !important;
-  display: flex !important;
-  align-items: center !important;
-  font-weight: 500 !important;
-  height: auto !important;
-}
-
-.lumina-tools-toggle:hover {
-  background: rgba(0, 0, 0, 0.12);
-  color: var(--lumina-text-primary);
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-.lumina-tools-dropdown {
-  position: absolute;
-  bottom: 130%;
-  left: -13px;
-  background: #ffffff !important;
-  border: 1px solid var(--lumina-ui-border, #e0e0e0);
-  box-shadow: none !important;
-  border-radius: 12px;
-  padding: 4px;
-  display: flex !important;
-  flex-direction: column;
-  min-width: 180px;
-  z-index: 10000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px) scale(0.95);
-  pointer-events: none;
-  transform-origin: bottom left;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
-}
-
-[data-theme="dark"] .lumina-tools-dropdown {
-  background: #1e1e1e !important;
-  border: 1px solid #333 !important;
-  box-shadow: none !important;
-  color: #fff !important;
-}
-
-.lumina-tools-dropdown::before {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  height: 20px;
-  background: transparent;
-  z-index: -1;
-}
-
-.lumina-tool-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border: none;
-  background: transparent;
-  color: #1a1a1b !important;
-  font-weight: 520;
-  cursor: pointer;
-  border-radius: 8px;
-  text-align: left;
-  width: 100%;
-  font-size: 0.9em;
-}
-
-[data-theme="dark"] .lumina-tool-item {
-  color: #e0e0e0 !important;
-}
-
-.lumina-tool-item:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="dark"] .lumina-tool-item:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.lumina-tools-toggle span {
-  font-weight: 500;
-  display: block;
-}
-
-.lumina-plus-toggle.lumina-tools-toggle,
-#tools-toggle.lumina-plus-toggle {
-  width: 32px !important;
-  height: 32px !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-  gap: 0 !important;
-  justify-content: center !important;
-  background: transparent !important;
-}
-
-.lumina-plus-toggle.lumina-tools-toggle:hover,
-#tools-toggle.lumina-plus-toggle:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--lumina-text-primary) !important;
-}
+/* Redundant Tools styles removed */
 
 .lumina-proofread-toggle {
   background: rgba(255, 204, 0, 0.2) !important;
@@ -4078,9 +4153,10 @@ button {
 }
 
 .lumina-web-chip.is-active {
+  border-width: 1.8px;
   border-color: var(--lumina-primary-color);
   color: var(--lumina-primary-color);
-  background: rgba(var(--lumina-primary-rgb), 0.05);
+  background: rgba(var(--lumina-primary-rgb), 0.08);
   opacity: 1;
 }
 
@@ -4850,4 +4926,173 @@ button {
   height: 16px;
   stroke: currentColor;
   fill: none;
+}
+
+/* ====================
+   SPOTLIGHT PAGE STYLES
+   ==================== */
+.lumina-spotlight-page {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100vw;
+  height: 100vh;
+  min-width: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.lumina-spotlight-page .lumina-chat-container {
+  width: 100% !important;
+  flex: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #FFFFFF !important;
+}
+
+.lumina-spotlight-page .lumina-chat-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 10px 10px 0 10px;
+  max-width: 740px !important;
+  margin: 0 auto !important;
+  width: 100%;
+}
+
+.lumina-spotlight-page .lumina-chat-scroll-content::-webkit-scrollbar {
+  display: none !important;
+}
+
+.lumina-spotlight-page .lumina-chat-input-wrapper {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  padding: 0 10px 10px 10px;
+  pointer-events: auto !important;
+  width: 100%;
+  max-width: 740px !important;
+  margin: 0 auto !important;
+  background: #FFFFFF !important;
+}
+
+.lumina-spotlight-page #input-area {
+  overflow: visible !important;
+  z-index: 1000 !important;
+  position: relative !important;
+}
+
+.lumina-spotlight-page .lumina-chat-input {
+  font-size: 1em !important;
+}
+
+.spotlight-main-area {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.spotlight-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  position: relative;
+  background: #fff;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+}
+
+#pane-primary {
+  flex: 1;
+}
+
+#pane-secondary {
+  border-left: none;
+  position: relative;
+}
+
+#pane-secondary::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: #e8e8e8;
+}
+
+.spotlight-pane-divider {
+  width: 14px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 100;
+  margin: 0 -7px;
+  transition: background 0.18s;
+}
+
+.spotlight-pane-divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: #ececec;
+  transform: translateX(-50%);
+  transition: background 0.18s, width 0.18s;
+}
+
+.spotlight-pane-divider:hover::after,
+.spotlight-pane-divider.dragging::after {
+  background: rgba(0, 86, 210, 0.35);
+  width: 2px;
+}
+
+.spotlight-pane-divider.snapped::after {
+  background: rgba(0, 86, 210, 0.85);
+  width: 3px;
+  top: 10%;
+  height: 80%;
+}
+
+.spotlight-resizing-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  cursor: col-resize;
+  display: none;
+}
+
+.spotlight-tab.drop-target-split::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  right: 0;
+  background: rgba(0, 86, 210, 0.1);
+  border-left: 2px dashed #0056D2;
+  z-index: 20;
+  pointer-events: none;
 }

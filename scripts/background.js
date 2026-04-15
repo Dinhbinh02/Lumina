@@ -93,6 +93,13 @@ async function toggleSidePanel(windowId) {
     }
 }
 
+async function ensureSidePanelOpen(windowId) {
+    if (!windowId) return;
+    if (!sidePanelPorts.has(windowId)) {
+        chrome.sidePanel.open({ windowId }).catch(() => { });
+    }
+}
+
 
 // Registration of content scripts is handled via manifest.json for regular websites.
 // Direct injection is ONLY needed for existing tabs during installation, which should be done via scripting.executeScript instead of persistent registration.
@@ -1343,10 +1350,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             pasteDictationText(request.text);
             return;
 
-        case 'open_sidepanel': {
+        case 'open_sidepanel':
+        case 'ensure_sidepanel_open': {
             const windowIdManual = sender.tab ? sender.tab.windowId : null;
             if (windowIdManual) {
-                toggleSidePanel(windowIdManual);
+                if (request.action === 'open_sidepanel') {
+                    toggleSidePanel(windowIdManual);
+                } else {
+                    ensureSidePanelOpen(windowIdManual);
+                }
+
+                // If this is a YouTube trigger, enrich it and save to storage
+                if (request.youtubeTrigger && sender.tab) {
+                    const enrichedTrigger = {
+                        ...request.youtubeTrigger,
+                        tabId: sender.tab.id,
+                        title: sender.tab.title || request.youtubeTrigger.title,
+                        url: sender.tab.url || request.youtubeTrigger.url
+                    };
+                    chrome.storage.local.set({ 'lumina_youtube_trigger': enrichedTrigger });
+                }
                 
                 // Identify if this is internal toggle from the sidepanel itself
                 const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');

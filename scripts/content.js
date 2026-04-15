@@ -1734,26 +1734,7 @@
 
         let youtubeTranscript = "";
         if (isYouTube) {
-            const videoId = YoutubeUtils.getVideoId(url);
-            if (videoId) {
-                // EXCLUSIVE LOGIC: Use DOM or Cache (both coming from the panel)
-                youtubeTranscript = YoutubeUtils.getTranscriptFromDOM();
-
-                // If panel is visible but no text, wait a bit for YouTube to populate it
-                if (!youtubeTranscript) {
-                    const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
-                    if (panel && panel.offsetParent !== null) {
-                        console.log('[Lumina] Transcript panel visible but empty, waiting for current content...');
-                        await new Promise(r => setTimeout(r, 1500));
-                        youtubeTranscript = YoutubeUtils.getTranscriptFromDOM();
-                    }
-                }
-
-                // Fallback to cache if DOM scan failed (e.g. user closed panel)
-                if (!youtubeTranscript && youtubeTranscriptCache.videoId === videoId) {
-                    youtubeTranscript = youtubeTranscriptCache.transcript;
-                }
-            }
+            youtubeTranscript = await YoutubeUtils.fetchTranscript(url);
         }
 
         const docClone = doc.cloneNode(true);
@@ -1848,148 +1829,302 @@
     window.luminaExtractMainContent = extractMainContent;
     window.luminaEstimateTokens = luminaEstimateTokens;
 
-    initShadowDOM();
-
-    // Initialize YouTube Background Fetcher
-    // YouTube Interval Management
-    let youtubeNavInterval = null;
-    let youtubeCacheInterval = null;
-
-    if (window.location.hostname.includes('youtube.com')) {
-        document.addEventListener('yt-navigate-finish', () => {
-            // Clear any existing intervals from previous video
-            if (youtubeNavInterval) clearInterval(youtubeNavInterval);
-            if (youtubeCacheInterval) clearInterval(youtubeCacheInterval);
-
-            // Wait for DOM to stabilize after navigation before auto-opening
-            setTimeout(() => {
-                autoOpenYouTubeTranscript();
-            }, 1000);
-        });
-
-        // Initial run
-        autoOpenYouTubeTranscript();
-    }
-
     /**
-     * Automatically attempts to open the YouTube transcript panel.
-     * YouTube requires the panel to be open to reliably reflect segments in the DOM.
+     * YouTube Button Manager
+     * Handles injection and state management for the "Ask Lumina" button on YouTube.
      */
-    async function autoOpenYouTubeTranscript() {
-        if (!window.location.hostname.includes('youtube.com') || !window.location.pathname.includes('/watch')) return;
+    class YouTubeButtonManager {
+        constructor() {
+            this.injected = false;
+            this.button = null;
+            this.observer = null;
+            this.currentVideoId = null;
+            this.injectStyles();
+        }
 
-        const checkAndClick = () => {
-            // 1. Check if already open and TRULY VISIBLE
-            const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
-            const isVisible = panel &&
-                panel.offsetParent !== null &&
-                panel.getAttribute('visibility') === 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED';
+        injectStyles() {
+            if (document.getElementById('lumina-yt-styles')) return;
+            const style = document.createElement('style');
+            style.id = 'lumina-yt-styles';
+            style.textContent = `
+                #title.ytd-watch-metadata {
+                    display: grid !important;
+                    grid-template-columns: 1fr auto !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                    width: 100% !important;
+                }
 
-            if (isVisible) {
-                console.log('[Lumina] Transcript panel is already open and expanded.');
-                return true;
+                .lumina-yt-title-left {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    min-width: 0;
+                    overflow: hidden;
+                }
+
+                .lumina-yt-title-left h1,
+                .lumina-yt-title-left yt-formatted-string {
+                    white-space: nowrap !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    display: block !important;
+                }
+
+                .lumina-yt-ask-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 16px;
+                    height: 36px;
+                    border-radius: 18px;
+                    font-family: "Roboto", "Arial", sans-serif;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    border: none;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    position: relative;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                    z-index: 10;
+                }
+
+                /* Ready State - Solid Blue */
+                .lumina-yt-ask-btn.is-ready {
+                    background: #065fd4;
+                    color: white;
+                }
+
+                .lumina-yt-ask-btn.is-ready:hover {
+                    filter: brightness(1.1);
+                }
+
+                /* Loading State - Shimmer */
+                .lumina-yt-ask-btn.is-loading {
+                    background: #f2f2f2;
+                    color: #606060;
+                    cursor: wait;
+                    pointer-events: none;
+                }
+
+                .lumina-yt-ask-btn.is-loading::after {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    bottom: 0;
+                    left: 0;
+                    transform: translateX(-100%);
+                    background: linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0) 0%,
+                        rgba(255, 255, 255, 0.6) 50%,
+                        rgba(255, 255, 255, 0) 100%
+                    );
+                    animation: lumina-shimmer 1.5s infinite;
+                }
+
+                @keyframes lumina-shimmer {
+                    100% {
+                        transform: translateX(100%);
+                    }
+                }
+
+                .lumina-yt-ask-btn .lumina-icon {
+                    width: 18px;
+                    height: 18px;
+                    margin-right: 8px;
+                    fill: currentColor;
+                }
+
+                html[dark] .lumina-yt-ask-btn.is-loading {
+                    background: #272727;
+                    color: #aaa;
+                }
+                
+                html[dark] .lumina-yt-ask-btn.is-loading::after {
+                    background: linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0) 0%,
+                        rgba(255, 255, 255, 0.1) 50%,
+                        rgba(255, 255, 255, 0) 100%
+                    );
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        async init() {
+            const videoId = this.getVideoId();
+            if (!videoId) {
+                this.removeButton();
+                return;
             }
 
-            // 2. Expand description if needed
-            const expandBtn = document.querySelector('#expand, #description-inline-expander .tp-yt-paper-button#expand, ytd-text-inline-expander #expand');
-            if (expandBtn && expandBtn.offsetParent !== null && (expandBtn.innerText.toLowerCase().includes('more') || expandBtn.innerText.toLowerCase().includes('thêm'))) {
-                console.log('[Lumina] Expanding description to find transcript button...');
-                expandBtn.click();
+            this.currentVideoId = videoId;
+            this.injectButton();
+            this.updateState('loading');
+
+            try {
+                // Pre-fetch transcript to be ready
+                const transcript = await YoutubeUtils.fetchTranscript(window.location.href);
+                if (transcript && this.currentVideoId === videoId) {
+                    this.updateState('ready');
+                } else if (this.currentVideoId === videoId) {
+                    // Even if transcript fails, we show the button but it might fallback to page content
+                    this.updateState('ready');
+                }
+            } catch (err) {
+                if (this.currentVideoId === videoId) {
+                    this.updateState('ready');
+                }
+            }
+        }
+
+        getVideoId() {
+            const url = new URL(window.location.href);
+            return url.searchParams.get('v') || (url.pathname.startsWith('/shorts/') ? url.pathname.split('/')[2] : null);
+        }
+
+        injectButton() {
+            const titleContainer = document.querySelector('#title.ytd-watch-metadata');
+            if (!titleContainer) {
+                // Retry if title not found yet (YouTube DOM loading)
+                if (!this.retryCount) this.retryCount = 0;
+                if (this.retryCount < 10) {
+                    this.retryCount++;
+                    setTimeout(() => this.injectButton(), 500);
+                }
+                return;
             }
 
-            // 3. Find the "Show transcript" button
-            const selectors = [
-                'button[aria-label="Show transcript"]',
-                'ytd-button-renderer[aria-label="Show transcript"] button',
-                '.yt-spec-button-shape-next[aria-label="Show transcript"]',
-                'ytd-video-description-transcript-section-renderer button'
-            ];
-
-            let btn = null;
-            for (const sel of selectors) {
-                btn = document.querySelector(sel);
-                if (btn && btn.offsetParent !== null) break;
+            // 1. Ensure leftContainer exists
+            let leftContainer = titleContainer.querySelector('.lumina-yt-title-left');
+            if (!leftContainer) {
+                leftContainer = document.createElement('div');
+                leftContainer.className = 'lumina-yt-title-left';
+                titleContainer.appendChild(leftContainer);
             }
 
-            if (!btn) {
-                const buttons = Array.from(document.querySelectorAll('button, ytd-button-renderer, tp-yt-paper-button'));
-                btn = buttons.find(b => {
-                    if (b.offsetParent === null) return false;
-                    const txt = (b.innerText || b.textContent || '').toLowerCase();
-                    return txt.includes('show transcript') ||
-                        txt.includes('hiển thị bản ghi') ||
-                        txt.includes('transcript');
+            // 2. Always move any children (badges, text, etc.) that are NOT the button or the container itself
+            // into the leftContainer. This prevents layout jumps when YouTube adds badges late.
+            const children = Array.from(titleContainer.childNodes);
+            let needsMove = false;
+            children.forEach(child => {
+                const isOurContainer = child === leftContainer;
+                const isOurButton = child.id === 'lumina-yt-ask-btn' || (child.classList && child.classList.contains('lumina-yt-ask-btn'));
+                
+                if (!isOurContainer && !isOurButton) {
+                    leftContainer.appendChild(child);
+                    needsMove = true;
+                }
+            });
+
+            // Clean up title attributes to avoid browser tooltips on truncated text
+            if (leftContainer) {
+                leftContainer.removeAttribute?.('title');
+                leftContainer.querySelectorAll?.('[title]').forEach(el => el.removeAttribute('title'));
+            }
+
+            // 3. Create button if it doesn't exist
+            if (document.getElementById('lumina-yt-ask-btn')) {
+                // If we moved things, make sure the button is at the end of the grid
+                if (needsMove) {
+                    titleContainer.appendChild(document.getElementById('lumina-yt-ask-btn'));
+                }
+                return;
+            }
+
+            const btn = document.createElement('button');
+            btn.id = 'lumina-yt-ask-btn';
+            btn.className = 'lumina-yt-ask-btn is-loading';
+            btn.innerHTML = `<span class="lumina-text">Fetching...</span>`;
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleAction();
+            });
+
+            titleContainer.appendChild(btn);
+            this.button = btn;
+
+            // Watch for changes in ytd-watch-metadata specifically to ensure persistence
+            if (!this.observer) {
+                this.observer = new MutationObserver((mutations) => {
+                    if (!document.getElementById('lumina-yt-ask-btn')) {
+                        this.injectButton();
+                    }
                 });
+                this.observer.observe(titleContainer, { childList: true });
             }
+        }
 
-            if (btn) {
-                console.log('[Lumina] Found "Show transcript" button. Clicking...');
-                btn.click();
+        updateState(state) {
+            const btn = document.getElementById('lumina-yt-ask-btn');
+            if (!btn) return;
 
-                setTimeout(() => {
-                    const collapseBtn = document.querySelector('ytd-text-inline-expander #collapse, #description-inline-expander #collapse, #collapse.ytd-text-inline-expander');
-                    if (collapseBtn && collapseBtn.offsetParent !== null) {
-                        console.log('[Lumina] Collapsing description...');
-                        collapseBtn.click();
-                    }
-                }, 500);
-
-                waitForSegmentsAndCache();
-                return true;
+            const text = btn.querySelector('.lumina-text');
+            if (state === 'loading') {
+                btn.className = 'lumina-yt-ask-btn is-loading';
+                text.textContent = 'Fetching...';
+            } else {
+                btn.className = 'lumina-yt-ask-btn is-ready';
+                text.textContent = 'Ask Lumina';
             }
-            return false;
-        };
+        }
 
-        if (checkAndClick()) return;
+        async handleAction() {
+            // 1. Prepare info for background to handle storage & pinning
+            const triggerInfo = {
+                action: 'youtube_ask',
+                timestamp: Date.now(),
+                videoId: this.currentVideoId,
+                url: window.location.href,
+                title: document.title.replace(' - YouTube', '')
+            };
 
-        let attempts = 0;
-        const maxAttempts = 20;
-        youtubeNavInterval = setInterval(() => {
-            attempts++;
-            if (checkAndClick() || attempts >= maxAttempts) {
-                clearInterval(youtubeNavInterval);
-                if (attempts < maxAttempts) {
-                    waitForSegmentsAndCache();
-                } else {
-                    console.warn('[Lumina] Could not auto-open transcript (button not found or hidden)');
-                }
+            // 2. Open Side Panel and pass info
+            try {
+                chrome.runtime.sendMessage({ 
+                    action: 'ensure_sidepanel_open',
+                    youtubeTrigger: triggerInfo
+                });
+            } catch (err) {
+                console.error('[Lumina] Failed to open side panel:', err);
             }
-        }, 1000);
+        }
 
-        async function waitForSegmentsAndCache() {
-            const videoId = YoutubeUtils.getVideoId(window.location.href);
-            if (!videoId) return;
-
-            let cacheAttempts = 0;
-            const maxCacheAttempts = 15;
-
-            if (youtubeCacheInterval) clearInterval(youtubeCacheInterval);
-
-            youtubeCacheInterval = setInterval(() => {
-                cacheAttempts++;
-                const transcript = YoutubeUtils.getTranscriptFromDOM();
-
-                if (transcript && transcript.length > 0) {
-                    if (youtubeTranscriptCache.videoId === videoId && youtubeTranscriptCache.transcript === transcript) {
-                        clearInterval(youtubeCacheInterval);
-                        return;
-                    }
-
-                    youtubeTranscriptCache.videoId = videoId;
-                    youtubeTranscriptCache.transcript = transcript;
-                    youtubeTranscriptCache.status = 'completed';
-
-                    console.log(`[Lumina] Successfully captured transcript from DOM: ${transcript.length} chars`);
-                    console.log(`[Lumina] Transcript Preview (first 1000 chars):\n%c${transcript.substring(0, 1000)}...`, "color: #4CAF50; font-weight: bold; font-style: italic;");
-
-                    clearInterval(youtubeCacheInterval);
-                } else if (cacheAttempts >= maxCacheAttempts) {
-                    console.log('[Lumina] Timed out waiting for segments to populate in DOM panel.');
-                    clearInterval(youtubeCacheInterval);
-                }
-            }, 1000);
+        removeButton() {
+            const btn = document.getElementById('lumina-yt-ask-btn');
+            if (btn) btn.remove();
+            if (this.observer) {
+                this.observer.disconnect();
+                this.observer = null;
+            }
         }
     }
+
+    const ytButtonManager = new YouTubeButtonManager();
+
+    // Re-initialize on every YouTube navigation
+    document.addEventListener('yt-navigate-finish', () => {
+        if (window.location.hostname.includes('youtube.com')) {
+            ytButtonManager.init();
+        }
+    });
+
+    // Initial check
+    if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/watch')) {
+        setTimeout(() => ytButtonManager.init(), 1000);
+    } else if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/shorts')) {
+         setTimeout(() => ytButtonManager.init(), 1000);
+    }
+
+    initShadowDOM();
+
 })();
 
 
