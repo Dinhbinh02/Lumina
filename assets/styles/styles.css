@@ -295,15 +295,30 @@ button {
   transition: background-color 0.2s !important;
 }
 
-/* Web Content Chips */
-.lumina-web-chips-container {
+/* Input Metadata Container (Web Chips & Redirects) */
+.lumina-input-meta-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0px 8px 0px;
+  overflow-x: hidden;
+}
+
+.lumina-web-chips-group,
+.lumina-redirect-group {
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
-  padding: 0 0px 8px 0px;
+  align-items: center;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.lumina-web-chips-group::-webkit-scrollbar,
+.lumina-redirect-group::-webkit-scrollbar {
+  display: none;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
@@ -861,7 +876,6 @@ button {
   justify-content: flex-end !important;
   align-items: flex-start !important;
   gap: 8px !important;
-  margin-bottom: 10px !important;
 }
 
 .lumina-question-row>.lumina-chat-question {
@@ -1335,11 +1349,8 @@ button {
   height: 32px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  /* Align the pill to the right */
+  justify-content: flex-start;
   min-width: 0 !important;
-  flex: 1;
-  /* Take all space in the actions row to handle shrinking */
   position: relative !important;
   overflow: visible !important;
 }
@@ -1348,7 +1359,6 @@ button {
   display: flex !important;
   align-items: center !important;
   width: auto !important;
-  /* Wrap content only */
   max-width: 100% !important;
   height: 32px !important;
   padding: 0 10px !important;
@@ -1408,21 +1418,22 @@ button {
 
 .lumina-input-bar .lumina-model-dropdown {
   position: absolute !important;
-  bottom: 130% !important;
-  left: 50% !important;
+  bottom: calc(100% + 8px) !important;
+  left: 0 !important;
   right: auto !important;
   width: 220px !important;
-  background: #ffffff !important;
+  background: var(--lumina-ui-bg) !important;
+  backdrop-filter: none !important;
   border: 1px solid var(--lumina-ui-border) !important;
   border-radius: 12px !important;
-  box-shadow: none !important;
+  box-shadow: var(--lumina-shadow-lg) !important;
   padding: 4px !important;
   display: flex !important;
   flex-direction: column !important;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-50%) translateY(10px);
-  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform: translateY(8px);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s !important;
   pointer-events: none;
   z-index: 10000 !important;
 }
@@ -1430,7 +1441,7 @@ button {
 .lumina-input-bar .lumina-model-dropdown.active {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -1509,9 +1520,10 @@ button {
 /* Tools Dropdown & Items */
 .lumina-tools-dropdown {
   position: absolute !important;
-  bottom: 130% !important;
+  bottom: calc(100% + 8px) !important;
   left: 0 !important;
-  background: #ffffff !important;
+  background: var(--lumina-ui-bg) !important;
+  backdrop-filter: none !important;
   border: 1px solid var(--lumina-ui-border, #e0e0e0) !important;
   border-radius: 12px !important;
   padding: 4px !important;
@@ -1521,22 +1533,22 @@ button {
   z-index: 10000 !important;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(10px) scale(0.95);
+  transform: translateY(8px);
   pointer-events: none;
-  transform-origin: bottom left;
+  box-shadow: var(--lumina-shadow-lg) !important;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
 }
 
 [data-theme="dark"] .lumina-tools-dropdown {
-  background: #1e1e1e !important;
-  border: 1px solid #333 !important;
-  color: #fff !important;
+  background: var(--lumina-ui-bg) !important;
+  border: 1px solid var(--lumina-ui-border) !important;
+  color: var(--lumina-text-primary) !important;
 }
 
 .lumina-tools-dropdown.active {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
   pointer-events: auto;
 }
 

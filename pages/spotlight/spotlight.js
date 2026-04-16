@@ -451,13 +451,17 @@ async function handleRemoteSync(changes, areaName) {
         const newGroupsMeta = changes.spotlight_tab_groups ? changes.spotlight_tab_groups.newValue : null;
 
         if (newTabsMeta) {
-            // Check if actual structural change occurred
+            // Check if actual structural change or metadata (title/session) change occurred
             const currentTabIds = tabs.map(t => t.id).join(',');
             const nextTabIds = newTabsMeta.map(t => t.id).join(',');
-            const titlesChanged = newTabsMeta.some((meta, i) => tabs[i] && tabs[i].title !== meta.title);
+            
+            const metadataChanged = newTabsMeta.some((meta, i) => {
+                const t = tabs[i];
+                if (!t) return true;
+                return t.title !== meta.title || t.sessionId !== meta.sessionId;
+            });
 
-            if (currentTabIds !== nextTabIds || titlesChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
-                console.log('[Spotlight] Syncing tabs from remote change...');
+            if (currentTabIds !== nextTabIds || metadataChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
                 
                 // Identify removed tabs
                 const nextIds = new Set(newTabsMeta.map(m => m.id));
@@ -473,9 +477,19 @@ async function handleRemoteSync(changes, areaName) {
                     let existing = tabs.find(t => t.id === meta.id);
                     
                     if (existing) {
+                        const sessionChanged = existing.sessionId !== meta.sessionId;
                         // Update metadata
                         existing.title = meta.title;
                         existing.sessionId = meta.sessionId;
+
+                        if (sessionChanged && existing.historyEl) {
+                            // Session re-synced (New Chat) - reload this specific tab's history content
+                            const historyKey = `spotlight_history_${meta.sessionId}`;
+                            const historyData = await chrome.storage.local.get([historyKey]);
+                            existing.historyEl.innerHTML = historyData[historyKey] || '';
+                            normalizeRestoredHistory(existing.historyEl);
+                            if (existing.chatUIInstance) existing.chatUIInstance.syncStateFromDOM();
+                        }
                     } else {
                         // New tab added remotely
                         const historyEl = document.createElement('div');
@@ -546,8 +560,38 @@ async function handleRemoteSync(changes, areaName) {
                     if (newHtml) {
                         affected.forEach(tab => {
                             if (tab.historyEl && tab.historyEl.innerHTML !== newHtml) {
+                                // Prevent self-stripping flicker: if we have a local min-height (transient)
+                                // and the storage update doesn't (cleaned), ignore this update as it's likely our own save.
+                                const hasLocalMinHeight = tab.historyEl.querySelector('.lumina-dict-entry[style*="min-height"]');
+                                if (hasLocalMinHeight && !newHtml.includes('min-height')) {
+                                    return;
+                                }
+
+                                // If this is NOT the originating window, preserve scroll position
+                                const wasAtBottom = Math.abs(tab.historyEl.scrollHeight - tab.historyEl.scrollTop - tab.historyEl.clientHeight) < 30;
+                                const savedScrollTop = tab.historyEl.scrollTop;
+
                                 tab.historyEl.innerHTML = newHtml;
                                 normalizeRestoredHistory(tab.historyEl);
+                                if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
+
+                                // Recalculate local min-height for this window's viewport
+                                const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+                                const lastEntry = entries[entries.length - 1];
+                                if (lastEntry && tab.chatUIInstance) {
+                                    tab.chatUIInstance.clearEntryMargins(lastEntry);
+                                    tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+                                }
+
+                                // Restore scroll - don't jump if we are a secondary window
+                                if (!wasAtBottom) {
+                                    tab.historyEl.scrollTop = savedScrollTop;
+                                } else {
+                                    // If we were already at bottom, we can either follow or stay. 
+                                    // User said "no scroll at all", so let's stick to the saved position.
+                                    tab.historyEl.scrollTop = savedScrollTop;
+                                }
+
                                 tab.historyEl.querySelectorAll('.lumina-chat-answer').forEach(ans => {
                                     LuminaChatUI.processContainer(ans);
                                 });
@@ -571,7 +615,6 @@ async function handleRemoteSync(changes, areaName) {
             const tabsToClose = tabs.filter(t => t.sessionId && deletedIds.includes(t.sessionId));
             
             if (tabsToClose.length > 0) {
-                console.log('[Lumina Sync] Bulk closing tabs due to session deletion:', tabsToClose.map(t => t.id));
                 
                 // 1. Remove DOM elements and cleanup groups
                 tabsToClose.forEach(tab => {
@@ -1189,11 +1232,9 @@ function syncTabUI(tab, isSecondary = false) {
     }
 
     const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
-    console.log(`[Spotlight] syncTabUI checking entries for tab: ${tab.title}, count: ${allEntries.length}`);
     if (allEntries.length > 0) {
         const lastEntry = allEntries[allEntries.length - 1];
         requestAnimationFrame(() => {
-            console.log('[Spotlight] requestAnimationFrame triggered adjustEntryMargin');
             tab.chatUIInstance.adjustEntryMargin(lastEntry, 'none');
         });
     }
@@ -1502,6 +1543,9 @@ function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
 
     historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
+        // Remove stale min-height that might have been synced from a window with different height
+        entry.style.removeProperty('min-height');
+        
         let questionEl = entry.querySelector('.lumina-chat-question') || entry.querySelector('[data-entry-type]');
         if (!questionEl) return;
 
@@ -2432,7 +2476,7 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
 
     chip.addEventListener('mouseenter', () => {
         // Respect tooltip muting after interaction
-        const container = chip.closest('.lumina-web-chips-container');
+        const container = chip.closest('.lumina-web-chips-group');
         if (container && container.dataset.muteTooltips === 'true') return;
 
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._showTagTooltip === 'function') {
@@ -2464,7 +2508,7 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
     chip.addEventListener('click', (event) => {
         event.stopPropagation();
         
-        const container = chip.closest('.lumina-web-chips-container');
+        const container = chip.closest('.lumina-web-chips-group');
         if (container) container.dataset.muteTooltips = 'true';
 
         // Hide tooltips immediately on interaction
@@ -2508,9 +2552,12 @@ function updateWebChips() {
         }
     }
 
-    const containers = document.querySelectorAll('.lumina-web-chips-container');
+    const containers = document.querySelectorAll('.lumina-web-chips-group');
     containers.forEach(container => {
         container.innerHTML = '';
+
+        // Spotlight window won't show Web Chips functionality
+        if (!isSidePanel && !isWebApp) return;
 
         const spotlightTabId = getSpotlightTabIdForPane(container);
         if (!spotlightTabId) return;
@@ -3107,12 +3154,18 @@ function setupPort() {
         });
 
         port.onDisconnect.addListener(() => {
-            // Disconnected from background
-            console.warn('[Lumina Stream] port disconnect', {
-                tabId: streamDebugState?.tabId || streamingTab?.id || null,
-                sessionId: streamDebugState?.sessionId || streamingTab?.sessionId || null,
-                chunkCount: streamDebugState?.chunkCount || 0
-            });
+            const lastError = chrome.runtime.lastError;
+            // Only warn if we were actually streaming or if there was a real error during an active session
+            if (streamingTab || (streamDebugState && streamDebugState.chunkCount > 0)) {
+                console.warn('[Lumina Stream] port disconnect', {
+                    tabId: streamDebugState?.tabId || streamingTab?.id || null,
+                    sessionId: streamDebugState?.sessionId || streamingTab?.sessionId || null,
+                    chunkCount: streamDebugState?.chunkCount || 0,
+                    error: lastError?.message || 'Unknown disconnect'
+                });
+            } else {
+            }
+            
             port = null; // Mark as invalid immediately to force reconnection on next use
 
             // Clean up any pending regen scroll lock
@@ -3120,13 +3173,15 @@ function setupPort() {
                 const affectedTabs = tabs.filter(t => t.sessionId === streamingTab.sessionId);
                 affectedTabs.forEach(t => {
                     const tUI = t.chatUIInstance;
-                    t.chatUIInstance.hideStopButton();
-                    if (tUI._regenScrollLocked && tUI._regenScrollContainer) {
-                        tUI._regenScrollContainer.scrollTop = tUI._regenScrollPosition;
-                        tUI._regenScrollContainer.style.overflowAnchor = '';
-                        tUI._regenScrollLocked = false;
-                        tUI._regenScrollContainer = null;
-                        tUI._regenScrollPosition = null;
+                    if (tUI) {
+                        tUI.hideStopButton();
+                        if (tUI._regenScrollLocked && tUI._regenScrollContainer) {
+                            tUI._regenScrollContainer.scrollTop = tUI._regenScrollPosition;
+                            tUI._regenScrollContainer.style.overflowAnchor = '';
+                            tUI._regenScrollLocked = false;
+                            tUI._regenScrollContainer = null;
+                            tUI._regenScrollPosition = null;
+                        }
                     }
                 });
             } else if (chatUI) {
@@ -3311,6 +3366,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 t.historyEl.innerHTML = currentTab.historyEl.innerHTML;
                 ui._setupHistoryDelegation(t.historyEl);
                 ui.initListeners(t.historyEl);
+                ui.syncStateFromDOM();
             }
             
             // Find the correct entry to show loading
@@ -3545,6 +3601,7 @@ function setupGlobalListeners() {
 
     document.addEventListener('keydown', (event) => {
         const activeElement = document.activeElement;
+        const selection = window.getSelection().toString().trim();
         const isEditing = activeElement && (
             activeElement.tagName === 'INPUT' ||
             activeElement.tagName === 'TEXTAREA' ||
@@ -3564,6 +3621,18 @@ function setupGlobalListeners() {
                 const shortcut = shortcuts[action];
                 if (!shortcut) continue;
                 if (!isShortcutMatchImmediate(event, shortcut)) continue;
+
+                // Selection-based shortcuts (translate, askLumina) should only trigger global prevention
+                // if there is actually a selection. Otherwise, let them fall through to auto-focus logic.
+                // Audio is also handled specifically later.
+                if ((action === 'translate' || action === 'askLumina' || action === 'audio') && !selection) {
+                    // Special case for audio: if audio is playing, we DO want to trigger stop even without selection
+                    if (action === 'audio' && _spotlightCurrentAudio) {
+                        // proceed to handle toggle
+                    } else {
+                        continue;
+                    }
+                }
 
                 event.preventDefault();
                 event.stopPropagation();
@@ -3609,7 +3678,6 @@ function setupGlobalListeners() {
             }
         }
 
-        const selection = window.getSelection().toString().trim();
         const inputEl = getHoveredInputEl();
 
         // Ignore Space key when no selection
@@ -3625,13 +3693,13 @@ function setupGlobalListeners() {
 
         if (event.key === 'Enter') {
             const activeEl = document.activeElement;
-            const isEditing = activeEl && (
+            const isEditingLocal = activeEl && (
                 activeEl.tagName === 'INPUT' ||
                 activeEl.tagName === 'TEXTAREA' ||
                 activeEl.isContentEditable
             );
 
-            if (!isEditing) {
+            if (!isEditingLocal) {
                 const targetInput = getHoveredInputEl();
                 const targetChatUI = targetInput === sharedInputUISecondary?.inputEl ? chatUISecondary : chatUI;
                 const hasInputText = !!targetInput && targetInput.value.trim().length > 0;
@@ -3651,8 +3719,50 @@ function setupGlobalListeners() {
             }
         }
 
-        // Bypass standard browser/system shortcuts (only pure Ctrl/Cmd + key, not Ctrl+Shift combinations)
-        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && ['r', 't', 'n', 'w', 'l', 'f', 'p', 's', 'c', 'x', 'z', 'y'].includes(event.key.toLowerCase())) {
+        // Focus and Select All (Ctrl+A) to target the input
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+            // Don't hijack if user is focusing on another input
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
+                return;
+            }
+
+            // Don't hijack if history sidebar is open
+            const sidebar = document.getElementById('lumina-history-sidebar');
+            if (sidebar && sidebar.classList.contains('open')) return;
+
+            const inputEl = getHoveredInputEl();
+            if (inputEl) {
+                event.preventDefault();
+                event.stopPropagation();
+                inputEl.focus();
+                inputEl.select();
+            }
+            return;
+        }
+
+        // Focus for Paste (Ctrl+V)
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
+                return;
+            }
+
+            // Don't hijack if history sidebar is open
+            const sidebar = document.getElementById('lumina-history-sidebar');
+            if (sidebar && sidebar.classList.contains('open')) return;
+
+            const inputEl = getHoveredInputEl();
+            if (inputEl) {
+                inputEl.focus();
+                // We do NOT preventDefault() - let browser paste into the now-focused inputEl
+                return;
+            }
+        }
+
+        // Bypass standard browser/system shortcuts (Cmd|Ctrl + key)
+        // This ensures Cmd+F, Cmd+C etc. work predictably even if not explicitly handled above
+        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.length === 1) {
             return;
         }
 
@@ -3669,20 +3779,13 @@ function setupGlobalListeners() {
                 const sel = window.getSelection();
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.LuminaSelection) {
-                    spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(range.commonAncestorContainer))
-                        ? 'secondary' : 'primary';
-
-                    LuminaSelection.show(0, 0, selection, range);
-                    // Save selection state
-                    const text = selection;
-
                     // Detect source pane
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                         ? 'secondary' : 'primary';
 
-                    LuminaSelection.show(0, 0, text, range);
+                    LuminaSelection.show(0, 0, selection, range);
                     LuminaSelection.showInput();
                     window.getSelection().removeAllRanges();
                     return;
@@ -3788,36 +3891,16 @@ function setupGlobalListeners() {
                 return;
             }
 
-            // Don't hijack if sidebar is active
-            const sidebar = document.getElementById('spotlight-sidebar');
-            if (sidebar && sidebar.classList.contains('active')) return;
+            // Don't hijack if history sidebar is open
+            const sidebar = document.getElementById('lumina-history-sidebar');
+            if (sidebar && sidebar.classList.contains('open')) return;
 
             if (inputEl) inputEl.focus();
             return;
         }
 
-        // Focus and Select All (Ctrl+A) to target the input
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-            // Don't hijack if user is focusing on another input (like sidebar search)
-            const activeEl = document.activeElement;
-            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
-                return;
-            }
-
-            // Don't hijack if sidebar is active
-            const sidebar = document.getElementById('spotlight-sidebar');
-            if (sidebar && sidebar.classList.contains('active')) return;
-
-            event.preventDefault();
-            if (inputEl) {
-                inputEl.focus();
-                inputEl.select();
-            }
-            return;
-        }
-
-        // Ignore pure modifier keys
-        if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock'].includes(event.key)) return;
+        // Ignore pure modifier keys and control keys
+        if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
 
         // In split mode, if a different pane's input currently has focus, we must redirect
         // keystrokes to the hovered pane's input instead of letting them fall into the
@@ -3825,20 +3908,32 @@ function setupGlobalListeners() {
         const isWrongPaneFocused = isSplitMode && inputEl && activeElement !== inputEl &&
             (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
 
-        // If user has text selected inside spotlight, allow shortcuts to work
+        // Auto-focus and type logic
         if ((!isEditing || isWrongPaneFocused) && inputEl) {
-            // Check if sidebar is active
-            const sidebar = document.getElementById('spotlight-sidebar');
-            if (sidebar && sidebar.classList.contains('active')) return;
+            // Check if history sidebar is open
+            const sidebar = document.getElementById('lumina-history-sidebar');
+            if (sidebar && sidebar.classList.contains('open')) return;
 
-            // Check if there's any text selected
-            if (selection) {
-                // Selection exists - allow shortcuts to work, don't auto-focus
+            // Typeable characters (length 1 and no modifiers) should focus and type
+            // even if there is a selection (unless it's a shortcut we handled above).
+            const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+
+            if (selection && !isTypeable) {
+                // Non-typeable key pressed while text is selected - allow browser/system to handle it
                 return;
             }
 
+            // If it's not a typeable character and we haven't handled it yet, 
+            // focus the input as a general fallback but don't preventDefault.
+            if (!isTypeable) {
+                inputEl.focus();
+                return;
+            }
+
+            // For typeable characters, we perform the manual redirection to ensure it arrives in the correct input
             event.stopPropagation();
             event.stopImmediatePropagation();
+            event.preventDefault();
 
             inputEl.focus();
 
@@ -3847,12 +3942,9 @@ function setupGlobalListeners() {
                 inputEl.setSelectionRange(len, len);
             }
 
-            if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
-                event.preventDefault();
-                const val = inputEl.value;
-                inputEl.value = val + event.key;
-                inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-            }
+            const val = inputEl.value;
+            inputEl.value = val + event.key;
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }, true);
 
@@ -3877,12 +3969,26 @@ function setupGlobalListeners() {
 
 // Reset chat
 function resetChat() {
+    stopSpotlightAudio();
+
     // Determine which pane to reset based on hover state
     const isSecondaryTarget = isSplitMode && hoveredPane === 'secondary';
 
     if (isSecondaryTarget) {
-        // Reset secondary pane
+        if (secondaryActiveTabIndex !== -1) {
+            const secondaryTab = tabs[secondaryActiveTabIndex];
+            if (secondaryTab) {
+                // Notify background to stop/cleanup old session
+                if (port && secondaryTab.sessionId) {
+                    port.postMessage({ action: 'stop_chat', sessionId: secondaryTab.sessionId });
+                }
 
+                const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
+                secondaryTab.title = 'New Tab';
+                secondaryTab.sessionId = newSessionId;
+                secondaryTab.scrollTop = -1;
+            }
+        }
 
         if (chatUISecondary) {
             chatUISecondary.clearHistory();
@@ -3893,27 +3999,27 @@ function resetChat() {
             }
         }
 
-        if (secondaryActiveTabIndex !== -1) {
-            const secondaryTab = tabs[secondaryActiveTabIndex];
-            if (secondaryTab) {
-                const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
-                secondaryTab.title = 'New Tab';
-                secondaryTab.sessionId = newSessionId;
-                secondaryTab.scrollTop = -1;
-            }
-        }
-
         renderTabs();
         saveTabsState();
 
-        // Hide regenerate button for secondary pane
         const paneSecondaryEl = document.getElementById('pane-secondary');
         const regenBtnSec = paneSecondaryEl?.querySelector('#lumina-regenerate-btn');
         if (regenBtnSec) regenBtnSec.style.display = 'none';
 
     } else {
-        // Reset primary pane
+        if (activeTabIndex !== -1) {
+            const activeTab = tabs[activeTabIndex];
+            
+            // Notify background to stop/cleanup old session
+            if (port && activeTab.sessionId) {
+                port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
+            }
 
+            const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
+            activeTab.title = 'New Tab';
+            activeTab.sessionId = newSessionId;
+            activeTab.scrollTop = -1;
+        }
 
         chatUI.clearHistory();
         if (chatUI.inputEl) {
@@ -3922,23 +4028,9 @@ function resetChat() {
             chatUI.inputEl.focus();
         }
 
-        // Reset current tab metadata to 'New Tab' state
-        if (activeTabIndex !== -1) {
-            const activeTab = tabs[activeTabIndex];
-            const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
+        renderTabs();
+        saveTabsState();
 
-            activeTab.title = 'New Tab';
-            activeTab.sessionId = newSessionId;
-            activeTab.scrollTop = -1;
-
-
-            // Refresh UI and save state
-            renderTabs();
-            saveTabsState();
-
-        }
-
-        // Hide regenerate button for new chat
         const regenBtn = document.getElementById('lumina-regenerate-btn');
         if (regenBtn) regenBtn.style.display = 'none';
     }
