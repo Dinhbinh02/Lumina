@@ -1335,9 +1335,11 @@ button {
   height: 32px;
   display: flex;
   align-items: center;
-  justify-content: flex-end; /* Align the pill to the right */
+  justify-content: flex-end;
+  /* Align the pill to the right */
   min-width: 0 !important;
-  flex: 1; /* Take all space in the actions row to handle shrinking */
+  flex: 1;
+  /* Take all space in the actions row to handle shrinking */
   position: relative !important;
   overflow: visible !important;
 }
@@ -1345,7 +1347,8 @@ button {
 .lumina-input-bar .lumina-model-btn {
   display: flex !important;
   align-items: center !important;
-  width: auto !important; /* Wrap content only */
+  width: auto !important;
+  /* Wrap content only */
   max-width: 100% !important;
   height: 32px !important;
   padding: 0 10px !important;
@@ -2294,7 +2297,12 @@ button {
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   height: 100%;
-  padding: 0 12px;
+  padding-right: 10px;
+  margin-left: -44px;
+  padding-left: 44px;
+  pointer-events: none;
+  z-index: 2;
+  position: relative;
 }
 
 .spotlight-tabs-list::-webkit-scrollbar {
@@ -2317,6 +2325,7 @@ button {
   user-select: none;
   letter-spacing: 0;
   border-bottom: none;
+  pointer-events: auto;
 }
 
 .spotlight-tab:not(.active)::after {
@@ -2425,6 +2434,7 @@ button {
   transition: background 0.15s;
   flex-shrink: 0;
   align-self: center;
+  pointer-events: auto;
 }
 
 .spotlight-new-tab-btn:hover {
@@ -4350,9 +4360,6 @@ button {
 }
 
 /* ====================
-   SPOTLIGHT HISTORY
-   ==================== */
-/* ====================
    HISTORY TOGGLE BUTTON
    ==================== */
 .lumina-history-toggle-btn {
@@ -4367,6 +4374,8 @@ button {
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s, color 0.2s;
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme="dark"] .lumina-history-toggle-btn {

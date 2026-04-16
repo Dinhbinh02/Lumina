@@ -13,6 +13,23 @@ chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONT
 
 // Side Panel State Tracking
 const sidePanelPorts = new Map(); // windowId -> chrome.runtime.Port
+const sessionPorts = new Map(); // sessionId -> Set<chrome.runtime.Port>
+const sessionControllers = new Map(); // sessionId -> AbortController
+
+function broadcastToSession(sessionId, message) {
+    if (!sessionId) return;
+    const ports = sessionPorts.get(sessionId);
+    if (!ports) return;
+    for (const port of ports) {
+        try {
+            port.postMessage(message);
+        } catch (e) {
+            console.warn('[Lumina BG] Failed to broadcast to session port:', e);
+            ports.delete(port);
+        }
+    }
+}
+
 
 // On startup, we might already have open panels (from a previous worker session)
 chrome.storage.session.get(['open_sidepanel_windows'], (result) => {
@@ -829,7 +846,7 @@ async function fetchPageContent(url) {
 
 // --- Chat Request Executor (Single Model) ---
 
-async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null) {
+async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Lumina BG][${action}]`;
 
@@ -933,6 +950,16 @@ async function executeChatRequest(config, messages, initialContext, question, po
         imageData
     };
 
+    let controller = null;
+    if (sessionId) {
+        // If a previous request is running for this session, abort it
+        if (sessionControllers.has(sessionId)) {
+            sessionControllers.get(sessionId).abort();
+        }
+        controller = new AbortController();
+        sessionControllers.set(sessionId, controller);
+    }
+
     let response = await fetchWithRotation(keys, async (key) => {
         const payload = await buildApiPayload(fullMessages, augmentedQuestion, systemInstruction, key, payloadParams);
         return fetch(payload.url, {
@@ -941,7 +968,8 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 'Content-Type': 'application/json',
                 ...(key ? { 'Authorization': `Bearer ${key}` } : {})
             },
-            body: JSON.stringify(payload.body)
+            body: JSON.stringify(payload.body),
+            signal: controller ? controller.signal : null
         });
     }, requestOptions);
 
@@ -1141,7 +1169,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
                 if (filteredText.length > 0) {
                     emittedChunks += 1;
-                    port.postMessage({ action: 'chunk', chunk: filteredText });
+                    const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
+                    if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                    else port.postMessage(chunkMsg);
                 }
             }
 
@@ -1198,7 +1228,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
                         preview: filteredText.slice(0, 120)
                     });
                 }
-                port.postMessage({ action: 'chunk', chunk: filteredText });
+                const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
+                if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                else port.postMessage(chunkMsg);
             }
         }
     }
@@ -1206,7 +1238,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
     // --- Stream Finished. Close reasoning tag if still open ---
     // This handles models that return only reasoning without content
     if (isInReasoning) {
-        port.postMessage({ action: 'chunk', chunk: '</think>' });
+        const thinkEndMsg = { action: 'chunk', chunk: '</think>', sessionId };
+        if (sessionId) broadcastToSession(sessionId, thinkEndMsg);
+        else port.postMessage(thinkEndMsg);
         fullToolResponse += '</think>';
         isInReasoning = false;
     }
@@ -2050,9 +2084,56 @@ chrome.windows.onRemoved.addListener(async (removedId) => {
 // --- Connect Listener (Long-lived for Chat Stream) ---
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-chat-stream') {
+        const registeredSessions = new Set();
+
+        port.onDisconnect.addListener(() => {
+            for (const sid of registeredSessions) {
+                if (sessionPorts.has(sid)) {
+                    sessionPorts.get(sid).delete(port);
+                    if (sessionPorts.get(sid).size === 0) {
+                        sessionPorts.delete(sid);
+                        // Abort background fetch if no more ports listening
+                        const controller = sessionControllers.get(sid);
+                        if (controller) {
+                            controller.abort();
+                            sessionControllers.delete(sid);
+                        }
+                    }
+                }
+            }
+        });
+
         port.onMessage.addListener(async (msg) => {
+            if (msg.action === 'register_sessions' && Array.isArray(msg.sessionIds)) {
+                msg.sessionIds.forEach(sid => {
+                    registeredSessions.add(sid);
+                    if (!sessionPorts.has(sid)) sessionPorts.set(sid, new Set());
+                    sessionPorts.get(sid).add(port);
+                });
+                return;
+            }
+
+            if (msg.action === 'stop_chat' && msg.sessionId) {
+                console.log('[Lumina BG][stream] stop_chat request', msg.sessionId);
+                const controller = sessionControllers.get(msg.sessionId);
+                if (controller) {
+                    controller.abort();
+                    sessionControllers.delete(msg.sessionId);
+                }
+                // Broadcast 'done' explicitly if not already triggered by error/abort
+                broadcastToSession(msg.sessionId, { action: 'done', sessionId: msg.sessionId });
+                return;
+            }
+
+            if (msg.sessionId && !registeredSessions.has(msg.sessionId)) {
+                registeredSessions.add(msg.sessionId);
+                if (!sessionPorts.has(msg.sessionId)) sessionPorts.set(msg.sessionId, new Set());
+                sessionPorts.get(msg.sessionId).add(port);
+            }
+
             console.log('[Lumina BG][stream] request', {
                 action: msg.action,
+                sessionId: msg.sessionId,
                 messageCount: msg.messages?.length || 0,
                 questionLength: msg.question ? msg.question.length : 0,
                 hasContext: !!(msg.initialContext && msg.initialContext.trim().length > 0),
@@ -2092,7 +2173,8 @@ chrome.runtime.onConnect.addListener((port) => {
                         msg.requestOptions || {},
                         msg.hasTranscriptForVideoId || null,
                         msg.action,
-                        finalSystemOverride
+                        finalSystemOverride,
+                        msg.sessionId
                     );
                     console.log('[Lumina BG][stream] request complete', {
                         action: msg.action,
@@ -2106,7 +2188,9 @@ chrome.runtime.onConnect.addListener((port) => {
                     port.postMessage({ action: 'chunk', chunk: `*Error: ${e.message}*` });
                 } finally {
                     console.log('[Lumina BG][stream] sending done', { action: msg.action });
-                    port.postMessage({ action: 'done' });
+                    const doneMsg = { action: 'done', sessionId: msg.sessionId };
+                    if (msg.sessionId) broadcastToSession(msg.sessionId, doneMsg);
+                    else port.postMessage(doneMsg);
                 }
             }
         });
@@ -2385,7 +2469,7 @@ async function proofreadText(text) {
 }
 
 // --- Main Chat Handler (New: Supports Model Chain) ---
-async function handleChatStream(messages, initialContext, question, port, imageData = null, isSpotlight = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null) {
+async function handleChatStream(messages, initialContext, question, port, imageData = null, isSpotlight = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null, sessionId = null) {
     try {
         try {
             let activeUrl = port?.sender?.tab?.url;
@@ -2458,7 +2542,9 @@ async function handleChatStream(messages, initialContext, question, port, imageD
         }
 
         if (!chain || chain.length === 0) {
-            port.postMessage({ error: 'No valid AI models configured. Please check Options.' });
+            const errorMsg = { error: 'No valid AI models configured. Please check Options.' };
+            if (sessionId) broadcastToSession(sessionId, errorMsg);
+            else port.postMessage(errorMsg);
             return;
         }
 
@@ -2469,7 +2555,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                 // Determine if this is the last attempt to throw fatal error if it fails
                 const isLast = i === chain.length - 1;
 
-                await executeChatRequest(config, cleanMessages, initialContext, question, port, imageData, isSpotlight, globalSettings, requestOptions, action, systemOverride);
+                await executeChatRequest(config, cleanMessages, initialContext, question, port, imageData, isSpotlight, globalSettings, requestOptions, action, systemOverride, sessionId);
 
                 return; // Success!
             } catch (e) {
@@ -2479,7 +2565,13 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                     if (i < chain.length - 1) {
                         // Notify UI of fallback (optional, maybe via port message types that don't break content)
                         try {
-                            port.postMessage({ action: 'status_update', text: `Rate limit hit on ${config.model}. Switching to backup model...` });
+                            const statusMsg = { 
+                                action: 'status_update', 
+                                text: `Rate limit hit on ${config.model}. Switching to backup model...`,
+                                sessionId: sessionId
+                            };
+                            if (sessionId) broadcastToSession(sessionId, statusMsg);
+                            else port.postMessage(statusMsg);
                         } catch (err) { }
                         continue; // Try next model
                     }
@@ -2489,13 +2581,17 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                 console.error(`[Lumina] Chat Chain failed at index ${i} (${config.model}):`, e);
 
                 // If it's the last model, or non-recoverable error, we must fail
-                port.postMessage({ error: e.message || "AI Request Failed" });
+                const errorMsg = { error: e.message || "AI Request Failed" };
+                if (sessionId) broadcastToSession(sessionId, errorMsg);
+                else port.postMessage(errorMsg);
                 return;
             }
         }
     } catch (err) {
         console.error('[Lumina] Fatal Chat Error:', err);
-        port.postMessage({ error: err.message });
+        const errorMsg = { error: err.message };
+        if (sessionId) broadcastToSession(sessionId, errorMsg);
+        else port.postMessage(errorMsg);
     }
 }
 

@@ -278,10 +278,10 @@ function updateWebSelectionForTab(tabId, updater) {
         const updatedSelection = selection.map((source) => {
             if (String(source.tabId) === stringTabId) {
                 const updated = updater(source, stringTabId);
-                if (updated) {
+                if (updated !== source) {
                     changed = true;
-                    return updated;
                 }
+                return updated;
             }
             return source;
         }).filter(Boolean);
@@ -442,7 +442,184 @@ function scheduleScrollRestore(tab) {
  * Normalizes tab IDs and history element IDs to be sequential (1, 2, 3...)
  * This makes the DOM cleaner as requested by the user.
  */
+async function handleRemoteSync(changes, areaName) {
+    if (areaName !== 'local') return;
+
+    // 1. Sync Tab Structure (Meta)
+    if (changes.spotlight_tabs || changes.spotlight_tab_groups) {
+        const newTabsMeta = changes.spotlight_tabs ? changes.spotlight_tabs.newValue : null;
+        const newGroupsMeta = changes.spotlight_tab_groups ? changes.spotlight_tab_groups.newValue : null;
+
+        if (newTabsMeta) {
+            // Check if actual structural change occurred
+            const currentTabIds = tabs.map(t => t.id).join(',');
+            const nextTabIds = newTabsMeta.map(t => t.id).join(',');
+            const titlesChanged = newTabsMeta.some((meta, i) => tabs[i] && tabs[i].title !== meta.title);
+
+            if (currentTabIds !== nextTabIds || titlesChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
+                console.log('[Spotlight] Syncing tabs from remote change...');
+                
+                // Identify removed tabs
+                const nextIds = new Set(newTabsMeta.map(m => m.id));
+                tabs = tabs.filter(t => {
+                    if (nextIds.has(t.id)) return true;
+                    if (t.historyEl) t.historyEl.remove();
+                    return false;
+                });
+
+                // Update/Add tabs
+                for (let i = 0; i < newTabsMeta.length; i++) {
+                    const meta = newTabsMeta[i];
+                    let existing = tabs.find(t => t.id === meta.id);
+                    
+                    if (existing) {
+                        // Update metadata
+                        existing.title = meta.title;
+                        existing.sessionId = meta.sessionId;
+                    } else {
+                        // New tab added remotely
+                        const historyEl = document.createElement('div');
+                        historyEl.className = 'lumina-chat-scroll-content';
+                        historyEl.style.display = 'none';
+                        const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
+                        primaryContainer.appendChild(historyEl);
+
+                        const historyKey = `spotlight_history_${meta.sessionId}`;
+                        const historyData = await chrome.storage.local.get([historyKey]);
+                        if (historyData[historyKey]) {
+                            historyEl.innerHTML = historyData[historyKey];
+                            normalizeRestoredHistory(historyEl);
+                        }
+
+                        const newTab = {
+                            id: meta.id,
+                            title: meta.title || 'New Tab',
+                            sessionId: meta.sessionId,
+                            historyEl: historyEl,
+                            chatUIInstance: new LuminaChatUI(container, {
+                                isSpotlight: true,
+                                skipInputSetup: true,
+                                onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
+                            })
+                        };
+                        newTab.chatUIInstance.historyEl = historyEl;
+                        newTab.chatUIInstance.initListeners(historyEl);
+                        bindHistoryScroll(newTab);
+                        tabs.push(newTab);
+                    }
+                }
+
+                // Sort tabs to match meta order
+                tabs.sort((a, b) => {
+                    const idxA = newTabsMeta.findIndex(m => m.id === a.id);
+                    const idxB = newTabsMeta.findIndex(m => m.id === b.id);
+                    return idxA - idxB;
+                });
+
+                if (newGroupsMeta) tabGroups = newGroupsMeta;
+                
+                // Ensure counter is synced
+                const counterData = await chrome.storage.local.get(['spotlight_tab_counter']);
+                if (counterData.spotlight_tab_counter) tabCounter = counterData.spotlight_tab_counter;
+
+                renderTabs();
+                if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
+                switchGroup(activeGroupIndex); // Re-sync active tab UI (handles split/single/active cases)
+                syncSessionsWithBackground();
+            }
+        }
+    }
+
+    // 2. Sync History Content (Static)
+    for (const key in changes) {
+        if (key.startsWith('spotlight_history_')) {
+            const sid = key.replace('spotlight_history_', '');
+            
+            // Only sync if any tab uses this session
+            const affected = tabs.filter(t => t.sessionId === sid);
+            if (affected.length > 0) {
+                // IMPORTANT: Only update if NOT generating locally to avoid race conditions with stream
+                const isGeneratingLocally = (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid);
+                
+                if (!isGeneratingLocally) {
+                    const newHtml = changes[key].newValue;
+                    if (newHtml) {
+                        affected.forEach(tab => {
+                            if (tab.historyEl && tab.historyEl.innerHTML !== newHtml) {
+                                tab.historyEl.innerHTML = newHtml;
+                                normalizeRestoredHistory(tab.historyEl);
+                                tab.historyEl.querySelectorAll('.lumina-chat-answer').forEach(ans => {
+                                    LuminaChatUI.processContainer(ans);
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Detect Session Deletion (from History Sidebar or Clear All)
+    if (changes['lumina_chat_sessions']) {
+        const oldSessions = changes['lumina_chat_sessions'].oldValue || {};
+        const newSessions = changes['lumina_chat_sessions'].newValue || {};
+        
+        // Find deleted session IDs
+        const deletedIds = Object.keys(oldSessions).filter(id => !newSessions[id]);
+        
+        if (deletedIds.length > 0) {
+            const tabsToClose = tabs.filter(t => t.sessionId && deletedIds.includes(t.sessionId));
+            
+            if (tabsToClose.length > 0) {
+                console.log('[Lumina Sync] Bulk closing tabs due to session deletion:', tabsToClose.map(t => t.id));
+                
+                // 1. Remove DOM elements and cleanup groups
+                tabsToClose.forEach(tab => {
+                    if (tab.historyEl) tab.historyEl.remove();
+                    tabGroups.forEach(g => {
+                        g.tabIds = g.tabIds.filter(id => id !== tab.id);
+                    });
+                });
+
+                // 2. Remove from local tabs array
+                tabs = tabs.filter(t => !tabsToClose.includes(t));
+                
+                // 3. Cleanup empty groups
+                tabGroups = tabGroups.filter(g => g.tabIds.length > 0);
+
+                if (tabs.length === 0) {
+                    createTab();
+                } else {
+                    // 4. Re-normalize IDs (matching logic in closeTab)
+                    const idMap = {};
+                    tabs.forEach((t, i) => {
+                        const newId = `tab-${i + 1}`;
+                        idMap[t.id] = newId;
+                        t.id = newId;
+                        if (t.historyEl) t.historyEl.id = `chat-history-tab-${i + 1}`;
+                    });
+                    tabGroups.forEach(g => {
+                        g.tabIds = g.tabIds.map(id => idMap[id] || id);
+                    });
+                    tabCounter = tabs.length;
+
+                    // 5. Ensure active index is valid
+                    if (activeGroupIndex >= tabGroups.length) {
+                        activeGroupIndex = Math.max(0, tabGroups.length - 1);
+                    }
+
+                    renderTabs();
+                    if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
+                    switchGroup(activeGroupIndex);
+                    saveTabsState();
+                }
+            }
+        }
+    }
+}
+
 function normalizeTabs() {
+
     const idMap = {};
     tabs.forEach((tab, index) => {
         const newNum = index + 1;
@@ -1495,6 +1672,9 @@ function renderTabs() {
                             draggedElement.style.zIndex = '1000';
 
                             const allGroups = Array.from(list.querySelectorAll('.spotlight-tab'));
+                            const newTabBtn = document.getElementById('new-tab-btn');
+                            if (newTabBtn) allGroups.push(newTabBtn);
+                            
                             initialRects = allGroups.map(el => el.getBoundingClientRect());
 
                             window.addEventListener('mousemove', handleMouseMove);
@@ -1550,6 +1730,9 @@ function handleMouseMove(e) {
 
     const list = document.getElementById('tabs-list');
     const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
+    const newTabBtn = document.getElementById('new-tab-btn');
+    if (newTabBtn) groupEls.push(newTabBtn);
+
     const draggedWidth = initialRects[initialDraggedIndex].width;
     const draggedGroup = tabGroups[initialDraggedIndex];
 
@@ -1609,6 +1792,20 @@ function handleMouseMove(e) {
         if (idx === initialDraggedIndex) return;
 
         const elRect = initialRects[idx];
+
+        // Special handling for New Tab button: Dynamic push-along effect
+        if (el === newTabBtn) {
+            const marginLeft = 4; // Based on .spotlight-new-tab-btn margin
+            const triggerLeft = elRect.left - marginLeft;
+            if (currentRightEdge > triggerLeft) {
+                const pushDistance = currentRightEdge - triggerLeft;
+                el.style.transform = `translateX(${pushDistance}px)`;
+            } else {
+                el.style.transform = '';
+            }
+            return;
+        }
+
         const elCenter = elRect.left + elRect.width / 2;
 
         if (initialDraggedIndex < idx && currentRightEdge > elCenter) {
@@ -1644,6 +1841,10 @@ function handleMouseUp() {
                 el.style.zIndex = '';
                 el.classList.remove('dragging-smooth', 'group-merge-preview', 'drop-target-split');
             });
+            const newTabBtn = document.getElementById('new-tab-btn');
+            if (newTabBtn) {
+                newTabBtn.style.transform = '';
+            }
             groupPreviewTargetIndex = -1;
             clearTimeout(splitHoverTimer);
             splitHoverTargetIndex = -1;
@@ -1696,6 +1897,10 @@ function handleMouseUp() {
         el.style.zIndex = '';
         el.classList.remove('dragging-smooth', 'group-merge-preview', 'drop-target-split');
     });
+    const newTabBtn = document.getElementById('new-tab-btn');
+    if (newTabBtn) {
+        newTabBtn.style.transform = '';
+    }
 
     clearTimeout(splitHoverTimer);
     splitHoverTargetIndex = -1;
@@ -1916,13 +2121,14 @@ function setupWebSourceTracking() {
             if (String(source.tabId) === sourceTabId) return null;
             return source;
         });
-        deleteWebSelectionFromStorage(tabId);
-        Object.keys(webSourceSelectionsByPageTabId).forEach((scopeKey) => {
-            if (scopeKey.startsWith(`${String(tabId)}::`)) {
-                delete webSourceSelectionsByPageTabId[scopeKey];
-            }
-        });
+        
+        // Remove from the current in-memory pinned list if present
         pinnedWebSources = pinnedWebSources.filter((source) => String(source.tabId) !== String(tabId));
+        
+        // IMPORTANT: Refresh current browser tab state to handle ghost chip updates
+        syncCurrentBrowserTab();
+        
+        // UI refresh
         updateWebChips();
     });
 }
@@ -2505,6 +2711,8 @@ async function init() {
             chatUI = tabs[activeTabIndex].chatUIInstance;
             if (sharedInputUI) {
                 sharedInputUI.historyEl = tabs[activeTabIndex].historyEl;
+                // Force button refresh now that historyEl is set
+                sharedInputUI._updateActionBtnState();
             }
         }
     }
@@ -2546,6 +2754,9 @@ async function init() {
             } else if (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.fontSize) {
                 applyFontSize(changes.globalDefaults.newValue.fontSize);
             }
+
+            // Sync structural changes and history from other windows
+            handleRemoteSync(changes, areaName);
         }
     });
 
@@ -2731,14 +2942,29 @@ async function init() {
 }
 
 // Setup connection to background
+function syncSessionsWithBackground() {
+    if (!port || tabs.length === 0) return;
+    const sessionIds = [...new Set(tabs.map(t => t.sessionId).filter(Boolean))];
+    if (sessionIds.length > 0) {
+        port.postMessage({ action: 'register_sessions', sessionIds });
+    }
+}
+
 function setupPort() {
     try {
         port = chrome.runtime.connect({ name: 'lumina-chat-stream' });
+        
+        // Register all current sessions after connection
+        syncSessionsWithBackground();
 
         port.onMessage.addListener((msg) => {
             // Determine affected tabs (all tabs sharing the streaming session)
             let affectedTabs = [];
-            if (streamingTab && streamingTab.sessionId) {
+            
+            // NEW: Use msg.sessionId if available (from broadcast)
+            if (msg.sessionId) {
+                affectedTabs = tabs.filter(t => t.sessionId === msg.sessionId);
+            } else if (streamingTab && streamingTab.sessionId) {
                 affectedTabs = tabs.filter(t => t.sessionId === streamingTab.sessionId);
             } else if (chatUI) {
                 affectedTabs = [tabs[activeTabIndex]];
@@ -2804,13 +3030,13 @@ function setupPort() {
 
             // Handle stream completion
             if (msg.action === 'done') {
+                const sid = msg.sessionId || (streamingTab?.sessionId);
                 console.log('[Lumina Stream] done', {
-                    tabId: streamDebugState?.tabId || streamingTab?.id || null,
-                    sessionId: streamDebugState?.sessionId || streamingTab?.sessionId || null,
-                    chunkCount: streamDebugState?.chunkCount || 0,
-                    durationMs: streamDebugState?.startedAt ? (Date.now() - streamDebugState.startedAt) : null
+                    tabId: streamingTab?.id || null,
+                    sessionId: sid,
+                    chunkCount: streamDebugState?.chunkCount || 0
                 });
-                // done message received — finishAnswer called below
+                // ... rest of logic
                 affectedTabs.forEach(tab => {
                     const targetUI = tab.chatUIInstance;
                     const answerDiv = targetUI.currentAnswerDiv;
@@ -3042,6 +3268,8 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
     const conversationHistory = targetChatUI.gatherMessages(untilEntryId);
 
+    let apiText = text;
+
     // If regeneration, we might need to use the old question text if the new text is empty
     if (extra.isRegenerate && !text) {
         const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : null;
@@ -3054,14 +3282,11 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    // Process @Comment trigger for the API request (but keep original text for display)
     // Determine streaming action
     let streamAction = 'chat_stream';
     if (extra.mode === 'proofread') {
         streamAction = 'proofread';
     }
-
-    let apiText = text;
 
     // UI Updates - Sync across all tabs in this session
     const syncTabs = tabs.filter(t => t.sessionId === currentTab.sessionId);
@@ -3193,6 +3418,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     // Prepare message
     const message = {
         action: streamAction,
+        sessionId: currentTab?.sessionId, // CRITICAL: Pass sessionId for broadcasting
         messages: conversationHistory,
         initialContext: pageContext,
         question: apiText || 'Describe these images',
@@ -3221,10 +3447,17 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
         const stopHandler = () => {
             if (port) {
-                port.disconnect();
-                port = null;
+                const sid = currentTab?.sessionId;
+                if (sid) {
+                    port.postMessage({ action: 'stop_chat', sessionId: sid });
+                } else {
+                    // Fallback for non-session ports
+                    port.disconnect();
+                    port = null;
+                }
             }
-            syncTabs.forEach(st => st.chatUIInstance.removeLoading());
+            // Immediate local UI update
+            syncTabs.forEach(tab => tab.chatUIInstance.removeLoading());
             if (sharedInputUI) {
                 sharedInputUI.isGenerating = false;
                 sharedInputUI._updateActionBtnState();
