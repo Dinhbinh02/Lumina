@@ -508,6 +508,26 @@
           </button>
 
         </div>
+
+        <!-- Annotation Card -->
+        <div class="glass-card">
+          <div class="card-header">
+            🖍️ Annotation
+            <span class="card-title-hint">
+              Select text + Key to highlight
+            </span>
+          </div>
+
+          <div class="mapping-list-container">
+            <div id="annotationShortcutsList">
+              <!-- Rows will be injected here -->
+            </div>
+          </div>
+
+          <button id="addAnnotationShortcutBtn" class="apply-model-btn dashed-btn mt-12">
+            + Add Shortcut
+          </button>
+        </div>
       </div>
 
     </div>
@@ -715,6 +735,22 @@
   <script src="../../lib/utils/memory.js"></script>
   <script src="../../lib/utils/auth.js"></script>
   <script src="options.js"></script>
+  <template id="annotationShortcutTemplate">
+    <div class="form-row-item annotation-shortcut-row">
+      <div class="feature-info flex-center">
+        <div class="annotation-color-palette"></div>
+      </div>
+      <div class="flex-center-gap12-mlauto">
+        <div class="shortcut-input annotation-shortcut-input" tabindex="0"></div>
+        <button class="remove-mapping-btn annotation-remove-btn" title="Remove">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </template>
 </body>
 
 </html>

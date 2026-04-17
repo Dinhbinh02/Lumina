@@ -1555,13 +1555,34 @@ document.addEventListener('DOMContentLoaded', () => {
       shortcuts[action] = keyData;
     });
 
+    // Collect Annotation Shortcuts
+    const annotationShortcutsExport = [];
+    document.querySelectorAll('.annotation-shortcut-row').forEach((row) => {
+      const activeSwatch = row.querySelector('.color-swatch.active');
+      const keyInput = row.querySelector('.annotation-shortcut-input');
+
+      if (keyInput) {
+        try {
+          const keyStr = keyInput.dataset.key;
+          const keyData = (keyStr && keyStr !== '') ? JSON.parse(keyStr) : null;
+          // Save the row even if keyData is null so the row persists on reload
+          annotationShortcutsExport.push({
+            ...keyData,
+            color: activeSwatch ? activeSwatch.dataset.color : '#FFFB78'
+          });
+        } catch (e) {
+          console.error('Error parsing annotation key data', e);
+        }
+      }
+    });
+
     const audioSpeed = parseFloat(audioSpeedInput ? audioSpeedInput.value : 1.0);
 
     // First get existing settings to update them
     chrome.storage.local.get(['globalDefaults', 'fontSizeByDomain'], (existing) => {
       let globalDefaults = existing.globalDefaults || {};
       let fontSizeByDomain = existing.fontSizeByDomain || {};
-      
+
       // Update global defaults
       globalDefaults.fontSize = parseFloat(fontSize);
       globalDefaults.theme = theme;
@@ -1601,6 +1622,7 @@ document.addEventListener('DOMContentLoaded', () => {
         responseLanguage: responseLanguage,
         theme: theme,
         shortcuts: shortcuts,
+        annotationShortcuts: annotationShortcutsExport,
         askSelectionPopupEnabled: isAskSelectionPopupEnabled,
         autoHideInputEnabled: document.getElementById('autoHideInputEnabled')?.checked || false,
         audioSpeed: audioSpeed,
@@ -2485,7 +2507,10 @@ document.addEventListener('DOMContentLoaded', () => {
     luminaChat: { code: 'Backquote', key: '`', display: '`' },
     audio: { code: 'ShiftLeft', key: 'Shift', display: isMac ? '⇧L' : 'ShiftL', shiftKey: true },
     resetChat: { code: 'Mouse0', key: 'Mouse0', display: 'Left', metaKey: true, shiftKey: true },
-    regenerate: { code: 'KeyR', key: 'r', display: 'R' }
+    regenerate: { code: 'KeyR', key: 'r', display: 'R' },
+    annotationShortcuts: [
+      { key: 'h', code: 'KeyH', color: '#FFFB78', display: 'H' }
+    ]
   };
 
   let currentRecordingInput = null;
@@ -2722,8 +2747,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Initialize shortcut inputs
-  document.querySelectorAll('.shortcut-input').forEach(input => {
+  function setupShortcutInput(input) {
     const action = input.dataset.action;
     const defaultKey = (typeof LUMINA_DEFAULT_SHORTCUTS !== 'undefined') ? LUMINA_DEFAULT_SHORTCUTS[action] : null;
 
@@ -2786,9 +2810,10 @@ document.addEventListener('DOMContentLoaded', () => {
             input.dataset.key = '';
             stopRecording(input, false);
 
-            // Only auto-save global shortcuts or mapping rows
-            // Web sources (sourceFormShortcut) must be saved via their form button
-            if (input.dataset.action || input.classList.contains('mapping-key-input')) {
+            // Only auto-save global shortcuts, mapping rows, or annotation rows
+            if (input.dataset.action || 
+                input.classList.contains('mapping-key-input') || 
+                input.classList.contains('annotation-shortcut-input')) {
               saveOptions();
             }
           } else {
@@ -2797,6 +2822,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, 100);
     });
+  }
+
+  // Initialize shortcut inputs
+  document.querySelectorAll('.shortcut-input').forEach(input => {
+    setupShortcutInput(input);
   });
 
   // Mouse down listener for recording mouse buttons
@@ -2826,7 +2856,7 @@ document.addEventListener('DOMContentLoaded', () => {
       recordingHadInput = false;
       stopRecording(input, false);
 
-      if (input.dataset.action || input.classList.contains('mapping-key-input')) {
+      if (input.dataset.action || input.classList.contains('mapping-key-input') || input.classList.contains('annotation-shortcut-input')) {
         saveOptions();
       }
       return;
@@ -2889,7 +2919,9 @@ document.addEventListener('DOMContentLoaded', () => {
       input.blur();
       currentRecordingInput = null;
 
-      if (input.dataset.action || input.classList.contains('mapping-key-input')) {
+      if (input.dataset.action || 
+          input.classList.contains('mapping-key-input') || 
+          input.classList.contains('annotation-shortcut-input')) {
         saveOptions();
       }
     }
@@ -2912,26 +2944,29 @@ document.addEventListener('DOMContentLoaded', () => {
       input.blur();
       currentRecordingInput = null;
 
-      if (input.dataset.action || input.classList.contains('mapping-key-input')) {
+      if (input.dataset.action || input.classList.contains('mapping-key-input') || input.classList.contains('annotation-shortcut-input')) {
         saveOptions();
       }
     }
   }, true);
 
   // Load saved shortcuts
-  chrome.storage.local.get(['shortcuts'], (items) => {
+  chrome.storage.local.get(['shortcuts', 'annotationShortcuts'], (items) => {
     const savedShortcuts = items.shortcuts || {};
+    const savedAnnotations = items.annotationShortcuts || DEFAULT_SHORTCUTS.annotationShortcuts || [];
 
     document.querySelectorAll('.shortcut-input').forEach(input => {
       const action = input.dataset.action;
 
-      // Skip if this is a mapping input (no action attribute)
-      if (!action) return;
+      // Skip if this is a mapping or annotation input (no action attribute)
+      if (!action || input.classList.contains('annotation-shortcut-input')) return;
 
       if (action in savedShortcuts) {
         renderShortcutDisplay(input, savedShortcuts[action]);
       }
     });
+
+    loadAnnotationShortcuts(savedAnnotations);
   });
 
   // Listen for storage changes
@@ -2979,10 +3014,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectItem = (item) => {
       const selection = window.getSelection();
       if (!selection.rangeCount) return;
-      
+
       const range = selection.getRangeAt(0);
       let textNode = range.startContainer;
-      
+
       // If cursor is at the end of a tag or in empty div
       if (textNode.nodeType !== Node.TEXT_NODE) {
         // Find the last text node or create one if empty
@@ -2999,28 +3034,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const offset = range.startOffset;
       const textBefore = val.substring(0, offset);
       const lastAt = textBefore.lastIndexOf('@');
-      
+
       if (lastAt !== -1) {
         range.setStart(textNode, lastAt);
         range.setEnd(textNode, offset);
         range.deleteContents();
-        
+
         const tag = document.createElement('span');
         tag.className = 'lumina-mention-tag';
         tag.textContent = item.name;
         tag.contentEditable = 'false';
-        
+
         range.insertNode(tag);
-        
+
         const nextNode = document.createTextNode(' ');
         tag.after(nextNode);
-        
+
         range.setStartAfter(nextNode);
         range.setEndAfter(nextNode);
         selection.removeAllRanges();
         selection.addRange(range);
       }
-      
+
       hidePopup();
       inputEl.focus();
       if (typeof saveOptions === 'function') saveOptions();
@@ -3031,11 +3066,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!selection.rangeCount) return hidePopup();
       const range = selection.getRangeAt(0);
       const textNode = range.startContainer;
-      
+
       if (textNode.nodeType !== Node.TEXT_NODE) {
         return hidePopup();
       }
-      
+
       const val = textNode.textContent || '';
       const offset = range.startOffset;
       const textBefore = val.substring(0, offset);
@@ -3181,8 +3216,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+  // --- Annotation Shortcuts Logic ---
+  const ANNOTATION_COLORS = ['#FFFB78', '#FFDE70', '#92ffaa', '#D1FF61', '#FFCAD7', '#B2D7FF'];
 
-  // Listen for changes
+  function loadAnnotationShortcuts(annotations) {
+    const list = document.getElementById('annotationShortcutsList');
+    if (!list) return;
+
+    list.innerHTML = '';
+    const items = annotations || [];
+    items.forEach(a => {
+      renderAnnotationShortcutRow(a);
+    });
+  }
+
+  function renderAnnotationShortcutRow(data = null) {
+    const list = document.getElementById('annotationShortcutsList');
+    if (!list) return;
+
+    const template = document.getElementById('annotationShortcutTemplate');
+    if (!template) return;
+
+    const clone = template.content.cloneNode(true);
+    const div = clone.querySelector('.annotation-shortcut-row');
+
+    const palette = div.querySelector('.annotation-color-palette');
+    const keyInput = div.querySelector('.annotation-shortcut-input');
+    const deleteBtn = div.querySelector('.annotation-remove-btn');
+
+    // Default color if none provided
+    const currentColor = data && data.color ? data.color : ANNOTATION_COLORS[0];
+
+    // Generate swatches
+    ANNOTATION_COLORS.forEach(color => {
+      const swatch = document.createElement('div');
+      swatch.className = 'color-swatch';
+      if (color.toLowerCase() === currentColor.toLowerCase()) {
+        swatch.classList.add('active');
+      }
+      swatch.style.backgroundColor = color;
+      swatch.dataset.color = color;
+      
+      swatch.addEventListener('click', () => {
+        div.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        saveOptions();
+      });
+      
+      palette.appendChild(swatch);
+    });
+
+    if (data) {
+      // Only render shortcut if it has key info (key/code), otherwise show "None"
+      if (data.key || data.code) {
+        renderShortcutDisplay(keyInput, data);
+      } else {
+        renderShortcutDisplay(keyInput, null);
+      }
+    }
+
+    // Initialize shortcut input recording logic
+    setupShortcutInput(keyInput);
+
+    deleteBtn.addEventListener('click', () => {
+      div.remove();
+      saveOptions();
+    });
+
+    list.appendChild(div);
+  }
+
+  const addAnnotationShortcutBtn = document.getElementById('addAnnotationShortcutBtn');
+  if (addAnnotationShortcutBtn) {
+    addAnnotationShortcutBtn.addEventListener('click', () => {
+      renderAnnotationShortcutRow();
+      // Wait for user to record shortcut before saving
+    });
+  }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
       // Refresh facts list when memory changes
@@ -3271,46 +3381,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (setGlobalDefaultsBtn) {
     setGlobalDefaultsBtn.addEventListener('click', () => {
-    const fontSize = parseFloat(fontSizeInput.value) || 13;
-    const theme = document.querySelector('input[name="theme"]:checked')?.value || 'light';
+      const fontSize = parseFloat(fontSizeInput.value) || 13;
+      const theme = document.querySelector('input[name="theme"]:checked')?.value || 'light';
 
-    const defaults = {
-      fontSize: fontSize,
-      theme: theme
-    };
+      const defaults = {
+        fontSize: fontSize,
+        theme: theme
+      };
 
-    chrome.storage.local.set({
-      globalDefaults: defaults,
-      fontSizeByDomain: {},
-      theme: theme,
-      fontSize: fontSize
-    }, () => {
-      // Show feedback
-      const originalHTML = setGlobalDefaultsBtn.innerHTML;
-      setGlobalDefaultsBtn.innerHTML = '';
-      const template = document.getElementById('appliedStateTemplate');
-      if (template) {
-        setGlobalDefaultsBtn.appendChild(template.content.cloneNode(true));
-      }
-      setGlobalDefaultsBtn.classList.add('btn-applied');
+      chrome.storage.local.set({
+        globalDefaults: defaults,
+        fontSizeByDomain: {},
+        theme: theme,
+        fontSize: fontSize
+      }, () => {
+        // Show feedback
+        const originalHTML = setGlobalDefaultsBtn.innerHTML;
+        setGlobalDefaultsBtn.innerHTML = '';
+        const template = document.getElementById('appliedStateTemplate');
+        if (template) {
+          setGlobalDefaultsBtn.appendChild(template.content.cloneNode(true));
+        }
+        setGlobalDefaultsBtn.classList.add('btn-applied');
 
-      // ... Broadcast logic ...
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          const isLuminaPage = tab.url && tab.url.startsWith(chrome.runtime.getURL(''));
-          if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https') || isLuminaPage) && tab.id) {
-            chrome.tabs.sendMessage(tab.id, {
-              action: 'settings_updated',
-              settings: {
-                globalDefaults: defaults,
-                fontSize: fontSize,
-                theme: theme,
-                fontSizeByDomain: {}
-              }
-            }).catch(() => { }); // Ignore errors
-          }
+        // ... Broadcast logic ...
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach((tab) => {
+            const isLuminaPage = tab.url && tab.url.startsWith(chrome.runtime.getURL(''));
+            if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('https') || isLuminaPage) && tab.id) {
+              chrome.tabs.sendMessage(tab.id, {
+                action: 'settings_updated',
+                settings: {
+                  globalDefaults: defaults,
+                  fontSize: fontSize,
+                  theme: theme,
+                  fontSizeByDomain: {}
+                }
+              }).catch(() => { }); // Ignore errors
+            }
+          });
         });
-      });
 
         setTimeout(() => {
           setGlobalDefaultsBtn.innerHTML = originalHTML;

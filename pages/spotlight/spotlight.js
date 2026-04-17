@@ -583,13 +583,16 @@ async function handleRemoteSync(changes, areaName) {
                                     tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
                                 }
 
-                                // Restore scroll - don't jump if we are a secondary window
+                                // Restore scroll - follow the bottom if we were already there
                                 if (!wasAtBottom) {
                                     tab.historyEl.scrollTop = savedScrollTop;
                                 } else {
-                                    // If we were already at bottom, we can either follow or stay. 
-                                    // User said "no scroll at all", so let's stick to the saved position.
-                                    tab.historyEl.scrollTop = savedScrollTop;
+                                    // If we were already at bottom, follow to the bottom of the new content
+                                    requestAnimationFrame(() => {
+                                        if (tab.historyEl) {
+                                            tab.historyEl.scrollTop = tab.historyEl.scrollHeight;
+                                        }
+                                    });
                                 }
 
                                 tab.historyEl.querySelectorAll('.lumina-chat-answer').forEach(ans => {
@@ -2024,7 +2027,7 @@ function initSpotlightAskSelection() {
 
     document.addEventListener('mouseup', (e) => {
         const path = e.composedPath();
-        const isInsideLumina = path.some(el => el.id === 'lumina-ask-selection-btn' || el.id === 'lumina-ask-input-popup');
+        const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
         if (isInsideLumina) return;
 
         setTimeout(() => {
@@ -3055,23 +3058,10 @@ function setupPort() {
 
             // Handle streaming chunks
             if (msg.action === 'chunk' && msg.chunk) {
-                if (streamDebugState) {
-                    streamDebugState.chunkCount += 1;
-                    streamDebugState.lastChunkAt = Date.now();
-                    if (streamDebugState.chunkCount <= 3 || streamDebugState.chunkCount % 10 === 0) {
-                        console.log('[Lumina Stream] chunk', {
-                            tabId: streamDebugState.tabId,
-                            sessionId: streamDebugState.sessionId,
-                            chunkCount: streamDebugState.chunkCount,
-                            chunkLength: msg.chunk.length,
-                            preview: msg.chunk.slice(0, 120)
-                        });
-                    }
-                }
+                // ... debug logging ...
                 affectedTabs.forEach(tab => {
-                    // Only scroll the tab that submitted — other shared-session tabs scroll independently
-                    const skipScroll = tab.id !== streamingTab?.id;
-                    tab.chatUIInstance.appendChunk(msg.chunk, skipScroll);
+                    // Let each UI decide if it should scroll (based on its own auto-scroll settings)
+                    tab.chatUIInstance.appendChunk(msg.chunk, false);
                 });
             }
 
@@ -3235,6 +3225,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     // Reset scroll lock so new entry always animates into view
     currentTab.userScrolledUp = false;
     if (targetChatUI) targetChatUI.disableAutoScroll = false;
+    
+    // Set generating flag early to prevent storage-sync clobbering during submission
+    if (sharedInputUI) sharedInputUI.isGenerating = true;
+    if (sharedInputUISecondary) sharedInputUISecondary.isGenerating = true;
 
     // Keyword command prefixes (colon optional): "Translate", "Proofread", "Google AI" ...
     const translateMatch = text && text.match(/^translate:?\s*([\s\S]*)/i);
@@ -3459,8 +3453,8 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             if (uniqueResults.length > 0) {
                 const pieces = uniqueResults.map((ctx, index) => {
                     const header = uniqueResults.length === 1 
-                        ? '[Current Source]' 
-                        : `[Source ${index + 1}]: ${ctx.title || 'Subframe Content'}`;
+                        ? `Source: ${ctx.title || 'Current Page'}` 
+                        : `Source ${index + 1}: ${ctx.title || 'Subframe Content'}`;
                     return `${header}\n\n${ctx.content}`;
                 });
                 pageContext = pieces.join("\n\n---\n\n");
@@ -4565,9 +4559,9 @@ window.addEventListener('mousedown', (e) => {
     }
 
     const path = e.composedPath();
-    const isInsideAskBtn = path.some(el => el.id === 'lumina-ask-selection-btn');
+    const isInsideAskBtn = path.some(el => el.id === 'lumina-action-bar');
     const isInsideAskInput = path.some(el => el.id === 'lumina-ask-input-popup');
-    const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && el.classList.contains('lumina-dict-launcher-part'));
+    const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && el.classList.contains('lumina-dict-launcher'));
     const isInsideDictPopup = document.getElementById('lumina-spotlight-dict-popup')?.contains(e.target) ||
         path.some(el => (el.id === 'lumina-spotlight-dict-popup') || (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')));
 

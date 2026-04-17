@@ -113,6 +113,7 @@
         "lib/utils/common.js",
         "lib/utils/selection_utils.js",
         "lib/utils/youtube_utils.js",
+        "lib/utils/annotation_utils.js",
         "scripts/content.js"
       ],
       "run_at": "document_end",

@@ -330,7 +330,8 @@
                     LuminaSelection.show(e.clientX, e.clientY, text, range);
                 }
             } else if (!isInsideShadow) {
-                if (window.LuminaSelection) LuminaSelection.hide();
+                const isHighlight = e.target.closest('.lumina-highlight');
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
             }
         }, 50);
     }, true);
@@ -340,9 +341,11 @@
 
     window.addEventListener('mousedown', (e) => {
         const path = e.composedPath();
-        const isInsideAskBtn = path.some(el => (el.id === 'lumina-ask-selection-btn') || (el.id === 'lumina-ask-input-popup') || (window.LuminaSelection && el === LuminaSelection.btn));
+        const isInsideAskBtn = path.some(el => (el.id === 'lumina-action-bar') || (el.id === 'lumina-ask-input-popup') || (window.LuminaSelection && el === LuminaSelection.btn));
 
-        if (!isInsideAskBtn) {
+        const isHighlight = path.some(el => el.classList && el.classList.contains('lumina-highlight'));
+
+        if (!isInsideAskBtn && !isHighlight) {
             if (window.LuminaSelection) LuminaSelection.hide();
         }
     }, true);
@@ -352,6 +355,20 @@
         askSelectionPopupEnabled = result.askSelectionPopupEnabled ?? true;
         readWebpageEnabled = result.readWebpage ?? false;
         // LuminaSelection is initialized in initShadowDOM; nothing extra needed here
+        
+        // Initialize highlights
+        if (window.LuminaAnnotation) {
+            LuminaAnnotation.loadHighlights();
+        } else {
+            // Wait for selection_utils.js to load if it's not ready
+            const checkSelection = setInterval(() => {
+                if (window.LuminaSelection) {
+                    if (window.LuminaAnnotation) LuminaAnnotation.loadHighlights();
+                    clearInterval(checkSelection);
+                }
+            }, 100);
+            setTimeout(() => clearInterval(checkSelection), 5000);
+        }
     });
 
     // Listen for storage changes - Consolidated single listener to prevent background lag
@@ -366,6 +383,14 @@
                 readWebpageEnabled = changes.readWebpage.newValue ?? false;
             }
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
+            
+            if (changes.shortcuts) {
+                Object.assign(shortcuts, changes.shortcuts.newValue || LUMINA_DEFAULT_SHORTCUTS);
+            }
+            
+            if (changes.annotationShortcuts) {
+                shortcuts.annotationShortcuts = changes.annotationShortcuts.newValue || [];
+            }
 
             // Font size settings (compensated for page zoom)
             if (changes.fontSize || changes.fontSizeByDomain || changes.globalDefaults) {
@@ -553,9 +578,12 @@
     let questionMappings = [];
 
     // Load saved shortcuts
-    chrome.storage.local.get(['shortcuts'], (items) => {
+    chrome.storage.local.get(['shortcuts', 'annotationShortcuts'], (items) => {
         if (items.shortcuts) {
             Object.assign(shortcuts, items.shortcuts);
+        }
+        if (items.annotationShortcuts) {
+            shortcuts.annotationShortcuts = items.annotationShortcuts;
         }
     });
 
@@ -723,7 +751,26 @@
     document.addEventListener('keydown', async (event) => {
         if (isExtensionDisabled) return;
 
-        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && ['r', 't', 'n', 'w', 'l', 'f', 'p', 's', 'c', 'x', 'z', 'y'].includes(event.key.toLowerCase())) {
+        // Undo Highlight Shortcut (Ctrl/Cmd + Z)
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+            // Don't undo highlights if user is in an editable area
+            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            
+            // Check if we should prevent default
+            // We only want to undo highlight if there's no other focused input that might need Ctrl+Z
+            const activeElement = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDeepActiveElement() : document.activeElement;
+            const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
+            
+            if (!isInput) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                if (window.LuminaAnnotation) LuminaAnnotation.undoLastHighlight();
+                return;
+            }
+        }
+
+        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && ['r', 't', 'n', 'w', 'l', 'f', 'p', 's', 'c', 'x', 'y'].includes(event.key.toLowerCase())) {
             return;
         }
 
@@ -902,6 +949,36 @@
         }
 
         // NOTE: Audio shortcut for modifier-only keys (like Shift alone) is handled in keyup listener below
+        
+        // --- Annotation / Highlighting Shortcuts ---
+        const annotationShortcuts = shortcuts['annotationShortcuts'] || [];
+        for (const shortcut of annotationShortcuts) {
+            if (matchesAnnotationShortcut(event, shortcut)) {
+                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+
+                const selection = window.getSelection();
+                const text = selection.toString().trim();
+                if (text.length > 0 && selection.rangeCount > 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
+                    const range = selection.getRangeAt(0);
+                    const highlightId = 'lh_' + Date.now();
+                    const color = shortcut.color || '#ffeb3b';
+                    
+                    // Apply visually
+                    LuminaAnnotation.applyHighlight(range, color, highlightId);
+                    
+                    // Save to storage
+                    LuminaAnnotation.saveHighlight(range, color, highlightId);
+                    
+                    window.getSelection().removeAllRanges();
+                    if (window.LuminaSelection) LuminaSelection.hide();
+                    return;
+                }
+            }
+        }
 
 
 
@@ -938,6 +1015,20 @@
             }
         }
     }, true);
+
+
+    function matchesAnnotationShortcut(event, shortcut) {
+        if (!shortcut) return false;
+
+        // Match modifiers if they exist
+        if (!!shortcut.ctrlKey !== event.ctrlKey) return false;
+        if (!!shortcut.altKey !== event.altKey) return false;
+        if (!!shortcut.shiftKey !== event.shiftKey) return false;
+        if (!!shortcut.metaKey !== event.metaKey) return false;
+
+        if (shortcut.code) return event.code === shortcut.code;
+        return event.key.toLowerCase() === (shortcut.key || "").toLowerCase();
+    }
 
     function formatTextLikeOriginal(original, target) {
         if (!target) return target;
@@ -2122,6 +2213,25 @@
     } else if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/shorts')) {
          setTimeout(() => ytButtonManager.init(), 1000);
     }
+
+    // Handle Highlight clicks to show the edit menu
+    document.addEventListener('click', (e) => {
+        if (isExtensionDisabled) return;
+        
+        const highlight = e.target.closest('.lumina-highlight');
+        if (highlight) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const id = highlight.dataset.highlightId;
+            const currentColor = highlight.style.backgroundColor;
+            
+            if (window.LuminaSelection) {
+                // To position correctly, we select the range of the highlight
+                LuminaSelection.showAnnotationMenu(highlight, id, currentColor);
+            }
+        }
+    }, true); // Use capture to intercept before other click handlers
 
     initShadowDOM();
 

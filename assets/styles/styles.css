@@ -69,9 +69,8 @@ button {
 }
 
 /* Global SVG Consistency */
-.lumina-dict-launcher-part svg,
-.lumina-ask-selection-btn svg,
-#lumina-ask-selection-btn svg,
+.lumina-action-item svg,
+#lumina-action-bar svg,
 .spotlight-new-tab-btn svg,
 .btn-chain-add svg,
 .lumina-icon svg {
@@ -79,41 +78,101 @@ button {
   shape-rendering: geometricPrecision !important;
 }
 
-#lumina-ask-selection-btn {
+#lumina-action-bar {
   all: initial;
   position: absolute !important;
   display: none;
   visibility: hidden;
   align-items: center !important;
   justify-content: flex-start !important;
-  background: #ffffff !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   border-radius: 12px !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 2px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
   z-index: 2147483647 !important;
   overflow: hidden !important;
   height: 28px !important;
-  animation: lumina-pop-in 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: lumina-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-family: var(--lumina-font-family) !important;
   font-size: var(--lumina-fontSize, 13px) !important;
   line-height: normal !important;
+  gap: 2px !important;
 }
 
-[data-theme="dark"] #lumina-ask-selection-btn {
-  background: #1c1c1e !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+[data-theme="dark"] #lumina-action-bar {
+  background: rgba(28, 28, 30, 0.9) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Show comment parts only when in comment mode */
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-comment-part {
+.lumina-action-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  color: var(--lumina-text-secondary) !important;
+  white-space: nowrap !important;
+  gap: 6px !important;
+}
+
+.lumina-action-item:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+[data-theme="dark"] .lumina-action-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-action-item img {
+  width: 16px !important;
+  height: 16px !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.lumina-action-item:hover img {
+  opacity: 1 !important;
+}
+
+.lumina-action-item.lumina-action-ask {
+  font-weight: 600 !important;
+  background: #111 !important;
+  color: #fff !important;
+  padding: 0 12px !important;
+}
+
+.lumina-action-item.lumina-action-ask:hover {
+  background: #333 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .lumina-action-item.lumina-action-ask {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+[data-theme="dark"] .lumina-action-item.lumina-action-ask:hover {
+  background: #e0e0e0 !important;
+  color: #000 !important;
+}
+
+/* Specific button modifiers/visibility */
+#lumina-action-bar.lumina-comment-mode .lumina-action-item:not(.lumina-action-comment) {
+  display: none !important;
+}
+
+#lumina-action-bar.lumina-comment-mode .lumina-action-comment {
   display: flex !important;
 }
 
-/* Hide other parts when in comment mode */
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-dict-launcher-part,
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-translate-launcher-part,
-#lumina-ask-selection-btn.lumina-comment-mode .lumina-ask-part {
+#lumina-action-bar:not(.lumina-comment-mode) .lumina-action-comment {
   display: none !important;
 }
 
@@ -385,15 +444,9 @@ button {
   mask-image: url("../icons/lumina/thumbtack-filled.svg");
 }
 
-.lumina-dict-launcher-part svg,
-.lumina-translate-launcher-part svg {
-  width: 17px !important;
-  height: 17px !important;
-}
+/* SVG sizing removed - handled by .lumina-action-item img */
 
-.lumina-dict-launcher-part .lumina-svg-icon,
-.lumina-translate-launcher-part .lumina-svg-icon,
-.lumina-ask-part .lumina-svg-icon {
+.lumina-action-item .lumina-svg-icon {
   width: 17px !important;
   height: 17px !important;
 }
@@ -552,10 +605,10 @@ button {
   background: #ffffff !important;
   border-radius: 12px !important;
   padding: 0 !important;
-  box-shadow: none !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
   z-index: 2147483647 !important;
-  width: 340px !important;
+  width: 280px !important;
   height: auto !important;
   min-height: 28px !important;
   overflow: visible !important;
@@ -585,7 +638,7 @@ button {
   background: transparent !important;
   border: none !important;
   outline: none !important;
-  padding: 6px 14px !important;
+  padding: 9px 12px !important;
   font-size: 1em !important;
   font-weight: 520 !important;
   color: #1d1d1f !important;
@@ -600,6 +653,14 @@ button {
   white-space: pre-wrap !important;
   word-wrap: break-word !important;
   word-break: break-all !important;
+}
+
+.lumina-ask-input-field:empty::before {
+  content: attr(data-placeholder);
+  color: #999 !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+  font-weight: 400 !important;
 }
 
 [data-theme="dark"] .lumina-ask-input-field {
@@ -1487,9 +1548,24 @@ button {
   background: rgba(var(--lumina-primary-rgb), 0.2) !important;
 }
 
+.lumina-tools-toggle.active svg,
+.lumina-tools-toggle.active-proofread svg,
+.lumina-tools-toggle.active-translate svg {
+  display: none !important;
+}
+
+.lumina-tools-toggle.active-proofread {
+  background: #fff9e6 !important;
+  color: #856404 !important;
+  border: 0.5px solid rgba(255, 193, 7, 0.4) !important;
+}
+
 .lumina-tools-toggle.active:hover {
-  background: rgba(var(--lumina-primary-rgb), 0.2) !important;
-  color: #000 !important;
+  background: rgba(var(--lumina-primary-rgb), 0.25) !important;
+}
+
+.lumina-tools-toggle.active-proofread:hover {
+  background: #fff4d1 !important;
 }
 
 [data-theme="dark"] .lumina-tools-toggle.active {
@@ -1497,9 +1573,18 @@ button {
   background: rgba(var(--lumina-primary-rgb), 0.3) !important;
 }
 
+[data-theme="dark"] .lumina-tools-toggle.active-proofread {
+  background: #2a2618 !important;
+  color: #ffc107 !important;
+  border: 0.5px solid rgba(255, 193, 7, 0.4) !important;
+}
+
 [data-theme="dark"] .lumina-tools-toggle.active:hover {
-  background: rgba(var(--lumina-primary-rgb), 0.3) !important;
-  color: #fff !important;
+  background: rgba(var(--lumina-primary-rgb), 0.35) !important;
+}
+
+[data-theme="dark"] .lumina-tools-toggle.active-proofread:hover {
+  background: #363120 !important;
 }
 
 .lumina-upload-btn:hover,
@@ -2526,68 +2611,6 @@ button {
   display: block;
   object-fit: contain;
   flex-shrink: 0;
-}
-
-.lumina-dict-launcher-part,
-.lumina-translate-launcher-part {
-  color: #1d1d1f !important;
-}
-
-[data-theme="dark"] .lumina-dict-launcher-part,
-[data-theme="dark"] .lumina-translate-launcher-part {
-  color: #f5f5f7 !important;
-}
-
-.lumina-dict-launcher-part {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 8px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  border-radius: 8px !important;
-  border-right: none !important;
-}
-
-[data-theme="dark"] .lumina-dict-launcher-part {
-  border-right: none !important;
-}
-
-.lumina-translate-launcher-part {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 8px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  border-radius: 8px !important;
-}
-
-.lumina-dict-launcher-part:hover,
-.lumina-translate-launcher-part:hover,
-.lumina-ask-part:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="dark"] .lumina-dict-launcher-part:hover,
-[data-theme="dark"] .lumina-translate-launcher-part:hover,
-[data-theme="dark"] .lumina-ask-part:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.lumina-translate-launcher-part .lumina-translate-logo {
-  width: 17px !important;
-  height: 17px !important;
-}
-
-.lumina-dict-launcher {
-  display: none !important;
-}
-
-.lumina-dict-launcher span {
-  display: none !important;
 }
 
 .lumina-dict-word {
@@ -5116,4 +5139,121 @@ button {
   border-left: 2px dashed #0056D2;
   z-index: 20;
   pointer-events: none;
+}
+
+/* Web Highlighting / Annotation */
+.lumina-highlight {
+  color: inherit !important;
+  cursor: pointer !important;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  transition: opacity 0.2s ease;
+  user-select: text;
+}
+
+.lumina-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  cursor: pointer !important;
+  z-index: 1;
+}
+
+.lumina-highlight:hover {
+  opacity: 0.8;
+}
+
+/* Annotation Edit Menu Styles */
+.lumina-color-swatch {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  margin: 0 4px !important;
+  border: 2px solid transparent !important;
+  transition: transform 0.2s ease, border-color 0.2s ease !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  flex-shrink: 0 !important;
+}
+
+.lumina-color-swatch:hover {
+  transform: scale(1.2);
+}
+
+.lumina-color-swatch.active {
+  border-color: rgba(0, 0, 0, 0.3) !important;
+  transform: scale(1.1);
+}
+
+[data-theme="dark"] .lumina-color-swatch.active {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.lumina-clear-highlight {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #f1f2f4 !important;
+  color: #8e8e93 !important;
+}
+
+[data-theme="dark"] .lumina-clear-highlight {
+  background: #3a3a3c !important;
+  color: #8e8e93 !important;
+}
+
+.lumina-clear-highlight svg {
+  width: 10px !important;
+  height: 10px !important;
+  stroke: currentColor !important;
+}
+
+
+/* Highlight Action Button Styles */
+.lumina-action-highlight {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 8px !important;
+}
+
+.lumina-highlight-icon-circle {
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 50% !important;
+  background-color: #FFFB78 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="dark"] .lumina-highlight-icon-circle {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+
+/* Ask Action Button Styles */
+.lumina-action-item.lumina-action-ask {
+  background-color: #0A84FF !important;
+  color: #ffffff !important;
+  padding: 0 16px !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.lumina-action-item.lumina-action-ask span {
+  color: #ffffff !important;
+}
+
+.lumina-action-item.lumina-action-ask:hover {
+  background-color: #007AFF !important;
+  color: #ffffff !important;
+  filter: none !important;
 }
