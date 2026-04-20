@@ -301,7 +301,8 @@
   /* Main Content */
   .main-content {
     flex: 1;
-    padding: 24px 12px;
+    max-width: 900px;
+    padding: 24px 20px;
     overflow-y: auto;
     background-color: var(--bg-color);
   }
@@ -309,7 +310,7 @@
   /* Content Sections */
   .content-section {
     display: none;
-    width: 800px;
+    width: 680px;
     max-width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
@@ -1668,26 +1669,6 @@
     font-size: 14px;
   }
 
-  .mapping-prompt {
-    flex: 1;
-    height: 40px;
-    padding: 0 14px;
-    border: 1px solid #D1D1D6 !important;
-    background: #FFFFFF !important;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    color: #000000 !important;
-    transition: all 0.2s;
-    box-sizing: border-box;
-  }
-
-  .mapping-prompt:focus {
-    background: #FFFFFF !important;
-    border-color: #D1D1D6 !important;
-    outline: none;
-    box-shadow: none !important;
-  }
-
   .mapping-delete {
     width: 32px;
     height: 32px;
@@ -2157,6 +2138,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
   }
 
   .chain-model-name {
@@ -2178,6 +2160,7 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-shrink: 0;
   }
 
   .fact-remove-btn,
@@ -2241,15 +2224,15 @@
     background: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    padding: 0 10px;
+    padding: 1px 11px;
     height: 36px;
     transition: all 0.2s;
     overflow: visible;
+    min-width: 0;
   }
 
   .mapping-prompt-wrapper:focus-within {
     border-color: var(--primary-color);
-    background: var(--card-bg);
   }
 
   .mapping-prompt {
@@ -2262,8 +2245,15 @@
     font-family: inherit;
     outline: none !important;
     white-space: nowrap;
-    overflow: hidden;
-    line-height: 36px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    line-height: 32px;
+    height: 32px !important;
+  }
+
+  .mapping-prompt::-webkit-scrollbar {
+    display: none;
   }
 
   .mapping-prompt[contenteditable="true"]:empty:before {
@@ -2802,43 +2792,44 @@
     gap: 8px;
     position: relative;
   }
-/* Annotation Color Palette */
-.annotation-color-palette {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
 
-.color-swatch {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-  position: relative;
-}
+  /* Annotation Color Palette */
+  .annotation-color-palette {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
 
-.color-swatch:hover {
-  transform: scale(1.15);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
+  .color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+  }
 
-.color-swatch.active {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
-  transform: scale(1.2);
-}
+  .color-swatch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
 
-.color-swatch.active::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
-  background: white;
-  border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-}
+  .color-swatch.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+    transform: scale(1.2);
+  }
+
+  .color-swatch.active::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }

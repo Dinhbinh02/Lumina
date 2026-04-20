@@ -1,8 +1,12 @@
-
 importScripts('../lib/marked.min.js');
 importScripts('../lib/utils/constants.js');
 importScripts('../lib/utils/memory.js');
 importScripts('../lib/utils/auth.js');
+importScripts('../lib/vendor/minisearch.js');
+importScripts('../lib/vendor/gpt-tokenizer.js');
+importScripts('../lib/utils/token_utils.js');
+importScripts('../lib/utils/rag_utils.js');
+
 
 
 // Default settings
@@ -30,37 +34,54 @@ function broadcastToSession(sessionId, message) {
     }
 }
 
-
 // On startup, we might already have open panels (from a previous worker session)
-chrome.storage.session.get(['open_sidepanel_windows'], (result) => {
-    if (result.open_sidepanel_windows) {
-        // We restore the keys into the Map. The value will be null until the panel re-connects,
-        // but .has(windowId) will correctly return true, allowing toggling to work.
-        result.open_sidepanel_windows.forEach(id => {
-            if (!sidePanelPorts.has(id)) {
-                sidePanelPorts.set(id, null);
+// We track restoration to avoid race conditions with toggling after hibernation.
+let isStateRestored = false;
+const restorationPromise = chrome.storage.local.get(['open_sidepanel_windows']).then(async (result) => {
+    if (result.open_sidepanel_windows && Array.isArray(result.open_sidepanel_windows)) {
+        const validIds = [];
+        for (const id of result.open_sidepanel_windows) {
+            try {
+                // Verify window still exists (important when using storage.local across browser restarts)
+                await chrome.windows.get(id);
+                validIds.push(id);
+                if (!sidePanelPorts.has(id)) {
+                    sidePanelPorts.set(id, null);
+                }
+            } catch (e) {
+                // Stale window ID, skip
             }
-        });
+        }
+        // Clean up storage if we found stale IDs
+        if (validIds.length !== result.open_sidepanel_windows.length) {
+            chrome.storage.local.set({ open_sidepanel_windows: validIds });
+        }
     }
+    isStateRestored = true;
+}).catch(() => {
+    isStateRestored = true;
 });
 
-// Persist the list of open sidepanels into session storage for state stability
+
+
+// Persist the list of open sidepanels into storage for state stability
 function updateOpenSidePanelsSession() {
     const windowIds = Array.from(sidePanelPorts.keys());
-    chrome.storage.session.set({ open_sidepanel_windows: windowIds });
+    chrome.storage.local.set({ open_sidepanel_windows: windowIds });
 }
+
 
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-sidepanel') {
         let connectedWindowId = null;
-        
+
         port.onMessage.addListener((msg) => {
             if (msg.windowId) {
                 // If this window already had a port, clear it
                 if (connectedWindowId && connectedWindowId !== msg.windowId) {
                     sidePanelPorts.delete(connectedWindowId);
                 }
-                
+
                 connectedWindowId = msg.windowId;
                 sidePanelPorts.set(connectedWindowId, port);
                 updateOpenSidePanelsSession();
@@ -89,8 +110,20 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 async function toggleSidePanel(windowId) {
     if (!windowId) return;
-    if (sidePanelPorts.has(windowId)) {
-        // Clear tracked state immediately so a stale port/session entry does not block the next open toggle.
+
+    // Always wait for state restoration before checking open/close state.
+    // This is the critical fix for the "double-click" bug after SW hibernation:
+    // when the worker wakes up, sidePanelPorts is empty until restorationPromise
+    // finishes re-populating it from storage. Without this wait, the toggle always
+    // incorrectly thinks the panel is closed and tries to open it.
+    if (!isStateRestored) {
+        await restorationPromise;
+    }
+
+    const isCurrentlyOpen = sidePanelPorts.has(windowId);
+
+    if (isCurrentlyOpen) {
+        // CLOSE logic (Does not require user gesture)
         sidePanelPorts.delete(windowId);
         updateOpenSidePanelsSession();
 
@@ -106,6 +139,9 @@ async function toggleSidePanel(windowId) {
             });
         }
     } else {
+        // OPEN logic — chrome.sidePanel.open requires a user gesture.
+        // Modern Chrome allows one microtask/await hop and still respects the gesture,
+        // so awaiting restorationPromise above is safe here.
         chrome.sidePanel.open({ windowId }).catch(() => { });
     }
 }
@@ -236,7 +272,6 @@ You are Lumina, a helpful and intelligent AI assistant.
 1. Be direct, accurate, and practical.
 2. If the user asks for concise output, keep the response short.
 3. For time-sensitive queries, use the provided current time context. Remember the year is 2026.
-4. If context is provided by the user, prioritize that context and avoid unsupported claims.
 </constraints>
 
 <output_format>
@@ -898,17 +933,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         systemInstruction = systemOverride || buildProofreadSystemPrompt();
     }
 
-    console.log(streamLogPrefix, 'start', {
-        model,
-        provider: currentProvider,
-        endpoint,
-        messageCount: messages?.length || 0,
-        hasContext: !!(initialContext && initialContext.trim().length > 0),
-        questionLength: question ? question.length : 0,
-        maxTokens,
-        hasFiles,
-        isSpotlight
-    });
+
 
     // --- Inject User Memory Facts for Personalization ---
     try {
@@ -929,11 +954,51 @@ async function executeChatRequest(config, messages, initialContext, question, po
         augmentedQuestion = `Correct/translate this text:\n<text>${question}</text>`;
     }
 
-    // Inject Page Context if available - Appended to the current question for better freshness & context switching
-    // This is done last to ensure it's not overwritten by specialized action logic
+    // Inject Page Context if available
     if (initialContext && initialContext.trim().length > 0) {
-        const processedContext = optimizeContextString(initialContext);
-        augmentedQuestion = `${processedContext}\n\n---\n\n${augmentedQuestion}`;
+        let processedContext = initialContext;
+
+        // --- Precise Local RAG using GPTTokenizer and MiniSearch ---
+        const actualTokens = LuminaToken.count(initialContext);
+
+        // Unified high-capacity context limit for all models
+        const TOKEN_LIMIT = 500000;
+
+        if (actualTokens > TOKEN_LIMIT) {
+            console.log(streamLogPrefix, `Content too long (${actualTokens} tokens), applying MiniSearch RAG...`);
+            const chunks = LuminaRAG.chunkText(initialContext, 2500, 400);
+
+            // Build a retrieval query that includes history for follow-ups
+            let retrievalQuery = question;
+            if (messages.length > 0) {
+                // Prepend last user/assistant message to help RAG find relevant chunks for follow-ups
+                const lastTurn = messages.slice(-1)[0];
+                const turnText = lastTurn.content || lastTurn.text;
+                if (turnText) retrievalQuery = `${turnText} ${question}`;
+            }
+
+            const topChunks = LuminaRAG.rankChunks(chunks, retrievalQuery, 5); // Increased topK for better coverage
+            processedContext = topChunks.join('\n\n[...]\n\n');
+            processedContext = `[Web Context Snippets (Retrieved via RAG)]:\n${processedContext}`;
+        } else {
+            processedContext = optimizeContextString(initialContext);
+        }
+
+        // --- Context Injection Strategy ---
+        // For follow-up turns, putting context at the end of the user message often causes "Recency Bias"
+        // where the AI ignores the history and re-translates the context.
+        // We now move context to the System Message for follow-ups to keep it as "Background Knowledge".
+        if (fullMessages.length > 0) {
+            // For follow-ups: Inject into System Prompt
+            console.log(streamLogPrefix, `Injecting context into follow-up (${processedContext.length} chars)`);
+            const contextInstruction = `\n\n[REFERENCE CONTEXT - Webpage Content]:\n${processedContext}\n\n(Note: This context is for background reference only. Prioritize the user's current goal in the history.)`;
+            systemInstruction += contextInstruction;
+            systemInstruction += "\nIMPORTANT: If context is provided, prioritize its information and avoid making unsupported claims.";
+        } else {
+            // For first turn: Prepend to question to set the stage
+            console.log(streamLogPrefix, `Injecting context into first turn (${processedContext.length} chars)`);
+            augmentedQuestion = `[REFERENCE CONTEXT - Webpage Content]:\n${processedContext}\n\n---\n\n[USER INSTRUCTION]:\n${augmentedQuestion}`;
+        }
     }
 
     // Parameters for payload builder
@@ -1005,10 +1070,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
     }
 
-    console.log(streamLogPrefix, 'response ok', {
-        status: response.status,
-        contentType: response.headers.get('content-type')
-    });
+
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
@@ -1049,7 +1111,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
             if (finishReason) {
                 lastFinishReason = finishReason;
-                console.log(streamLogPrefix, 'finish_reason', { finishReason });
             }
 
             let content = delta.content;
@@ -1175,16 +1236,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 }
             }
 
-            console.log(streamLogPrefix, 'reader done', {
-                emittedChunks,
-                fullToolResponseLength: fullToolResponse.length,
-                isInReasoning,
-                lastFinishReason,
-                sawDoneSignal,
-                usage: lastUsage || null,
-                trailingBufferLength,
-                flushedTailDeltas: tailDeltas.length
-            });
+
             break;
         }
         const chunk = decoder.decode(value, { stream: true });
@@ -1221,13 +1273,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
             const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
             if (filteredText.length > 0) {
                 emittedChunks += 1;
-                if (emittedChunks <= 3 || emittedChunks % 10 === 0) {
-                    console.log(streamLogPrefix, 'chunk', {
-                        emittedChunks,
-                        chunkLength: filteredText.length,
-                        preview: filteredText.slice(0, 120)
-                    });
-                }
                 const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
                 if (sessionId) broadcastToSession(sessionId, chunkMsg);
                 else port.postMessage(chunkMsg);
@@ -1245,14 +1290,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         isInReasoning = false;
     }
 
-    console.log(streamLogPrefix, 'finished', {
-        emittedChunks,
-        fullToolResponseLength: fullToolResponse.length,
-        hadOpenReasoningTag: false,
-        lastFinishReason,
-        sawDoneSignal,
-        usage: lastUsage || null
-    });
+
 
     // --- Stream Finished. Check for tool call anywhere in content ---
 }
@@ -1329,7 +1367,7 @@ async function bridgeLog(...args) {
 
 // --- Message Listener ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Lumina BG] Message received:', request.action, request.word || request.url || '');
+
 
     switch (request.action) {
         case 'fetch_cambridge':
@@ -1345,7 +1383,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 ? `https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word.replace(/\s+/g, '-'))}`
                 : `https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`;
 
-            console.log(`[Lumina BG] Fetching ${request.action}:`, url);
+
 
             fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow' })
                 .then(res => {
@@ -1353,7 +1391,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     return res.text();
                 })
                 .then(html => {
-                    console.log(`[Lumina BG] ${request.action} success, length:`, html.length);
+
                     sendResponse({ success: true, html });
                 })
                 .catch(err => {
@@ -1404,19 +1442,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     };
                     chrome.storage.local.set({ 'lumina_youtube_trigger': enrichedTrigger });
                 }
-                
+
                 // Identify if this is internal toggle from the sidepanel itself
                 const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
-                
+
                 // Automatically pin the current tab when side panel is opened via shortcut (from external page)
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,
                     url: sender.tab.url
                 } : null;
-                
+
                 if (sourceTab && sidePanelPorts.has(windowIdManual)) {
-                    chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab });
+                    chrome.storage.local.get(['readWebpage'], (res) => {
+                        const isReadWebpageEnabled = res.readWebpage !== false; // Default to true
+                        if (isReadWebpageEnabled) {
+                            chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab });
+                        }
+                    });
                 }
             }
             sendResponse({ success: true });
@@ -1428,10 +1471,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (windowIdQuery) {
                 chrome.sidePanel.open({ windowId: windowIdQuery }).catch(() => { });
                 const queryId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
-                
+
                 // Identify if this is an internal query from the spotlight/sidepanel itself
                 const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
-                
+
                 // Only provide sourceTab for external web pages to avoid redundant pinning
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
@@ -1439,19 +1482,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     url: sender.tab.url
                 } : null;
 
-                const queryData = { 
-                    query: request.query, 
-                    displayQuery: request.displayQuery, 
-                    queryId, 
+                const queryData = {
+                    query: request.query,
+                    displayQuery: request.displayQuery,
+                    queryId,
                     mode: request.mode,
                     sourceTab: sourceTab,
                     isInternal: isInternal
                 };
 
+                // Always set as pending to ensure reliability across Service Worker restarts.
+                // Use local storage as a robust persistent trigger for side panel to bridge SW awake gap.
+                queryData.timestamp = Date.now();
+                chrome.storage.local.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData });
+
                 if (sidePanelPorts.has(windowIdQuery)) {
                     chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, ...queryData });
-                } else {
-                    chrome.storage.session.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData });
                 }
             }
             sendResponse({ success: true });
@@ -1480,7 +1526,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             let optionsUrl = chrome.runtime.getURL('pages/options/options.html');
             if (request.section) optionsUrl += `?section=${request.section}`;
             if (request.requestMic) optionsUrl += (optionsUrl.includes('?') ? '&' : '?') + 'requestMic=1';
-            
+
             chrome.tabs.create({ url: optionsUrl });
             return true;
         }
@@ -1720,7 +1766,7 @@ async function getSpotlightWindowId() {
 }
 
 
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener(async (command, tab) => {
     if (command === 'open-lumina-chat') {
         createSpotlightWindow();
     } else if (command === 'new-chat') {
@@ -1735,13 +1781,22 @@ chrome.commands.onCommand.addListener(async (command) => {
             });
         }
     } else if (command === 'toggle-side-panel') {
-        chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
-            if (currentWindow && currentWindow.id) {
-                toggleSidePanel(currentWindow.id);
-            }
-        });
+        // Use the windowId from the tab argument directly.
+        // This is more reliable than chrome.windows.getCurrent and preserves the user gesture
+        // which is required for chrome.sidePanel.open.
+        if (tab && tab.windowId) {
+            toggleSidePanel(tab.windowId);
+        } else {
+            // Fallback for cases where tab is not provided (unlikely for onCommand)
+            chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
+                if (currentWindow && currentWindow.id) {
+                    toggleSidePanel(currentWindow.id);
+                }
+            });
+        }
     }
 });
+
 
 
 async function transcribeAudio(base64Audio, mimeType) {
@@ -2093,8 +2148,8 @@ chrome.runtime.onConnect.addListener((port) => {
                     if (sessionPorts.get(sid).size === 0) {
                         sessionPorts.delete(sid);
                         // Abort background fetch if no more ports listening
-                        const controller = sessionControllers.get(sid);
                         if (controller) {
+
                             controller.abort();
                             sessionControllers.delete(sid);
                         }
@@ -2114,7 +2169,7 @@ chrome.runtime.onConnect.addListener((port) => {
             }
 
             if (msg.action === 'stop_chat' && msg.sessionId) {
-                console.log('[Lumina BG][stream] stop_chat request', msg.sessionId);
+
                 const controller = sessionControllers.get(msg.sessionId);
                 if (controller) {
                     controller.abort();
@@ -2131,15 +2186,7 @@ chrome.runtime.onConnect.addListener((port) => {
                 sessionPorts.get(msg.sessionId).add(port);
             }
 
-            console.log('[Lumina BG][stream] request', {
-                action: msg.action,
-                sessionId: msg.sessionId,
-                messageCount: msg.messages?.length || 0,
-                questionLength: msg.question ? msg.question.length : 0,
-                hasContext: !!(msg.initialContext && msg.initialContext.trim().length > 0),
-                hasImages: !!(msg.imageData && msg.imageData.length),
-                isSpotlight: !!msg.isSpotlight
-            });
+
             if (msg.action === 'chat_stream' || msg.action === 'proofread' || msg.action === 'dict_stream') {
                 try {
                     let question = msg.question;
@@ -2176,10 +2223,7 @@ chrome.runtime.onConnect.addListener((port) => {
                         finalSystemOverride,
                         msg.sessionId
                     );
-                    console.log('[Lumina BG][stream] request complete', {
-                        action: msg.action,
-                        questionLength: question ? question.length : 0
-                    });
+
                 } catch (e) {
                     console.error('[Lumina BG][stream] request error', {
                         action: msg.action,
@@ -2187,7 +2231,7 @@ chrome.runtime.onConnect.addListener((port) => {
                     });
                     port.postMessage({ action: 'chunk', chunk: `*Error: ${e.message}*` });
                 } finally {
-                    console.log('[Lumina BG][stream] sending done', { action: msg.action });
+
                     const doneMsg = { action: 'done', sessionId: msg.sessionId };
                     if (msg.sessionId) broadcastToSession(msg.sessionId, doneMsg);
                     else port.postMessage(doneMsg);
@@ -2498,7 +2542,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                 }
             }
         } catch (e) {
-             console.warn("[Lumina] Optional context extraction failed:", e);
+            console.warn("[Lumina] Optional context extraction failed:", e);
         }
 
         // 1. Load global settings for params (shared across models)
@@ -2565,8 +2609,8 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                     if (i < chain.length - 1) {
                         // Notify UI of fallback (optional, maybe via port message types that don't break content)
                         try {
-                            const statusMsg = { 
-                                action: 'status_update', 
+                            const statusMsg = {
+                                action: 'status_update',
                                 text: `Rate limit hit on ${config.model}. Switching to backup model...`,
                                 sessionId: sessionId
                             };

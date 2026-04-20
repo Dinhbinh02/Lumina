@@ -316,11 +316,26 @@
         const selection = window.getSelection();
         if (!selection) return;
 
+        // Synchronous check to block third-party scripts
+        const initialText = selection.toString();
         const path = e.composedPath();
         const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host');
+
+        // If user has selected text and it's not inside an editable field or Lumina's UI,
+        // we block other scripts from seeing this mouseup event.
+        if (initialText.length > 0 && !isInsideShadow && window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            // console.log('[Lumina] Blocked third-party selection script');
+        }
+
         if (isInsideShadow) return;
 
         setTimeout(() => {
+            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+                LuminaSelection.expandToWordBoundaries();
+            }
+
             const finalSelection = window.getSelection();
             const text = finalSelection.toString().trim();
             const range = finalSelection.rangeCount > 0 ? finalSelection.getRangeAt(0) : null;
@@ -844,13 +859,13 @@
                         if (hasVariables) {
                             const containerContent = getSmartClimbedContext();
                             fullQuestion = fullQuestion
-                                .replace(/\$SelectedText|"SelectedText"/gi, text.trim())
+                                .replace(/\$SelectedText|SelectedText/gi, text.trim())
                                 .replace(/\$Sentence/gi, () => getSentenceContext())
                                 .replace(/\$Paragraph/gi, () => getParagraphContext())
                                 .replace(/\$Container/gi, containerContent);
                             // Display version: omit $Container and surrounding punctuation/spaces
                             displayQuestion = mapping.prompt
-                                .replace(/\$SelectedText|"SelectedText"/gi, text.trim())
+                                .replace(/\$SelectedText|SelectedText/gi, text.trim())
                                 .replace(/\$Sentence/gi, () => getSentenceContext())
                                 .replace(/\$Paragraph/gi, () => getParagraphContext())
                                 .replace(/[("'\[]*\$Container[)"'\]]*\s*/gi, '')
@@ -863,7 +878,6 @@
 
                         // Always redirect to Side Panel
                         triggerSidePanelQuery(fullQuestion, displayQuestion);
-                        window.getSelection().removeAllRanges();
                         if (window.LuminaSelection) LuminaSelection.hide();
                         return;
                     }
@@ -901,16 +915,15 @@
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
             // Only trigger if text is selected
-            if (text.length > 0 && range && window.LuminaSelection) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
+                if (text.length > 0 && range && window.LuminaSelection) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
 
-                LuminaSelection.show(0, 0, text, range);
-                LuminaSelection.showInput();
-                window.getSelection().removeAllRanges();
-                return;
-            }
+                    LuminaSelection.show(0, 0, text, range);
+                    LuminaSelection.showInput();
+                    return;
+                }
         }
 
         // Play Audio Shortcut
@@ -967,11 +980,10 @@
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
                     
+                    // Save to storage before applying to DOM (applying mutates the range)
+                    LuminaAnnotation.saveHighlight(range, color, highlightId);
                     // Apply visually
                     LuminaAnnotation.applyHighlight(range, color, highlightId);
-                    
-                    // Save to storage
-                    LuminaAnnotation.saveHighlight(range, color, highlightId);
                     
                     window.getSelection().removeAllRanges();
                     if (window.LuminaSelection) LuminaSelection.hide();
@@ -1812,109 +1824,82 @@
         status: 'idle'
     };
 
-
+    let lastExtractedContent = null;
+    let lastExtractedUrl = "";
 
     /**
-     * Robust "Reader Mode" style extraction.
-     * Identifies the main content by scoring containers based on text density,
-     * class names, and relationship to other elements.
+     * Extracts high-quality content using Readability.js and converts to Markdown with Turndown.
      */
     async function extractMainContent(doc = document) {
         const url = window.location.href;
-        const isYouTube = typeof YoutubeUtils !== 'undefined' && YoutubeUtils.isYouTubeVideo(url);
+        
+        // Cache check
+        if (lastExtractedContent && lastExtractedUrl === url) {
+            return lastExtractedContent;
+        }
 
+        const isYouTube = typeof YoutubeUtils !== 'undefined' && YoutubeUtils.isYouTubeVideo(url);
         let youtubeTranscript = "";
         if (isYouTube) {
             youtubeTranscript = await YoutubeUtils.fetchTranscript(url);
         }
 
-        const docClone = doc.cloneNode(true);
-
-        // 1. Remove obvious noise immediately
-        const blacklistedSelectors = [
-            'nav', 'footer', 'header', 'aside', 'script', 'style', 'noscript',
-            'form', 'svg', 'canvas', '.ads', '.sidebar', '.menu', '.footer', '.header',
-            '.ad-box', '.social-share', '.comments', '[id^="lumina-"]', '[class^="lumina-"]'
-        ];
-        
-        // Specialized logic for SharePoint/Office Online to preserve viewer containers
-        const isOfficeDoc = url.includes('sharepoint.com') || url.includes('office.com') || url.includes('officeapps.live.com');
-        
-        blacklistedSelectors.forEach(s => {
-            docClone.querySelectorAll(s).forEach(el => {
-                // Don't remove iframes on Office docs as they hold the content
-                if (s === 'iframe' && isOfficeDoc) return;
-                el.remove();
-            });
-        });
-
-        // 2. Score potential main containers
-        const candidates = [];
-        const elements = docClone.querySelectorAll('div, article, section, main');
-
-        elements.forEach(el => {
-            const text = el.innerText.trim();
-            if (text.length < 100) return;
-
-            const links = el.querySelectorAll('a');
-            let linkLength = 0;
-            links.forEach(a => linkLength += a.innerText.length);
-            const linkDensity = linkLength / text.length;
-            if (linkDensity > 0.4) return;
-
-            let score = Math.floor(text.length / 100);
-            const weightString = (el.className + ' ' + el.id).toLowerCase();
-            if (/(article|content|main|body|post|entry|text|story)/i.test(weightString)) score += 25;
-            if (/(comment|sidebar|footer|header|nav|menu|share|meta|promo|ad|tags)/i.test(weightString)) score -= 50;
-
-            candidates.push({ element: el, score: score });
-        });
-
-        // 3. Select best container or fallback
-        candidates.sort((a, b) => b.score - a.score);
-        let bestEl = candidates.length > 0 ? candidates[0].element : docClone.body;
-
-        // Specialized check for Excel Online elements if standard scoring fails
-        if (isOfficeDoc && (!candidates.length || candidates[0].score < 10)) {
-            const excelContainer = docClone.querySelector('.ewa-grid-container, #WACViewPanel_Excel_MainElement, .WACViewPanel');
-            if (excelContainer) bestEl = excelContainer;
-        }
-
-        bestEl.querySelectorAll('p, li, .ewa-rtc-content').forEach(sub => {
-            const subText = sub.innerText.trim();
-            if (subText.length < 5) {
-                sub.remove();
-                return;
-            }
-            const subLinks = sub.querySelectorAll('a');
-            let slLen = 0;
-            subLinks.forEach(a => slLen += a.innerText.length);
-            if (slLen > subText.length * 0.5) sub.remove();
-        });
-
-        let finalText = bestEl.innerText || bestEl.textContent || "";
-        finalText = finalText
-            .replace(/[ \t]+/g, ' ')
-            .replace(/\n\s*\n/g, '\n\n')
-            .trim();
-
-        finalText = `[Page Content]:\n${finalText}`;
-
-        if (youtubeTranscript) {
-            finalText = `${finalText}\n\n---\n\n[YouTube Video Transcript]:\n${youtubeTranscript}`;
-        }
-
-        return {
+        let result = {
             url: url,
             title: document.title,
-            content: finalText
+            content: ""
         };
+
+        try {
+            // 1. Use Readability for smart content extraction
+            // We clone the document because Readability mutates the DOM
+            const docClone = doc.cloneNode(true);
+            const reader = new Readability(docClone);
+            const article = reader.parse();
+
+            if (article && article.content) {
+                // 2. Convert HTML to Markdown using Turndown
+                const turndownService = new TurndownService({
+                    headingStyle: 'atx',
+                    codeBlockStyle: 'fenced'
+                });
+                
+                // Add some custom rules for better formatting if needed
+                let markdownContent = turndownService.turndown(article.content);
+
+                // Add metadata header
+                let finalText = `[Page Content - ${article.title || document.title}]\n`;
+                if (article.excerpt) finalText += `> ${article.excerpt}\n\n`;
+                finalText += markdownContent;
+
+                if (youtubeTranscript) {
+                    finalText += `\n\n---\n\n[YouTube Video Transcript]:\n${youtubeTranscript}`;
+                }
+
+                result.content = finalText;
+            } else {
+                // Fallback to basic text extraction if Readability fails
+                // Significantly increased limit for Gemini (1M+ context window)
+                result.content = `[Page Content]:\n${doc.body.innerText.slice(0, 500000)}`;
+            }
+        } catch (error) {
+            console.error('[Lumina] Content extraction failed:', error);
+            result.content = `[Extraction Error]: ${error.message}`;
+        }
+
+        lastExtractedContent = result;
+        lastExtractedUrl = url;
+        return result;
     }
 
     function luminaEstimateTokens(text) {
         if (!text) return 0;
-        return Math.ceil(text.length / 3);
+        if (typeof LuminaToken !== 'undefined') {
+            return LuminaToken.count(text);
+        }
+        return Math.ceil(text.length / 4); // Improved rough fallback
     }
+
 
     // Assign to window for external calling via executeScript
     window.luminaExtractMainContent = extractMainContent;

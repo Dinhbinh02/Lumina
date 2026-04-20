@@ -106,7 +106,12 @@
         "https://*/*"
       ],
       "js": [
+        "lib/vendor/Readability.js",
+        "lib/vendor/turndown.js",
+        "lib/vendor/minisearch.js",
+        "lib/vendor/gpt-tokenizer.js",
         "lib/utils/constants.js",
+        "lib/utils/token_utils.js",
         "lib/utils/cambridge_parser.js",
         "lib/utils/oxford_parser.js",
         "lib/utils/dictionary_popup.js",
@@ -114,8 +119,10 @@
         "lib/utils/selection_utils.js",
         "lib/utils/youtube_utils.js",
         "lib/utils/annotation_utils.js",
+        "lib/utils/rag_utils.js",
         "scripts/content.js"
       ],
+
       "run_at": "document_end",
       "all_frames": true
     }
