@@ -170,38 +170,23 @@
         <!-- Intelligent Features -->
         <div class="glass-card mt-16">
           <div class="card-header">🧠 Intelligent Features</div>
-
-
-
-          <!-- Dictation Configuration -->
-          <div class="mt-24 border-top pt-24">
-            <label class="mb-12 block">🎙️ Dictation Select Model<span class="info-tooltip"
-                data-tooltip="Select a model for speech-to-text transcription.">i</span></label>
-            <div class="dictation-area">
-              <div class="form-group form-group-provider">
-                <label for="voiceProvider" class="label-small">Provider</label>
-                <input type="text" id="voiceProvider" autocomplete="off" placeholder="Select..."
-                  class="input-readonly input-element-bg" readonly>
-                <div id="voiceProviderList" class="dropdown-list"></div>
-              </div>
-              <div class="form-group form-group-model">
-                <label for="voiceModel" class="label-small">Model</label>
-                <input type="text" id="voiceModel" autocomplete="off" class="input-element-bg">
-                <div id="voiceModelList" class="dropdown-list"></div>
-              </div>
-            </div>
-          </div>
-
           <!-- AI Dictionary Configuration -->
-          <div class="mt-24 border-top pt-24">
-            <div class="form-row-item no-border p-0 mb-16">
+          <div class="mt-20">
+
+            <div class="form-row-item mb-16">
               <div class="feature-info">
-                <span class="feature-label">📖 AI Dictionary Lookup Toolbar</span>
-                <span class="feature-desc">Show a floating toolbar when text is selected</span>
+                <span class="feature-label">Definition Language</span>
               </div>
-              <button type="button" id="askSelectionPopupBtn" class="status-btn btn-status-toggle">
-                Enabled
-              </button>
+              <div class="radio-group w-240">
+                <label class="radio-option">
+                  <input type="radio" name="dictLanguage" value="en" checked>
+                  <span>English</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="dictLanguage" value="vi">
+                  <span>Vietnamese</span>
+                </label>
+              </div>
             </div>
 
             <label class="mb-12 block text-semibold">Dictionary Lookup Model<span class="info-tooltip"

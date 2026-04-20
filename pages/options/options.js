@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Global state for model lists
   let availableModels = [];
-  let availableVoiceModels = [];
   let availableDictModels = [];
 
   // Sidebar Navigation Logic
@@ -322,10 +321,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Define mappings elements globally for scope access
   const mappingsList = document.getElementById('questionMappingsList');
   const addMappingBtn = document.getElementById('addMappingBtn');
-  const voiceProviderInput = document.getElementById('voiceProvider');
-  const voiceProviderList = document.getElementById('voiceProviderList');
-  const voiceModelInput = document.getElementById('voiceModel');
-  const voiceModelList = document.getElementById('voiceModelList');
 
   const dictProviderInput = document.getElementById('dictProvider');
   const dictProviderList = document.getElementById('dictProviderList');
@@ -336,8 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const fontSizeInput = document.getElementById('fontSize');
   const decreaseFontSizeBtn = document.getElementById('decreaseFontSize');
   const increaseFontSizeBtn = document.getElementById('increaseFontSize');
-  const askSelectionPopupBtn = document.getElementById('askSelectionPopupBtn');
-  let isAskSelectionPopupEnabled = true;
   const statusDiv = document.getElementById('status');
   const siteToggle = document.getElementById('siteToggle');
   const siteToggleLabel = document.getElementById('siteToggleLabel');
@@ -1299,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Load options from storage
-  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'voiceProvider', 'voiceModel', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode'], (items) => {
+  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage'], (items) => {
     // Wait for providers to be loaded
     setTimeout(() => {
       // --- Load Advanced Params ---
@@ -1341,22 +1334,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
 
-      // Voice provider - custom dropdown (for options UI)
-      if (items.voiceProvider && voiceProviderInput) {
-        const prov = getProviderById(items.voiceProvider);
-        if (prov) {
-          voiceProviderInput.value = prov.name;
-          voiceProviderInput.dataset.providerId = items.voiceProvider;
-          // Enable model input
-          if (voiceModelInput) {
-            voiceModelInput.disabled = false;
-            voiceModelInput.placeholder = 'Type or select model...';
-          }
-        }
-      }
-      if (items.voiceModel && voiceModelInput) {
-        voiceModelInput.value = items.voiceModel;
-      }
 
       // Dictionary provider - custom dropdown (for options UI)
       if (items.dictProvider && dictProviderInput) {
@@ -1409,8 +1386,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const langRadio = document.querySelector(`input[name="responseLanguage"][value="${savedLanguage}"]`);
     if (langRadio) langRadio.checked = true;
 
+    // Load AI Dictionary language
+    const dictLang = items.dictLanguage || 'en';
+    const dictLangRadio = document.querySelector(`input[name="dictLanguage"][value="${dictLang}"]`);
+    if (dictLangRadio) dictLangRadio.checked = true;
+
     // Load Selection Popup setting
-    isAskSelectionPopupEnabled = items.askSelectionPopupEnabled !== undefined ? items.askSelectionPopupEnabled : true;
     updateAskSelectionPopupBtnUI();
 
     // Load Read webpage setting
@@ -1611,8 +1592,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const settings = {
         provider: provider,
         model: model,
-        voiceProvider: voiceProviderInput?.dataset?.providerId || '',
-        voiceModel: voiceModelInput ? voiceModelInput.value : '',
         dictProvider: dictProviderInput?.dataset?.providerId || '',
         dictModel: dictModelInput ? dictModelInput.value : '',
         questionMappings: questionMappingsExport,
@@ -1620,10 +1599,10 @@ document.addEventListener('DOMContentLoaded', () => {
         globalDefaults: globalDefaults,
         compactionSize: parseInt(document.getElementById('compactionSize')?.value, 10) || 10,
         responseLanguage: responseLanguage,
+        dictLanguage: document.querySelector('input[name="dictLanguage"]:checked')?.value || 'en',
         theme: theme,
         shortcuts: shortcuts,
         annotationShortcuts: annotationShortcutsExport,
-        askSelectionPopupEnabled: isAskSelectionPopupEnabled,
         autoHideInputEnabled: document.getElementById('autoHideInputEnabled')?.checked || false,
         audioSpeed: audioSpeed,
         memoryThreshold: parseInt(document.getElementById('memoryThreshold')?.value, 10) || 14,
@@ -1688,34 +1667,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fontSizeInput,
   ].filter(Boolean); // Filter out nulls explicitly
 
-  function updateAskSelectionPopupBtnUI() {
-    if (!askSelectionPopupBtn) return;
-    if (isAskSelectionPopupEnabled) {
-      askSelectionPopupBtn.textContent = 'Enabled';
-      askSelectionPopupBtn.style.color = '#fff';
-      askSelectionPopupBtn.style.background = '#28a745'; // Green for enabled
-      askSelectionPopupBtn.style.borderColor = '#28a745';
-      askSelectionPopupBtn.style.boxShadow = 'none';
-      askSelectionPopupBtn.style.fontWeight = '600';
-    } else {
-      askSelectionPopupBtn.textContent = 'Disabled';
-      askSelectionPopupBtn.style.color = 'var(--text-secondary)';
-      askSelectionPopupBtn.style.background = 'var(--card-bg)';
-      askSelectionPopupBtn.style.borderColor = 'var(--border-color)';
-      askSelectionPopupBtn.style.boxShadow = 'none';
-      askSelectionPopupBtn.style.fontWeight = '520';
-    }
-  }
-
-  if (askSelectionPopupBtn) {
-    askSelectionPopupBtn.addEventListener('click', () => {
-      isAskSelectionPopupEnabled = !isAskSelectionPopupEnabled;
-      updateAskSelectionPopupBtnUI();
-      saveOptions();
-    });
-  }
-
-
   inputs.forEach(input => {
     if (input) { // Double check
       input.addEventListener('change', saveOptions);
@@ -1744,6 +1695,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.querySelectorAll('input[name="responseLanguage"]').forEach(radio => {
+    radio.addEventListener('change', saveOptions);
+  });
+
+  document.querySelectorAll('input[name="dictLanguage"]').forEach(radio => {
     radio.addEventListener('change', saveOptions);
   });
 
@@ -1793,7 +1748,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setupDropdown(modelInput, modelList, () => availableModels);
-  setupDropdown(voiceModelInput, voiceModelList, () => availableVoiceModels);
   setupDropdown(dictModelInput, dictModelList, () => availableDictModels);
 
   function renderDropdown(models, inputElement, listElement) {

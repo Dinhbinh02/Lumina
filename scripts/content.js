@@ -7,9 +7,7 @@
         if (fontStyleElement || document.getElementById('lumina-fonts')) return;
 
         // Use Google Fonts CDN for reliable cross-page loading
-        const fontCss = `
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
-`;
+        const fontCss = `@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');`;
 
         fontStyleElement = document.createElement('style');
         fontStyleElement.id = 'lumina-fonts';
@@ -160,7 +158,6 @@
         return 1;
     }
 
-    let askSelectionPopupEnabled = false;
     let readWebpageEnabled = false;
     let askSelectionText = '';
     let askSelectionContext = '';
@@ -340,7 +337,7 @@
             const text = finalSelection.toString().trim();
             const range = finalSelection.rangeCount > 0 ? finalSelection.getRangeAt(0) : null;
 
-            if (askSelectionPopupEnabled && text.length > 0 && range && (window.LuminaSelection && !LuminaSelection.isInsideEditable())) {
+            if (text.length > 0 && range && (window.LuminaSelection && !LuminaSelection.isInsideEditable())) {
                 if (window.LuminaSelection) {
                     LuminaSelection.show(e.clientX, e.clientY, text, range);
                 }
@@ -365,12 +362,10 @@
         }
     }, true);
 
-    // Load setting
-    chrome.storage.local.get(['askSelectionPopupEnabled', 'readWebpage'], (result) => {
-        askSelectionPopupEnabled = result.askSelectionPopupEnabled ?? true;
+    chrome.storage.local.get(['readWebpage'], (result) => {
         readWebpageEnabled = result.readWebpage ?? false;
         // LuminaSelection is initialized in initShadowDOM; nothing extra needed here
-        
+
         // Initialize highlights
         if (window.LuminaAnnotation) {
             LuminaAnnotation.loadHighlights();
@@ -391,18 +386,15 @@
         if (!chrome.runtime || !chrome.runtime.id) return;
         // 1. Settings & Mappings (local)
         if (area === 'local') {
-            if (changes.askSelectionPopupEnabled) {
-                askSelectionPopupEnabled = changes.askSelectionPopupEnabled.newValue ?? false;
-            }
             if (changes.readWebpage) {
                 readWebpageEnabled = changes.readWebpage.newValue ?? false;
             }
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
-            
+
             if (changes.shortcuts) {
                 Object.assign(shortcuts, changes.shortcuts.newValue || LUMINA_DEFAULT_SHORTCUTS);
             }
-            
+
             if (changes.annotationShortcuts) {
                 shortcuts.annotationShortcuts = changes.annotationShortcuts.newValue || [];
             }
@@ -571,19 +563,6 @@
             return true; // Keep channel open for async
         }
 
-        if (request.action === 'startDictationRecording') {
-            startDictationRecording().then(sendResponse);
-            return true; // Keep channel open for async
-        }
-
-        if (request.action === 'stopDictationRecording') {
-            stopDictationRecording().then(sendResponse);
-            return true; // Keep channel open for async
-        }
-
-        if (request.action === 'pasteDictationText') {
-            pasteDictationText(request.text);
-        }
     });
 
     // Use shared constant from libs/constants.js
@@ -770,12 +749,12 @@
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
             // Don't undo highlights if user is in an editable area
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
-            
+
             // Check if we should prevent default
             // We only want to undo highlight if there's no other focused input that might need Ctrl+Z
             const activeElement = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDeepActiveElement() : document.activeElement;
             const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
-            
+
             if (!isInput) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -915,15 +894,14 @@
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
             // Only trigger if text is selected
-                if (text.length > 0 && range && window.LuminaSelection) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
+            if (text.length > 0 && range && window.LuminaSelection) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
 
-                    LuminaSelection.show(0, 0, text, range);
-                    LuminaSelection.showInput();
-                    return;
-                }
+                LuminaSelection.show(0, 0, text, range);
+                return;
+            }
         }
 
         // Play Audio Shortcut
@@ -962,7 +940,7 @@
         }
 
         // NOTE: Audio shortcut for modifier-only keys (like Shift alone) is handled in keyup listener below
-        
+
         // --- Annotation / Highlighting Shortcuts ---
         const annotationShortcuts = shortcuts['annotationShortcuts'] || [];
         for (const shortcut of annotationShortcuts) {
@@ -979,12 +957,12 @@
                     const range = selection.getRangeAt(0);
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
-                    
+
                     // Save to storage before applying to DOM (applying mutates the range)
                     LuminaAnnotation.saveHighlight(range, color, highlightId);
                     // Apply visually
                     LuminaAnnotation.applyHighlight(range, color, highlightId);
-                    
+
                     window.getSelection().removeAllRanges();
                     if (window.LuminaSelection) LuminaSelection.hide();
                     return;
@@ -1832,7 +1810,7 @@
      */
     async function extractMainContent(doc = document) {
         const url = window.location.href;
-        
+
         // Cache check
         if (lastExtractedContent && lastExtractedUrl === url) {
             return lastExtractedContent;
@@ -1863,7 +1841,7 @@
                     headingStyle: 'atx',
                     codeBlockStyle: 'fenced'
                 });
-                
+
                 // Add some custom rules for better formatting if needed
                 let markdownContent = turndownService.turndown(article.content);
 
@@ -2091,7 +2069,7 @@
             children.forEach(child => {
                 const isOurContainer = child === leftContainer;
                 const isOurButton = child.id === 'lumina-yt-ask-btn' || (child.classList && child.classList.contains('lumina-yt-ask-btn'));
-                
+
                 if (!isOurContainer && !isOurButton) {
                     leftContainer.appendChild(child);
                     needsMove = true;
@@ -2164,7 +2142,7 @@
 
             // 2. Open Side Panel and pass info
             try {
-                chrome.runtime.sendMessage({ 
+                chrome.runtime.sendMessage({
                     action: 'ensure_sidepanel_open',
                     youtubeTrigger: triggerInfo
                 });
@@ -2196,21 +2174,21 @@
     if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/watch')) {
         setTimeout(() => ytButtonManager.init(), 1000);
     } else if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/shorts')) {
-         setTimeout(() => ytButtonManager.init(), 1000);
+        setTimeout(() => ytButtonManager.init(), 1000);
     }
 
     // Handle Highlight clicks to show the edit menu
     document.addEventListener('click', (e) => {
         if (isExtensionDisabled) return;
-        
+
         const highlight = e.target.closest('.lumina-highlight');
         if (highlight) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const id = highlight.dataset.highlightId;
             const currentColor = highlight.style.backgroundColor;
-            
+
             if (window.LuminaSelection) {
                 // To position correctly, we select the range of the highlight
                 LuminaSelection.showAnnotationMenu(highlight, id, currentColor);

@@ -1689,8 +1689,8 @@ button {
   width: 32px !important;
   border: none !important;
   border-radius: 12px !important;
-  background: var(--lumina-ui-bg-hover, #eee) !important;
-  color: #000 !important;
+  background: #d4d4d4 !important;
+  color: #fff !important;
   cursor: default !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   flex-shrink: 0 !important;
@@ -1717,8 +1717,8 @@ button {
 }
 
 .lumina-action-btn.regenerate {
-  background: #ccc !important;
-  color: #000 !important;
+  background: #bebebe !important;
+  color: #fff !important;
   cursor: pointer;
 }
 
@@ -1727,8 +1727,8 @@ button {
 }
 
 .lumina-action-btn.regenerate:hover {
-  background: #bbb !important;
-  color: #000 !important;
+  background: #acacac !important;
+  color: #fff !important;
 }
 
 .lumina-action-btn.active.regenerate svg,
@@ -2220,12 +2220,26 @@ button {
 
 .lumina-answer-edit-toolbar {
   display: flex !important;
-  justify-content: flex-end !important;
+  justify-content: space-between !important;
+  align-items: center !important;
   gap: 8px !important;
   margin-top: 8px !important;
   pointer-events: auto !important;
   user-select: none !important;
   animation: luminaFadeIn 0.2s ease-out !important;
+}
+
+.lumina-edit-toolbar-spacer {
+  flex: 1 !important;
+}
+
+.lumina-edit-btn.lumina-edit-undo {
+  background: #ef4444 !important;
+  color: #fff !important;
+}
+
+.lumina-edit-btn.lumina-edit-undo:hover {
+  background: #dc2626 !important;
 }
 
 .lumina-web-chip.lumina-pinned-question-chip {
@@ -2596,13 +2610,11 @@ button {
    DICTIONARY & TRANSLATION
    ==================== */
 
-.lumina-dict-tab-btn.active {
+.lumina-dict-tab-btn.active,
+.lumina-dict-tab-btn.active:hover {
   background: var(--lumina-primary-color, #0076d6) !important;
   color: #fff !important;
-}
-
-[data-theme="dark"] .lumina-dict-tab-btn.active {
-  background: var(--lumina-primary-color, #0076d6) !important;
+  cursor: default !important;
 }
 
 .lumina-translate-logo {
@@ -2852,21 +2864,13 @@ button {
 }
 
 .lumina-dict-scroll-area {
-  height: 100% !important;
+  flex: 1 !important;
   overflow-y: auto !important;
-  padding: 12px !important;
+  padding: 14px 16px !important;
   box-sizing: border-box !important;
   overscroll-behavior: contain !important;
   will-change: transform !important;
   -webkit-overflow-scrolling: touch !important;
-}
-
-.lumina-dict-scroll-area::after {
-  content: "" !important;
-  display: block !important;
-  height: 26px !important;
-  width: 100% !important;
-  pointer-events: none !important;
 }
 
 .lumina-dict-scroll-area::-webkit-scrollbar {
@@ -2882,26 +2886,39 @@ button {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.lumina-dict-tabs {
-  position: absolute !important;
-  bottom: 10px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+.lumina-dict-footer {
+  position: relative !important;
+  height: 38px !important;
+  background: var(--lumina-bg-primary, #ffffff) !important;
+  z-index: 100 !important;
   display: flex !important;
-  gap: 2px !important;
-  background: #ffffff !important;
-  padding: 4px !important;
-  border-radius: 14px !important;
-  z-index: 2147483647 !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.05)) !important;
+  flex-shrink: 0 !important;
 }
 
-[data-theme="dark"] .lumina-dict-tabs {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: none !important;
+.lumina-dict-tabs {
+  display: flex !important;
+  gap: 4px !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  z-index: 2 !important;
 }
+
+[data-theme="dark"] .lumina-dict-footer {
+  background: var(--lumina-bg-primary, #1c1c1e) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+
+[data-theme="dark"] .lumina-dict-tabs {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
 
 .lumina-dict-tab-btn {
   padding: 6px 12px !important;
@@ -2916,12 +2933,12 @@ button {
   white-space: nowrap !important;
 }
 
-.lumina-dict-tab-btn:hover {
+.lumina-dict-tab-btn:not(.active):hover {
   background: rgba(0, 0, 0, 0.03) !important;
   color: var(--lumina-text-primary) !important;
 }
 
-[data-theme="dark"] .lumina-dict-tab-btn:hover {
+[data-theme="dark"] .lumina-dict-tab-btn:not(.active):hover {
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
@@ -4296,7 +4313,7 @@ button {
 }
 
 .lumina-chat-question.proofread-question.is-editing {
-  border: none !important;
+  border: 1.5px solid #FFC107 !important;
   background: var(--lumina-chat-bg, #ffffff) !important;
 }
 

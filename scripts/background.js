@@ -292,33 +292,41 @@ Use clear markdown with concise sections only when needed.
     return instruction;
 }
 
-function buildProofreadSystemPrompt() {
+function buildProofreadSystemPrompt(responseLanguage = 'auto') {
+    let languageInstruction = "PRESERVE the input language of the text. Do NOT translate the text unless explicitly requested.";
+    if (responseLanguage && responseLanguage !== 'auto') {
+        languageInstruction += ` The user's preferred language for general assistance is ${responseLanguage}, but for Proofreading, focus exclusively on the provided text's original language.`;
+    }
+
     return `<role>
 You are an expert editor and text refinement tool.
 </role>
 
 <task>
-Refine the provided text. If the user provides specific feedback (e.g., "[USER COMMENTS]" or "[Iteration Instruction]"), apply those changes carefully to the original draft. 
-Return ONLY the final corrected/refined version.
+Refine and correct the text provided within the <text> tags.
 </task>
 
 <constraints>
 1. Output ONLY the refined text. No explanations, no conversation, no headers like "[REVISED VERSION]".
-2. If the input is not English, translate it to natural, professional English.
-3. Keep the original tone and intent unless specifically asked to change it.
-4. If no specific instructions/comments are provided, simply correct all grammar, spelling, and style errors.
-5. Match original capitalization and punctuation where appropriate.
+2. ${languageInstruction}
+3. If the input is English, provide the refined version in English. If the input is Vietnamese, provide the refined version in Vietnamese.
+4. Keep the original tone and intent unless specifically asked to change it.
+5. If no specific instructions/comments are provided, simply correct all grammar, spelling, and style errors.
+6. Match original capitalization and punctuation where appropriate.
+7. NEVER respond in a different language than the input unless the user explicitly asks to translate it.
+8. If the user provides context or instructions outside the <text> tags, follow them, but still only output the refined text.
 </constraints>`;
 }
 
-function buildDictionarySystemPrompt(word) {
+function buildDictionarySystemPrompt(word, lang = 'en') {
     return `You are a world-class lexicographer and expert linguist for Cambridge and Oxford University Press.
 Provide a professional, high-fidelity dictionary entry for the English word or phrase: "${word}".
 
 ### Structure Guidelines (Follow Cambridge Standards):
 1. **Multiple Entries**: If the word has multiple parts of speech (e.g., "run" as verb and noun), provide distinct entries for each.
 2. **Senses & Indicators**: Group definitions into logical "Senses" with a capitalized, concise "Indicator" descriptor (e.g., MOVEMENT, ANALYTICAL INSTRUMENT). Use spaces, NOT underscores.
-3. **Definitions**: Clear, academic English definitions.
+3. **Definitions**: Clear, academic definitions. If lang is 'vi', provide the definition in Vietnamese. Otherwise, keep it in English.
+    The current target language for definitions is: ${lang === 'vi' ? 'Vietnamese' : 'English'}.
    - **Phonetic Standards (MANDATORY)**:
      - **UK (Received Pronunciation)**: Use /e/ for the "short e" sound (e.g., manifest, chemical, resin). Use /ɒ/ for "short o" (hot). Use /ə/ or /ɪ/ for unstressed vowels. NEVER use /ɛ/ for UK English.
      - **US (General American)**: Use /ɛ/ for the "short e" sound. Use /ɑ/ for "short o". Use /ə/ or /ʌ/ as appropriate.
@@ -344,7 +352,7 @@ Provide a professional, high-fidelity dictionary entry for the English word or p
                 {
                     "indicator": "UPPERCASE INDICATOR",
                     "definitions": [
-                        { "meaning": "English definition" }
+                        { "meaning": "${lang === 'vi' ? 'Vietnamese definition' : 'English definition'}" }
                     ]
                 }
             ]
@@ -930,7 +938,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
     let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode);
 
     if (action === 'proofread') {
-        systemInstruction = systemOverride || buildProofreadSystemPrompt();
+        systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
+    } else if (responseLanguage && responseLanguage !== 'auto') {
+        systemInstruction += `\n\nIMPORTANT: Please respond in ${responseLanguage === 'vi' ? 'Vietnamese' : (responseLanguage === 'zh' ? 'Chinese' : responseLanguage)} unless the user specifies otherwise.`;
     }
 
 
@@ -949,9 +959,18 @@ async function executeChatRequest(config, messages, initialContext, question, po
     let fullMessages = [...messages];
     let augmentedQuestion = question;
 
-    if (action === 'proofread' && !systemOverride) {
-        // Wrap the user question in text tags for proofreading/translation
-        augmentedQuestion = `Correct/translate this text:\n<text>${question}</text>`;
+    if (action === 'proofread') {
+        // Isolate from chat history to prevent context leakage (Vietnamese context making it translate English to Vietnamese)
+        // EXCEPT if it's a regenerate/recheck where the user might have provided specific instruction/comment in the history.
+        // For standard Proofread from side panel/popup, we isolate.
+        if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
+            fullMessages = [];
+        }
+        
+        if (!systemOverride) {
+            // Wrap the user question in text tags for proofreading/translation
+            augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
+        }
     }
 
     // Inject Page Context if available
@@ -1539,13 +1558,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             proofreadText(request.text).then(sendResponse).catch(err => sendResponse({ error: err.message }));
             return true;
 
-        case 'toggle-dictation-stop':
-            if (isRecording) stopDictation();
-            return true;
 
-        case 'dictation-cancelled':
-            isRecording = false;
-            return true;
 
         case 'playAudio':
             if (request.text) {
@@ -1632,12 +1645,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
 
-        case 'transcribe_audio':
-            (async () => {
-                const result = await transcribeAudio(request.audio, request.mimeType);
-                sendResponse(result);
-            })();
-            return true;
 
         case 'play_audio':
             (async () => {
@@ -1796,86 +1803,6 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
         }
     }
 });
-
-
-
-async function transcribeAudio(base64Audio, mimeType) {
-    try {
-        // Get voice provider settings and providers list
-        const data = await chrome.storage.local.get(['voiceProvider', 'voiceModel', 'providers']);
-        const voiceProviderId = data.voiceProvider;
-        const model = data.voiceModel || 'whisper-large-v3';
-        const providers = data.providers || [];
-
-        if (!voiceProviderId) {
-            return { error: 'Please configure Voice Dictation in Settings → AI Configuration' };
-        }
-
-        // Find the provider config
-        const provider = providers.find(p => p.id === voiceProviderId);
-        if (!provider) {
-            return { error: 'Voice provider not found. Please reconfigure in Settings.' };
-        }
-
-        if (!provider.apiKey) {
-            return { error: `Please set API key for ${provider.name} in Settings → Providers` };
-        }
-
-        const apiKey = provider.apiKey.split(',')[0].trim(); // Use first key
-
-        // Convert base64 to Blob
-        const binary = atob(base64Audio);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        const audioBlob = new Blob([bytes], { type: mimeType || 'audio/webm' });
-
-        // Determine file extension from mime type
-        let extension = 'webm';
-        if (mimeType) {
-            if (mimeType.includes('mp4')) extension = 'mp4';
-            else if (mimeType.includes('wav')) extension = 'wav';
-            else if (mimeType.includes('webm')) extension = 'webm';
-            else if (mimeType.includes('ogg')) extension = 'ogg';
-        }
-
-        // Create FormData for multipart upload
-        const formData = new FormData();
-        formData.append('file', audioBlob, `audio.${extension}`);
-        formData.append('model', model);
-        formData.append('response_format', 'text');
-
-        // Build API endpoint
-        let transcriptionUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/audio/transcriptions');
-
-        // For Groq specifically
-        if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) {
-            transcriptionUrl = 'https://api.groq.com/openai/v1/audio/transcriptions';
-        }
-
-        const response = await fetch(transcriptionUrl, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: formData
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[Lumina] Transcription API error:', errorText);
-            return { error: `Transcription failed: ${response.status}` };
-        }
-
-        const transcribedText = await response.text();
-
-        return { text: transcribedText };
-    } catch (err) {
-        console.error('[Lumina] Transcription error:', err);
-        return { error: err.message || 'Transcription failed' };
-    }
-}
 
 let isCreatingSpotlight = false; // Guard against race conditions
 
@@ -2148,8 +2075,8 @@ chrome.runtime.onConnect.addListener((port) => {
                     if (sessionPorts.get(sid).size === 0) {
                         sessionPorts.delete(sid);
                         // Abort background fetch if no more ports listening
+                        const controller = sessionControllers.get(sid);
                         if (controller) {
-
                             controller.abort();
                             sessionControllers.delete(sid);
                         }
@@ -2481,7 +2408,8 @@ async function proofreadText(text) {
         if (model) incrementModelUsage(model);
         // -------------------
 
-        const systemPrompt = buildProofreadSystemPrompt();
+        const globalSettings = await chrome.storage.local.get(['responseLanguage']);
+        const systemPrompt = buildProofreadSystemPrompt(globalSettings.responseLanguage);
 
         try {
             const res = await fetchWithRotation(keys, async (key) => {
@@ -2956,12 +2884,14 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
  * Fetches structured dictionary data from AI
  */
 async function fetchAIDict(word) {
+    const { dictLanguage, ...items } = await chrome.storage.local.get(['dictLanguage', 'dictionary']);
+    const lang = dictLanguage || 'en';
     const chain = await getModelChain('dictionary');
     if (!chain || chain.length === 0) {
         throw new Error('No AI model configured for dictionary.');
     }
 
-    const systemPrompt = buildDictionarySystemPrompt(word);
+    const systemPrompt = buildDictionarySystemPrompt(word, lang);
 
     // IMPORTANT: To ensure consistency with the chat flow and bypass potential 503 errors 
     // often caused by non-streaming requests in Gemini OpenAI endpoints, we use streaming 
