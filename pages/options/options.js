@@ -141,6 +141,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run initial restore (will be called again after async data loads to ensure accuracy)
   restoreLastSessionState();
 
+  // Open shortcuts management page
+  const configShortcutBtn = document.getElementById('configShortcutBtn');
+  if (configShortcutBtn) {
+    configShortcutBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+    });
+  }
+
   // --- Anki Management Logic ---
   const checkAnkiConnBtn = document.getElementById('checkAnkiConnBtn');
   const openAnkiMgtBtn = document.getElementById('openAnkiMgtBtn');
@@ -292,13 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Open Lumina Play
-  const openLuminaPlayBtn = document.getElementById('openLuminaPlayBtn');
-  if (openLuminaPlayBtn) {
-    openLuminaPlayBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://lumina-play.vercel.app/' });
-    });
-  }
+
 
   // Utilities
   function escapeHtml(str) {
@@ -1292,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Load options from storage
-  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'askSelectionPopupEnabled', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage'], (items) => {
+  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage'], (items) => {
     // Wait for providers to be loaded
     setTimeout(() => {
       // --- Load Advanced Params ---
@@ -1391,10 +1393,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const dictLangRadio = document.querySelector(`input[name="dictLanguage"][value="${dictLang}"]`);
     if (dictLangRadio) dictLangRadio.checked = true;
 
-    // Load Selection Popup setting
-    updateAskSelectionPopupBtnUI();
 
     // Load Read webpage setting
+
 
 
     // Load Auto-hide Input setting
@@ -1817,86 +1818,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // Voice provider custom dropdown
-  if (voiceProviderInput && voiceProviderList) {
-    // Initially disable model input until provider is selected
-    if (voiceModelInput && !voiceProviderInput.dataset.providerId) {
-      voiceModelInput.disabled = true;
-      voiceModelInput.placeholder = 'Select provider first...';
-    }
-
-    voiceProviderInput.addEventListener('click', () => {
-      const isVisible = voiceProviderList.style.display === 'block';
-      voiceProviderList.style.display = isVisible ? 'none' : 'block';
-
-      if (!isVisible) {
-        voiceProviderList.innerHTML = providers.map(p =>
-          `<div class="dropdown-item" data-value="${p.id}">${escapeHtml(p.name)}</div>`
-        ).join('');
-
-        voiceProviderList.querySelectorAll('.dropdown-item').forEach(item => {
-          item.addEventListener('click', () => {
-            voiceProviderInput.value = item.textContent;
-            voiceProviderInput.dataset.providerId = item.dataset.value;
-            voiceProviderList.style.display = 'none';
-
-            // Enable model input
-            if (voiceModelInput) {
-              voiceModelInput.disabled = false;
-              voiceModelInput.placeholder = 'Type or select model...';
-            }
-
-            saveOptions();
-            const provider = getProviderById(item.dataset.value);
-            if (provider) {
-              fetchModelsForProvider(provider, {
-                isVoice: true
-              });
-            }
-          });
-        });
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!voiceProviderInput.contains(e.target) && !voiceProviderList.contains(e.target)) {
-        voiceProviderList.style.display = 'none';
-      }
-    });
-  }
-
-  // Voice model input listeners
-  if (voiceModelInput) {
-    voiceModelInput.addEventListener('change', () => {
-      saveOptions();
-    });
-
-    voiceModelInput.addEventListener('focus', () => {
-      const providerId = voiceProviderInput?.dataset?.providerId;
-      const provider = providerId ? getProviderById(providerId) : null;
-      if (provider) {
-        // Refresh list on focus
-        fetchModelsForProvider(provider, {
-          selectedModel: voiceModelInput.value,
-          isVoice: true
-        });
-      }
-      if (voiceModelList) voiceModelList.style.display = 'block';
-    });
-
-    voiceModelInput.addEventListener('input', () => {
-      const query = voiceModelInput.value.toLowerCase();
-      const filtered = availableVoiceModels.filter(m => m.toLowerCase().includes(query));
-      renderDropdown(filtered, voiceModelInput, voiceModelList);
-      if (voiceModelList) voiceModelList.style.display = 'block';
-    });
-
-    voiceModelInput.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (!isSelectingModel && voiceModelList) voiceModelList.style.display = 'none';
-      }, 200);
-    });
-  }
+  // Generic dropdown logic (already defined above as setupDropdown)
 
   // Dictionary provider custom dropdown
   if (dictProviderInput && dictProviderList) {
@@ -2009,7 +1931,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const {
       selectedModel = '',
       isVision = false,
-      isVoice = false,
       isTrans = false,
       isDict = false,
       targetListId = null,
@@ -2023,12 +1944,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!listId) {
       if (isDict) listId = 'dictModelList';
-      else if (isVoice) listId = 'voiceModelList';
       else listId = 'modelList';
     }
     if (!inputId) {
       if (isDict) inputId = 'dictModel';
-      else if (isVoice) inputId = 'voiceModel';
       else inputId = 'model';
     }
 
@@ -2057,21 +1976,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Filter for voice models if isVoice is true - REMOVED FILTER to show ALL models
-      if (isVoice) {
-
-        // Just fallback if empty and it's specific provider
-        if (models.length === 0) {
-          if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) models.push('whisper-large-v3');
-          if (provider.type === 'openai' || provider.endpoint.includes('openai.com')) models.push('whisper-1');
-        }
-      }
 
       // Update global arrays
       if (isDict) {
         availableDictModels = models;
-      } else if (isVoice) {
-        availableVoiceModels = models;
       } else {
         availableModels = models;
       }

@@ -1,11 +1,9 @@
-importScripts('../lib/marked.min.js');
-importScripts('../lib/utils/constants.js');
-importScripts('../lib/utils/memory.js');
-importScripts('../lib/utils/auth.js');
-importScripts('../lib/vendor/minisearch.js');
+importScripts('../lib/vendor/marked.min.js');
+importScripts('../lib/core/constants.js');
+importScripts('../lib/core/memory.js');
+importScripts('../lib/core/auth.js');
 importScripts('../lib/vendor/gpt-tokenizer.js');
-importScripts('../lib/utils/token_utils.js');
-importScripts('../lib/utils/rag_utils.js');
+importScripts('../lib/core/token_utils.js');
 
 
 
@@ -17,6 +15,8 @@ chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONT
 
 // Side Panel State Tracking
 const sidePanelPorts = new Map(); // windowId -> chrome.runtime.Port
+let sessionOpenWindows = new Set(); // Refreshed from session storage on SW wake
+
 const sessionPorts = new Map(); // sessionId -> Set<chrome.runtime.Port>
 const sessionControllers = new Map(); // sessionId -> AbortController
 
@@ -34,42 +34,20 @@ function broadcastToSession(sessionId, message) {
     }
 }
 
-// On startup, we might already have open panels (from a previous worker session)
-// We track restoration to avoid race conditions with toggling after hibernation.
-let isStateRestored = false;
-const restorationPromise = chrome.storage.local.get(['open_sidepanel_windows']).then(async (result) => {
-    if (result.open_sidepanel_windows && Array.isArray(result.open_sidepanel_windows)) {
-        const validIds = [];
-        for (const id of result.open_sidepanel_windows) {
-            try {
-                // Verify window still exists (important when using storage.local across browser restarts)
-                await chrome.windows.get(id);
-                validIds.push(id);
-                if (!sidePanelPorts.has(id)) {
-                    sidePanelPorts.set(id, null);
-                }
-            } catch (e) {
-                // Stale window ID, skip
-            }
-        }
-        // Clean up storage if we found stale IDs
-        if (validIds.length !== result.open_sidepanel_windows.length) {
-            chrome.storage.local.set({ open_sidepanel_windows: validIds });
-        }
+// Startup: Hydrate open windows from session storage (survives hibernation)
+chrome.storage.session.get(['open_sidepanel_windows'], (result) => {
+    if (result.open_sidepanel_windows) {
+        sessionOpenWindows = new Set(result.open_sidepanel_windows);
+        // Pre-fill the sidePanelPorts keys so toggle logic knows they are open
+        sessionOpenWindows.forEach(wid => {
+            if (!sidePanelPorts.has(wid)) sidePanelPorts.set(wid, null);
+        });
     }
-    isStateRestored = true;
-}).catch(() => {
-    isStateRestored = true;
 });
 
-
-
-// Persist the list of open sidepanels into storage for state stability
 function updateOpenSidePanelsSession() {
-    const windowIds = Array.from(sidePanelPorts.keys());
-    chrome.storage.local.set({ open_sidepanel_windows: windowIds });
+    chrome.storage.session.set({ open_sidepanel_windows: Array.from(sessionOpenWindows) }).catch(() => { });
 }
-
 
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-sidepanel') {
@@ -77,23 +55,29 @@ chrome.runtime.onConnect.addListener((port) => {
 
         port.onMessage.addListener((msg) => {
             if (msg.windowId) {
-                // If this window already had a port, clear it
-                if (connectedWindowId && connectedWindowId !== msg.windowId) {
-                    sidePanelPorts.delete(connectedWindowId);
-                }
-
                 connectedWindowId = msg.windowId;
                 sidePanelPorts.set(connectedWindowId, port);
+                sessionOpenWindows.add(connectedWindowId);
                 updateOpenSidePanelsSession();
             }
         });
 
         port.onDisconnect.addListener(() => {
-            if (connectedWindowId && sidePanelPorts.get(connectedWindowId) === port) {
+            if (connectedWindowId) {
+                // Keep in sessionOpenWindows because panel might still be physically open
+                // even if port disconnects during SW hibernation.
                 sidePanelPorts.delete(connectedWindowId);
-                updateOpenSidePanelsSession();
             }
         });
+    }
+});
+
+// Clean up when window is closed
+chrome.windows.onRemoved.addListener((windowId) => {
+    if (sessionOpenWindows.has(windowId)) {
+        sessionOpenWindows.delete(windowId);
+        sidePanelPorts.delete(windowId);
+        updateOpenSidePanelsSession();
     }
 });
 
@@ -108,22 +92,22 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     });
 });
 
-async function toggleSidePanel(windowId) {
+// toggleSidePanel MUST be a fully synchronous function.
+// chrome.sidePanel.open() requires a Chrome "user gesture" to be active.
+// ANY await in the call stack between the keyboard shortcut event and
+// chrome.sidePanel.open() — including await chrome.storage.local.get —
+// will invalidate the gesture and silently fail.
+// The in-memory sidePanelPorts Map is pre-populated synchronously by the
+// startup IIFE above, so we can always read state without awaiting.
+function toggleSidePanel(windowId) {
     if (!windowId) return;
 
-    // Always wait for state restoration before checking open/close state.
-    // This is the critical fix for the "double-click" bug after SW hibernation:
-    // when the worker wakes up, sidePanelPorts is empty until restorationPromise
-    // finishes re-populating it from storage. Without this wait, the toggle always
-    // incorrectly thinks the panel is closed and tries to open it.
-    if (!isStateRestored) {
-        await restorationPromise;
-    }
-
-    const isCurrentlyOpen = sidePanelPorts.has(windowId);
+    // Check both memory map AND our session persistent set
+    const isCurrentlyOpen = sidePanelPorts.has(windowId) || sessionOpenWindows.has(windowId);
 
     if (isCurrentlyOpen) {
-        // CLOSE logic (Does not require user gesture)
+        // CLOSE logic
+        sessionOpenWindows.delete(windowId);
         sidePanelPorts.delete(windowId);
         updateOpenSidePanelsSession();
 
@@ -140,16 +124,29 @@ async function toggleSidePanel(windowId) {
         }
     } else {
         // OPEN logic — chrome.sidePanel.open requires a user gesture.
-        // Modern Chrome allows one microtask/await hop and still respects the gesture,
-        // so awaiting restorationPromise above is safe here.
-        chrome.sidePanel.open({ windowId }).catch(() => { });
+        sessionOpenWindows.add(windowId);
+        sidePanelPorts.set(windowId, null);
+        updateOpenSidePanelsSession();
+        chrome.sidePanel.open({ windowId }).catch(() => {
+            sessionOpenWindows.delete(windowId);
+            sidePanelPorts.delete(windowId);
+            updateOpenSidePanelsSession();
+        });
     }
 }
 
 async function ensureSidePanelOpen(windowId) {
     if (!windowId) return;
-    if (!sidePanelPorts.has(windowId)) {
-        chrome.sidePanel.open({ windowId }).catch(() => { });
+    const isCurrentlyOpen = sidePanelPorts.has(windowId) || sessionOpenWindows.has(windowId);
+    if (!isCurrentlyOpen) {
+        sessionOpenWindows.add(windowId);
+        sidePanelPorts.set(windowId, null);
+        updateOpenSidePanelsSession();
+        chrome.sidePanel.open({ windowId }).catch(() => {
+            sessionOpenWindows.delete(windowId);
+            sidePanelPorts.delete(windowId);
+            updateOpenSidePanelsSession();
+        });
     }
 }
 
@@ -975,33 +972,11 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     // Inject Page Context if available
     if (initialContext && initialContext.trim().length > 0) {
-        let processedContext = initialContext;
-
-        // --- Precise Local RAG using GPTTokenizer and MiniSearch ---
-        const actualTokens = LuminaToken.count(initialContext);
-
-        // Unified high-capacity context limit for all models
-        const TOKEN_LIMIT = 500000;
-
-        if (actualTokens > TOKEN_LIMIT) {
-            console.log(streamLogPrefix, `Content too long (${actualTokens} tokens), applying MiniSearch RAG...`);
-            const chunks = LuminaRAG.chunkText(initialContext, 2500, 400);
-
-            // Build a retrieval query that includes history for follow-ups
-            let retrievalQuery = question;
-            if (messages.length > 0) {
-                // Prepend last user/assistant message to help RAG find relevant chunks for follow-ups
-                const lastTurn = messages.slice(-1)[0];
-                const turnText = lastTurn.content || lastTurn.text;
-                if (turnText) retrievalQuery = `${turnText} ${question}`;
-            }
-
-            const topChunks = LuminaRAG.rankChunks(chunks, retrievalQuery, 5); // Increased topK for better coverage
-            processedContext = topChunks.join('\n\n[...]\n\n');
-            processedContext = `[Web Context Snippets (Retrieved via RAG)]:\n${processedContext}`;
-        } else {
-            processedContext = optimizeContextString(initialContext);
-        }
+        // --- Process and Inject Full Web Context ---
+        // Removed limit and local RAG to allow full context for long-context models (Gemini 1.5 Pro, etc.)
+        let processedContext = optimizeContextString(initialContext);
+        const actualTokens = LuminaToken.count(processedContext);
+        console.log(streamLogPrefix, `Injecting full context (${actualTokens} tokens)`);
 
         // --- Context Injection Strategy ---
         // For follow-up turns, putting context at the end of the user message often causes "Recency Bias"
@@ -2146,7 +2121,7 @@ chrome.runtime.onConnect.addListener((port) => {
                         msg.isSpotlight || false,
                         msg.requestOptions || {},
                         msg.hasTranscriptForVideoId || null,
-                        msg.action,
+                        (msg.options && msg.options.mode) || msg.action,
                         finalSystemOverride,
                         msg.sessionId
                     );

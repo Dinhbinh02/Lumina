@@ -1806,7 +1806,8 @@
     let lastExtractedUrl = "";
 
     /**
-     * Extracts high-quality content using Readability.js and converts to Markdown with Turndown.
+     * Lumina Smart Scan: A robust, general-purpose content extraction algorithm 
+     * that identifies all significant content blocks without over-aggressive pruning.
      */
     async function extractMainContent(doc = document) {
         const url = window.location.href;
@@ -1829,37 +1830,68 @@
         };
 
         try {
-            // 1. Use Readability for smart content extraction
-            // We clone the document because Readability mutates the DOM
-            const docClone = doc.cloneNode(true);
-            const reader = new Readability(docClone);
-            const article = reader.parse();
+            const turndownService = new TurndownService({
+                headingStyle: 'atx',
+                codeBlockStyle: 'fenced'
+            });
 
-            if (article && article.content) {
-                // 2. Convert HTML to Markdown using Turndown
-                const turndownService = new TurndownService({
-                    headingStyle: 'atx',
-                    codeBlockStyle: 'fenced'
-                });
+            // Helper to normalize text for reliable comparison (collapses whitespace/newlines)
+            const normalize = (s) => (s || "").toLowerCase().replace(/\s+/g, ' ').trim();
+            
+            let finalMarkdown = `[Context Source: ${document.title}]\nURL: ${url}\n\n`;
+            let normalizedCaptured = "";
 
-                // Add some custom rules for better formatting if needed
-                let markdownContent = turndownService.turndown(article.content);
+            // Intelligent Scan: Detect high-density information blocks
+            const MIN_TEXT_LENGTH = 150; 
+            const SCRAP_TAGS = ['script', 'style', 'nav', 'footer', 'header', 'noscript', 'aside', 'svg', 'button'];
+            
+            // Get all potential containers
+            const candidates = Array.from(doc.querySelectorAll('article, main, section, [class*="content"], [id*="content"], [class*="article"], [class*="main"], div, p'));
+            
+            // Priority Sort: prefer explicit content tags first
+            candidates.sort((a, b) => {
+                const aIsPrimary = a.matches('article, main, [class*="article"], [id*="article"]');
+                const bIsPrimary = b.matches('article, main, [class*="article"], [id*="article"]');
+                if (aIsPrimary && !bIsPrimary) return -1;
+                if (!aIsPrimary && bIsPrimary) return 1;
+                return (b.innerText?.length || 0) - (a.innerText?.length || 0);
+            });
 
-                // Add metadata header
-                let finalText = `[Page Content - ${article.title || document.title}]\n`;
-                if (article.excerpt) finalText += `> ${article.excerpt}\n\n`;
-                finalText += markdownContent;
+            let segmentsCount = 0;
+            candidates.forEach(el => {
+                if (el.closest(SCRAP_TAGS.join(','))) return;
+                
+                const text = el.innerText || "";
+                if (text.length < MIN_TEXT_LENGTH) return;
+                
+                const normText = normalize(text);
+                
+                // De-duplication using dual fingerprints (start & end)
+                const startFingerprint = normText.slice(0, 150);
+                const endFingerprint = normText.slice(-150);
+                if (startFingerprint && normalizedCaptured.includes(startFingerprint)) return;
+                if (endFingerprint && normalizedCaptured.includes(endFingerprint)) return;
 
-                if (youtubeTranscript) {
-                    finalText += `\n\n---\n\n[YouTube Video Transcript]:\n${youtubeTranscript}`;
+                // Text Density Check
+                const html = el.innerHTML || "";
+                const density = text.length / (html.length + 1);
+                
+                if (density > 0.07 || el.matches('article, main, p, [class*="content"], [class*="question"]')) {
+                    const blockMarkdown = turndownService.turndown(html).trim();
+                    if (blockMarkdown) {
+                        segmentsCount++;
+                        finalMarkdown += `\n\n--- [Segment ${segmentsCount}] ---\n\n` + blockMarkdown;
+                        normalizedCaptured += " " + normText;
+                    }
                 }
+            });
 
-                result.content = finalText;
-            } else {
-                // Fallback to basic text extraction if Readability fails
-                // Significantly increased limit for Gemini (1M+ context window)
-                result.content = `[Page Content]:\n${doc.body.innerText.slice(0, 500000)}`;
+            if (youtubeTranscript) {
+                finalMarkdown += `\n\n---\n\n[YouTube Video Transcript]:\n${youtubeTranscript}`;
             }
+
+            result.content = segmentsCount > 0 ? finalMarkdown : `[Fallback Page Text]:\n${doc.body.innerText}`;
+            
         } catch (error) {
             console.error('[Lumina] Content extraction failed:', error);
             result.content = `[Extraction Error]: ${error.message}`;

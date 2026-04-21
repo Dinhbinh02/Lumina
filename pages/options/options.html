@@ -4,8 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Lumina Settings</title>
-  <script src="../../lib/utils/Sortable.min.js"></script>
-  <script src="../../lib/utils/constants.js"></script>
+  <script src="../../lib/vendor/Sortable.min.js"></script>
+  <script src="../../lib/core/constants.js"></script>
+  <script src="../../lib/core/memory.js"></script>
+  <script src="../../lib/core/auth.js"></script>
 
   <link rel="stylesheet" href="options.css">
 </head>
@@ -56,10 +58,7 @@
           Anki Management
         </div>
 
-        <div class="sidebar-nav-item" id="openLuminaPlayBtn">
-          <div class="sidebar-nav-item-icon">🎬</div>
-          Lumina Play
-        </div>
+
 
         <div class="sidebar-nav-item" data-section="account">
           <div class="sidebar-nav-item-icon">👤</div>
@@ -404,11 +403,9 @@
 
           <div class="form-row-item">
             <div class="feature-info">
-              <span class="feature-label">Open Sidepanel</span>
+              <span class="feature-label">Toggle Sidepanel</span>
             </div>
-            <div class="shortcut-input" data-action="luminaChat" tabindex="0">
-              <span class="shortcut-key">`</span>
-            </div>
+            <button type="button" id="configShortcutBtn" class="primary-btn btn-sm" style="margin-left: auto;">Configure</button>
           </div>
 
           <div class="form-row-item">
@@ -717,8 +714,7 @@
     </div>
   </template>
 
-  <script src="../../lib/utils/memory.js"></script>
-  <script src="../../lib/utils/auth.js"></script>
+
   <script src="options.js"></script>
   <template id="annotationShortcutTemplate">
     <div class="form-row-item annotation-shortcut-row">

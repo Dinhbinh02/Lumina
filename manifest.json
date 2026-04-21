@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Lumina",
   "version": "1.0",
-  "description": "Trợ lý AI đa năng, bảo mật và siêu tốc ngay trên trình duyệt.",
+  "description": "Fast, private, and flexible AI assistant for your browser.",
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -81,12 +81,16 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "lib/utils/*",
-        "lib/utils/proxy.html",
+        "lib/core/*",
+        "lib/vendor/*",
+        "lib/ui/*",
+        "lib/parsers/*",
+        "lib/helpers/*",
+        "lib/helpers/proxy.html",
         "assets/*",
         "assets/styles/*",
-        "lib/katex/*",
-        "lib/katex/fonts/*",
+        "lib/vendor/katex/*",
+        "lib/vendor/katex/fonts/*",
         "lib/fonts/*",
         "lib/edge-tts/*"
       ],
@@ -106,23 +110,19 @@
         "https://*/*"
       ],
       "js": [
-        "lib/vendor/Readability.js",
         "lib/vendor/turndown.js",
-        "lib/vendor/minisearch.js",
         "lib/vendor/gpt-tokenizer.js",
-        "lib/utils/constants.js",
-        "lib/utils/token_utils.js",
-        "lib/utils/cambridge_parser.js",
-        "lib/utils/oxford_parser.js",
-        "lib/utils/dictionary_popup.js",
-        "lib/utils/common.js",
-        "lib/utils/selection_utils.js",
-        "lib/utils/youtube_utils.js",
-        "lib/utils/annotation_utils.js",
-        "lib/utils/rag_utils.js",
+        "lib/core/constants.js",
+        "lib/core/token_utils.js",
+        "lib/parsers/cambridge_parser.js",
+        "lib/parsers/oxford_parser.js",
+        "lib/ui/dictionary_popup.js",
+        "lib/ui/common.js",
+        "lib/helpers/selection_utils.js",
+        "lib/helpers/youtube_utils.js",
+        "lib/helpers/annotation_utils.js",
         "scripts/content.js"
       ],
-
       "run_at": "document_end",
       "all_frames": true
     }

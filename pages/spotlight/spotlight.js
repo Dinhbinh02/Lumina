@@ -3519,6 +3519,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         hasTranscriptForVideoId: currentTab?.chatUIInstance?.getTranscriptVideoId ? currentTab.chatUIInstance.getTranscriptVideoId() : null,
         options: extra,
         requestOptions: {
+            ...extra,
             ...(tabModel ? { tabModel: { providerId: tabModel.providerId, model: tabModel.model } } : {}),
             ...((extra.maxTokens !== undefined && extra.maxTokens !== null && extra.maxTokens !== '')
                 ? { maxTokens: Number(extra.maxTokens) }
