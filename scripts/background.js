@@ -290,27 +290,24 @@ Use clear markdown with concise sections only when needed.
 }
 
 function buildProofreadSystemPrompt(responseLanguage = 'auto') {
-    let languageInstruction = "PRESERVE the input language of the text. Do NOT translate the text unless explicitly requested.";
-    if (responseLanguage && responseLanguage !== 'auto') {
-        languageInstruction += ` The user's preferred language for general assistance is ${responseLanguage}, but for Proofreading, focus exclusively on the provided text's original language.`;
-    }
+    let languageInstruction = "ALWAYS refine and output the text in ENGLISH. If the input contains a mix of languages (e.g., English and Vietnamese) or is entirely in another language, TRANSLATE and CORRECT everything into natural, professional English.";
 
     return `<role>
 You are an expert editor and text refinement tool.
 </role>
 
 <task>
-Refine and correct the text provided within the <text> tags.
+Refine and correct the text provided within the <text> tags, ensuring the final output is in polished English.
 </task>
 
 <constraints>
 1. Output ONLY the refined text. No explanations, no conversation, no headers like "[REVISED VERSION]".
 2. ${languageInstruction}
-3. If the input is English, provide the refined version in English. If the input is Vietnamese, provide the refined version in Vietnamese.
-4. Keep the original tone and intent unless specifically asked to change it.
+3. Even if the input is in Vietnamese or a mix of languages, the refined version MUST be in English.
+4. Keep the original tone and intent while making it sound like a native English speaker.
 5. If no specific instructions/comments are provided, simply correct all grammar, spelling, and style errors.
 6. Match original capitalization and punctuation where appropriate.
-7. NEVER respond in a different language than the input unless the user explicitly asks to translate it.
+7. ALWAYS respond in English, regardless of the input language.
 8. If the user provides context or instructions outside the <text> tags, follow them, but still only output the refined text.
 </constraints>`;
 }
