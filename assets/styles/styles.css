@@ -309,6 +309,8 @@ button {
 
 .lumina-dict-body {
   flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden !important;
   position: relative !important;
   background: transparent !important;
@@ -647,14 +649,14 @@ button {
   min-height: 28px !important;
   max-height: 300px !important;
   overflow-y: auto !important;
-  line-height: 22px !important;
+  line-height: 24px !important;
   font-family: 'Montserrat', sans-serif !important;
   box-sizing: border-box !important;
   cursor: text !important;
   display: block !important;
   white-space: pre-wrap !important;
-  word-wrap: break-word !important;
-  word-break: break-all !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
 }
 
 .lumina-ask-input-field:empty::before {
@@ -722,14 +724,14 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 0;
+  padding: 6px 12px;
   cursor: pointer;
   user-select: none;
   transition: background-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
 }
 
 .lumina-thinking-container:not(.collapsed) .lumina-thinking-header {
-  padding: 8px 12px;
+  padding: 6px 12px;
 }
 
 .lumina-thinking-header:hover {
@@ -1380,7 +1382,7 @@ button {
   grid-column: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 #upload-btn {
@@ -1398,20 +1400,14 @@ button {
   text-overflow: ellipsis !important;
 }
 
-.lumina-input-bar .lumina-left-actions {
-  grid-row: 2;
-  grid-column: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+
 
 .lumina-input-bar .lumina-trailing-group {
   grid-row: 2;
   grid-column: 2;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -1442,6 +1438,142 @@ button {
   box-shadow: none !important;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   gap: 4px !important;
+}
+
+/* Token Counter Styles */
+.lumina-token-counter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  font-size: 0.9em !important;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lumina-token-counter:hover {
+  cursor: pointer;
+}
+
+.lumina-token-counter.is-active {
+  color: var(--lumina-primary-color) !important;
+}
+
+.lumina-token-details {
+  position: absolute !important;
+  bottom: calc(100% + 12px) !important;
+  left: 0 !important;
+  right: auto !important;
+  background: var(--lumina-ui-bg) !important;
+  backdrop-filter: none !important;
+  border: 1px solid var(--lumina-ui-border, #e0e0e0) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 165px !important;
+  z-index: 10000 !important;
+  box-shadow: var(--lumina-shadow-lg) !important;
+  
+  /* Animation properties */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+
+[data-theme="dark"] .lumina-token-details {
+  background: var(--lumina-ui-bg) !important;
+  border: 1px solid var(--lumina-ui-border) !important;
+}
+
+.lumina-token-counter.is-expanded .lumina-token-details {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.lumina-token-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+}
+
+.lumina-token-detail-item .detail-label {
+  font-weight: 520;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-token-detail-item .detail-value {
+  font-weight: 700;
+  color: var(--lumina-text-primary);
+  font-family: 'Google Sans Code', 'Source Code Pro', monospace;
+}
+
+.lumina-token-limit-input {
+  background: rgba(var(--lumina-ui-base-rgb), 0.05);
+  border: 1px solid var(--lumina-ui-border);
+  border-radius: 6px;
+  color: var(--lumina-text-primary);
+  font-size: 11px;
+  padding: 4px 8px;
+  width: 70px;
+  text-align: right;
+  outline: none;
+  font-family: 'Google Sans Code', 'Source Code Pro', monospace;
+  transition: all 0.2s ease;
+  user-select: text;
+  cursor: text;
+  pointer-events: auto;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.lumina-token-limit-input::-webkit-outer-spin-button,
+.lumina-token-limit-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.lumina-token-limit-input:focus {
+  border-color: var(--lumina-primary-color);
+  background: rgba(var(--lumina-primary-rgb), 0.05);
+  box-shadow: 0 0 0 2px rgba(var(--lumina-primary-rgb), 0.1);
+}
+
+.lumina-token-history.is-truncated {
+  color: #ff9500 !important;
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+.lumina-token-divider {
+  height: 1px;
+  background: var(--lumina-ui-border);
+  margin: 2px 0;
+}
+
+.lumina-token-total-row {
+  margin-top: 2px;
+}
+
+.lumina-token-total-row .detail-label {
+  color: var(--lumina-text-primary);
+  font-weight: 700;
+}
+
+.lumina-token-total-row .detail-value {
+  color: var(--lumina-primary-color);
 }
 
 .lumina-model-btn svg,
@@ -2244,22 +2376,29 @@ button {
 
 .lumina-web-chip.lumina-pinned-question-chip {
   margin-left: auto;
-  max-width: 240px;
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  justify-content: center;
   border-style: solid;
-  border-color: var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(0, 86, 210, 0.05);
-  gap: 6px;
-  font-weight: 620;
+  border-color: var(--lumina-primary-color) !important;
+  color: #fff !important;
+  background: var(--lumina-primary-color) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
 }
 
 .lumina-web-chip.lumina-pinned-question-chip:hover {
-  background: rgba(0, 86, 210, 0.09);
-  border-color: var(--lumina-primary-color);
+  background: var(--lumina-primary-color-dark, #0046b0) !important;
+  border-color: var(--lumina-primary-color-dark, #0046b0) !important;
+  color: #fff !important;
+  box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.lumina-pinned-question-chip {
-  background: rgba(0, 86, 210, 0.16);
+  background: var(--lumina-primary-color) !important;
+  color: #fff !important;
+  border-color: var(--lumina-primary-color) !important;
 }
 
 /* ====================
@@ -2865,6 +3004,7 @@ button {
 
 .lumina-dict-scroll-area {
   flex: 1 !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
   padding: 14px 16px !important;
   box-sizing: border-box !important;
@@ -2888,7 +3028,9 @@ button {
 
 .lumina-dict-footer {
   position: relative !important;
-  height: 38px !important;
+  min-height: 38px !important;
+  height: auto !important;
+  padding: 8px 0 !important;
   background: var(--lumina-bg-primary, #ffffff) !important;
   z-index: 100 !important;
   display: flex !important;
@@ -2896,7 +3038,7 @@ button {
   justify-content: center !important;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
-  border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.05)) !important;
+  border-top: none !important;
   flex-shrink: 0 !important;
 }
 
@@ -4231,19 +4373,24 @@ button {
 }
 
 .lumina-web-chip.is-active {
-  border-width: 1.8px;
-  border-color: var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(var(--lumina-primary-rgb), 0.08);
+  border-width: 1.5px;
+  border-color: var(--lumina-primary-color) !important;
+  color: #fff !important;
+  background: var(--lumina-primary-color) !important;
   opacity: 1;
+  box-shadow: none !important;
+  font-weight: 620;
 }
 
 .lumina-web-chip.is-active:hover {
-  background: rgba(var(--lumina-primary-rgb), 0.1);
+  background: var(--lumina-primary-color-dark, #0046b0) !important;
+  border-color: var(--lumina-primary-color-dark, #0046b0) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active {
-  background: rgba(var(--lumina-primary-rgb), 0.15);
+  background: var(--lumina-primary-color) !important;
+  color: #fff !important;
 }
 
 .lumina-web-chip.is-ghost {

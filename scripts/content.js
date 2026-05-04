@@ -208,7 +208,22 @@
      * Triggers the side panel with a specific query.
      * Replaces the old floating popup logic.
      */
-    function triggerSidePanelQuery(query, displayQuery = null, mode = 'qa') {
+    function triggerSidePanelQuery(query, displayQuery = null, mode = 'qa', range = null) {
+        // Handle Auto-Highlighting of selection
+        if (window.LuminaAnnotation) {
+            const finalRange = range || (window.getSelection().rangeCount > 0 ? window.getSelection().getRangeAt(0) : null);
+            if (finalRange && !finalRange.collapsed) {
+                const color = '#FFFB78';
+                
+                // Apply and Save new one using the unified method (unique ID generated automatically)
+                window.LuminaAnnotation.highlight(finalRange, color);
+                
+                // Clear native selection to emphasize the highlight
+                const selection = window.getSelection();
+                if (selection) selection.removeAllRanges();
+            }
+        }
+
         safeRuntimeSendMessage({
             action: 'open_sidepanel_with_query',
             query: query,
@@ -242,14 +257,13 @@
         if (window.LuminaSelection) {
             LuminaSelection.init({
                 shadowRoot: luminaShadowRoot,
-                onSubmit: (query, displayQuery, isDictionary) => {
+                onSubmit: (query, displayQuery, isDictionary, sourceEntry, range) => {
                     if (isDictionary) {
                         const selection = window.getSelection();
                         const text = selection.toString().trim();
                         if (text) {
-                            // Show the floating popup instead of sending to chat
-                            const range = selection.getRangeAt(0);
-                            const rect = range.getBoundingClientRect();
+                            const rangeToUse = range || selection.getRangeAt(0);
+                            const rect = rangeToUse.getBoundingClientRect();
                             LuminaDictionaryPopup.show(text, {
                                 x: rect.left,
                                 y: rect.bottom + 5,
@@ -258,7 +272,7 @@
                             return;
                         }
                     }
-                    triggerSidePanelQuery(query, displayQuery, isDictionary ? 'dictionary' : 'qa');
+                    triggerSidePanelQuery(query, displayQuery, isDictionary ? 'dictionary' : 'qa', range);
                 }
             });
         }
@@ -435,6 +449,14 @@
             } else {
                 injectFonts();
             }
+        } else if (request.action === 'get_page_content') {
+            extractMainContent().then(result => {
+                sendResponse({ text: result.content || '' });
+            }).catch(err => {
+                console.error('[Lumina] extractMainContent failed:', err);
+                sendResponse({ text: document.body.innerText || '' });
+            });
+            return true;
         }
 
         // Handle shortcuts update
@@ -856,7 +878,7 @@
                         }
 
                         // Always redirect to Side Panel
-                        triggerSidePanelQuery(fullQuestion, displayQuestion);
+                        triggerSidePanelQuery(fullQuestion, displayQuestion, 'qa', currentRange);
                         if (window.LuminaSelection) LuminaSelection.hide();
                         return;
                     }
@@ -886,6 +908,18 @@
             return;
         }
 
+        // Mic Toggle Shortcut
+        if (matchesShortcut(event, 'micToggle')) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            // Set flag so sidepanel starts listening after it opens
+            chrome.storage.local.set({ pendingMicToggle: Date.now() });
+            safeRuntimeSendMessage({ action: 'open_sidepanel' });
+            return;
+        }
+
 
         // Ask Lumina Shortcut
         if (matchesShortcut(event, 'askLumina')) {
@@ -900,6 +934,7 @@
                 event.stopImmediatePropagation();
 
                 LuminaSelection.show(0, 0, text, range);
+                LuminaSelection.showInput();
                 return;
             }
         }
@@ -1837,17 +1872,17 @@
 
             // Helper to normalize text for reliable comparison (collapses whitespace/newlines)
             const normalize = (s) => (s || "").toLowerCase().replace(/\s+/g, ' ').trim();
-            
+
             let finalMarkdown = `[Context Source: ${document.title}]\nURL: ${url}\n\n`;
             let normalizedCaptured = "";
 
             // Intelligent Scan: Detect high-density information blocks
-            const MIN_TEXT_LENGTH = 150; 
+            const MIN_TEXT_LENGTH = 150;
             const SCRAP_TAGS = ['script', 'style', 'nav', 'footer', 'header', 'noscript', 'aside', 'svg', 'button'];
-            
+
             // Get all potential containers
             const candidates = Array.from(doc.querySelectorAll('article, main, section, [class*="content"], [id*="content"], [class*="article"], [class*="main"], div, p'));
-            
+
             // Priority Sort: prefer explicit content tags first
             candidates.sort((a, b) => {
                 const aIsPrimary = a.matches('article, main, [class*="article"], [id*="article"]');
@@ -1860,12 +1895,12 @@
             let segmentsCount = 0;
             candidates.forEach(el => {
                 if (el.closest(SCRAP_TAGS.join(','))) return;
-                
+
                 const text = el.innerText || "";
                 if (text.length < MIN_TEXT_LENGTH) return;
-                
+
                 const normText = normalize(text);
-                
+
                 // De-duplication using dual fingerprints (start & end)
                 const startFingerprint = normText.slice(0, 150);
                 const endFingerprint = normText.slice(-150);
@@ -1875,7 +1910,7 @@
                 // Text Density Check
                 const html = el.innerHTML || "";
                 const density = text.length / (html.length + 1);
-                
+
                 if (density > 0.07 || el.matches('article, main, p, [class*="content"], [class*="question"]')) {
                     const blockMarkdown = turndownService.turndown(html).trim();
                     if (blockMarkdown) {
@@ -1891,7 +1926,7 @@
             }
 
             result.content = segmentsCount > 0 ? finalMarkdown : `[Fallback Page Text]:\n${doc.body.innerText}`;
-            
+
         } catch (error) {
             console.error('[Lumina] Content extraction failed:', error);
             result.content = `[Extraction Error]: ${error.message}`;
