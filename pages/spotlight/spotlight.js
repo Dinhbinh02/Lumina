@@ -155,6 +155,8 @@ function applyFontSize(size) {
 
 const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
 
+const currentBrowserTabTokens = new Map(); // tabId -> tokens (cached for ghost chip)
+
 function getSpotlightTabIdForPane(container) {
     if (!container) return null;
 
@@ -166,11 +168,12 @@ function getSpotlightTabIdForPane(container) {
     return activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
 }
 
-// Scope key = spotlightTabId only — selections are isolated per conversation tab,
-// regardless of which browser tab is currently active.
+// Scope key = spotlightTabId + browserTabId — selections are strictly isolated 
+// per conversation tab AND per browser tab. This ensures that switching 
+// browser tabs provides a fresh, independent context.
 function getWebSelectionScopeKey(spotlightTabId) {
-    if (spotlightTabId == null) return null;
-    return String(spotlightTabId);
+    if (spotlightTabId == null || !currentBrowserTab) return null;
+    return `${String(spotlightTabId)}_${String(currentBrowserTab.tabId)}`;
 }
 
 // Returns the spotlightTabId for the currently active primary pane
@@ -402,7 +405,7 @@ function refreshWebSourceTokensForTab(tabId) {
     }
 
     // 2. Refresh in all stored scopes.
-    // scopeKey IS the spotlightTabId (since the scope key redesign — no more compound keys)
+    // Selection is isolated per spotlightTabId + browserTabId.
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
@@ -421,9 +424,14 @@ function refreshWebSourceTokensForTab(tabId) {
     if (currentBrowserTab && String(currentBrowserTab.tabId) === stringTabId) {
         (async () => {
             const text = await fetchFreshWebContent(stringTabId);
-            if (text && text.length >= 200) {
+            if (text) {
+                const count = (typeof LuminaToken !== 'undefined') ? LuminaToken.count(text) : Math.ceil(text.length / 4);
+                currentBrowserTabTokens.set(stringTabId, count);
                 updateWebChips();
                 tabs.forEach(t => { if (t.chatUIInstance) t.chatUIInstance._throttledUpdateTokenCount(); });
+            } else {
+                currentBrowserTabTokens.delete(stringTabId);
+                updateWebChips();
             }
         })();
     }
@@ -2396,6 +2404,11 @@ function syncCurrentBrowserTab() {
                     };
                     loadCurrentWebSelection();
                     updateWebChips();
+                    refreshWebSourceTokensForTab(realTab.id);
+                    // Force refresh token count for active panes
+                    [chatUI, chatUISecondary].forEach(ui => {
+                        if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
+                    });
                     if (webTabPickerEl) {
                         refreshWebTabPicker();
                     }
@@ -2411,9 +2424,20 @@ function syncCurrentBrowserTab() {
                 url: activeTab.url
             };
             loadCurrentWebSelection();
+            updateWebChips();
+            refreshWebSourceTokensForTab(activeTab.id);
+            // Force refresh token count for active panes
+            [chatUI, chatUISecondary].forEach(ui => {
+                if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
+            });
         } else {
             currentBrowserTab = null;
             pinnedWebSources = [];
+            updateWebChips();
+            // Force refresh token count for active panes
+            [chatUI, chatUISecondary].forEach(ui => {
+                if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
+            });
         }
         updateWebChips();
         if (webTabPickerEl) {
@@ -2811,7 +2835,8 @@ function updateWebChips() {
                     url: currentBrowserTab.url,
                     displayTitle: 'Current Tab',
                     isActive: false,
-                    isGhost: true
+                    isGhost: true,
+                    tokens: currentBrowserTabTokens.get(String(currentBrowserTab.tabId)) || 0
                 };
                 container.appendChild(createWebChipElement(ghostData, selectedSources, spotlightTabId, addButton));
             }
@@ -3697,7 +3722,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
             flatResults.forEach(ctx => {
                 const text = ctx.content.trim();
-                if (text.length < 100) return; // Skip trivial frames
+                if (text.length < 30) return; // Skip only very trivial frames
 
                 // Fingerprint the content to avoid overlap
                 const fingerprint = text.substring(0, 500);

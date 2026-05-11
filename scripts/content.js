@@ -1852,6 +1852,20 @@
             return lastExtractedContent;
         }
 
+        // Smart Wait for SPAs: If the page is a dynamic app (Vite/React) and seems empty,
+        // wait briefly for the content to render before extraction.
+        const isPossiblyEmptySPA = () => {
+            const text = (doc.body ? doc.body.innerText : "") || "";
+            const hasAppRoot = doc.querySelector('#root') || doc.querySelector('#app') || doc.querySelector('div[id*="app"]');
+            const isVite = doc.querySelector('script[type="module"]');
+            const hasSpinner = doc.querySelector('.spoke-spinner') || doc.querySelector('.ant-spin') || doc.querySelector('.loading-spinner');
+            return (text.length < 600 && (hasAppRoot || isVite)) || hasSpinner;
+        };
+
+        if (isPossiblyEmptySPA()) {
+            await new Promise(r => setTimeout(r, 1500));
+        }
+
         const isYouTube = typeof YoutubeUtils !== 'undefined' && YoutubeUtils.isYouTubeVideo(url);
         let youtubeTranscript = "";
         if (isYouTube) {
@@ -1877,16 +1891,64 @@
             let normalizedCaptured = "";
 
             // Intelligent Scan: Detect high-density information blocks
-            const MIN_TEXT_LENGTH = 150;
-            const SCRAP_TAGS = ['script', 'style', 'nav', 'footer', 'header', 'noscript', 'aside', 'svg', 'button'];
+            const MIN_TEXT_LENGTH = 50; // Lowered to capture questions
+            const SCRAP_TAGS = [
+                'script', 'style', 'nav', 'footer', 'header', 'noscript', 'aside', 'svg', 'button', 'audio', 'video',
+                '.menu', '.sidebar', '.navbar', '.header', '.footer', '[class*="header" i]', '[class*="footer" i]',
+                '[class*="nav" i]', '[class*="menu" i]', '[class*="sidebar" i]', '[class*="feedback" i]', 
+                '[class*="upgrade" i]', '[class*="timer" i]', '[class*="modal" i]', '[class*="user-nav" i]', 
+                '[class*="promo" i]', '[class*="ads" i]', '[class*="banner" i]', '[class*="social" i]',
+                '[class*="related" i]', '[class*="breadcrumb" i]', '[class*="auth" i]', '[class*="login" i]',
+                '[class*="account" i]', '[class*="profile" i]', '[class*="expire" i]', '[class*="notification" i]',
+                '[class*="contact" i]', '[class*="hotline" i]', '[class*="address" i]', '[class*="popup" i]',
+                '[class*="overlay" i]', '[class*="tooltip" i]', '[class*="download" i]', '[class*="comment" i]',
+                '[class*="review" i]', '[class*="share" i]', '[class*="cookie" i]', '[class*="gdpr" i]',
+                '[class*="logo" i]', '[class*="topbar" i]', '[class*="fixed" i]', '[class*="section-header" i]',
+                '#feedback-modal', '.lumina-ignore', '[role="navigation"]', '[role="contentinfo"]', 
+                '.dol-breadcrumb', '.breadcrumb-container', '.landing-header', '.footer-nested-links', 
+                '.socialButtonGroup', '.referral-share-banner', '#__NEXT_DATA__', '.rowLink', '.nav-item',
+                '.LandingHeader__Main-sc-vzeq2b-0', '.LandingLayout__Main-sc-1plzfds-0', '.TopbarNavList__Main-sc-tbxqf6-1'
+            ];
 
-            // Get all potential containers
-            const candidates = Array.from(doc.querySelectorAll('article, main, section, [class*="content"], [id*="content"], [class*="article"], [class*="main"], div, p'));
+            // Explicitly tell Turndown to remove these tags from output
+            turndownService.remove(['script', 'style', 'noscript', 'iframe', 'svg', 'button', 'audio', 'video', 'canvas', 'map', 'area', 'img[alt*="logo" i]']);
+
+            // Helper to find leaf-ward content blocks while avoiding huge wrappers
+            const findCandidates = (root) => {
+                const HIGH_LEVEL_WRAPPERS = ['html', 'body', '#__next', '#app-root', '.app-wrapper', '.app-container', '.main-wrapper', '.layout-wrapper'];
+                
+                // Query potential blocks
+                let found = Array.from(root.querySelectorAll('article, main, section, [class*="content"], [id*="content"], [class*="article"], [class*="main"], [class*="reading"], [class*="passage"], [class*="question"], [class*="exercise"], [class*="practice"], [id*="reading"], [id*="passage"], div, p'));
+                
+                // Filter out candidates that are high-level layout containers
+                found = found.filter(el => {
+                    const isWrapper = HIGH_LEVEL_WRAPPERS.some(sel => el.matches(sel));
+                    if (isWrapper) return false;
+                    
+                    // Also avoid elements that are direct children of body or __next if they are too large
+                    if (el.parentElement && (el.parentElement.tagName === 'BODY' || el.parentElement.id === '__next')) {
+                        // Only include if it's a semantic content tag
+                        if (!el.matches('article, main, section')) return false;
+                    }
+                    return true;
+                });
+
+                // Scan for Shadow Roots
+                const all = root.querySelectorAll('*');
+                for (const el of all) {
+                    if (el.shadowRoot) {
+                        found = found.concat(findCandidates(el.shadowRoot));
+                    }
+                }
+                return found;
+            };
+
+            const candidates = findCandidates(doc);
 
             // Priority Sort: prefer explicit content tags first
             candidates.sort((a, b) => {
-                const aIsPrimary = a.matches('article, main, [class*="article"], [id*="article"]');
-                const bIsPrimary = b.matches('article, main, [class*="article"], [id*="article"]');
+                const aIsPrimary = a.matches('article, main, [class*="article"], [id*="article"], [class*="reading"], [class*="passage"], [class*="question"]');
+                const bIsPrimary = b.matches('article, main, [class*="article"], [id*="article"], [class*="reading"], [class*="passage"], [class*="question"]');
                 if (aIsPrimary && !bIsPrimary) return -1;
                 if (!aIsPrimary && bIsPrimary) return 1;
                 return (b.innerText?.length || 0) - (a.innerText?.length || 0);
@@ -1894,26 +1956,38 @@
 
             let segmentsCount = 0;
             candidates.forEach(el => {
+                if (!el || !el.isConnected) return;
+                
+                // Skip if element or any ancestor matches scrap tags
                 if (el.closest(SCRAP_TAGS.join(','))) return;
 
-                const text = el.innerText || "";
+                const text = (el.innerText || el.textContent || "").trim();
                 if (text.length < MIN_TEXT_LENGTH) return;
+
+                // Density/Link check: If too many links vs text, it's definitely a navigation block
+                const linkCount = el.querySelectorAll('a').length;
+                if (linkCount > 2 && text.length / linkCount < 50) return;
 
                 const normText = normalize(text);
 
-                // De-duplication using dual fingerprints (start & end)
+                // Aggressive De-duplication: 
                 const startFingerprint = normText.slice(0, 150);
-                const endFingerprint = normText.slice(-150);
                 if (startFingerprint && normalizedCaptured.includes(startFingerprint)) return;
-                if (endFingerprint && normalizedCaptured.includes(endFingerprint)) return;
+                if (normText.length > 200 && normalizedCaptured.includes(normText.substring(50, 200))) return;
 
                 // Text Density Check
                 const html = el.innerHTML || "";
                 const density = text.length / (html.length + 1);
 
-                if (density > 0.07 || el.matches('article, main, p, [class*="content"], [class*="question"]')) {
+                // Broaden inclusion for education/reading sites
+                const isEducationBlock = el.matches('[class*="question"], [class*="reading"], [class*="passage"], [class*="exercise"], [class*="practice"]');
+
+                // Segment filtering: skip if it seems like a list of meta info
+                if (text.split('\n').length < 3 && linkCount > 1 && !isEducationBlock) return;
+
+                if (density > 0.05 || el.matches('article, main, p, [class*="content"]') || isEducationBlock) {
                     const blockMarkdown = turndownService.turndown(html).trim();
-                    if (blockMarkdown) {
+                    if (blockMarkdown && blockMarkdown.length > 20) {
                         segmentsCount++;
                         finalMarkdown += `\n\n--- [Segment ${segmentsCount}] ---\n\n` + blockMarkdown;
                         normalizedCaptured += " " + normText;
