@@ -313,50 +313,31 @@ function buildDictionarySystemPrompt(word, lang = 'en') {
     return `You are a world-class lexicographer and expert linguist for Cambridge and Oxford University Press. Your definitions are high-fidelity, professional, and academically rigorous.
 Provide a comprehensive dictionary entry for the English word or phrase: "${word}".
 
-### Structure Guidelines (Follow Cambridge Standards):
+### Structure Guidelines:
 1. **Multiple Entries**: If the word has multiple parts of speech (e.g., "run" as verb and noun), provide distinct entries for each.
-2. **Senses & Indicators**: Group definitions into logical "Senses" with a capitalized, concise "Indicator" descriptor (e.g., MOVEMENT, ANALYTICAL INSTRUMENT). Use spaces, NOT underscores.
-3. **Definitions**: Clear, academic definitions. If lang is 'vi', provide the definition in Vietnamese. Otherwise, keep it in English.
-    The current target language for definitions is: ${lang === 'vi' ? 'Vietnamese' : 'English'}.
-   - **Phonetic Standards (MANDATORY)**:
-     - **UK (Received Pronunciation)**: Use /e/ for the "short e" sound (e.g., manifest, chemical, resin). Use /ɒ/ for "short o" (hot). Use /ə/ or /ɪ/ for unstressed vowels. NEVER use /ɛ/ for UK English.
-     - **US (General American)**: Use /ɛ/ for the "short e" sound. Use /ɑ/ for "short o". Use /ə/ or /ʌ/ as appropriate.
-     - **Rhoticity**: Ensure UK is non-rhotic (e.g., /ə/ or /ɔː/ instead of /ɚ/ or /ɔːr/) and US is rhotic.
-   - **Self-Correction Logic**: Before outputting the JSON, mentally verify: "Does the UK IPA use /e/? Does the US IPA use /ɛ/? Are they distinct strings?"
-   - **Examples of Regional Variance expected**:
-     - "chemicals": UK: /ˈkem.ɪ.kəlz/, US: /ˈkɛm.ɪ.kəlz/
-     - "manifest": UK: /ˈmæn.ɪ.fest/, US: /ˈmæn.ə.fɛst/
-     - "water": UK: /ˈwɔː.tər/, US: /ˈwɑː.t̬ɚ/
-     - "schedule": UK: /ˈʃed.juːl/, US: /ˈskedʒ.uːl/
-     - "can't": UK: /kɑːnt/, US: /kænt/
+2. **Definitions**: For each part of speech, provide a list of definitions. Each definition MUST have:
+    - **Keywords**: 1-3 short, common synonyms or core terms in Vietnamese (e.g., for "nature" -> "tự nhiên, thiên nhiên, tạo hoá").
+    - **Explanation**: A clear, academic explanation of that specific meaning.
+    - If lang is 'vi', provide ALL những trường này bằng tiếng Việt.
+    - The current target language for keywords and explanations is: ${lang === 'vi' ? 'Vietnamese' : 'English'}.
 
 ### JSON Schema (STRICT):
 {
-    "dialect_verification": "Self-verify rules: UK MUST use /e/ (not /ɛ/). US MUST use /ɛ/. Check rhoticity differences (water UK: /r/ null, US: /r/ present).",
     "word": "${word}",
     "entries": [
         {
             "pos": "noun/verb/adjective/etc.",
-            "uk": { "ipa": "...", "audio": "" },
-            "us": { "ipa": "...", "audio": "" },
-            "senses": [
-                {
-                    "indicator": "UPPERCASE INDICATOR",
-                    "definitions": [
-                        { "meaning": "${lang === 'vi' ? 'Vietnamese definition' : 'English definition'}" }
-                    ]
+            "uk": { "audio": "" },
+            "us": { "audio": "" },
+            "definitions": [
+                { 
+                    "keywords": "Short term 1, term 2",
+                    "explanation": "Detailed explanation of the meaning..."
                 }
             ]
         }
     ]
 }
-
-- **Examples of Regional Variance expected**:
-  - "headspace": UK: /ˈhed.speɪs/, US: /ˈhɛd.speɪs/
-  - "chemicals": UK: /ˈkem.ɪ.kəlz/, US: /ˈkɛm.ɪ.kəlz/
-  - "manifest": UK: /ˈmæn.ɪ.fest/, US: /ˈmæn.ə.fɛst/
-  - "water": UK: /ˈwɔː.tər/, US: /ˈwɑː.t̬ɚ/
-  - "schedule": UK: /ˈʃed.juːl/, US: /ˈskedʒ.uːl/
 
 - Output ONLY valid JSON starting with { and ending with }.
 - No markdown wrappers, no explanations outside the JSON.`;
@@ -1388,17 +1369,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
 
             const isCambridge = request.action === 'fetch_cambridge';
+            const wordPath = encodeURIComponent(word.replace(/\s+/g, '-'));
             const url = isCambridge
-                ? `https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word.replace(/\s+/g, '-'))}`
-                : `https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`;
+                ? `https://dictionary.cambridge.org/dictionary/english/${wordPath}`
+                : `https://www.oxfordlearnersdictionaries.com/definition/english/${wordPath}`;
 
+            // Oxford fallback logic: if direct definition fails (404), try search
+            const fetchWithFallback = async (targetUrl, isOxfordSearch = false) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-
-            fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow' })
-                .then(res => {
+                try {
+                    const res = await fetch(targetUrl, { 
+                        signal: controller.signal,
+                        headers: { 
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                            'Accept-Language': 'en-US,en;q=0.9'
+                        },
+                        redirect: 'follow'
+                    });
+                    clearTimeout(timeoutId);
+                    
+                    if (res.status === 404 && !isCambridge && !isOxfordSearch) {
+                        // Try search URL if direct link fails for Oxford
+                        return fetchWithFallback(`https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`, true);
+                    }
+                    
                     if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
                     return res.text();
-                })
+                } catch (e) {
+                    clearTimeout(timeoutId);
+                    throw e;
+                }
+            };
+
+            fetchWithFallback(url)
                 .then(html => {
 
                     sendResponse({ success: true, html });
@@ -1410,12 +1416,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
+        case 'fetch_images': {
+            const keyword = request.keyword;
+            const url = `https://www.google.com/search?q=${encodeURIComponent(keyword)}&tbm=isch`;
 
-
+            fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+            })
+                .then(res => res.text())
+                .then(html => {
+                    const regex = /\["(https?:\/\/[^"]+?\.(?:jpg|jpeg|png))",\d+,\d+\]/g;
+                    let matches = [];
+                    let match;
+                    while ((match = regex.exec(html)) !== null) {
+                        if (!match[1].includes('gstatic.com')) {
+                            matches.push(match[1]);
+                        }
+                    }
+                    const uniqueLinks = [...new Set(matches)].slice(0, 20);
+                    sendResponse({ success: true, images: uniqueLinks });
+                })
+                .catch(err => {
+                    console.error('[Lumina BG] fetch_images error:', err);
+                    sendResponse({ success: false, error: err.message });
+                });
+            return true;
+        }
 
         case 'fetch_oxford_url': {
-            fetch(request.url, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0' } })
-                .then(res => res.ok ? res.text() : Promise.reject(`Status ${res.status}`))
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            fetch(request.url, { 
+                redirect: 'follow', 
+                signal: controller.signal,
+                headers: { 
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
+                } 
+            })
+                .then(res => {
+                    clearTimeout(timeoutId);
+                    return res.ok ? res.text() : Promise.reject(`Status ${res.status}`);
+                })
                 .then(html => sendResponse({ success: true, html }))
                 .catch(error => sendResponse({ success: false, error: String(error) }));
             return true;

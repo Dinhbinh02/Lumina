@@ -3124,13 +3124,48 @@ button {
   font-style: italic !important;
 }
 
-.lumina-dict-popup-meaning {
-  font-weight: 520 !important;
+.lumina-dict-popup-meaning.ai-custom {
+  margin-bottom: 20px !important;
+}
+
+.lumina-dict-meaning-keywords {
+  font-weight: 700 !important;
+  font-size: 1.1em !important;
+  color: var(--lumina-primary-color) !important;
+  display: block !important;
+  margin-bottom: 4px !important;
+}
+
+.lumina-dict-meaning-explanation {
   font-size: 1em !important;
   line-height: 1.5 !important;
   color: var(--lumina-text-primary) !important;
+  margin-bottom: 8px !important;
+}
+
+.lumina-dict-popup-examples {
+  margin-top: 8px !important;
+  padding-left: 12px !important;
+  border-left: 2px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .lumina-dict-popup-examples {
+  border-left-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.lumina-dict-popup-example {
+  font-size: 0.95em !important;
+  color: var(--lumina-text-secondary) !important;
+  font-style: italic !important;
   margin-bottom: 4px !important;
-  margin-bottom: 14px;
+  line-height: 1.4 !important;
+}
+
+.lumina-dict-popup-example::before {
+  content: "•" !important;
+  margin-right: 8px !important;
+  color: var(--lumina-primary-color) !important;
+  font-style: normal !important;
 }
 
 .lumina-dict-loading-state {
@@ -3151,6 +3186,41 @@ button {
   margin: 0 !important;
   letter-spacing: -0.02em !important;
   line-height: 1.1 !important;
+}
+
+/* Images Tab Styling */
+.lumina-dict-images-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+  padding: 0 !important;
+}
+
+.lumina-dict-image-card {
+  position: relative !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  aspect-ratio: 4/3 !important;
+  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.lumina-dict-image-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.lumina-dict-image-card img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+[data-theme="dark"] .lumina-dict-image-card {
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .lumina-dict-popup-prons {
