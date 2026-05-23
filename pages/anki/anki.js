@@ -1,17 +1,17 @@
-// Main Logic for Anki Page (Browser & Connection)
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     const anki = new AnkiClient();
 
-    // UI References
+    
     const connectionStatus = document.getElementById('connectionStatusSidebar');
     const statusText = connectionStatus?.querySelector('.status-text');
     
-    // Sidebar Tabs
+    
     const tabs = document.querySelectorAll('.nav-item[data-tab]');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    // State
+    
     let isConnected = false;
     let allNoteIds = [];
     let loadedNoteDetails = [];
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let backgroundLoadCancelToken = 0;
     let lastCheckedIndex = null;
 
-    // --- Browser State & UI Refs ---
+    
     const STATE = {
         selectedDeck: 'all',
         selectedField: 'all'
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const moveDeckSearch = document.getElementById('moveDeckSearch');
     let selectedTargetDeck = null;
 
-    // --- Connection ---
+    
 
     async function checkConnection() {
         if (!connectionStatus || !statusText) return;
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             connectionStatus.classList.remove('disconnected');
             connectionStatus.classList.add('connected');
 
-            // Load Initial Data
+            
             await loadDecks();
             loadBrowser();
             if (window.ankiHeatmap) {
@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loadBrowser();
             });
 
-            // Models/Fields - Only from models that actually have notes
+            
             const modelNames = await anki.invoke('modelNames');
             const fieldSet = new Set();
             
-            // Find which models are actually being used by notes
+            
             const modelUsageData = await Promise.all(modelNames.map(async (name) => {
                 const ids = await anki.invoke('findNotes', { query: `note:"${name}"` });
                 return { name, used: ids.length > 0 };
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // Field selector removed as per visual update
+            
             
         } catch (e) {
             console.error("Failed to load initial data:", e);
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tab.addEventListener('click', () => {
             const targetId = tab.dataset.tab;
             
-            // UI Update
+            
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
 
@@ -126,10 +126,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const content = document.getElementById(`tab-${targetId}`);
             if (content) content.classList.add('active');
 
-            // Persist
+            
             localStorage.setItem('lastAnkiTab', targetId);
 
-            // Action
+            
             if (targetId === 'browser') {
                 if (allNoteIds.length === 0) {
                     loadBrowser();
@@ -143,20 +143,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // --- Global Quick Paste Logic ---
+    
     window.addEventListener('paste', (e) => {
         const active = document.activeElement;
         const isEditable = active.tagName === 'INPUT' || 
                            active.tagName === 'TEXTAREA' || 
                            active.isContentEditable;
 
-        // If we're already in batchInput, let the default paste happen
+        
         if (active.id === 'batchInput') return;
 
-        // If targeting another input/editable, assume intentional local paste
+        
         if (isEditable) return;
 
-        // Quick jump to generator and paste
+        
         const genTab = document.querySelector('.nav-item[data-tab="generator"]');
         const batchInput = document.getElementById('batchInput');
         
@@ -165,23 +165,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!text) return;
 
             e.preventDefault();
-            genTab.click(); // Switch to tab
+            genTab.click(); 
 
             const currentVal = batchInput.value.trim();
             const separator = currentVal ? '\n' : '';
             batchInput.value = currentVal + separator + text;
             batchInput.focus();
 
-            // Move cursor to end
+            
             batchInput.selectionStart = batchInput.selectionEnd = batchInput.value.length;
             
-            // Trigger count update
+            
             batchInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
     });
 
 
-    // --- Custom Dropdown Handlers ---
+    
     function setupCustomDropdowns() {
         const pills = ['deckPill'];
         
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             pill.addEventListener('click', (e) => {
                 if (e.target.closest('.custom-dropdown')) return;
                 
-                // Close others
+                
                 document.querySelectorAll('.filter-pill').forEach(p => {
                     if (p !== pill) {
                         p.classList.remove('active');
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (isOpen) searchInput.focus();
             });
 
-            // Dropdown Search Logic
+            
             searchInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
                 const items = dropdown.querySelectorAll('.dropdown-item');
@@ -222,13 +222,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Click outside to close
+        
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.filter-pill')) {
                 document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('open'));
                 document.querySelectorAll('.filter-pill').forEach(p => {
-                     // Check if it has an active value that isn't default to decide if it stays styled active
-                     // But for now, just remove UI active class
+                     
+                     
                      p.classList.remove('active');
                 });
             }
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tbody = document.getElementById('browserTableBody');
         const searchTerm = document.getElementById('browserSearch')?.value.trim().toLowerCase() || '';
 
-        // Reset Selection when loading new data
+        
         if (typeof selectedNoteIds !== 'undefined') {
             selectedNoteIds.clear();
         }
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         backgroundLoadCancelToken++;
         const currentToken = backgroundLoadCancelToken;
 
-        // 1. Build Query
+        
         let query = "";
         if (STATE.selectedDeck !== 'all') query += `deck:"${STATE.selectedDeck}" `;
         
@@ -290,11 +290,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const chunkIds = newNoteIds.slice(i, i + CHUNK_SIZE);
                 const chunkData = await anki.getNotesInfo(chunkIds);
                 
-                // Fetch deck names for these notes
+                
                 const cardIds = chunkData.map(n => n.cards ? n.cards[0] : null).filter(c => c);
                 let deckMap = {};
 
-                // Optimization: if a specific deck is selected, we already know the deck name
+                
                 if (STATE.selectedDeck !== 'all') {
                     chunkData.forEach(n => { deckMap[n.noteId] = STATE.selectedDeck; });
                 } else if (cardIds.length > 0) {
@@ -307,26 +307,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const processedChunk = processNotes(chunkData, deckMap);
                 allDetails = allDetails.concat(processedChunk);
                 
-                // Update state incrementally
+                
                 loadedNoteDetails = allDetails;
                 allNoteIds = allDetails.map(n => n.noteId);
 
-                // FASTER FIRST LOAD: Show the first few cards as soon as the first chunk is ready
+                
                 if (!firstRenderDone && allDetails.length > 0) {
                     tbody.innerHTML = '';
-                    applySort(); // Sort what we have so far
+                    applySort(); 
                     renderInitialBatch();
-                    updateCount(newNoteIds.length); // Show total found immediately
+                    updateCount(newNoteIds.length); 
                     firstRenderDone = true;
                 }
             }
 
             if (currentToken !== backgroundLoadCancelToken) return;
 
-            // Final sort and potential count update when everything is in
+            
             applySort();
-            // If the user hasn't scrolled yet, we don't need to re-render everything, 
-            // but the count and full list are now ready.
+            
+            
             updateCount(allNoteIds.length);
 
         } catch (e) {
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Scroll Lazy Load
+    
     browserResultsContainer?.addEventListener('scroll', () => {
         const { scrollTop, clientHeight, scrollHeight } = browserResultsContainer;
         if (scrollTop + clientHeight >= scrollHeight - 200) {
@@ -413,18 +413,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Search input logic
+    
     document.getElementById('browserSearch')?.addEventListener('input', () => {
         loadBrowser();
     });
 
-    // --- Selection Logic ---
+    
 
     selectAllCheckbox?.addEventListener('change', (e) => {
         const checked = e.target.checked;
         
         if (checked) {
-            // Select ALL loaded notes, regardless of whether they are rendered
+            
             loadedNoteDetails.forEach(note => {
                 selectedNoteIds.add(note.noteId.toString());
             });
@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             selectedNoteIds.clear();
         }
 
-        // Update visual state of all currently rendered checkboxes
+        
         const checkboxes = document.querySelectorAll('.row-checkbox');
         checkboxes.forEach(cb => {
             cb.checked = checked;
@@ -476,15 +476,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleSelectAllState() {
         if (!selectAllCheckbox || loadedNoteDetails.length === 0) return;
         
-        // Accurate check: do we have as many IDs as notes found?
+        
         const allSelected = selectedNoteIds.size === loadedNoteDetails.length;
         selectAllCheckbox.checked = allSelected;
         
-        // Also handle indeterminate state if some but not all are selected
+        
         selectAllCheckbox.indeterminate = selectedNoteIds.size > 0 && selectedNoteIds.size < loadedNoteDetails.length;
     }
 
-    // --- Action Button Logic ---
+    
     document.getElementById('deleteSelectedBtn')?.addEventListener('click', async () => {
         if (selectedNoteIds.size === 0) return alert('Please select cards to delete.');
         if (!confirm(`Are you sure you want to delete ${selectedNoteIds.size} cards?`)) return;
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             selectedNoteIds.clear();
             if (selectAllCheckbox) selectAllCheckbox.checked = false;
             loadBrowser();
-            // Sync to AnkiWeb
+            
             try { await anki.sync(); } catch (sErr) { console.warn("AnkiWeb sync failed:", sErr); }
         } catch (e) {
             alert('Error deleting cards: ' + e);
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const ids = Array.from(selectedNoteIds).map(id => parseInt(id));
             const notes = await anki.getNotesInfo(ids);
             
-            // Extract the word/main content. Strictly use "Input" field for consistency.
+            
             const words = notes.map(n => {
                 const keys = Object.keys(n.fields);
                 const inputField = keys.find(k => k.toLowerCase() === 'input');
@@ -517,14 +517,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             }).filter(w => w);
 
             if (words.length > 0) {
-                // Save to localStorage for the generator tab
+                
                 localStorage.setItem('regenerate_words', words.join('\n'));
                 
-                // Navigate to Generator Tab
+                
                 const genTab = document.querySelector('.nav-item[data-tab="generator"]');
                 if (genTab) {
                     genTab.click();
-                    // Dispatch a custom event and/or the generator script will check localStorage
+                    
                     window.dispatchEvent(new CustomEvent('triggerRegenerate', { detail: { words: words.join('\n') } }));
                 }
             }
@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // --- Move to Deck Logic ---
+    
 
     document.getElementById('moveSelectedBtn')?.addEventListener('click', () => {
         if (selectedNoteIds.size === 0) return alert('Please select cards to move.');
@@ -575,8 +575,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         try {
             const ids = Array.from(selectedNoteIds).map(id => parseInt(id));
-            // To move cards in AnkiConnect, we usually need the card IDs, not note IDs.
-            // But 'changeDeck' action usually works on cards.
+            
+            
             const notes = await anki.getNotesInfo(ids);
             const cardIds = notes.flatMap(n => n.cards);
 
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 selectedNoteIds.clear();
                 if (selectAllCheckbox) selectAllCheckbox.checked = false;
                 loadBrowser();
-                // Sync to AnkiWeb
+                
                 try { await anki.sync(); } catch (sErr) { console.warn("AnkiWeb sync failed:", sErr); }
             }
         } catch (e) {
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeHeatmapModalBtn = document.getElementById('closeHeatmapModalBtn');
     if (closeHeatmapModalBtn) closeHeatmapModalBtn.onclick = () => document.getElementById('heatmapDetailsModal').classList.add('hidden');
 
-    // --- Editor Logic ---
+    
     let selectedNoteId = null;
 
     document.getElementById('browserTableBody')?.addEventListener('click', (e) => {
@@ -652,11 +652,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             editorContent.innerHTML = fieldsHtml;
 
-            // Setup rich text fields for paste hygiene
+            
             editorContent.querySelectorAll('.rich-text').forEach(el => {
                 setupRichText(el);
             });
-            // Force paragraph behavior for better HTML structure
+            
             document.execCommand('defaultParagraphSeparator', false, 'p');
         } catch (e) {
             editorContent.innerHTML = `<div class="editor-empty-state" style="color:red">Error: ${e}</div>`;
@@ -669,12 +669,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectedNoteId = null;
     });
 
-    // Click outside to close side editor
+    
     document.addEventListener('click', (e) => {
         const sideEditor = document.getElementById('sideEditor');
         if (!sideEditor || !sideEditor.classList.contains('open')) return;
 
-        // Don't close if clicking inside editor, or on a row (let row click handle switching), or on top action buttons
+        
         if (sideEditor.contains(e.target) || 
             e.target.closest('#browserTableBody tr') || 
             e.target.closest('.unified-search-bar') ||
@@ -699,21 +699,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                     updatedFields[fieldName] = el.innerHTML;
                 }
             });
-            // Gọi updateNoteFields để sync với Anki
+            
             await anki.updateNoteFields(selectedNoteId, updatedFields);
             document.getElementById('sideEditor')?.classList.remove('open');
-            // Cập nhật lại đúng 1 row vừa sửa, không reload cả table
+            
             const notes = await anki.getNotesInfo([selectedNoteId]);
             if (notes && notes.length) {
                 const n = notes[0];
-                // Cập nhật loadedNoteDetails
+                
                 const idx = loadedNoteDetails.findIndex(x => x.noteId == n.noteId);
                 if (idx !== -1) {
-                    // Cập nhật content và modified
+                    
                     loadedNoteDetails[idx].content = Object.values(n.fields).sort((a, b) => a.order - b.order).map(f => f.value).join(' ');
                     loadedNoteDetails[idx].modified = (n.mod || 0) * 1000;
                 }
-                // Cập nhật lại row trong DOM
+                
                 const row = document.querySelector(`#browserTableBody tr[data-note-id="${n.noteId}"]`);
                 if (row) {
                     const tds = row.querySelectorAll('td');
@@ -723,7 +723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             }
-            // Sync to AnkiWeb
+            
             try { await anki.sync(); } catch (sErr) { console.warn("AnkiWeb sync failed:", sErr); }
         } catch (e) {
             alert('Error: ' + e);
@@ -738,14 +738,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             await anki.deleteNotes([parseInt(selectedNoteId)]);
             loadBrowser();
             document.getElementById('sideEditor')?.classList.remove('open');
-            // Sync to AnkiWeb
+            
             try { await anki.sync(); } catch (sErr) { console.warn("AnkiWeb sync failed:", sErr); }
         } catch (e) {
             alert('Error: ' + e);
         }
     });
 
-    // --- Helpers ---
+    
     function formatTime(ms) {
         return ms ? new Date(ms).toLocaleString('en-GB', { hour12: false }) : '-';
     }
@@ -755,25 +755,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function setupRichText(el) {
-        // Paste hygiene
+        
         el.addEventListener('paste', (e) => {
             e.preventDefault();
             const text = e.clipboardData.getData('text/plain');
             const html = e.clipboardData.getData('text/html');
             
             if (html) {
-                // Sanitize HTML to remove font-family, font-size, line-height etc.
+                
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Deep clean and consolidate structure
+                
                 const sanitize = (body) => {
-                    // 1. Remove all comments
+                    
                     const iterator = doc.createNodeIterator(body, NodeFilter.SHOW_COMMENT);
                     let comment;
                     while (comment = iterator.nextNode()) comment.remove();
 
-                    // 2. Convert styles to semantic tags before stripping attributes (crucial for GDocs)
+                    
                     body.querySelectorAll('*').forEach(el => {
                         const style = el.getAttribute('style') || '';
                         if (style.includes('font-weight:700') || style.includes('font-weight:bold') || style.includes('700')) {
@@ -788,25 +788,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     });
 
-                    // 3. Remove all attributes
+                    
                     body.querySelectorAll('*').forEach(el => {
                         while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
                     });
 
-                    // 4. Flatten and unwrap metadata/junk wrappers
+                    
                     const flatten = (node) => {
                         const children = Array.from(node.childNodes);
                         for (const child of children) {
                             if (child.nodeType === 1) {
                                 const tag = child.tagName;
-                                // Unwrap spans, fonts, and metadata tags
+                                
                                 if (['SPAN', 'FONT', 'META', 'STYLE', 'LINK'].includes(tag)) {
                                     while (child.firstChild) node.insertBefore(child.firstChild, child);
                                     child.remove();
                                     flatten(node);
                                     return;
                                 }
-                                // Unwrap formatting tags that contain block elements (common in GDocs metadata)
+                                
                                 if (['B', 'I', 'U', 'STRONG', 'EM'].includes(tag)) {
                                     const hasBlock = Array.from(child.childNodes).some(n => n.nodeType === 1 && ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'UL', 'OL', 'LI'].includes(n.tagName));
                                     if (hasBlock) {
@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         return;
                                     }
                                 }
-                                // Convert DIV to P
+                                
                                 if (tag === 'DIV') {
                                     const p = doc.createElement('p');
                                     while (child.firstChild) p.appendChild(node.firstChild);
@@ -830,7 +830,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
                     flatten(body);
 
-                    // 5. Consolidation: Paragraphify loose inline content
+                    
                     const finalChildren = Array.from(body.childNodes);
                     let currentPara = null;
                     finalChildren.forEach(node => {
@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     });
 
-                    // 6. Recursive deep cleanup of empty tags
+                    
                     let changed = true;
                     while (changed) {
                         changed = false;
@@ -872,7 +872,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // Basic formatting support
+        
         el.addEventListener('keydown', (e) => {
             if (e.metaKey || e.ctrlKey) {
                 if (e.key === 'b') { e.preventDefault(); document.execCommand('bold', false, null); }
@@ -882,47 +882,47 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Expose for Generator
+    
     window.anki = anki;
 
-    // Start
-    // --- Init ---
+    
+    
     checkConnection();
 
-    // Restore last active tab or use URL param
+    
     const urlParams = new URLSearchParams(window.location.search);
     const targetTabId = urlParams.get('tab') || localStorage.getItem('lastAnkiTab') || 'generator';
     const initialTab = document.querySelector(`.nav-item[data-tab="${targetTabId}"]`);
     
-    // Check for pending words from Quick Note
+    
     const pendingWords = localStorage.getItem('lumina_pending_words');
     if (pendingWords) {
-        // Ensure we are on the generator tab
+        
         const genTab = document.querySelector('.nav-item[data-tab="generator"]');
         if (genTab) genTab.click();
 
-        // Give a small delay for the DOM to settle if needed, but since it's already in DOM, we can try directly
+        
         const checkExist = setInterval(() => {
             const batchInput = document.getElementById('batchInput');
             if (batchInput) {
                 batchInput.value = pendingWords;
-                // Trigger input event to update word count if any listener exists
+                
                 batchInput.dispatchEvent(new Event('input', { bubbles: true }));
                 localStorage.removeItem('lumina_pending_words');
                 clearInterval(checkExist);
             }
         }, 100);
         
-        // Timeout after 5 seconds to avoid infinite loop
+        
         setTimeout(() => clearInterval(checkExist), 5000);
     } else if (initialTab) {
         initialTab.click(); 
     } else {
-        // Fallback to first tab if ID mismatch
+        
         tabs[0]?.click();
     }
 
-    // PWA Service Worker Registration
+    
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')

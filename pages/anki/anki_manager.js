@@ -1,12 +1,9 @@
-/**
- * anki_manager.js
- * Comprehensive management for Decks, Note Types, Fields, and Card Layouts.
- */
+
 
 (function() {
     const anki = window.anki || new AnkiClient();
 
-    // UI References
+    
     const deckList = document.getElementById('deckList');
     const modelList = document.getElementById('modelList');
     const modelDiveEmpty = document.getElementById('modelDiveEmpty');
@@ -15,26 +12,26 @@
     const modelTemplatesList = document.getElementById('modelTemplatesList');
     const cardTemplateEditor = document.getElementById('cardTemplateEditor');
     
-    // Editors
+    
     const templateFrontEditor = document.getElementById('templateFrontEditor');
     const templateBackEditor = document.getElementById('templateBackEditor');
     const templateCssEditor = document.getElementById('templateCssEditor');
     const saveModelChangesBtn = document.getElementById('saveModelChangesBtn');
     const previewModelNoteBtn = document.getElementById('previewModelNoteBtn');
 
-    // Preview Modal Refs
+    
     const cardPreviewModal = document.getElementById('cardPreviewModal');
     const ankiCardContent = document.getElementById('ankiCardContent');
     const ankiPreviewStyle = document.getElementById('ankiPreviewStyle');
     const previewToggles = document.querySelectorAll('.preview-toggle-wrap .toggle-btn');
 
-    // State
+    
     const MANAGER_STATE = {
         selectedModelName: null,
         selectedTemplateName: null,
-        templates: [], // HTML templates for selected model
-        styling: "", // CSS for selected model
-        fields: [] // Fields for selected model
+        templates: [], 
+        styling: "", 
+        fields: [] 
     };
 
     async function initManager() {
@@ -43,7 +40,7 @@
         setupEventListeners();
     }
 
-    // --- Decks ---
+    
     async function loadDecksList() {
         try {
             const decks = await anki.invoke('deckNames');
@@ -70,7 +67,7 @@
                     </div>
                 `;
 
-                li.onclick = () => { /* Select Logic if needed */ };
+                li.onclick = () => {  };
 
                 setupDeckDragAndDrop(li);
                 deckList.appendChild(li);
@@ -112,8 +109,8 @@
 
             if (!targetName || draggedName === targetName) return;
 
-            // Logic like Anki: Rename dragged deck to be a sub-deck of target
-            // e.g., Drag "Vocab" into "English" -> "English::Vocab"
+            
+            
             const parts = draggedName.split('::');
             const baseName = parts[parts.length - 1];
             const newName = `${targetName}::${baseName}`;
@@ -127,7 +124,7 @@
         });
     }
 
-    // --- Note Types (Models) ---
+    
     async function loadModelsList() {
         try {
             const models = await anki.invoke('modelNames');
@@ -151,7 +148,7 @@
         MANAGER_STATE.selectedModelName = name;
         MANAGER_STATE.selectedTemplateName = null;
         
-        // Update UI
+        
         modelList.querySelectorAll('.setup-item').forEach(i => i.classList.toggle('selected', i.dataset.model === name));
         modelDiveEmpty.classList.add('hidden');
         modelDiveContent.classList.remove('hidden');
@@ -161,17 +158,17 @@
 
     async function loadModelDetails(name) {
         try {
-            // Load Fields
+            
             MANAGER_STATE.fields = await anki.invoke('modelFieldNames', { modelName: name });
             renderFields();
 
-            // Load Templates (Card Types)
+            
             MANAGER_STATE.templates = await anki.invoke('modelTemplates', { modelName: name });
             MANAGER_STATE.styling = await anki.invoke('modelStyling', { modelName: name });
             
             renderTemplates();
             
-            // Auto-select first template
+            
             if (Object.keys(MANAGER_STATE.templates).length > 0) {
                 selectCardTemplate(Object.keys(MANAGER_STATE.templates)[0]);
             }
@@ -210,7 +207,7 @@
     }
 
     function setupEventListeners() {
-        // Sub-nav switching (Front/Back/CSS)
+        
         const subNavItems = document.querySelectorAll('.sub-nav-item');
         subNavItems.forEach(btn => {
             btn.onclick = () => {
@@ -224,17 +221,17 @@
             };
         });
 
-        // Preview Note
+        
         previewModelNoteBtn.onclick = () => openCardPreview();
 
-        // Close Preview by clicking outside
+        
         cardPreviewModal.onclick = (e) => {
             if (e.target === cardPreviewModal) {
                 cardPreviewModal.classList.add('hidden');
             }
         };
 
-        // Toggle Front/Back in Preview
+        
         previewToggles.forEach(btn => {
             btn.onclick = () => {
                 previewToggles.forEach(b => b.classList.remove('active'));
@@ -243,7 +240,7 @@
             };
         });
 
-        // Save Changes
+        
         saveModelChangesBtn.onclick = async () => {
             if (!MANAGER_STATE.selectedModelName || !MANAGER_STATE.selectedTemplateName) return;
             
@@ -251,7 +248,7 @@
             saveModelChangesBtn.textContent = 'Saving...';
             
             try {
-                // 1. Update Templates
+                
                 const updatedTemplates = {
                     [MANAGER_STATE.selectedTemplateName]: {
                         Front: templateFrontEditor.value,
@@ -265,7 +262,7 @@
                     }
                 });
 
-                // 2. Update Styling
+                
                 await anki.invoke('updateModelStyling', {
                     model: {
                         name: MANAGER_STATE.selectedModelName,
@@ -274,7 +271,7 @@
                 });
 
                 alert('Note Type changes saved successfully!');
-                // Refresh local state
+                
                 await loadModelDetails(MANAGER_STATE.selectedModelName);
             } catch (e) {
                 alert('Save failed: ' + e);
@@ -284,7 +281,7 @@
             }
         };
 
-        // Create New Deck
+        
         document.getElementById('createNewDeckBtn').onclick = async () => {
             const name = prompt("Enter new Deck name:");
             if (name) {
@@ -293,15 +290,15 @@
             }
         };
 
-        // Note Type creation (Simplified as Anki-Connect model creation is complex)
+        
         document.getElementById('createNewModelBtn').onclick = () => {
             alert("To create a new Note Type, please use Anki Desktop's 'Manage Note Types' for best results.");
         };
     }
 
-    // --- Preview Detailed Logic ---
+    
     let CURRENT_PREVIEW_DATA = {
-        side: 'front', // 'front' or 'back'
+        side: 'front', 
         fields: {}
     };
 
@@ -312,7 +309,7 @@
         cardPreviewModal.classList.remove('hidden');
 
         try {
-            // Pick a note to preview
+            
             const noteIds = await anki.invoke('findNotes', { query: `note:"${MANAGER_STATE.selectedModelName}"` });
             let fieldMap = {};
 
@@ -324,7 +321,7 @@
                     });
                 }
             } else {
-                // Mock data if no notes exist
+                
                 MANAGER_STATE.fields.forEach(f => {
                     fieldMap[f] = `(Sample ${f})`;
                 });
@@ -345,21 +342,21 @@
         const template = side === 'front' ? templateFrontEditor.value : templateBackEditor.value;
         let html = template;
 
-        // Process field replacements
+        
         Object.entries(CURRENT_PREVIEW_DATA.fields).forEach(([name, val]) => {
-            // 1. Handle replacements inside attributes (strip ALL tags)
-            // Matches: id="{{Value}}", src="...{{Value}}...", etc.
+            
+            
             const attrRegex = new RegExp(`(=\\s*["'])([^"']*?){{\\s*${name}\\s*}}([^"']*?)(["'])`, 'g');
             const plainValue = val.replace(/<[^>]*>/g, '').trim();
             html = html.replace(attrRegex, `$1$2${plainValue}$3$4`);
 
-            // 2. Handle normal replacements (strip only outer P tags to match Anki's clean look)
+            
             const normalRegex = new RegExp(`{{\\s*${name}\\s*}}`, 'g');
             const cleanVal = val.replace(/^<p>/i, '').replace(/<\/p>$/i, '').trim();
             html = html.replace(normalRegex, cleanVal);
         });
 
-        // Handle FrontSide special tag for Back template
+        
         if (side === 'back') {
             const frontHtml = renderProcessedTemplate('front');
             html = html.replace(/{{FrontSide}}/g, frontHtml);
@@ -372,7 +369,7 @@
         const tmpl = side === 'front' ? templateFrontEditor.value : templateBackEditor.value;
         let res = tmpl;
         Object.entries(CURRENT_PREVIEW_DATA.fields).forEach(([name, val]) => {
-            // Apply similar logic here for nested FrontSide processing
+            
             const attrRegex = new RegExp(`(=\\s*["'])([^"']*?){{\\s*${name}\\s*}}([^"']*?)(["'])`, 'g');
             const plainValue = val.replace(/<[^>]*>/g, '').trim();
             res = res.replace(attrRegex, `$1$2${plainValue}$3$4`);
@@ -384,6 +381,6 @@
         return res;
     }
 
-    // Expose init
+    
     window.initAnkiManager = initManager;
 })();

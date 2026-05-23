@@ -1,6 +1,4 @@
-/* ====================
-   VARIABLES & RESET
-   ==================== */
+
 
 * {
   box-sizing: border-box;
@@ -68,7 +66,7 @@ button {
   --lumina-border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Global SVG Consistency */
+
 .lumina-action-item svg,
 #lumina-action-bar svg,
 .spotlight-new-tab-btn svg,
@@ -163,7 +161,7 @@ button {
   color: #000 !important;
 }
 
-/* Specific button modifiers/visibility */
+
 #lumina-action-bar.lumina-comment-mode .lumina-action-item:not(.lumina-action-comment) {
   display: none !important;
 }
@@ -176,16 +174,16 @@ button {
   display: none !important;
 }
 
-/* Comment Highlighting */
+
 .lumina-comment-highlight {
   background-color: #fff9c4 !important;
-  /* Pale yellow */
+  
   cursor: text !important;
   border-radius: 2px;
   transition: background-color 0.2s;
 }
 
-/* Comment Tooltip */
+
 .lumina-comment-tooltip {
   position: fixed;
   z-index: 10000;
@@ -204,7 +202,7 @@ button {
   line-height: 1.4;
 }
 
-/* Custom SelectedText Tag - Now a text-like prefix */
+
 .lumina-selected-text-tag {
   display: inline-block !important;
   background: transparent !important;
@@ -226,7 +224,7 @@ button {
   line-height: inherit !important;
 }
 
-/* Custom Popup Tooltip */
+
 .lumina-tooltip {
   position: fixed;
   background: rgba(15, 15, 15, 0.9) !important;
@@ -257,7 +255,7 @@ button {
   transform: translateY(0);
 }
 
-/* File Chips in History */
+
 .lumina-attached-file-chip {
   display: inline-flex;
   align-items: center;
@@ -273,7 +271,7 @@ button {
   vertical-align: top;
 }
 
-/* File Previews in Input Bar */
+
 .lumina-image-preview-item.is-file {
   width: auto !important;
   min-width: 156px !important;
@@ -291,13 +289,13 @@ button {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Dictionary Popup Styles */
+
 .lumina-dictionary-popup {
   position: fixed !important;
   z-index: 2147483647 !important;
   background: var(--lumina-bg-primary, #ffffff) !important;
   border-radius: 14px !important;
-  box-shadow: none !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
@@ -318,12 +316,12 @@ button {
   border-top-right-radius: 14px !important;
 }
 
-/* Data rendering in popup */
+
 .lumina-dict-popup-item {
   margin-bottom: 20px !important;
 }
 
-/* Answer & Question Editing Mode */
+
 .lumina-chat-answer.is-editing,
 .lumina-chat-question.is-editing {
   width: 100% !important;
@@ -348,7 +346,7 @@ button {
   justify-content: flex-start !important;
 }
 
-/* Proofread Comment Highlights & Tags */
+
 .lumina-proofread-comment-highlight {
   background-color: rgba(255, 193, 7, 0.2) !important;
   border-bottom: 2px solid rgba(255, 193, 7, 0.4) !important;
@@ -356,7 +354,7 @@ button {
   transition: background-color 0.2s !important;
 }
 
-/* Input Metadata Container (Web Chips & Redirects) */
+
 .lumina-input-meta-container {
   display: none;
   justify-content: space-between;
@@ -391,9 +389,7 @@ button {
   display: block !important;
 }
 
-/* ====================
-   BASE UI COMPONENTS
-   ==================== */
+
 
 
 .lumina-svg-icon {
@@ -448,7 +444,7 @@ button {
   mask-image: url("../icons/lumina/star.svg");
 }
 
-/* SVG sizing removed - handled by .lumina-action-item img */
+
 
 .lumina-action-item .lumina-svg-icon {
   width: 17px !important;
@@ -597,9 +593,7 @@ button {
   height: 12px;
 }
 
-/* ====================
-   MAIN CHAT UI
-   ==================== */
+
 
 #lumina-ask-input-popup {
   all: initial;
@@ -1179,6 +1173,110 @@ button {
   color: var(--lumina-text-secondary) !important;
 }
 
+.lumina-alert {
+  margin: 1em 0 !important;
+  padding: 12px 16px !important;
+  border-left: 4px solid var(--alert-border-color) !important;
+  background-color: var(--alert-bg-color) !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.lumina-alert-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.9em !important;
+  color: var(--alert-title-color) !important;
+  text-transform: capitalize !important;
+  letter-spacing: 0.02em !important;
+}
+
+.lumina-alert-icon {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--alert-title-color) !important;
+  flex-shrink: 0 !important;
+}
+
+.lumina-alert-content {
+  font-size: 0.93em !important;
+  line-height: 1.6 !important;
+  color: var(--lumina-text-primary) !important;
+}
+
+.lumina-alert-content p {
+  margin: 0 !important;
+  color: inherit !important;
+}
+
+.lumina-alert-content p + p {
+  margin-top: 8px !important;
+}
+
+.lumina-alert--note {
+  --alert-border-color: #0969da;
+  --alert-bg-color: rgba(9, 105, 218, 0.05);
+  --alert-title-color: #0969da;
+}
+
+[data-theme="dark"] .lumina-alert--note {
+  --alert-border-color: #2f81f7;
+  --alert-bg-color: rgba(47, 129, 247, 0.1);
+  --alert-title-color: #2f81f7;
+}
+
+.lumina-alert--tip {
+  --alert-border-color: #1a7f37;
+  --alert-bg-color: rgba(26, 127, 55, 0.05);
+  --alert-title-color: #1a7f37;
+}
+
+[data-theme="dark"] .lumina-alert--tip {
+  --alert-border-color: #3fb950;
+  --alert-bg-color: rgba(63, 185, 80, 0.1);
+  --alert-title-color: #3fb950;
+}
+
+.lumina-alert--important {
+  --alert-border-color: #8250df;
+  --alert-bg-color: rgba(130, 80, 223, 0.05);
+  --alert-title-color: #8250df;
+}
+
+[data-theme="dark"] .lumina-alert--important {
+  --alert-border-color: #a371f7;
+  --alert-bg-color: rgba(163, 113, 247, 0.1);
+  --alert-title-color: #a371f7;
+}
+
+.lumina-alert--warning {
+  --alert-border-color: #9a6700;
+  --alert-bg-color: rgba(154, 103, 0, 0.05);
+  --alert-title-color: #9a6700;
+}
+
+[data-theme="dark"] .lumina-alert--warning {
+  --alert-border-color: #d29922;
+  --alert-bg-color: rgba(210, 153, 34, 0.1);
+  --alert-title-color: #d29922;
+}
+
+.lumina-alert--caution {
+  --alert-border-color: #cf222e;
+  --alert-bg-color: rgba(207, 34, 46, 0.05);
+  --alert-title-color: #cf222e;
+}
+
+[data-theme="dark"] .lumina-alert--caution {
+  --alert-border-color: #f85149;
+  --alert-bg-color: rgba(248, 81, 73, 0.1);
+  --alert-title-color: #f85149;
+}
+
 .lumina-chat-answer .lumina-table-wrap {
   margin: 1em 0 !important;
   max-width: 100% !important;
@@ -1440,7 +1538,7 @@ button {
   gap: 4px !important;
 }
 
-/* Token Counter Styles */
+
 .lumina-token-counter {
   position: relative;
   display: flex;
@@ -1480,8 +1578,8 @@ button {
   min-width: 165px !important;
   z-index: 10000 !important;
   box-shadow: var(--lumina-shadow-lg) !important;
+
   
-  /* Animation properties */
   opacity: 0;
   visibility: hidden;
   transform: translateY(8px);
@@ -1744,7 +1842,7 @@ button {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Tools Dropdown & Items */
+
 .lumina-tools-dropdown {
   position: absolute !important;
   bottom: calc(100% + 8px) !important;
@@ -1812,7 +1910,7 @@ button {
   font-weight: 520 !important;
 }
 
-/* Action Button Specific Styles */
+
 .lumina-action-btn {
   display: flex !important;
   align-items: center !important;
@@ -1866,10 +1964,10 @@ button {
 .lumina-action-btn.active.regenerate svg,
 .lumina-action-btn.regenerate svg {
   filter: none !important;
-  /* Use currentColor instead of inversion filter */
+  
 }
 
-/* Unified Tool Colors */
+
 .lumina-tool-item.active {
   color: var(--lumina-primary) !important;
   background: rgba(0, 122, 255, 0.1) !important;
@@ -1983,7 +2081,7 @@ button {
   flex: 0 1 auto;
   height: 100%;
   aspect-ratio: 1 / 1;
-  /* Force square shape */
+  
   width: auto;
   min-width: 40px;
   border-radius: 14px;
@@ -2127,19 +2225,11 @@ button {
 }
 
 .lumina-thinking {
-  line-height: 1.65 !important;
-  letter-spacing: normal !important;
-  color: var(--lumina-text-primary);
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.lumina-thinking::after {
-  content: "";
-  display: inline-block;
-  width: 1.5em;
-  text-align: left;
-  animation: lumina-dots 1.5s steps(4, end) infinite;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: var(--lumina-text-secondary) !important;
+  font-size: 0.95em !important;
 }
 
 .lumina-mic-btn:hover {
@@ -2401,9 +2491,7 @@ button {
   border-color: var(--lumina-primary-color) !important;
 }
 
-/* ====================
-   SPOTLIGHT INTERFACE
-   ==================== */
+
 
 .lumina-spotlight-wrapper {
   font-size: inherit !important;
@@ -2745,16 +2833,9 @@ button {
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s;
 }
 
-/* ====================
-   DICTIONARY & TRANSLATION
-   ==================== */
 
-.lumina-dict-tab-btn.active,
-.lumina-dict-tab-btn.active:hover {
-  background: var(--lumina-primary-color, #0076d6) !important;
-  color: #fff !important;
-  cursor: default !important;
-}
+
+
 
 .lumina-translate-logo {
   width: 17px;
@@ -2996,10 +3077,61 @@ button {
   box-shadow: none !important;
 }
 
+
+.lumina-translation-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 80px;
+  padding: 2px 0;
+}
+
+.lumina-skeleton-line {
+  height: 14px;
+  background: rgba(var(--lumina-primary-rgb, 0, 122, 255), 0.08);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  animation: lumina-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.lumina-skeleton-line.short {
+  width: 60%;
+}
+
+.lumina-skeleton-line.medium {
+  width: 85%;
+}
+
+.lumina-skeleton-line.long {
+  width: 100%;
+}
+
+@keyframes lumina-skeleton-pulse {
+  0% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0.4;
+  }
+}
+
+[data-theme="dark"] .lumina-skeleton-line {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 [data-theme="dark"] .lumina-dictionary-popup {
   background: var(--lumina-bg-primary, #1c1c1e) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .lumina-dict-scroll-area {
@@ -3028,60 +3160,158 @@ button {
 
 .lumina-dict-footer {
   position: relative !important;
-  min-height: 38px !important;
-  height: auto !important;
-  padding: 8px 0 !important;
-  background: var(--lumina-bg-primary, #ffffff) !important;
+  height: 32px !important;
+  background: #f1f3f4 !important;
   z-index: 100 !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
   border-top: none !important;
   flex-shrink: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
 .lumina-dict-tabs {
   display: flex !important;
-  gap: 4px !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-  padding: 3px !important;
-  border-radius: 10px !important;
+  width: 100% !important;
+  height: 100% !important;
+  gap: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
   z-index: 2 !important;
 }
 
 [data-theme="dark"] .lumina-dict-footer {
-  background: var(--lumina-bg-primary, #1c1c1e) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #1e1e1e !important;
+  border-top: none !important;
 }
 
-
 [data-theme="dark"] .lumina-dict-tabs {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
 }
 
 
 .lumina-dict-tab-btn {
-  padding: 6px 12px !important;
+  flex: 1 !important;
+  height: 100% !important;
   border: none !important;
   background: transparent !important;
-  border-radius: 8px !important;
-  font-size: 0.9em !important;
-  font-weight: 620 !important;
-  color: var(--lumina-text-secondary) !important;
+  border-radius: 0 !important;
+  font-size: 0.85em !important;
+  font-weight: 600 !important;
+  color: #5f6368 !important;
   cursor: pointer !important;
-  transition: background-color 0.2s, color 0.2s !important;
+  transition: none !important;
   white-space: nowrap !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.lumina-dict-tab-btn.active {
+  background: var(--lumina-bg-primary, #ffffff) !important;
+  color: var(--lumina-primary-color, #007aff) !important;
+  z-index: 10 !important;
+}
+
+.lumina-dict-tab-btn.active::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: radial-gradient(circle at bottom left, transparent 12px, var(--lumina-bg-primary, #ffffff) 12.5px) !important;
+  pointer-events: none !important;
+}
+
+.lumina-dict-tab-btn.active::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  right: -12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: radial-gradient(circle at bottom right, transparent 12px, var(--lumina-bg-primary, #ffffff) 12.5px) !important;
+  pointer-events: none !important;
+}
+
+[data-theme="dark"] .lumina-dict-tab-btn {
+  color: #9aa0a6 !important;
+}
+
+[data-theme="dark"] .lumina-dict-tab-btn.active {
+  background: #1c1c1e !important;
+  
+  color: #fff !important;
+}
+
+[data-theme="dark"] .lumina-dict-tab-btn.active::before {
+  background: radial-gradient(circle at bottom left, transparent 12px, #1c1c1e 12.5px) !important;
+}
+
+[data-theme="dark"] .lumina-dict-tab-btn.active::after {
+  background: radial-gradient(circle at bottom right, transparent 12px, #1c1c1e 12.5px) !important;
 }
 
 .lumina-dict-tab-btn:not(.active):hover {
-  background: rgba(0, 0, 0, 0.03) !important;
-  color: var(--lumina-text-primary) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #202124 !important;
 }
 
 [data-theme="dark"] .lumina-dict-tab-btn:not(.active):hover {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #e8eaed !important;
+}
+
+.lumina-dict-status-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  min-height: 200px !important;
+  text-align: center !important;
+  padding: 32px 24px !important;
+  box-sizing: border-box !important;
+}
+
+.lumina-dict-status-card {
+  max-width: 320px !important;
+  animation: lumina-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.lumina-dict-status-icon {
+  font-size: 42px !important;
+  margin-bottom: 16px !important;
+  line-height: 1 !important;
+}
+
+.lumina-dict-status-title {
+  font-size: 1.25em !important;
+  font-weight: 750 !important;
+  margin-bottom: 10px !important;
+  color: var(--lumina-text-primary) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.lumina-dict-status-desc {
+  font-size: 0.95em !important;
+  line-height: 1.6 !important;
+  color: var(--lumina-text-secondary) !important;
+  font-weight: 450 !important;
+}
+
+.status-error .lumina-dict-status-icon {
+  filter: drop-shadow(0 2px 4px rgba(255, 59, 48, 0.2));
+}
+
+.status-empty .lumina-dict-status-icon {
+  filter: grayscale(1) opacity(0.6);
 }
 
 .lumina-dict-popup-meta {
@@ -3111,17 +3341,21 @@ button {
 
 .lumina-dict-header-row {
   display: flex !important;
+  justify-content: flex-start !important;
   align-items: baseline !important;
-  gap: 6px !important;
-  margin-bottom: 4px !important;
+  gap: 8px !important;
+  margin-bottom: 8px !important;
 }
 
 .lumina-dict-popup-pos {
-  font-size: 1em !important;
+  font-size: 0.85em !important;
   text-transform: lowercase !important;
-  color: var(--lumina-primary-color, #0076d6) !important;
-  font-weight: 620 !important;
+  color: var(--lumina-text-secondary) !important;
+  font-weight: 500 !important;
   font-style: italic !important;
+  text-align: right !important;
+  opacity: 0.7 !important;
+  line-height: 1.2 !important;
 }
 
 .lumina-dict-popup-meaning.ai-custom {
@@ -3186,9 +3420,13 @@ button {
   margin: 0 !important;
   letter-spacing: -0.02em !important;
   line-height: 1.1 !important;
+  white-space: nowrap !important;
+  flex-shrink: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
-/* Images Tab Styling */
+
 .lumina-dict-images-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
@@ -3210,6 +3448,15 @@ button {
 .lumina-dict-image-card:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.lumina-dict-image-card .lumina-loading-spinner {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  margin-top: -10px !important;
+  margin-left: -10px !important;
+  z-index: 1 !important;
 }
 
 .lumina-dict-image-card img {
@@ -3303,9 +3550,7 @@ button {
   margin-bottom: 0;
 }
 
-/* ====================
-   ANIMATIONS
-   ==================== */
+
 
 @keyframes lumina-mic-pulse {
 
@@ -3495,9 +3740,7 @@ button {
   }
 }
 
-/* ====================
-   LIBRARY STYLES (KaTeX/HLJS)
-   ==================== */
+
 
 .lumina-chat-answer pre code .hljs-keyword,
 .lumina-chat-answer pre code .hljs-operator,
@@ -3556,8 +3799,13 @@ button {
 }
 
 .lumina-chat-answer .katex {
+  font-family: var(--lumina-font-family) !important;
   font-weight: 500 !important;
   text-rendering: optimizeLegibility;
+}
+
+.lumina-chat-answer .katex * {
+  font-family: var(--lumina-font-family) !important;
 }
 
 .lumina-chat-answer .katex .text {
@@ -3571,11 +3819,9 @@ button {
   padding: 4px 0;
 }
 
-/* ====================
-   MISC
-   ==================== */
 
-* {
+
+*:not(.katex):not(.katex *) {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
   font-family: var(--lumina-font-family);
@@ -3643,7 +3889,7 @@ button {
 
 .lumina-comment-highlight:hover {
   background-color: #fff176 !important;
-  /* Slightly darker on hover */
+  
   ;
 }
 
@@ -3851,7 +4097,7 @@ button {
   box-sizing: border-box !important;
   border-radius: 24px !important;
   background: rgba(0, 0, 0, 0.85);
-  /* Removed backdrop-filter for solid UI */
+  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3876,7 +4122,7 @@ button {
   z-index: 10000 !important;
   border-radius: 0 !important;
   padding: 20px !important;
-  /* Removed backdrop-filter for solid UI */
+  
 }
 
 .lumina-preview-close {
@@ -4036,18 +4282,10 @@ button {
 }
 
 .lumina-fetching-shimmer {
-  line-height: 1.65 !important;
-  color: var(--lumina-text-primary);
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.lumina-fetching-shimmer::after {
-  content: "";
-  display: inline-block;
-  width: 1.5em;
-  text-align: left;
-  animation: lumina-dots 1.5s steps(4, end) infinite;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: var(--lumina-text-secondary) !important;
 }
 
 .lumina-proofread-text {
@@ -4306,7 +4544,7 @@ button {
   color: inherit !important;
 }
 
-/* Redundant Tools styles removed */
+
 
 .lumina-proofread-toggle {
   background: rgba(255, 204, 0, 0.2) !important;
@@ -4384,10 +4622,20 @@ button {
   box-shadow: none !important;
 }
 
-.lumina-loading-spinner.smaller {
-  width: 24px !important;
-  height: 24px !important;
-  border-width: 2px !important;
+.lumina-loading-spinner {
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid rgba(var(--lumina-primary-rgb, 0, 122, 255), 0.15) !important;
+  border-top-color: var(--lumina-primary-color, #007aff) !important;
+  border-radius: 50% !important;
+  animation: lumina-spin 0.6s linear infinite !important;
+  display: inline-block !important;
+}
+
+@keyframes lumina-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .lumina-edit-btn {
@@ -4644,9 +4892,7 @@ button {
   white-space: nowrap;
 }
 
-/* ====================
-   HISTORY TOGGLE BUTTON
-   ==================== */
+
 .lumina-history-toggle-btn {
   background: transparent;
   border: none;
@@ -4682,14 +4928,12 @@ button {
   height: 18px;
 }
 
-/* ====================
-   HISTORY SIDEBAR
-   ==================== */
+
 .lumina-history-sidebar {
   position: absolute;
   top: 0;
   left: -320px;
-  /* Hidden initially */
+  
   width: 320px;
   height: 100%;
   background: var(--lumina-ui-bg, #ffffff);
@@ -4816,9 +5060,7 @@ button {
   background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="%23a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
 }
 
-/* ====================
-   HISTORY LIST & ITEMS
-   ==================== */
+
 .lumina-history-list-container {
   flex: 1;
   overflow-y: auto;
@@ -4936,9 +5178,7 @@ button {
   color: var(--lumina-text-secondary, #999);
 }
 
-/* ====================
-   FOOTER (USAGE & DELETE ALL)
-   ==================== */
+
 .lumina-history-sidebar-footer {
   padding: 12px 20px;
   display: flex;
@@ -4994,9 +5234,7 @@ button {
   background: rgba(252, 129, 129, 0.15);
 }
 
-/* ====================
-   CONTEXT MENU
-   ==================== */
+
 .lumina-history-context-menu {
   position: fixed;
   background: var(--lumina-ui-bg, #ffffff);
@@ -5072,9 +5310,7 @@ button {
   height: 14px;
 }
 
-/* ====================
-   INLINE RENAME INPUT
-   ==================== */
+
 .lumina-history-rename-input {
   width: 100%;
   box-sizing: border-box;
@@ -5083,7 +5319,7 @@ button {
   font-family: inherit;
   padding: 2px 6px;
   margin: -2px -6px 2px -6px;
-  /* Offset padding to keep layout stable */
+  
   background: var(--lumina-ui-bg, #fff);
   color: var(--lumina-text-primary, #000);
   border: 1px solid var(--lumina-primary-color, #0056d2);
@@ -5099,9 +5335,7 @@ button {
   box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
 }
 
-/* ====================
-   SEARCH LOADER
-   ==================== */
+
 .lumina-history-loader {
   position: absolute;
   bottom: 0;
@@ -5142,9 +5376,7 @@ button {
   background: var(--lumina-primary-color, #0a84ff);
 }
 
-/* ====================
-   OVERLAY
-   ==================== */
+
 .lumina-history-overlay {
   position: fixed;
   top: 0;
@@ -5152,9 +5384,9 @@ button {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.2);
-  /* Removed backdrop-filter for solid UI */
+  
   z-index: 1500;
-  /* Below sidebar (2000) */
+  
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -5182,9 +5414,7 @@ button {
   color: #fff;
 }
 
-/* ====================
-   SEND COMMENT BUTTON
-   ==================== */
+
 .lumina-send-comment-btn {
   display: flex;
   align-items: center;
@@ -5222,9 +5452,7 @@ button {
   fill: none;
 }
 
-/* ====================
-   SPOTLIGHT PAGE STYLES
-   ==================== */
+
 .lumina-spotlight-page {
   background: transparent;
   margin: 0;
@@ -5391,7 +5619,7 @@ button {
   pointer-events: none;
 }
 
-/* Web Highlighting / Annotation */
+
 .lumina-highlight {
   color: inherit !important;
   cursor: pointer !important;
@@ -5418,7 +5646,7 @@ button {
   opacity: 0.8;
 }
 
-/* Annotation Edit Menu Styles */
+
 .lumina-color-swatch {
   width: 18px !important;
   height: 18px !important;
@@ -5464,7 +5692,7 @@ button {
 }
 
 
-/* Highlight Action Button Styles */
+
 .lumina-action-highlight {
   display: flex !important;
   align-items: center !important;
@@ -5485,7 +5713,7 @@ button {
 }
 
 
-/* Ask Action Button Styles */
+
 .lumina-action-item.lumina-action-ask {
   background-color: #0A84FF !important;
   color: #ffffff !important;
@@ -5506,4 +5734,91 @@ button {
   background-color: #007AFF !important;
   color: #ffffff !important;
   filter: none !important;
+}
+
+
+.lumina-dict-translation-container {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+.lumina-dict-translation-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.lumina-dict-translation-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: var(--lumina-text-secondary, rgba(0, 0, 0, 0.5)) !important;
+}
+
+[data-theme="dark"] .lumina-dict-translation-label {
+  color: var(--lumina-text-secondary, rgba(255, 255, 255, 0.5)) !important;
+}
+
+.lumina-dict-original-text {
+  font-size: 1em !important;
+  line-height: 1.5 !important;
+  color: var(--lumina-text-primary, #000) !important;
+  margin-bottom: 16px !important;
+  white-space: pre-wrap !important;
+}
+
+[data-theme="dark"] .lumina-dict-original-text {
+  color: var(--lumina-text-primary, #fff) !important;
+}
+
+.lumina-dict-translation-divider {
+  height: 1px !important;
+  background: var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
+  margin: 16px 0 !important;
+}
+
+[data-theme="dark"] .lumina-dict-translation-divider {
+  background: var(--lumina-ui-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+.lumina-dict-translated-text {
+  font-size: 1em !important;
+  font-weight: 520 !important;
+  line-height: 1.5 !important;
+  color: #000000 !important;
+  white-space: pre-wrap !important;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+[data-theme="dark"] .lumina-dict-translated-text {
+  color: #ffffff !important;
+}
+
+.lumina-translation-audio-btn {
+  background: none !important;
+  border: none !important;
+  padding: 4px !important;
+  cursor: pointer !important;
+  color: var(--lumina-text-secondary, rgba(0, 0, 0, 0.5)) !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.2s, color 0.2s !important;
+}
+
+[data-theme="dark"] .lumina-translation-audio-btn {
+  color: var(--lumina-text-secondary, rgba(255, 255, 255, 0.5)) !important;
+}
+
+.lumina-translation-audio-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--lumina-primary-color, #007aff) !important;
+}
+
+[data-theme="dark"] .lumina-translation-audio-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
 }

@@ -2,13 +2,13 @@
 
 :root {
     --bg-app: #F5F5F7;
-    /* Light Gray Background like macOS Settings */
+    
     --bg-surface: #FFFFFF;
-    /* Pure White Surface */
+    
     --text-primary: #000000;
     --text-secondary: #6B6B6B;
     --accent: #000000;
-    /* Black Accent */
+    
     --border: #E5E5E5;
 
     --radius: 12px;
@@ -26,7 +26,7 @@ body {
     margin: 0;
     font-family: 'Montserrat', sans-serif !important;
     font-size: 0.8125em;
-    /* Smaller, cleaner type */
+    
     color: var(--text-primary);
     background: var(--bg-app);
     height: 100vh;
@@ -35,7 +35,7 @@ body {
     -moz-osx-font-smoothing: grayscale !important;
 }
 
-/* --- Layout Grid --- */
+
 .anki-container {
     display: flex;
     flex-direction: column;
@@ -48,10 +48,10 @@ body {
     overflow: hidden;
 }
 
-/* --- Header --- */
+
 .anki-header {
     display: none;
-    /* User requested removal */
+    
 }
 
 .logo-area h1 {
@@ -69,7 +69,7 @@ body {
     color: var(--text-secondary);
 }
 
-/* Consolidated with sidebar styles below */
+
 
 .icon-btn {
     border: none;
@@ -86,7 +86,7 @@ body {
     background: rgba(0, 0, 0, 0.05);
 }
 
-/* Small icon button variant for inline controls */
+
 .icon-btn-small {
     display: inline-flex;
     align-items: center;
@@ -104,7 +104,7 @@ body {
     transition: background var(--anim), color var(--anim), transform 0.08s ease;
 }
 
-/* Danger variant for delete/edit field buttons */
+
 .icon-btn-small.danger,
 .delete-edit-field-btn.icon-btn-small {
     background: rgba(255, 59, 48, 0.06);
@@ -123,7 +123,7 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
 }
 
-/* Text-style inline icon button (matches `.btn-text` but for icon-sized controls) */
+
 .icon-btn-text {
     background: transparent;
     border: 1px solid var(--border);
@@ -148,7 +148,7 @@ body {
     color: #fff;
 }
 
-/* Make the small delete-edit button visually match the Delete text button */
+
 .icon-btn-small.danger.delete-edit-field-btn {
     background: #ff3b300f;
     border: none;
@@ -171,7 +171,7 @@ body {
     transform: scale(1.04);
 }
 
-/* --- Sidebar --- */
+
 .anki-sidebar {
     width: 220px;
     flex-shrink: 0;
@@ -191,7 +191,7 @@ body {
     border: none;
     background: transparent;
     border-radius: 8px;
-    /* Slightly squarer than pill */
+    
     font-size: 0.8125em;
     color: var(--text-secondary);
     cursor: pointer;
@@ -221,10 +221,10 @@ body {
 
 .back-btn {
     margin-top: auto;
-    /* Fallback if back-btn used */
+    
 }
 
-/* --- Content Area --- */
+
 .anki-content-area {
     flex: 1;
     min-width: 0;
@@ -250,7 +250,7 @@ textarea {
     flex-direction: column;
 }
 
-/* --- Browser View --- */
+
 .browser-layout {
     display: flex;
     flex-direction: column;
@@ -446,7 +446,7 @@ textarea {
     color: #000;
 }
 
-/* Checkbox Styling */
+
 .checkbox-cell {
     width: 40px !important;
     padding: 0 !important;
@@ -544,7 +544,7 @@ th {
     background: var(--bg-surface);
     z-index: 10;
     cursor: pointer;
-    /* Clickable headers for sorting */
+    
     user-select: none;
 }
 
@@ -555,7 +555,7 @@ th:hover {
 
 tbody tr {
     cursor: pointer;
-    /* Hand cursor for rows */
+    
 }
 
 td {
@@ -577,7 +577,7 @@ tbody tr.selected {
     background: #F0F0F0;
 }
 
-/* --- Side Editor (Drawer Style) --- */
+
 .side-editor {
     position: absolute;
     top: 0;
@@ -634,7 +634,7 @@ tbody tr.selected {
     overflow-y: auto;
 }
 
-/* Input Fields */
+
 .field-edit-group {
     margin-bottom: 12px;
 }
@@ -649,7 +649,7 @@ tbody tr.selected {
 }
 
 
-/* Footer */
+
 .side-editor-footer {
     padding: 10px 20px;
     border-top: 1px solid var(--border);
@@ -731,14 +731,14 @@ tbody tr.selected {
     background: #D32F2F;
 }
 
-/* Truncate Helper */
+
 .truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Scrollbar */
+
 ::-webkit-scrollbar {
     width: 6px;
 }
@@ -748,10 +748,10 @@ tbody tr.selected {
     border-radius: 3px;
 }
 
-/* Creator Layout Adjustments */
+
 .creator-layout {
     display: flex;
-    /* Switch to Flex for simplicity */
+    
     height: 100%;
 }
 
@@ -769,7 +769,7 @@ tbody tr.selected {
     overflow-y: auto;
 }
 
-/* Re-style forms for white bg */
+
 .form-group label {
     color: #666;
     font-size: 0.6875em;
@@ -789,7 +789,7 @@ tbody tr.selected {
     border-color: #000;
 }
 
-/* Sidebar Header */
+
 .sidebar-header {
     padding: 0 12px 16px 12px;
     margin-bottom: 8px;
@@ -803,7 +803,7 @@ tbody tr.selected {
     color: var(--text-primary);
 }
 
-/* Sidebar Status Style */
+
 .connection-status {
     display: flex;
     align-items: center;
@@ -830,10 +830,10 @@ tbody tr.selected {
     background: #999;
 }
 
-/* Connected State: Green BG, White Text */
+
 .connection-status.connected {
     background: #28C840;
-    /* Apple style green */
+    
 }
 
 .connection-status.connected .status-text {
@@ -875,24 +875,24 @@ tbody tr.selected {
     width: 100%;
 }
 
-/* Remove sticky from TH since we separated it */
+
 th {
     position: static;
 }
 
-/* Hide scrollbars globally but keep scroll functionality */
+
 *::-webkit-scrollbar {
     display: none;
 }
 
 * {
     -ms-overflow-style: none;
-    /* IE and Edge */
+    
     scrollbar-width: none;
-    /* Firefox */
+    
 }
 
-/* Card Count Badge - Floating Pill */
+
 .card-count-badge {
     position: absolute;
     bottom: 16px;
@@ -916,7 +916,7 @@ th {
     opacity: 1;
 }
 
-/* --- Premium Flatpickr Overrides --- */
+
 .flatpickr-calendar {
     background: #fff;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
@@ -931,7 +931,7 @@ th {
 .flatpickr-calendar:before,
 .flatpickr-calendar:after {
     display: none !important;
-    /* Clean look without arrows */
+    
 }
 
 .flatpickr-months {
@@ -995,7 +995,7 @@ th {
     color: #d1d1d6;
 }
 
-/* Animations */
+
 @keyframes fpFadeIn {
     from {
         opacity: 0;
@@ -1012,7 +1012,7 @@ th {
     animation: fpFadeIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* --- Heatmap Section --- */
+
 .heatmap-section {
     margin: 0 16px 16px 16px;
     padding: 16px;
@@ -1024,7 +1024,7 @@ th {
     height: 160px;
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-    overflow: visible; /* Added to prevent tooltip clipping */
+    overflow: visible; 
 }
 
 .heatmap-container {
@@ -1067,7 +1067,7 @@ th {
     color: var(--text-primary);
 }
 
-/* Modal adjustments for heatmap */
+
 .modal-overlay.heatmap-details .modal-content {
     max-width: 800px;
     width: 90%;
@@ -1090,7 +1090,7 @@ th {
     background: #ffebee;
     color: #d32f2f;
 }
-/* --- CalHeatMap Tooltip Styling --- */
+
 .ch-tooltip {
     padding: 6px 10px;
     background: #1a1a1a !important;
@@ -1100,16 +1100,16 @@ th {
     font-weight: 500 !important;
     line-height: 1.3 !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    z-index: 99999 !important; /* Extremely high to stay above sidebar */
+    z-index: 99999 !important; 
     pointer-events: none;
     position: absolute;
     white-space: normal !important;
-    max-width: 140px !important; /* Shrink width as requested */
+    max-width: 140px !important; 
     width: max-content !important;
     text-align: center;
 }
 
-/* --- Heatmap Label Custom Styles --- */
+
 .graph-label {
     fill: #000000 !important;
     font-family: 'Montserrat', sans-serif !important;

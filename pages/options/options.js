@@ -12,32 +12,32 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTheme(result.theme || 'auto');
   });
 
-  // Global state for model lists
+  
   let availableModels = [];
   let availableDictModels = [];
 
-  // Sidebar Navigation Logic
+  
   const sidebarNavItems = document.querySelectorAll('.sidebar-nav-item');
   const contentSections = document.querySelectorAll('.content-section');
   let currentActiveSectionId = null;
-  let isInitialLoad = true; // Flag to prevent scroll overrides during startup
+  let isInitialLoad = true; 
 
   function switchSection(sectionId, restoreScroll = false) {
     if (currentActiveSectionId === sectionId) return;
 
-    // Show selected section
+    
     const targetSection = document.getElementById(sectionId);
     if (!targetSection) {
       console.warn(`Section not found: ${sectionId}`);
       return;
     }
 
-    // Hide all sections
+    
     contentSections.forEach(section => {
       section.classList.remove('active');
     });
 
-    // Remove active state from all nav items
+    
     sidebarNavItems.forEach(item => {
       item.classList.remove('active');
     });
@@ -45,13 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
     targetSection.classList.add('active');
     currentActiveSectionId = sectionId;
 
-    // Highlight active nav item
+    
     const activeNavItem = document.querySelector(`[data-section="${sectionId}"]`);
     if (activeNavItem) {
       activeNavItem.classList.add('active');
     }
 
-    // Scroll content area
+    
     const mainContent = document.querySelector('.main-content');
     if (mainContent) {
       if (!restoreScroll) {
@@ -59,28 +59,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Persist active section
+    
     chrome.storage.local.set({ optionsLastSection: sectionId });
   }
 
-  // Save scroll position with debounce
+  
   const mainContent = document.querySelector('.main-content');
   let scrollSaveTimer = null;
   if (mainContent) {
     mainContent.addEventListener('scroll', () => {
-      // Don't save if we're in the middle of a section switch or initial load
+      
       if (isInitialLoad) return;
 
       clearTimeout(scrollSaveTimer);
       scrollSaveTimer = setTimeout(() => {
-        // We now store scroll position PER section to be more robust
+        
         if (currentActiveSectionId) {
           chrome.storage.local.get(['optionsScrollPositions'], (result) => {
             const positions = result.optionsScrollPositions || {};
             positions[currentActiveSectionId] = mainContent.scrollTop;
             chrome.storage.local.set({
               optionsScrollPositions: positions,
-              optionsLastScroll: mainContent.scrollTop // Keep global one for compatibility
+              optionsLastScroll: mainContent.scrollTop 
             });
           });
         }
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Add click listeners to sidebar navigation items
+  
   sidebarNavItems.forEach(item => {
     item.addEventListener('click', () => {
       const sectionId = item.getAttribute('data-section');
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Function to perform the actual restoration once content is ready
+  
   function restoreLastSessionState() {
     chrome.storage.local.get(['optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions'], (saved) => {
       const lastSection = saved.optionsLastSection || 'general';
@@ -109,24 +109,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetSection) {
         switchSection(lastSection, true);
 
-        // Restore scroll after layout stabilizes
+        
         const mc = document.querySelector('.main-content');
         if (mc && lastScroll > 0) {
-          // Attempt multiple times as content might expand gradually
+          
           const applyScroll = () => {
             if (mc.scrollTop !== lastScroll) {
               mc.scrollTop = lastScroll;
             }
           };
 
-          // Immediate restore
+          
           applyScroll();
 
-          // Double RAF to ensure browser has painted the dynamic content
+          
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               applyScroll();
-              // One more attempt after short delays for heavy sections (like web sources)
+              
               setTimeout(applyScroll, 50);
               setTimeout(applyScroll, 200);
               setTimeout(applyScroll, 500);
@@ -138,10 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Run initial restore (will be called again after async data loads to ensure accuracy)
+  
   restoreLastSessionState();
 
-  // Open shortcuts management page
+  
   const configShortcutBtn = document.getElementById('configShortcutBtn');
   if (configShortcutBtn) {
     configShortcutBtn.addEventListener('click', () => {
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Anki Management Logic ---
+  
   const checkAnkiConnBtn = document.getElementById('checkAnkiConnBtn');
   const openAnkiMgtBtn = document.getElementById('openAnkiMgtBtn');
   const addToAnkiBtn = document.getElementById('addToAnkiBtn');
@@ -157,20 +157,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const clearAnkiNoteBtn = document.getElementById('clearAnkiNoteBtn');
 
-  // Load saved note on startup
+  
   chrome.storage.local.get(['ankiQuickNoteContent'], (result) => {
     if (ankiQuickNote) {
       if (result.ankiQuickNoteContent) {
         ankiQuickNote.value = result.ankiQuickNoteContent;
       }
-      // Update count badge after setting value
+      
       if (typeof updateQuickNoteCount === 'function') {
         updateQuickNoteCount();
       }
     }
   });
 
-  // Auto-save note on input
+  
   if (ankiQuickNote) {
     const ankiQuickNoteCountEl = document.getElementById('ankiQuickNoteCount');
 
@@ -190,12 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.local.set({ ankiQuickNoteContent: ankiQuickNote.value });
       updateQuickNoteCount();
     });
-    // initialize count on load
+    
     updateQuickNoteCount();
 
-    // --- Automatic Paste Handling for Anki Management ---
+    
     document.addEventListener('paste', (e) => {
-      // If we're typing in ANOTHER input/textarea (like API keys), don't hijack the paste
+      
       if (e.target.tagName === 'INPUT' || (e.target.tagName === 'TEXTAREA' && e.target !== ankiQuickNote)) {
         return;
       }
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const text = (e.clipboardData || window.clipboardData).getData('text');
       if (!text) return;
 
-      // Automatically switch to Anki Management if not already there
+      
       const activeSection = document.querySelector('.content-section.active');
       if (activeSection && activeSection.id !== 'anki-management') {
         if (typeof switchSection === 'function') {
@@ -217,13 +217,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const needsLeadingNewline = (currentValue && !currentValue.endsWith('\n'));
       const textToInsert = (needsLeadingNewline ? '\n' : '') + text + '\n';
 
-      // 1. Place cursor at the absolute end
+      
       ankiQuickNote.focus();
       const len = ankiQuickNote.value.length;
       ankiQuickNote.setSelectionRange(len, len);
 
-      // 2. Use execCommand to insert text — this preserves the UNDO stack (Ctrl/Cmd+Z)
-      // and automatically triggers the 'input' event which saves to storage.
+      
+      
       document.execCommand('insertText', false, textToInsert);
     });
   }
@@ -278,14 +278,14 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Please enter some words first.');
         return;
       }
-      // Store in localStorage for anki.html to pick up
+      
       localStorage.setItem('lumina_pending_words', words);
-      // Open Anki Management on Generator tab
+      
       chrome.tabs.create({ url: 'pages/anki/anki.html?tab=generator' });
     });
   }
 
-  // Open Web App (now opens Sidepanel)
+  
   const openSpotlightWebAppBtn = document.getElementById('openSpotlightWebAppBtn');
   if (openSpotlightWebAppBtn) {
     openSpotlightWebAppBtn.addEventListener('click', () => {
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tabs[0] && chrome.sidePanel && typeof chrome.sidePanel.open === 'function') {
           chrome.sidePanel.open({ tabId: tabs[0].id });
         } else {
-          // Fallback to standalone web app if sidepanel open is not supported
+          
           chrome.tabs.create({ url: chrome.runtime.getURL('pages/spotlight/spotlight.html') + '?webapp=1' });
         }
       });
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // Utilities
+  
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -313,14 +313,14 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/'/g, '&#039;');
   }
 
-  // Initialize: show first section by default (already has active class in HTML)
+  
 
   const providerSelect = document.getElementById('provider');
   const modelInput = document.getElementById('model');
   const modelList = document.getElementById('modelList');
 
 
-  // Define mappings elements globally for scope access
+  
   const mappingsList = document.getElementById('questionMappingsList');
   const addMappingBtn = document.getElementById('addMappingBtn');
 
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const githubClientIdInput = document.getElementById('githubClientId');
 
 
-  // Provider Management elements
+  
   const providerListEl = document.getElementById('providerList');
   const addProviderBtn = document.getElementById('addProviderBtn');
   const providerForm = document.getElementById('providerForm');
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // Audio Speed Listener
+  
   if (audioSpeedInput) {
     audioSpeedInput.addEventListener('change', () => {
       saveOptions();
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
           audioSpeedInput.value = parts[0] + '.' + parts[1].slice(0, 2);
         }
       }
-      // Just save on every input for numbers
+      
       debounce(saveOptions, 500)();
     });
 
@@ -400,30 +400,30 @@ document.addEventListener('DOMContentLoaded', () => {
   if (autoAudioCheckbox) {
     autoAudioCheckbox.addEventListener('change', saveOptions);
   }
-  // -----------------------------------------
+  
   let providers = [];
 
   let currentHostname = '';
   const isMac = navigator.userAgent.toUpperCase().includes('MAC');
 
-  // Function to apply domain-specific settings (overrides global defaults)
+  
   function applyDomainSpecificSettings() {
-    // We want the tab that was active BEFORE/UNDERNEATH the options page
-    // If we're a popup or a dialog, {active: true, currentWindow: true} works.
-    // If we're in a full tab, we might need to look at other tabs.
+    
+    
+    
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       let targetTab = (tabs && tabs.length > 0) ? tabs[0] : null;
 
-      // Heuristic: If the "active" tab is ourselves, try to find a real website
+      
       if (targetTab && targetTab.url.startsWith('chrome-extension://')) {
         chrome.tabs.query({ lastFocusedWindow: true }, (allTabs) => {
-          // Find the first tab that isn't an extension or internal page
+          
           const realTab = allTabs.find(t => t.url && !t.url.startsWith('chrome-extension://') && !t.url.startsWith('chrome://'));
           if (realTab) {
             setupHostnameSettings(realTab.url);
           } else {
-            // Revert labels to "Default" if no specific site found
-            // Labels removed in HTML as per user request
+            
+            
           }
         });
       } else if (targetTab && targetTab.url) {
@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Trigger hostname detection immediately
+  
   applyDomainSpecificSettings();
 
   siteToggle.addEventListener('change', () => {
@@ -463,17 +463,17 @@ document.addEventListener('DOMContentLoaded', () => {
       let disabledDomains = items.disabledDomains || [];
 
       if (isEnabled) {
-        // Remove from disabled list
+        
         disabledDomains = disabledDomains.filter(domain => domain !== currentHostname);
       } else {
-        // Add to disabled list
+        
         if (!disabledDomains.includes(currentHostname)) {
           disabledDomains.push(currentHostname);
         }
       }
 
       chrome.storage.local.set({ disabledDomains: disabledDomains }, () => {
-        // Notify content script
+        
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs && tabs.length > 0) {
             chrome.tabs.sendMessage(tabs[0].id, {
@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Helper functions
+  
   function updateStatus(message, type = 'info') {
     statusDiv.textContent = message;
     statusDiv.className = `status ${type}`;
@@ -498,12 +498,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const PROVIDERS = LUMINA_PROVIDERS;
 
-  // Render provider list
+  
   function renderProviders() {
     if (!providerListEl) return;
 
-    // Move form back to original container before clearing innerHTML
-    // to prevent the element from being destroyed
+    
+    
     const originalParent = providerListEl.parentElement;
     if (originalParent && providerForm) {
       originalParent.appendChild(providerForm);
@@ -541,9 +541,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Populate provider dropdowns (Text AI, Vision AI)
+  
   function populateProviderDropdowns() {
-    // Text AI provider dropdown
+    
     if (providerSelect) {
       const currentVal = providerSelect.value;
       providerSelect.innerHTML = '';
@@ -559,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   }
 
-  // Show add provider form
+  
   function showAddProviderForm() {
     providerFormId.value = '';
     providerFormName.value = '';
@@ -567,11 +567,11 @@ document.addEventListener('DOMContentLoaded', () => {
     providerFormEndpoint.value = '';
     providerFormApiKey.value = '';
 
-    // Hide Get API Key link for new provider
+    
     const apiKeyLink = document.getElementById('providerApiKeyLink');
     if (apiKeyLink) apiKeyLink.classList.add('hidden');
 
-    // Move form back to original container if it was inside an item
+    
     const originalParent = providerListEl.parentElement;
     if (originalParent) originalParent.appendChild(providerForm);
 
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
     providerFormName.focus();
   }
 
-  // Edit provider
+  
   function editProvider(id) {
     const provider = providers.find(p => p.id === id);
     if (!provider) return;
@@ -591,12 +591,12 @@ document.addEventListener('DOMContentLoaded', () => {
     providerFormEndpoint.value = provider.endpoint;
     providerFormApiKey.value = provider.apiKey || '';
 
-    // Show Get API Key link if it's a default provider
+    
     const apiKeyLink = document.getElementById('providerApiKeyLink');
     if (apiKeyLink) {
       let linkUrl = null;
 
-      // Check default IDs or partial matches
+      
       if (id === 'groq-default' && PROVIDERS.groq) linkUrl = PROVIDERS.groq.link;
       else if (id === 'gemini-default' && PROVIDERS.gemini) linkUrl = PROVIDERS.gemini.link;
       else if (id.includes('openrouter') && PROVIDERS.openrouter) linkUrl = PROVIDERS.openrouter.link;
@@ -611,10 +611,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Inline editing logic: move form into the item
+    
     const item = providerListEl.querySelector(`.provider-item[data-id="${id}"]`);
     if (item) {
-      // Hide all other item contents to avoid clutter (optional, but requested/implied)
+      
       providerListEl.querySelectorAll('.provider-item-content').forEach(c => c.classList.remove('hidden'));
 
       const content = item.querySelector('.provider-item-content');
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     providerFormName.focus();
   }
 
-  // Save provider (add or update)
+  
   function saveProvider() {
     const id = providerFormId.value || Date.now().toString();
     const name = providerFormName.value.trim();
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
       providers.push(providerData);
     }
 
-    // Save to storage
+    
     chrome.storage.local.set({ providers }, () => {
       renderProviders();
       populateProviderDropdowns();
@@ -661,9 +661,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Delete provider
+  
   function deleteProvider(id) {
-    // Prevent deleting default providers
+    
     if (id === 'groq-default' || id === 'gemini-default' || id === 'cerebras-default' || id === 'mistral-default' || id === 'openrouter-default') {
       alert('Cannot delete default providers. You can edit them to change API keys.');
       return;
@@ -678,12 +678,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Hide provider form
+  
   function hideProviderForm() {
-    // Show all item contents and reset form placeholders
+    
     providerListEl.querySelectorAll('.provider-item-content').forEach(c => c.classList.remove('hidden'));
 
-    // Move form back to original container
+    
     const originalParent = providerListEl.parentElement;
     if (originalParent) originalParent.appendChild(providerForm);
 
@@ -749,12 +749,12 @@ document.addEventListener('DOMContentLoaded', () => {
     await chrome.storage.local.set({ providers: currentProviders });
   }
 
-  // Get provider by ID
+  
   function getProviderById(id) {
     return providers.find(p => p.id === id);
   }
 
-  // Provider Management event listeners
+  
   if (addProviderBtn) {
     addProviderBtn.addEventListener('click', showAddProviderForm);
   }
@@ -765,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveProviderBtn.addEventListener('click', saveProvider);
   }
 
-  // Check API Keys functionality
+  
   const checkApiKeysBtn = document.getElementById('checkApiKeysBtn');
   const apiKeyResults = document.getElementById('apiKeyResults');
   const apiKeyResultsList = document.getElementById('apiKeyResultsList');
@@ -796,21 +796,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
           for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
-            // Show first 8 and last 4 chars of key for identification
+            
             const keyDisplay = key.length > 16 ? `${key.substring(0, 8)}...${key.substring(key.length - 4)}` : key;
 
             try {
               let testUrl, headers;
 
               if (provider.type === 'gemini') {
-                // Gemini uses query param for auth
+                
                 const baseUrl = provider.endpoint.includes('/models')
                   ? provider.endpoint.split('/models')[0] + '/models'
                   : 'https://generativelanguage.googleapis.com/v1beta/models';
                 testUrl = `${baseUrl}?key=${key}`;
                 headers = {};
               } else {
-                // OpenAI-compatible uses Bearer token
+                
                 testUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/models');
                 headers = { 'Authorization': `Bearer ${key}` };
               }
@@ -853,7 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Render results
+      
       apiKeyResultsList.innerHTML = '';
       results.forEach(r => {
         const itemTemplate = document.getElementById('apiKeyResultItemTemplate');
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentlyConfiguringModel = null;
   let currentlyConfiguringProvider = null;
   let advancedParamsByModel = {};
-  let isSelectingModel = false; // Flag to prevent blur from hiding dropdown during selection
+  let isSelectingModel = false; 
 
   const textChainListEl = document.getElementById('textChainList');
   const textChainProviderInput = document.getElementById('textChainProvider');
@@ -909,39 +909,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const textChainModelList = document.getElementById('textChainModelList');
 
-  // Provider dropdown for text chain (custom dropdown)
+  
   if (textChainProviderInput && textChainProviderList) {
-    // Initially disable model input until provider is selected
+    
     if (textChainModelInput) {
       textChainModelInput.disabled = true;
       textChainModelInput.placeholder = 'Select provider first...';
     }
 
     textChainProviderInput.addEventListener('click', () => {
-      // Toggle dropdown visibility
+      
       const isVisible = textChainProviderList.style.display === 'block';
       textChainProviderList.style.display = isVisible ? 'none' : 'block';
 
       if (!isVisible) {
-        // Render provider list
+        
         textChainProviderList.innerHTML = providers.map(p =>
           `<div class="dropdown-item" data-value="${p.id}">${escapeHtml(p.name)}</div>`
         ).join('');
 
-        // Add click listeners to items
+        
         textChainProviderList.querySelectorAll('.dropdown-item').forEach(item => {
           item.addEventListener('click', () => {
             textChainProviderInput.value = item.textContent;
             textChainProviderInput.dataset.providerId = item.dataset.value;
             textChainProviderList.style.display = 'none';
 
-            // Enable model input
+            
             if (textChainModelInput) {
               textChainModelInput.disabled = false;
               textChainModelInput.placeholder = 'Type or select model...';
             }
 
-            // Fetch models for the selected provider
+            
             const prov = getProviderById(item.dataset.value);
             if (prov) fetchModelsForProvider(prov, {
               targetListId: 'textChainModelList',
@@ -952,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Close dropdown when clicking outside
+    
     document.addEventListener('click', (e) => {
       if (!textChainProviderInput.contains(e.target) && !textChainProviderList.contains(e.target)) {
         textChainProviderList.style.display = 'none';
@@ -960,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Add focus listeners to fetch models
+  
   if (textChainModelInput) {
     textChainModelInput.addEventListener('focus', () => {
       const providerId = textChainProviderInput?.dataset?.providerId;
@@ -1002,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Vision Chain Provider (custom dropdown)
+  
 
 
   function renderChainList() {
@@ -1052,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
       removeBtn.addEventListener('click', () => removeChainItem('text', index));
 
       if (isSelected) {
-        // Get saved params for this model
+        
         const modelKey = `${item.providerId}:${item.model}`;
         const savedParams = advancedParamsByModel[modelKey] || {};
         const temp = savedParams.temperature !== undefined ? savedParams.temperature : 1;
@@ -1065,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const paramsClone = paramsTemplate.content.cloneNode(true);
         const paramsPanel = paramsClone.querySelector('.chain-params-panel');
 
-        // Setup sliders and values
+        
         const tempSlider = paramsPanel.querySelector('.param-temperature');
         tempSlider.value = temp;
         paramsPanel.querySelector('.temp-value').textContent = temp;
@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
           saveInlineParam(item.providerId, item.model, 'topP', parseFloat(e.target.value));
         });
 
-        // Tokens setting removed
+        
 
         const thinkingSelect = paramsPanel.querySelector('.param-thinking-level');
         thinkingSelect.value = savedParams.thinkingLevel || 'none';
@@ -1185,10 +1185,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const newItem = { providerId, model };
 
-    textChain.unshift(newItem); // Add to beginning
+    textChain.unshift(newItem); 
     renderChainList();
     saveModelChains();
-    // Clear inputs and disable model
+    
     modelInput.value = '';
     modelInput.disabled = true;
     modelInput.placeholder = 'Select provider first...';
@@ -1209,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', () => {
       text: textChain
     };
 
-    // Backward compatibility: Update legacy single-model fields with the first item in textChain
+    
     const legacyUpdate = {};
     if (textChain.length > 0) {
       legacyUpdate.provider = textChain[0].providerId;
@@ -1226,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function configureModelParams(modelName, providerId) {
     if (!modelName) return;
 
-    // Toggle: if already selected, deselect
+    
     if (currentlyConfiguringModel === modelName && currentlyConfiguringProvider === providerId) {
       currentlyConfiguringModel = null;
       currentlyConfiguringProvider = null;
@@ -1235,12 +1235,12 @@ document.addEventListener('DOMContentLoaded', () => {
       currentlyConfiguringProvider = providerId;
     }
 
-    // Update UI selection (this will show/hide the params panel)
+    
     renderChainList();
   }
 
   function setupInlineParamListeners() {
-    // No longer needed as listeners are attached during clone
+    
   }
 
   function saveInlineParam(providerId, modelName, paramName, value) {
@@ -1249,11 +1249,11 @@ document.addEventListener('DOMContentLoaded', () => {
       advancedParamsByModel[modelKey] = {};
     }
     advancedParamsByModel[modelKey][paramName] = value;
-    // Save to storage
+    
     chrome.storage.local.set({ advancedParamsByModel });
   }
 
-  // Delegation for remove and configure buttons
+  
   [textChainListEl].forEach(el => {
     if (el) {
       el.addEventListener('click', (e) => {
@@ -1274,11 +1274,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Populate dropdowns for Chain UI
+  
   function populateChainDropdowns() {
-    // Text chain provider - custom dropdown (no default selection)
-    // The dropdown is populated dynamically on click, so no initialization needed here
-    // Just ensure input is cleared
+    
+    
+    
     if (textChainProviderInput) {
       textChainProviderInput.value = '';
       delete textChainProviderInput.dataset.providerId;
@@ -1286,23 +1286,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   }
 
-  // Initialize providers and populate dropdowns
+  
   initializeProviders().then(() => {
     renderProviders();
     populateProviderDropdowns();
-    populateChainDropdowns(); // Populate chain dropdowns too
+    populateChainDropdowns(); 
   });
 
-  // Load options from storage
+  
   chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage'], (items) => {
-    // Wait for providers to be loaded
+    
     setTimeout(() => {
-      // --- Load Advanced Params ---
+      
       if (items.advancedParamsByModel) {
         advancedParamsByModel = items.advancedParamsByModel;
       }
 
-      // --- Load Model Chains ---
+      
       if (items.modelChains) {
         textChain = items.modelChains.text || [];
       }
@@ -1312,21 +1312,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-      // Initialize SortableJS
+      
       if (typeof Sortable !== 'undefined') {
         const createSortable = (el) => {
           if (!el) return;
           new Sortable(el, {
             animation: 150,
-            handle: '.chain-item', // Drag whole item
+            handle: '.chain-item', 
             ghostClass: 'chain-item-ghost',
             onEnd: function (evt) {
-              // Update array order after drag
+              
               const chain = textChain;
               const item = chain.splice(evt.oldIndex, 1)[0];
               chain.splice(evt.newIndex, 0, item);
 
-              // Re-render to update numbers
+              
               renderChainList();
               saveModelChains();
             }
@@ -1337,13 +1337,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-      // Dictionary provider - custom dropdown (for options UI)
+      
       if (items.dictProvider && dictProviderInput) {
         const prov = getProviderById(items.dictProvider);
         if (prov) {
           dictProviderInput.value = prov.name;
           dictProviderInput.dataset.providerId = items.dictProvider;
-          // Enable model input
+          
           if (dictModelInput) {
             dictModelInput.disabled = false;
             dictModelInput.placeholder = 'Type or select model...';
@@ -1358,10 +1358,10 @@ document.addEventListener('DOMContentLoaded', () => {
         audioSpeedInput.value = (items.audioSpeed || 1.0).toFixed(2);
       }
 
-      // Final attempt to restore scroll position after all dynamic content is rendered
+      
       if (typeof restoreLastSessionState === 'function') {
         setTimeout(restoreLastSessionState, 300);
-        // After this final attempt, we can safely allow scroll saving
+        
         setTimeout(() => { isInitialLoad = false; }, 1500);
       }
     }, 200);
@@ -1376,41 +1376,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // Global Defaults
+    
     const globalDefaults = items.globalDefaults || {};
     const defaultFontSize = globalDefaults.fontSize || items.fontSize || 13;
 
-    // Font Size - start with global default (domain-specific applied later)
+    
     fontSizeInput.value = defaultFontSize;
 
-    // Load Response Language
+    
     const savedLanguage = items.responseLanguage || 'vi';
     const langRadio = document.querySelector(`input[name="responseLanguage"][value="${savedLanguage}"]`);
     if (langRadio) langRadio.checked = true;
 
-    // Load AI Dictionary language
+    
     const dictLang = items.dictLanguage || 'en';
     const dictLangRadio = document.querySelector(`input[name="dictLanguage"][value="${dictLang}"]`);
     if (dictLangRadio) dictLangRadio.checked = true;
 
 
-    // Load Read webpage setting
+    
 
 
 
-    // Load Auto-hide Input setting
+    
     const autoHideInputEnabledCheckbox = document.getElementById('autoHideInputEnabled');
     if (autoHideInputEnabledCheckbox) {
       autoHideInputEnabledCheckbox.checked = items.autoHideInputEnabled !== undefined ? items.autoHideInputEnabled : false;
       autoHideInputEnabledCheckbox.addEventListener('change', saveOptions);
     }
 
-    // Load temperature and topP
+    
     if (items.temperature !== undefined) {
       temperatureInput.value = items.temperature;
       temperatureValue.textContent = items.temperature.toFixed(1);
     }
-    // Advanced params are loaded per-model after model loads (see setTimeout above)
+    
     setTimeout(() => {
       if (window.loadAdvancedParamsForModel) {
         window.loadAdvancedParamsForModel();
@@ -1419,7 +1419,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 200);
 
-    // Load Theme
+    
 
     const savedTheme = items.theme || (items.globalDefaults && items.globalDefaults.theme) || 'light';
     const themeRadio = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
@@ -1446,7 +1446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = parseInt(e.target.value, 10);
         memThreshVal.textContent = `${val} entries`;
 
-        // Enforce Threshold >= Compaction Size
+        
         const currentCompSize = parseInt(compSizeInput.value, 10);
         if (val < currentCompSize) {
           compSizeInput.value = val;
@@ -1467,11 +1467,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const handleCompSizeChange = (e) => {
         let val = parseInt(e.target.value, 10);
 
-        // Enforce Compaction Size <= Threshold
+        
         const currentThreshold = parseInt(memThreshInput.value, 10);
         if (val > currentThreshold) {
           val = currentThreshold;
-          e.target.value = val; // Snap back
+          e.target.value = val; 
         }
 
         compSizeVal.textContent = `${val} entries`;
@@ -1502,42 +1502,42 @@ document.addEventListener('DOMContentLoaded', () => {
       maxTokensInput.addEventListener('change', handleMaxTokensChange);
     }
 
-    // Load Question Mappings
+    
     if (typeof loadQuestionMappings === 'function') {
       loadQuestionMappings(items);
     }
 
-    // Mark settings as loaded - initial load will happen at end of file
+    
     window._dictPlusSettingsLoaded = true;
 
-    // Ensure domain-specific settings are applied after main settings load
+    
     if (typeof applyDomainSpecificSettings === 'function') {
       applyDomainSpecificSettings();
     }
   });
 
-  // Auto-save function
+  
   function saveOptions() {
     if (!window._dictPlusSettingsLoaded) return;
-    const provider = providerSelect ? providerSelect.value : '';  // Legacy
-    const model = modelInput ? modelInput.value : '';             // Legacy
+    const provider = providerSelect ? providerSelect.value : '';  
+    const model = modelInput ? modelInput.value : '';             
     const fontSize = fontSizeInput ? fontSizeInput.value : '13';
     const responseLanguage = document.querySelector('input[name="responseLanguage"]:checked')?.value || 'vi';
     const theme = document.querySelector('input[name="theme"]:checked')?.value || 'auto';
 
     applyTheme(theme);
 
-    // Collect shortcuts
+    
     const shortcuts = {};
     document.querySelectorAll('.shortcut-input').forEach(input => {
       const action = input.dataset.action;
-      if (!action) return; // Skip non-global shortcuts like custom source triggers
+      if (!action) return; 
 
       const keyData = input.dataset.key ? JSON.parse(input.dataset.key) : null;
       shortcuts[action] = keyData;
     });
 
-    // Collect Annotation Shortcuts
+    
     const annotationShortcutsExport = [];
     document.querySelectorAll('.annotation-shortcut-row').forEach((row) => {
       const activeSwatch = row.querySelector('.color-swatch.active');
@@ -1547,7 +1547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const keyStr = keyInput.dataset.key;
           const keyData = (keyStr && keyStr !== '') ? JSON.parse(keyStr) : null;
-          // Save the row even if keyData is null so the row persists on reload
+          
           annotationShortcutsExport.push({
             ...keyData,
             color: activeSwatch ? activeSwatch.dataset.color : '#FFFB78'
@@ -1560,16 +1560,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const audioSpeed = parseFloat(audioSpeedInput ? audioSpeedInput.value : 1.0);
 
-    // First get existing settings to update them
+    
     chrome.storage.local.get(['globalDefaults', 'fontSizeByDomain'], (existing) => {
       let globalDefaults = existing.globalDefaults || {};
       let fontSizeByDomain = existing.fontSizeByDomain || {};
 
-      // Update global defaults
+      
       globalDefaults.fontSize = parseFloat(fontSize);
       globalDefaults.theme = theme;
 
-      // Collect Question Mappings
+      
       const questionMappingsExport = [];
       document.querySelectorAll('.mapping-item').forEach((row) => {
         const keyInput = row.querySelector('.mapping-key-input');
@@ -1580,11 +1580,11 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const keyStr = keyInput.dataset.key;
             const keyData = (keyStr && keyStr !== '') ? JSON.parse(keyStr) : null;
-            // Save the row even if key/prompt are empty so the row persists on reload
+            
             questionMappingsExport.push({ keyData, prompt });
           } catch (e) {
             console.error('Error parsing key data', e);
-            // Fallback: save row even if key is malformed (shouldn't happen)
+            
             questionMappingsExport.push({ keyData: null, prompt });
           }
         }
@@ -1596,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dictProvider: dictProviderInput?.dataset?.providerId || '',
         dictModel: dictModelInput ? dictModelInput.value : '',
         questionMappings: questionMappingsExport,
-        fontSize: fontSize, // Global default
+        fontSize: fontSize, 
         globalDefaults: globalDefaults,
         compactionSize: parseInt(document.getElementById('compactionSize')?.value, 10) || 10,
         responseLanguage: responseLanguage,
@@ -1613,39 +1613,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-      // Save OAuth Client IDs
+      
       if (googleClientIdInput) settings.googleClientId = googleClientIdInput.value;
       if (githubClientIdInput) {
         const ghId = githubClientIdInput.value;
         settings.githubClientId = ghId;
-        // Sync to localStorage for Lumina Play pages
+        
         localStorage.setItem('gh_client_id', ghId);
       }
 
       chrome.storage.local.set(settings, () => {
-        // Sync critical settings to localStorage for synchronous access
+        
         try {
-          // Popup dimensions sync removed
+          
         } catch (e) {
           console.warn('Failed to sync to localStorage:', e);
         }
 
-        // Notify all tabs about changes
+        
         chrome.tabs.query({}, (tabs) => {
           tabs.forEach(tab => {
-            // Only send to tabs with http/https URLs or Lumina extension pages
+            
             const isLuminaPage = tab.url && tab.url.startsWith(chrome.runtime.getURL(''));
             if (!tab.id || !tab.url || (!tab.url.startsWith('http://') && !tab.url.startsWith('https://') && !isLuminaPage)) {
               return;
             }
 
-            // Send shortcuts update
+            
             chrome.tabs.sendMessage(tab.id, {
               action: 'shortcuts_updated',
               shortcuts: shortcuts
-            }).catch(() => { /* Tab might not have content script */ });
+            }).catch(() => {  });
 
-            // Send visual settings update for live preview
+            
             chrome.tabs.sendMessage(tab.id, {
               action: 'settings_updated',
               settings: {
@@ -1654,22 +1654,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 globalDefaults: globalDefaults,
                 theme: theme,
               }
-            }).catch(() => { /* Tab might not have content script */ });
+            }).catch(() => {  });
           });
         });
       });
     });
   }
-  // Add auto-save listeners to all inputs
+  
   const inputs = [
     providerSelect, modelInput,
 
     deepLApiKeyInput,
     fontSizeInput,
-  ].filter(Boolean); // Filter out nulls explicitly
+  ].filter(Boolean); 
 
   inputs.forEach(input => {
-    if (input) { // Double check
+    if (input) { 
       input.addEventListener('change', saveOptions);
       if (input.type === 'text' || input.type === 'number' || input.type === 'password') {
         input.addEventListener('input', debounce(saveOptions, 500));
@@ -1679,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Debounce helper
+  
   function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -1688,9 +1688,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Translation Provider Logic
+  
 
-  // Add auto-save listeners for radio buttons
+  
   document.querySelectorAll('input[name="theme"]').forEach(radio => {
     radio.addEventListener('change', saveOptions);
   });
@@ -1709,7 +1709,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const providerId = providerSelect.value;
       saveOptions();
 
-      // Fetch models for the selected provider
+      
       const provider = getProviderById(providerId);
       if (provider) {
         fetchModelsForProvider(provider, {
@@ -1722,13 +1722,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Custom Dropdown Logic (Generic)
+  
   function setupDropdown(input, list, getModels) {
-    if (!input || !list) return; // Prevent crash if elements missing
+    if (!input || !list) return; 
 
     input.addEventListener('focus', () => {
       if (input.value && !availableModels.includes(input.value)) {
-        // Maybe they typed something custom?
+        
       }
       renderDropdown(getModels(), input, list);
       list.classList.add('show');
@@ -1770,45 +1770,45 @@ document.addEventListener('DOMContentLoaded', () => {
         div.classList.add('selected');
       }
       div.textContent = model;
-      // Use mousedown instead of click to ensure selection happens before input blur
+      
       div.addEventListener('mousedown', (e) => {
-        e.preventDefault(); // Prevent input from losing focus immediately
-        e.stopPropagation(); // Stop event bubbling
-        isSelectingModel = true; // Set flag to prevent blur from hiding dropdown
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        isSelectingModel = true; 
 
         const oldModel = inputElement.value;
         const modelToSave = currentlyConfiguringModel || oldModel;
 
-        // Save current params for OLD model/Context before switching
+        
         if (modelToSave && window.saveAdvancedParamsForCurrentModel) {
           window.saveAdvancedParamsForCurrentModel(modelToSave);
         }
 
         inputElement.value = model;
-        listElement.style.display = 'none'; // Force hide
+        listElement.style.display = 'none'; 
         listElement.classList.remove('show');
 
-        // Reset chain configuration mode if we are switching the main model
+        
         if (inputElement.id === 'model' && currentlyConfiguringModel) {
           currentlyConfiguringModel = null;
           currentlyConfiguringProvider = null;
-          // Refresh chain lists to remove highlight
+          
           if (typeof renderChainList === 'function') {
             renderChainList();
           }
         }
 
-        // Dispatch event FIRST to load new model's params
+        
         document.dispatchEvent(new CustomEvent('modelChanged'));
-        // Then save general options (without advanced params)
+        
         saveOptions();
 
-        // Auto-add for Chain UI (Model Management)
+        
         if (inputElement.id === 'textChainModel') {
           addToChain();
         }
 
-        // Reset flag after a short delay
+        
         setTimeout(() => {
           isSelectingModel = false;
         }, 50);
@@ -1818,11 +1818,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // Generic dropdown logic (already defined above as setupDropdown)
+  
 
-  // Dictionary provider custom dropdown
+  
   if (dictProviderInput && dictProviderList) {
-    // Initially disable model input until provider is selected
+    
     if (dictModelInput && !dictProviderInput.dataset.providerId) {
       dictModelInput.disabled = true;
       dictModelInput.placeholder = 'Select provider first...';
@@ -1843,7 +1843,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dictProviderInput.dataset.providerId = item.dataset.value;
             dictProviderList.style.display = 'none';
 
-            // Enable model input
+            
             if (dictModelInput) {
               dictModelInput.disabled = false;
               dictModelInput.placeholder = 'Type or select model...';
@@ -1868,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Dictionary model input listeners
+  
   if (dictModelInput) {
     dictModelInput.addEventListener('change', () => {
       saveOptions();
@@ -1878,7 +1878,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const providerId = dictProviderInput?.dataset?.providerId;
       const provider = providerId ? getProviderById(providerId) : null;
       if (provider) {
-        // Refresh list on focus
+        
         fetchModelsForProvider(provider, {
           selectedModel: dictModelInput.value,
           isDict: true
@@ -1889,7 +1889,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dictModelInput.addEventListener('input', () => {
       const query = dictModelInput.value.toLowerCase();
-      // Use the appropriate model cache based on context
+      
       const modelsToFilter = availableDictModels || [];
       const filtered = modelsToFilter.filter(m => m.toLowerCase().includes(query));
       renderDropdown(filtered, dictModelInput, dictModelList);
@@ -1923,11 +1923,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${trimmed}${targetPath}`;
   }
 
-  // Fetch models for a dynamic provider
+  
   async function fetchModelsForProvider(provider, options = {}) {
     if (!provider) return;
 
-    // Destructure options with defaults
+    
     const {
       selectedModel = '',
       isVision = false,
@@ -1938,7 +1938,7 @@ document.addEventListener('DOMContentLoaded', () => {
       customTarget = false
     } = options;
 
-    // Determine target elements
+    
     let listId = targetListId;
     let inputId = targetInputId;
 
@@ -1957,10 +1957,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       console.log('[Lumina Options] Fetching models for provider:', provider.name, 'type:', provider.type, 'endpoint:', provider.endpoint, 'hasKey:', !!firstKey);
 
-      // OpenAI-compatible API
+      
       let modelsUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/models');
 
-      // Adjust for Groq specifically
+      
       if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) {
         modelsUrl = 'https://api.groq.com/openai/v1/models';
       }
@@ -1977,7 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
 
-      // Update global arrays
+      
       if (isDict) {
         availableDictModels = models;
       } else {
@@ -1990,18 +1990,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const listEl = document.getElementById(listId);
       renderModelDropdown(listEl, inputEl, models);
 
-      // Show dropdown if input is currently focused
+      
       if (inputEl && document.activeElement === inputEl && listEl) {
         listEl.style.display = 'block';
       }
 
-      // Preserve selection
+      
       if (inputEl && selectedModel) {
         inputEl.value = selectedModel;
       }
     } catch (e) {
       console.warn('Failed to fetch models:', e);
-      // Fallback
+      
       const inputEl = document.getElementById(inputId);
       const listEl = document.getElementById(listId);
       renderModelDropdown(listEl, inputEl, []);
@@ -2014,7 +2014,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     models.forEach(m => {
       const div = document.createElement('div');
-      // Inline styles to match existing dropdown items if class is missing
+      
       div.className = 'dropdown-item';
       div.style.padding = '8px 12px';
       div.style.cursor = 'pointer';
@@ -2030,12 +2030,12 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = m;
         list.style.display = 'none';
 
-        // Auto-add for Chain UI (Model Management)
+        
         if (input.id === 'textChainModel') {
           addToChain();
         }
 
-        // Notify that model changed (for saving)
+        
         document.dispatchEvent(new CustomEvent('modelChanged'));
         saveOptions();
       });
@@ -2066,7 +2066,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function fetchModels(provider, apiKey, selectedModel) {
     try {
-      // Use the first key for fetching models if multiple are provided
+      
       const firstKey = apiKey.split(',')[0].trim();
       let models = [];
       if (provider === 'groq') {
@@ -2099,14 +2099,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       availableModels = models;
 
-      // If we have models, render them (but don't show unless focused)
+      
     } catch (e) {
       console.error('Failed to fetch models', e);
       availableModels = [];
     }
   }
 
-  // Temperature and Top P sliders
+  
   if (temperatureInput) {
     temperatureInput.addEventListener('input', () => {
       temperatureValue.textContent = parseFloat(temperatureInput.value).toFixed(1);
@@ -2123,7 +2123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Custom Params with validation
+  
   function addCustomParamRow(key = '', value = '') {
     if (!customParamsList) return;
     const template = document.getElementById('customParamRowTemplate');
@@ -2147,14 +2147,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getCustomParamsJSON() {
-    if (!customParamsList) return ''; // Guard against null element
+    if (!customParamsList) return ''; 
     const rows = customParamsList.querySelectorAll('.custom-param-row');
     const params = {};
     rows.forEach(row => {
       const key = row.querySelector('.custom-param-key')?.value?.trim();
       let value = row.querySelector('.custom-param-value')?.value?.trim();
       if (key) {
-        // Try to parse as number, boolean, or JSON object
+        
         if (value === 'true') value = true;
         else if (value === 'false') value = false;
         else if (!isNaN(value) && value !== '') value = Number(value);
@@ -2187,7 +2187,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetModel) saveAdvancedParamsForCurrentModel(targetModel);
     }, 500));
 
-    // Also save immediately when an input loses focus, to prevent lost changes on quick exit
+    
     customParamsList.addEventListener('focusout', (e) => {
       if (e.target.tagName === 'INPUT') {
         const targetModel = currentlyConfiguringModel || modelInput?.value?.trim();
@@ -2196,7 +2196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Per-model advanced params functions
+  
   window.saveAdvancedParamsForCurrentModel = function (modelName) {
     if (!modelName) return;
 
@@ -2224,14 +2224,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const model = currentlyConfiguringModel || modelInput?.value?.trim();
     if (!model) return;
 
-    // Determine provider for key generation
+    
     let provider = currentlyConfiguringProvider;
     if (!provider && !currentlyConfiguringModel) {
-      // Fallback to main selector if not configuring a specific chain item
+      
       provider = providerSelect?.value;
     }
 
-    // Create composite key if provider is known, otherwise fallback to model name (legacy)
+    
     const storageKey = provider ? `${provider}:${model}` : model;
 
     const params = {
@@ -2243,20 +2243,20 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(['advancedParamsByModel'], (result) => {
       const allParams = result.advancedParamsByModel || {};
       allParams[storageKey] = params;
-      // Also save legacy key for backward compatibility if needed? 
+      
       chrome.storage.local.set({ advancedParamsByModel: allParams });
     });
   }
 
   function loadAdvancedParamsForModel(modelOverride, providerOverride) {
-    // Determine which model to load:
+    
     const model = (typeof modelOverride === 'string' && modelOverride)
       ? modelOverride
       : (currentlyConfiguringModel || modelInput?.value?.trim());
 
     if (!model) return;
 
-    // Determine provider
+    
     let provider = providerOverride || currentlyConfiguringProvider;
     if (!provider && !currentlyConfiguringModel) {
       provider = providerSelect?.value;
@@ -2266,16 +2266,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.storage.local.get(['advancedParamsByModel'], (result) => {
       const allParams = result.advancedParamsByModel || {};
-      // Try new key, then fallback to legacy key (just model name)
+      
       const params = allParams[storageKey] || allParams[model] || { temperature: 1.0, topP: 1.0, customParams: '' };
 
-      // Update UI
+      
       temperatureInput.value = params.temperature;
       temperatureValue.textContent = params.temperature.toFixed(1);
       topPInput.value = params.topP;
       topPValue.textContent = params.topP.toFixed(2);
 
-      // Clear and load custom params
+      
       customParamsList.innerHTML = '';
       if (params.customParams) {
         try {
@@ -2289,28 +2289,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Load params when model changes
+  
   document.addEventListener('modelChanged', loadAdvancedParamsForModel);
   if (modelInput) {
     modelInput.addEventListener('blur', debounce(loadAdvancedParamsForModel, 300));
   }
 
-  // Save settings
+  
   function showStatus(message, type) {
     statusDiv.textContent = message;
     statusDiv.className = 'status ' + type;
     statusDiv.style.display = 'block';
   }
-  // Stepper Logic
+  
   function setupStepperButton(btn, delta) {
     let timeoutId = null;
     let intervalId = null;
-    let speed = 150; // Initial speed (ms)
+    let speed = 150; 
 
     const updateValue = () => {
       let val = parseFloat(fontSizeInput.value) || 13;
       let newVal = val + delta;
-      // Clamp value
+      
       if (newVal >= 10 && newVal <= 30) {
         fontSizeInput.value = newVal;
         saveOptions();
@@ -2318,14 +2318,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const startRepeating = () => {
-      updateValue(); // Immediate update
+      updateValue(); 
 
-      // Initial delay before repeating
+      
       timeoutId = setTimeout(() => {
-        // Start repeating loop
+        
         const loop = () => {
           updateValue();
-          // Accelerate: reduce delay by 10% each step, min 30ms
+          
           speed = Math.max(30, speed * 0.9);
           intervalId = setTimeout(loop, speed);
         };
@@ -2336,7 +2336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopRepeating = () => {
       clearTimeout(timeoutId);
       clearTimeout(intervalId);
-      speed = 150; // Reset speed
+      speed = 150; 
     };
 
     btn.addEventListener('mousedown', startRepeating);
@@ -2347,7 +2347,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStepperButton(decreaseFontSizeBtn, -0.5);
   setupStepperButton(increaseFontSizeBtn, 0.5);
 
-  // Auto-save for Theme radio buttons
+  
   document.querySelectorAll('input[name="theme"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const selectedTheme = document.querySelector('input[name="theme"]:checked')?.value || 'auto';
@@ -2356,7 +2356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Auto-save for Response Language radio buttons
+  
   document.querySelectorAll('input[name="responseLanguage"]').forEach(radio => {
     radio.addEventListener('change', saveOptions);
   });
@@ -2376,13 +2376,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   let currentRecordingInput = null;
-  let recordingPressedCodes = new Set(); // track codes held during recording
-  let recordingHadInput = false;    // true once a key/mouse shortcut is actually saved
+  let recordingPressedCodes = new Set(); 
+  let recordingHadInput = false;    
   let suppressNextShortcutClick = null;
 
-  // Format key display name
+  
   function getKeyDisplay(event) {
-    // Check if it's a mouse event structure (has button property and internal type we set)
+    
     if (event.code && event.code.startsWith('Mouse')) {
       const map = {
         'Mouse0': 'Left',
@@ -2397,12 +2397,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let key = event.key;
     const code = event.code;
 
-    // Fix for Windows Alt/Ctrl/Win combos causing "Dead" or "Unidentified"
+    
     if (key === 'Unidentified' && (code === 'Space' || event.keyCode === 32)) {
       key = 'Space';
     }
 
-    // We prefer the physical key character (KeyA -> A) when modifiers are active
+    
     if (!key || key === 'Unidentified' || key === 'Dead' || ((event.altKey || event.ctrlKey || event.metaKey) && code && (code.startsWith('Key') || code.startsWith('Digit')))) {
       if (code && code.startsWith('Key')) {
         key = code.slice(3);
@@ -2411,7 +2411,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (code === 'Space') {
         key = 'Space';
       } else {
-        // Fallback to code mapping for symbols if key fails
+        
         const codeMap = {
           'Comma': ',', 'Period': '.', 'Slash': '/', 'Backslash': '\\',
           'BracketLeft': '[', 'BracketRight': ']', 'Quote': "'", 'Semicolon': ';',
@@ -2419,13 +2419,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         if (codeMap[code]) key = codeMap[code];
         else if (code && !code.startsWith('Control') && !code.startsWith('Alt') && !code.startsWith('Shift') && !code.startsWith('Meta')) {
-          // Last resort: use code
+          
           key = code;
         }
       }
     }
 
-    // Special keys
+    
     const specialKeys = {
       ' ': 'Space',
       'Escape': 'Esc',
@@ -2452,7 +2452,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (specialKeys[key]) return specialKeys[key];
 
-    // Handle modifiers display — distinguish Left vs Right via code
+    
     if (key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') {
       const side = code === 'ShiftRight' || code === 'ControlRight' || code === 'AltRight' || code === 'MetaRight' ? 'R' : (
         code === 'ShiftLeft' || code === 'ControlLeft' || code === 'AltLeft' || code === 'MetaLeft' ? 'L' : '');
@@ -2495,7 +2495,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return normalized;
   }
 
-  // Render shortcut display
+  
   function renderShortcutDisplay(inputEl, keyData) {
     if (!inputEl.dataset.debugId) {
       inputEl.dataset.debugId = 'input_' + Math.random().toString(36).substr(2, 9);
@@ -2533,7 +2533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inputEl.dataset.key = JSON.stringify(normalizedKeyData);
   }
 
-  // Start recording
+  
   function startRecording(inputEl) {
     if (currentRecordingInput) {
       stopRecording(currentRecordingInput, false);
@@ -2548,12 +2548,12 @@ document.addEventListener('DOMContentLoaded', () => {
     inputEl.appendChild(template.content.cloneNode(true));
   }
 
-  // Stop recording
+  
   function stopRecording(inputEl, restoreOriginal = true) {
     inputEl.classList.remove('recording');
 
     if (restoreOriginal && inputEl.dataset.key) {
-      // Restore from data attr if valid JSON
+      
       try {
         const keyData = JSON.parse(inputEl.dataset.key);
         renderShortcutDisplay(inputEl, keyData);
@@ -2595,13 +2595,13 @@ document.addEventListener('DOMContentLoaded', () => {
     saveOptions();
   }
 
-  // Show live preview of modifiers being pressed
+  
   function showModifierPreview(e) {
     if (!currentRecordingInput) return;
 
-    // Use standard symbols for live preview
+    
     if (hasModifiers) {
-      // already added segments
+      
     } else {
       currentRecordingInput.innerHTML = '';
       const template = document.getElementById('shortcutRecordingTemplate');
@@ -2613,7 +2613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const action = input.dataset.action;
     const defaultKey = (typeof LUMINA_DEFAULT_SHORTCUTS !== 'undefined') ? LUMINA_DEFAULT_SHORTCUTS[action] : null;
 
-    // Wrap input in a container for relative positioning
+    
     if (!input.parentElement.classList.contains('shortcut-input-container')) {
       const container = document.createElement('div');
       container.className = 'shortcut-input-container';
@@ -2622,22 +2622,22 @@ document.addEventListener('DOMContentLoaded', () => {
       container.style.alignItems = 'center';
       container.style.gap = '8px';
       if (action) {
-        container.style.marginLeft = 'auto'; // Align to right only global shortcuts
+        container.style.marginLeft = 'auto'; 
       }
 
       input.parentElement.insertBefore(container, input);
       container.appendChild(input);
     }
 
-    // Set default
+    
     if (defaultKey) {
       renderShortcutDisplay(input, defaultKey);
     }
 
-    // Click to start recording
+    
     input.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation(); // Stop bubbling
+      e.stopPropagation(); 
 
       if (suppressNextShortcutClick === input) {
         suppressNextShortcutClick = null;
@@ -2653,26 +2653,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Focus also starts recording, BUT we debounce/check if it's already active to avoid fighting with click
+    
     input.addEventListener('focus', (e) => {
-      // If we just clicked, click handler takes precedence
+      
       if (currentRecordingInput !== input) {
         startRecording(input);
       }
     });
 
-    // Blur stops recording
+    
     input.addEventListener('blur', (e) => {
-      // Only stop if we are not clicking another part of the extension UI
+      
       setTimeout(() => {
         if (currentRecordingInput === input) {
           if (!recordingHadInput) {
-            // Nothing was recorded — reset shortcut to None
+            
             renderShortcutDisplay(input, null);
             input.dataset.key = '';
             stopRecording(input, false);
 
-            // Only auto-save global shortcuts, mapping rows, or annotation rows
+            
             if (input.dataset.action || 
                 input.classList.contains('mapping-key-input') || 
                 input.classList.contains('annotation-shortcut-input')) {
@@ -2686,12 +2686,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initialize shortcut inputs
+  
   document.querySelectorAll('.shortcut-input').forEach(input => {
     setupShortcutInput(input);
   });
 
-  // Mouse down listener for recording mouse buttons
+  
   document.addEventListener('mousedown', (e) => {
     if (!currentRecordingInput) return;
 
@@ -2699,10 +2699,10 @@ document.addEventListener('DOMContentLoaded', () => {
       ? e.target
       : e.target.closest?.('.shortcut-input');
 
-    // If clicking a different shortcut input, let that input's own click handler manage it.
+    
     if (shortcutTarget && shortcutTarget !== currentRecordingInput) return;
 
-    // Prevent default actions (like losing focus or context menu)
+    
     e.preventDefault();
     e.stopPropagation();
 
@@ -2712,7 +2712,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const input = currentRecordingInput;
-      // Left click outside = cancel and reset shortcut to None
+      
       renderShortcutDisplay(input, null);
       input.dataset.key = '';
       recordingHadInput = false;
@@ -2724,11 +2724,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Mouse buttons on the active shortcut input are recorded as shortcuts.
+    
     recordMouseShortcut(currentRecordingInput, e.button, e);
   }, true);
 
-  // Keyboard events
+  
   document.addEventListener('keydown', (e) => {
     if (!currentRecordingInput) return;
 
@@ -2737,11 +2737,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     recordingPressedCodes.add(e.code);
 
-    // Check if it's a modifier key
+    
     const isModifier = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
 
-    // Detect both-sides: if user presses both Left + Right of the same modifier,
-    // use the generic code (e.g. 'Shift') instead of a side-specific one.
+    
+    
     let code = e.code;
     if (isModifier) {
       const MODIFIER_PAIRS = {
@@ -2752,7 +2752,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const pair = MODIFIER_PAIRS[e.key];
       if (pair && recordingPressedCodes.has(pair[0]) && recordingPressedCodes.has(pair[1])) {
-        code = e.key; // generic — no side
+        code = e.key; 
       }
     }
 
@@ -2766,14 +2766,14 @@ document.addEventListener('DOMContentLoaded', () => {
       metaKey: e.metaKey
     };
 
-    // If it's a modifier key, we update the preview but we DO NOT finish recording yet
+    
 
     if (isModifier) {
-      // Just show preview/update current data but don't finish
+      
       renderShortcutDisplay(currentRecordingInput, keyData);
-      // We don't blur immediately for modifiers
+      
     } else {
-      // Non-modifier key pressed: Finish recording
+      
       renderShortcutDisplay(currentRecordingInput, keyData);
       recordingHadInput = true;
       const input = currentRecordingInput;
@@ -2787,9 +2787,9 @@ document.addEventListener('DOMContentLoaded', () => {
         saveOptions();
       }
     }
-  }, true); // Use capture phase
+  }, true); 
 
-  // Global keyup handler 
+  
   document.addEventListener('keyup', (e) => {
     recordingPressedCodes.delete(e.code);
 
@@ -2797,9 +2797,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isModifier = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
 
-    // If we release a modifier key, and that modifier was arguably the *only* thing pressed...
+    
     if (isModifier) {
-      // We check if the currently displayed/stored key matches this modifier.
+      
       recordingHadInput = true;
       const input = currentRecordingInput;
       input.classList.remove('recording');
@@ -2812,7 +2812,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, true);
 
-  // Load saved shortcuts
+  
   chrome.storage.local.get(['shortcuts', 'annotationShortcuts'], (items) => {
     const savedShortcuts = items.shortcuts || {};
     const savedAnnotations = items.annotationShortcuts || DEFAULT_SHORTCUTS.annotationShortcuts || [];
@@ -2820,7 +2820,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.shortcut-input').forEach(input => {
       const action = input.dataset.action;
 
-      // Skip if this is a mapping or annotation input (no action attribute)
+      
       if (!action || input.classList.contains('annotation-shortcut-input')) return;
 
       if (action in savedShortcuts) {
@@ -2831,9 +2831,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAnnotationShortcuts(savedAnnotations);
   });
 
-  // Listen for storage changes
+  
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    // Reload chat history if it changes
+    
     if (areaName === 'local' && changes.chat_history && typeof loadChatHistory === 'function') {
       loadChatHistory();
     }
@@ -2880,14 +2880,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const range = selection.getRangeAt(0);
       let textNode = range.startContainer;
 
-      // If cursor is at the end of a tag or in empty div
+      
       if (textNode.nodeType !== Node.TEXT_NODE) {
-        // Find the last text node or create one if empty
+        
         if (textNode.childNodes.length === 0) {
           textNode.appendChild(document.createTextNode(''));
           textNode = textNode.firstChild;
         } else {
-          // Find the at trigger manually if needed, but usually we are in text
+          
           return hidePopup();
         }
       }
@@ -2954,7 +2954,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !popup.classList.contains('active')) {
-        e.preventDefault(); // Prevent newlines in mapping prompt
+        e.preventDefault(); 
         return;
       }
 
@@ -2997,7 +2997,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mappingsList = document.getElementById('questionMappingsList');
     if (!mappingsList) return;
 
-    // Support both old {key: "Q"} and new {keyData: {...}}
+    
     let keyData = null;
     if (keyDataOrSimpleKey) {
       if (typeof keyDataOrSimpleKey === 'string') {
@@ -3019,7 +3019,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderShortcutDisplay(keyDisplay, keyData);
     }
     if (prompt) {
-      // Convert "SelectedText" string to tags visually
+      
       const parts = prompt.split('SelectedText');
       promptInput.innerHTML = '';
       parts.forEach((part, i) => {
@@ -3052,14 +3052,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // Load Question Mappings (Moved logic here to use the updated render function)
+  
   function loadQuestionMappings(items) {
     const savedMappings = items.questionMappings || [];
     const mappingsList = document.getElementById('questionMappingsList');
     if (mappingsList) {
       mappingsList.innerHTML = '';
       savedMappings.forEach(m => {
-        // Support both old {key: "Q"} and new {keyData: {...}}
+        
         const data = m.keyData || m.key;
         renderMappingRow(data, m.prompt);
       });
@@ -3067,18 +3067,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Hook into storage load (we need to recall this or update the original call site)
+  
 
   if (addMappingBtn) {
     addMappingBtn.addEventListener('click', () => {
       renderMappingRow();
-      saveOptions(); // Trigger save so the new row is persisted immediately
+      saveOptions(); 
     });
   }
 
 
 
-  // --- Annotation Shortcuts Logic ---
+  
   const ANNOTATION_COLORS = ['#FFFB78', '#FFDE70', '#92ffaa', '#D1FF61', '#FFCAD7', '#B2D7FF'];
 
   function loadAnnotationShortcuts(annotations) {
@@ -3106,10 +3106,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const keyInput = div.querySelector('.annotation-shortcut-input');
     const deleteBtn = div.querySelector('.annotation-remove-btn');
 
-    // Default color if none provided
+    
     const currentColor = data && data.color ? data.color : ANNOTATION_COLORS[0];
 
-    // Generate swatches
+    
     ANNOTATION_COLORS.forEach(color => {
       const swatch = document.createElement('div');
       swatch.className = 'color-swatch';
@@ -3129,7 +3129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (data) {
-      // Only render shortcut if it has key info (key/code), otherwise show "None"
+      
       if (data.key || data.code) {
         renderShortcutDisplay(keyInput, data);
       } else {
@@ -3137,7 +3137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Initialize shortcut input recording logic
+    
     setupShortcutInput(keyInput);
 
     deleteBtn.addEventListener('click', () => {
@@ -3152,12 +3152,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addAnnotationShortcutBtn) {
     addAnnotationShortcutBtn.addEventListener('click', () => {
       renderAnnotationShortcutRow();
-      // Wait for user to record shortcut before saving
+      
     });
   }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
-      // Refresh facts list when memory changes
+      
       if (changes.user_memory) {
         renderUserFacts();
         updateMemoryStats();
@@ -3169,7 +3169,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const newFactInput = document.getElementById('newFactInput');
   const addFactBtn = document.getElementById('addFactBtn');
 
-  // Render facts list
+  
   async function renderUserFacts() {
     if (!userFactsList) return;
 
@@ -3222,7 +3222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Add new fact
+  
   if (newFactInput) {
     newFactInput.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter') {
@@ -3237,7 +3237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Set Global Defaults / Apply to All Pages Button
+  
   const setGlobalDefaultsBtn = document.getElementById('setGlobalDefaultsBtn');
   const resetSettingsBtn = document.getElementById('resetSettingsBtn');
 
@@ -3257,7 +3257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         theme: theme,
         fontSize: fontSize
       }, () => {
-        // Show feedback
+        
         const originalHTML = setGlobalDefaultsBtn.innerHTML;
         setGlobalDefaultsBtn.innerHTML = '';
         const template = document.getElementById('appliedStateTemplate');
@@ -3266,7 +3266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setGlobalDefaultsBtn.classList.add('btn-applied');
 
-        // ... Broadcast logic ...
+        
         chrome.tabs.query({}, (tabs) => {
           tabs.forEach((tab) => {
             const isLuminaPage = tab.url && tab.url.startsWith(chrome.runtime.getURL(''));
@@ -3279,7 +3279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   theme: theme,
                   fontSizeByDomain: {}
                 }
-              }).catch(() => { }); // Ignore errors
+              }).catch(() => { }); 
             }
           });
         });
@@ -3298,17 +3298,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const defaultTheme = 'light';
       const defaultAudioSpeed = 1.0;
 
-      // Update UI Inputs
+      
       if (fontSizeInput) fontSizeInput.value = defaultFontSize;
       if (audioSpeedInput) audioSpeedInput.value = defaultAudioSpeed;
 
       const radio = document.querySelector(`input[name="theme"][value="${defaultTheme}"]`);
       if (radio) radio.checked = true;
 
-      // Apply theme immediately
+      
       applyTheme(defaultTheme);
 
-      // Save to storage (resetting both global and domain-specific for these values)
+      
       chrome.storage.local.set({
         fontSize: defaultFontSize,
         theme: defaultTheme,
@@ -3320,10 +3320,10 @@ document.addEventListener('DOMContentLoaded', () => {
           audioSpeed: defaultAudioSpeed
         }
       }, () => {
-        // Show feedback
+        
         updateStatus('Settings reset to system defaults', 'success');
 
-        // Broadcast update
+        
         chrome.tabs.query({}, (tabs) => {
           tabs.forEach((tab) => {
             if (tab.id) {
@@ -3343,7 +3343,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // Initial render - Defer execution to prioritize main UI
+  
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => {
       renderUserFacts();
@@ -3355,7 +3355,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // --- Auth & Sync Logic ---
+  
   const googleLoginBtn = document.getElementById('googleLoginBtn');
   const googleLogoutBtn = document.getElementById('googleLogoutBtn');
   const authLoggedOut = document.getElementById('auth-logged-out');
@@ -3376,12 +3376,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userName) userName.textContent = user.name;
       if (userEmail) userEmail.textContent = user.email;
 
-      // Enable Sync Card
+      
       if (syncCard) {
         syncCard.style.opacity = '1';
         syncCard.style.pointerEvents = 'auto';
 
-        // Always fetch last sync time when authenticated
+        
         LuminaSync.getLastSyncTime().then(time => {
           if (syncStatus && time !== 'Never') {
             syncStatus.textContent = `Last synced: ${time}`;
@@ -3393,7 +3393,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (authLoggedOut) authLoggedOut.classList.remove('hidden');
       if (authLoggedIn) authLoggedIn.classList.add('hidden');
 
-      // Disable Sync Card
+      
       if (syncCard) {
         syncCard.style.opacity = '0.5';
         syncCard.style.pointerEvents = 'none';
@@ -3401,7 +3401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Bind Listeners
+  
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
       try {
@@ -3414,12 +3414,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = await LuminaAuth.login();
         updateStatus('Signed in successfully', 'success');
 
-        // Restore HTML (though it might be hidden now)
+        
         googleLoginBtn.innerHTML = originalHTML;
       } catch (e) {
         console.error(e);
         updateStatus('Sign in failed: ' + e.message, 'error');
-        googleLoginBtn.innerHTML = 'Sign in with Google'; // Fallback
+        googleLoginBtn.innerHTML = 'Sign in with Google'; 
       } finally {
         googleLoginBtn.disabled = false;
       }
@@ -3438,9 +3438,9 @@ document.addEventListener('DOMContentLoaded', () => {
       syncUpBtn.disabled = true;
       try {
         await LuminaSync.syncUp();
-        // UI updates handled by listener
+        
       } catch (e) {
-        // Error logging handled by listener/catch block in SyncManager
+        
       } finally {
         syncUpBtn.disabled = false;
       }
@@ -3458,14 +3458,14 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => location.reload(), 1000);
         }
       } catch (e) {
-        // Error handled by listener
+        
       } finally {
         syncDownBtn.disabled = false;
       }
     });
   }
 
-  // Handle Sync Updates
+  
   LuminaSync.addListener((status, timestamp) => {
     if (syncStatus) {
       if (timestamp) {
@@ -3483,13 +3483,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initialize Listener
+  
   LuminaAuth.addListener(updateAuthUI);
 
-  // Initial check
+  
   if (LuminaAuth.isAuthenticated) {
     updateAuthUI(true, LuminaAuth.user);
-    // Show initial sync time
+    
     LuminaSync.getLastSyncTime().then(time => {
       if (syncStatus && time !== 'Never') {
         syncStatus.textContent = `Last synced: ${time}`;
@@ -3497,7 +3497,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Manual Backup Logic ---
+  
   const exportSettingsBtn = document.getElementById('exportSettingsBtn');
   const importSettingsBtn = document.getElementById('importSettingsBtn');
   const importSettingsFile = document.getElementById('importSettingsFile');
@@ -3540,7 +3540,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!file) return;
 
       if (!confirm('This will overwrite current settings with the backup file. Continue?')) {
-        importSettingsFile.value = ''; // Reset
+        importSettingsFile.value = ''; 
         return;
       }
 
@@ -3549,10 +3549,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const content = JSON.parse(event.target.result);
 
-          // Validate structure (check for 'data' key or assume flat)
+          
           let dataToRestore = content;
           if (content.data && content.timestamp) {
-            dataToRestore = content.data; // New structure
+            dataToRestore = content.data; 
           }
 
           await chrome.storage.local.clear();
@@ -3571,7 +3571,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Handle URL parameters (e.g., section navigation or mic permission request)
+  
   const urlParams = new URLSearchParams(window.location.search);
   const sectionParam = urlParams.get('section');
   if (sectionParam) {

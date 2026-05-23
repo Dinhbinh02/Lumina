@@ -1,16 +1,16 @@
-// import { EdgeTTS } from '../../lib/edge-tts/edge-tts.js';
+
 
 let currentAudio = null;
-let currentAudioResolve = null; // Resolve callback for the active playSound promise
+let currentAudioResolve = null; 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // 0. Heartbeat check
+    
     if (request.action === 'offscreen_ping') {
         sendResponse({ success: true });
         return false;
     }
 
-    // 1. New Handler: Edge TTS
+    
     if (request.action === 'offscreen_playEdgeTTS') {
         playEdgeTTS(request.text, request.voice, request.speed)
             .then(() => sendResponse({ success: true }))
@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // 2. Legacy Handler: Play Audio URL (Oxford/Google fallback)
+    
     if (request.action === 'offscreen_playAudio') {
         playAudio(request.url, request.speed)
             .then(() => sendResponse({ success: true }))
@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // 3. Legacy Handler: Play Base64 Data
+    
     if (request.action === 'offscreen_playBase64') {
         console.log('[Offscreen] playBase64', { size: request.data?.length, speed: request.speed });
         playBase64(request.data, request.speed)
@@ -39,16 +39,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
 
-    // Stop Handlers
+    
     if (request.action === 'offscreen_stopAudio' || request.action === 'offscreen_stopGoogleAudio') {
-        stopCurrentAudio(); // also resolves any hanging playSound promise
+        stopCurrentAudio(); 
         sendResponse({ success: true });
         return false;
     }
 });
 
 
-// ... Audio functions unchanged ...
+
 async function playEdgeTTS(text, voice = 'en-US-AriaNeural', speed = 1.0) {
     stopCurrentAudio();
     throw new Error('EdgeTTS not available (dependency missing)');

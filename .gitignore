@@ -11,3 +11,9 @@ pnpm-debug.log*
 .env.*
 .vscode/
 .idea/_metadata/
+scratch/
+CLAUDE.md
+claude.md
+docs/
+
+

@@ -3,21 +3,21 @@
     let fontStyleElement = null;
 
     function injectFonts() {
-        // Check both local variable and DOM to prevent duplicates from multiple script runs
+        
         if (fontStyleElement || document.getElementById('lumina-fonts')) return;
 
-        // Use Google Fonts CDN for reliable cross-page loading
+        
         const fontCss = `@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');`;
 
         fontStyleElement = document.createElement('style');
         fontStyleElement.id = 'lumina-fonts';
         fontStyleElement.textContent = fontCss;
 
-        // Ensure document.head exists before appending
+        
         if (document.head) {
             document.head.appendChild(fontStyleElement);
         } else {
-            // Wait for DOM to be ready
+            
             const headObserver = new MutationObserver(() => {
                 if (document.head) {
                     if (!document.getElementById('lumina-fonts')) {
@@ -37,13 +37,13 @@
         }
     }
 
-    // Inject fonts immediately when script loads
+    
     injectFonts();
 
-    // KaTeX is injected via manifest.json
+    
     window.katexLoaded = true;
 
-    // Event Cleanup Manager to prevent memory leaks
+    
     class EventCleanupManager {
         constructor() {
             this.listeners = new WeakMap();
@@ -102,7 +102,7 @@
 
     const eventCleanup = new EventCleanupManager();
 
-    // Returns the current browser zoom level relative to 100%.
+    
     let currentCachedZoom = 1;
     function updateCachedZoom(callback) {
         if (!chrome.runtime || !chrome.runtime.id) {
@@ -124,18 +124,18 @@
             if (callback) callback(getPageZoom());
         }
     }
-    // Initial update and on every resize
+    
     updateCachedZoom();
     window.addEventListener('resize', () => {
         updateCachedZoom(() => {
-            // Update spotlight overlay if it exists
+            
             if (luminaShadowRoot) {
                 const spotlight = luminaShadowRoot.querySelector('.lumina-spotlight-overlay');
                 if (spotlight && typeof applyPopupStyles === 'function') {
                     applyPopupStyles(spotlight, true);
                 }
             }
-            // Also update Ask Lumina elements
+            
             if (window.LuminaSelection) {
                 LuminaSelection.hide();
             }
@@ -143,14 +143,14 @@
     });
 
     function getPageZoom() {
-        // Priority 1: Use cached zoom from chrome.tabs.getZoom (most accurate)
+        
         if (currentCachedZoom && currentCachedZoom !== 1) return currentCachedZoom;
 
-        // Priority 2: Use DPR heuristic as immediate fallback (esp. for Mac users)
+        
         const dpr = window.devicePixelRatio || 1;
         const isMac = /mac/i.test(navigator.platform);
         if (isMac) {
-            // On Mac, base DPR is almost always 1 or 2.
+            
             const baseDpr = Math.round(dpr) || 1;
             return dpr / baseDpr;
         }
@@ -168,7 +168,7 @@
     let isExtensionDisabled = false;
 
 
-    // Shadow DOM Variables
+    
     let luminaHost = null;
     let luminaShadowRoot = null;
 
@@ -204,21 +204,18 @@
         });
     }
 
-    /**
-     * Triggers the side panel with a specific query.
-     * Replaces the old floating popup logic.
-     */
+    
     function triggerSidePanelQuery(query, displayQuery = null, mode = 'qa', range = null) {
-        // Handle Auto-Highlighting of selection
+        
         if (window.LuminaAnnotation) {
             const finalRange = range || (window.getSelection().rangeCount > 0 ? window.getSelection().getRangeAt(0) : null);
             if (finalRange && !finalRange.collapsed) {
                 const color = '#FFFB78';
                 
-                // Apply and Save new one using the unified method (unique ID generated automatically)
+                
                 window.LuminaAnnotation.highlight(finalRange, color);
                 
-                // Clear native selection to emphasize the highlight
+                
                 const selection = window.getSelection();
                 if (selection) selection.removeAllRanges();
             }
@@ -233,42 +230,49 @@
     }
 
     function initShadowDOM() {
-        // Check DOM first to prevent duplicates (especially with manifest.json + dynamic registration)
+        
         if (luminaHost || document.getElementById('lumina-host') || document.getElementById('lumina-shadow-host')) return;
 
-        // 1. Shadow root creation
+        
         luminaHost = document.createElement('div');
         luminaHost.id = 'lumina-shadow-host';
         luminaHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; overflow: visible;';
 
-        // Set initial font-size from storage
+        
         applyAskSelectionStyles();
 
         luminaShadowRoot = luminaHost.attachShadow({ mode: 'open' });
         document.documentElement.appendChild(luminaHost);
 
-        // 2. Add styles to shadow root
+        
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = chrome.runtime.getURL('assets/styles/styles.css');
         luminaShadowRoot.appendChild(link);
 
-        // 3. Initialize common UI utilities
+        
         if (window.LuminaSelection) {
             LuminaSelection.init({
                 shadowRoot: luminaShadowRoot,
-                onSubmit: (query, displayQuery, isDictionary, sourceEntry, range) => {
-                    if (isDictionary) {
+                onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate) => {
+                    if (isDictionary || isTranslate) {
                         const selection = window.getSelection();
-                        const text = selection.toString().trim();
+                        const text = selection.toString().trim() || displayQuery;
                         if (text) {
-                            const rangeToUse = range || selection.getRangeAt(0);
-                            const rect = rangeToUse.getBoundingClientRect();
+                            const rangeToUse = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
+                            const rect = rangeToUse ? rangeToUse.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
                             LuminaDictionaryPopup.show(text, {
                                 x: rect.left,
                                 y: rect.bottom + 5,
-                                source: 'cambridge'
+                                source: isTranslate ? 'translate' : 'ai'
                             });
+                            if (isDictionary) {
+                                (async () => {
+                                    await playCombinedAudio(text);
+                                    await new Promise(r => setTimeout(r, 200));
+                                    await playCombinedAudio(text);
+                                })();
+                            }
                             return;
                         }
                     }
@@ -282,14 +286,14 @@
         katexLink.href = chrome.runtime.getURL('lib/katex/katex.min.css');
         luminaShadowRoot.appendChild(katexLink);
 
-        // Mark that styles are loading
+        
         window.luminaStylesLoaded = new Promise((resolve) => {
             link.addEventListener('load', () => {
                 resolve();
             });
         });
 
-        // Append to documentElement (html) to avoid body limitations on some sites
+        
         (document.documentElement || document.body).appendChild(luminaHost);
 
         initThemeObserver();
@@ -298,19 +302,19 @@
 
 
     function preprocessMathContent(text) {
-        // 1. Handle Display Math \[ ... \]
+        
         let processed = text.replace(/(\\\[)([\s\S]*?)(\\\])/g, (match, start, content, end) => {
             let safeContent = content.replace(/%/g, '\\\\%');
             return `\\\\[${safeContent}\\\\]`;
         });
 
-        // 2. Handle Inline Math \( ... \)
+        
         processed = processed.replace(/(\\\()([\s\S]*?)(\\\))/g, (match, start, content, end) => {
             let safeContent = content.replace(/%/g, '\\\\%');
             return `\\\\(${safeContent}\\\\)`;
         });
 
-        // 3. Handle $$ ... $$
+        
         processed = processed.replace(/(\$\$)([\s\S]*?)(\$\$)/g, (match, start, content, end) => {
             let safeContent = content.replace(/%/g, '\\\\%');
             return `$$${safeContent}$$`;
@@ -320,24 +324,24 @@
     }
 
 
-    // Listen for text selection
+    
     document.addEventListener('mouseup', (e) => {
         if (isExtensionDisabled) return;
 
         const selection = window.getSelection();
         if (!selection) return;
 
-        // Synchronous check to block third-party scripts
+        
         const initialText = selection.toString();
         const path = e.composedPath();
         const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host');
 
-        // If user has selected text and it's not inside an editable field or Lumina's UI,
-        // we block other scripts from seeing this mouseup event.
+        
+        
         if (initialText.length > 0 && !isInsideShadow && window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
             e.stopImmediatePropagation();
             e.stopPropagation();
-            // console.log('[Lumina] Blocked third-party selection script');
+            
         }
 
         if (isInsideShadow) return;
@@ -361,9 +365,9 @@
             }
         }, 50);
     }, true);
-    // Use CAPTURE phase to ensure we see the event even if the page stops propagation
+    
 
-    // Double-click is now handled via mouseup selection logic above
+    
 
     window.addEventListener('mousedown', (e) => {
         const path = e.composedPath();
@@ -378,13 +382,13 @@
 
     chrome.storage.local.get(['readWebpage'], (result) => {
         readWebpageEnabled = result.readWebpage ?? false;
-        // LuminaSelection is initialized in initShadowDOM; nothing extra needed here
+        
 
-        // Initialize highlights
+        
         if (window.LuminaAnnotation) {
             LuminaAnnotation.loadHighlights();
         } else {
-            // Wait for selection_utils.js to load if it's not ready
+            
             const checkSelection = setInterval(() => {
                 if (window.LuminaSelection) {
                     if (window.LuminaAnnotation) LuminaAnnotation.loadHighlights();
@@ -395,10 +399,10 @@
         }
     });
 
-    // Listen for storage changes - Consolidated single listener to prevent background lag
+    
     chrome.storage.onChanged.addListener((changes, area) => {
         if (!chrome.runtime || !chrome.runtime.id) return;
-        // 1. Settings & Mappings (local)
+        
         if (area === 'local') {
             if (changes.readWebpage) {
                 readWebpageEnabled = changes.readWebpage.newValue ?? false;
@@ -413,12 +417,12 @@
                 shortcuts.annotationShortcuts = changes.annotationShortcuts.newValue || [];
             }
 
-            // Font size settings (compensated for page zoom)
+            
             if (changes.fontSize || changes.fontSizeByDomain || changes.globalDefaults) {
                 applyAskSelectionStyles();
             }
 
-            // Theme sync
+            
             if (changes.theme || (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.theme)) {
                 if (typeof cachedTheme !== 'undefined') {
                     cachedTheme = null;
@@ -428,17 +432,17 @@
         }
     });
 
-    // ChatHistoryManager is now loaded from libs/chat_history.js
+    
     chrome.storage.local.get(['disabledDomains'], (items) => {
         const disabledDomains = items.disabledDomains || [];
         if (disabledDomains.includes(window.location.hostname)) {
             isExtensionDisabled = true;
-            removeFonts(); // Remove fonts if domain is disabled
+            removeFonts(); 
         }
-        // Fonts are already injected at script load, no need to call injectFonts() here
+        
     });
 
-    // Listen for toggle messages
+    
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (!chrome.runtime || !chrome.runtime.id) return;
         if (request.action === 'toggle_extension_state') {
@@ -459,24 +463,24 @@
             return true;
         }
 
-        // Handle shortcuts update
+        
         if (request.action === 'shortcuts_updated') {
             Object.assign(shortcuts, request.shortcuts);
         }
 
-        // Handle live websource height/CSS update
+        
 
 
-        // Handle visual settings update
+        
         if (request.action === 'settings_updated') {
             const settings = request.settings;
-            // Apply theme change immediately
+            
             if (settings.theme) {
                 updateTheme();
             }
         }
 
-        // Handle load chat history
+        
         if (request.action === 'loadChatHistory') {
             const sessionId = request.sessionId;
             if (sessionId) {
@@ -489,7 +493,7 @@
             }
         }
 
-        // Handle GPS location request from options page
+        
         if (request.action === 'getGPSLocation') {
             if (!navigator.geolocation) {
                 sendResponse({ error: 'Geolocation not supported' });
@@ -501,7 +505,7 @@
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
 
-                    // Reverse geocode using Nominatim (zoom=16 for district level)
+                    
                     try {
                         const response = await fetch(
                             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=16&addressdetails=1&accept-language=en`,
@@ -512,7 +516,7 @@
                             const data = await response.json();
                             const address = data.address || {};
 
-                            // Normalize Vietnamese city names to English
+                            
                             const cityNameMap = {
                                 'Hà Nội': 'Hanoi',
                                 'Thành phố Hồ Chí Minh': 'Ho Chi Minh City',
@@ -527,21 +531,21 @@
 
                             const normalize = (name) => cityNameMap[name] || name;
 
-                            // Build detailed location string with district
+                            
                             const parts = [];
 
-                            // Add district/suburb (this is the detailed part)
+                            
                             if (address.suburb) parts.push(normalize(address.suburb));
                             else if (address.neighbourhood) parts.push(normalize(address.neighbourhood));
                             else if (address.quarter) parts.push(normalize(address.quarter));
                             else if (address.city_district) parts.push(normalize(address.city_district));
 
-                            // Add city
+                            
                             if (address.city) parts.push(normalize(address.city));
                             else if (address.town) parts.push(normalize(address.town));
                             else if (address.village) parts.push(normalize(address.village));
 
-                            // Add country
+                            
                             if (address.country) parts.push(normalize(address.country));
 
                             const locationInfo = {
@@ -555,7 +559,7 @@
                                 isGPS: true
                             };
 
-                            // Save to storage (no timestamp - no expiry)
+                            
                             await chrome.storage.local.set({
                                 locationCache: locationInfo,
                                 gpsEnabled: true
@@ -582,18 +586,18 @@
                 { timeout: 10000, maximumAge: 0, enableHighAccuracy: true }
             );
 
-            return true; // Keep channel open for async
+            return true; 
         }
 
     });
 
-    // Use shared constant from libs/constants.js
+    
     const DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
 
     let shortcuts = { ...DEFAULT_SHORTCUTS };
     let questionMappings = [];
 
-    // Load saved shortcuts
+    
     chrome.storage.local.get(['shortcuts', 'annotationShortcuts'], (items) => {
         if (items.shortcuts) {
             Object.assign(shortcuts, items.shortcuts);
@@ -603,31 +607,31 @@
         }
     });
 
-    // Load saved mappings
+    
     chrome.storage.local.get(['questionMappings'], (items) => {
         if (items.questionMappings) {
             questionMappings = items.questionMappings;
         }
     });
 
-    // --- Shared Chat History ---
-    // Standardized keys and session management handled by ChatHistoryManager
+    
+    
     let popupSearchQuery = '';
     const POPUP_HISTORY_BATCH_SIZE = 30;
     const popupHistoryState = new WeakMap();
 
-    // Track if another key was pressed while a modifier is held (for modifier-only shortcuts)
+    
     let modifierKeyPressedAlone = true;
 
-    // Helper function to check if an event matches a shortcut
+    
     function matchesShortcut(event, action) {
         const shortcut = shortcuts[action];
         if (!shortcut) return false;
 
         if (shortcut.key === 'Shift' || shortcut.key === 'Control' || shortcut.key === 'Alt' || shortcut.key === 'Meta') {
             if (event.type !== 'keyup' || event.key !== shortcut.key || !modifierKeyPressedAlone) return false;
-            // Only enforce side if the code is side-specific (ends with Left/Right).
-            // Generic codes like 'Shift' (both-sides shortcut) match either side.
+            
+            
             const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
             if (isSideSpecific && shortcut.code !== event.code) return false;
             return true;
@@ -638,9 +642,9 @@
         if (!!shortcut.shiftKey !== event.shiftKey) return false;
         if (!!shortcut.metaKey !== event.metaKey) return false;
 
-        // Check main key or mouse button
+        
         if (event.type === 'mousedown' || event.type === 'mouseup' || event.type === 'click') {
-            // Check mouse button
+            
             const buttonCode = 'Mouse' + event.button;
             return shortcut.code === buttonCode || shortcut.key === buttonCode;
         } else {
@@ -658,7 +662,7 @@
             }
         }
 
-        // Protection for sites like YouTube: if focus is in Lumina, don't let shortcuts leak out
+        
         const active = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
             ? LuminaChatUI.getDeepActiveElement()
             : document.activeElement;
@@ -671,8 +675,8 @@
         );
 
         if (isLuminaInput) {
-            // Don't block Enter, Escape or Tab - Lumina needs these for submission, closing, and navigation.
-            // We let them bubble so other Lumina handlers (at document level) can see them.
+            
+            
             if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab') {
                 return;
             }
@@ -680,7 +684,7 @@
             event.stopPropagation();
             event.stopImmediatePropagation();
         }
-    }, true); // Use capture phase to run before other handlers
+    }, true); 
 
     ['keyup', 'keypress'].forEach(type => {
         document.addEventListener(type, (e) => {
@@ -730,7 +734,7 @@
             }
         }
 
-        // Lumina Chat (lone modifier shortcut variant — fires on keyup)
+        
         const luminaChatShortcut = shortcuts['luminaChat'];
         const isLoneModifierLuminaChat = luminaChatShortcut && ['Shift', 'Control', 'Alt', 'Meta'].includes(luminaChatShortcut.key);
         if (isLoneModifierLuminaChat && matchesShortcut(event, 'luminaChat')) {
@@ -738,7 +742,7 @@
             event.stopPropagation();
             event.stopImmediatePropagation();
 
-            // Always use side panel
+            
             safeRuntimeSendMessage({ action: 'open_sidepanel' });
             return;
         }
@@ -767,13 +771,13 @@
     document.addEventListener('keydown', async (event) => {
         if (isExtensionDisabled) return;
 
-        // Undo Highlight Shortcut (Ctrl/Cmd + Z)
+        
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
-            // Don't undo highlights if user is in an editable area
+            
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
 
-            // Check if we should prevent default
-            // We only want to undo highlight if there's no other focused input that might need Ctrl+Z
+            
+            
             const activeElement = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDeepActiveElement() : document.activeElement;
             const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
 
@@ -790,34 +794,34 @@
             return;
         }
 
-        // Question Mappings (Text Selection + Key)
+        
         if (questionMappings && questionMappings.length > 0) {
             if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
                 const selection = window.getSelection();
-                // User requested to preserve spaces (e.g. indentation or specific formatting)
+                
                 const text = selection.toString();
 
-                // Check if there is actual content (ignoring pure whitespace for trigger safety, 
+                
                 if (text && text.trim().length > 0) {
                     const mapping = questionMappings.find(m => {
-                        // Support new keyData format or legacy simple key
+                        
                         let config = m.keyData;
                         if (!config && m.key) {
-                            // Legacy fallback
+                            
                             config = { key: m.key, code: 'Key' + m.key.toUpperCase() };
-                            // Legacy only supported simple keys, so no modifiers
+                            
                             if (event.ctrlKey || event.metaKey || event.altKey) return false;
                         }
 
                         if (!config) return false;
 
-                        // Check match manually using similar logic to matchesShortcut
+                        
                         if (!!config.ctrlKey !== event.ctrlKey) return false;
                         if (!!config.altKey !== event.altKey) return false;
                         if (!!config.shiftKey !== event.shiftKey) return false;
                         if (!!config.metaKey !== event.metaKey) return false;
 
-                        // Check main key
+                        
                         if (config.key === 'Shift' || config.key === 'Control' || config.key === 'Alt' || config.key === 'Meta') {
                             return event.key === config.key;
                         }
@@ -830,14 +834,14 @@
                         event.stopPropagation();
                         event.stopImmediatePropagation();
 
-                        // CRITICAL: Set range and reset direction BEFORE showing popup
-                        // This ensures updatePopupPosition uses selection coordinates, not center.
+                        
+                        
                         if (selection.rangeCount > 0) {
                             currentRange = selection.getRangeAt(0).cloneRange();
                         }
-                        popupDirection = null; // Re-evaluate above/below for fresh shortcut trigger
+                        popupDirection = null; 
 
-                        // Check if prompt implies translation
+                        
                         const promptLower = mapping.prompt.toLowerCase();
                         const hasVariables = /\$(SelectedText|Sentence|Paragraph|Container)|"SelectedText"/i.test(mapping.prompt);
 
@@ -849,11 +853,11 @@
                             promptLower.includes('chuyển ngữ') ||
                             (promptLower.includes('nghĩa') && (promptLower.includes('việt') || promptLower.includes('viet')));
 
-                        // Extract text for replacement
+                        
                         const normalize = (s) => s.replace(/\s+/g, ' ').trim();
                         const cleanSelection = normalize(text);
 
-                        // Construct questions with variable replacement
+                        
                         let fullQuestion = mapping.prompt;
                         let displayQuestion = mapping.prompt;
 
@@ -864,7 +868,7 @@
                                 .replace(/\$Sentence/gi, () => getSentenceContext())
                                 .replace(/\$Paragraph/gi, () => getParagraphContext())
                                 .replace(/\$Container/gi, containerContent);
-                            // Display version: omit $Container and surrounding punctuation/spaces
+                            
                             displayQuestion = mapping.prompt
                                 .replace(/\$SelectedText|SelectedText/gi, text.trim())
                                 .replace(/\$Sentence/gi, () => getSentenceContext())
@@ -872,12 +876,12 @@
                                 .replace(/[("'\[]*\$Container[)"'\]]*\s*/gi, '')
                                 .trim();
                         } else {
-                            // Fallback logic: place selection FIRST to match UI layout [SelectedText] [Input]
+                            
                             fullQuestion = `"${text.trim()}" ${mapping.prompt}`;
                             displayQuestion = fullQuestion;
                         }
 
-                        // Always redirect to Side Panel
+                        
                         triggerSidePanelQuery(fullQuestion, displayQuestion, 'qa', currentRange);
                         if (window.LuminaSelection) LuminaSelection.hide();
                         return;
@@ -888,7 +892,7 @@
 
 
 
-        // If the ask-selection button is visible and a shortcut fires, hide it.
+        
         if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
 
         if (window.LuminaSelection && LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
@@ -897,37 +901,37 @@
             }
         }
 
-        // Lumina Chat
+        
         if (matchesShortcut(event, 'luminaChat')) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
 
-            // Always open side panel
+            
             safeRuntimeSendMessage({ action: 'open_sidepanel' });
             return;
         }
 
-        // Mic Toggle Shortcut
+        
         if (matchesShortcut(event, 'micToggle')) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
 
-            // Set flag so sidepanel starts listening after it opens
+            
             chrome.storage.local.set({ pendingMicToggle: Date.now() });
             safeRuntimeSendMessage({ action: 'open_sidepanel' });
             return;
         }
 
 
-        // Ask Lumina Shortcut
+        
         if (matchesShortcut(event, 'askLumina')) {
             const selection = window.getSelection();
             const text = selection.toString().trim();
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
-            // Only trigger if text is selected
+            
             if (text.length > 0 && range && window.LuminaSelection) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -939,8 +943,8 @@
             }
         }
 
-        // Play Audio Shortcut
-        // Skip if this is a modifier-only shortcut (e.g. Shift alone) — those are handled in keyup to avoid double-firing
+        
+        
         const audioShortcut = shortcuts['audio'];
         const isModifierOnlyAudioShortcut = audioShortcut && ['Shift', 'Control', 'Alt', 'Meta'].includes(audioShortcut.key);
         if (!isModifierOnlyAudioShortcut && matchesShortcut(event, 'audio')) {
@@ -953,11 +957,11 @@
             const text = getSmartSelectionText() || selection.toString().trim();
 
             const activeElement = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDeepActiveElement() : document.activeElement;
-            // Don't trigger if typing in an input without text selected
+            
             const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
             if (isInput && text.length === 0) return;
 
-            // If there's selected text, always play/replay from beginning
+            
             if (text) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -965,7 +969,7 @@
                 playCombinedAudio(text);
                 return;
             } else {
-                // No text selected - stop any playing audio
+                
                 event.preventDefault();
                 event.stopPropagation();
                 event.stopImmediatePropagation();
@@ -974,9 +978,9 @@
             }
         }
 
-        // NOTE: Audio shortcut for modifier-only keys (like Shift alone) is handled in keyup listener below
+        
 
-        // --- Annotation / Highlighting Shortcuts ---
+        
         const annotationShortcuts = shortcuts['annotationShortcuts'] || [];
         for (const shortcut of annotationShortcuts) {
             if (matchesAnnotationShortcut(event, shortcut)) {
@@ -993,9 +997,9 @@
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
 
-                    // Save to storage before applying to DOM (applying mutates the range)
+                    
                     LuminaAnnotation.saveHighlight(range, color, highlightId);
-                    // Apply visually
+                    
                     LuminaAnnotation.applyHighlight(range, color, highlightId);
 
                     window.getSelection().removeAllRanges();
@@ -1009,7 +1013,7 @@
 
 
 
-        // Translate - Always performs translation
+        
         if (matchesShortcut(event, 'translate')) {
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
 
@@ -1022,16 +1026,16 @@
                 event.stopImmediatePropagation();
                 currentText = text;
 
-                // Capture range BEFORE clearing selection
+                
                 if (selection.rangeCount > 0) {
                     currentRange = selection.getRangeAt(0).cloneRange();
                 }
-                popupDirection = null; // Re-evaluate positioning for fresh trigger
+                popupDirection = null; 
 
                 window.getSelection().removeAllRanges();
                 if (window.LuminaSelection) LuminaSelection.hide();
 
-                // Always open side panel for translation
+                
                 safeRuntimeSendMessage({
                     action: 'open_sidepanel_with_query',
                     query: `translate: ${text}`
@@ -1045,7 +1049,7 @@
     function matchesAnnotationShortcut(event, shortcut) {
         if (!shortcut) return false;
 
-        // Match modifiers if they exist
+        
         if (!!shortcut.ctrlKey !== event.ctrlKey) return false;
         if (!!shortcut.altKey !== event.altKey) return false;
         if (!!shortcut.shiftKey !== event.shiftKey) return false;
@@ -1062,21 +1066,21 @@
 
         let finalResult = target.trim();
 
-        // Check capitalization of the first letter
+        
         const firstChar = trimmedOriginal.charAt(0);
         const isOriginalCapitalized = firstChar === firstChar.toUpperCase() && firstChar !== firstChar.toLowerCase();
 
-        // Check for trailing dot
+        
         const hasTrailingDot = trimmedOriginal.endsWith('.');
 
-        // 1. Handle Trailing Dot
+        
         if (!hasTrailingDot && finalResult.endsWith('.')) {
             finalResult = finalResult.slice(0, -1);
         } else if (hasTrailingDot && !finalResult.endsWith('.')) {
             finalResult += '.';
         }
 
-        // 2. Handle Capitalization
+        
         if (finalResult.length > 0) {
             const firstCharResult = finalResult.charAt(0);
             if (isOriginalCapitalized) {
@@ -1089,29 +1093,29 @@
         return finalResult;
     }
 
-    // ----- Audio playback (plays locally in content script via new Audio()) -----
-    // Uses unified fetchAudio in background.js — same logic as spotlight.
-    // No offscreen document or port needed - avoids all shared-state race conditions
+    
+    
+    
 
-    let currentAudioEl = null;   // The currently playing Audio element
-    let audioAborted = false;    // Set to true to abort the current playback chain
+    let currentAudioEl = null;   
+    let audioAborted = false;    
     let audioDebounceTimer = null;
-    const CHUNK_GAP_MS = 50;     // Gap between consecutive chunks
+    const CHUNK_GAP_MS = 50;     
 
-    // Audio cache for instant replay (in-memory for current session)
+    
     let audioCache = {
         text: null,
-        type: null,  // 'oxford' or 'google'
-        data: null   // single base64 string for oxford, array for google
+        type: null,  
+        data: null   
     };
 
-    // Combined Play - delegates all fetch logic to the unified fetchAudio in background.js
+    
     async function playCombinedAudio(text) {
         if (!text) return;
 
         if (audioDebounceTimer) { clearTimeout(audioDebounceTimer); audioDebounceTimer = null; }
 
-        // Abort and stop any current playback immediately
+        
         audioAborted = true;
         if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
         audioAborted = false;
@@ -1122,14 +1126,14 @@
             const storageData = await chrome.storage.local.get(['audioSpeed']);
             const speed = storageData.audioSpeed || 1.0;
 
-            // 1. Check in-memory cache
+            
             if (audioCache.text === normalizedText && audioCache.data) {
                 const chunks = Array.isArray(audioCache.data) ? audioCache.data : [audioCache.data];
                 await playChunksSequentially(chunks, speed);
                 return;
             }
 
-            // 2. Check persistent cache
+            
             try {
                 const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: normalizedText });
                 if (cached && cached.success && cached.data) {
@@ -1138,19 +1142,19 @@
                     await playChunksSequentially(chunks, speed);
                     return;
                 }
-            } catch (e) { /* cache miss */ }
+            } catch (e) {  }
 
-            // 3. Fetch via unified background logic (Oxford priority for 1-2 words, Google otherwise)
+            
             const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed });
             if (!result || !result.chunks || result.chunks.length === 0) return;
 
             audioCache = { text: normalizedText, type: result.type, data: result.chunks };
             await playChunksSequentially(result.chunks, speed);
             chrome.runtime.sendMessage({ action: 'setAudioCache', text: normalizedText, type: result.type, data: result.chunks }).catch(() => { });
-        } catch (e) { /* ignore */ }
+        } catch (e) {  }
     }
 
-    // Play an array of base64 chunks sequentially with a small gap between them
+    
     async function playChunksSequentially(chunks, speed) {
         for (let i = 0; i < chunks.length; i++) {
             if (audioAborted) break;
@@ -1166,7 +1170,7 @@
         if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
     }
 
-    // Shared AudioContext — used only for silence detection, not for playback
+    
     let _contentAudioCtx = null;
     function getContentAudioCtx() {
         if (!_contentAudioCtx || _contentAudioCtx.state === 'closed') {
@@ -1175,12 +1179,12 @@
         return _contentAudioCtx;
     }
 
-    // Detect leading-silence offset (seconds) by decoding the buffer and scanning samples.
-    // Returns 0 if detection fails.
+    
+    
     async function detectSilenceOffset(byteArray) {
         try {
             const ctx = getContentAudioCtx();
-            // decodeAudioData transfers the buffer; pass a copy so the original is intact
+            
             const audioBuffer = await ctx.decodeAudioData(byteArray.buffer.slice(0));
             const channelData = audioBuffer.getChannelData(0);
             const THRESHOLD = 0.005;
@@ -1195,7 +1199,7 @@
         }
     }
 
-    // Play a single base64 data URI via new Audio(), seeking past any leading silence.
+    
     function playBase64Locally(base64, speed = 1.0) {
         return new Promise(async (resolve) => {
             if (audioAborted) { resolve(); return; }
@@ -1209,7 +1213,7 @@
                     const byteArray = new Uint8Array(byteString.length);
                     for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
 
-                    // Detect silence offset before creating Blob URL
+                    
                     const silenceOffset = await detectSilenceOffset(byteArray);
 
                     const blob = new Blob([byteArray], { type: mime });
@@ -1228,9 +1232,9 @@
                     audio.play().catch(() => { cleanup(); resolve(); });
                     return;
                 }
-            } catch (e) { /* fall back below */ }
+            } catch (e) {  }
 
-            // Fallback: play without silence trimming
+            
             const audio = new Audio(blobUrl || base64);
             audio.playbackRate = speed;
             currentAudioEl = audio;
@@ -1241,7 +1245,7 @@
         });
     }
 
-    // Oxford Audio (Helper)
+    
     function playOxfordAudio(text, speed) {
         return new Promise((resolve, reject) => {
             if (!text) {
@@ -1252,7 +1256,7 @@
             const str = text.trim().toLowerCase();
             const audioUrl = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${str}--_gb_1.mp3`;
 
-            // Send to background -> Offscreen
+            
             chrome.runtime.sendMessage({
                 action: 'playAudio',
                 url: audioUrl,
@@ -1271,7 +1275,7 @@
         });
     }
 
-    // --- Contextual Chat Helpers ---
+    
 
     function extractContextParagraph(selection) {
         let context = "";
@@ -1280,7 +1284,7 @@
             const range = selection.getRangeAt(0);
             let node = range.commonAncestorContainer;
 
-            // Find the parent block element (p, div, etc.)
+            
             while (node && node.nodeType !== Node.ELEMENT_NODE) {
                 node = node.parentNode;
             }
@@ -1293,19 +1297,19 @@
                 context = node.textContent.trim();
             }
 
-            // If no context found or too short, try to get surrounding text
+            
             if (!context || context.length < 50) {
                 const fullText = selection.anchorNode.textContent || "";
                 const selectedText = selection.toString();
                 const index = fullText.indexOf(selectedText);
 
                 if (index !== -1) {
-                    // Get surrounding context (±200 chars)
+                    
                     const start = Math.max(0, index - 200);
                     const end = Math.min(fullText.length, index + selectedText.length + 200);
                     context = fullText.substring(start, end).trim();
 
-                    // Clean up if we cut mid-sentence
+                    
                     if (start > 0 && !context.startsWith('.')) {
                         context = context.substring(context.indexOf('. ') + 2);
                     }
@@ -1316,7 +1320,7 @@
                 }
             }
 
-            // Limit context length
+            
             if (context.length > 500) {
                 context = context.substring(0, 500) + '...';
             }
@@ -1334,14 +1338,14 @@
             return;
         }
 
-        // Add remove button
+        
         const removeBtn = document.createElement('div');
         removeBtn.className = 'lumina-context-remove';
         removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
         removeBtn.title = 'Remove context';
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // If context is standalone (pending), just remove it
+            
             const parentEntry = element.closest('.lumina-dict-entry');
             if (parentEntry) {
                 parentEntry.remove();
@@ -1353,7 +1357,7 @@
 
         const maxLength = 120;
 
-        // Always store full text in dataset for AI context extraction
+        
         element.dataset.fullText = fullText;
 
         if (fullText.length > maxLength) {
@@ -1362,7 +1366,7 @@
             element.title = "Click to expand";
 
             element.addEventListener('click', function expand(e) {
-                // Don't expand if clicking on remove button
+                
                 if (e.target.closest('.lumina-context-remove')) return;
 
                 textSpan.textContent = this.dataset.fullText;
@@ -1378,16 +1382,16 @@
     }
 
     function appendContextEntry(contextParagraph) {
-        // No-op
+        
     }
 
     let lastPopupState = null;
 
 
 
-    let popupDirection = null; // 'above' or 'below'
+    let popupDirection = null; 
 
-    // Update position on scroll and resize to keep popup next to text
+    
     let isTicking = false;
 
 
@@ -1396,7 +1400,7 @@
     function applyAskSelectionStyles() {
         chrome.storage.local.get(['fontSize', 'fontSizeByDomain', 'globalDefaults'], (items) => {
             const currentDomain = window.location.hostname;
-            let baseFontSize = 13; // Default
+            let baseFontSize = 13; 
 
             if (items.fontSizeByDomain && items.fontSizeByDomain[currentDomain]) {
                 baseFontSize = items.fontSizeByDomain[currentDomain];
@@ -1409,7 +1413,7 @@
             if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.applyFontSize === 'function') {
                 LuminaChatUI.applyFontSize(luminaHost, baseFontSize);
             } else {
-                // Fallback if common.js is not loaded for some reason
+                
                 if (luminaHost) {
                     luminaHost.style.setProperty('font-size', baseFontSize + 'px', 'important');
                 }
@@ -1421,7 +1425,7 @@
 
     var cachedTheme = null;
     function updateTheme() {
-        // Strategy: Cache theme to avoid repeated storage reads during streaming/scrolling
+        
         const applyTheme = (theme) => {
             const preferredTheme = theme === 'auto'
                 ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -1445,10 +1449,10 @@
         });
     }
 
-    // Clear theme cache when options change
-    // (Theme sync already handled by consolidated storage listener aloft)
+    
+    
 
-    // Watch for popup creation to apply theme immediately
+    
     let dictPlusObserver = null;
 
     function initThemeObserver() {
@@ -1457,15 +1461,15 @@
 
         let _themeDebounceTimer = null;
         dictPlusObserver = new MutationObserver((mutations) => {
-            // Only trigger on top-level childList changes (popup/bar added/removed),
-            // not on every streaming innerHTML mutation deep in the tree.
+            
+            
             const hasTopLevelChange = mutations.some(m =>
                 m.type === 'childList' && m.addedNodes.length &&
                 m.target === luminaShadowRoot
             );
             if (!hasTopLevelChange) return;
 
-            // Debounce: call updateTheme at most once per 200ms
+            
             if (_themeDebounceTimer) return;
             _themeDebounceTimer = setTimeout(() => {
                 _themeDebounceTimer = null;
@@ -1476,12 +1480,12 @@
         dictPlusObserver.observe(luminaShadowRoot, { childList: true, subtree: true });
     }
 
-    // Ctrl/Cmd + Click = Enter (on focused element)
+    
     document.addEventListener('mousedown', (e) => {
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.button === 0) {
             const focused = document.activeElement;
             if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable)) {
-                e.preventDefault(); // Prevent focus from changing
+                e.preventDefault(); 
                 const enterEvent = new KeyboardEvent('keydown', {
                     key: 'Enter',
                     code: 'Enter',
@@ -1499,7 +1503,7 @@
         if (node.nodeType === Node.TEXT_NODE) {
             return node.textContent;
         }
-        // Handle DocumentFragment (nodeType 11)
+        
         if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
             let text = '';
             for (const child of node.childNodes) {
@@ -1512,16 +1516,16 @@
 
         const el = node;
 
-        // Use computed style only if element is in document. 
-        // For detached nodes (like in DocumentFragment), getComputedStyle is unreliable or empty.
+        
+        
         if (el.isConnected) {
             const style = window.getComputedStyle(el);
             if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                 return '';
             }
         } else {
-            // For detached nodes, we can only check inline styles. 
-            // We assume it's visible unless explicitly hidden inline.
+            
+            
             if (el.style.display === 'none' || el.style.visibility === 'hidden' || el.style.opacity === '0') {
                 return '';
             }
@@ -1529,12 +1533,12 @@
 
         const tag = el.tagName.toLowerCase();
 
-        // Skip common UI elements and functional buttons
+        
         if (['button', 'svg', 'mat-icon', 'script', 'style', 'noscript', 'img'].includes(tag)) {
             return '';
         }
 
-        // Explicit check for button roles or button classes
+        
         const classStr = typeof el.className === 'string' ? el.className.toLowerCase() : '';
 
         if (el.getAttribute('role') === 'button' ||
@@ -1544,33 +1548,33 @@
             return '';
         }
 
-        // Check for links masquerading as buttons
+        
         if (tag === 'a' && (
             el.classList.contains('btn') ||
             el.classList.contains('button') ||
-            el.className.includes('btn ') // Fallback string check
+            el.className.includes('btn ') 
         )) {
             return '';
         }
 
-        // Skip elements with aria-hidden
+        
         if (el.getAttribute('aria-hidden') === 'true') {
             return '';
         }
 
-        // Skip icon fonts and specific excluded classes (like dividers)
+        
         const classNameStr = typeof el.className === 'string' ? el.className : (el.className?.baseVal || '');
         if (/\b(icon|material-icons|google-symbols|fa-|glyphicon|lumina-translation-divider|lumina-trans-actions)\b/i.test(classNameStr)) {
             return '';
         }
 
-        // Recurse into children
+        
         let text = '';
         for (const child of el.childNodes) {
             text += getVisibleText(child);
         }
 
-        // Add space/newline based on display type/tag
+        
         if (['div', 'p', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'].includes(tag)) {
             text = '\n' + text + '\n';
         }
@@ -1578,13 +1582,10 @@
         return text;
     }
 
-    /**
-     * Cross-Shadow DOM Selection Helper
-     * Returns the active selection even if it's inside the Lumina Shadow DOM
-     */
+    
     function getActiveSelection(preferShadow = false) {
         if (preferShadow) {
-            // Prioritize Lumina's own shadow root if requested
+            
             if (typeof luminaShadowRoot !== 'undefined' && luminaShadowRoot) {
                 try {
                     const shadowSel = (luminaShadowRoot.getSelection) ? luminaShadowRoot.getSelection() : null;
@@ -1600,7 +1601,7 @@
             return sel;
         }
 
-        // Recursively check Shadow DOM of active elements (common for components/iframes)
+        
         try {
             let active = document.activeElement;
             while (active && active.shadowRoot) {
@@ -1613,7 +1614,7 @@
         } catch (e) { }
 
         if (!preferShadow) {
-            // Check Lumina's own shadow root last if not prioritized
+            
             if (typeof luminaShadowRoot !== 'undefined' && luminaShadowRoot) {
                 try {
                     const shadowSel = luminaShadowRoot.getSelection ? luminaShadowRoot.getSelection() : null;
@@ -1637,14 +1638,14 @@
 
         let extracted = getVisibleText(fragment);
 
-        // Clean up
+        
         extracted = extracted
-            .replace(/\n{3,}/g, '\n\n')  // Collapse multiple newlines
-            .replace(/[ \t]+/g, ' ')      // Collapse spaces
-            .replace(/ ?\n ?/g, '\n')     // Clean spaces around newlines
+            .replace(/\n{3,}/g, '\n\n')  
+            .replace(/[ \t]+/g, ' ')      
+            .replace(/ ?\n ?/g, '\n')     
             .trim();
 
-        // Fallback to basic selection string if smart extraction failed but selection exists
+        
         if (!extracted && sel.toString().trim()) {
             extracted = sel.toString().trim();
         }
@@ -1652,21 +1653,16 @@
         return extracted;
     }
 
-    /**
-     * Sanitizes text selection for dictionary lookups by removing leading/trailing punctuation
-     * and excess whitespace. Example: "take it for granted," -> "take it for granted"
-     */
+    
     function sanitizeDictionaryQuery(text) {
         if (!text) return '';
-        // Trim and then remove non-alphanumeric trailing/leading characters
-        // (keeping inner ones like '-'). Using unicode aware regex if possible, 
-        // but basic punctuation check is safer for now.
+        
+        
+        
         return text.toString().trim().replace(/^[^a-zA-Z0-9'"]+|[^a-zA-Z0-9'"]+$/g, '');
     }
 
-    /**
-     * Get the sentence containing the current selection
-     */
+    
     function getSentenceContext() {
         const sel = getActiveSelection();
         if (!sel || sel.rangeCount === 0) return '';
@@ -1677,7 +1673,7 @@
 
         const blockTags = ['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'ARTICLE', 'SECTION', 'TR', 'TD'];
 
-        // Find a block-level parent, crossing shadow boundaries if needed
+        
         let parent = node.nodeType === 3 ? node.parentNode : node;
         while (parent) {
             if (parent.nodeType === 11 && parent.host) {
@@ -1700,7 +1696,7 @@
         const selectionText = sel.toString();
         if (!selectionText) return '';
 
-        // Robust way to find selection offset in parent
+        
         const preSelectionRange = range.cloneRange();
         preSelectionRange.selectNodeContents(parent);
         preSelectionRange.setEnd(range.startContainer, range.startOffset);
@@ -1709,9 +1705,9 @@
         const before = text.substring(0, index);
         const after = text.substring(index + selectionText.length);
 
-        // Find boundaries of the sentence
-        const lastTerminatorIndex = before.lastIndexOf('.'); // Simple fallback
-        // Use regex for more markers: . ! ?
+        
+        const lastTerminatorIndex = before.lastIndexOf('.'); 
+        
         const markers = before.match(/.*[.!?](?:\s|$)/);
         const start = markers ? markers[0].length : 0;
 
@@ -1721,9 +1717,7 @@
         return text.substring(start, end).trim();
     }
 
-    /**
-     * Get the paragraph (block) containing the current selection
-     */
+    
     function getParagraphContext() {
         const sel = getActiveSelection();
         if (!sel || sel.rangeCount === 0) return '';
@@ -1754,13 +1748,8 @@
         return (parent.innerText || parent.textContent).trim();
     }
 
-    /**
-     * Get the nearest container (DIV) content
-     */
-    /**
-     * Smart Context: Climbs up the DOM from selection to find the most meaningful container.
-     * It will skip small blocks (P, LI) and keep climbing until it finds a DIV or similar substantial container.
-     */
+    
+    
     function getSmartClimbedContext() {
         const sel = getActiveSelection();
         if (!sel || sel.rangeCount === 0) return '';
@@ -1769,7 +1758,7 @@
         let node = range.startContainer;
         if (!node) return '';
 
-        // Start looking for containers
+        
         const bigContainers = ['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'ASIDE', 'BODY'];
 
         let current = node.nodeType === 3 ? node.parentNode : node;
@@ -1792,7 +1781,7 @@
         return (current.innerText || current.textContent).trim();
     }
 
-    // Smart copy listener - always trim whitespace
+    
     document.addEventListener('copy', (e) => {
         if (isExtensionDisabled) return;
 
@@ -1800,7 +1789,7 @@
             const activeElement = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDeepActiveElement() : document.activeElement;
             const isEditing = activeElement && (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName) || activeElement.isContentEditable);
 
-            // Don't apply smart copy when user is selecting text inside an input/textarea or other editing field
+            
             if (isEditing) return;
 
             const sel = window.getSelection();
@@ -1810,27 +1799,23 @@
             const original = sel.toString();
             const trimmedOriginal = original.trim();
 
-            // Always use trimmed text; prefer smart text if different
+            
             let finalText = trimmedOriginal;
             if (smartText && smartText !== trimmedOriginal) {
                 finalText = smartText.trim();
             }
 
-            // Only override if we're actually changing something
+            
             if (finalText !== original) {
                 e.preventDefault();
                 e.clipboardData.setData('text/plain', finalText);
             }
         } catch (err) {
-            // Silently fail to let default browser copy proceed
+            
         }
     }, true);
 
-    /**
-     * YouTube Transcript Cache
-     * Stores transcript text captured from the DOM panel to provide fast access
-     * and persistence even if the panel is closed.
-     */
+    
     let youtubeTranscriptCache = {
         videoId: null,
         transcript: null,
@@ -1839,33 +1824,66 @@
 
     let lastExtractedContent = null;
     let lastExtractedUrl = "";
+    let lastExtractionTime = 0;
 
-    /**
-     * Lumina Smart Scan: A robust, general-purpose content extraction algorithm 
-     * that identifies all significant content blocks without over-aggressive pruning.
-     */
-    async function extractMainContent(doc = document) {
+    
+    async function extractMainContent(doc = document, forceRefresh = false) {
         const url = window.location.href;
+        const now = Date.now();
 
-        // Cache check
-        if (lastExtractedContent && lastExtractedUrl === url) {
+        
+        if (!forceRefresh && lastExtractedContent && lastExtractedUrl === url && (now - lastExtractionTime < 2000)) {
             return lastExtractedContent;
         }
 
-        // Smart Wait for SPAs: If the page is a dynamic app (Vite/React) and seems empty,
-        // wait briefly for the content to render before extraction.
+        
+        
         const isPossiblyEmptySPA = () => {
             const text = (doc.body ? doc.body.innerText : "") || "";
             const hasAppRoot = doc.querySelector('#root') || doc.querySelector('#app') || doc.querySelector('div[id*="app"]');
             const isVite = doc.querySelector('script[type="module"]');
             const hasSpinner = doc.querySelector('.spoke-spinner') || doc.querySelector('.ant-spin') || doc.querySelector('.loading-spinner');
-            return (text.length < 600 && (hasAppRoot || isVite)) || hasSpinner;
+            const hasLMS = doc.querySelector('.lms-container') || doc.querySelector('.dol-content') || doc.querySelector('[class*="passage"]');
+            
+            
+            const isEducationSite = url.includes('dolenglish') || url.includes('ielts') || url.includes('education');
+            const minThreshold = isEducationSite ? 1000 : 600;
+
+            return (text.length < minThreshold && (hasAppRoot || isVite || hasLMS)) || hasSpinner;
         };
 
+        
         if (isPossiblyEmptySPA()) {
             await new Promise(r => setTimeout(r, 1500));
         }
 
+        let retries = 0;
+        const MAX_RETRIES = 2;
+        let finalOutput = null;
+
+        while (retries <= MAX_RETRIES) {
+            finalOutput = await performExtraction(doc, url);
+            
+            
+            if (finalOutput && finalOutput.content && finalOutput.content.length > 500) {
+                break;
+            }
+
+            
+            if (retries < MAX_RETRIES) {
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            retries++;
+        }
+
+        lastExtractedContent = finalOutput;
+        lastExtractedUrl = url;
+        lastExtractionTime = Date.now();
+
+        return finalOutput;
+    }
+
+    async function performExtraction(doc, url) {
         const isYouTube = typeof YoutubeUtils !== 'undefined' && YoutubeUtils.isYouTubeVideo(url);
         let youtubeTranscript = "";
         if (isYouTube) {
@@ -1884,14 +1902,14 @@
                 codeBlockStyle: 'fenced'
             });
 
-            // Helper to normalize text for reliable comparison (collapses whitespace/newlines)
+            
             const normalize = (s) => (s || "").toLowerCase().replace(/\s+/g, ' ').trim();
 
             let finalMarkdown = `[Context Source: ${document.title}]\nURL: ${url}\n\n`;
             let normalizedCaptured = "";
 
-            // Intelligent Scan: Detect high-density information blocks
-            const MIN_TEXT_LENGTH = 50; // Lowered to capture questions
+            
+            const MIN_TEXT_LENGTH = 50; 
             const SCRAP_TAGS = [
                 'script', 'style', 'nav', 'footer', 'header', 'noscript', 'aside', 'svg', 'button', 'audio', 'video',
                 '.menu', '.sidebar', '.navbar', '.header', '.footer', '[class*="header" i]', '[class*="footer" i]',
@@ -1910,30 +1928,30 @@
                 '.LandingHeader__Main-sc-vzeq2b-0', '.LandingLayout__Main-sc-1plzfds-0', '.TopbarNavList__Main-sc-tbxqf6-1'
             ];
 
-            // Explicitly tell Turndown to remove these tags from output
+            
             turndownService.remove(['script', 'style', 'noscript', 'iframe', 'svg', 'button', 'audio', 'video', 'canvas', 'map', 'area', 'img[alt*="logo" i]']);
 
-            // Helper to find leaf-ward content blocks while avoiding huge wrappers
+            
             const findCandidates = (root) => {
                 const HIGH_LEVEL_WRAPPERS = ['html', 'body', '#__next', '#app-root', '.app-wrapper', '.app-container', '.main-wrapper', '.layout-wrapper'];
                 
-                // Query potential blocks
+                
                 let found = Array.from(root.querySelectorAll('article, main, section, [class*="content"], [id*="content"], [class*="article"], [class*="main"], [class*="reading"], [class*="passage"], [class*="question"], [class*="exercise"], [class*="practice"], [id*="reading"], [id*="passage"], div, p'));
                 
-                // Filter out candidates that are high-level layout containers
+                
                 found = found.filter(el => {
                     const isWrapper = HIGH_LEVEL_WRAPPERS.some(sel => el.matches(sel));
                     if (isWrapper) return false;
                     
-                    // Also avoid elements that are direct children of body or __next if they are too large
+                    
                     if (el.parentElement && (el.parentElement.tagName === 'BODY' || el.parentElement.id === '__next')) {
-                        // Only include if it's a semantic content tag
+                        
                         if (!el.matches('article, main, section')) return false;
                     }
                     return true;
                 });
 
-                // Scan for Shadow Roots
+                
                 const all = root.querySelectorAll('*');
                 for (const el of all) {
                     if (el.shadowRoot) {
@@ -1945,7 +1963,7 @@
 
             const candidates = findCandidates(doc);
 
-            // Priority Sort: prefer explicit content tags first
+            
             candidates.sort((a, b) => {
                 const aIsPrimary = a.matches('article, main, [class*="article"], [id*="article"], [class*="reading"], [class*="passage"], [class*="question"]');
                 const bIsPrimary = b.matches('article, main, [class*="article"], [id*="article"], [class*="reading"], [class*="passage"], [class*="question"]');
@@ -1958,31 +1976,31 @@
             candidates.forEach(el => {
                 if (!el || !el.isConnected) return;
                 
-                // Skip if element or any ancestor matches scrap tags
+                
                 if (el.closest(SCRAP_TAGS.join(','))) return;
 
                 const text = (el.innerText || el.textContent || "").trim();
                 if (text.length < MIN_TEXT_LENGTH) return;
 
-                // Density/Link check: If too many links vs text, it's definitely a navigation block
+                
                 const linkCount = el.querySelectorAll('a').length;
                 if (linkCount > 2 && text.length / linkCount < 50) return;
 
                 const normText = normalize(text);
 
-                // Aggressive De-duplication: 
+                
                 const startFingerprint = normText.slice(0, 150);
                 if (startFingerprint && normalizedCaptured.includes(startFingerprint)) return;
                 if (normText.length > 200 && normalizedCaptured.includes(normText.substring(50, 200))) return;
 
-                // Text Density Check
+                
                 const html = el.innerHTML || "";
                 const density = text.length / (html.length + 1);
 
-                // Broaden inclusion for education/reading sites
+                
                 const isEducationBlock = el.matches('[class*="question"], [class*="reading"], [class*="passage"], [class*="exercise"], [class*="practice"]');
 
-                // Segment filtering: skip if it seems like a list of meta info
+                
                 if (text.split('\n').length < 3 && linkCount > 1 && !isEducationBlock) return;
 
                 if (density > 0.05 || el.matches('article, main, p, [class*="content"]') || isEducationBlock) {
@@ -1996,11 +2014,11 @@
             });
 
             if (youtubeTranscript) {
-                finalMarkdown += `\n\n---\n\n[YouTube Video Transcript]:\n${youtubeTranscript}`;
+                finalMarkdown += "\n\n--- [Video Transcript] ---\n\n" + youtubeTranscript;
             }
 
             result.content = segmentsCount > 0 ? finalMarkdown : `[Fallback Page Text]:\n${doc.body.innerText}`;
-
+            return result;
         } catch (error) {
             console.error('[Lumina] Content extraction failed:', error);
             result.content = `[Extraction Error]: ${error.message}`;
@@ -2016,18 +2034,15 @@
         if (typeof LuminaToken !== 'undefined') {
             return LuminaToken.count(text);
         }
-        return Math.ceil(text.length / 4); // Improved rough fallback
+        return Math.ceil(text.length / 4); 
     }
 
 
-    // Assign to window for external calling via executeScript
+    
     window.luminaExtractMainContent = extractMainContent;
     window.luminaEstimateTokens = luminaEstimateTokens;
 
-    /**
-     * YouTube Button Manager
-     * Handles injection and state management for the "Ask Lumina" button on YouTube.
-     */
+    
     class YouTubeButtonManager {
         constructor() {
             this.injected = false;
@@ -2163,12 +2178,12 @@
             this.updateState('loading');
 
             try {
-                // Pre-fetch transcript to be ready
+                
                 const transcript = await YoutubeUtils.fetchTranscript(window.location.href);
                 if (transcript && this.currentVideoId === videoId) {
                     this.updateState('ready');
                 } else if (this.currentVideoId === videoId) {
-                    // Even if transcript fails, we show the button but it might fallback to page content
+                    
                     this.updateState('ready');
                 }
             } catch (err) {
@@ -2186,7 +2201,7 @@
         injectButton() {
             const titleContainer = document.querySelector('#title.ytd-watch-metadata');
             if (!titleContainer) {
-                // Retry if title not found yet (YouTube DOM loading)
+                
                 if (!this.retryCount) this.retryCount = 0;
                 if (this.retryCount < 10) {
                     this.retryCount++;
@@ -2195,7 +2210,7 @@
                 return;
             }
 
-            // 1. Ensure leftContainer exists
+            
             let leftContainer = titleContainer.querySelector('.lumina-yt-title-left');
             if (!leftContainer) {
                 leftContainer = document.createElement('div');
@@ -2203,8 +2218,8 @@
                 titleContainer.appendChild(leftContainer);
             }
 
-            // 2. Always move any children (badges, text, etc.) that are NOT the button or the container itself
-            // into the leftContainer. This prevents layout jumps when YouTube adds badges late.
+            
+            
             const children = Array.from(titleContainer.childNodes);
             let needsMove = false;
             children.forEach(child => {
@@ -2217,15 +2232,15 @@
                 }
             });
 
-            // Clean up title attributes to avoid browser tooltips on truncated text
+            
             if (leftContainer) {
                 leftContainer.removeAttribute?.('title');
                 leftContainer.querySelectorAll?.('[title]').forEach(el => el.removeAttribute('title'));
             }
 
-            // 3. Create button if it doesn't exist
+            
             if (document.getElementById('lumina-yt-ask-btn')) {
-                // If we moved things, make sure the button is at the end of the grid
+                
                 if (needsMove) {
                     titleContainer.appendChild(document.getElementById('lumina-yt-ask-btn'));
                 }
@@ -2246,7 +2261,7 @@
             titleContainer.appendChild(btn);
             this.button = btn;
 
-            // Watch for changes in ytd-watch-metadata specifically to ensure persistence
+            
             if (!this.observer) {
                 this.observer = new MutationObserver((mutations) => {
                     if (!document.getElementById('lumina-yt-ask-btn')) {
@@ -2272,7 +2287,7 @@
         }
 
         async handleAction() {
-            // 1. Prepare info for background to handle storage & pinning
+            
             const triggerInfo = {
                 action: 'youtube_ask',
                 timestamp: Date.now(),
@@ -2281,7 +2296,7 @@
                 title: document.title.replace(' - YouTube', '')
             };
 
-            // 2. Open Side Panel and pass info
+            
             try {
                 chrome.runtime.sendMessage({
                     action: 'ensure_sidepanel_open',
@@ -2304,21 +2319,21 @@
 
     const ytButtonManager = new YouTubeButtonManager();
 
-    // Re-initialize on every YouTube navigation
+    
     document.addEventListener('yt-navigate-finish', () => {
         if (window.location.hostname.includes('youtube.com')) {
             ytButtonManager.init();
         }
     });
 
-    // Initial check
+    
     if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/watch')) {
         setTimeout(() => ytButtonManager.init(), 1000);
     } else if (window.location.hostname.includes('youtube.com') && window.location.pathname.startsWith('/shorts')) {
         setTimeout(() => ytButtonManager.init(), 1000);
     }
 
-    // Handle Highlight clicks to show the edit menu
+    
     document.addEventListener('click', (e) => {
         if (isExtensionDisabled) return;
 
@@ -2331,13 +2346,43 @@
             const currentColor = highlight.style.backgroundColor;
 
             if (window.LuminaSelection) {
-                // To position correctly, we select the range of the highlight
+                
                 LuminaSelection.showAnnotationMenu(highlight, id, currentColor);
             }
         }
-    }, true); // Use capture to intercept before other click handlers
+    }, true); 
 
     initShadowDOM();
+
+    
+    let syncTimeout = null;
+    let lastContentHash = "";
+
+    const contentObserver = new MutationObserver((mutations) => {
+        
+        const isStructuralChange = mutations.some(m => m.type === 'childList');
+        if (!isStructuralChange) return;
+
+        if (syncTimeout) clearTimeout(syncTimeout);
+        syncTimeout = setTimeout(() => {
+            try {
+                
+                const currentText = (document.body ? document.body.innerText.slice(0, 1000) : "") + 
+                                   (document.body ? document.body.innerText.slice(-1000) : "");
+                
+                if (currentText !== lastContentHash) {
+                    lastContentHash = currentText;
+                    chrome.runtime.sendMessage({ type: 'LUMINA_CONTENT_UPDATED' }).catch(() => {});
+                }
+            } catch (e) {
+                
+            }
+        }, 5000); 
+    });
+
+    if (document.body) {
+        contentObserver.observe(document.body, { childList: true, subtree: true });
+    }
 
 })();
 

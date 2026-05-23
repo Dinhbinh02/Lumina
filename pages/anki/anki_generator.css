@@ -1,4 +1,4 @@
-/* --- Anki Generator Redesign (Tabbed & Table-based) --- */
+
 
 .creator-container {
     height: 100%;
@@ -15,7 +15,7 @@
     border-radius: 16px !important;
 }
 
-/* --- Generator Grid Layout --- */
+
 .generator-layout {
     display: flex;
     flex-direction: column;
@@ -54,7 +54,7 @@
     padding: 20px;
 }
 
-/* Removed .container-title as headers are deleted */
+
 
 .setup-body {
     display: flex;
@@ -116,7 +116,7 @@
     -moz-osx-font-smoothing: grayscale !important;
 }
 
-/* Global table weights */
+
 table,
 th,
 td,
@@ -130,7 +130,7 @@ th {
     font-weight: 620 !important;
 }
 
-/* --- Lumina Standard Anki Content Styles --- */
+
 .rich-text {
     line-height: 1.65 !important;
     color: inherit !important;
@@ -262,7 +262,7 @@ th {
     white-space: pre !important;
 }
 
-/* Base styles for the editor box itself */
+
 .rich-text[contenteditable="true"] {
     border: 1px solid #e1e4e8;
     border-radius: 8px;
@@ -288,7 +288,7 @@ th {
     border-top: 1px solid #f0f0f0;
 }
 
-/* Field Rows in Editor */
+
 
 
 .field-row-header {
@@ -330,7 +330,7 @@ th {
     border-color: #eee;
 }
 
-/* Review View Layout */
+
 .review-wrapper {
     flex: 1;
     display: flex;
@@ -357,7 +357,7 @@ th {
     background: #f5f7f9;
 }
 
-/* Preview Card */
+
 .preview-card {
     background: #ffffff;
     border: 1px solid #e1e4e8;
@@ -411,7 +411,7 @@ th {
     word-break: break-word;
 }
 
-/* Status & Indicators */
+
 
 
 .spinner,
@@ -437,7 +437,7 @@ th {
     margin-right: 8px;
 }
 
-/* --- Example Preview Cards in Template Editor --- */
+
 .example-preview-card {
     background: #ffffff;
     border: 1px solid #e1e4e8;
@@ -537,7 +537,7 @@ th {
     box-sizing: border-box;
 }
 
-/* Buttons */
+
 .btn-text-small {
     background: none;
     border: none;
@@ -583,12 +583,12 @@ th {
     color: #ffffff;
 }
 
-/* --- Preview Labels (Simplified) --- */
+
 .preview-container {
     padding: 20px;
 }
 
-/* Match setup container height */
+
 .generator-container.preview-container {
     height: 100%;
     overflow-y: auto;
@@ -601,7 +601,7 @@ th {
     gap: 8px;
     overflow-y: auto;
     padding: 4px;
-    /* Match min-height to the card label button height */
+    
     min-height: var(--card-label-btn-h, 32px);
 }
 
@@ -629,7 +629,7 @@ th {
     transform: translateY(-1px);
 }
 
-/* --- History Container --- */
+
 .history-container {
     flex: 1;
     min-height: 250px;
@@ -714,7 +714,7 @@ th {
     background: #fff5f5;
 }
 
-/* --- Readonly Fields logic --- */
+
 .plain-text-field.edit-ex-field[readonly] {
     min-height: 40px;
     background: #f8f9fa;
@@ -728,7 +728,7 @@ th {
     font-size: 0.8125em;
 }
 
-/* --- Model Selector Styles --- */
+
 .lumina-model-selector {
     position: relative;
     width: 100%;
@@ -812,7 +812,7 @@ th {
     text-overflow: ellipsis;
 }
 
-/* --- Modal Styles --- */
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -893,7 +893,7 @@ th {
     resize: vertical;
 }
 
-/* --- Toggle Switch UI --- */
+
 .switch-group {
     display: flex;
     align-items: center;

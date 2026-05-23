@@ -7,18 +7,18 @@ importScripts('../lib/core/token_utils.js');
 
 
 
-// Default settings
+
 const DEFAULTS = LUMINA_DEFAULTS;
 
-// Set session access level so content scripts can see it
+
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
 
-// Side Panel State Tracking
-const sidePanelPorts = new Map(); // windowId -> chrome.runtime.Port
-let sessionOpenWindows = new Set(); // Refreshed from session storage on SW wake
 
-const sessionPorts = new Map(); // sessionId -> Set<chrome.runtime.Port>
-const sessionControllers = new Map(); // sessionId -> AbortController
+const sidePanelPorts = new Map(); 
+let sessionOpenWindows = new Set(); 
+
+const sessionPorts = new Map(); 
+const sessionControllers = new Map(); 
 
 function broadcastToSession(sessionId, message) {
     if (!sessionId) return;
@@ -34,11 +34,11 @@ function broadcastToSession(sessionId, message) {
     }
 }
 
-// Startup: Hydrate open windows from session storage (survives hibernation)
+
 chrome.storage.session.get(['open_sidepanel_windows'], (result) => {
     if (result.open_sidepanel_windows) {
         sessionOpenWindows = new Set(result.open_sidepanel_windows);
-        // Pre-fill the sidePanelPorts keys so toggle logic knows they are open
+        
         sessionOpenWindows.forEach(wid => {
             if (!sidePanelPorts.has(wid)) sidePanelPorts.set(wid, null);
         });
@@ -54,7 +54,11 @@ chrome.runtime.onConnect.addListener((port) => {
         let connectedWindowId = null;
 
         port.onMessage.addListener((msg) => {
-            if (msg.windowId) {
+            if (msg.action === 'closing' && msg.windowId) {
+                sessionOpenWindows.delete(msg.windowId);
+                sidePanelPorts.delete(msg.windowId);
+                updateOpenSidePanelsSession();
+            } else if (msg.windowId) {
                 connectedWindowId = msg.windowId;
                 sidePanelPorts.set(connectedWindowId, port);
                 sessionOpenWindows.add(connectedWindowId);
@@ -64,15 +68,15 @@ chrome.runtime.onConnect.addListener((port) => {
 
         port.onDisconnect.addListener(() => {
             if (connectedWindowId) {
-                // Keep in sessionOpenWindows because panel might still be physically open
-                // even if port disconnects during SW hibernation.
+                
+                
                 sidePanelPorts.delete(connectedWindowId);
             }
         });
     }
 });
 
-// Clean up when window is closed
+
 chrome.windows.onRemoved.addListener((windowId) => {
     if (sessionOpenWindows.has(windowId)) {
         sessionOpenWindows.delete(windowId);
@@ -81,7 +85,17 @@ chrome.windows.onRemoved.addListener((windowId) => {
     }
 });
 
-// Clean up per-tab session tracking
+if (chrome.sidePanel && chrome.sidePanel.onClosed) {
+    chrome.sidePanel.onClosed.addListener((closeInfo) => {
+        if (closeInfo && closeInfo.windowId) {
+            sessionOpenWindows.delete(closeInfo.windowId);
+            sidePanelPorts.delete(closeInfo.windowId);
+            updateOpenSidePanelsSession();
+        }
+    });
+}
+
+
 chrome.tabs.onRemoved.addListener((tabId) => {
     chrome.storage.local.get(['lumina_tab_sessions'], result => {
         const tabSessions = result.lumina_tab_sessions || {};
@@ -92,21 +106,21 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     });
 });
 
-// toggleSidePanel MUST be a fully synchronous function.
-// chrome.sidePanel.open() requires a Chrome "user gesture" to be active.
-// ANY await in the call stack between the keyboard shortcut event and
-// chrome.sidePanel.open() — including await chrome.storage.local.get —
-// will invalidate the gesture and silently fail.
-// The in-memory sidePanelPorts Map is pre-populated synchronously by the
-// startup IIFE above, so we can always read state without awaiting.
+
+
+
+
+
+
+
 function toggleSidePanel(windowId) {
     if (!windowId) return;
 
-    // Check both memory map AND our session persistent set
+    
     const isCurrentlyOpen = sidePanelPorts.has(windowId) || sessionOpenWindows.has(windowId);
 
     if (isCurrentlyOpen) {
-        // CLOSE logic
+        
         sessionOpenWindows.delete(windowId);
         sidePanelPorts.delete(windowId);
         updateOpenSidePanelsSession();
@@ -123,7 +137,7 @@ function toggleSidePanel(windowId) {
             });
         }
     } else {
-        // OPEN logic — chrome.sidePanel.open requires a user gesture.
+        
         sessionOpenWindows.add(windowId);
         sidePanelPorts.set(windowId, null);
         updateOpenSidePanelsSession();
@@ -151,44 +165,44 @@ async function ensureSidePanelOpen(windowId) {
 }
 
 
-// Registration of content scripts is handled via manifest.json for regular websites.
-// Direct injection is ONLY needed for existing tabs during installation, which should be done via scripting.executeScript instead of persistent registration.
+
+
 async function checkAndRegisterScripts() {
-    // This function is now deprecated to avoid duplicate execution with manifest.json
+    
 }
 
-// Removing immediate call to avoid duplicates
-// checkAndRegisterScripts();
 
-// Display Mode Management
+
+
+
 function updateDisplayMode(mode) {
     if (!chrome.sidePanel) return;
 
-    // Always keep Side Panel configured for opens
+    
     chrome.sidePanel.setOptions({
         path: 'pages/spotlight/spotlight.html?sidepanel=1',
         enabled: true
     });
 
-    // CRITICAL: Always keep extension icon as Options Popup (as requested)
-    // Never allow icon click to open Side Panel automatically.
+    
+    
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
     chrome.action.setPopup({ popup: 'pages/options/options.html' });
 }
 
-// Initial setup
+
 chrome.storage.local.get(['displayMode'], (result) => {
     updateDisplayMode(result.displayMode || 'popup');
 });
 
-// Storage change listener
+
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.displayMode) {
         updateDisplayMode(changes.displayMode.newValue || 'popup');
     }
 });
 
-// Model usage tracking
+
 async function incrementModelUsage(modelId) {
     if (!modelId) return;
 
@@ -242,19 +256,16 @@ function normalizeOpenAICompatibleEndpoint(endpoint, targetPath) {
     return `${trimmed}${targetPath}`;
 }
 
-/**
- * Optimizes a context string by collapsing redundant newlines and whitespace.
- * This maximizes token efficiency across all model providers.
- */
+
 function optimizeContextString(text) {
     if (!text || typeof text !== 'string') return '';
     return text
-        .replace(/\r\n/g, '\n')           // Normalize newlines
-        .replace(/\n{3,}/g, '\n\n')      // Collapse 3+ newlines to 2
-        .replace(/[ \t]{2,}/g, ' ')      // Collapse multiple spaces/tabs to 1
-        .replace(/--- \[Segment \d+\] ---/g, '') // Clean up segment markers for cleaner AI reading
-        .replace(/\[Context Source:.*?\]/g, '') // Remove redundant header
-        .replace(/URL: https?:\/\/\S+/g, '')   // Remove URL boilerplate
+        .replace(/\r\n/g, '\n')           
+        .replace(/\n{3,}/g, '\n\n')      
+        .replace(/[ \t]{2,}/g, ' ')      
+        .replace(/--- \[Segment \d+\] ---/g, '') 
+        .replace(/\[Context Source:.*?\]/g, '') 
+        .replace(/URL: https?:\/\/\S+/g, '')   
         .trim();
 }
 
@@ -265,7 +276,7 @@ function isGeminiModel(modelName) {
 
 function buildChatSystemInstruction(reasoningMode = false) {
     const currentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
-    
+
     let instruction = `You are Lumina, an elite AI partner powered by Gemini. You are authentic, precise, and highly empathetic. Your tone balances professional candor with helpful peer-like insight.
 [Capabilities]: Multimodal (Text, PDF, Vision), built-in Translation/Proofreading/Lexicography, and real-time Web Context awareness.
 
@@ -276,7 +287,7 @@ function buildChatSystemInstruction(reasoningMode = false) {
 
 [Personalization]:
 - Use user data ONLY if explicitly triggered (e.g. "for me"). Otherwise, use generic responses.
-- Treat context as factual and invisible. Never say "Based on what you told me...". Integrate memory seamlessly without over-fitting.
+- Treat context as factual and invisible. Never say "Based on what you told me..." or literally reference system terms/tags like "Reference Context", "[Reference Context]", "CURRENT CONTEXT", "[CURRENT CONTEXT]", "Webpage Source Content", "webpage content", "context", "context provided", etc. Refer to the information naturally as if you already know it (e.g. "Trong bài đọc này...", "Trong đoạn văn này..."). Integrate memory and webpage context seamlessly without over-fitting.
 
 [Communication]:
 - No Hedging: Never use fillers like "I hope this helps".
@@ -310,15 +321,17 @@ function buildProofreadSystemPrompt(responseLanguage = 'auto') {
 }
 
 function buildDictionarySystemPrompt(word, lang = 'en') {
-    return `You are a world-class lexicographer and expert linguist for Cambridge and Oxford University Press. Your definitions are high-fidelity, professional, and academically rigorous.
-Provide a comprehensive dictionary entry for the English word or phrase: "${word}".
+    return `You are a senior professional lexicographer. Your task is to provide ACCURATE, nuanced, and easy-to-read dictionary definitions.
+Provide a high-quality dictionary entry for the English word or phrase: "${word}".
 
-### Structure Guidelines:
-1. **Multiple Entries**: If the word has multiple parts of speech (e.g., "run" as verb and noun), provide distinct entries for each.
-2. **Definitions**: For each part of speech, provide a list of definitions. Each definition MUST have:
-    - **Keywords**: 1-3 short, common synonyms or core terms in Vietnamese (e.g., for "nature" -> "tự nhiên, thiên nhiên, tạo hoá").
-    - **Explanation**: A clear, academic explanation of that specific meaning.
-    - If lang is 'vi', provide ALL những trường này bằng tiếng Việt.
+### Lexicographical Guidelines:
+1. **Precision**: Definitions must be accurate. For words with specific connotations, ensure these nuances are captured.
+2. **Multiple Entries**: If the word has multiple parts of speech, provide distinct entries. ONLY provide parts of speech (pos) that ACTUALLY exist for the word. For example, "undue" is strictly an adjective (adj.); do NOT fabricate/hallucinate an adverb (adv.) entry for it (its adverb form is "unduly"). Be extremely precise.
+3. **Atomicity (CRITICAL)**: Each distinct meaning or usage MUST be its own separate object in the \`definitions\` array. NEVER group unrelated meanings into a single string using phrases like "Ngoài ra", "Ngoài ra cũng có nghĩa là", or "Also". Each definition object should represent exactly ONE sense of the word.
+4. **Definitions**: For each part of speech, provide a list of definitions. Each definition MUST have:
+    - **Keywords**: 1-2 extremely short, common core terms in Vietnamese (e.g., for "nature" -> "tự nhiên, thiên nhiên"). Use common, natural Vietnamese equivalents.
+    - **Explanation**: A professional, concise explanation. Capture the essence of the word's usage in modern English. If lang is 'vi', providing this explanation in natural, idiomatic Vietnamese is mandatory.
+    - If lang is 'vi', provide ALL fields in high-quality Vietnamese.
     - The current target language for keywords and explanations is: ${lang === 'vi' ? 'Vietnamese' : 'English'}.
 
 ### JSON Schema (STRICT):
@@ -331,8 +344,8 @@ Provide a comprehensive dictionary entry for the English word or phrase: "${word
             "us": { "audio": "" },
             "definitions": [
                 { 
-                    "keywords": "Short term 1, term 2",
-                    "explanation": "Detailed explanation of the meaning..."
+                    "keywords": "Vietnamese term 1, term 2",
+                    "explanation": "Professional, idiomatic explanation in Vietnamese for ONE specific sense."
                 }
             ]
         }
@@ -340,10 +353,10 @@ Provide a comprehensive dictionary entry for the English word or phrase: "${word
 }
 
 - Output ONLY valid JSON starting with { and ending with }.
-- No markdown wrappers, no explanations outside the JSON.`;
+- No markdown wrappers, no conversational filler, no commentary.`;
 }
 
-// Get Gemini API key
+
 async function getGeminiApiKey() {
     const data = await chrome.storage.local.get(['providers']);
     const providers = data.providers || [];
@@ -355,7 +368,7 @@ async function getGeminiApiKey() {
     return null;
 }
 
-// Model Chain Management
+
 function detectMediaType(item) {
     if (!item) return null;
     if (typeof item === 'string') {
@@ -501,14 +514,14 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const { model, endpoint, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
     const openaiMessages = [{ role: 'system', content: sysPrompt }];
 
-    // DEBUG: Token logging in Background Service Worker
+    
     if (typeof LuminaToken !== 'undefined') {
         const sysTokens = LuminaToken.count(sysPrompt || '');
         const historyTokens = msgs.reduce((acc, m) => acc + LuminaToken.count(m.text || ''), 0);
         const inputTokens = LuminaToken.count(currentQ || '');
         let attachmentTokens = 0;
 
-        // Count attachments
+        
         const allAttachments = [...(imageData || [])];
         msgs.forEach(m => { if (m.files || m.images) allAttachments.push(...(m.files || m.images)); });
 
@@ -556,7 +569,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         ...parsedCustomParams
     };
 
-    // Respect explicit maxTokens from request/model params unless custom token fields are already set.
+    
     const hasCustomTokenLimit = Object.prototype.hasOwnProperty.call(openaiBody, 'max_tokens')
         || Object.prototype.hasOwnProperty.call(openaiBody, 'max_completion_tokens')
         || Object.prototype.hasOwnProperty.call(openaiBody, 'max_output_tokens');
@@ -587,37 +600,37 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
 async function getModelChain(type = 'text') {
     const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
 
-    // 1. Build the full list from modelChains or single selection
+    
     let chain = [];
     if (data.modelChains && data.modelChains[type] && data.modelChains[type].length > 0) {
         chain = [...data.modelChains[type]];
     } else if (type === 'dictionary' && data.dictProvider && data.dictModel) {
         chain = [{ providerId: data.dictProvider, model: data.dictModel }];
     } else {
-        // Fallback to text chain if specific chain not found
+        
         if (data.modelChains && data.modelChains['text'] && data.modelChains['text'].length > 0) {
             chain = [...data.modelChains['text']];
         } else {
-            // Legacy fallback
+            
             chain = [{ providerId: data.provider, model: data.model }];
         }
     }
 
-    // 2. If the user has a lastUsedModel preference, move that entry to the front (only for generic text tasks)
+    
     if (type === 'text' && data.lastUsedModel && data.lastUsedModel.model) {
         const { providerId: lastPId, model: lastModel } = data.lastUsedModel;
         const idx = chain.findIndex(item => item.providerId === lastPId && item.model === lastModel);
         if (idx > 0) {
-            // Move preferred model to front (no mutation of the stored array)
+            
             const preferred = chain.splice(idx, 1)[0];
             chain.unshift(preferred);
         } else if (idx === -1 && lastPId && lastModel) {
-            // lastUsedModel is not in the chain list – still use it as the first option
+            
             chain.unshift({ providerId: lastPId, model: lastModel });
         }
     }
 
-    // 3. Hydrate chain with provider details (API Keys, Endpoints)
+    
     const hydratedChain = chain.map(config => {
         const provider = data.providers?.find(p => p.id === config.providerId);
         if (!provider) return null;
@@ -633,13 +646,13 @@ async function getModelChain(type = 'text') {
     return hydratedChain;
 }
 
-// API Key Management (Rotation)
+
 function getKeysArray(keyStr) {
     if (!keyStr) return [];
     return keyStr.split(',').map(k => k.trim()).filter(k => k.length > 0);
 }
 
-// Helper to get today's date string (YYYY-MM-DD) for rotation reset
+
 function getTodayString() {
     const now = new Date();
     return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
@@ -651,16 +664,16 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
         return requestFn('');
     }
 
-    // Determine the group key for index persistence
+    
     const groupKey = 'rot_' + keys.join(',').substring(0, 32).replace(/[^a-zA-Z0-9]/g, '');
     const today = getTodayString();
 
-    // 1. If a specific key index is requested, use ONLY that key (legacy support)
+    
     if (typeof options.keyIndex === 'number' && options.keyIndex >= 0 && options.keyIndex < keys.length) {
         return await requestFn(keys[options.keyIndex]);
     }
 
-    // 2. Load persisted active index
+    
     let activeIndex = 0;
     try {
         const data = await chrome.storage.local.get([groupKey]);
@@ -668,7 +681,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
         if (state && state.date === today) activeIndex = state.index;
     } catch (e) { }
 
-    // Helper: detect rate-limit or request-too-large from a response
+    
     const isRateLimitOrTooLarge = async (response) => {
         if (response.status === 429 || response.status === 503) return true;
         if (response.status === 400 || response.status === 413) {
@@ -683,7 +696,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
         return false;
     };
 
-    // 3. Try rotating through the keys
+    
     for (let attempts = 0; attempts < keys.length; attempts++) {
         const currentIndex = (activeIndex + attempts) % keys.length;
         const currentKey = keys[currentIndex];
@@ -693,9 +706,9 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
 
             if (await isRateLimitOrTooLarge(response)) {
                 console.warn(`[Lumina] Key ${currentIndex} hit rate limit or request-too-large. Rotating to next key.`);
-                // Continue loop to try next key
+                
             } else {
-                // Success - save this as the last successful index and return
+                
                 chrome.storage.local.set({
                     [groupKey]: { index: currentIndex, date: today }
                 });
@@ -703,7 +716,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
             }
         } catch (err) {
             console.error(`[Lumina] Request failed with key ${currentIndex}:`, err);
-            // Continue loop to try next key
+            
         }
     }
 
@@ -711,7 +724,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
 }
 
 
-// --- Helper Functions for Provider Settings ---
+
 function getApiKeyForProvider(provider, keys) {
     switch (provider) {
         case 'groq': return keys.groqApiKey;
@@ -756,11 +769,11 @@ async function setStatus(tabId, text, type = 'loading') {
             type: type
         });
     } catch (e) {
-        // Tab might be closed
+        
     }
 }
 
-// Cache System (Dictionary, Translation, Audio)
+
 const CACHE_EXPIRATION_MS = 14 * 24 * 60 * 60 * 1000;
 
 async function getLuminaCache(cacheKey) {
@@ -810,7 +823,7 @@ async function setLuminaCache(cacheKey, entries, maxEntries = 500) {
     }
 }
 
-// Audio Cache Logic
+
 const AUDIO_CACHE_KEY = 'audio_cache';
 const AUDIO_CACHE_MAX_ENTRIES = 200;
 
@@ -847,12 +860,12 @@ async function setAudioCache(text, type, data) {
     }
 }
 
-// --- Page Content Fetcher ---
+
 async function fetchPageContent(url) {
     try {
-        // Fetching content from: url
+        
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000); 
 
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -861,7 +874,7 @@ async function fetchPageContent(url) {
 
         const html = await response.text();
 
-        // Basic text extraction (strip HTML tags)
+        
         let text = html
             .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gmi, "")
             .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gmi, "")
@@ -869,7 +882,7 @@ async function fetchPageContent(url) {
             .replace(/\s+/g, " ")
             .trim();
 
-        // Limit context length
+        
         const maxLength = 3000;
         if (text.length > maxLength) {
             text = text.substring(0, maxLength) + "... (truncated)";
@@ -882,16 +895,16 @@ async function fetchPageContent(url) {
     }
 }
 
-// --- Chat Request Executor (Single Model) ---
+
 
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Lumina BG][${action}]`;
 
-    // Per-model params from global settings
+    
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
 
-    // Try composite key first (provider:model), then legacy (model)
+    
     const providerId = config.providerId;
     const compositeKey = providerId ? `${providerId}:${model}` : model;
 
@@ -903,7 +916,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
 
-    // Parse custom params
+    
     let parsedCustomParams = {};
     if (customParams) {
         if (typeof customParams === 'object') {
@@ -918,11 +931,11 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const isGemini25Model = /gemini-2\.5/i.test(normalizedModelName);
     const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
 
-    // --- TRACK USAGE ---
+    
     if (model) {
         incrementModelUsage(model);
     }
-    // -------------------
+    
     if (!apiKey && !endpoint.includes('localhost') && !endpoint.includes('127.0.0.1')) {
         throw new Error(`No API Key for provider type: ${currentProvider}`);
     }
@@ -940,7 +953,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
 
 
-    // --- Inject User Memory Facts for Personalization ---
+    
     try {
         const userMemoryAddition = await UserMemory.getSystemPromptAddition();
         if (userMemoryAddition) {
@@ -955,43 +968,43 @@ async function executeChatRequest(config, messages, initialContext, question, po
     let augmentedQuestion = question;
 
     if (action === 'proofread') {
-        // Isolate from chat history to prevent context leakage (Vietnamese context making it translate English to Vietnamese)
-        // EXCEPT if it's a regenerate/recheck where the user might have provided specific instruction/comment in the history.
-        // For standard Proofread from side panel/popup, we isolate.
+        
+        
+        
         if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
             fullMessages = [];
         }
-        
+
         if (!systemOverride) {
-            // Wrap the user question in text tags for proofreading/translation
+            
             augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
         }
     }
 
-    // Inject Page Context if available
+    
     if (initialContext && initialContext.trim().length > 0) {
-        // --- Process and Inject Full Web Context ---
-        // Removed limit and local RAG to allow full context for long-context models (Gemini 1.5 Pro, etc.)
+        
+        
         let processedContext = optimizeContextString(initialContext);
         const actualTokens = LuminaToken.count(processedContext);
         console.log("%c[Lumina Context Debug] Web Source Content:", "color: #34c759; font-weight: bold;", processedContext);
 
-        // --- Context Injection Strategy ---
-        // For follow-up turns, putting context at the end of the user message often causes "Recency Bias"
-        // where the AI ignores the history and re-translates the context.
-        // We now move context to the System Message for follow-ups to keep it as "Background Knowledge".
+        
+        
+        
+        
         if (fullMessages.length > 0) {
-            // For follow-ups: Inject into System Prompt
-            const contextInstruction = `\n\n[REFERENCE CONTEXT - Webpage Content]:\n${processedContext}\n\n(Note: This context is for background reference only. Prioritize the user's current goal in the history.)`;
+            
+            const contextInstruction = `\n\n### Webpage Source Content:\n${processedContext}\n\n(Note: This content is for background reference only. Prioritize the user's current goal in the history.)`;
             systemInstruction += contextInstruction;
             systemInstruction += "\nIMPORTANT: If context is provided, prioritize its information and avoid making unsupported claims.";
         } else {
-            // For first turn: Prepend to question to set the stage
-            augmentedQuestion = `[REFERENCE CONTEXT - Webpage Content]:\n${processedContext}\n\n---\n\n[USER INSTRUCTION]:\n${augmentedQuestion}`;
+            
+            augmentedQuestion = `### Webpage Source Content:\n${processedContext}\n\n---\n\n### User Instruction:\n${augmentedQuestion}`;
         }
     }
 
-    // Parameters for payload builder
+    
     const payloadParams = {
         model,
         endpoint,
@@ -1007,7 +1020,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     let controller = null;
     if (sessionId) {
-        // If a previous request is running for this session, abort it
+        
         if (sessionControllers.has(sessionId)) {
             sessionControllers.get(sessionId).abort();
         }
@@ -1043,7 +1056,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             errorData
         });
 
-        // Detect "Request too large" / TPM rate limit → trigger chain fallback
+        
         const errMsg =
             (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
             (typeof errorData?.message === 'string' && errorData.message.trim()) ||
@@ -1072,7 +1085,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     let sawDoneSignal = false;
     let lastUsage = null;
 
-    // Universal reasoning field detection
+    
     let isInReasoning = false;
 
     const collectDeltasFromPayload = (payloadStr, textDeltas) => {
@@ -1131,7 +1144,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             }
 
             if (typeof reasoning === 'string' && reasoning.length > 0) {
-                // Start <think> tag if not already in reasoning mode
+                
                 if (!isInReasoning) {
                     textDeltas.push('<think>');
                     isInReasoning = true;
@@ -1140,7 +1153,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             }
 
             if (typeof content === 'string' && content.length > 0) {
-                // End </think> tag if transitioning from reasoning to content
+                
                 if (isInReasoning) {
                     textDeltas.push('</think>');
                     isInReasoning = false;
@@ -1150,7 +1163,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
             return true;
         } catch (e) {
-            // Ignore non-json payloads from keepalive/comment events.
+            
             return false;
         }
     };
@@ -1172,7 +1185,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         const combinedPayload = dataLines.join('\n').trim();
         const parsedCombined = collectDeltasFromPayload(combinedPayload, textDeltas);
         if (!parsedCombined && dataLines.length > 1) {
-            // Fallback: some providers may emit one payload per data line.
+            
             dataLines.forEach((payloadLine) => {
                 collectDeltasFromPayload(payloadLine, textDeltas);
             });
@@ -1187,7 +1200,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 buffer += flushChunk;
             }
 
-            // Flush the final buffered line that may not end with a newline.
+            
             const tailDeltas = [];
             const trailingBufferLength = buffer ? buffer.length : 0;
             while (buffer && buffer.length > 0) {
@@ -1231,7 +1244,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         }
         const chunk = decoder.decode(value, { stream: true });
 
-        // --- Stream Parser Logic (OpenAI-compatible SSE event parser) ---
+        
         const textDeltas = [];
         buffer += chunk;
 
@@ -1256,10 +1269,10 @@ async function executeChatRequest(config, messages, initialContext, question, po
             processSSEEvent(rawEvent, textDeltas);
         }
 
-        // --- Collect all content for tool detection ---
+        
         for (const text of textDeltas) {
             fullToolResponse += text;
-            // Filter out tool call JSON before streaming to UI
+            
             const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
             if (filteredText.length > 0) {
                 emittedChunks += 1;
@@ -1270,8 +1283,8 @@ async function executeChatRequest(config, messages, initialContext, question, po
         }
     }
 
-    // --- Stream Finished. Close reasoning tag if still open ---
-    // This handles models that return only reasoning without content
+    
+    
     if (isInReasoning) {
         const thinkEndMsg = { action: 'chunk', chunk: '</think>', sessionId };
         if (sessionId) broadcastToSession(sessionId, thinkEndMsg);
@@ -1282,16 +1295,16 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
 
 
-    // --- Stream Finished. Check for tool call anywhere in content ---
+    
 }
 
-// --- AI Helper for One-off Completions ---
-// --- AI Helper for One-off Completions ---
+
+
 async function generateOneOffCompletion(prompt, systemInstruction = "You are a helpful assistant.", modelConfig = null, requestOptions = {}) {
     let provider;
 
     if (modelConfig && modelConfig.providerId) {
-        // Use specifically requested model/provider (for parallel generation)
+        
         const data = await chrome.storage.local.get(['providers']);
         const found = data.providers?.find(p => p.id === modelConfig.providerId);
         if (!found) throw new Error("Provider not found: " + modelConfig.providerId);
@@ -1303,7 +1316,7 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
             endpoint: found.endpoint
         };
     } else {
-        // Default to active chain
+        
         const chain = await getModelChain();
         provider = chain.length > 0 ? chain[0] : null;
     }
@@ -1343,7 +1356,7 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
 
 
 
-// --- Utility: Bridge Background Logs to Content Script ---
+
 async function bridgeLog(...args) {
     const msg = `[BG Bridge] ${args.join(' ')}`;
     console.log(msg);
@@ -1355,9 +1368,23 @@ async function bridgeLog(...args) {
     } catch (e) { }
 }
 
-// --- Message Listener ---
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
+
+    if (request.type === 'LUMINA_CONTENT_UPDATED' && sender.tab) {
+        
+        for (const [windowId, port] of sidePanelPorts) {
+            if (port) {
+                try {
+                    port.postMessage({ action: 'content_updated', tabId: sender.tab.id });
+                } catch (e) {
+                    
+                }
+            }
+        }
+        return false;
+    }
 
     switch (request.action) {
         case 'fetch_cambridge':
@@ -1370,32 +1397,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             const isCambridge = request.action === 'fetch_cambridge';
             const wordPath = encodeURIComponent(word.replace(/\s+/g, '-'));
+
+            
+            
             const url = isCambridge
                 ? `https://dictionary.cambridge.org/dictionary/english/${wordPath}`
-                : `https://www.oxfordlearnersdictionaries.com/definition/english/${wordPath}`;
+                : `https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`;
 
-            // Oxford fallback logic: if direct definition fails (404), try search
-            const fetchWithFallback = async (targetUrl, isOxfordSearch = false) => {
+            const fetchWithFallback = async (targetUrl, isRetry = false) => {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
 
                 try {
-                    const res = await fetch(targetUrl, { 
+                    const res = await fetch(targetUrl, {
                         signal: controller.signal,
-                        headers: { 
-                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                            'Accept-Language': 'en-US,en;q=0.9'
+                            'Accept-Language': 'en-US,en;q=0.9',
+                            'Referer': 'https://www.oxfordlearnersdictionaries.com/'
                         },
                         redirect: 'follow'
                     });
                     clearTimeout(timeoutId);
+
                     
-                    if (res.status === 404 && !isCambridge && !isOxfordSearch) {
-                        // Try search URL if direct link fails for Oxford
-                        return fetchWithFallback(`https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`, true);
+                    if (res.status === 404 && !isRetry) {
+                        if (isCambridge) {
+                            
+                        } else {
+                            
+                            const fallbackUrl = `https://www.oxfordlearnersdictionaries.com/definition/english/${wordPath}`;
+                            return fetchWithFallback(fallbackUrl, true);
+                        }
                     }
-                    
+
                     if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
                     return res.text();
                 } catch (e) {
@@ -1406,7 +1442,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             fetchWithFallback(url)
                 .then(html => {
-
                     sendResponse({ success: true, html });
                 })
                 .catch(err => {
@@ -1448,13 +1483,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'fetch_oxford_url': {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
-            fetch(request.url, { 
-                redirect: 'follow', 
+            fetch(request.url, {
+                redirect: 'follow',
                 signal: controller.signal,
-                headers: { 
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
-                } 
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Referer': 'https://www.oxfordlearnersdictionaries.com/'
+                }
             })
                 .then(res => {
                     clearTimeout(timeoutId);
@@ -1480,7 +1516,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } else {
                 prompt = buildChatSystemInstruction(reasoningMode);
             }
-            // Use the established countTokens from token_utils.js
+            
             const tokens = (typeof countTokens !== 'undefined') ? countTokens(prompt) : Math.ceil(prompt.length / 2);
             sendResponse({ tokens });
             return true;
@@ -1500,7 +1536,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     ensureSidePanelOpen(windowIdManual);
                 }
 
-                // If this is a YouTube trigger, enrich it and save to storage
+                
                 if (request.youtubeTrigger && sender.tab) {
                     const enrichedTrigger = {
                         ...request.youtubeTrigger,
@@ -1511,10 +1547,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     chrome.storage.local.set({ 'lumina_youtube_trigger': enrichedTrigger });
                 }
 
-                // Identify if this is internal toggle from the sidepanel itself
+                
                 const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
 
-                // Automatically pin the current tab when side panel is opened via shortcut (from external page)
+                
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,
@@ -1523,7 +1559,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                 if (sourceTab && sidePanelPorts.has(windowIdManual)) {
                     chrome.storage.local.get(['readWebpage'], (res) => {
-                        const isReadWebpageEnabled = res.readWebpage !== false; // Default to true
+                        const isReadWebpageEnabled = res.readWebpage !== false; 
                         if (isReadWebpageEnabled) {
                             chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab });
                         }
@@ -1540,10 +1576,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 chrome.sidePanel.open({ windowId: windowIdQuery }).catch(() => { });
                 const queryId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
 
-                // Identify if this is an internal query from the spotlight/sidepanel itself
+                
                 const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
 
-                // Only provide sourceTab for external web pages to avoid redundant pinning
+                
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,
@@ -1559,8 +1595,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     isInternal: isInternal
                 };
 
-                // Always set as pending to ensure reliability across Service Worker restarts.
-                // Use local storage as a robust persistent trigger for side panel to bridge SW awake gap.
+                
+                
                 queryData.timestamp = Date.now();
                 chrome.storage.local.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData });
 
@@ -1710,7 +1746,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         }).catch(() => null);
                     }
                     if (!result) {
-                        const chunks = [request.text]; // Simplify for now
+                        const chunks = [request.text]; 
                         const res = await Promise.all(chunks.map(async c => {
                             const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-GB&client=tw-ob&q=${encodeURIComponent(c)}`;
                             const r = await fetch(url);
@@ -1749,7 +1785,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
             return true;
 
-        // --- Model Consolidation ---
+        
         case 'updateModelChain':
             (async () => {
                 try {
@@ -1785,18 +1821,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// --- Global Command Listener (Spotlight) ---
+
 let spotlightWindowId = null;
 let spotlightInitialPosition = null;
 let spotlightHasMoved = false;
 
-/**
- * Robustly retrieves the current spotlight window ID, checking both memory and storage.
- * This is crucial for MV3 where the service worker may restart.
- */
+
 async function getSpotlightWindowId() {
     if (spotlightWindowId) {
-        // Double check it still exists
+        
         try {
             const win = await chrome.windows.get(spotlightWindowId);
             if (win) return spotlightWindowId;
@@ -1805,7 +1838,7 @@ async function getSpotlightWindowId() {
         }
     }
 
-    // Try storage
+    
     const data = await chrome.storage.local.get(['spotlightWindowId']);
     if (data.spotlightWindowId) {
         try {
@@ -1837,13 +1870,13 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
             });
         }
     } else if (command === 'toggle-side-panel') {
-        // Use the windowId from the tab argument directly.
-        // This is more reliable than chrome.windows.getCurrent and preserves the user gesture
-        // which is required for chrome.sidePanel.open.
+        
+        
+        
         if (tab && tab.windowId) {
             toggleSidePanel(tab.windowId);
         } else {
-            // Fallback for cases where tab is not provided (unlikely for onCommand)
+            
             chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
                 if (currentWindow && currentWindow.id) {
                     toggleSidePanel(currentWindow.id);
@@ -1853,10 +1886,10 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
     }
 });
 
-let isCreatingSpotlight = false; // Guard against race conditions
+let isCreatingSpotlight = false; 
 
 async function createSpotlightWindow() {
-    // --- TOGGLE LOGIC: Close if focused, focus if hidden, create if missing ---
+    
     const currentId = await getSpotlightWindowId();
     if (currentId) {
         try {
@@ -1864,7 +1897,7 @@ async function createSpotlightWindow() {
             if (win) {
                 if (win.focused) {
                     await chrome.windows.remove(currentId);
-                    // spotlightWindowId will be cleared by the onRemoved listener
+                    
                     isCreatingSpotlight = false;
                     return;
                 } else {
@@ -1874,20 +1907,20 @@ async function createSpotlightWindow() {
                 }
             }
         } catch (e) {
-            // Window no longer exists, clear stale ID and proceed to create new
+            
             spotlightWindowId = null;
             chrome.storage.local.remove('spotlightWindowId');
         }
     }
 
-    // Prevent multiple windows from being created simultaneously
+    
     if (isCreatingSpotlight) {
         return;
     }
     isCreatingSpotlight = true;
 
     try {
-        // Load saved dimensions and position
+        
         const saved = await new Promise(resolve => {
             chrome.storage.local.get(['spotlightWidth', 'spotlightHeight', 'spotlightLeft', 'spotlightTop'], resolve);
         });
@@ -1896,10 +1929,10 @@ async function createSpotlightWindow() {
         const windowHeight = saved.spotlightHeight || 400;
 
         try {
-            // Get all displays to validate bounds
+            
             const displays = await chrome.system.display.getInfo();
 
-            // Try to get the last focused Chrome window to determine which screen
+            
             const lastFocused = await new Promise(resolve => {
                 chrome.windows.getLastFocused({ populate: false }, (win) => {
                     resolve(chrome.runtime.lastError ? null : win);
@@ -1908,11 +1941,11 @@ async function createSpotlightWindow() {
 
             let left, top;
 
-            // Helper function to check if position is within any visible screen
+            
             const isPositionValid = (x, y, w, h) => {
                 for (const display of displays) {
                     const bounds = display.workArea;
-                    // Check if at least 50% of window would be visible on this display
+                    
                     const overlapLeft = Math.max(x, bounds.left);
                     const overlapTop = Math.max(y, bounds.top);
                     const overlapRight = Math.min(x + w, bounds.left + bounds.width);
@@ -1930,23 +1963,23 @@ async function createSpotlightWindow() {
                 return false;
             };
 
-            // If we have saved position, validate it's still on a visible screen
+            
             if (saved.spotlightLeft !== undefined && saved.spotlightTop !== undefined) {
                 if (isPositionValid(saved.spotlightLeft, saved.spotlightTop, windowWidth, windowHeight)) {
                     left = saved.spotlightLeft;
                     top = saved.spotlightTop;
                 } else {
-                    // Clear invalid saved position
+                    
                     await chrome.storage.local.remove(['spotlightLeft', 'spotlightTop']);
                 }
             }
 
-            // Calculate center position if no valid saved position
+            
             if (left === undefined || top === undefined) {
                 let targetDisplay = null;
 
                 if (lastFocused && lastFocused.left !== undefined && lastFocused.top !== undefined) {
-                    // Find which display contains the last focused window
+                    
                     const windowCenterX = lastFocused.left + (lastFocused.width || 0) / 2;
                     const windowCenterY = lastFocused.top + (lastFocused.height || 0) / 2;
 
@@ -1962,7 +1995,7 @@ async function createSpotlightWindow() {
                     }
                 }
 
-                // Fallback to primary display
+                
                 if (!targetDisplay) {
                     targetDisplay = displays.find(d => d.isPrimary) || displays[0];
                 }
@@ -1992,10 +2025,10 @@ async function createSpotlightWindow() {
             }
 
             chrome.windows.create(windowConfig, (win) => {
-                // Check if window creation was successful
+                
                 if (chrome.runtime.lastError || !win) {
                     console.error('[Lumina] Failed to create spotlight window:', chrome.runtime.lastError?.message);
-                    // Retry without position (let Chrome decide)
+                    
                     chrome.windows.create({
                         url: 'pages/spotlight/spotlight.html',
                         type: 'popup',
@@ -2018,12 +2051,12 @@ async function createSpotlightWindow() {
                 spotlightWindowId = win.id;
                 spotlightInitialPosition = { left: win.left, top: win.top };
                 spotlightHasMoved = false;
-                // Persist window ID to storage (survives service worker restarts)
+                
                 chrome.storage.local.set({ spotlightWindowId: win.id });
             });
         } catch (error) {
             console.error('Error creating spotlight window:', error);
-            // Fallback with no position
+            
             chrome.windows.create({
                 url: 'pages/spotlight/spotlight.html',
                 type: 'popup',
@@ -2050,36 +2083,36 @@ async function createSpotlightWindow() {
     }
 }
 
-// Track window movement and resize
+
 chrome.windows.onBoundsChanged.addListener(async (window) => {
-    // Determine if this is the spotlight window
+    
     let isSpotlight = (window.id === spotlightWindowId);
     if (!isSpotlight && !spotlightWindowId) {
         const data = await chrome.storage.local.get(['spotlightWindowId']);
         if (data.spotlightWindowId === window.id) {
-            spotlightWindowId = window.id; // Restore memory state
+            spotlightWindowId = window.id; 
             isSpotlight = true;
         }
     }
 
     if (isSpotlight) {
-        // Check if window has moved from initial position
+        
         if (spotlightInitialPosition) {
             const movedX = Math.abs(window.left - spotlightInitialPosition.left) > 5;
             const movedY = Math.abs(window.top - spotlightInitialPosition.top) > 5;
 
-            // If moved, update flag and set always on top
+            
             if (movedX || movedY) {
                 if (!spotlightHasMoved) {
                     spotlightHasMoved = true;
-                    // Note: alwaysOnTop is not supported in Manifest V3
+                    
                 }
-                // Update initial position to current, so we can detect next movement
+                
                 spotlightInitialPosition = { left: window.left, top: window.top };
             }
         }
 
-        // Always save position and dimensions (for cross-platform compatibility)
+        
 
         chrome.storage.local.set({
             spotlightWidth: window.width,
@@ -2090,12 +2123,12 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
     }
 });
 
-// Track when spotlight window is manually closed
+
 chrome.windows.onRemoved.addListener(async (removedId) => {
-    // Check against memory
+    
     let isSpotlight = (removedId === spotlightWindowId);
 
-    // If memory is null (SW just restarted), check storage
+    
     if (!isSpotlight && !spotlightWindowId) {
         const data = await chrome.storage.local.get(['spotlightWindowId']);
         if (data.spotlightWindowId === removedId) {
@@ -2107,12 +2140,12 @@ chrome.windows.onRemoved.addListener(async (removedId) => {
         spotlightWindowId = null;
         spotlightInitialPosition = null;
         spotlightHasMoved = false;
-        // Clear from storage so next open creates fresh window
+        
         chrome.storage.local.remove('spotlightWindowId');
     }
 });
 
-// --- Connect Listener (Long-lived for Chat Stream) ---
+
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-chat-stream') {
         const registeredSessions = new Set();
@@ -2123,7 +2156,7 @@ chrome.runtime.onConnect.addListener((port) => {
                     sessionPorts.get(sid).delete(port);
                     if (sessionPorts.get(sid).size === 0) {
                         sessionPorts.delete(sid);
-                        // Abort background fetch if no more ports listening
+                        
                         const controller = sessionControllers.get(sid);
                         if (controller) {
                             controller.abort();
@@ -2151,7 +2184,7 @@ chrome.runtime.onConnect.addListener((port) => {
                     controller.abort();
                     sessionControllers.delete(msg.sessionId);
                 }
-                // Broadcast 'done' explicitly if not already triggered by error/abort
+                
                 broadcastToSession(msg.sessionId, { action: 'done', sessionId: msg.sessionId });
                 return;
             }
@@ -2183,7 +2216,7 @@ chrome.runtime.onConnect.addListener((port) => {
                             Avoid long technical explanations. Be very concise.`;
                     }
 
-                    // Important: Extract systemOverride from options or root msg
+                    
                     const finalSystemOverride = (msg.options && msg.options.systemOverride) || msg.systemOverride || systemMsg;
 
                     await handleChatStream(
@@ -2222,9 +2255,9 @@ chrome.runtime.onConnect.addListener((port) => {
                 const text = msg.text;
                 if (!text) return;
 
-                // --- Language Detection ---
+                
                 const detectLanguage = (text) => {
-                    // Count characters in different Unicode ranges
+                    
                     let counts = {
                         vietnamese: 0,
                         chinese: 0,
@@ -2234,49 +2267,49 @@ chrome.runtime.onConnect.addListener((port) => {
                         latin: 0
                     };
 
-                    // Vietnamese-specific characters (diacritics)
+                    
                     const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;
 
                     for (const char of text) {
                         const code = char.charCodeAt(0);
 
-                        // CJK Unified Ideographs (Chinese)
+                        
                         if (code >= 0x4E00 && code <= 0x9FFF) {
                             counts.chinese++;
                         }
-                        // Hiragana
+                        
                         else if (code >= 0x3040 && code <= 0x309F) {
                             counts.japanese++;
                         }
-                        // Katakana
+                        
                         else if (code >= 0x30A0 && code <= 0x30FF) {
                             counts.japanese++;
                         }
-                        // Hangul (Korean)
+                        
                         else if (code >= 0xAC00 && code <= 0xD7AF) {
                             counts.korean++;
                         }
-                        // Cyrillic
+                        
                         else if (code >= 0x0400 && code <= 0x04FF) {
                             counts.cyrillic++;
                         }
-                        // Basic Latin (include extended for accented chars)
+                        
                         else if ((code >= 0x0041 && code <= 0x007A) || (code >= 0x00C0 && code <= 0x00FF)) {
                             counts.latin++;
                         }
                     }
 
-                    // Check for Vietnamese (Latin with specific diacritics)
+                    
                     const vietnameseMatches = text.match(vietnameseRegex);
                     if (vietnameseMatches) {
                         counts.vietnamese = vietnameseMatches.length;
                     }
 
-                    // Find dominant by highest count (no special priority)
+                    
                     const total = Object.values(counts).reduce((a, b) => a + b, 0);
-                    if (total === 0) return 'en-GB'; // Default
+                    if (total === 0) return 'en-GB'; 
 
-                    // Determine by highest count
+                    
                     const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
 
                     const langMap = {
@@ -2288,7 +2321,7 @@ chrome.runtime.onConnect.addListener((port) => {
                         vietnamese: 'vi'
                     };
 
-                    // Special case: If Latin dominant but has significant Vietnamese diacritics
+                    
                     if (dominant[0] === 'latin' && counts.vietnamese > 0 && counts.vietnamese / counts.latin > 0.15) {
                         return 'vi';
                     }
@@ -2296,24 +2329,24 @@ chrome.runtime.onConnect.addListener((port) => {
                     return langMap[dominant[0]] || 'en-GB';
                 };
 
-                // Detect language for TTS
+                
                 const detectedLang = detectLanguage(text);
 
-                // --- 1. Prepare Google TTS Strategy ---
-                // Split text by sentences (. ? !)
+                
+                
                 const googleChunks = [];
-                // Match sentences ending with . ? or !
+                
                 const sentences = text.match(/[^.?!]+[.?!]+/g) || [text];
-                // Filter: remove single-letter chunks like "a.", "b.", "c." etc.
+                
                 const cleanSentences = sentences
                     .map(s => s.trim())
                     .filter(s => {
                         const textOnly = s.replace(/[.?!,;:]/g, '').trim();
-                        return textOnly.length >= 2; // Must have at least 2 chars of actual text
+                        return textOnly.length >= 2; 
                     });
 
                 if (cleanSentences.length <= 1) {
-                    // Use full text if only 1 or 0 valid sentences
+                    
                     const fullTextOnly = text.replace(/[.?!,;:]/g, '').trim();
                     if (fullTextOnly.length >= 2) {
                         googleChunks.push(text);
@@ -2329,7 +2362,7 @@ chrome.runtime.onConnect.addListener((port) => {
                     }
                 }
 
-                // Define Google Fetcher with detected language
+                
                 const executeGoogleFallback = async () => {
 
                     port.postMessage({ type: 'meta', total: googleChunks.length, lang: detectedLang });
@@ -2337,7 +2370,7 @@ chrome.runtime.onConnect.addListener((port) => {
                     const fetchChunk = async (chunk, index) => {
                         try {
                             const encodedText = encodeURIComponent(chunk);
-                            // 'tw-ob' is the standard client used by many extensions
+                            
                             const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${detectedLang}&client=tw-ob&q=${encodedText}&total=1&idx=0`;
 
                             const response = await fetch(url, { referrerPolicy: 'no-referrer' });
@@ -2345,32 +2378,32 @@ chrome.runtime.onConnect.addListener((port) => {
 
                             const contentType = response.headers.get('Content-Type');
 
-                            // Google sometimes returns audio/mpeg or audio/mp3.
-                            // If it's text/html, it's definitely an error (captcha/block).
+                            
+                            
                             if (contentType && !contentType.includes('audio') && !contentType.includes('mpeg')) {
                                 const text = await response.text();
 
                                 throw new Error('Invalid content type: ' + contentType);
                             }
 
-                            // 1. Get raw bytes
+                            
                             const rawBlob = await response.blob();
 
-                            // 2. Force type to audio/mpeg to ensure subsequent FileReader result is a valid DataURI
+                            
                             const blob = new Blob([rawBlob], { type: 'audio/mpeg' });
 
-                            // 3. Return as a Promise so we can await all chunks
+                            
                             return new Promise((resolve) => {
                                 const reader = new FileReader();
                                 reader.onloadend = () => {
-                                    const base64DataUrl = reader.result; // This includes data:audio/mpeg;base64,...
+                                    const base64DataUrl = reader.result; 
                                     try {
                                         port.postMessage({
                                             type: 'chunk',
                                             index: index,
                                             data: base64DataUrl
                                         });
-                                    } catch (e) { /* Port disconnected */ }
+                                    } catch (e) {  }
                                     resolve();
                                 };
                                 reader.onerror = () => {
@@ -2385,15 +2418,15 @@ chrome.runtime.onConnect.addListener((port) => {
                         }
                     };
 
-                    // Fetch ALL chunks in parallel for seamless playback
-                    // Then send 'done' so content script knows the stream is finished
+                    
+                    
                     await Promise.all(googleChunks.map((chunk, index) => fetchChunk(chunk, index)));
-                    try { port.postMessage({ type: 'done' }); } catch (e) { /* Port disconnected */ }
+                    try { port.postMessage({ type: 'done' }); } catch (e) {  }
                 };
 
-                // --- STREAMING LOGIC ---
-                // The content script manages the decision (Oxford vs Google).
-                // If this port is called, we assume we want Google TTS chunks.
+                
+                
+                
 
                 await executeGoogleFallback();
             }
@@ -2401,10 +2434,10 @@ chrome.runtime.onConnect.addListener((port) => {
     }
 });
 
-// --- Helper Functions (Dictionary & Translation) ---
+
 
 async function translateText(text, targetLang = 'vi') {
-    // --- Google Translate Only ---
+    
     const fromLang = 'auto';
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
 
@@ -2414,13 +2447,13 @@ async function translateText(text, targetLang = 'vi') {
         const data = await response.json();
         let translatedText = data[0].map(item => item[0]).join('');
 
-        // Preserve letter numbering
+        
         const letterPrefix = text.match(/^([a-z])\.\s*/i);
         if (letterPrefix) {
             translatedText = translatedText.replace(/^(Một|Hai|Ba|Bốn|Năm|Sáu|Bảy|Tám|Chín|Mười|[A-Z])\.\s*/, letterPrefix[0]);
         }
 
-        // Create final result
+        
         const result = {
             type: 'sentence',
             original: text,
@@ -2440,22 +2473,22 @@ async function translateText(text, targetLang = 'vi') {
 }
 
 async function proofreadText(text) {
-    // 1. Get Model Chain
+    
     const chain = await getModelChain();
 
     if (!chain || chain.length === 0) {
         throw new Error("No AI provider configured. Please add a provider in Options.");
     }
 
-    // 2. Execution Loop
+    
     for (let i = 0; i < chain.length; i++) {
         const config = chain[i];
         const { model, providerType: currentProvider, endpoint, apiKey } = config;
         const keys = getKeysArray(apiKey);
 
-        // --- TRACK USAGE ---
+        
         if (model) incrementModelUsage(model);
-        // -------------------
+        
 
         const globalSettings = await chrome.storage.local.get(['responseLanguage']);
         const systemPrompt = buildProofreadSystemPrompt(globalSettings.responseLanguage);
@@ -2482,14 +2515,14 @@ async function proofreadText(text) {
                 continue;
             }
             console.error(`[Lumina] Proofread failed on ${model}:`, e);
-            continue; // Fallback for other errors too
+            continue; 
         }
     }
 
     throw new Error("Proofreading failed on all models.");
 }
 
-// --- Main Chat Handler (New: Supports Model Chain) ---
+
 async function handleChatStream(messages, initialContext, question, port, imageData = null, isSpotlight = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null, sessionId = null) {
     try {
         try {
@@ -2497,17 +2530,17 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             let activeTabId = port?.sender?.tab?.id;
 
             if (!activeUrl) {
-                // If the message came from popup (port.sender.tab is undefined)
-                // or spotlight (which may not have the right tab associated), we query the current tab.
+                
+                
                 const queryOptions = isSpotlight ? { active: true } : { active: true, currentWindow: true };
 
-                // For Spotlight, currentWindow might be the Spotlight window itself which has no URL. 
-                // In that case we want the last focused window's active tab.
+                
+                
                 const tabs = await chrome.tabs.query(queryOptions);
                 if (tabs && tabs.length > 0) {
                     activeUrl = tabs[0].url;
                     activeTabId = tabs[0].id;
-                    // If spotlight grabbed its own tab by mistake, filter it out
+                    
                     if (isSpotlight && activeUrl && activeUrl.includes(chrome.runtime.id)) {
                         const allActive = await chrome.tabs.query({ active: true });
                         const realTab = allActive.find(t => t.url && !t.url.includes(chrome.runtime.id));
@@ -2522,13 +2555,13 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             console.warn("[Lumina] Optional context extraction failed:", e);
         }
 
-        // 1. Load global settings for params (shared across models)
+        
         const globalSettings = await chrome.storage.local.get(['responseLanguage', 'advancedParamsByModel']);
 
-        // 2. Get Chain
+        
         let chain = await getModelChain();
 
-        // Clean up history
+        
         const cleanMessages = (messages || []).map(m => {
             if ((m.role === 'assistant' || m.role === 'model') && typeof m.content === 'string') {
                 return { ...m, content: m.content.trim() };
@@ -2536,17 +2569,17 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             return m;
         });
 
-        // If Spotlight provided a tab-specific model override, prioritize it for THIS request only
+        
         if (requestOptions.tabModel) {
             const { providerId, model } = requestOptions.tabModel;
             const targetIdx = chain.findIndex(c => c.providerId === providerId && c.model === model);
 
             if (targetIdx > 0) {
-                // Move it to the front
+                
                 const target = chain.splice(targetIdx, 1)[0];
                 chain.unshift(target);
             } else if (targetIdx === -1) {
-                // Fallback: manually hydrate if somehow not in the chain list
+                
                 const data = await chrome.storage.local.get(['providers']);
                 const provider = (data.providers || []).find(p => p.id === providerId);
                 if (provider) {
@@ -2569,22 +2602,22 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             return;
         }
 
-        // 3. Execution Loop
+        
         for (let i = 0; i < chain.length; i++) {
             const config = chain[i];
             try {
-                // Determine if this is the last attempt to throw fatal error if it fails
+                
                 const isLast = i === chain.length - 1;
 
                 await executeChatRequest(config, cleanMessages, initialContext, question, port, imageData, isSpotlight, globalSettings, requestOptions, action, systemOverride, sessionId);
 
-                return; // Success!
+                return; 
             } catch (e) {
                 if (e.message === 'RATE_LIMIT_EXHAUSTED') {
                     console.warn(`[Lumina] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
 
                     if (i < chain.length - 1) {
-                        // Notify UI of fallback (optional, maybe via port message types that don't break content)
+                        
                         try {
                             const statusMsg = {
                                 action: 'status_update',
@@ -2594,14 +2627,14 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                             if (sessionId) broadcastToSession(sessionId, statusMsg);
                             else port.postMessage(statusMsg);
                         } catch (err) { }
-                        continue; // Try next model
+                        continue; 
                     }
                 }
 
-                // If we are here: either NOT a rate limit error, OR it WAS rate limit but it was the last model
+                
                 console.error(`[Lumina] Chat Chain failed at index ${i} (${config.model}):`, e);
 
-                // If it's the last model, or non-recoverable error, we must fail
+                
                 const errorMsg = { error: e.message || "AI Request Failed" };
                 if (sessionId) broadcastToSession(sessionId, errorMsg);
                 else port.postMessage(errorMsg);
@@ -2616,13 +2649,13 @@ async function handleChatStream(messages, initialContext, question, port, imageD
     }
 }
 
-// --- Handle Model Selection updates from Content Script / Popup ---
-// --- Handle Model Selection updates merged above ---
 
-// --- Handle Spotlight tab-local model selection (does NOT affect other tabs) ---
-// --- Handle Spotlight tab-local model selection merged above ---
 
-// --- Offscreen Document Management ---
+
+
+
+
+
 let creatingOffscreenParams = null;
 async function setupOffscreenDocument(path) {
     if (await chrome.offscreen.hasDocument()) {
@@ -2648,7 +2681,7 @@ async function playNativeTTS(text, speed = 1.0) {
     return new Promise((resolve, reject) => {
         chrome.tts.getVoices((voices) => {
             let voiceName = null;
-            // Prioritize Vietnamese
+            
             const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
 
             if (isVietnamese) {
@@ -2659,16 +2692,16 @@ async function playNativeTTS(text, speed = 1.0) {
                     if (vnAny) voiceName = vnAny.voiceName;
                 }
             } else {
-                // Try English Natural (GB/UK preferred as per user request)
+                
                 let enVoice = voices.find(v => v.voiceName.includes('English') && v.voiceName.includes('Natural') && (v.voiceName.includes('United Kingdom') || v.voiceName.includes('Great Britain')));
 
-                // Fallback to US Natural if UK not found
+                
                 if (!enVoice) enVoice = voices.find(v => v.voiceName.includes('English') && v.voiceName.includes('Natural') && v.voiceName.includes('United States'));
 
-                // Fallback to any English Natural
+                
                 if (!enVoice) enVoice = voices.find(v => v.voiceName.includes('English') && (v.voiceName.includes('Natural') || v.voiceName.includes('Online')));
 
-                // Fallback to ANY Microsoft English (faster than Library)
+                
                 if (!enVoice) enVoice = voices.find(v => v.voiceName.includes('Microsoft') && v.voiceName.includes('English'));
 
                 if (enVoice) voiceName = enVoice.voiceName;
@@ -2679,7 +2712,7 @@ async function playNativeTTS(text, speed = 1.0) {
                 return;
             }
 
-            // Explicitly interrupt current speech using the API option instead of stop()
+            
             chrome.tts.speak(text, {
                 voiceName: voiceName,
                 rate: speed,
@@ -2710,7 +2743,7 @@ async function playAudioOffscreen(url, speed = 1.0) {
 
 async function playEdgeTTSOffscreen(text, speed = 1.0) {
     let voice = 'en-GB-SoniaNeural';
-    // Simple language detection
+    
     const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
     if (vietnameseRegex.test(text)) {
         voice = 'vi-VN-HoaiMyNeural';
@@ -2734,7 +2767,7 @@ async function playEdgeTTSOffscreen(text, speed = 1.0) {
 
 
 async function playBase64AudioOffscreen(base64Data, speed = 1.0) {
-    // Check if offscreen document exists
+    
     if (!(await chrome.offscreen.hasDocument())) {
         await chrome.offscreen.createDocument({
             url: 'pages/offscreen/offscreen.html',
@@ -2743,7 +2776,7 @@ async function playBase64AudioOffscreen(base64Data, speed = 1.0) {
         });
     }
 
-    // Send message to offscreen document
+    
     return await chrome.runtime.sendMessage({
         action: 'offscreen_playBase64',
         data: base64Data,
@@ -2767,31 +2800,31 @@ async function stopGoogleAudioOffscreen() {
     }
 }
 
-// Unified audio fetch — single code path for both web (content.js) and spotlight.
-// Returns { type: 'oxford'|'google', chunks: [base64, ...] }
-//
-// Logic:
-//   1-2 words  → fire Oxford + Google in parallel; use Oxford if it succeeds, else Google
-//   3+ words   → try Google with full text; if 400 Bad Request → split by sentence and retry
+
+
+
+
+
+
 async function fetchAudio(text, speed = 1.0, forcedLang = null) {
     if (!text) return { type: null, chunks: [] };
 
     let normalizedText = text.trim();
 
-    // Clean up variables/keys so TTS reads them naturally:
-    // 1. Replace underscores with spaces (e.g. policy_holder_id -> policy holder id)
+    
+    
     normalizedText = normalizedText.replace(/_/g, ' ');
-    // 2. Pronounce common programming acronyms by spelling them out
+    
     const acronymsToSpellOut = ['id', 'url', 'ip', 'io', 'os', 'ui', 'db', 'api', 'ssl', 'tls', 'dto', 'dao'];
     acronymsToSpellOut.forEach(acronym => {
-        // Match standalone acronyms (case-insensitive), replace with space-separated uppercase letters (e.g. 'i d')
+        
         const regex = new RegExp(`\\b${acronym}\\b`, 'gi');
         normalizedText = normalizedText.replace(regex, acronym.toUpperCase().split('').join(' '));
     });
 
     const wordCount = normalizedText.split(/\s+/).length;
 
-    // --- Language Detection ---
+    
     const detectLanguage = (t) => {
         let counts = { vietnamese: 0, chinese: 0, japanese: 0, korean: 0, cyrillic: 0, latin: 0 };
         const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;
@@ -2815,7 +2848,7 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
 
     const lang = forcedLang || detectLanguage(normalizedText);
 
-    // Helper: fetch one URL → base64 data URI. Throws on any HTTP error.
+    
     const fetchToBase64 = async (url, opts = {}) => {
         const response = await fetch(url, opts);
         if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status });
@@ -2827,38 +2860,38 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         return `data:audio/mpeg;base64,${base64}`;
     };
 
-    // Helper: strip leading list prefixes (a., 1., (a), (1), •, -) before sending
-    // to Google TTS — these cause slower synthesis and sometimes a leading pause.
+    
+    
     const stripListPrefix = (q) =>
         q.replace(/^\s*(?:[a-zA-Z\d]{1,2}\)|[a-zA-Z\d]{1,2}\.|[•\-–—])\s+/, '').trim();
 
-    // Helper: build Google TTS URL
+    
     const googleUrl = (q) => {
         const cleaned = stripListPrefix(q);
         return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleaned)}&tl=${lang}&total=1&idx=0&textlen=${cleaned.length}&client=gtx&prev=input&ttsspeed=${speed}`;
     };
 
-    // Helper: split text into chunks that are short enough for Google TTS (~200 chars each).
-    // Level 1: sentence boundaries (.?!)
-    // Level 2: clause boundaries (,;–—) for chunks still too long
-    // Level 3: fixed word-count split for chunks that have no punctuation at all
+    
+    
+    
+    
     const MAX_CHUNK_CHARS = 200;
     const splitIntoChunks = (text) => {
-        // Level 1: sentence split
+        
         const sentences = text.match(/[^.?!]+[.?!]+/g) || [];
-        // Include trailing text not ending in sentence punctuation
+        
         const lastSentenceEnd = sentences.reduce((acc, s) => acc + s.length, 0);
         if (lastSentenceEnd < text.length) sentences.push(text.slice(lastSentenceEnd).trim());
         const level1 = sentences.map(s => s.trim()).filter(s => s.replace(/[.?!,;:]/g, '').trim().length >= 2);
         const base = level1.length >= 2 ? level1 : [text];
 
-        // Level 2: for chunks still too long, split on clause delimiters
+        
         const level2 = [];
         for (const chunk of base) {
             if (chunk.length <= MAX_CHUNK_CHARS) { level2.push(chunk); continue; }
             const clauses = chunk.split(/(?<=[,;–—])\s+/);
             if (clauses.length >= 2) {
-                // Group clauses so each group stays under MAX_CHUNK_CHARS
+                
                 let current = '';
                 for (const clause of clauses) {
                     if (current && (current + ' ' + clause).length > MAX_CHUNK_CHARS) {
@@ -2874,7 +2907,7 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
             }
         }
 
-        // Level 3: for any chunk still too long, split every N words
+        
         const WORDS_PER_CHUNK = 25;
         const final = [];
         for (const chunk of level2) {
@@ -2887,15 +2920,15 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         return final.filter(Boolean);
     };
 
-    // Helper: fetch Google with full text first; if 400, chunk and retry
+    
     const fetchGoogle = async () => {
         try {
             const data = await fetchToBase64(googleUrl(normalizedText), { referrerPolicy: 'no-referrer' });
             return [data];
         } catch (e) {
-            if (e.status !== 400) return []; // unexpected error (network, etc.)
+            if (e.status !== 400) return []; 
         }
-        // 400 → split into digestible chunks and fetch in parallel
+        
         const chunks = splitIntoChunks(normalizedText);
         const results = new Array(chunks.length).fill(null);
         await Promise.all(chunks.map(async (chunk, i) => {
@@ -2906,32 +2939,30 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
     };
 
     if (wordCount <= 2) {
-        // Fire Oxford and Google simultaneously; prefer Oxford if it returns audio
+        
         const oxfordUrl = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${normalizedText.toLowerCase()}--_gb_1.mp3`;
         const oxfordPromise = fetchToBase64(oxfordUrl).catch(() => null);
-        const googlePromise = fetchGoogle(); // already running in parallel
+        const googlePromise = fetchGoogle(); 
 
         const oxfordData = await oxfordPromise;
         if (oxfordData) {
             return { type: 'oxford', chunks: [oxfordData] };
         }
-        // Oxford failed (404) — Google is already done or nearly done
+        
         const googleChunks = await googlePromise;
         return { type: 'google', chunks: googleChunks };
     }
 
-    // 3+ words: Google only
+    
     const googleChunks = await fetchGoogle();
     return { type: 'google', chunks: googleChunks };
 }
 
-// --- Audio Handlers merged above ---
 
 
 
-/**
- * Fetches structured dictionary data from AI
- */
+
+
 async function fetchAIDict(word) {
     const { dictLanguage, ...items } = await chrome.storage.local.get(['dictLanguage', 'dictionary']);
     const lang = dictLanguage || 'en';
@@ -2942,9 +2973,9 @@ async function fetchAIDict(word) {
 
     const systemPrompt = buildDictionarySystemPrompt(word, lang);
 
-    // IMPORTANT: To ensure consistency with the chat flow and bypass potential 503 errors 
-    // often caused by non-streaming requests in Gemini OpenAI endpoints, we use streaming 
-    // internally and collect the result.
+    
+    
+    
     for (let i = 0; i < chain.length; i++) {
         const config = chain[i];
         const { model, endpoint, apiKey } = config;
@@ -2962,7 +2993,7 @@ async function fetchAIDict(word) {
             isGemini25Model: /gemini-2\.5/i.test(model),
             reasoningMode: false,
             imageData: null,
-            isStreaming: true // Use streaming for stability
+            isStreaming: true 
         };
 
         try {
@@ -2983,7 +3014,7 @@ async function fetchAIDict(word) {
                 throw new Error(`HTTP error ${response.status}: ${errText}`);
             }
 
-            // Collect stream
+            
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
             let fullText = '';
@@ -3010,7 +3041,7 @@ async function fetchAIDict(word) {
                 }
             }
 
-            // Clean up result
+            
             let jsonStr = fullText.trim();
             if (jsonStr.startsWith('```')) {
                 jsonStr = jsonStr.replace(/^```json\n?|```$/g, '').trim();

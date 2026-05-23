@@ -1,44 +1,44 @@
-// DOM Elements
+
 const container = document.querySelector('.lumina-chat-container');
 const fileInput = document.getElementById('file-input');
 
-// Forward wheel events from the margin area of the chat container to the active scroll child
+
 function bindContainerWheelForward(containerEl) {
     if (!containerEl || containerEl.__luminaWheelBound) return;
     containerEl.__luminaWheelBound = true;
     let cachedScrollable = null;
 
-    // Stop wheel events from bubbling out of the scroll content — this prevents the
-    // passive:false container listener below from running during normal scroll, which
-    // would otherwise force the browser to wait for JS before every scroll frame.
+    
+    
+    
     function attachScrollContentBlocker(scrollable) {
         if (!scrollable || scrollable.__luminaWheelStop) return;
         scrollable.__luminaWheelStop = true;
         scrollable.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
     }
 
-    // Margin-only handler — only fires when wheel originates outside .lumina-chat-scroll-content
+    
     containerEl.addEventListener('wheel', (e) => {
-        // Cache and refresh only when null or hidden
+        
         if (!cachedScrollable || cachedScrollable.style.display === 'none') {
             cachedScrollable = containerEl.querySelector('.lumina-chat-scroll-content:not([style*="display: none"])');
             if (cachedScrollable) attachScrollContentBlocker(cachedScrollable);
         }
         if (!cachedScrollable) return;
         e.preventDefault();
-        // Normalize deltaMode: 0=pixels, 1=lines(~16px), 2=page
+        
         let delta = e.deltaY;
         if (e.deltaMode === 1) delta *= 16;
         else if (e.deltaMode === 2) delta *= cachedScrollable.clientHeight;
         cachedScrollable.scrollBy({ top: delta, behavior: 'instant' });
     }, { passive: false });
 
-    // Eagerly attach stopper if scroll content already exists
+    
     const existing = containerEl.querySelector('.lumina-chat-scroll-content');
     if (existing) attachScrollContentBlocker(existing);
 }
 
-// Detect whether we're running as a standalone web app or side panel
+
 const isWebApp = new URLSearchParams(window.location.search).get('webapp') === '1';
 const isSidePanel = new URLSearchParams(window.location.search).get('sidepanel') === '1';
 
@@ -55,21 +55,21 @@ const KEYS = {
     splitRatio: `${STORAGE_PREFIX}_split_ratio`
 };
 
-// Tab Management
+
 let tabs = [];
-let tabGroups = []; // Array of { id: 'group-x', tabIds: ['tab-1', 'tab-2'], ratio: 50 }
+let tabGroups = []; 
 let activeGroupIndex = -1;
-let activeTabIndex = -1; // Derived from active group
+let activeTabIndex = -1; 
 let tabCounter = 1;
 
-// Initialize shared UI
-let chatUI = null; // Will point to primary active tab's chatUI
-let sharedInputUI = null; // Primary input bar UI instance
-let sharedInputUISecondary = null; // Secondary input bar UI instance for split view
-let chatUISecondary = null; // Will point to secondary active tab's chatUI
-let hoveredPane = 'primary'; // Tracks which pane the mouse is currently over
 
-// Helper: Get the input element for the currently hovered pane
+let chatUI = null; 
+let sharedInputUI = null; 
+let sharedInputUISecondary = null; 
+let chatUISecondary = null; 
+let hoveredPane = 'primary'; 
+
+
 function getHoveredInputEl() {
     if (isSplitMode && hoveredPane === 'secondary' && sharedInputUISecondary?.inputEl) {
         return sharedInputUISecondary.inputEl;
@@ -98,10 +98,10 @@ function redirectToPinnedQuestion() {
     }
 }
 
-let isSplitMode = false; // Derived from active group
-let secondaryActiveTabIndex = -1; // Derived from active group
+let isSplitMode = false; 
+let secondaryActiveTabIndex = -1; 
 let resizerDragging = false;
-let sidebarTargetTabId = null; // Tab ID that triggered sidebar open via double-click
+let sidebarTargetTabId = null; 
 let splitHoverTimer = null;
 let splitHoverTargetIndex = -1;
 let isApplyingSplit = false;
@@ -111,39 +111,39 @@ let shortcuts = {};
 let questionMappings = [];
 let askSelectionPopupEnabled = false;
 let advancedParamsByModel = {};
-let pinnedWebSources = []; // Array of { tabId, title, url }
-let webSourceSelectionsByPageTabId = {}; // browserTabId -> Array<{ tabId, title, url }>
-let currentBrowserTab = null; // Currently active browser tab
+let pinnedWebSources = []; 
+let webSourceSelectionsByPageTabId = {}; 
+let currentBrowserTab = null; 
 let webTabPickerEl = null;
 let webTabPickerAnchorEl = null;
 let webTabPickerOutsideHandler = null;
 let webTabPickerKeyHandler = null;
 let minHeightReflowRaf = null;
 
-// Ask Selection (Spotlight internal)
+
 let spotlightAskSourcePane = 'primary';
 let groupCounter = 1;
 let isInitializing = false;
 let handledQueryIds = new Set();
 
-// Track whether the last key pressed was a modifier that was pressed alone (no combo)
+
 let modifierKeyPressedAlone = false;
 let lastSubmitTime = 0;
 let lastSubmitText = "";
 let readWebpageEnabled = false;
 
 const GROUP_COLORS = [
-    '#4285f4', // Blue
-    '#34a853', // Green
-    '#fbbc05', // Yellow
-    '#ea4335', // Red
-    '#a142f4', // Purple
-    '#24c1e0', // Cyan
-    '#ff6d01', // Orange
-    '#ff33b5'  // Pink
+    '#4285f4', 
+    '#34a853', 
+    '#fbbc05', 
+    '#ea4335', 
+    '#a142f4', 
+    '#24c1e0', 
+    '#ff6d01', 
+    '#ff33b5'  
 ];
 
-// Helper: Apply font size
+
 function applyFontSize(size) {
     if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.applyFontSize === 'function') {
         LuminaChatUI.applyFontSize(null, size);
@@ -155,7 +155,7 @@ function applyFontSize(size) {
 
 const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
 
-const currentBrowserTabTokens = new Map(); // tabId -> tokens (cached for ghost chip)
+const currentBrowserTabTokens = new Map(); 
 
 function getSpotlightTabIdForPane(container) {
     if (!container) return null;
@@ -168,15 +168,15 @@ function getSpotlightTabIdForPane(container) {
     return activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
 }
 
-// Scope key = spotlightTabId + browserTabId — selections are strictly isolated 
-// per conversation tab AND per browser tab. This ensures that switching 
-// browser tabs provides a fresh, independent context.
+
+
+
 function getWebSelectionScopeKey(spotlightTabId) {
     if (spotlightTabId == null || !currentBrowserTab) return null;
     return `${String(spotlightTabId)}_${String(currentBrowserTab.tabId)}`;
 }
 
-// Returns the spotlightTabId for the currently active primary pane
+
 function getCurrentSpotlightTabId() {
     const tab = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex] : null;
     return tab ? tab.id : null;
@@ -230,7 +230,7 @@ function getWebSelectionForScope(spotlightTabId) {
     const scopeKey = getWebSelectionScopeKey(spotlightTabId);
     if (!scopeKey) return [];
 
-    // Always read fresh from storage to ensure we handle tab switching correctly
+    
     webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(scopeKey);
     return webSourceSelectionsByPageTabId[scopeKey] || [];
 }
@@ -249,14 +249,14 @@ function saveWebSelectionForScope(spotlightTabId, selection) {
     webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
     writeWebSelectionToStorage(scopeKey, normalizedSelection);
 
-    // Async refresh tokens for any new/uncalculated sources
+    
     if (normalizedSelection.length > 0) {
         refreshWebSourceTokens(spotlightTabId, normalizedSelection);
     }
 }
 
-// Task 5: Utility — fetch live web content from a browser tab via executeScript.
-// Uses the same approach as handleSubmit so tokens always reflect real page state.
+
+
 async function fetchFreshWebContent(tabId) {
     const tabInfo = await chrome.tabs.get(parseInt(tabId)).catch(() => null);
     if (!tabInfo || tabInfo.status !== 'complete') return null;
@@ -265,12 +265,12 @@ async function fetchFreshWebContent(tabId) {
         const results = await chrome.scripting.executeScript({
             target: { tabId: parseInt(tabId), allFrames: true },
             func: () => typeof window.luminaExtractMainContent === 'function'
-                ? window.luminaExtractMainContent() : null
+                ? window.luminaExtractMainContent(document, true) : null
         });
 
         if (!results) return null;
 
-        // Deduplicate frames (same approach as handleSubmit)
+        
         const seenFingerprints = new Set();
         const texts = [];
         for (const r of results) {
@@ -290,7 +290,7 @@ async function fetchFreshWebContent(tabId) {
     }
 }
 
-// Task 6: Refresh token counts by fetching fresh content (no cache).
+
 async function refreshWebSourceTokens(spotlightTabId, selection) {
     if (!selection || selection.length === 0) return;
     let updated = false;
@@ -323,7 +323,7 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
         }
         updateWebChips();
 
-        // Notify affected chat UIs to recalculate total token count
+        
         const affectedTabs = spotlightTabId
             ? tabs.filter(t => t.id === spotlightTabId)
             : tabs;
@@ -359,7 +359,7 @@ function loadCurrentWebSelection(spotlightTabId = null) {
 function updateWebSelectionForTab(tabId, updater) {
     const stringTabId = String(tabId);
 
-    // Iterate over all keys in localStorage to find web selections
+    
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
@@ -367,10 +367,10 @@ function updateWebSelectionForTab(tabId, updater) {
     storageKeys.forEach((storageKey) => {
         const scopeKey = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
 
-        // Read the selection list for this scope
+        
         const selection = readWebSelectionFromStorage(scopeKey);
 
-        // Check if any source in the list matches the changed tabId
+        
         let changed = false;
         const updatedSelection = selection.map((source) => {
             if (String(source.tabId) === stringTabId) {
@@ -395,7 +395,7 @@ function updateWebSelectionForTab(tabId, updater) {
 function refreshWebSourceTokensForTab(tabId) {
     const stringTabId = String(tabId);
 
-    // 1. Refresh in-memory pinned list if it matches
+    
     const pinnedMatch = pinnedWebSources.find(s => String(s.tabId) === stringTabId);
     if (pinnedMatch) {
         const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
@@ -404,8 +404,8 @@ function refreshWebSourceTokensForTab(tabId) {
         }
     }
 
-    // 2. Refresh in all stored scopes.
-    // Selection is isolated per spotlightTabId + browserTabId.
+    
+    
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
@@ -420,7 +420,7 @@ function refreshWebSourceTokensForTab(tabId) {
         }
     });
 
-    // 3. Refresh current browser tab (ghost chip) tokens if it matches
+    
     if (currentBrowserTab && String(currentBrowserTab.tabId) === stringTabId) {
         (async () => {
             const text = await fetchFreshWebContent(stringTabId);
@@ -439,7 +439,7 @@ function refreshWebSourceTokensForTab(tabId) {
 
 function isSelectionInsideEditable() {
     const sel = window.getSelection();
-    // 1. Check selection nodes
+    
     if (sel && sel.rangeCount > 0 && sel.toString().trim().length > 0) {
         let node = sel.anchorNode;
         while (node && node !== document.documentElement) {
@@ -456,7 +456,7 @@ function isSelectionInsideEditable() {
         }
     }
 
-    // 2. Check focused element
+    
     const active = document.activeElement;
     if (active && (
         ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(active.tagName) ||
@@ -486,20 +486,20 @@ function bindHistoryScroll(tab) {
             tab.isAtBottom = true;
             tab.scrollAnchorIndex = null;
             tab.scrollAnchorOffset = null;
-            // User is at bottom — allow auto-scroll again
+            
             tab.userScrolledUp = false;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = false;
         } else {
             tab.scrollTop = scrollTop;
             tab.isAtBottom = false;
-            // User has scrolled up — lock auto-scroll for this tab
+            
             tab.userScrolledUp = true;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = true;
         }
         const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
         if (entries.length > 0) {
             if (nearBottom) {
-                // Skip anchor when we want bottom restore
+                
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => {
                     saveTabsState();
@@ -541,7 +541,7 @@ function restoreScrollPosition(tab) {
 
     if (tab.scrollAnchorIndex != null && tab.scrollAnchorIndex < entries.length) {
         const anchor = entries[tab.scrollAnchorIndex];
-        // Use standard logic but allow for anchor offset if it was saved
+        
         const baseTarget = LuminaChatUI.calculateInitialScrollTarget(anchor, tab.historyEl);
         tab.historyEl.scrollTop = baseTarget + (tab.scrollAnchorOffset || 0);
     }
@@ -553,7 +553,7 @@ function restoreLatestScrollPosition(tab) {
     if (entries.length === 0) return;
 
     const latestEntry = entries[entries.length - 1];
-    // Use the standardized helper for consistent buffer spacing
+    
     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
 
     tab.historyEl.scrollTop = targetScrollTop;
@@ -576,20 +576,17 @@ function scheduleScrollRestore(tab) {
     });
 }
 
-/**
- * Normalizes tab IDs and history element IDs to be sequential (1, 2, 3...)
- * This makes the DOM cleaner as requested by the user.
- */
+
 async function handleRemoteSync(changes, areaName) {
     if (areaName !== 'local') return;
 
-    // 1. Sync Tab Structure (Meta)
+    
     if (changes[KEYS.tabs] || changes[KEYS.tabGroups]) {
         const newTabsMeta = changes[KEYS.tabs] ? changes[KEYS.tabs].newValue : null;
         const newGroupsMeta = changes[KEYS.tabGroups] ? changes[KEYS.tabGroups].newValue : null;
 
         if (newTabsMeta) {
-            // Check if actual structural change or metadata (title/session) change occurred
+            
             const currentTabIds = tabs.map(t => t.id).join(',');
             const nextTabIds = newTabsMeta.map(t => t.id).join(',');
 
@@ -601,7 +598,7 @@ async function handleRemoteSync(changes, areaName) {
 
             if (currentTabIds !== nextTabIds || metadataChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
 
-                // Identify removed tabs
+                
                 const nextIds = new Set(newTabsMeta.map(m => m.id));
                 tabs = tabs.filter(t => {
                     if (nextIds.has(t.id)) return true;
@@ -609,19 +606,19 @@ async function handleRemoteSync(changes, areaName) {
                     return false;
                 });
 
-                // Update/Add tabs
+                
                 for (let i = 0; i < newTabsMeta.length; i++) {
                     const meta = newTabsMeta[i];
                     let existing = tabs.find(t => t.id === meta.id);
 
                     if (existing) {
                         const sessionChanged = existing.sessionId !== meta.sessionId;
-                        // Update metadata
+                        
                         existing.title = meta.title;
                         existing.sessionId = meta.sessionId;
 
                         if (sessionChanged && existing.historyEl) {
-                            // Session re-synced (New Chat) - reload this specific tab's history content
+                            
                             const historyKey = `spotlight_history_${meta.sessionId}`;
                             const historyData = await chrome.storage.local.get([historyKey]);
                             existing.historyEl.innerHTML = historyData[historyKey] || '';
@@ -629,7 +626,7 @@ async function handleRemoteSync(changes, areaName) {
                             if (existing.chatUIInstance) existing.chatUIInstance.syncStateFromDOM();
                         }
                     } else {
-                        // New tab added remotely
+                        
                         const historyEl = document.createElement('div');
                         historyEl.className = 'lumina-chat-scroll-content';
                         historyEl.style.display = 'none';
@@ -661,7 +658,7 @@ async function handleRemoteSync(changes, areaName) {
                     }
                 }
 
-                // Sort tabs to match meta order
+                
                 tabs.sort((a, b) => {
                     const idxA = newTabsMeta.findIndex(m => m.id === a.id);
                     const idxB = newTabsMeta.findIndex(m => m.id === b.id);
@@ -670,27 +667,27 @@ async function handleRemoteSync(changes, areaName) {
 
                 if (newGroupsMeta) tabGroups = newGroupsMeta;
 
-                // Ensure counter is synced
+                
                 const counterData = await chrome.storage.local.get([KEYS.tabCounter]);
                 if (counterData[KEYS.tabCounter]) tabCounter = counterData[KEYS.tabCounter];
 
                 renderTabs();
                 if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
-                switchGroup(activeGroupIndex); // Re-sync active tab UI (handles split/single/active cases)
+                switchGroup(activeGroupIndex); 
                 syncSessionsWithBackground();
             }
         }
     }
 
-    // 2. Sync History Content (Static)
+    
     for (const key in changes) {
         if (key.startsWith('spotlight_history_')) {
             const sid = key.replace('spotlight_history_', '');
 
-            // Only sync if any tab uses this session
+            
             const affected = tabs.filter(t => t.sessionId === sid);
             if (affected.length > 0) {
-                // IMPORTANT: Only update if NOT generating locally to avoid race conditions with stream
+                
                 const isGeneratingLocally = (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid);
 
                 if (!isGeneratingLocally) {
@@ -698,14 +695,14 @@ async function handleRemoteSync(changes, areaName) {
                     if (newHtml) {
                         affected.forEach(tab => {
                             if (tab.historyEl && tab.historyEl.innerHTML !== newHtml) {
-                                // Prevent self-stripping flicker: if we have a local min-height (transient)
-                                // and the storage update doesn't (cleaned), ignore this update as it's likely our own save.
+                                
+                                
                                 const hasLocalMinHeight = tab.historyEl.querySelector('.lumina-dict-entry[style*="min-height"]');
                                 if (hasLocalMinHeight && !newHtml.includes('min-height')) {
                                     return;
                                 }
 
-                                // If this is NOT the originating window, preserve scroll position
+                                
                                 const wasAtBottom = Math.abs(tab.historyEl.scrollHeight - tab.historyEl.scrollTop - tab.historyEl.clientHeight) < 30;
                                 const savedScrollTop = tab.historyEl.scrollTop;
 
@@ -713,7 +710,7 @@ async function handleRemoteSync(changes, areaName) {
                                 normalizeRestoredHistory(tab.historyEl);
                                 if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
 
-                                // Recalculate local min-height for this window's viewport
+                                
                                 const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
                                 const lastEntry = entries[entries.length - 1];
                                 if (lastEntry && tab.chatUIInstance) {
@@ -721,11 +718,11 @@ async function handleRemoteSync(changes, areaName) {
                                     tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
                                 }
 
-                                // Restore scroll - follow the bottom if we were already there
+                                
                                 if (!wasAtBottom) {
                                     tab.historyEl.scrollTop = savedScrollTop;
                                 } else {
-                                    // If we were already at bottom, follow to the bottom of the new content
+                                    
                                     requestAnimationFrame(() => {
                                         if (tab.historyEl) {
                                             tab.historyEl.scrollTop = tab.historyEl.scrollHeight;
@@ -733,12 +730,12 @@ async function handleRemoteSync(changes, areaName) {
                                     });
                                 }
 
-                                // Re-process for math/highlighting/translations
+                                
                                 tab.historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions').forEach(ans => {
                                     LuminaChatUI.processContainer(ans);
                                 });
 
-                                // Ensure all translation entries are fully re-initialized (listeners, etc.)
+                                
                                 tab.historyEl.querySelectorAll('.lumina-dict-entry[data-entry-type="translation"]').forEach(entry => {
                                     LuminaChatUI._setupTranslationHighlight(entry);
                                     LuminaChatUI.balanceTranslationCard(entry, false);
@@ -751,12 +748,12 @@ async function handleRemoteSync(changes, areaName) {
         }
     }
 
-    // 3. Detect Session Deletion (from History Sidebar or Clear All)
+    
     if (changes['lumina_chat_sessions']) {
         const oldSessions = changes['lumina_chat_sessions'].oldValue || {};
         const newSessions = changes['lumina_chat_sessions'].newValue || {};
 
-        // Find deleted session IDs
+        
         const deletedIds = Object.keys(oldSessions).filter(id => !newSessions[id]);
 
         if (deletedIds.length > 0) {
@@ -764,7 +761,7 @@ async function handleRemoteSync(changes, areaName) {
 
             if (tabsToClose.length > 0) {
 
-                // 1. Remove DOM elements and cleanup groups
+                
                 tabsToClose.forEach(tab => {
                     if (tab.historyEl) tab.historyEl.remove();
                     tabGroups.forEach(g => {
@@ -772,16 +769,16 @@ async function handleRemoteSync(changes, areaName) {
                     });
                 });
 
-                // 2. Remove from local tabs array
+                
                 tabs = tabs.filter(t => !tabsToClose.includes(t));
 
-                // 3. Cleanup empty groups
+                
                 tabGroups = tabGroups.filter(g => g.tabIds.length > 0);
 
                 if (tabs.length === 0) {
                     createTab();
                 } else {
-                    // 4. Re-normalize IDs (matching logic in closeTab)
+                    
                     const idMap = {};
                     tabs.forEach((t, i) => {
                         const newId = `tab-${i + 1}`;
@@ -794,7 +791,7 @@ async function handleRemoteSync(changes, areaName) {
                     });
                     tabCounter = tabs.length;
 
-                    // 5. Ensure active index is valid
+                    
                     if (activeGroupIndex >= tabGroups.length) {
                         activeGroupIndex = Math.max(0, tabGroups.length - 1);
                     }
@@ -825,14 +822,14 @@ function normalizeTabs() {
         }
     });
 
-    // Update tabIds in tabGroups to match the new IDs
+    
     tabGroups.forEach(group => {
         if (group.tabIds) {
             group.tabIds = group.tabIds.map(oldId => idMap[oldId] || oldId);
         }
     });
 
-    // Reset counter to current length so next new tab is N+1
+    
     tabCounter = tabs.length;
 
     renderTabs();
@@ -840,11 +837,11 @@ function normalizeTabs() {
 }
 
 async function initTabs() {
-    // 1. Ensure history elements are clean on reload
+    
     const tabsBar = document.getElementById('tabs-bar');
     if (tabsBar) tabsBar.style.display = 'flex';
 
-    // Remove ALL existing history containers from DOM to avoid accumulation across reloads
+    
     const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
     const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
     [primaryContainer, secondaryContainer].forEach(c => {
@@ -852,10 +849,10 @@ async function initTabs() {
         c.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
     });
 
-    // Also remove any existing tabs from the internal state to avoid doubling up
+    
     tabs = [];
 
-    // Create a fresh initial history container
+    
     const initialHistory = document.createElement('div');
     initialHistory.id = 'chat-history';
     initialHistory.className = 'lumina-chat-scroll-content';
@@ -863,7 +860,7 @@ async function initTabs() {
     primaryContainer.appendChild(initialHistory);
 
     try {
-        // Load from storage
+        
         const data = await chrome.storage.local.get([
             KEYS.tabs,
             KEYS.tabCounter,
@@ -874,7 +871,7 @@ async function initTabs() {
             KEYS.isSplitMode,
             KEYS.secondaryTabIndex,
             KEYS.splitRatio,
-            // Fallback for side panel migration
+            
             'spotlight_tabs',
             'spotlight_tab_counter',
             'spotlight_tab_groups',
@@ -882,7 +879,7 @@ async function initTabs() {
             'spotlight_group_counter'
         ]);
 
-        // Migration Check for Side Panel
+        
         if (isSidePanel && !data[KEYS.tabs] && data.spotlight_tabs) {
             data[KEYS.tabs] = data.spotlight_tabs;
             data[KEYS.tabCounter] = data.spotlight_tab_counter;
@@ -896,10 +893,10 @@ async function initTabs() {
         }
 
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 0) {
-            tabs = []; // Clear existing for re-population
+            tabs = []; 
             const processedSessionIds = new Set();
 
-            // Load all tabs first to establish metadata
+            
             for (let i = 0; i < data[KEYS.tabs].length; i++) {
                 const meta = data[KEYS.tabs][i];
                 if (!meta.sessionId || processedSessionIds.has(meta.sessionId)) {
@@ -909,35 +906,35 @@ async function initTabs() {
                 processedSessionIds.add(meta.sessionId);
                 let historyEl;
 
-                // Create or reuse history container
+                
                 if (i === 0 && initialHistory) {
                     historyEl = initialHistory;
                 } else {
                     historyEl = document.createElement('div');
                     historyEl.className = 'lumina-chat-scroll-content';
-                    // In init, we can't be sure about container since it might be pane-primary
+                    
                     const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
                     primaryContainer.appendChild(historyEl);
                 }
 
-                // Keep it hidden initially
+                
                 historyEl.style.display = 'none';
 
-                // Load history content for this tab session
+                
                 const historyKey = `spotlight_history_${meta.sessionId}`;
                 const historyData = await chrome.storage.local.get([historyKey]);
                 if (historyData[historyKey]) {
                     historyEl.innerHTML = historyData[historyKey];
                     normalizeRestoredHistory(historyEl);
-                    // Re-process for math/highlighting/translations
+                    
                     historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions').forEach(ans => {
                         LuminaChatUI.processContainer(ans);
                     });
 
-                    // Clear any stuck hover states from restored HTML
+                    
                     historyEl.querySelectorAll('.lumina-trans-sentence').forEach(s => s.classList.remove('hovered'));
 
-                    // Ensure all translation cards are re-processed (some might be partial/outside answer blocks)
+                    
                     historyEl.querySelectorAll('.lumina-dict-entry[data-entry-type="translation"]').forEach(entry => {
                         LuminaChatUI._setupTranslationHighlight(entry);
                         LuminaChatUI.balanceTranslationCard(entry);
@@ -963,12 +960,12 @@ async function initTabs() {
                     })
                 };
                 tab.chatUIInstance.historyEl = historyEl;
-                tab.chatUIInstance.initListeners(historyEl); // NEW: Enable question editing/regeneration delegation
+                tab.chatUIInstance.initListeners(historyEl); 
                 bindHistoryScroll(tab);
                 tabs.push(tab);
             }
 
-            // Determine groups
+            
             if (data[KEYS.tabGroups] && data[KEYS.tabGroups].length > 0) {
                 tabGroups = data[KEYS.tabGroups];
                 tabGroups.forEach(g => {
@@ -977,7 +974,7 @@ async function initTabs() {
                 tabGroups = tabGroups.filter(g => g.tabIds.length > 0);
                 activeGroupIndex = data[KEYS.activeGroupIndex] || 0;
             } else {
-                // Migration from old flat array + split variables
+                
                 tabGroups = [];
                 let skipSecondary = false;
 
@@ -1004,7 +1001,7 @@ async function initTabs() {
                 activeGroupIndex = 0;
             }
 
-            // Prune tabs not referenced by any group — remove orphaned DOM elements too
+            
             const referencedTabIds = new Set(tabGroups.flatMap(g => g.tabIds));
             tabs = tabs.filter(t => {
                 if (referencedTabIds.has(t.id)) return true;
@@ -1012,51 +1009,51 @@ async function initTabs() {
                 return false;
             });
 
-            // Normalize AFTER both tabs and tabGroups are loaded so IDs stay in sync
+            
             normalizeTabs();
 
             if (tabGroups.length === 0) {
                 createTab(true);
             } else {
-                activeGroupIndex = -1; // Force switch logic
+                activeGroupIndex = -1; 
                 const savedIndex = data[KEYS.activeGroupIndex] || 0;
                 switchGroup(Math.min(Math.max(0, savedIndex), tabGroups.length - 1));
             }
 
-            // Check for pending YouTube trigger AFTER tabs are ready
+            
             chrome.storage.local.get(['lumina_youtube_trigger'], (ytData) => {
                 if (ytData.lumina_youtube_trigger) {
-                    // Reduce delay for better responsiveness
+                    
                     setTimeout(() => handleYouTubeTrigger(ytData.lumina_youtube_trigger), 100);
                 }
             });
 
         } else {
-            // No saved state, start fresh
+            
             createTab(true);
         }
     } catch (e) {
         console.error('[Spotlight] initTabs failed:', e);
-        // Fallback
+        
         if (tabs.length === 0) createTab(true);
     }
 
-    // Bind wheel-forwarding so margin clicks also scroll
+    
     const primaryC = document.querySelector('#pane-primary .lumina-chat-container') || container;
     const secondaryC = document.querySelector('#pane-secondary .lumina-chat-container');
     bindContainerWheelForward(primaryC);
     if (secondaryC) bindContainerWheelForward(secondaryC);
 
-    // Bind Tab Bar Events
+    
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) {
-        // Remove existing to avoid double bind
+        
         const newBtn = newTabBtn.cloneNode(true);
         newTabBtn.parentNode.replaceChild(newBtn, newTabBtn);
         newBtn.addEventListener('click', () => createTab());
     }
 
-    // Bind Shortcuts
+    
     window.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 't') {
             e.preventDefault();
@@ -1072,7 +1069,7 @@ async function initTabs() {
             e.preventDefault();
             let targetIdx = activeTabIndex;
             try {
-                // Find which pane the mouse is currently hovering over
+                
                 const hoverEls = document.querySelectorAll(':hover');
                 if (hoverEls.length > 0) {
                     const deepestHover = hoverEls[hoverEls.length - 1];
@@ -1094,7 +1091,7 @@ async function initTabs() {
             resetChat();
             return;
         }
-        if (!isSidePanel && (e.metaKey || e.ctrlKey) && !isNaN(parseInt(e.key))) {
+        if ((e.metaKey || e.ctrlKey) && !isNaN(parseInt(e.key))) {
             const index = parseInt(e.key) - 1;
             if (index >= 0 && index < 9) {
                 e.preventDefault();
@@ -1106,10 +1103,6 @@ async function initTabs() {
     }, true);
 }
 
-
-
-
-
 function createTab(switchToIt = true) {
     tabCounter++;
     const newTabId = `tab-${tabCounter}`;
@@ -1119,7 +1112,7 @@ function createTab(switchToIt = true) {
     newHistory.id = `chat-history-${newTabId}`;
     newHistory.style.display = 'none';
 
-    // Default container (might move on switchTab)
+    
     const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
     primaryContainer.appendChild(newHistory);
 
@@ -1141,12 +1134,12 @@ function createTab(switchToIt = true) {
         onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
     });
     newTab.chatUIInstance.historyEl = newHistory;
-    newTab.chatUIInstance.initListeners(newHistory); // NEW: Enable question editing/regeneration delegation
+    newTab.chatUIInstance.initListeners(newHistory); 
     bindHistoryScroll(newTab);
 
     chrome.storage.local.get(['lastUsedModel'], (data) => {
         if (data.lastUsedModel && data.lastUsedModel.model) {
-            // Only set if user hasn't already changed the model (guard against overwrite).
+            
             if (!newTab.selectedModel) {
                 newTab.selectedModel = { ...data.lastUsedModel };
             }
@@ -1158,7 +1151,7 @@ function createTab(switchToIt = true) {
 
     tabs.push(newTab);
 
-    // Create group for the new tab
+    
     tabGroups.push({ id: `group-${groupCounter++}`, tabIds: [newTab.id], ratio: 50 });
 
     normalizeTabs();
@@ -1194,14 +1187,14 @@ function duplicateTab(index) {
         scrollTop: sourceTab.scrollTop ?? -1,
         isAtBottom: !!sourceTab.isAtBottom,
         restoreLatestOnOpen: true,
-        sessionId: sourceTab.sessionId, // Share same session so messages sync between panes
+        sessionId: sourceTab.sessionId, 
         selectedModel: sourceTab.selectedModel ? { ...sourceTab.selectedModel } : null
     };
     newTab.chatUIInstance.historyEl = newHistory;
-    newTab.chatUIInstance.initListeners(newHistory); // NEW: Enable question editing/regeneration delegation
+    newTab.chatUIInstance.initListeners(newHistory); 
     bindHistoryScroll(newTab);
 
-    // Copy current content for instant display (shared sessionId, no storage copy needed)
+    
     newHistory.innerHTML = sourceTab.historyEl.innerHTML;
     normalizeRestoredHistory(newHistory);
     newTab.chatUIInstance.clearEntryMargins();
@@ -1215,30 +1208,30 @@ function duplicateTab(index) {
         }
     }
 
-    // Insert next to source in tabs array
+    
     tabs.splice(index + 1, 0, newTab);
 
-    // Add new tab to a temporary group so applySplit can find it
+    
     const sourceGroupIndex = tabGroups.findIndex(g => g.tabIds.includes(sourceTab.id));
     const tempGroup = { id: `group-${groupCounter++}`, tabIds: [newTab.id], ratio: 50 };
     if (sourceGroupIndex >= 0) {
         tabGroups.splice(sourceGroupIndex + 1, 0, tempGroup);
         const sourceGroup = tabGroups[sourceGroupIndex];
 
-        // If duplicating the secondary pane, swap it to primary pane before applying split
+        
         if (sourceGroup.tabIds.length >= 2 && sourceGroup.tabIds[1] === sourceTab.id) {
             const tab0 = tabs.find(t => t.id === sourceGroup.tabIds[0]);
             const tab1 = sourceTab;
 
-            // Save live input states before swap
+            
             if (tab0 && sharedInputUI?.getInputState) tab0.inputState = sharedInputUI.getInputState();
             if (tab1 && sharedInputUISecondary?.getInputState) tab1.inputStateSecondary = sharedInputUISecondary.getInputState();
 
-            // Swap tab IDs
+            
             [sourceGroup.tabIds[0], sourceGroup.tabIds[1]] = [sourceGroup.tabIds[1], sourceGroup.tabIds[0]];
             sourceGroup.ratio = 100 - (sourceGroup.ratio || 50);
 
-            // Remap input states
+            
             if (tab1) tab1.inputState = tab1.inputStateSecondary;
             if (tab0) tab0.inputStateSecondary = tab0.inputState;
         }
@@ -1246,7 +1239,7 @@ function duplicateTab(index) {
         tabGroups.push(tempGroup);
     }
 
-    // Merge duplicated tab into the source tab's group (split/group view)
+    
     applySplit(sourceTab.id, newTab.id);
     normalizeTabs();
 }
@@ -1260,7 +1253,7 @@ function switchGroup(groupIndex) {
         ? tabs.find(t => t.id === previousGroup.tabIds[1])
         : null;
 
-    // Save live input states before switching away from current group
+    
     if (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) {
         const oldGroup = tabGroups[activeGroupIndex];
         const oldPrimary = tabs.find(t => t.id === oldGroup.tabIds[0]);
@@ -1273,7 +1266,7 @@ function switchGroup(groupIndex) {
     previousPrimaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
     previousSecondaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
 
-    // Hide all existing
+    
     tabs.forEach(t => {
         if (t.historyEl) t.historyEl.style.display = 'none';
     });
@@ -1281,7 +1274,7 @@ function switchGroup(groupIndex) {
     activeGroupIndex = groupIndex;
     const group = tabGroups[groupIndex];
 
-    // Identify tabs in the group
+    
     const primaryTab = tabs.find(t => t.id === group.tabIds[0]);
     const secondaryTab = group.tabIds.length > 1 ? tabs.find(t => t.id === group.tabIds[1]) : null;
 
@@ -1303,7 +1296,7 @@ function switchGroup(groupIndex) {
         primaryPane.style.flex = ratio;
         secondaryPane.style.flex = (100 - ratio);
 
-        // Mount primary
+        
         const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container');
         primaryContainer.appendChild(primaryTab.historyEl);
         primaryTab.historyEl.style.display = 'block';
@@ -1319,7 +1312,7 @@ function switchGroup(groupIndex) {
         syncTabUI(primaryTab);
         primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
 
-        // Mount secondary
+        
         const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
         secondaryContainer.appendChild(secondaryTab.historyEl);
         secondaryTab.historyEl.style.display = 'block';
@@ -1343,7 +1336,7 @@ function switchGroup(groupIndex) {
         if (secondaryPane) secondaryPane.style.display = 'none';
         primaryPane.style.flex = '1';
 
-        // Mount primary
+        
         const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container');
         primaryContainer.appendChild(primaryTab.historyEl);
         primaryTab.historyEl.style.display = 'block';
@@ -1423,15 +1416,15 @@ function syncTabUI(tab, isSecondary = false) {
 function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
     isApplyingSplit = true;
 
-    // Find groups containing these tabs
+    
     const group1Idx = tabGroups.findIndex(g => g.tabIds.includes(primaryTabId));
     let group2Idx = tabGroups.findIndex(g => g.tabIds.includes(secondaryTabId));
 
     if (group1Idx === -1 || group2Idx === -1) return;
 
-    // If they are in the same group already, handle reordering? Not necessary right now.
+    
     if (group1Idx === group2Idx) {
-        // Just rearrange inside the group
+        
         const g = tabGroups[group1Idx];
         if (g.tabIds[0] !== primaryTabId) {
             g.tabIds.reverse();
@@ -1441,18 +1434,18 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
         return;
     }
 
-    // Dissolve secondary group, merge secondary tab into primary group
+    
     const g1 = tabGroups[group1Idx];
     const g2 = tabGroups[group2Idx];
 
     g2.tabIds = g2.tabIds.filter(id => id !== secondaryTabId);
 
-    // If g1 already had 2 tabs, close the old secondary tab instead of expelling it
+    
     if (g1.tabIds.length >= 2) {
         const expelledTabId = g1.tabIds[1];
         g1.tabIds = [g1.tabIds[0]];
 
-        // Remove old tab from global tabs array and DOM
+        
         const tabIndex = tabs.findIndex(t => t.id === expelledTabId);
         if (tabIndex !== -1) {
             const tabToRemove = tabs[tabIndex];
@@ -1461,17 +1454,17 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
         }
     }
 
-    // Merge
+    
     g1.tabIds.push(secondaryTabId);
     g1.ratio = ratio;
 
-    // Clean up empty groups
+    
     if (g2.tabIds.length === 0) {
         const idxToRemove = tabGroups.findIndex(g => g.id === g2.id);
         if (idxToRemove !== -1) tabGroups.splice(idxToRemove, 1);
     }
 
-    // Re-evaluate group1Index since splice might have shifted it
+    
     const newG1Idx = tabGroups.findIndex(g => g.id === g1.id);
 
     switchGroup(newG1Idx);
@@ -1484,7 +1477,7 @@ function deactivateSplit() {
     const group = tabGroups[activeGroupIndex];
     if (group.tabIds.length < 2) return;
 
-    // Split the group into two individual groups
+    
     const expelledTabId = group.tabIds[1];
     group.tabIds = [group.tabIds[0]];
 
@@ -1510,29 +1503,29 @@ function setupResizer() {
         const timeSinceLast = now - lastMouseDownTime;
         const moveSinceLast = Math.abs(e.clientX - lastMouseDownX);
 
-        // Detect double-click: two mousedowns within 400ms with minimal movement
+        
         if (timeSinceLast < 400 && moveSinceLast < 5) {
-            lastMouseDownTime = 0; // Reset so triple-click doesn't re-trigger
+            lastMouseDownTime = 0; 
             if (!isSplitMode) return;
             const group = tabGroups[activeGroupIndex];
             if (!group || group.tabIds.length < 2) return;
 
-            const tab0 = tabs.find(t => t.id === group.tabIds[0]); // current primary
-            const tab1 = tabs.find(t => t.id === group.tabIds[1]); // current secondary
+            const tab0 = tabs.find(t => t.id === group.tabIds[0]); 
+            const tab1 = tabs.find(t => t.id === group.tabIds[1]); 
 
-            // Save live input states before swap
+            
             if (tab0 && sharedInputUI?.getInputState) tab0.inputState = sharedInputUI.getInputState();
             if (tab1 && sharedInputUISecondary?.getInputState) tab1.inputStateSecondary = sharedInputUISecondary.getInputState();
 
-            // Swap tab IDs (tab1 becomes primary, tab0 becomes secondary)
+            
             [group.tabIds[0], group.tabIds[1]] = [group.tabIds[1], group.tabIds[0]];
 
-            // Invert ratio so each pane keeps its visual width
+            
             group.ratio = 100 - (group.ratio || 50);
 
-            // Remap input states to the correct slot for new positions:
-            // tab1 is now primary → switchGroup reads tab1.inputState, so promote from inputStateSecondary
-            // tab0 is now secondary → switchGroup reads tab0.inputStateSecondary, so demote from inputState
+            
+            
+            
             if (tab0 && tab1) {
                 const promoted = tab1.inputStateSecondary;
                 const demoted = tab0.inputState;
@@ -1553,15 +1546,15 @@ function setupResizer() {
         overlay.style.display = 'block';
 
         const SNAP_CENTER = 50;
-        const SNAP_ZONE = 2; // percent
+        const SNAP_ZONE = 2; 
 
         const onMouseMove = (moveEvent) => {
             if (!resizerDragging) return;
             const containerWidth = document.getElementById('spotlight-main-area').clientWidth;
             let ratio = (moveEvent.pageX / containerWidth) * 100;
-            ratio = Math.max(20, Math.min(80, ratio)); // Min 20% width for each
+            ratio = Math.max(20, Math.min(80, ratio)); 
 
-            // Snap to center
+            
             if (Math.abs(ratio - SNAP_CENTER) <= SNAP_ZONE) {
                 ratio = SNAP_CENTER;
                 divider.classList.add('snapped');
@@ -1572,7 +1565,7 @@ function setupResizer() {
             primaryPane.style.flex = ratio;
             secondaryPane.style.flex = (100 - ratio);
 
-            // Save ratio to current group
+            
             if (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) {
                 tabGroups[activeGroupIndex].ratio = ratio;
             }
@@ -1599,14 +1592,14 @@ function closeTab(tabId) {
 
     const tabToRemove = tabs[tabIndex];
 
-    // Find group
+    
     const groupIdx = tabGroups.findIndex(g => g.tabIds.includes(tabId));
     if (groupIdx !== -1) {
         const group = tabGroups[groupIdx];
         group.tabIds = group.tabIds.filter(id => id !== tabId);
 
         if (group.tabIds.length === 0) {
-            // Group became empty -> remove group
+            
             tabGroups.splice(groupIdx, 1);
             if (activeGroupIndex >= tabGroups.length) {
                 activeGroupIndex = Math.max(0, tabGroups.length - 1);
@@ -1614,27 +1607,27 @@ function closeTab(tabId) {
                 activeGroupIndex--;
             }
         } else if (activeGroupIndex === groupIdx) {
-            // Group still has tabs (was split mode, now single)
-            // Just let switchGroup redraw it as single
+            
+            
         }
     }
 
-    // Remove from absolute array and DOM
+    
     tabs.splice(tabIndex, 1);
     if (tabToRemove.historyEl) tabToRemove.historyEl.remove();
 
-    // Clean up history content from storage
+    
     if (tabToRemove.sessionId) {
         chrome.storage.local.remove([`spotlight_history_${tabToRemove.sessionId}`]);
     }
 
-    // Clean up web source selections for all browser tabs
-    const storageKeys = Object.keys(localStorage).filter(key => 
+    
+    const storageKeys = Object.keys(localStorage).filter(key =>
         key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${tabId}_`)
     );
     storageKeys.forEach(key => localStorage.removeItem(key));
 
-    // Re-normalize IDs so tabs are always sequential (tab-1, tab-2, ...)
+    
     const idMap = {};
     tabs.forEach((t, i) => {
         const newId = `tab-${i + 1}`;
@@ -1658,14 +1651,14 @@ function closeTab(tabId) {
 function closeGroup(groupIndex) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
     const group = tabGroups[groupIndex];
-    // Copy tabIds since closeTab modifies the arrays
+    
     const idsToClose = [...group.tabIds];
 
     idsToClose.forEach(id => closeTab(id));
 }
 
 function updateTabTitle(chatUIInstance, title) {
-    // Find tab by chatUI instance
+    
     const tab = tabs.find(t => t.chatUIInstance === chatUIInstance);
     if (tab) {
         tab.title = title;
@@ -1687,20 +1680,20 @@ function saveTabsState() {
 
     chrome.storage.local.set({
         [KEYS.tabs]: tabsMetadata,
-        [KEYS.tabCounter]: tabCounter, // Use the correct global counter
-        [KEYS.activeTabIndex]: activeTabIndex, // Save currently active tab
+        [KEYS.tabCounter]: tabCounter, 
+        [KEYS.activeTabIndex]: activeTabIndex, 
         [KEYS.tabGroups]: tabGroups,
         [KEYS.activeGroupIndex]: activeGroupIndex,
         [KEYS.groupCounter]: groupCounter
     });
 
-    // Save history content for each tab separately using sessionId
+    
     tabs.forEach(tab => {
         if (tab.historyEl && tab.sessionId) {
             const historyHTML = tab.chatUIInstance?.serializeHistoryHTML?.() || tab.historyEl.innerHTML;
             chrome.storage.local.set({ [`spotlight_history_${tab.sessionId}`]: historyHTML });
 
-            // Sync with global ChatHistoryManager
+            
             if (typeof ChatHistoryManager !== 'undefined') {
                 ChatHistoryManager.saveCurrentChat(tab.historyEl, tab.sessionId);
             }
@@ -1712,7 +1705,7 @@ function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
 
     historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
-        // Remove stale min-height that might have been synced from a window with different height
+        
         entry.style.removeProperty('min-height');
 
         let questionEl = entry.querySelector('.lumina-chat-question') || entry.querySelector('[data-entry-type]');
@@ -1762,17 +1755,17 @@ let startX = 0;
 let draggedElement = null;
 let initialRects = [];
 let totalDeltaX = 0;
-let groupPreviewTargetIndex = -1; // Index of tab that would be grouped with dragged tab
+let groupPreviewTargetIndex = -1; 
 
 function getGroupColor(sessionId, tabIndex) {
-    // 1. SPLIT MODE: Active and Secondary tabs share a special blue group
+    
     if (isSplitMode) {
         if (tabIndex === activeTabIndex || tabIndex === secondaryActiveTabIndex) {
-            return '#0056D2'; // Split group color
+            return '#0056D2'; 
         }
     }
 
-    // 2. Already grouped by sessionId (existing logic)
+    
     const sessionCount = {};
     tabs.forEach(t => {
         sessionCount[t.sessionId] = (sessionCount[t.sessionId] || 0) + 1;
@@ -1801,11 +1794,11 @@ function renderTabs() {
         const groupEl = document.createElement('div');
         const isActive = groupIndex === activeGroupIndex;
         const isSplitGroup = group.tabIds.length > 1;
-        // The container acts as the 'tab' aesthetically
+        
         groupEl.className = `spotlight-tab ${isActive ? 'active' : ''} ${isSplitGroup ? 'is-split' : ''}`;
         groupEl.dataset.groupIndex = groupIndex;
 
-        // Render sub-tabs inside this group
+        
         group.tabIds.forEach((tabId, subIdx) => {
             const tab = tabs.find(t => t.id === tabId);
             if (!tab) return;
@@ -1826,7 +1819,7 @@ function renderTabs() {
             closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" /></svg>';
             closeBtn.onclick = (e) => {
                 e.stopPropagation();
-                // Last sub-tab of an inactive split group → close the whole group
+                
                 if (isSplitGroup && !isActive && subIdx === group.tabIds.length - 1) {
                     closeGroup(groupIndex);
                 } else {
@@ -1837,7 +1830,7 @@ function renderTabs() {
             subTabEl.appendChild(titleSpan);
             subTabEl.appendChild(closeBtn);
 
-            // Sub-tab interaction
+            
             let subTabClickTimer = null;
             subTabEl.onmousedown = (e) => {
                 if (e.target.closest('.spotlight-tab-close')) return;
@@ -1846,7 +1839,7 @@ function renderTabs() {
                 let isInactiveTab = false;
 
                 if (groupIndex === activeGroupIndex) {
-                    // Double click opens sidebar
+                    
                     if (subTabClickTimer) {
                         clearTimeout(subTabClickTimer);
                         subTabClickTimer = null;
@@ -1859,11 +1852,11 @@ function renderTabs() {
                         }, 300);
                     }
                 } else {
-                    // Mark as inactive tab, will switch when drag starts
+                    
                     isInactiveTab = true;
                 }
 
-                // Always allow drag
+                
                 isDragging = false;
                 initialDraggedIndex = groupIndex;
                 startX = e.pageX;
@@ -1872,10 +1865,10 @@ function renderTabs() {
                 const onMouseMove = (moveEvent) => {
                     if (Math.abs(moveEvent.pageX - startX) > 5) {
                         if (!isDragging) {
-                            // If this is an inactive tab, switch now before drag starts
+                            
                             if (isInactiveTab) {
                                 switchGroup(groupIndex);
-                                // Re-query draggedElement after switchGroup changes DOM
+                                
                                 const list = document.getElementById('tabs-list');
                                 draggedElement = list.querySelector(`[data-group-index="${groupIndex}"]`);
                             }
@@ -1903,10 +1896,10 @@ function renderTabs() {
                     if (isDragging) {
                         handleMouseUp();
                     } else if (isInactiveTab) {
-                        // Simple click on inactive tab — switch to it
+                        
                         activateSubTab(groupIndex, tabId);
                     } else if (isSplitGroup) {
-                        // In split mode, clicking a sub-tab should make that sub-tab active.
+                        
                         activateSubTab(groupIndex, tabId);
                     }
                 };
@@ -1953,8 +1946,8 @@ function handleMouseMove(e) {
     const currentRightEdge = currentLeftEdge + draggedWidth;
     const draggedCenterX = currentLeftEdge + draggedWidth / 2;
 
-    // --- GROUP MERGE PREVIEW DETECTION ---
-    // Activate when the leading edge of the dragged tab is between 1/3 and 2/3 of the target tab
+    
+    
     let newGroupPreviewTarget = -1;
     if (draggedGroup && draggedGroup.tabIds.length === 1) {
         groupEls.forEach((el, idx) => {
@@ -1966,12 +1959,12 @@ function handleMouseMove(e) {
             const twoThird = elRect.left + elRect.width * 2 / 3;
             const comingFromRight = initialDraggedIndex > idx;
             if (comingFromRight) {
-                // Leading edge is left edge of dragged tab
+                
                 if (currentLeftEdge > oneThird && currentLeftEdge <= twoThird) {
                     newGroupPreviewTarget = idx;
                 }
             } else {
-                // Leading edge is right edge of dragged tab
+                
                 if (currentRightEdge >= oneThird && currentRightEdge < twoThird) {
                     newGroupPreviewTarget = idx;
                 }
@@ -1979,7 +1972,7 @@ function handleMouseMove(e) {
         });
     }
 
-    // Update preview state
+    
     if (newGroupPreviewTarget !== groupPreviewTargetIndex) {
         if (groupPreviewTargetIndex !== -1 && groupEls[groupPreviewTargetIndex]) {
             groupEls[groupPreviewTargetIndex].classList.remove('group-merge-preview');
@@ -1992,7 +1985,7 @@ function handleMouseMove(e) {
         }
     }
 
-    // While in group preview mode: suppress reorder shifts so nothing jumps around
+    
     if (groupPreviewTargetIndex !== -1) {
         groupEls.forEach((el, idx) => {
             if (idx !== initialDraggedIndex) el.style.transform = '';
@@ -2000,15 +1993,15 @@ function handleMouseMove(e) {
         return;
     }
 
-    // --- NORMAL REORDER LOGIC ---
+    
     groupEls.forEach((el, idx) => {
         if (idx === initialDraggedIndex) return;
 
         const elRect = initialRects[idx];
 
-        // Special handling for New Tab button: Dynamic push-along effect
+        
         if (el === newTabBtn) {
-            const marginLeft = 4; // Based on .spotlight-new-tab-btn margin
+            const marginLeft = 4; 
             const triggerLeft = elRect.left - marginLeft;
             if (currentRightEdge > triggerLeft) {
                 const pushDistance = currentRightEdge - triggerLeft;
@@ -2039,7 +2032,7 @@ function handleMouseUp() {
     const list = document.getElementById('tabs-list');
     const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
 
-    // --- GROUP MERGE: released while preview was active ---
+    
     if (groupPreviewTargetIndex !== -1) {
         const targetGroup = tabGroups[groupPreviewTargetIndex];
         const draggedGroup = tabGroups[initialDraggedIndex];
@@ -2048,7 +2041,7 @@ function handleMouseUp() {
             const primaryTabId = targetGroup.tabIds[0];
             const secondaryTabId = draggedGroup.tabIds[0];
 
-            // Cleanup visual state
+            
             groupEls.forEach(el => {
                 el.style.transform = '';
                 el.style.zIndex = '';
@@ -2073,7 +2066,7 @@ function handleMouseUp() {
         groupPreviewTargetIndex = -1;
     }
 
-    // --- NORMAL REORDER ---
+    
     const draggedWidth = initialRects[initialDraggedIndex].width;
     const currentLeftEdge = initialRects[initialDraggedIndex].left + totalDeltaX;
     const currentRightEdge = currentLeftEdge + draggedWidth;
@@ -2104,7 +2097,7 @@ function handleMouseUp() {
         }
     }
 
-    // Cleanup
+    
     groupEls.forEach(el => {
         el.style.transform = '';
         el.style.zIndex = '';
@@ -2131,29 +2124,36 @@ function handleMouseUp() {
 }
 
 
-// ─── Spotlight Ask-Selection ───────────────────────────────────────────────
+
 
 function initSpotlightAskSelection() {
     if (window.LuminaSelection) {
         LuminaSelection.init({
-            shadowRoot: null, // Spotlight is main document
-            onSubmit: (query, displayQuery, isDictionary, sourceEntry, range) => {
-                if (isDictionary) {
+            shadowRoot: null, 
+            onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate) => {
+                if (isDictionary || isTranslate) {
                     const selection = window.getSelection();
-                    const text = selection.toString().trim();
+                    const text = selection.toString().trim() || displayQuery;
                     if (text) {
-                        const finalRange = range || selection.getRangeAt(0);
-                        const rect = finalRange.getBoundingClientRect();
+                        const finalRange = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
+                        const rect = finalRange ? finalRange.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
                         LuminaDictionaryPopup.show(text, {
                             x: rect.left,
                             y: rect.bottom + 5,
-                            source: 'cambridge'
+                            source: isTranslate ? 'translate' : 'ai'
                         });
+                        if (isDictionary) {
+                            (async () => {
+                                await playSpotlightAudio(text);
+                                await new Promise(r => setTimeout(r, 200));
+                                await playSpotlightAudio(text);
+                            })();
+                        }
                         return;
                     }
                 }
 
-                // Apply highlight if available
+                
                 if (window.LuminaAnnotation && range) {
                     window.LuminaAnnotation.highlight(range);
                 }
@@ -2163,7 +2163,7 @@ function initSpotlightAskSelection() {
                     : activeTabIndex;
                 const targetTab = tabs[targetTabIdx];
 
-                // Automatically pin the source entry if it belongs to a chat UI
+                
                 if (sourceEntry && targetTab && targetTab.chatUIInstance) {
                     const questionDiv = sourceEntry.querySelector('.lumina-chat-question');
                     if (questionDiv) {
@@ -2227,14 +2227,14 @@ function initSpotlightAskSelection() {
                 return;
             }
 
-            // Always allow selection in proofread entries for commenting
+            
             const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
             if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
                 if (window.LuminaSelection) LuminaSelection.hide();
                 return;
             }
 
-            // Detect which pane the selection is in
+            
             const commonNode = range.commonAncestorContainer;
             const secondaryPane = document.getElementById('pane-secondary');
             spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -2268,7 +2268,7 @@ function handleCommentSubmission(entry) {
         });
         constructedPrompt += "\nPlease revise the content accordingly.";
 
-        // Robust tab detection
+        
         let targetTabIdx = -1;
         const paneSecondary = document.getElementById('pane-secondary');
         const isInSecondary = paneSecondary && paneSecondary.contains(entry);
@@ -2281,7 +2281,7 @@ function handleCommentSubmission(entry) {
 
         let targetTab = (targetTabIdx >= 0) ? tabs[targetTabIdx] : null;
 
-        // Ultimate Fallback: If still no targetTab, find ANY valid tab
+        
         if (!targetTab) {
             console.warn('[Lumina DEBUG] No targetTab found by index, searching tabs array...');
             targetTab = tabs.find(t => t && t.chatUIInstance) || null;
@@ -2298,7 +2298,7 @@ function handleCommentSubmission(entry) {
             console.error('[Lumina DEBUG] handleSubmit is NOT a function!');
         }
 
-        // Remove the button after sending
+        
         const btn = entry.querySelector('.lumina-send-comment-btn');
         if (btn) btn.remove();
 
@@ -2307,25 +2307,22 @@ function handleCommentSubmission(entry) {
     }
 }
 
-/**
- * Web Source Chips Logic
- * --------------------------------------------------------------------------
- */
+
 
 function setupWebSourceTracking() {
-    // 1. Initial sync
+    
     syncCurrentBrowserTab();
 
-    // 2. Listen for tab activation
+    
     chrome.tabs.onActivated.addListener(() => {
         syncCurrentBrowserTab();
     });
 
-    // 3. Listen for url/title updates
+    
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'complete' || changeInfo.title || changeInfo.url) {
-            // If the updated tab is active, we should always sync to capture transitions 
-            // from chrome:// pages (where currentBrowserTab was null) to normal web pages.
+            
+            
             if (tab.active) {
                 syncCurrentBrowserTab();
             }
@@ -2345,27 +2342,27 @@ function setupWebSourceTracking() {
                 refreshWebTabPicker();
             }
 
-            // If the page finished loading, refresh tokens everywhere this tab is used
+            
             if (changeInfo.status === 'complete') {
                 refreshWebSourceTokensForTab(tabId);
             }
         }
     });
 
-    // 4. Listen for tab closure
+    
     chrome.tabs.onRemoved.addListener((tabId) => {
         updateWebSelectionForTab(tabId, (source, sourceTabId) => {
             if (String(source.tabId) === sourceTabId) return null;
             return source;
         });
 
-        // Remove from the current in-memory pinned list if present
+        
         pinnedWebSources = pinnedWebSources.filter((source) => String(source.tabId) !== String(tabId));
 
-        // IMPORTANT: Refresh current browser tab state to handle ghost chip updates
+        
         syncCurrentBrowserTab();
 
-        // UI refresh
+        
         updateWebChips();
     });
 }
@@ -2375,8 +2372,8 @@ function isWebPageUrl(url) {
 }
 
 function syncCurrentBrowserTab() {
-    // In side panel, 'current' window IS the host window.
-    // In spotlight popup, we need the last focused window (the real browser window)
+    
+    
     const queryOptions = isSidePanel ? { active: true, currentWindow: true } : { active: true, lastFocusedWindow: true };
 
     chrome.tabs.query(queryOptions, (tabs) => {
@@ -2384,14 +2381,14 @@ function syncCurrentBrowserTab() {
 
         saveCurrentWebSelection();
 
-        // If the last focused window is THIS extension window (spotlight), 
-        // we might need to look further back or just skip if none found.
+        
+        
         if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
-            // Find the most recent non-extension active tab
+            
             chrome.windows.getAll({ populate: true }, (windows) => {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
-                    .sort((a, b) => b.id - a.id); // Heuristic if lastFocused fails
+                    .sort((a, b) => b.id - a.id); 
 
                 const realTab = sortedWindows
                     .map(w => w.tabs.find(t => t.active))
@@ -2405,7 +2402,7 @@ function syncCurrentBrowserTab() {
                     loadCurrentWebSelection();
                     updateWebChips();
                     refreshWebSourceTokensForTab(realTab.id);
-                    // Force refresh token count for active panes
+                    
                     [chatUI, chatUISecondary].forEach(ui => {
                         if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
                     });
@@ -2426,7 +2423,7 @@ function syncCurrentBrowserTab() {
             loadCurrentWebSelection();
             updateWebChips();
             refreshWebSourceTokensForTab(activeTab.id);
-            // Force refresh token count for active panes
+            
             [chatUI, chatUISecondary].forEach(ui => {
                 if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
             });
@@ -2434,7 +2431,7 @@ function syncCurrentBrowserTab() {
             currentBrowserTab = null;
             pinnedWebSources = [];
             updateWebChips();
-            // Force refresh token count for active panes
+            
             [chatUI, chatUISecondary].forEach(ui => {
                 if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
             });
@@ -2549,7 +2546,7 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                     if (activeSpotlightTabId) {
                         saveWebSelectionForScope(activeSpotlightTabId, nextSelection);
 
-                        // Keep in-memory pinnedWebSources in sync for the active primary tab
+                        
                         const primaryTabId = getCurrentSpotlightTabId();
                         if (String(activeSpotlightTabId) === String(primaryTabId)) {
                             pinnedWebSources = nextSelection.map((item) => ({ ...item }));
@@ -2682,7 +2679,7 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
     chip.className = `lumina-web-chip ${source.isActive ? 'is-active' : ''} ${isGhost ? 'is-ghost' : ''}`;
     chip.removeAttribute('title');
 
-    // Store tokens for UI calculation
+    
     if (source.isSummary) {
         const totalTokens = selectedSources.reduce((sum, s) => sum + (parseInt(s.tokens) || 0), 0);
         chip.dataset.tokens = totalTokens;
@@ -2695,13 +2692,13 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
     chip.appendChild(titleSpan);
 
     chip.addEventListener('mouseenter', () => {
-        // Respect tooltip muting after interaction
+        
         const container = chip.closest('.lumina-web-chips-group');
         if (container && container.dataset.muteTooltips === 'true') return;
 
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._showTagTooltip === 'function') {
             if (hasMultipleTabs) {
-                // List all pinned sources in the unified tooltip
+                
                 const showNumbers = selectedSources.length > 1;
                 const html = selectedSources.map((s, idx) => {
                     const numberSpan = showNumbers
@@ -2731,16 +2728,16 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
         const container = chip.closest('.lumina-web-chips-group');
         if (container) container.dataset.muteTooltips = 'true';
 
-        // Hide tooltips immediately on interaction
+        
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
             try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
         }
 
         if (source.isSummary) {
-            // Clear all pinned sources for this spotlight tab
+            
             saveWebSelectionForScope(spotlightTabId, []);
 
-            // Sync in-memory if it matches the active tab
+            
             const activeId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
             if (String(spotlightTabId) === String(activeId)) {
                 pinnedWebSources = [];
@@ -2751,10 +2748,10 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
         }
 
         if (isGhost) {
-            // Pin the ghost chip
+            
             toggleWebSourcePin(source, true, spotlightTabId);
         } else {
-            // Unpin regular chip
+            
             toggleWebSourcePin(source, null, spotlightTabId);
         }
     });
@@ -2763,18 +2760,18 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
 }
 
 function updateWebChips() {
-    // 0. Hide all potential tooltips before refreshing
+    
     if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
         try {
             LuminaChatUI.prototype._hideTagTooltip();
-        } catch (e) { /* Ignore if UI is not ready */ }
+        } catch (e) {  }
     }
 
     const containers = document.querySelectorAll('.lumina-web-chips-group');
     containers.forEach(container => {
         container.innerHTML = '';
 
-        // Spotlight window won't show Web Chips functionality
+        
         if (!isSidePanel && !isWebApp) return;
 
         const spotlightTabId = getSpotlightTabIdForPane(container);
@@ -2783,10 +2780,10 @@ function updateWebChips() {
             return;
         }
 
-        // Always show the container
+        
         container.style.display = 'flex';
 
-        // Bind mouse-leave muting once per container
+        
         if (!container.dataset.muteHandlerSet) {
             container.addEventListener('mouseleave', () => {
                 container.dataset.muteTooltips = 'false';
@@ -2794,7 +2791,7 @@ function updateWebChips() {
             container.dataset.muteHandlerSet = 'true';
         }
 
-        // 1. Always render "+" Add Button
+        
         const addButton = document.createElement('button');
         addButton.type = 'button';
         addButton.className = 'lumina-web-chip-add';
@@ -2806,11 +2803,11 @@ function updateWebChips() {
         });
         container.appendChild(addButton);
 
-        // 2. Fetch pinned sources for THIS spotlight tab (always reads fresh from storage)
+        
         const selectedSources = getWebSelectionForScope(spotlightTabId);
 
-        // 3. Always render Summary Chip if there are pinned sources
-        //    (so users can see/clear them even when on internal pages)
+        
+        
         if (selectedSources.length > 0) {
             const count = selectedSources.length;
             const summarySource = {
@@ -2822,7 +2819,7 @@ function updateWebChips() {
             container.appendChild(createWebChipElement(summarySource, selectedSources, spotlightTabId, addButton));
         }
 
-        // 4. Render Ghost Chip only when on a valid web page and current tab is not pinned
+        
         const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
         if (onValidWebPage) {
             const currentTabId = String(currentBrowserTab.tabId);
@@ -2885,7 +2882,7 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
     const idx = currentSelection.findIndex(p => String(p.tabId) === String(source.tabId));
     if (idx > -1) {
         if (forceState === true) {
-            // Keep selected state but refresh tab metadata
+            
             currentSelection[idx] = {
                 tabId: source.tabId,
                 title: source.title || currentSelection[idx].title || 'Untitled',
@@ -2895,11 +2892,11 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
             updateWebChips();
             return;
         }
-        // Unpin
+        
         currentSelection.splice(idx, 1);
     } else {
-        if (forceState === false) return; // Already unpinned
-        // Pin
+        if (forceState === false) return; 
+        
         currentSelection.push({
             tabId: source.tabId,
             title: source.title,
@@ -2908,7 +2905,7 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
     }
     saveWebSelectionForScope(targetSpotlightTabId, currentSelection);
 
-    // Update the in-memory list for the active spotlight tab
+    
     const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
     if (String(targetSpotlightTabId) === String(activeTabId)) {
         pinnedWebSources = currentSelection.map((item) => ({ ...item }));
@@ -2917,9 +2914,9 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
     updateWebChips();
 }
 
-// ────────────────────────────────────────────────────────────────────────────
 
-// Initialize
+
+
 async function init() {
     if (isInitializing) return;
     isInitializing = true;
@@ -2940,15 +2937,15 @@ async function init() {
         }
     });
 
-    // Immediate: Initialize search selection UI so listeners work regardless of tab loading
+    
     initSpotlightAskSelection();
 
-    // 1. Inject shared input bar HTML FIRST so LuminaChatUI can find it
+    
     const inputAreaPrimary = document.getElementById('input-area-primary');
     const inputAreaSecondary = document.getElementById('input-area-secondary');
 
     if (inputAreaPrimary) {
-        inputAreaPrimary.innerHTML = LuminaChatUI.getChatInputHTML(true); // autofocus=true
+        inputAreaPrimary.innerHTML = LuminaChatUI.getChatInputHTML(true); 
         sharedInputUI = new LuminaChatUI(inputAreaPrimary, {
             isSpotlight: true,
             isPrimaryInput: true,
@@ -2964,7 +2961,7 @@ async function init() {
         inputAreaSecondary.innerHTML = LuminaChatUI.getChatInputHTML(false);
         sharedInputUISecondary = new LuminaChatUI(inputAreaSecondary, {
             isSpotlight: true,
-            isPrimaryInput: true, // Also acts as a primary for its own container
+            isPrimaryInput: true, 
             alwaysExpanded: true,
             onSubmit: (text, images, extra) => {
                 const activeTab = tabs[secondaryActiveTabIndex];
@@ -2973,22 +2970,22 @@ async function init() {
         });
     }
 
-    // Initialize resizer
+    
     setupResizer();
 
-    // 2. Init Tabs (this will create LuminaChatUI instances which now find the input)
+    
     await initTabs();
 
-    // 3. Ensure we have at least one tab and it's initialized correctly
+    
     if (tabs.length === 0) {
         createTab();
     } else {
-        // Initialize global chatUI to the active tab's instance
+        
         if (tabs[activeTabIndex]) {
             chatUI = tabs[activeTabIndex].chatUIInstance;
             if (sharedInputUI) {
                 sharedInputUI.historyEl = tabs[activeTabIndex].historyEl;
-                // Force button refresh now that historyEl is set
+                
                 sharedInputUI._updateActionBtnState();
             }
         }
@@ -2996,10 +2993,10 @@ async function init() {
 
     setupPort();
 
-    // Setup regenerate/stop button click handler (matches popup behavior)
+    
     setupRegenerateButtons();
 
-    // Load shortcuts, mappings and settings
+    
     chrome.storage.local.get(['shortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
@@ -3010,10 +3007,10 @@ async function init() {
             applyFontSize(items.globalDefaults.fontSize);
         }
 
-        // Handle pending mic toggle from content script
+        
         if (items.pendingMicToggle) {
             const diff = Date.now() - items.pendingMicToggle;
-            if (diff < 5000) { // Only within 5 seconds
+            if (diff < 5000) { 
                 chrome.storage.local.remove(['pendingMicToggle']);
                 setTimeout(() => {
                     const micBtn = document.getElementById('mic-btn');
@@ -3025,14 +3022,14 @@ async function init() {
         }
 
         setupGlobalListeners();
-        setupWebSourceTracking(); // New: Initialize tab tracking
+        setupWebSourceTracking(); 
         isInitializing = false;
     });
 
-    // Listen for settings and pending sidepanel queries
+    
     chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'local') {
-            // 1. Reactive trigger for pending queries (bridges SW suspended gap)
+            
             chrome.windows.getCurrent((win) => {
                 const pendingKey = win ? `pending_sidepanel_query_${win.id}` : null;
                 if (pendingKey && changes[pendingKey] && changes[pendingKey].newValue) {
@@ -3040,7 +3037,7 @@ async function init() {
                 }
             });
 
-            // 2. Settings sync
+            
             if (changes.shortcuts) shortcuts = changes.shortcuts.newValue || {};
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
             if (changes.askSelectionPopupEnabled) {
@@ -3050,33 +3047,30 @@ async function init() {
             if (changes.readWebpage) readWebpageEnabled = !!changes.readWebpage.newValue;
             if (changes.advancedParamsByModel) advancedParamsByModel = changes.advancedParamsByModel.newValue || {};
 
-            // Handle Font Size changes (check both top-level and globalDefaults)
+            
             if (changes.fontSize) {
                 applyFontSize(changes.fontSize.newValue);
             } else if (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.fontSize) {
                 applyFontSize(changes.globalDefaults.newValue.fontSize);
             }
 
-            // Sync structural changes and history from other windows
+            
             handleRemoteSync(changes, areaName);
         }
     });
 
-    /**
-     * Processes a pending query from storage.
-     * Centralized to handle both startup and reactive storage triggers.
-     */
+    
     function processPendingQuery(data, storageKey) {
         if (!data) return;
 
-        // Remove immediately to prevent re-processing on next load/change
+        
         if (storageKey) {
             chrome.storage.local.remove([storageKey]);
         }
 
         const { query, displayQuery, queryId, mode, sourceTab, timestamp } = data;
 
-        // Safety: Ignore queries older than 2 minutes to prevent stale triggers
+        
         if (timestamp && (Date.now() - timestamp > 120000)) {
             console.log('[Spotlight] Skipping stale pending query:', queryId);
             return;
@@ -3091,22 +3085,22 @@ async function init() {
             if (currentTab && !isInitializing) {
                 if (queryId) handledQueryIds.add(queryId);
 
-                // Automatically pin source tab if present in pending query
+                
                 if (sourceTab) {
                     toggleWebSourcePin(sourceTab, true);
                 }
 
                 handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
             } else {
-                // Wait for initialization or tabs to be ready
+                
                 setTimeout(checkReady, 50);
             }
         };
         checkReady();
     }
 
-    // Listen for tab-local model selection events from the model dropdown
-    // (fired by LuminaChatUI._setupModelSelector via CustomEvent 'lumina:spotlight-model-change')
+    
+    
     document.addEventListener('lumina:spotlight-model-change', (e) => {
         const isSecondary = e.target.closest('#pane-secondary') !== null;
         const targetIndex = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
@@ -3118,20 +3112,20 @@ async function init() {
             if (targetSharedUI) {
                 targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
             }
-            // CRITICAL: Update global lastUsedModel so new tabs/reloads use this choice
+            
             chrome.storage.local.set({ lastUsedModel: activeTab.selectedModel });
         }
     });
 
     chrome.runtime.onMessage.addListener((request) => {
         if (request.action === 'settings_updated') {
-            // Prefer draft fontSize, then global default
+            
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
             if (size) applyFontSize(size);
         } else if (request.action === 'clear_selection') {
-            // Clear any text selection
+            
             window.getSelection().removeAllRanges();
-            // Re-focus the input
+            
             ensureFocus();
         } else if (request.action === 'new_chat') {
             resetChat();
@@ -3145,7 +3139,7 @@ async function init() {
                     }
                     if (queryId) handledQueryIds.add(queryId);
 
-                    // Automatically pin source tab if requested via shortcut (from external page)
+                    
                     if (sourceTab) {
                         toggleWebSourcePin(sourceTab, true);
                     }
@@ -3162,7 +3156,7 @@ async function init() {
         }
     });
 
-    // Check for pending queries from content script on startup
+    
     chrome.windows.getCurrent(async (win) => {
         if (!win || !win.id) return;
         const key = `pending_sidepanel_query_${win.id}`;
@@ -3177,34 +3171,42 @@ async function init() {
             if (win && win.id) {
                 const port = chrome.runtime.connect({ name: 'lumina-sidepanel' });
                 port.postMessage({ windowId: win.id });
+                port.onMessage.addListener((msg) => {
+                    if (msg.action === 'content_updated') {
+                        refreshWebSourceTokensForTab(msg.tabId);
+                    }
+                });
+                window.addEventListener('pagehide', () => {
+                    port.postMessage({ action: 'closing', windowId: win.id });
+                });
             }
         });
     }
 
-    // Helper: Ensure focus (retries for reliability)
+    
     function ensureFocus() {
         const targetInput = getHoveredInputEl();
         if (!targetInput) return;
 
-        // Check if sidebar is active
+        
         const sidebar = document.getElementById('spotlight-sidebar');
         if (sidebar && sidebar.classList.contains('active')) return;
 
         const setCursorToEnd = (el) => {
             try {
                 el.focus();
-                // Move cursor to end
+                
                 const len = el.value.length;
                 el.setSelectionRange(len, len);
             } catch (e) {
-                // Ignore potential errors if element is detached
+                
             }
         };
 
-        // Immediate
+        
         setCursorToEnd(targetInput);
 
-        // Short delays to handle window animation/restoration
+        
         setTimeout(() => {
             const sidebar = document.getElementById('spotlight-sidebar');
             const el = getHoveredInputEl();
@@ -3217,26 +3219,26 @@ async function init() {
         }, 150);
     }
 
-    // Auto-focus on load
+    
     ensureFocus();
 
-    // Auto-focus when window regains focus
+    
     window.addEventListener('focus', () => {
         const selection = window.getSelection().toString().trim();
-        // Prevent auto-filling if selection looks like internal CSS variables (bug fix)
+        
         if (selection && (selection.includes('--lumina-') || selection.includes('var(--lumina'))) {
             window.getSelection().removeAllRanges();
             ensureFocus();
             return;
         }
 
-        // If no text is selected inside the spotlight window, force focus to input
+        
         if (!selection) {
             ensureFocus();
         }
     });
 
-    // Save scroll position for active tab periodically
+    
     setInterval(() => {
         if (tabs[activeTabIndex]) {
             const currentScroll = tabs[activeTabIndex].historyEl.scrollTop;
@@ -3247,7 +3249,7 @@ async function init() {
         }
     }, 5000);
 
-    // Update "Read Page" title when switching tabs or navigating
+    
     const updateReadTitles = () => {
         if (typeof sharedInputUI?.refreshReadPageTitle === 'function') sharedInputUI.refreshReadPageTitle();
         if (typeof sharedInputUISecondary?.refreshReadPageTitle === 'function') sharedInputUISecondary.refreshReadPageTitle();
@@ -3262,7 +3264,7 @@ async function init() {
     }
 }
 
-// Setup connection to background
+
 function syncSessionsWithBackground() {
     if (!port || tabs.length === 0) return;
     const sessionIds = [...new Set(tabs.map(t => t.sessionId).filter(Boolean))];
@@ -3275,14 +3277,14 @@ function setupPort() {
     try {
         port = chrome.runtime.connect({ name: 'lumina-chat-stream' });
 
-        // Register all current sessions after connection
+        
         syncSessionsWithBackground();
 
         port.onMessage.addListener((msg) => {
-            // Determine affected tabs (all tabs sharing the streaming session)
+            
             let affectedTabs = [];
 
-            // NEW: Use msg.sessionId if available (from broadcast)
+            
             if (msg.sessionId) {
                 affectedTabs = tabs.filter(t => t.sessionId === msg.sessionId);
             } else if (streamingTab && streamingTab.sessionId) {
@@ -3317,7 +3319,7 @@ function setupPort() {
                 return;
             }
 
-            // Handle web search status updates
+            
             if (msg.action === 'web_search_status') {
                 affectedTabs.forEach(tab => {
                     tab.chatUIInstance.handleWebSearchStatus(msg);
@@ -3327,42 +3329,42 @@ function setupPort() {
 
 
 
-            // Handle streaming chunks
+            
             if (msg.action === 'chunk' && msg.chunk) {
-                // ... debug logging ...
+                
                 affectedTabs.forEach(tab => {
-                    // Let each UI decide if it should scroll (based on its own auto-scroll settings)
+                    
                     tab.chatUIInstance.appendChunk(msg.chunk, false);
                 });
             }
 
-            // Handle stream completion
+            
             if (msg.action === 'done') {
                 const sid = msg.sessionId || (streamingTab?.sessionId);
 
-                // ... rest of logic
+                
                 affectedTabs.forEach(tab => {
                     const targetUI = tab.chatUIInstance;
                     const answerDiv = targetUI.currentAnswerDiv;
                     const isRegen = !!targetUI._regenScrollLocked;
-                    // Skip margin recalc + scroll when regenerating (min-height is cleaned up in done handler)
+                    
                     const skipScroll = isRegen || tab.id !== streamingTab?.id;
                     const skipMargin = isRegen;
                     targetUI.finishAnswer(skipMargin, skipScroll);
 
-                    // ── Restore locked scroll after finishAnswer ──────────────────────────────
+                    
                     if (isRegen && targetUI._regenScrollContainer) {
                         const lockedContainer = targetUI._regenScrollContainer;
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
-                                // Re-enable scroll anchoring
+                                
                                 lockedContainer.style.overflowAnchor = '';
-                                // Clean up lock state — min-height stays on entry until next
-                                // question clears it via clearEntryMargins()
+                                
+                                
                                 targetUI._regenScrollLocked = false;
                                 targetUI._regenScrollContainer = null;
                                 targetUI._regenScrollPosition = null;
-                                // Re-evaluate auto-scroll: if user is near bottom, re-enable
+                                
                                 const sh = lockedContainer.scrollHeight;
                                 const vh = lockedContainer.clientHeight;
                                 const pos = lockedContainer.scrollTop;
@@ -3371,7 +3373,7 @@ function setupPort() {
                             });
                         });
                     }
-                    // ─────────────────────────────────────────────────────────────────────────
+                    
 
                     requestAnimationFrame(() => {
                         if (sharedInputUI) {
@@ -3388,14 +3390,14 @@ function setupPort() {
                                 const nav = entry.querySelector('.lumina-answer-nav');
                                 if (nav) nav.style.display = 'flex';
 
-                                // Update cache if it was a translation regeneration
+                                
                                 if (targetUI._regenEntryType === 'translation' && targetUI._regenSourceText) {
                                     const latestTranslation = answerDiv.textContent.trim();
                                     chrome.runtime.sendMessage({
                                         action: 'update_translation_cache',
                                         text: targetUI._regenSourceText,
                                         translation: latestTranslation,
-                                        targetLang: 'vi' // Default or detected?
+                                        targetLang: 'vi' 
                                     });
                                 }
                             }
@@ -3404,7 +3406,7 @@ function setupPort() {
                 });
 
                 saveTabsState();
-                // Clear streaming tab
+                
                 streamingTab = null;
                 streamDebugState = null;
             }
@@ -3412,15 +3414,15 @@ function setupPort() {
 
         port.onDisconnect.addListener(() => {
             const lastError = chrome.runtime.lastError;
-            // Only warn if we were actually streaming or if there was a real error during an active session
+            
             if (streamingTab || (streamDebugState && streamDebugState.chunkCount > 0)) {
 
             } else {
             }
 
-            port = null; // Mark as invalid immediately to force reconnection on next use
+            port = null; 
 
-            // Clean up any pending regen scroll lock
+            
             if (streamingTab && streamingTab.sessionId) {
                 const affectedTabs = tabs.filter(t => t.sessionId === streamingTab.sessionId);
                 affectedTabs.forEach(t => {
@@ -3456,15 +3458,15 @@ function setupPort() {
     }
 }
 
-// Handle message submission (called by LuminaChatUI)
-let streamingTab = null; // Track which tab initiated the request
+
+let streamingTab = null; 
 let streamDebugState = null;
 
 async function handleSubmit(text, images, extra = {}, targetTab = null, displayQuery = null) {
     const currentTab = targetTab || tabs[activeTabIndex];
     if (!currentTab) return;
 
-    // Prevention of duplicate submissions (hardware bounce protection)
+    
     const now = Date.now();
     const isVeryClose = lastSubmitTime && (now - lastSubmitTime < 250);
     const isDuplicateText = lastSubmitTime && (now - lastSubmitTime < 1000) && lastSubmitText === text;
@@ -3476,23 +3478,23 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     lastSubmitTime = now;
     lastSubmitText = text;
 
-    // Use the tab's specific chatUI instance
+    
     const targetChatUI = currentTab.chatUIInstance;
 
-    // Refresh global chatUI if this is the active primary tab
+    
     if (currentTab === tabs[activeTabIndex]) {
         chatUI = targetChatUI;
     }
 
-    // Reset scroll lock so new entry always animates into view
+    
     currentTab.userScrolledUp = false;
     if (targetChatUI) targetChatUI.disableAutoScroll = false;
 
-    // Set generating flag early to prevent storage-sync clobbering during submission
+    
     if (sharedInputUI) sharedInputUI.isGenerating = true;
     if (sharedInputUISecondary) sharedInputUISecondary.isGenerating = true;
 
-    // Keyword command prefixes (colon optional): "Translate", "Proofread", "Google AI" ...
+    
     const translateMatch = text && text.match(/^translate:?\s*([\s\S]*)/i);
     const proofreadMatch = !translateMatch && text && text.match(/^proofread:?\s*([\s\S]*)/i);
 
@@ -3504,12 +3506,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         extra = { ...extra, mode: 'proofread' };
     }
 
-    // Update Tab Title to reflect current question - Sync across all tabs in this session
+    
     if (currentTab) {
         const rawText = displayQuery || text || (images.length > 0 ? 'Video/Image Analysis' : 'Chat');
         const newTitle = rawText.length > 20 ? rawText.substring(0, 20) + '...' : rawText;
 
-        // Sync title across all tabs in this session
+        
         tabs.forEach(t => {
             if (t.sessionId === currentTab.sessionId) {
                 t.title = newTitle;
@@ -3520,7 +3522,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         saveTabsState();
     }
 
-    // Track streaming session
+    
     streamingTab = currentTab;
     streamDebugState = {
         tabId: currentTab.id,
@@ -3535,7 +3537,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     };
 
 
-    // Support tool modes from extra (for dropdown tools)
+    
     if (extra.mode === 'translate') {
         await targetChatUI.handleTranslation(text);
         if (sharedInputUI) {
@@ -3568,7 +3570,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 
     if (extra.mode === 'websource') {
-        // Apply to all sync tabs
+        
         tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
             t.chatUIInstance.openWebSource(extra.source, text);
         });
@@ -3583,18 +3585,18 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         return;
     }
 
-    // Regular chat flow
+    
     let untilEntryId = null;
     if (extra.isRecheck || extra.isRegenerate) {
         untilEntryId = extra.entryId;
         if (!untilEntryId) {
-            // Fallback: use last entry ID
+            
             const lastEntry = targetChatUI.historyEl.querySelector('.lumina-dict-entry:last-child');
             untilEntryId = lastEntry ? lastEntry.dataset.entryId : null;
         }
     }
 
-    // Sync token limit from the active input UI to the target tab's history instance
+    
     const isSecondaryTabForSubmit = typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && currentTab === tabs[secondaryActiveTabIndex];
     const activeInputUI = isSecondaryTabForSubmit ? sharedInputUISecondary : sharedInputUI;
     if (targetChatUI && activeInputUI) {
@@ -3605,7 +3607,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
     let apiText = text;
 
-    // If regeneration, we might need to use the old question text if the new text is empty
+    
     if (extra.isRegenerate && !text) {
         const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : null;
         if (targetEntry) {
@@ -3617,17 +3619,17 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    // Determine streaming action
+    
     let streamAction = 'chat_stream';
     if (extra.mode === 'proofread') {
         streamAction = 'proofread';
     }
 
-    // UI Updates - Sync across all tabs in this session
+    
     const syncTabs = tabs.filter(t => t.sessionId === currentTab.sessionId);
 
     syncTabs.forEach(t => {
-        // Only scroll the tab that actually submitted — the other shared-session tab scrolls independently
+        
         const skipMargin = t !== currentTab;
         const ui = t.chatUIInstance;
 
@@ -3640,16 +3642,16 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             });
             ui.showLoading();
         } else {
-            // For synced secondary tabs, if there is a recheck/regen event, we need to manually show loading 
+            
             if (t !== currentTab) {
-                // Mirror the history structure
+                
                 t.historyEl.innerHTML = currentTab.historyEl.innerHTML;
                 ui._setupHistoryDelegation(t.historyEl);
                 ui.initListeners(t.historyEl);
                 ui.syncStateFromDOM();
             }
 
-            // Find the correct entry to show loading
+            
             const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
             if (targetEntry) {
                 ui.clearAnswer(targetEntry);
@@ -3662,12 +3664,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     let pageContext = "";
     const isSpotlightWindow = !isSidePanel && !isWebApp;
 
-    // Priority: 1. Manual override from UI toggle (extra.readPage) 
-    //           2. Global setting from Options (readWebpageEnabled)
-    // 3. Force disable in Spotlight Window
+    
+    
+    
     const shouldReadPage = isSpotlightWindow ? false : ((extra.readPage !== undefined) ? extra.readPage : readWebpageEnabled);
 
-    // Determine active model to get maxTokens
+    
     let tabModel = currentTab?.selectedModel;
     if (!tabModel) {
         const isSecondaryTab = isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
@@ -3678,10 +3680,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 
 
-    // --- CONTEXT GATHERING ---
+    
     let webSourceScope = isSpotlightWindow ? [] : getWebSelectionForScope(currentTab.id);
 
-    // If "Read Current Page" is enabled and current tab isn't already pinned, include it implicitly
+    
     if (shouldReadPage && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const alreadyPinned = webSourceScope.some(s => s.tabId === currentBrowserTab.tabId);
         if (!alreadyPinned) {
@@ -3702,7 +3704,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                         target: { tabId: source.tabId, allFrames: true },
                         func: () => {
                             return typeof window.luminaExtractMainContent === 'function'
-                                ? window.luminaExtractMainContent()
+                                ? window.luminaExtractMainContent(document, true)
                                 : null;
                         }
                     });
@@ -3713,18 +3715,18 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 return [];
             }));
 
-            // results is Array<Array<ContentObject>>
+            
             const flatResults = results.flat().filter(r => r && r.content);
 
-            // Aggregate and deduplicate (avoid double-collecting from parent/child frames)
+            
             const uniqueResults = [];
             const seenContents = new Set();
 
             flatResults.forEach(ctx => {
                 const text = ctx.content.trim();
-                if (text.length < 30) return; // Skip only very trivial frames
+                if (text.length < 30) return; 
 
-                // Fingerprint the content to avoid overlap
+                
                 const fingerprint = text.substring(0, 500);
                 if (seenContents.has(fingerprint)) return;
 
@@ -3735,11 +3737,20 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             if (uniqueResults.length > 0) {
                 const pieces = uniqueResults.map((ctx, index) => {
                     const header = uniqueResults.length === 1
-                        ? `Source: ${ctx.title || 'Current Page'}`
-                        : `Source ${index + 1}: ${ctx.title || 'Subframe Content'}`;
-                    return `${header}\n\n${ctx.content}`;
+                        ? `Active Webpage: ${ctx.title || 'Current Page'}`
+                        : `Webpage Context Source ${index + 1}: ${ctx.title || 'Subframe Content'}`;
+                    return `${header}\nURL: ${ctx.url}\n\n${ctx.content}`;
                 });
                 pageContext = pieces.join("\n\n---\n\n");
+
+                
+                const currentUrl = currentBrowserTab ? currentBrowserTab.url : "";
+                if (currentTab && currentTab.lastContextUrl && currentTab.lastContextUrl !== currentUrl) {
+                    
+                    const transitionMarker = `[SYSTEM NOTE: The user has navigated to a new page. Please prioritize the following context and ignore conflicting information from previous messages in this conversation.]`;
+                    pageContext = transitionMarker + "\n\n" + pageContext;
+                }
+                if (currentTab) currentTab.lastContextUrl = currentUrl;
             }
 
         } catch (err) {
@@ -3747,11 +3758,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-
-    // Prepare message
+    
     const message = {
         action: streamAction,
-        sessionId: currentTab?.sessionId, // CRITICAL: Pass sessionId for broadcasting
+        sessionId: currentTab?.sessionId,
         messages: conversationHistory,
         initialContext: pageContext,
         question: apiText || 'Describe these images',
@@ -3768,12 +3778,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     };
 
-    // Update global last used model for persistence
+    
     if (tabModel) {
         chrome.storage.local.set({ lastUsedModel: tabModel });
     }
 
-    // Send to background
+    
     const sendMessage = () => {
         if (!port) setupPort();
         if (!port) throw new Error("Could not establish connection");
@@ -3785,12 +3795,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 if (sid) {
                     port.postMessage({ action: 'stop_chat', sessionId: sid });
                 } else {
-                    // Fallback for non-session ports
+                    
                     port.disconnect();
                     port = null;
                 }
             }
-            // Immediate local UI update
+            
             syncTabs.forEach(tab => {
                 tab.chatUIInstance.removeLoading();
                 tab.chatUIInstance.currentAnswerDiv = null;
@@ -3831,27 +3841,27 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 }
 
-// Handle translation requests - use shared LuminaChatUI method
+
 async function handleTranslation(text) {
     await chatUI.handleTranslation(text);
 
 }
 
-// Global keyboard listeners (not handled by LuminaChatUI)
+
 function setupGlobalListeners() {
-    // Track which pane the mouse is hovering over to route keystrokes correctly
+    
     const panePrimary = document.getElementById('pane-primary');
     const paneSecondary = document.getElementById('pane-secondary');
 
-    // Helper: transfer focus to the correct input when entering a pane.
-    // Only fires if the user is not mid-drag (no mouse button held) and there is no
-    // active text selection — otherwise we'd interrupt a cross-pane drag-select.
+    
+    
+    
     function transferFocusOnPaneEnter(inputEl, e) {
         if (!inputEl) return;
         if (!isSplitMode) return;
-        if (e.buttons !== 0) return; // dragging (e.g. text selection in progress)
+        if (e.buttons !== 0) return; 
         const selection = window.getSelection();
-        if (selection && selection.toString().trim().length > 0) return; // text selected
+        if (selection && selection.toString().trim().length > 0) return; 
         const sidebar = document.getElementById('spotlight-sidebar');
         if (sidebar && sidebar.classList.contains('active')) return;
         inputEl.focus();
@@ -3870,9 +3880,9 @@ function setupGlobalListeners() {
         });
     }
 
-    // Also update hoveredPane when an input is directly focused (e.g. click after reload
-    // before any mouseenter has fired). This prevents the keydown handler from mis-routing
-    // keystrokes back to the primary input when secondary was focused via direct click.
+    
+    
+    
     if (sharedInputUI?.inputEl) {
         sharedInputUI.inputEl.addEventListener('focus', () => { hoveredPane = 'primary'; });
     }
@@ -3889,7 +3899,7 @@ function setupGlobalListeners() {
             activeElement.isContentEditable
         );
 
-        // Track modifier-only presses
+        
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
             modifierKeyPressedAlone = true;
         } else {
@@ -3902,20 +3912,20 @@ function setupGlobalListeners() {
             if (!shortcut) continue;
             if (!isShortcutMatchImmediate(event, shortcut)) continue;
 
-            // If user is editing, only allow shortcuts with modifiers (Alt/Ctrl/Cmd)
-            // OR specific shortcuts that are meant to override typing (like micToggle or audio)
+            
+            
             if (isEditing) {
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
                 if (!hasModifier && !isOverridingShortcut) continue;
             }
 
-            // Selection-based shortcuts (translate, askLumina) should only trigger global prevention
-            // if there is actually a selection. Otherwise, let them fall through to auto-focus logic.
+            
+            
             if ((action === 'translate' || action === 'askLumina' || action === 'audio') && !selection) {
-                // Special case for audio: if audio is playing, we DO want to trigger stop even without selection
+                
                 if (action === 'audio' && _spotlightCurrentAudio) {
-                    // proceed to handle toggle
+                    
                 } else {
                     continue;
                 }
@@ -3927,7 +3937,7 @@ function setupGlobalListeners() {
             return;
         }
 
-        // --- CUSTOM MAPPINGS (Check before general keys like Enter) ---
+        
         if (selection && questionMappings && questionMappings.length > 0) {
             if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
                 for (const mapping of questionMappings) {
@@ -3958,18 +3968,18 @@ function setupGlobalListeners() {
                             fullQuestion = `"${selection}" ${mapping.prompt}`;
                         }
 
-                        // Get target tab and perform pinning
+                        
                         const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
                             ? secondaryActiveTabIndex
                             : activeTabIndex;
                         const targetTab = tabs[targetTabIdx];
 
-                        // Automatically pin the source entry if it belongs to a chat UI
+                        
                         if (targetTab && targetTab.chatUIInstance) {
                             const sel = window.getSelection();
                             const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                             if (range && range.startContainer) {
-                                // Apply persistent highlight
+                                
                                 if (window.LuminaAnnotation) {
                                     window.LuminaAnnotation.highlight(range);
                                 }
@@ -3998,10 +4008,10 @@ function setupGlobalListeners() {
 
         const inputEl = getHoveredInputEl();
 
-        // Ignore Space key when no selection
+        
         if (event.key === ' ' && !selection) return;
 
-        // Removed selection + Enter search as requested
+        
 
         if (event.key === 'Enter') {
             const activeEl = document.activeElement;
@@ -4031,15 +4041,15 @@ function setupGlobalListeners() {
             }
         }
 
-        // Focus and Select All (Ctrl+A) to target the input
+        
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-            // Don't hijack if user is focusing on another input
+            
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
 
-            // Don't hijack if history sidebar is open
+            
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
@@ -4053,32 +4063,32 @@ function setupGlobalListeners() {
             return;
         }
 
-        // Focus for Paste (Ctrl+V)
+        
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
 
-            // Don't hijack if history sidebar is open
+            
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
             const inputEl = getHoveredInputEl();
             if (inputEl) {
                 inputEl.focus();
-                // We do NOT preventDefault() - let browser paste into the now-focused inputEl
+                
                 return;
             }
         }
 
-        // Bypass standard browser/system shortcuts (Cmd|Ctrl + key)
-        // This ensures Cmd+F, Cmd+C etc. work predictably even if not explicitly handled above
+        
+        
         if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.length === 1) {
             return;
         }
 
-        // Play Audio shortcut — works with or without selection (no selection = stop)
+        
         if (matchesShortcut(event, 'audio', shortcuts)) {
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
             event.preventDefault();
@@ -4091,7 +4101,7 @@ function setupGlobalListeners() {
                 const sel = window.getSelection();
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.LuminaSelection) {
-                    // Detect source pane
+                    
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -4107,10 +4117,10 @@ function setupGlobalListeners() {
             return;
         }
 
-        // === SELECTION-BASED SHORTCUTS ===
+        
         if (selection && (window.LuminaSelection && !LuminaSelection.isInsideEditable())) {
 
-            // Ask Lumina shortcut — show inline ask-input above the selection
+            
             if (matchesShortcut(event, 'askLumina', shortcuts)) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -4120,7 +4130,7 @@ function setupGlobalListeners() {
                 if (range && window.LuminaSelection) {
                     const text = selection;
 
-                    // Detect source pane
+                    
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -4133,7 +4143,7 @@ function setupGlobalListeners() {
                 }
             }
 
-            // Translate shortcut
+            
             if (matchesShortcut(event, 'translate', shortcuts)) {
 
                 event.preventDefault();
@@ -4146,15 +4156,15 @@ function setupGlobalListeners() {
 
         }
 
-        // Auto-focus and allow Paste (Ctrl+V) to target the input
+        
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-            // Don't hijack if user is focusing on another input/editable
+            
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
 
-            // Don't hijack if history sidebar is open
+            
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
@@ -4162,38 +4172,38 @@ function setupGlobalListeners() {
             return;
         }
 
-        // Ignore pure modifier keys and control keys
+        
         if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
 
-        // In split mode, if a different pane's input currently has focus, we must redirect
-        // keystrokes to the hovered pane's input instead of letting them fall into the
-        // already-focused (wrong) input.
+        
+        
+        
         const isWrongPaneFocused = isSplitMode && inputEl && activeElement !== inputEl &&
             (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
 
-        // Auto-focus and type logic
+        
         if ((!isEditing || isWrongPaneFocused) && inputEl) {
-            // Check if history sidebar is open
+            
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
-            // Typeable characters (length 1 and no modifiers) should focus and type
-            // even if there is a selection (unless it's a shortcut we handled above).
+            
+            
             const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
 
             if (selection && !isTypeable) {
-                // Non-typeable key pressed while text is selected - allow browser/system to handle it
+                
                 return;
             }
 
-            // If it's not a typeable character and we haven't handled it yet, 
-            // focus the input as a general fallback but don't preventDefault.
+            
+            
             if (!isTypeable) {
                 inputEl.focus();
                 return;
             }
 
-            // For typeable characters, we perform the manual redirection to ensure it arrives in the correct input
+            
             event.stopPropagation();
             event.stopImmediatePropagation();
             event.preventDefault();
@@ -4211,7 +4221,7 @@ function setupGlobalListeners() {
         }
     }, true);
 
-    // Reset chat with configured mouse shortcut (if any)
+    
     document.addEventListener('mousedown', (event) => {
         const redirectShortcut = shortcuts.redirect;
         if (redirectShortcut && isShortcutMatch(event, redirectShortcut)) {
@@ -4230,18 +4240,18 @@ function setupGlobalListeners() {
     });
 }
 
-// Reset chat
+
 function resetChat() {
     stopSpotlightAudio();
 
-    // Determine which pane to reset based on hover state
+    
     const isSecondaryTarget = isSplitMode && hoveredPane === 'secondary';
 
     if (isSecondaryTarget) {
         if (secondaryActiveTabIndex !== -1) {
             const secondaryTab = tabs[secondaryActiveTabIndex];
             if (secondaryTab) {
-                // Notify background to stop/cleanup old session
+                
                 if (port && secondaryTab.sessionId) {
                     port.postMessage({ action: 'stop_chat', sessionId: secondaryTab.sessionId });
                 }
@@ -4273,7 +4283,7 @@ function resetChat() {
         if (activeTabIndex !== -1) {
             const activeTab = tabs[activeTabIndex];
 
-            // Notify background to stop/cleanup old session
+            
             if (port && activeTab.sessionId) {
                 port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
             }
@@ -4299,11 +4309,11 @@ function resetChat() {
     }
 }
 
-// Setup regenerate/stop button click handler
+
 function setupRegenerateButtons() {
     const buttons = document.querySelectorAll('#lumina-regenerate-btn');
     buttons.forEach(btn => {
-        // Clone to remove old listeners if re-calling
+        
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
 
@@ -4324,7 +4334,7 @@ function setupRegenerateButtons() {
     });
 }
 
-// Start
+
 document.addEventListener('DOMContentLoaded', init);
 
 window.addEventListener('beforeunload', () => {
@@ -4340,12 +4350,12 @@ window.addEventListener('beforeunload', () => {
     saveTabsState();
 });
 
-// Ctrl/Cmd + Click = Enter (on focused element)
+
 document.addEventListener('mousedown', (e) => {
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.button === 0) {
         const focused = document.activeElement;
         if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable)) {
-            e.preventDefault(); // Prevent focus from changing
+            e.preventDefault(); 
             const enterEvent = new KeyboardEvent('keydown', {
                 key: 'Enter',
                 code: 'Enter',
@@ -4359,7 +4369,7 @@ document.addEventListener('mousedown', (e) => {
     }
 }, true);
 
-// Smart copy: extract only visible text, skip UI elements
+
 document.addEventListener('copy', (e) => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
@@ -4367,7 +4377,7 @@ document.addEventListener('copy', (e) => {
     const range = sel.getRangeAt(0);
     const fragment = range.cloneContents();
 
-    // Extract visible text only
+    
     function getVisibleText(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             return node.textContent;
@@ -4377,29 +4387,29 @@ document.addEventListener('copy', (e) => {
         const el = node;
         const tag = el.tagName.toLowerCase();
 
-        // Skip common UI elements
+        
         if (['button', 'svg', 'mat-icon', 'script', 'style', 'noscript'].includes(tag)) {
             return '';
         }
 
-        // Skip elements with aria-hidden
+        
         if (el.getAttribute('aria-hidden') === 'true') {
             return '';
         }
 
-        // Skip icon fonts (common classes)
+        
         const className = el.className?.toString() || '';
         if (/\b(icon|material-icons|google-symbols|fa-|glyphicon)\b/i.test(className)) {
             return '';
         }
 
-        // Recurse into children
+        
         let text = '';
         for (const child of el.childNodes) {
             text += getVisibleText(child);
         }
 
-        // Add newline based on display type
+        
         if (['div', 'p', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
             text = '\n' + text + '\n';
         }
@@ -4409,7 +4419,7 @@ document.addEventListener('copy', (e) => {
 
     let extracted = getVisibleText(fragment);
 
-    // Clean up
+    
     extracted = extracted
         .replace(/\n{3,}/g, '\n\n')
         .replace(/[ \t]+/g, ' ')
@@ -4427,28 +4437,28 @@ document.addEventListener('copy', (e) => {
     }
 }, true);
 
-// =============== REGENERATE FUNCTIONALITY ===============
+
 
 function triggerRegenerate(targetUI = null) {
     const tUI = targetUI || chatUI;
     const history = tUI?.historyEl;
     if (!history) return;
 
-    // Find the very last entry
+    
     const lastEntry = history.lastElementChild;
     if (!lastEntry || !lastEntry.classList.contains('lumina-dict-entry')) return;
 
     const entryType = lastEntry.dataset.entryType;
     let originalQuestion = null;
 
-    // Priority 1: Translation/Dictionary specific extraction based on entryType
+    
     if (entryType === 'translation') {
         const transSource = lastEntry.querySelector('.lumina-translation-source .lumina-translation-text');
         if (transSource) {
             const sourceText = transSource.textContent.trim();
             originalQuestion = `Translate this text: "${sourceText}"`;
 
-            // Store for cache update later
+            
             if (tUI) {
                 tUI._regenSourceText = sourceText;
                 tUI._regenEntryType = 'translation';
@@ -4462,13 +4472,13 @@ function triggerRegenerate(targetUI = null) {
         }
     }
 
-    // Priority 2: Q&A, Proofread, Contextual-QA (has question element)
+    
     if (!originalQuestion) {
         const questionEl = lastEntry.querySelector('.lumina-chat-question');
         if (questionEl) {
             originalQuestion = questionEl.textContent.trim();
 
-            // For contextual-qa, include the context
+            
             const contextEl = lastEntry.querySelector('.lumina-chat-context');
             if (contextEl) {
                 const ctxText = contextEl.dataset.fullText || contextEl.textContent.trim();
@@ -4519,26 +4529,26 @@ function updateVersionNav(entryElement, activeIndex, totalCount) {
     nextBtn.disabled = activeIndex === totalCount - 1;
 }
 
-// Helper: Check if event matches a shortcut definition
+
 function isShortcutMatch(event, shortcut) {
     if (!shortcut) return false;
 
-    // Lone modifier key shortcut (e.g. ShiftRight alone)
+    
     const isLoneModifierShortcut = ['Control', 'Alt', 'Shift', 'Meta'].includes(shortcut.key);
 
     if (isLoneModifierShortcut) {
-        // Match: keyup event, key matches, and modifier was pressed alone (no combo)
+        
         if (event.type !== 'keyup') return false;
         if (event.key !== shortcut.key) return false;
-        // Only enforce side if the code is side-specific (ends with Left/Right).
-        // Generic codes like 'Shift' (both-sides shortcut) match either side.
+        
+        
         const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
         if (isSideSpecific && shortcut.code !== event.code) return false;
-        // Must have been pressed alone (tracked by modifierKeyPressedAlone)
+        
         return modifierKeyPressedAlone;
     }
 
-    // Key or mouse match: check code/key or mouse button
+    
     let keyMatch = false;
     if (event.type === 'mousedown' || event.type === 'mouseup' || event.type === 'click') {
         const buttonCode = 'Mouse' + event.button;
@@ -4551,7 +4561,7 @@ function isShortcutMatch(event, shortcut) {
 
     if (!keyMatch) return false;
 
-    // Exact modifier match: allow Cmd as Ctrl when Ctrl is expected
+    
     const wantsCtrl = !!shortcut.ctrlKey;
     const wantsMeta = !!shortcut.metaKey;
 
@@ -4562,7 +4572,7 @@ function isShortcutMatch(event, shortcut) {
     const altMatch = !!shortcut.altKey === event.altKey;
     const metaMatch = wantsMeta ? event.metaKey : (!event.metaKey || wantsCtrl);
 
-    // Reject extra modifiers for simple shortcuts
+    
     if (!shortcut.ctrlKey && !shortcut.shiftKey && !shortcut.altKey && !shortcut.metaKey) {
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
     }
@@ -4596,7 +4606,7 @@ function dispatchConfiguredShortcutAction(action) {
             stopSpotlightAudio();
         }
     } else if (action === 'luminaChat') {
-        // handled by content.js
+        
     } else if (action === 'askLumina') {
         const sel = window.getSelection();
         const text = sel ? sel.toString().trim() : '';
@@ -4623,7 +4633,7 @@ function dispatchConfiguredShortcutAction(action) {
     }
 }
 
-// Helper: Match named shortcut
+
 function matchesShortcut(event, actionName, shortcuts) {
     const DEFAULT_SHORTCUTS = {
         regenerate: { code: 'KeyR', key: 'r' },
@@ -4636,7 +4646,7 @@ function matchesShortcut(event, actionName, shortcuts) {
     return isShortcutMatch(event, shortcut);
 }
 
-// Audio Helper for Spotlight — delegates all fetch logic to unified fetchAudio in background.js
+
 async function playSpotlightAudio(text) {
     if (!text) return;
 
@@ -4648,7 +4658,7 @@ async function playSpotlightAudio(text) {
         speed = data.audioSpeed || 1.0;
     } catch (e) { }
 
-    // 1. Check persistent cache first
+    
     try {
         const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: normalizedText });
         if (cached && cached.success && cached.data) {
@@ -4656,9 +4666,9 @@ async function playSpotlightAudio(text) {
             for (const chunk of chunks) await playBase64Audio(chunk, speed);
             return;
         }
-    } catch (e) { /* cache miss */ }
+    } catch (e) {  }
 
-    // 2. Fetch via unified background logic (Oxford priority for 1-2 words, Google otherwise)
+    
     try {
         const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed });
         if (!result || !result.chunks || result.chunks.length === 0) return;
@@ -4671,7 +4681,7 @@ async function playSpotlightAudio(text) {
     }
 }
 
-// Shared AudioContext for spotlight — used only for silence detection, not playback
+
 let _spotlightAudioCtx = null;
 function getSpotlightAudioCtx() {
     if (!_spotlightAudioCtx || _spotlightAudioCtx.state === 'closed') {
@@ -4680,7 +4690,7 @@ function getSpotlightAudioCtx() {
     return _spotlightAudioCtx;
 }
 
-// Track the currently playing Audio element so it can be stopped
+
 let _spotlightCurrentAudio = null;
 let _spotlightAudioAborted = false;
 
@@ -4692,8 +4702,8 @@ function stopSpotlightAudio() {
     }
 }
 
-// Play base64 audio with leading-silence trimming.
-// Detects silence via Web Audio API, plays via native HTML Audio (no distortion).
+
+
 function playBase64Audio(base64Data, speed = 1.0) {
     return new Promise(async (resolve, reject) => {
         if (_spotlightAudioAborted) { resolve(); return; }
@@ -4703,7 +4713,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
             const byteArray = new Uint8Array(byteString.length);
             for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
 
-            // Detect silence offset using Web Audio API (detection only, not playback)
+            
             let silenceOffset = 0;
             try {
                 const ctx = getSpotlightAudioCtx();
@@ -4716,11 +4726,11 @@ function playBase64Audio(base64Data, speed = 1.0) {
                         break;
                     }
                 }
-            } catch (e) { /* detection failed, play from start */ }
+            } catch (e) {  }
 
             if (_spotlightAudioAborted) { resolve(); return; }
 
-            // Play via native HTML Audio (preserves original quality)
+            
             const mime = parts[0].split(':')[1].split(';')[0];
             const blob = new Blob([byteArray], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
@@ -4732,7 +4742,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
             audio.onerror = (e) => { _spotlightCurrentAudio = null; URL.revokeObjectURL(blobUrl); reject(e); };
             audio.play().catch(reject);
         } catch (e) {
-            // Last-resort fallback
+            
             try {
                 const audio = new Audio(base64Data);
                 audio.playbackRate = speed;
@@ -4750,9 +4760,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
 
 
 
-/**
- * Ported Dictionary Launcher for Spotlight
- */
+
 function initSpotlightDictLauncher() {
     if (!spotlightDictLauncherBtn) {
         spotlightDictLauncherBtn = document.createElement('div');
@@ -4793,12 +4801,12 @@ function hideSpotlightDictLauncher() {
 
 function showSpotlightDictionaryPopup(word, x, y) {
     console.log('[Spotlight Debug] Opening Dictionary Popup for:', word);
-    // Port of the dictionary popup logic or message background to handle it
-    // For now, we can use the existing chatUI if it supports it, 
-    // but typically spotlight logic is different.
-    // I'll implement a basic iframe popup for dictionary.
+    
+    
+    
+    
 
-    // Check if there's an existing popup
+    
     const existing = document.getElementById('lumina-spotlight-dict-popup');
     if (existing) existing.remove();
 
@@ -4825,9 +4833,9 @@ function showSpotlightDictionaryPopup(word, x, y) {
     document.body.appendChild(popup);
 }
 
-// Add global listener for mousedown to hide both in Spotlight
+
 window.addEventListener('mousedown', (e) => {
-    // Clear any pending mouseup show commands to prevent race conditions
+    
     if (window.mouseupTimer) {
         clearTimeout(window.mouseupTimer);
     }
@@ -4848,7 +4856,7 @@ window.addEventListener('mousedown', (e) => {
     }
 }, true);
 
-// Listen for settings changes and specialized triggers
+
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
         if (changes.readWebpage) {
@@ -4863,10 +4871,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
 });
 
-/**
- * Handles the "Ask Lumina" trigger from YouTube.
- * Auto-pins the current tab as a web source and focuses the input.
- */
+
 async function handleYouTubeTrigger(triggerInfo) {
     console.log('[Spotlight YT] handleYouTubeTrigger calling with:', triggerInfo);
     if (!triggerInfo || triggerInfo.action !== 'youtube_ask') return;
@@ -4875,12 +4880,12 @@ async function handleYouTubeTrigger(triggerInfo) {
     console.log('[Spotlight YT] activeTabIndex:', activeTabIndex, 'activeTab exists:', !!activeTab);
 
     if (!activeTab) {
-        // Panel not fully ready yet — retry once after a short delay
+        
         setTimeout(() => handleYouTubeTrigger(triggerInfo), 200);
         return;
     }
 
-    // 1. Find the specific YouTube tab that triggered this
+    
     const handleFoundTab = (ytTab) => {
         console.log('[Spotlight YT] Processing YouTube tab:', ytTab ? ytTab.id : 'NOT FOUND');
 
@@ -4891,11 +4896,11 @@ async function handleYouTubeTrigger(triggerInfo) {
                 url: ytTab.url
             };
 
-            // 2. Auto-pin this source for the active spotlight tab
+            
             console.log('[Spotlight YT] Pinning to active tab:', activeTab.id);
             toggleWebSourcePin(currentBrowserTab, true, activeTab.id);
 
-            // Clear storage trigger after handling to prevent re-triggering on reload
+            
             chrome.storage.local.remove('lumina_youtube_trigger');
         } else {
             console.warn('[Spotlight YT] Could not find any corresponding YouTube tab.');
@@ -4931,21 +4936,21 @@ async function handleYouTubeTrigger(triggerInfo) {
     }
 }
 
-// Expose API for History Controller
+
 window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null) {
     if (tabs.length === 0) return;
 
-    // Use the currently active tab instead of creating a new one
+    
     const activeTab = tabs[activeTabIndex];
     if (!activeTab) return;
 
-    // Overwrite the session so saves sync back to the original history
+    
     activeTab.sessionId = historySessionId;
 
-    // Determine dynamic title if not renamed
+    
     let displayTitle = meta.title || "Restored Chat";
     if (!meta.isRenamed && messages && messages.length > 0) {
-        // Find the LATEST question or translation in the provided messages
+        
         for (let i = messages.length - 1; i >= 0; i--) {
             const m = messages[i];
             if (m.type === 'question') {
@@ -4958,9 +4963,9 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         }
     }
     activeTab.title = displayTitle;
-    activeTab.selectedModel = null; // Reset to default or preserved model behavior can apply here
+    activeTab.selectedModel = null; 
 
-    // Prepare data for ChatHistoryManager
+    
     const chatData = {
         ...meta,
         messages: messages,
@@ -4968,34 +4973,34 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         timestamp: meta.createdAt || meta.updatedAt
     };
 
-    // Use ChatHistoryManager to restore the DOM structure safely
+    
     if (typeof ChatHistoryManager !== 'undefined' && typeof ChatHistoryManager.restoreChat === 'function') {
-        // Clear existing tab content
+        
         activeTab.historyEl.innerHTML = '';
 
         await ChatHistoryManager.restoreChat(chatData, activeTab.historyEl);
 
-        // Finalize state
+        
         normalizeRestoredHistory(activeTab.historyEl);
         console.log('[Spotlight] history restored, rendering active tab');
         renderTabs();
         saveTabsState();
 
-        // Trigger layout sync so adjustEntryMargin runs on the last entry (same as panel open/reload)
+        
         syncTabUI(activeTab);
 
         if (targetIndex !== null && messages && messages[targetIndex]) {
-            // Wait slightly longer for DOM to finish rendering and layout to stabilize for large histories
+            
             setTimeout(() => {
                 const targetNode = activeTab.historyEl.querySelector(`.lumina-chat-question[data-message-index="${targetIndex}"]`);
 
                 if (targetNode) {
                     const targetEntry = targetNode.closest('.lumina-dict-entry');
                     if (targetEntry) {
-                        // Use calculated offset including standard padding
+                        
                         const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(targetEntry, activeTab.historyEl);
 
-                        // Safety: clamp scroll target to valid range to prevent browser jitter or lockup
+                        
                         const maxScroll = Math.max(0, activeTab.historyEl.scrollHeight - activeTab.historyEl.clientHeight);
                         const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScroll));
 
@@ -5004,11 +5009,11 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                             behavior: 'instant'
                         });
 
-                        // SCROLL LOCK: Immediately update state so background/sync doesn't revert manually
+                        
                         activeTab.scrollTop = finalScrollTop;
                         activeTab.isAtBottom = (finalScrollTop >= maxScroll - 10);
 
-                        // Flash highlight the text for UX
+                        
                         targetNode.style.transition = 'background-color 0.5s';
                         const originalBg = targetNode.style.backgroundColor;
                         targetNode.style.backgroundColor = 'rgba(0, 86, 210, 0.1)';

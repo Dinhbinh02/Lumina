@@ -14,7 +14,7 @@
 
 <body>
   <div class="container">
-    <!-- Sidebar -->
+    
     <div class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-title">
@@ -67,27 +67,27 @@
 
       </nav>
 
-    </div> <!-- Closes Sidebar -->
+    </div> 
 
     <div class="main-content">
-      <!-- Configuration Section -->
+      
       <div class="content-section active" id="ai-config">
         <div class="section-header">
           <h2>General Settings</h2>
           <p>Configure your AI providers, models, and smart interaction features.</p>
         </div>
 
-        <!-- Provider Management -->
+        
         <div class="glass-card">
           <div class="card-header">🔑 AI Provider<span class="info-tooltip"
               data-tooltip="Add API keys to the providers below, then select a model to start using.">i</span></div>
 
-          <!-- Provider List -->
+          
           <div id="providerList" class="provider-list">
-            <!-- Providers will be rendered here -->
+            
           </div>
 
-          <!-- Add Provider Button -->
+          
           <div class="flex gap-8">
             <button type="button" id="addProviderBtn" class="add-provider-btn flex-1">
               + Add Provider
@@ -97,13 +97,13 @@
             </button>
           </div>
 
-          <!-- API Key Check Results -->
+          
           <div id="apiKeyResults" class="hidden mb-16">
             <div id="apiKeyStatusTitle" class="text-semibold mb-8">API Key Status:</div>
             <div id="apiKeyResultsList" class="flex-col gap-6"></div>
           </div>
 
-          <!-- Add/Edit Provider Form (hidden by default) -->
+          
           <div id="providerForm" class="provider-form hidden">
             <input type="hidden" id="providerFormId">
             <div class="form-group">
@@ -140,7 +140,7 @@
               data-tooltip="Search and add models you want to use here. You can pick which one to use when chatting.">i</span>
           </div>
 
-          <!-- Add to Chain -->
+          
           <label class="mb-12 block text-semibold">Add New Model</label>
           <div class="add-chain-area flex gap-12 items-end mb-20">
             <div class="form-group form-group-provider">
@@ -157,7 +157,7 @@
             </div>
           </div>
 
-          <!-- Model List container -->
+          
           <div class="mt-20">
             <label class="mb-12 block text-semibold">Model list</label>
             <div id="textChainList">
@@ -166,10 +166,10 @@
           </div>
         </div>
 
-        <!-- Intelligent Features -->
+        
         <div class="glass-card mt-16">
           <div class="card-header">🧠 Intelligent Features</div>
-          <!-- AI Dictionary Configuration -->
+          
           <div class="mt-20">
 
             <div class="form-row-item mb-16">
@@ -212,7 +212,7 @@
               data-tooltip="Add persistent instructions that Lumina will always follow in every conversation.">i</span>
           </div>
 
-          <!-- Add New Instruction -->
+          
           <div class="mb-20">
             <label class="mb-12 block text-semibold">Add New Instruction</label>
             <div class="form-group">
@@ -220,7 +220,7 @@
             </div>
           </div>
 
-          <!-- Instructions List -->
+          
           <div class="mt-20">
             <label class="mb-12 block text-semibold">Instruction list</label>
             <div id="userFactsList" class="facts-list scroll-auto max-h-300">
@@ -229,11 +229,11 @@
           </div>
         </div>
 
-        <!-- Appearance Card -->
+        
         <div class="glass-card mt-16">
           <div class="card-header">🎨 Appearance</div>
 
-          <!-- Theme -->
+          
           <div class="form-row-item">
             <div class="feature-info">
               <span class="feature-label">Theme</span>
@@ -280,8 +280,8 @@
 
       </div>
 
-      <!-- Account & Sync Section -->
-      <!-- Anki Management Section -->
+      
+      
       <div class="content-section" id="anki-management">
         <div class="section-header">
           <h2 class="card-header">Anki Management</h2>
@@ -333,11 +333,11 @@
           <h2>Account & Sync</h2>
         </div>
 
-        <!-- Cloud & Sync -->
+        
         <div class="glass-card">
           <div class="card-header">☁️ Cloud & Backup</div>
 
-          <!-- Account info -->
+          
           <div class="mb-24">
             <div id="auth-logged-out" class="block">
               <div class="info-note mb-16">
@@ -360,7 +360,7 @@
             </div>
           </div>
 
-          <!-- Sync actions -->
+          
           <div class="form-row-item border-top pt-20" id="syncCard">
             <div class="feature-info">
               <span class="feature-label">Cloud Sync</span>
@@ -372,7 +372,7 @@
             </div>
           </div>
 
-          <!-- Manual backup -->
+          
           <div class="form-row-item border-top pt-20">
             <div class="feature-info">
               <span class="feature-label">File Backup</span>
@@ -392,7 +392,7 @@
 
 
 
-      <!-- Shortcuts Section -->
+      
       <div class="content-section" id="shortcuts">
         <div class="section-header">
           <h2>Shortcuts</h2>
@@ -480,7 +480,7 @@
           </div>
         </div>
 
-        <!-- Custom Mappings Card (merged from Mappings section) -->
+        
         <div class="glass-card">
           <div class="card-header">
             🔗 Custom Mappings
@@ -491,7 +491,7 @@
 
           <div class="mapping-list-container">
             <div id="questionMappingsList">
-              <!-- Rows will be injected here -->
+              
             </div>
           </div>
 
@@ -501,7 +501,7 @@
 
         </div>
 
-        <!-- Annotation Card -->
+        
         <div class="glass-card">
           <div class="card-header">
             🖍️ Annotation
@@ -512,7 +512,7 @@
 
           <div class="mapping-list-container">
             <div id="annotationShortcutsList">
-              <!-- Rows will be injected here -->
+              
             </div>
           </div>
 
@@ -527,7 +527,7 @@
 
   <div id="status" class="status"></div>
 
-  <!-- Templates for dynamic UI elements -->
+  
   <template id="providerItemTemplate">
     <div class="provider-item">
       <div class="provider-item-content">
@@ -619,7 +619,7 @@
     </div>
   </template>
 
-  <!-- Mapping Row Template -->
+  
   <template id="mappingRowTemplate">
     <div class="mapping-item">
       <div class="mapping-number"></div>
@@ -644,7 +644,7 @@
     </div>
   </template>
 
-  <!-- User Fact Item Template -->
+  
   <template id="userFactItemTemplate">
     <div class="fact-item">
       <span class="fact-index"></span>
@@ -653,24 +653,24 @@
     </div>
   </template>
 
-  <!-- Suggestion Item Template -->
+  
 
-  <!-- Shortcut None Template -->
+  
   <template id="shortcutNoneTemplate">
     <span style="color: var(--text-secondary); font-style: italic;">None</span>
   </template>
 
-  <!-- Shortcut Recording Template -->
+  
   <template id="shortcutRecordingTemplate">
     <span style="color: var(--primary-color); font-weight: 520;">Press a key...</span>
   </template>
 
-  <!-- Shortcut Key Segment Template -->
+  
   <template id="shortcutKeySegmentTemplate">
     <span class="shortcut-key"></span>
   </template>
 
-  <!-- Button State Templates -->
+  
   <template id="appliedStateTemplate">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="margin-right:6px;">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -682,7 +682,7 @@
     Signing in...
   </template>
 
-  <!-- Custom Param Row Template -->
+  
   <template id="customParamRowTemplate">
     <div class="custom-param-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
       <input type="text" class="custom-param-key" placeholder="key" style="flex: 1; font-size: 0.75em;">
@@ -693,17 +693,17 @@
     </div>
   </template>
 
-  <!-- Provider Dropdown Option Template -->
+  
   <template id="providerDropdownOptionTemplate">
     <option value=""></option>
   </template>
 
-  <!-- Empty List State Template -->
+  
   <template id="emptyListStateTemplate">
     <div class="chain-empty-state">No models added. Add one above.</div>
   </template>
 
-  <!-- API Key Result Item Template -->
+  
   <template id="apiKeyResultItemTemplate">
     <div class="api-key-result-item" style="margin-bottom: 8px;">
       <div class="api-key-result-header"
@@ -716,7 +716,7 @@
     </div>
   </template>
 
-  <!-- Failed Key Info Template -->
+  
   <template id="failedKeyInfoTemplate">
     <div style="font-size: 11px; color: #FF3B30; margin-left: 20px; font-family: monospace;">
       • <code style="background: rgba(255,59,48,0.1); padding: 2px 6px; border-radius: 4px;"

@@ -1,13 +1,10 @@
-/**
- * anki_generator.js
- * Logic for Tabbed Anki Generator (Templates Table & Batch UI)
- */
+
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Shared Anki Client (from anki.js)
+    
     const anki = window.anki || new AnkiClient();
 
-    // --- Tab: Templates (UI References) ---
+    
     const templateTableBody = document.getElementById('templateTableBody');
     const templateSearch = document.getElementById('templateSearch');
     const createNewTemplateBtn = document.getElementById('createNewTemplateBtn');
@@ -28,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const noteTypeLabel = document.getElementById('note-type-label');
     const noteTypeDropdown = document.getElementById('note-type-dropdown');
 
-    // --- Tab: Generator (UI References) ---
+    
     const deckSelect = document.getElementById('deckSelect');
     const templateSelect = document.getElementById('templateSelect');
     const batchInput = document.getElementById('batchInput');
@@ -44,13 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const genCardCountBadge = document.getElementById('genCardCountBadge');
     const historyTableBody = document.getElementById('historyTableBody');
 
-    // --- Example Editor Modal (UI References) ---
+    
     const exampleModal = document.getElementById('exampleModal');
     const exampleFieldsContainer = document.getElementById('exampleFieldsContainer');
     const saveExampleBtn = document.getElementById('saveExampleBtn');
     const regenerateExBtn = document.getElementById('regenerateExBtn');
 
-    // --- Status Modal (UI References) ---
+    
     const statusModal = document.getElementById('statusModal');
     const statusIcon = document.getElementById('statusIcon');
     const statusTitle = document.getElementById('statusTitle');
@@ -58,30 +55,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusCloseBtn = document.getElementById('statusCloseBtn');
     const statusCopyBtn = document.getElementById('statusCopyBtn');
 
-    // --- State ---
+    
     const STATE = {
         templates: [],
-        currentEditTemplate: null, // For side-editor
-        batchHistory: [], // [{ id, words: [], cards: [], timestamp }]
-        activeBatchId: null, // The batch currently being previewed
-        genAIModel: 'Standard', // Default for generator
+        currentEditTemplate: null, 
+        batchHistory: [], 
+        activeBatchId: null, 
+        genAIModel: 'Standard', 
         genAIProviderId: '',
         decks: [],
         models: [],
         aiModelChains: [],
         isGenerating: false,
-        existingWordsCache: new Map(), // Map<"modelName|deckName", Map<word, noteId>>
+        existingWordsCache: new Map(), 
         isCacheLoading: false
     };
 
-    // --- Initialization ---
+    
     async function init() {
         await initData();
         setupEventListeners();
         setupAIModelSelector();
         checkPendingRegenerate();
 
-        // Auto-reset quota once on init to clear any "Rate Limit vs quota" confusion from previous sessions
+        
         chrome.runtime.sendMessage({ action: 'reset_exhausted_keys' });
     }
 
@@ -131,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ankiModelDropdown = document.getElementById('anki-model-dropdown');
 
     function setupAIModelSelector() {
-        // Selector 1: Template Editor (Anki Note Type)
+        
         if (noteTypeBtn && noteTypeDropdown) {
             noteTypeBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -141,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderNoteTypeDropdown();
         }
 
-        // Selector 2: Template Editor (AI Model)
+        
         if (ankiModelBtn && ankiModelDropdown) {
             ankiModelBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -151,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderModelDropdown(ankiModelDropdown, ankiModelLabel, 'template');
         }
 
-        // Selector 2: Batch Generator
+        
         if (genModelBtn && genModelDropdown) {
             genModelBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -159,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 genModelDropdown.classList.toggle('active');
             };
 
-            // Load saved model preference or use first available
+            
             chrome.storage.local.get(['lastUsedGenAIModel'], (res) => {
                 const savedModel = res.lastUsedGenAIModel;
                 if (savedModel && STATE.aiModelChains.some(item => item.model === savedModel.model && item.providerId === savedModel.providerId)) {
@@ -175,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Load saved batch size
+        
         chrome.storage.local.get(['lastUsedBatchSize'], (res) => {
             if (res.lastUsedBatchSize && batchSizeInput) {
                 batchSizeInput.value = res.lastUsedBatchSize;
@@ -185,9 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.addEventListener('click', closeAllDropdowns);
     }
 
-    /**
-     * Shows a custom status modal instead of native alert
-     */
+    
     function showStatus(type, title, message, missingWords = null) {
         if (!statusModal) return;
         statusIcon.textContent = type === 'success' ? '✅' : (type === 'error' ? '❌' : '⚠️');
@@ -210,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         statusModal.classList.remove('hidden');
 
-        // Notify user if tab is hidden
+        
         if (document.hidden && (type === 'success' || type === 'warning')) {
             if (!document.title.startsWith('● ')) {
                 document.title = '● ' + document.title;
@@ -218,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Reset title when user returns
+    
     window.addEventListener('focus', () => {
         if (document.title.startsWith('● ')) {
             document.title = document.title.replace('● ', '');
@@ -298,20 +293,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     STATE.currentEditTemplate.model = modelName;
                     noteTypeLabel.textContent = modelName;
 
-                    // Auto-sync fields with Anki Model fields
+                    
                     try {
                         const fieldNames = await anki.invoke('modelFieldNames', { modelName: modelName });
                         if (fieldNames && fieldNames.length > 0) {
-                            // Preserve existing prompts if names match
+                            
                             const oldFields = [...STATE.currentEditTemplate.fields];
                             
-                            // Build new fields list from Anki fields
+                            
                             let newFields = fieldNames.map(name => {
                                 const existing = oldFields.find(f => f.name === name);
                                 return existing || { name: name, prompt: '', example: '' };
                             });
 
-                            // Ensure 'Input' field is present and at the end
+                            
                             const inputField = oldFields.find(f => f.name.toLowerCase() === 'input') || { name: 'Input', prompt: '', example: '' };
                             newFields = newFields.filter(f => f.name.toLowerCase() !== 'input');
                             newFields.push(inputField);
@@ -371,34 +366,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function processBatch(words, tmpl, options = {}) {
-                // Simple JSON repair: extract valid objects from a broken array string
+                
                 function tryRepairJSONArray(str) {
                     if (!str) return [];
                     
-                    // 1. Basic cleanup
+                    
                     let cleaned = str.trim()
-                        .replace(/^[^{[]+/, '') // Remove anything before first { or [
-                        .replace(/[^}\]]+$/, ''); // Remove anything after last } or ]
+                        .replace(/^[^{[]+/, '') 
+                        .replace(/[^}\]]+$/, ''); 
 
-                    // Helper: Handle bad control characters inside strings (newlines, tabs, etc)
+                    
                     const fixControlCharacters = (s) => {
-                        // Replace real newlines, carriage returns, and tabs with escaped versions
-                        // but only if they appear to be inside quotes (not perfect, but helpful)
-                        // Actually, just escaping all control chars in the entire string is often safer for repair
+                        
+                        
+                        
                         return s.replace(/[\x00-\x1F\x7F-\x9F]/g, (match) => {
                             if (match === '\n') return '\\n';
                             if (match === '\r') return '\\r';
                             if (match === '\t') return '\\t';
-                            return ''; // Strip others
+                            return ''; 
                         });
                     };
 
-                    // 2. Try to handle unescaped quotes inside values
+                    
                     const fixUnescapedQuotes = (s) => {
                         return s.replace(/([^\\])"(?![ \t]*[:,\}\]])/g, '$1\\"');
                     };
 
-                    // 3. Remove trailing commas before } or ]
+                    
                     cleaned = cleaned.replace(/,[ \t\r\n]*([}\]])/g, '$1');
 
                     const tryParse = (s) => {
@@ -416,7 +411,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const result = tryParse(cleaned);
                     if (result) return result;
 
-                    // 4. Last resort: Extract individual objects {...}
+                    
                     const matches = cleaned.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/g);
                     if (matches && matches.length > 0) {
                         const repaired = [];
@@ -428,14 +423,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     return [];
                 }
-        // Helper to convert rich text/HTML field data to plain text for the prompt
+        
         const toPromptText = (html) => {
             if (!html) return '';
             const d = document.createElement('div');
-            // Remove comments and hidden characters
+            
             d.innerHTML = html.replace(/<!--[\s\S]*?-->/g, '');
             
-            // Use markers to preserve formatting boundaries without losing nested content
+            
             d.querySelectorAll('b, strong').forEach(el => { el.prepend('__BS__'); el.append('__BE__'); });
             d.querySelectorAll('i, em').forEach(el => { el.prepend('__IS__'); el.append('__IE__'); });
             d.querySelectorAll('u').forEach(el => { el.prepend('__US__'); el.append('__UE__'); });
@@ -447,19 +442,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let text = d.textContent;
 
-            // Helper to wrap only non-empty lines in markers
+            
             const wrapLines = (content, symbolS, symbolE) => {
                 return content.split('\n').map(line => {
                     const trimmed = line.trim();
                     if (!trimmed) return line;
-                    // Extract leading/trailing spaces to keep the markers tight around the text
+                    
                     const lead = line.match(/^\s*/)[0];
                     const trail = line.match(/\s*$/)[0];
                     return `${lead}${symbolS}${trimmed}${symbolE}${trail}`;
                 }).join('\n');
             };
 
-            // Replace boundaries with a line-aware wrapping logic
+            
             const regex = /__([BIU])S__([\s\S]*?)__\1E__/g;
             while (text.match(regex)) {
                 text = text.replace(regex, (match, type, content) => {
@@ -532,9 +527,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             let raw = (response.text || "").trim();
-            // Remove code fences if present
+            
             raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-            // Extract only the JSON array using regex (first [ ... ] block)
+            
             const arrayMatch = raw.match(/\[([\s\S]*?)\]/);
             let jsonToParse = raw;
             if (arrayMatch) {
@@ -544,7 +539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 results = JSON.parse(jsonToParse);
             } catch (e) {
-                // Try to repair broken JSON array
+                
                 results = tryRepairJSONArray(jsonToParse);
                 if (!results || !Array.isArray(results) || results.length === 0) {
                     throw e;
@@ -552,11 +547,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (results && Array.isArray(results)) {
-                // IMPORTANT: We map over the ORIGINAL 'words' array to guarantee order and length.
+                
                 return words.map((targetWord, i) => {
                     const normalizedTarget = (targetWord || '').toLowerCase().trim();
                     
-                    // Defensive matching:
+                    
                     const getValInsensitive = (obj, key) => {
                         if (!obj || typeof obj !== 'object') return null;
                         if (obj[key] !== undefined) return obj[key];
@@ -565,9 +560,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return foundKey ? obj[foundKey] : null;
                     };
 
-                    // 1. Try result at the same index
+                    
                     let res = results[i];
-                    // 2. If index doesn't match word, look for it in the whole batch
+                    
                     const resWord = getValInsensitive(res, 'word');
                     if (!res || (resWord && resWord.toLowerCase().trim() !== normalizedTarget)) {
                         const found = results.find(r => {
@@ -578,7 +573,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         else res = res || {}; 
                     }
 
-                    // Respect plainText setting for each field
+                    
                     const fieldData = {};
                     tmpl.fields.forEach(f => {
                         let val = getValInsensitive(res, f.name) || '';
@@ -608,14 +603,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             STATE.decks = await anki.invoke('deckNames');
             deckSelect.innerHTML = STATE.decks.map(d => `<option value="${d}">${d}</option>`).join('');
 
-            // Restore last used deck
+            
             chrome.storage.local.get(['lastUsedDeck'], (res) => {
                 if (res.lastUsedDeck && STATE.decks.includes(res.lastUsedDeck)) {
                     deckSelect.value = res.lastUsedDeck;
                 }
             });
 
-            // Also load Note Types (Models)
+            
             STATE.models = await anki.invoke('modelNames');
         } catch (e) {
             console.error("Failed to load decks/models", e);
@@ -629,7 +624,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderTemplatesTable();
         renderTemplateSelect();
         
-        // Restore last used template
+        
         if (res.lastUsedTemplateId && STATE.templates.some(t => t.id === res.lastUsedTemplateId)) {
             templateSelect.value = res.lastUsedTemplateId;
         }
@@ -653,7 +648,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // --- Templates Tab Logic ---
+    
     function renderTemplatesTable() {
         const query = (templateSearch.value || '').toLowerCase();
         const filtered = STATE.templates.filter(t =>
@@ -679,7 +674,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function openTemplateEditor(id = null) {
         if (!id) {
-            // Create New
+            
             STATE.currentEditTemplate = {
                 id: 'tmpl-' + Date.now(),
                 name: '',
@@ -699,7 +694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             templateEditorTitle.textContent = 'Create Template';
             deleteTemplateBtn.classList.add('hidden');
         } else {
-            // Edit Existing
+            
             const found = STATE.templates.find(t => t.id === id);
             STATE.currentEditTemplate = JSON.parse(JSON.stringify(found));
             templateEditorTitle.textContent = 'Edit Template';
@@ -709,11 +704,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         editTemplateName.value = STATE.currentEditTemplate.name;
         editTemplateGlobalPrompt.value = STATE.currentEditTemplate.globalPrompt || '';
 
-        // Note Type setup
+        
         noteTypeLabel.textContent = STATE.currentEditTemplate.model || 'Basic';
         renderNoteTypeDropdown();
 
-        // AI Model Setup
+        
         const selectedAiModel = STATE.aiModelChains.find(m =>
             m.model === STATE.currentEditTemplate.aiModel &&
             m.providerId === STATE.currentEditTemplate.aiProviderId
@@ -736,7 +731,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderEditFields() {
         editFieldsContainer.innerHTML = '';
         STATE.currentEditTemplate.fields.forEach((field, index) => {
-            const isProtected = index < 2; // Front/Back PROTECTED
+            const isProtected = index < 2; 
             const isInput = field.name.toLowerCase() === 'input';
 
             const header = document.createElement('div');
@@ -795,16 +790,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (onChange) onChange(el.innerHTML);
         });
 
-        // 1. Keyboard Shortcuts & Formatting
+        
         el.addEventListener('keydown', (e) => {
-            // Shortcuts: Ctrl+B, Ctrl+I, Ctrl+U
+            
             if (e.metaKey || e.ctrlKey) {
                 if (e.key === 'b') { e.preventDefault(); document.execCommand('bold', false, null); }
                 if (e.key === 'i') { e.preventDefault(); document.execCommand('italic', false, null); }
                 if (e.key === 'u') { e.preventDefault(); document.execCommand('underline', false, null); }
             }
 
-            // Bullet points: '-' followed by space at start of line
+            
             if (e.key === ' ') {
                 try {
                     const selection = window.getSelection();
@@ -823,12 +818,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
                 } catch (err) {
-                    // Ignore selection errors on vanished nodes
+                    
                 }
             }
         });
 
-        // 2. Paste Hygiene (Sanitization)
+        
         el.addEventListener('paste', (e) => {
             e.preventDefault();
             const text = e.clipboardData.getData('text/plain');
@@ -839,14 +834,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const doc = parser.parseFromString(html, 'text/html');
 
                 const sanitize = (body) => {
-                    // Remove ALL comments robustly
+                    
                     const comments = [];
                     const iterator = doc.createNodeIterator(body, NodeFilter.SHOW_COMMENT, null, false);
                     let n;
                     while (n = iterator.nextNode()) comments.push(n);
                     comments.forEach(c => c.remove());
 
-                    // Convert styles to semantic tags
+                    
                     body.querySelectorAll('*').forEach(el => {
                         const style = el.getAttribute('style') || '';
                         if (style.includes('font-weight:700') || style.includes('font-weight:bold') || style.includes('700')) {
@@ -861,7 +856,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     });
 
-                    // Remove all attributes
+                    
                     body.querySelectorAll('*').forEach(el => {
                         while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
                     });
@@ -1046,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (isInput) return; // No listeners needed for read-only input
 
-                // Re-render field when toggle changes
+                
                 const toggle = group.querySelector('.modal-richtext-toggle');
                 toggle.onchange = (e) => {
                     const rich = e.target.checked;
@@ -1071,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 };
 
-                // Initial link
+                
                 const fieldInput = group.querySelector('.edit-ex-field');
                 if (!isPlain) {
                     setupRichText(fieldInput, (newContent) => {
@@ -1089,13 +1084,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (isNew) {
             if ((STATE.currentEditTemplate.examples || []).length >= 3) return alert('Max 3 examples allowed.');
 
-            // Sync latest Prompt/Rules from UI before generating
+            
             STATE.currentEditTemplate.globalPrompt = editTemplateGlobalPrompt.value;
 
             const sampleWord = prompt("Enter a word to generate an example:", "Knowledge");
             if (!sampleWord) return;
 
-            // Show a temporary loading bar in the container
+            
             const loadingBar = document.createElement('div');
             loadingBar.className = 'example-preview-card loading';
             loadingBar.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; font-size: 0.8125em; font-weight: 620;"><div class="spinner-small"></div> Generating example...</div>`;
@@ -1106,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loadingBar.remove();
                 if (res && res[0]) {
                     draftExample = res[0];
-                    // Save immediately after generation to prevent loss
+                    
                     if (isNew) {
                         if (!STATE.currentEditTemplate.examples) STATE.currentEditTemplate.examples = [];
                         STATE.currentEditTemplate.examples.push(draftExample);
@@ -1123,14 +1118,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return alert('Generate example failed.');
             }
         } else {
-            // Clone the existing example to avoid direct mutation
+            
             const original = STATE.currentEditTemplate.examples[index];
             draftExample = JSON.parse(JSON.stringify(original));
         }
 
         renderFields(draftExample);
 
-        // Regenerate Logic
+        
         regenerateExBtn.onclick = async () => {
             const inputEl = exampleFieldsContainer.querySelector('textarea[data-field="Input"], textarea[data-field="input"]');
             const word = inputEl ? inputEl.value.trim() : draftExample.word;
@@ -1164,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveExampleBtn.onclick = () => {
             const inputEl = exampleFieldsContainer.querySelector('textarea[data-field="Input"], textarea[data-field="input"]');
             if (inputEl) draftExample.word = inputEl.value.toLowerCase().trim();
-            // Final sync for any unsaved changes in fields
+            
             exampleFieldsContainer.querySelectorAll('.edit-ex-field').forEach(el => {
                 const fieldName = el.dataset.field;
                 if (el.tagName === 'TEXTAREA') {
@@ -1184,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             exampleModal.classList.add('hidden');
             renderExamplePreviews();
-            // Automatically save to storage when saving example
+            
             chrome.storage.local.set({ luminaTemplatesV3: STATE.templates });
         };
 
@@ -1195,11 +1190,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const name = editTemplateName.value.trim();
         if (!name) return alert('Please enter a template name.');
 
-        templateEditor.classList.remove('open'); // Close panel immediately for better UX
+        templateEditor.classList.remove('open'); 
 
         STATE.currentEditTemplate.name = name;
         STATE.currentEditTemplate.globalPrompt = editTemplateGlobalPrompt.value;
-        // aiModel and aiProviderId are updated via dropdown selection
+        
         STATE.currentEditTemplate.modified = Date.now();
 
         const index = STATE.templates.findIndex(t => t.id === STATE.currentEditTemplate.id);
@@ -1210,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         await chrome.storage.local.set({ luminaTemplatesV3: STATE.templates });
-        initData(); // Refresh both table and Generator dropdown without re-binding events
+        initData(); 
     }
 
     async function deleteTemplate() {
@@ -1223,7 +1218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         init();
     }
 
-    // --- Generator Tab Logic ---
+    
     function renderTemplateSelect() {
         templateSelect.innerHTML = STATE.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     }
@@ -1240,11 +1235,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const currentTmpl = STATE.templates.find(t => t.id === templateSelect.value);
         if (!currentTmpl) return alert('Please select a template.');
 
-        // 1. Normalize words (lowercase and trimmed)
+        
         const rawWords = userInput.split(/[,\n]/).map(s => s.trim()).filter(s => s);
         if (rawWords.length === 0) return;
 
-        // Unique words in this request (case-insensitive)
+        
         const uniqueWordsMap = new Map();
         rawWords.forEach(w => {
             const normalized = w.toLowerCase();
@@ -1253,23 +1248,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const wordsToGenerate = Array.from(uniqueWordsMap.keys());
         const wordsToGenerateSet = new Set(wordsToGenerate);
 
-        // Button Loading State
+        
         const originalBtnText = generateBatchBtn.innerHTML;
         STATE.isGenerating = true;
-        generateBatchBtn.disabled = false; // Keep enabled so user can click to STOP
+        generateBatchBtn.disabled = false; 
         
         const modelName = currentTmpl?.model || 'Basic';
-        const cacheKey = `${modelName}`; // Global check for the Note Type across all decks
+        const cacheKey = `${modelName}`; 
 
-        const existingNoteIds = {}; // Map word -> noteId
+        const existingNoteIds = {}; 
 
         try {
-            // Check if we need to load/refresh cache
+            
             if (!STATE.existingWordsCache.has(cacheKey)) {
                 generateBatchBtn.innerHTML = `<span class="spinner-small"></span> Initializing check...`;
                 const startTime = Date.now();
                 
-                // 1. Fetch ALL note IDs for this model across ALL decks (fast)
+                
                 const query = `note:"${modelName}"`;
                 const allIds = await anki.findNoteIds(query);
                 
@@ -1277,7 +1272,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (allIds.length > 0) {
                     generateBatchBtn.innerHTML = `<span class="spinner-small"></span> Checking ${allIds.length} existing cards...`;
                     
-                    // 2. Fetch info in large chunks to build cache
+                    
                     const INFO_CHUNK = 1000;
                     for (let i = 0; i < allIds.length; i += INFO_CHUNK) {
                         const chunk = allIds.slice(i, i + INFO_CHUNK);
@@ -1293,7 +1288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log(`Duplicate cache built in ${Date.now() - startTime}ms for ${allIds.length} notes.`);
             }
 
-            // 3. Instant check using cache
+            
             const wordMap = STATE.existingWordsCache.get(cacheKey);
             wordsToGenerate.forEach(word => {
                 if (wordMap.has(word)) {
@@ -1330,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const newBatch = {
             id: batchId,
             words: words,
-            existingNoteIds: existingNoteIds, // Store for sync later
+            existingNoteIds: existingNoteIds, 
             cards: [],
             timestamp: Date.now(),
             deckName: deckSelect.value,
@@ -1345,8 +1340,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderPreview();
 
         try {
-            const generationErrors = []; // Track diagnostic errors
-            // Prepare Tasks (Batches of words)
+            const generationErrors = []; 
+            
             const batchSize = parseInt(batchSizeInput?.value) || 10;
             const tasks = [];
             for (let i = 0; i < words.length; i += batchSize) {
@@ -1357,14 +1352,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Prepare AI Keys
+            
             const selectedProvider = STATE.providers.find(p => p.id === STATE.genAIProviderId);
             const keys = (selectedProvider?.apiKey || '').split(',').map(k => k.trim()).filter(k => k);
 
-            // Cycle-based Sequential Rotation logic
+            
             const groupKey = 'rot_' + keys.join(',').substring(0, 32).replace(/[^a-zA-Z0-9]/g, '');
             const today = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`;
-            // 1. Get saved index
+            
             const indexData = await chrome.storage.local.get([groupKey]);
             let currentKeyIndex = (indexData[groupKey] && indexData[groupKey].date === today) 
                 ? indexData[groupKey].index 
@@ -1382,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             while (taskQueue.length > 0) {
                 if (!STATE.isGenerating) break;
 
-                // 1. Cycle-level Wait: 15s between starting new cycles
+                
                 if (keysUsedInCycle >= keys.length) {
                     const elapsed = Date.now() - cycleStartTime;
                     const waitTime = Math.max(0, 15000 - elapsed);
@@ -1402,13 +1397,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     keysUsedInCycle = 0;
                 }
 
-                // 2. Staggered Start Logic
-                // We start the task and create a "trigger" promise that resolves after 500ms 
-                // OR immediately if the task fails.
+                
+                
+                
                 const task = taskQueue.shift();
                 const keyIndex = currentKeyIndex;
                 
-                // Advance counters BEFORE starting to ensure next attempt (even if instant) uses next key
+                
                 currentKeyIndex = (currentKeyIndex + 1) % keys.length;
                 keysUsedInCycle++;
 
@@ -1423,7 +1418,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         const results = await processBatch(task.words, currentTmpl, { keyIndex: keyIndex });
                         
-                        // If it succeeded early, we don't need to force-wait the trigger
+                        
                         clearTimeout(fuse);
                         resolveTrigger();
 
@@ -1439,37 +1434,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.error(errorMsg, err);
                         generationErrors.push(errorMsg);
                         
-                        // Failure! Trigger next batch immediately (no 500ms wait)
+                        
                         clearTimeout(fuse);
                         resolveTrigger();
 
-                        // Re-queue the task for another attempt, but only if it hasn't failed too many times
-                        // For simplicity now, just unshift if keyIndex was low, but let's just log it.
+                        
+                        
                         taskQueue.unshift(task); 
                     }
                 })();
 
                 pendingTasks.push(taskPromise);
 
-                // Wait for the trigger (500ms OR early error) before the next loop iteration
+                
                 await nextBatchTrigger;
                 lastBatchStartTime = Date.now();
             }
 
-            // 3. Final Wait: Make sure ALL pending batches are finished before showing Success alert
+            
             await Promise.all(pendingTasks);
 
-            // Final save after all tasks are done
+            
             await saveBatchHistory();
             
-            // Final count and summary
+            
             const generatedWords = new Set(newBatch.cards.map(c => (c.word || '').toLowerCase().trim()));
             const missingWords = words.filter(w => !generatedWords.has(w.toLowerCase().trim()));
 
             if (missingWords.length > 0) {
                 const missingText = missingWords.join(', ');
                 
-                // Try to copy BEFORE alert to avoid focus issues, with fallback
+                
                 const performCopy = async (text) => {
                     console.log("Attempting to copy missing words to clipboard:", text);
                     try {
@@ -1497,7 +1492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 await performCopy(missingText);
                 
-                // Diagnostic log for the user
+                
                 console.group("⚠️ Generation Diagnostics");
                 console.warn(`Summary: Created ${newBatch.cards.length} out of ${words.length} cards.`);
                 console.warn(`Missing Words (${missingWords.length}):`, missingWords);
@@ -1594,12 +1589,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const liveExistingNoteIds = {};
 
         try {
-            // 1. Instant duplicate check using cache
+            
             const currentTmpl = STATE.templates.find(t => t.id === batch.templateId);
             const modelName = currentTmpl?.model || 'Basic';
             const cacheKey = `${modelName}`;
             
-            // If cache is missing (unlikely if they just generated, but possible if page was reloaded)
+            
             if (!STATE.existingWordsCache.has(cacheKey)) {
                 const query = `note:"${modelName}"`;
                 const allIds = await anki.findNoteIds(query);
@@ -1623,7 +1618,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            // 2. Prepare batches for New and Updates
+            
             const notesToAdd = [];
             const updateActions = [];
 
@@ -1661,7 +1656,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 3. Execute Batch Add
+            
             if (notesToAdd.length > 0) {
                 const ADD_CHUNK = 500;
                 for (let i = 0; i < notesToAdd.length; i += ADD_CHUNK) {
@@ -1672,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 4. Execute Batch Updates
+            
             if (updateActions.length > 0) {
                 const UPDATE_CHUNK = 100;
                 for (let i = 0; i < updateActions.length; i += UPDATE_CHUNK) {
@@ -1683,7 +1678,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 3. Trigger Sync to AnkiWeb
+            
             try {
                 btn.textContent = 'Syncing to Web...';
                 await anki.sync();
@@ -1695,7 +1690,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error("Sync error:", e);
         }
 
-        // alert removed: no notification after successful sync
+        
         btn.disabled = false;
         btn.textContent = originalText;
     }
@@ -1718,7 +1713,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Update badge
+        
         genCardCountBadge.textContent = `${count} ${count === 1 ? 'card' : 'cards'}`;
         genCardCountBadge.classList.remove('hidden');
 
@@ -1736,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const card = batch.cards[cardIndex];
         const tmpl = STATE.templates.find(t => t.id === batch.templateId);
 
-        // Use a draft card to avoid premature mutation
+        
         const draftCard = JSON.parse(JSON.stringify(card));
 
         exampleFieldsContainer.innerHTML = '';
@@ -1748,7 +1743,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isPlainText = field.plainText || isInput;
             
             let value = draftCard.fieldData[field.name] || '';
-            // If it's Input field and empty in fieldData, fallback to card.word
+            
             if (isInput && !value) value = draftCard.word;
 
             group.innerHTML = `
@@ -1777,15 +1772,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     draftCard.fieldData[fieldName] = el.value.trim();
                     if (fieldName.toLowerCase() === 'input') draftCard.word = el.value.toLowerCase().trim();
                 } else {
-                    // Loại bỏ <p> rỗng trước khi lưu
+                    
                     draftCard.fieldData[fieldName] = sanitizeRichTextHTML(el.innerHTML);
                 }
             });
 
-            // Sanitize lại toàn bộ fieldData trước khi lưu (loại <p> rỗng cho mọi field rich text)
+            
             Object.keys(draftCard.fieldData).forEach(fieldName => {
                 const val = draftCard.fieldData[fieldName];
-                // Nếu có vẻ là HTML (có thẻ p, div, br, b, i, strong...)
+                
                 if (typeof val === 'string' && /<\/?(p|div|br|b|i|strong|em|span)[ >]/i.test(val)) {
                     draftCard.fieldData[fieldName] = sanitizeRichTextHTML(val);
                 }
@@ -1799,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         exampleModal.classList.remove('hidden');
     }
 
-    // --- Helpers ---
+    
     function formatDate(ts) {
         if (!ts) return '-';
         return new Date(ts).toLocaleString('en-GB', {
@@ -1811,15 +1806,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderMarkdown(text) {
         if (!text) return '';
         
-        // If it already looks like HTML, just sanitize and return to avoid double-wrapping
+        
         if (typeof text === 'string' && (text.includes('<p>') || text.includes('<div>') || text.includes('<br>'))) {
             return sanitizeRichTextHTML(text);
         }
 
-        // Clean up text and split to paragraphs
+        
         let cleanText = text.toString().trim();
         
-        // Split by double newlines or more
+        
         const paragraphs = cleanText.split(/\n\n+/).filter(p => p.trim());
         
         const rendered = paragraphs.map(p => {
@@ -1836,9 +1831,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return rendered;
     }
 
-    // --- Event Listeners ---
+    
     function setupEventListeners() {
-        // Tab: Templates
+        
         templateSearch.addEventListener('input', renderTemplatesTable);
         createNewTemplateBtn.addEventListener('click', () => openTemplateEditor(null));
         cancelTemplateBtn.addEventListener('click', () => templateEditor.classList.remove('open'));
@@ -1847,7 +1842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         addTemplateFieldBtn.addEventListener('click', () => {
             if (!STATE.currentEditTemplate) return;
             
-            // Find 'Input' field to insert before it
+            
             const inputIndex = STATE.currentEditTemplate.fields.findIndex(f => f.name.toLowerCase() === 'input');
             const newField = { name: 'New Field', prompt: '', example: '' };
             
@@ -1876,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 selector.style.borderColor = '#ff3b30';
                 selector.style.boxShadow = '0 0 0 3px rgba(255, 59, 48, 0.2)';
                 
-                // Shake animation
+                
                 selector.animate([
                     { transform: 'translateX(0)' },
                     { transform: 'translateX(-5px)' },
@@ -1892,7 +1887,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // Click outside to close example modal
+        
         exampleModal.addEventListener('click', (e) => {
             if (e.target === exampleModal) {
                 exampleModal.classList.add('hidden');
@@ -1906,10 +1901,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (STATE.currentEditTemplate) STATE.currentEditTemplate.globalPrompt = editTemplateGlobalPrompt.value;
         });
 
-        // Tab: Generator
+        
         generateBatchBtn.onclick = handleGenerate;
         
-        // Clear cache when deck or template changes
+        
         const invalidateCache = () => STATE.existingWordsCache.clear();
         deckSelect.addEventListener('change', () => {
             invalidateCache();
@@ -1938,7 +1933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const words = text.split(/[,\n]/).map(s => s.trim()).filter(s => s);
                     const unique = new Set(words.map(w => w.toLowerCase()));
                     batchWordCount.textContent = `(${unique.size})`;
-                }, 300); // Debounce to keep UI responsive with large lists
+                }, 300); 
             };
 
             const checkDuplicates = () => {
@@ -1972,11 +1967,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             batchInput.addEventListener('input', updateCount);
             batchInput.addEventListener('blur', checkDuplicates);
-            // Trigger check immediately after paste
+            
             batchInput.addEventListener('paste', () => {
                 setTimeout(checkDuplicates, 100);
             });
-            updateCount(); // Initial count
+            updateCount(); 
         }
     }
 

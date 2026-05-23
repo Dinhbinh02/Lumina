@@ -1,12 +1,10 @@
-/**
- * Anki Heatmap Integration for Lumina
- */
+
 
 class AnkiHeatmap {
     constructor() {
         this.anki = null;
-        this.reviewData = {}; // timestamp -> count
-        this.rawReviews = []; // [{id, cardId, ease, ...}, ...]
+        this.reviewData = {}; 
+        this.rawReviews = []; 
         this.stats = {
             dailyAvg: 0,
             daysLearned: 0,
@@ -19,7 +17,7 @@ class AnkiHeatmap {
 
     async init() {
         if (this.isInitialized) return;
-        this.anki = window.anki; // From anki.js
+        this.anki = window.anki; 
         if (!this.anki) {
             console.error("Anki Heatmap: window.anki not found");
             return;
@@ -56,7 +54,7 @@ class AnkiHeatmap {
     }
 
     async fetchData() {
-        // Fetch cards that have reviews OR are in our special streak fixer deck
+        
         const query = "deck:* prop:reps>0 OR deck:\"Lumina\"";
         const cardIds = await this.anki.invoke('findCards', { query: query });
         console.log("Anki Heatmap: Found card IDs to check:", cardIds?.length);
@@ -65,7 +63,7 @@ class AnkiHeatmap {
             return;
         }
 
-        // Fetch reviews in chunks
+        
         const CHUNK_SIZE = 1000;
         const processedData = {};
         const allRevs = [];
@@ -112,7 +110,7 @@ class AnkiHeatmap {
         const totalReviews = Object.values(this.reviewData).reduce((a, b) => a + b, 0);
         this.stats.dailyAvg = Math.round(totalReviews / uniqueDays.length);
 
-        // Longest Streak
+        
         let longest = 0;
         let tempStreak = 0;
         for (let i = 0; i < uniqueDays.length; i++) {
@@ -124,7 +122,7 @@ class AnkiHeatmap {
             if (tempStreak > longest) longest = tempStreak;
         }
 
-        // Current Streak
+        
         const today = new Date();
         today.setHours(0,0,0,0);
         const todayTs = Math.floor(today.getTime() / 1000);
@@ -149,7 +147,7 @@ class AnkiHeatmap {
         const container = document.getElementById('cal-heatmap');
         if (!container) return;
         
-        // Destroy existing instance if any
+        
         if (this.cal) {
             try { this.cal.destroy(); } catch(e) {}
         }
@@ -175,7 +173,7 @@ class AnkiHeatmap {
             range: 12,
             cellSize: 10,
             cellPadding: 2,
-            legend: [1, 10, 20, 40], // Start legend from 1 so 3 reviews are clearly visible
+            legend: [1, 10, 20, 40], 
             displayLegend: false,
             tooltip: true,
             onClick: (date, value) => {
@@ -198,28 +196,28 @@ class AnkiHeatmap {
                 const margin = 20;
                 const sidebarWidth = 240; 
 
-                // Default arrow shift is 50% (centered)
+                
                 tooltip.style.setProperty('--arrow-shift', '50%');
 
-                // Collision with left (Sidebar side)
+                
                 if (rect.left < sidebarWidth) {
                     const currentLeft = parseFloat(tooltip.style.left);
                     const shift = sidebarWidth - rect.left;
                     tooltip.style.left = (currentLeft + shift) + 'px';
                     
-                    // Adjust arrow to point back at the original center
+                    
                     const newCenter = rect.left + rect.width / 2;
                     const originalCenter = newCenter - shift;
                     const relativePos = ((originalCenter - (rect.left + shift)) / rect.width * 100) + 50;
                     tooltip.style.setProperty('--arrow-shift', `${Math.max(10, Math.min(90, relativePos))}%`);
                 } 
-                // Collision with right
+                
                 else if (rect.right > viewportWidth - margin) {
                     const currentLeft = parseFloat(tooltip.style.left);
                     const shift = rect.right - (viewportWidth - margin);
                     tooltip.style.left = (currentLeft - shift) + 'px';
 
-                    // Adjust arrow to point back at the original center
+                    
                     const newCenter = rect.left + rect.width / 2;
                     const originalCenter = newCenter + shift;
                     const relativePos = ((originalCenter - (rect.left - shift)) / rect.width * 100) + 50;
@@ -301,22 +299,22 @@ class AnkiHeatmap {
         }
     }
 
-    // --- Streak Reviver Logic ---
+    
 
     async ensureBackfillCard() {
         const deckName = "Lumina";
         try {
-            // 1. Create deck if missing
+            
             const decks = await this.anki.getDecks();
             if (!decks.includes(deckName)) {
                 await this.anki.invoke('createDeck', { deck: deckName });
             }
 
-            // 2. Find existing card in this deck
+            
             const cards = await this.anki.invoke('findCards', { query: `deck:"${deckName}"` });
             if (cards && cards.length > 0) return cards[0];
 
-            // 3. Create a dummy note if no cards exist
+            
             console.log("Anki Heatmap: Creating dummy card for streak fixing...");
             const noteId = await this.anki.addNote({
                 deckName: deckName,
@@ -329,7 +327,7 @@ class AnkiHeatmap {
             const newCards = await this.anki.invoke('findCards', { query: `nid:${noteId}` });
             const cardId = newCards[0];
             
-            // Suspend the card so it never shows up in study
+            
             await this.anki.invoke('suspend', { cards: [cardId] });
             
             return cardId;
@@ -349,22 +347,22 @@ class AnkiHeatmap {
 
             const cardId = await this.ensureBackfillCard();
             
-            // Generate 3 reviews for the day at 12:00 PM
+            
             const baseTime = new Date(date);
             baseTime.setHours(12, 0, 0, 0);
             let ts = baseTime.getTime();
 
-            // Ensure unique IDs by adding random offsets and checking against existing reviews
+            
             const getUniqueTs = (base) => {
                 let uniqueTs = base + Math.floor(Math.random() * 1000);
-                // Simple collision avoidance
+                
                 while (this.rawReviews.some(r => r.id === uniqueTs)) {
                     uniqueTs += 1;
                 }
                 return uniqueTs;
             };
 
-            // Format: [time (ID), cid, usn, ease, ivl, lastIvl, factor, timeTaken, type]
+            
             const reviews = [
                 [getUniqueTs(ts), cardId, -1, 3, 0, 0, 2500, 1000, 0],
                 [getUniqueTs(ts + 2000), cardId, -1, 3, 0, 0, 2500, 1200, 0],
@@ -375,13 +373,13 @@ class AnkiHeatmap {
 
             await this.anki.invoke('insertReviews', { reviews });
             
-            // Give Anki a moment to process
+            
             await new Promise(r => setTimeout(r, 500));
             
-            // Refresh
+            
             await this.refresh();
             
-            // Hide modal
+            
             document.getElementById('heatmapDetailsModal').classList.add('hidden');
             alert(`Streak revived for ${date.toLocaleDateString()}!`);
 
@@ -391,5 +389,5 @@ class AnkiHeatmap {
     }
 }
 
-// Global instance
+
 window.ankiHeatmap = new AnkiHeatmap();
