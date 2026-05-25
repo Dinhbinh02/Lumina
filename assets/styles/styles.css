@@ -705,6 +705,10 @@ button {
   opacity: 1;
 }
 
+.lumina-thinking-container:not(.thinking) .lumina-dict-loading-state {
+  display: none !important;
+}
+
 .lumina-thinking-container:not(.appeared) {
   opacity: 1;
   animation: none;
