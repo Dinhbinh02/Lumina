@@ -264,14 +264,10 @@
                             LuminaDictionaryPopup.show(text, {
                                 x: rect.left,
                                 y: rect.bottom + 5,
-                                source: isTranslate ? 'translate' : 'ai'
+                                source: isTranslate ? 'translate' : 'cambridge'
                             });
                             if (isDictionary) {
-                                (async () => {
-                                    await playCombinedAudio(text);
-                                    await new Promise(r => setTimeout(r, 200));
-                                    await playCombinedAudio(text);
-                                })();
+                                playCombinedAudio(text);
                             }
                             return;
                         }
@@ -1115,7 +1111,6 @@
 
         if (audioDebounceTimer) { clearTimeout(audioDebounceTimer); audioDebounceTimer = null; }
 
-        
         audioAborted = true;
         if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
         audioAborted = false;
@@ -1124,16 +1119,14 @@
 
         try {
             const storageData = await chrome.storage.local.get(['audioSpeed']);
-            const speed = storageData.audioSpeed || 1.0;
+            const speed = storageData.audioSpeed || 1.1;
 
-            
             if (audioCache.text === normalizedText && audioCache.data) {
                 const chunks = Array.isArray(audioCache.data) ? audioCache.data : [audioCache.data];
                 await playChunksSequentially(chunks, speed);
                 return;
             }
 
-            
             try {
                 const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: normalizedText });
                 if (cached && cached.success && cached.data) {
@@ -1144,7 +1137,6 @@
                 }
             } catch (e) {  }
 
-            
             const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed });
             if (!result || !result.chunks || result.chunks.length === 0) return;
 

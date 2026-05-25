@@ -186,8 +186,8 @@ function updateDisplayMode(mode) {
 
     
     
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
-    chrome.action.setPopup({ popup: 'pages/options/options.html' });
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+    chrome.action.setPopup({ popup: '' });
 }
 
 

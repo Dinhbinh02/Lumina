@@ -46,8 +46,7 @@
       "48": "assets/icons/icon48.png",
       "128": "assets/icons/icon128.png"
     },
-    "default_title": "Lumina",
-    "default_popup": "pages/options/options.html"
+    "default_title": "Lumina"
   },
   "background": {
     "service_worker": "scripts/background.js"
@@ -101,7 +100,7 @@
   ],
   "options_ui": {
     "page": "pages/options/options.html",
-    "open_in_tab": false
+    "open_in_tab": true
   },
   "content_scripts": [
     {

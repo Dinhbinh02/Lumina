@@ -2144,14 +2144,10 @@ function initSpotlightAskSelection() {
                         LuminaDictionaryPopup.show(text, {
                             x: rect.left,
                             y: rect.bottom + 5,
-                            source: isTranslate ? 'translate' : 'ai'
+                            source: isTranslate ? 'translate' : 'cambridge'
                         });
                         if (isDictionary) {
-                            (async () => {
-                                await playSpotlightAudio(text);
-                                await new Promise(r => setTimeout(r, 200));
-                                await playSpotlightAudio(text);
-                            })();
+                            playSpotlightAudio(text);
                         }
                         return;
                     }
@@ -4656,13 +4652,12 @@ async function playSpotlightAudio(text) {
 
     const normalizedText = text.trim();
 
-    let speed = 1.0;
+    let speed = 1.1;
     try {
         const data = await chrome.storage.local.get(['audioSpeed']);
-        speed = data.audioSpeed || 1.0;
+        speed = data.audioSpeed || 1.1;
     } catch (e) { }
 
-    
     try {
         const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: normalizedText });
         if (cached && cached.success && cached.data) {

@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lumina Settings</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
   <script src="../../lib/vendor/Sortable.min.js"></script>
   <script src="../../lib/core/constants.js"></script>
   <script src="../../lib/core/memory.js"></script>
@@ -12,588 +18,616 @@
   <link rel="stylesheet" href="options.css">
 </head>
 
-<body>
-  <div class="container">
+<body class="m3-theme">
+  <div class="m3-app-layout">
     
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">
-          <h1>Lumina</h1>
-          <button type="button" id="openSpotlightWebAppBtn" title="Open Sidepanel" class="sidepanel-toggle-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" class="sidepanel-toggle-icon">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="9" y1="3" x2="9" y2="21"></line>
-            </svg>
-          </button>
+    <!-- M3 Left Navigation Drawer -->
+    <aside class="m3-navigation-drawer">
+      <div class="m3-drawer-header">
+        <div class="m3-drawer-logo-row">
+          <div class="m3-brand-icon" style="background: none;">
+            <img src="../../assets/icons/icon48.png" alt="Lumina Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+          </div>
+          <span class="m3-drawer-title">Lumina</span>
         </div>
-        <div class="site-toggle-wrapper">
-          <span id="siteToggleLabel">Enabled</span>
-          <label class="switch">
+
+        <div class="m3-site-toggle-card" style="display: none;">
+          <div class="m3-site-toggle-text">
+            <span class="m3-label-large">Extension Status</span>
+            <span id="siteToggleLabel" class="m3-body-medium text-secondary">Enabled</span>
+          </div>
+          <label class="m3-switch">
             <input type="checkbox" id="siteToggle" checked>
-            <span class="slider round"></span>
+            <span class="m3-switch-slider"></span>
           </label>
         </div>
       </div>
 
-      <nav class="sidebar-nav">
+      <nav class="m3-drawer-nav">
         <div class="sidebar-nav-item active" data-section="ai-config">
-          <div class="sidebar-nav-item-icon">⚙️</div>
-          General Settings
+          <div class="m3-nav-pill">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <span class="m3-nav-label">General Settings</span>
         </div>
 
         <div class="sidebar-nav-item" data-section="shortcuts">
-          <div class="sidebar-nav-item-icon">⌨️</div>
-          Shortcuts
+          <div class="m3-nav-pill">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+              <line x1="6" y1="8" x2="6" y2="8"></line>
+              <line x1="10" y1="8" x2="10" y2="8"></line>
+              <line x1="14" y1="8" x2="14" y2="8"></line>
+              <line x1="18" y1="8" x2="18" y2="8"></line>
+              <line x1="6" y1="12" x2="6" y2="12"></line>
+              <line x1="10" y1="12" x2="10" y2="12"></line>
+              <line x1="14" y1="12" x2="14" y2="12"></line>
+              <line x1="18" y1="12" x2="18" y2="12"></line>
+              <line x1="7" y1="16" x2="17" y2="16"></line>
+            </svg>
+          </div>
+          <span class="m3-nav-label">Shortcuts</span>
         </div>
 
-
         <div class="sidebar-nav-item" data-section="anki-management">
-          <div class="sidebar-nav-item-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"
-              stroke-linecap="round" stroke-linejoin="round" class="anki-status-icon">
+          <div class="m3-nav-pill">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2l2.75 6.25h6.75l-5.25 4.25 1.75 6.75-6-4.25-6 4.25 1.75-6.75-5.25-4.25h6.75L12 2z"></path>
             </svg>
           </div>
-          Anki Management
+          <span class="m3-nav-label">Anki Management</span>
         </div>
-
-
 
         <div class="sidebar-nav-item" data-section="account">
-          <div class="sidebar-nav-item-icon">👤</div>
-          Cloud & Sync
+          <div class="m3-nav-pill">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM20 21a8 8 0 0 0-16 0" />
+            </svg>
+          </div>
+          <span class="m3-nav-label">Cloud & Sync</span>
         </div>
-
       </nav>
+    </aside>
 
-    </div> 
-
-    <div class="main-content">
+    <!-- M3 Main Container -->
+    <main class="m3-main-container">
       
-      <div class="content-section active" id="ai-config">
-        <div class="section-header">
-          <h2>General Settings</h2>
-          <p>Configure your AI providers, models, and smart interaction features.</p>
+      <!-- General Settings Section -->
+      <section class="content-section active" id="ai-config">
+        <div class="m3-page-header">
+          <h1 class="m3-headline-large">General Settings</h1>
+          <p class="m3-body-large text-secondary">Configure your AI providers, models, and smart interaction features.</p>
         </div>
 
-        
-        <div class="glass-card">
-          <div class="card-header">🔑 AI Provider<span class="info-tooltip"
-              data-tooltip="Add API keys to the providers below, then select a model to start using.">i</span></div>
-
-          
-          <div id="providerList" class="provider-list">
-            
-          </div>
-
-          
-          <div class="flex gap-8">
-            <button type="button" id="addProviderBtn" class="add-provider-btn flex-1">
-              + Add Provider
-            </button>
-            <button type="button" id="checkApiKeysBtn" class="add-provider-btn btn-primary-compact">
-              🔍 Check API Keys
-            </button>
-          </div>
-
-          
-          <div id="apiKeyResults" class="hidden mb-16">
-            <div id="apiKeyStatusTitle" class="text-semibold mb-8">API Key Status:</div>
-            <div id="apiKeyResultsList" class="flex-col gap-6"></div>
-          </div>
-
-          
-          <div id="providerForm" class="provider-form hidden">
-            <input type="hidden" id="providerFormId">
-            <div class="form-group">
-              <label for="providerFormName">Name <span class="text-required">*</span></label>
-              <input type="text" id="providerFormName" placeholder="e.g. My Groq, Local LLM">
+        <!-- Provider Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">🔑 AI Providers</h2>
+              <p class="m3-body-medium text-secondary">Add API keys to active services to power Lumina's models.</p>
             </div>
-            <input type="hidden" id="providerFormType" value="openai">
-            <div class="form-group">
-              <label for="providerFormEndpoint">Endpoint URL <span class="text-required">*</span></label>
-              <input type="text" id="providerFormEndpoint"
-                placeholder="e.g. https://api.groq.com/openai/v1/chat/completions">
+          </div>
+          
+          <div class="m3-card-content">
+            <div id="providerList" class="m3-provider-grid"></div>
 
+            <div class="provider-item-form-container" id="providerFormContainer" style="width: 100%;"></div>
+
+            <div class="m3-actions-row">
+              <button type="button" id="addProviderBtn" class="m3-btn m3-btn-tonal">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" class="m3-btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Provider
+              </button>
+              <button type="button" id="checkApiKeysBtn" class="m3-btn m3-btn-outlined">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" class="m3-btn-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Check API Keys
+              </button>
             </div>
-            <div class="form-group">
-              <div class="items-center-mb8">
-                <label for="providerFormApiKey" class="mb-0">API Key</label>
-                <a id="providerApiKeyLink" href="#" target="_blank" class="text-link-color hidden list-none">Get API
-                  Key</a>
+
+            <!-- API Key Checking Results -->
+            <div id="apiKeyResults" class="m3-api-results hidden">
+              <div id="apiKeyStatusTitle" class="m3-title-medium text-primary">API Key Status:</div>
+              <div id="apiKeyResultsList" class="m3-list"></div>
+            </div>
+
+            <!-- Add/Edit Provider Dialog/Form -->
+            <div id="providerForm" class="m3-form-container hidden">
+              <input type="hidden" id="providerFormId">
+              <input type="hidden" id="providerFormType" value="openai">
+              
+              <div class="m3-text-field-container">
+                <label for="providerFormName" class="m3-field-label">Name <span class="text-required">*</span></label>
+                <input type="text" id="providerFormName" class="m3-text-input" placeholder="e.g. Gemini, DeepSeek, Local LLM">
               </div>
-              <input type="text" id="providerFormApiKey" placeholder="Enter your API key...">
-              <div class="provider-api-hint text-secondary-color mt-6">
-                Multiple keys separated by commas. Auto-switches on rate limit.
+
+              <div class="m3-text-field-container">
+                <label for="providerFormEndpoint" class="m3-field-label">Endpoint URL <span class="text-required">*</span></label>
+                <input type="text" id="providerFormEndpoint" class="m3-text-input" placeholder="e.g. https://api.groq.com/openai/v1">
               </div>
-            </div>
-            <div class="provider-api-form-actions">
-              <button type="button" id="cancelProviderBtn" class="btn-secondary">Cancel</button>
-              <button type="button" id="saveProviderBtn" class="btn-primary">Save Provider</button>
-            </div>
-          </div>
-        </div>
 
-        <div class="glass-card mt-16">
-          <div class="card-header">📝 Model Management<span class="info-tooltip"
-              data-tooltip="Search and add models you want to use here. You can pick which one to use when chatting.">i</span>
-          </div>
+              <div class="m3-text-field-container">
+                <div class="m3-label-row">
+                  <label for="providerFormApiKey" class="m3-field-label">API Key</label>
+                  <a id="providerApiKeyLink" href="#" target="_blank" class="m3-text-link hidden">Get API Key</a>
+                </div>
+                <input type="password" id="providerFormApiKey" class="m3-text-input" placeholder="Enter API Key">
+                <p class="m3-helper-text">Multiple keys separated by commas. Auto-switches on rate limit.</p>
+              </div>
 
-          
-          <label class="mb-12 block text-semibold">Add New Model</label>
-          <div class="add-chain-area flex gap-12 items-end mb-20">
-            <div class="form-group form-group-provider">
-              <label for="textChainProvider" class="label-small">Provider</label>
-              <input type="text" id="textChainProvider" autocomplete="off" placeholder="Select..."
-                class="input-readonly" readonly>
-              <div id="textChainProviderList" class="dropdown-list"></div>
-            </div>
-            <div class="form-group form-group-model">
-              <label for="textChainModel" class="label-small">Model</label>
-              <input type="text" id="textChainModel" autocomplete="off" class="input-element-bg"
-                placeholder="Type or select model...">
-              <div id="textChainModelList" class="dropdown-list"></div>
-            </div>
-          </div>
-
-          
-          <div class="mt-20">
-            <label class="mb-12 block text-semibold">Model list</label>
-            <div id="textChainList">
-              <div class="chain-empty-state">No models added yet. Select a model above to add it.</div>
+              <div class="m3-form-actions">
+                <button type="button" id="cancelProviderBtn" class="m3-btn m3-btn-text">Cancel</button>
+                <button type="button" id="saveProviderBtn" class="m3-btn m3-btn-filled">Save Provider</button>
+              </div>
             </div>
           </div>
         </div>
 
-        
-        <div class="glass-card mt-16">
-          <div class="card-header">🧠 Intelligent Features</div>
-          
-          <div class="mt-20">
+        <!-- Model Management Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">📝 Model Management</h2>
+              <p class="m3-body-medium text-secondary">Manage and customize your model pipeline chain.</p>
+            </div>
+          </div>
 
-            <div class="form-row-item mb-16">
-              <div class="feature-info">
-                <span class="feature-label">Definition Language</span>
+          <div class="m3-card-content">
+            <h3 class="m3-title-medium">Add New Model</h3>
+            <div class="m3-grid-cols-2 gap-16">
+              <div class="m3-dropdown-field-container">
+                <label for="textChainProvider" class="m3-field-label">Provider</label>
+                <input type="text" id="textChainProvider" class="m3-text-input input-readonly" readonly placeholder="Select Provider...">
+                <div id="textChainProviderList" class="m3-dropdown-menu"></div>
               </div>
-              <div class="radio-group w-240">
-                <label class="radio-option">
+              <div class="m3-dropdown-field-container">
+                <label for="textChainModel" class="m3-field-label">Model</label>
+                <input type="text" id="textChainModel" class="m3-text-input" placeholder="Select or type Model...">
+                <div id="textChainModelList" class="m3-dropdown-menu"></div>
+              </div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <h3 class="m3-title-medium">Model list</h3>
+            <div id="textChainList" class="m3-chain-list">
+              <div class="chain-empty-state">No models added yet. Select a provider and model above.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Intelligent Features Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">🧠 Intelligent Features</h2>
+              <p class="m3-body-medium text-secondary">Fine-tune dictionary and automation interactions.</p>
+            </div>
+          </div>
+
+          <div class="m3-card-content">
+            <div class="m3-setting-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Definition Language</span>
+                <span class="m3-body-medium text-secondary">Output language used for dictionary definitions</span>
+              </div>
+              <div class="m3-segmented-control">
+                <label class="m3-segment-option">
                   <input type="radio" name="dictLanguage" value="en" checked>
-                  <span>English</span>
+                  <span class="m3-segment-label">English</span>
                 </label>
-                <label class="radio-option">
+                <label class="m3-segment-option">
                   <input type="radio" name="dictLanguage" value="vi">
-                  <span>Vietnamese</span>
+                  <span class="m3-segment-label">Vietnamese</span>
                 </label>
               </div>
             </div>
 
-            <label class="mb-12 block text-semibold">Dictionary Lookup Model<span class="info-tooltip"
-                data-tooltip="Select a specific model for AI-powered word definitions in popups.">i</span></label>
-            <div class="dictation-area">
-              <div class="form-group form-group-provider">
-                <label for="dictProvider" class="label-small">Provider</label>
-                <input type="text" id="dictProvider" autocomplete="off" placeholder="Select..."
-                  class="input-readonly input-element-bg" readonly>
-                <div id="dictProviderList" class="dropdown-list"></div>
+            <div class="m3-divider"></div>
+
+            <h3 class="m3-title-medium">Dictionary Lookup Model</h3>
+            <div class="m3-grid-cols-2 gap-16">
+              <div class="m3-dropdown-field-container">
+                <label for="dictProvider" class="m3-field-label">Provider</label>
+                <input type="text" id="dictProvider" class="m3-text-input input-readonly" readonly placeholder="Select Provider...">
+                <div id="dictProviderList" class="m3-dropdown-menu"></div>
               </div>
-              <div class="form-group form-group-model">
-                <label for="dictModel" class="label-small">Model</label>
-                <input type="text" id="dictModel" autocomplete="off" class="input-element-bg">
-                <div id="dictModelList" class="dropdown-list"></div>
+              <div class="m3-dropdown-field-container">
+                <label for="dictModel" class="m3-field-label">Model</label>
+                <input type="text" id="dictModel" class="m3-text-input" placeholder="Select or type Model...">
+                <div id="dictModelList" class="m3-dropdown-menu"></div>
               </div>
             </div>
           </div>
         </div>
 
-
-        <div class="glass-card mt-16">
-          <div class="card-header">💡 Persistent Instructions<span class="info-tooltip"
-              data-tooltip="Add persistent instructions that Lumina will always follow in every conversation.">i</span>
-          </div>
-
-          
-          <div class="mb-20">
-            <label class="mb-12 block text-semibold">Add New Instruction</label>
-            <div class="form-group">
-              <input type="text" id="newFactInput" placeholder="e.g. Always explain metaphors" class="input-element-bg">
+        <!-- Persistent Instructions Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">💡 Persistent Instructions</h2>
+              <p class="m3-body-medium text-secondary">Instructions Lumina will always respect across your chats.</p>
             </div>
           </div>
 
-          
-          <div class="mt-20">
-            <label class="mb-12 block text-semibold">Instruction list</label>
-            <div id="userFactsList" class="facts-list scroll-auto max-h-300">
-              <div class="chain-empty-state">No instructions yet. Add new instruction above.</div>
-            </div>
-          </div>
-        </div>
-
-        
-        <div class="glass-card mt-16">
-          <div class="card-header">🎨 Appearance</div>
-
-          
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Theme</span>
-            </div>
-            <div class="radio-group w-240">
-              <label class="radio-option">
-                <input type="radio" name="theme" value="light" checked>
-                <span>Light</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="theme" value="dark">
-                <span>Dark</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="theme" value="auto">
-                <span>Auto</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Font Size</span>
-            </div>
-            <div class="stepper-control">
-              <button type="button" id="decreaseFontSize" class="stepper-btn">
-                <svg width="12" height="2" viewBox="0 0 12 2" fill="none">
-                  <rect width="12" height="2" rx="1" fill="currentColor" />
-                </svg>
-              </button>
-              <div class="stepper-value-wrapper">
-                <input type="number" id="fontSize" min="10" max="30" step="0.5" value="13" readonly>
-                <span class="stepper-unit">px</span>
+          <div class="m3-card-content">
+            <div class="m3-text-field-container">
+              <label for="newFactInput" class="m3-field-label">Add Instruction</label>
+              <div class="m3-input-action-row">
+                <input type="text" id="newFactInput" class="m3-text-input" placeholder="e.g. Always write answers in a professional, concise tone.">
               </div>
-              <button type="button" id="increaseFontSize" class="stepper-btn">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <rect x="5" width="2" height="12" rx="1" fill="currentColor" />
-                  <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
-                </svg>
-              </button>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <h3 class="m3-title-medium">Active Instructions</h3>
+            <div id="userFactsList" class="m3-instruction-list">
+              <div class="chain-empty-state">No instructions added yet. Add one above.</div>
             </div>
           </div>
         </div>
 
-      </div>
-
-      
-      
-      <div class="content-section" id="anki-management">
-        <div class="section-header">
-          <h2 class="card-header">Anki Management</h2>
-        </div>
-
-        <div class="anki-instructions-card">
-          <h3 class="title-semibold-mb12">Getting Started</h3>
-          <ul class="instruction-list list-unstyled">
-            <li class="mb-12">
-              <strong>Step 1:</strong> Download and install Anki from
-              <a href="https://apps.ankiweb.net/#downloads" target="_blank"
-                class="text-medium-primary no-underline">AnkiWeb</a>
-            </li>
-            <li class="mb-12">
-              <strong>Step 2:</strong> Open Anki, go to <strong>Tools</strong> → <strong>Add-ons</strong> → <strong>Get
-                Add-ons...</strong>,
-              and enter code <span class="anki-code">2055492159</span> to install AnkiConnect.
-            </li>
-            <li class="mb-12">
-              <strong>Step 3:</strong> Restart Anki app to apply changes.
-            </li>
-          </ul>
-          <p class="anki-warning">⚠️ Note: Always keep the
-            Anki
-            app running while using this feature.</p>
-        </div>
-
-        <div class="anki-action-row mb-32 flex gap-12">
-          <button id="checkAnkiConnBtn" class="btn-secondary flex-1">Check Connection</button>
-          <button id="openAnkiMgtBtn" class="btn-primary flex-1">Open Anki Management</button>
-        </div>
-
-        <div class="anki-note-section border-top pt-24">
-          <h3 class="title-semibold-mb8">Quick Add Words</h3>
-          <p class="section-subtitle">Enter words to add (separate by comma or newline)</p>
-          <div class="quick-note-wrapper mt-12">
-            <textarea id="ankiQuickNote" placeholder="e.g. apple, banana, cherry..." class="anki-textarea"></textarea>
-            <span id="ankiQuickNoteCount" class="card-count-badge">0 cards</span>
+        <!-- Appearance Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">🎨 Appearance Settings</h2>
+              <p class="m3-body-medium text-secondary">Customize theme mode and size aesthetics.</p>
+            </div>
           </div>
-          <div class="flex gap-12 mt-16">
-            <button id="clearAnkiNoteBtn" class="btn-secondary btn-secondary-small">Clear</button>
-            <button id="addToAnkiBtn" class="btn-primary flex-1">Add to Anki</button>
+
+          <div class="m3-card-content">
+            <div class="m3-setting-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Interface Theme</span>
+                <span class="m3-body-medium text-secondary">Switch between Light, Dark, or System Auto preferences</span>
+              </div>
+              <div class="m3-segmented-control">
+                <label class="m3-segment-option">
+                  <input type="radio" name="theme" value="light" checked>
+                  <span class="m3-segment-label">Light</span>
+                </label>
+                <label class="m3-segment-option">
+                  <input type="radio" name="theme" value="dark">
+                  <span class="m3-segment-label">Dark</span>
+                </label>
+                <label class="m3-segment-option">
+                  <input type="radio" name="theme" value="auto">
+                  <span class="m3-segment-label">Auto</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <div class="m3-setting-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Font Size</span>
+                <span class="m3-body-medium text-secondary">Adjust font sizing across pages</span>
+              </div>
+              <div class="m3-stepper">
+                <button type="button" id="decreaseFontSize" class="m3-icon-button">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <div class="m3-stepper-value-container">
+                  <input type="number" id="fontSize" min="10" max="30" step="0.5" value="13" readonly class="m3-stepper-input">
+                  <span class="m3-stepper-unit">px</span>
+                </div>
+                <button type="button" id="increaseFontSize" class="m3-icon-button">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="content-section" id="account">
-        <div class="section-header">
-          <h2>Account & Sync</h2>
+      <!-- Shortcuts Section -->
+      <section class="content-section" id="shortcuts">
+        <div class="m3-page-header">
+          <h1 class="m3-headline-large">Shortcuts & Triggers</h1>
+          <p class="m3-body-large text-secondary">Configure key mappings and quick-trigger mouse configurations.</p>
         </div>
 
-        
-        <div class="glass-card">
-          <div class="card-header">☁️ Cloud & Backup</div>
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">⌨️ Shortcuts Management</h2>
+              <p class="m3-body-medium text-secondary">Customize shortcuts for quick actions.</p>
+            </div>
+          </div>
 
-          
-          <div class="mb-24">
-            <div id="auth-logged-out" class="block">
-              <div class="info-note mb-16">
-                <div class="info-note-wrapper">
-                  <span class="info-note-icon">✨</span>
-                  <div class="info-note-text">Sign in to sync your settings across devices.</div>
+          <div class="m3-card-content">
+            <!-- Toggle Sidepanel -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Toggle Sidepanel</span>
+                <span class="m3-body-medium text-secondary">Global shortcut to show or hide the assistant panel</span>
+              </div>
+              <button type="button" id="configShortcutBtn" class="m3-btn m3-btn-outlined">Configure</button>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- New Chat -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">New Chat</span>
+                <span class="m3-body-medium text-secondary">Reset currently active side panel conversation</span>
+              </div>
+              <div class="shortcut-input m3-shortcut-box" data-action="resetChat" tabindex="0"></div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- Redirect -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Redirect</span>
+                <span class="m3-body-medium text-secondary">Redirect text selection query</span>
+              </div>
+              <div class="shortcut-input m3-shortcut-box" data-action="redirect" tabindex="0">
+                <span class="m3-shortcut-placeholder">None</span>
+              </div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- Translate -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Translate</span>
+                <span class="m3-body-medium text-secondary">Instant translation for selection</span>
+              </div>
+              <div class="shortcut-input m3-shortcut-box" data-action="translate" tabindex="0"></div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- Text-to-Speech -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Text-to-Speech</span>
+                <span class="m3-body-medium text-secondary">Speak selection aloud.</span>
+              </div>
+              <div class="shortcut-input m3-shortcut-box" data-action="audio" tabindex="0"></div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- Ask Lumina -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Ask Lumina</span>
+                <span class="m3-body-medium text-secondary">Quick ask action key shortcut</span>
+              </div>
+              <div class="shortcut-input m3-shortcut-box" data-action="askLumina" tabindex="0"></div>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- Toggle Mic -->
+            <div class="m3-shortcut-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Toggle Mic</span>
+                <span class="m3-body-medium text-secondary">Voice-dictation microphone toggle</span>
+              </div>
+              <div class="shortcut-input m3-shortcut-box" data-action="micToggle" tabindex="0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Mappings Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <div class="m3-header-align-row">
+                <h2 class="m3-title-large">🔗 Custom Mappings</h2>
+                <span class="m3-badge">Select text + Key to auto-ask</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="m3-card-content">
+            <div id="questionMappingsList" class="m3-mapping-list"></div>
+            <button type="button" id="addMappingBtn" class="m3-btn m3-btn-outlined w-100 mt-16">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" class="m3-btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Mapping
+            </button>
+          </div>
+        </div>
+
+        <!-- Annotation Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <div class="m3-header-align-row">
+                <h2 class="m3-title-large">🖍️ Annotation Shortcuts</h2>
+                <span class="m3-badge">Select text + Key to highlight</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="m3-card-content">
+            <div id="annotationShortcutsList" class="m3-mapping-list"></div>
+            <button type="button" id="addAnnotationShortcutBtn" class="m3-btn m3-btn-outlined w-100 mt-16">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" class="m3-btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Shortcut
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Anki Section -->
+      <section class="content-section" id="anki-management">
+        <div class="m3-page-header">
+          <h1 class="m3-headline-large">Anki Management</h1>
+          <p class="m3-body-large text-secondary">Export vocabularies directly to Anki decks.</p>
+        </div>
+
+        <div class="m3-card m3-elevation-1 m3-accent-card">
+          <div class="m3-card-content">
+            <h3 class="m3-title-large mb-12">Getting Started</h3>
+            <ul class="m3-instruction-steps">
+              <li><strong>Step 1:</strong> Download and install Anki from <a href="https://apps.ankiweb.net/#downloads" target="_blank" class="m3-text-link">AnkiWeb</a>.</li>
+              <li><strong>Step 2:</strong> Open Anki, navigate to <strong>Tools</strong> → <strong>Add-ons</strong> → <strong>Get Add-ons...</strong>, then install AnkiConnect by pasting the code: <code class="m3-inline-code">2055492159</code>.</li>
+              <li><strong>Step 3:</strong> Restart Anki to activate the extension.</li>
+            </ul>
+            <p class="m3-alert-text">⚠️ Always make sure the Anki app is active on your device while using this function.</p>
+          </div>
+        </div>
+
+        <div class="m3-grid-cols-2 gap-16 mt-20">
+          <button type="button" id="checkAnkiConnBtn" class="m3-btn m3-btn-outlined">Check Connection</button>
+          <button type="button" id="openAnkiMgtBtn" class="m3-btn m3-btn-tonal">Open Anki Management</button>
+        </div>
+
+        <div class="m3-card m3-elevation-1 mt-20">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">Quick Add Words</h2>
+              <p class="m3-body-medium text-secondary">Write or paste words (separate by comma or newline) to batch-import.</p>
+            </div>
+          </div>
+          <div class="m3-card-content">
+            <div class="m3-textarea-container">
+              <textarea id="ankiQuickNote" class="m3-textarea" placeholder="e.g. persistent, aesthetic, dynamic..."></textarea>
+              <div class="m3-textarea-footer">
+                <span id="ankiQuickNoteCount" class="m3-count-badge">0 cards</span>
+              </div>
+            </div>
+            <div class="m3-form-actions mt-16">
+              <button type="button" id="clearAnkiNoteBtn" class="m3-btn m3-btn-text">Clear</button>
+              <button type="button" id="addToAnkiBtn" class="m3-btn m3-btn-filled flex-grow">Add to Anki</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Account & Sync Section -->
+      <section class="content-section" id="account">
+        <div class="m3-page-header">
+          <h1 class="m3-headline-large">Account & Sync</h1>
+          <p class="m3-body-large text-secondary">Manage sync settings, remote profiles, and config backups.</p>
+        </div>
+
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">☁️ Cloud & Backup</h2>
+              <p class="m3-body-medium text-secondary">Keep your profiles in sync across all devices.</p>
+            </div>
+          </div>
+
+          <div class="m3-card-content">
+            <!-- Auth Container -->
+            <div class="m3-profile-section">
+              <div id="auth-logged-out" class="m3-auth-row">
+                <div class="m3-banner m3-accent-banner">
+                  <span class="m3-banner-icon">✨</span>
+                  <span class="m3-banner-text m3-body-medium">Sign in to sync your configuration parameters across Chrome browsers.</span>
+                </div>
+                <button type="button" id="googleLoginBtn" class="m3-btn m3-btn-filled w-100 mt-16">Sign in with Google</button>
+              </div>
+
+              <div id="auth-logged-in" class="m3-auth-row hidden">
+                <div class="m3-profile-header">
+                  <img id="userAvatar" src="" alt="Avatar" class="m3-avatar">
+                  <div class="m3-profile-meta">
+                    <span id="userName" class="m3-title-medium">User Profile</span>
+                    <span id="userEmail" class="m3-body-medium text-secondary">user@example.com</span>
+                    <span id="syncStatus" class="m3-body-small" style="margin-top: 4px; display: block;"></span>
+                  </div>
+                </div>
+                <div class="m3-actions-row mt-16">
+                  <button type="button" id="syncBtn" class="m3-btn m3-btn-tonal" style="flex: 1; height: 36px;">Sync</button>
+                  <button type="button" id="googleLogoutBtn" class="m3-btn m3-btn-filled-error" style="flex: 1; height: 36px;">Sign Out</button>
                 </div>
               </div>
-              <button id="googleLoginBtn" class="btn-primary w-full">Sign in with Google</button>
             </div>
-            <div id="auth-logged-in" class="hidden">
-              <div class="user-profile-header mb-16">
-                <img id="userAvatar" src="" alt="Avatar" class="user-avatar">
-                <div>
-                  <div id="userName" class="text-semibold">User Name</div>
-                  <div id="userEmail" class="text-secondary-color">user@example.com</div>
-                </div>
+
+            <div class="m3-divider"></div>
+
+            <!-- Local File Backup -->
+            <div class="m3-setting-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">File Backup</span>
+                <span class="m3-body-medium text-secondary">Export or Import settings locally via JSON file</span>
               </div>
-              <button id="googleLogoutBtn" class="btn-secondary w-full">Sign Out</button>
-            </div>
-          </div>
-
-          
-          <div class="form-row-item border-top pt-20" id="syncCard">
-            <div class="feature-info">
-              <span class="feature-label">Cloud Sync</span>
-              <span class="feature-desc">Sync providers and shortcuts to your account</span>
-            </div>
-            <div class="flex gap-8">
-              <button id="syncUpBtn" class="btn-secondary">Upload</button>
-              <button id="syncDownBtn" class="btn-secondary">Download</button>
-            </div>
-          </div>
-
-          
-          <div class="form-row-item border-top pt-20">
-            <div class="feature-info">
-              <span class="feature-label">File Backup</span>
-              <span class="feature-desc">Export or Import settings via JSON file</span>
-            </div>
-            <div class="flex gap-8">
-              <button id="exportSettingsBtn" class="btn-secondary">Export</button>
-              <input type="file" id="importSettingsFile" accept=".json" class="hidden">
-              <button id="importSettingsBtn" class="btn-secondary">Import</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-
-
-
-
-      
-      <div class="content-section" id="shortcuts">
-        <div class="section-header">
-          <h2>Shortcuts</h2>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-header">⌨️ Shortcuts Management</div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Toggle Sidepanel</span>
-            </div>
-            <button type="button" id="configShortcutBtn" class="primary-btn btn-sm" style="margin-left: auto;">Configure</button>
-          </div>
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">New Chat</span>
-            </div>
-            <div class="shortcut-input shortcut-small" data-action="resetChat" tabindex="0"></div>
-          </div>
-
-
-
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Redirect</span>
-            </div>
-            <div class="shortcut-input" data-action="redirect" tabindex="0">
-              <span style="color: var(--text-secondary); font-style: italic;">None</span>
-            </div>
-          </div>
-
-
-
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Translate</span>
-            </div>
-            <div class="shortcut-input" data-action="translate" tabindex="0">
-              <span class="shortcut-key">T</span>
-            </div>
-          </div>
-
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Text-to-Speech</span>
-            </div>
-            <div class="flex-center-gap12-mlauto">
-              <input type="number" id="audioSpeed" class="speed-number-input" min="0.5" max="3.0" step="0.05"
-                value="1.0">
-              <span class="speed-unit">x</span>
-              <div class="rel-flex-center-gap8">
-                <div class="shortcut-input" data-action="audio" tabindex="0">
-                  <span class="shortcut-key">⇧</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-
-
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Ask Lumina</span>
-            </div>
-            <div class="flex-center-gap12-mlauto">
-              <div class="rel-flex-center-gap8">
-                <div class="shortcut-input" data-action="askLumina" tabindex="0"></div>
-              </div>
-            </div>
-          </div>
-          <div class="form-row-item">
-            <div class="feature-info">
-              <span class="feature-label">Toggle Mic</span>
-            </div>
-            <div class="flex-center-gap12-mlauto">
-              <div class="rel-flex-center-gap8">
-                <div class="shortcut-input" data-action="micToggle" tabindex="0"></div>
+              <div class="m3-actions-row">
+                <button type="button" id="exportSettingsBtn" class="m3-btn m3-btn-outlined">Export</button>
+                <input type="file" id="importSettingsFile" accept=".json" class="hidden">
+                <button type="button" id="importSettingsBtn" class="m3-btn m3-btn-outlined">Import</button>
               </div>
             </div>
           </div>
         </div>
-
-        
-        <div class="glass-card">
-          <div class="card-header">
-            🔗 Custom Mappings
-            <span class="card-title-hint">
-              Select text + Key to auto-ask
-            </span>
-          </div>
-
-          <div class="mapping-list-container">
-            <div id="questionMappingsList">
-              
-            </div>
-          </div>
-
-          <button id="addMappingBtn" class="apply-model-btn dashed-btn mt-12">
-            + Add Mapping
-          </button>
-
-        </div>
-
-        
-        <div class="glass-card">
-          <div class="card-header">
-            🖍️ Annotation
-            <span class="card-title-hint">
-              Select text + Key to highlight
-            </span>
-          </div>
-
-          <div class="mapping-list-container">
-            <div id="annotationShortcutsList">
-              
-            </div>
-          </div>
-
-          <button id="addAnnotationShortcutBtn" class="apply-model-btn dashed-btn mt-12">
-            + Add Shortcut
-          </button>
-        </div>
-      </div>
-
-    </div>
+      </section>
+    </main>
   </div>
 
-  <div id="status" class="status"></div>
+  <div id="status" class="m3-status-toast"></div>
 
+  <!-- ==================== TEMPLATES ==================== -->
   
   <template id="providerItemTemplate">
-    <div class="provider-item">
-      <div class="provider-item-content">
-        <div class="provider-item-info">
-          <div class="provider-item-name"></div>
-          <div class="provider-item-endpoint"></div>
-        </div>
-        <span class="provider-badge"></span>
-        <div class="provider-item-actions">
-          <button class="provider-edit-btn">Edit</button>
-          <button class="provider-delete-btn btn-danger">Delete</button>
+    <div class="provider-item m3-provider-card">
+      <div class="provider-item-content m3-provider-card-content">
+        <div class="m3-provider-logo-container"></div>
+        <div class="m3-provider-info">
+          <span class="m3-provider-title provider-item-name"></span>
+          <span class="provider-badge"></span>
         </div>
       </div>
-      <div class="provider-item-form-container"></div>
     </div>
   </template>
 
   <template id="chainItemTemplate">
-    <div class="chain-item">
-      <div class="chain-number"></div>
-      <div class="chain-info">
-        <div class="chain-model-name"></div>
-        <div class="chain-provider-name"></div>
+    <div class="m3-chain-card chain-item">
+      <div class="m3-chain-drag-handle">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="9" x2="16" y2="9"></line>
+          <line x1="8" y1="15" x2="16" y2="15"></line>
+        </svg>
       </div>
-      <div class="chain-controls">
-        <button class="chain-btn configure" title="Configure Parameters">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <span class="m3-chain-index chain-number"></span>
+      <div class="m3-chain-details">
+        <span class="m3-chain-title chain-model-name"></span>
+        <span class="m3-chain-sub chain-provider-name"></span>
+      </div>
+      <div class="m3-chain-actions">
+        <button class="m3-icon-button configure" title="Configure Parameters">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
-            <path
-              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-            </path>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
-        <button class="chain-btn remove" title="Remove">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="m3-icon-button remove text-error" title="Remove">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       </div>
-      <div class="chain-item-params-container"></div>
+      <div class="chain-item-params-container w-100"></div>
     </div>
   </template>
 
   <template id="chainParamsTemplate">
-    <div class="chain-params-panel">
-      <div class="form-group mb-12">
-        <label class="flex justify-between text-12">
-          Temperature
-          <span class="temp-value text-secondary"></span>
-        </label>
-        <input type="range" class="param-temperature" min="0" max="2" step="0.1">
+    <div class="m3-params-panel chain-params-panel">
+      <div class="m3-param-row">
+        <label class="m3-body-medium">Temperature <span class="temp-value m3-body-small text-secondary"></span></label>
+        <input type="range" class="m3-slider param-temperature" min="0" max="2" step="0.1">
       </div>
-      <div class="form-group mb-12">
-        <label class="flex justify-between text-12">
-          Top P
-          <span class="topp-value text-secondary"></span>
-        </label>
-        <input type="range" class="param-topp" min="0" max="1" step="0.05">
+      <div class="m3-param-row">
+        <label class="m3-body-medium">Top P <span class="topp-value m3-body-small text-secondary"></span></label>
+        <input type="range" class="m3-slider param-topp" min="0" max="1" step="0.05">
       </div>
-      <div class="form-group mb-12">
-        <label class="flex justify-between text-12">
-          Thinking Level
-          <span class="thinking-level-value text-secondary"></span>
-        </label>
-        <select class="param-thinking-level">
+      <div class="m3-param-row">
+        <label class="m3-body-medium">Thinking Level <span class="thinking-level-value m3-body-small text-secondary"></span></label>
+        <select class="m3-select param-thinking-level">
           <option value="none">None</option>
           <option value="minimal">Minimal</option>
           <option value="low">Low</option>
@@ -601,79 +635,68 @@
           <option value="high">High</option>
         </select>
       </div>
-      <div class="form-group mb-0">
-        <label class="flex justify-between items-center text-12">
-          Custom Parameters
-          <button type="button" class="btn-secondary add-custom-param">+ Add</button>
-        </label>
+      <div class="m3-param-row mt-12">
+        <div class="m3-label-row">
+          <span class="m3-body-medium font-semibold">Custom Parameters</span>
+          <button type="button" class="m3-btn m3-btn-text add-custom-param" style="padding: 2px 8px; font-size: 12px;">+ Add</button>
+        </div>
         <div class="custom-params-list"></div>
       </div>
     </div>
   </template>
 
   <template id="customParamRowTemplate">
-    <div class="custom-param-row">
-      <input type="text" class="custom-param-key" placeholder="Key">
-      <input type="text" class="custom-param-value" placeholder="Value">
-      <button type="button" class="remove-custom-param">×</button>
+    <div class="m3-custom-param-row custom-param-row">
+      <input type="text" class="m3-text-input custom-param-key" placeholder="Key">
+      <input type="text" class="m3-text-input custom-param-value" placeholder="Value">
+      <button type="button" class="m3-icon-button remove-custom-param">×</button>
     </div>
   </template>
 
-  
   <template id="mappingRowTemplate">
-    <div class="mapping-item">
-      <div class="mapping-number"></div>
-      <div class="mapping-info">
-        <div class="shortcut-input mapping-key-input" tabindex="0">
-          <span style="color: var(--text-secondary); font-style: italic;">None</span>
+    <div class="m3-mapping-item mapping-item">
+      <div class="m3-mapping-index mapping-number"></div>
+      <div class="m3-mapping-row-content">
+        <div class="shortcut-input m3-shortcut-box mapping-key-input" tabindex="0">
+          <span class="m3-shortcut-placeholder">None</span>
         </div>
-        <span class="mapping-arrow">→</span>
-        <div class="mapping-prompt-wrapper">
-          <div contenteditable="true" class="mapping-prompt" data-placeholder="Enter @ to add variables..."></div>
+        <span class="m3-mapping-arrow">→</span>
+        <div class="m3-mapping-prompt-container">
+          <div contenteditable="true" class="m3-prompt-textarea mapping-prompt" data-placeholder="Enter @ to insert variables..."></div>
         </div>
       </div>
-      <div class="mapping-controls">
-        <button class="mapping-btn remove mapping-delete-btn" title="Delete Mapping">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="mapping-item-params-container"></div>
+      <button class="m3-icon-button mapping-delete-btn text-error" title="Delete Mapping">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
     </div>
   </template>
 
-  
   <template id="userFactItemTemplate">
-    <div class="fact-item">
-      <span class="fact-index"></span>
-      <input type="text" class="fact-text">
-      <button class="fact-remove-btn"><span>×</span></button>
+    <div class="m3-instruction-row fact-item">
+      <span class="m3-instruction-index fact-index"></span>
+      <input type="text" class="m3-text-input fact-text" style="flex-grow: 1;">
+      <button class="m3-icon-button fact-remove-btn text-error">×</button>
     </div>
   </template>
 
-  
-
-  
   <template id="shortcutNoneTemplate">
-    <span style="color: var(--text-secondary); font-style: italic;">None</span>
+    <span class="m3-shortcut-placeholder">None</span>
   </template>
 
-  
   <template id="shortcutRecordingTemplate">
-    <span style="color: var(--primary-color); font-weight: 520;">Press a key...</span>
+    <span class="m3-shortcut-recording">Press any key...</span>
   </template>
 
-  
   <template id="shortcutKeySegmentTemplate">
-    <span class="shortcut-key"></span>
+    <kbd class="m3-kbd-key shortcut-key"></kbd>
   </template>
 
-  
   <template id="appliedStateTemplate">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14" style="margin-right:6px;">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" class="m3-toast-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
     </svg>
     Applied!
   </template>
@@ -682,66 +705,65 @@
     Signing in...
   </template>
 
-  
-  <template id="customParamRowTemplate">
-    <div class="custom-param-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
-      <input type="text" class="custom-param-key" placeholder="key" style="flex: 1; font-size: 0.75em;">
-      <span style="color: var(--text-secondary);">=</span>
-      <input type="text" class="custom-param-value" placeholder="value" style="flex: 1; font-size: 0.75em;">
-      <button type="button" class="remove-param-btn"
-        style="padding: 4px 8px; font-size: 0.6875em; background: var(--error-color, #f44336); color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
-    </div>
-  </template>
-
-  
   <template id="providerDropdownOptionTemplate">
     <option value=""></option>
   </template>
 
-  
   <template id="emptyListStateTemplate">
-    <div class="chain-empty-state">No models added. Add one above.</div>
+    <div class="chain-empty-state">No models added yet. Select a provider and model above.</div>
   </template>
 
-  
   <template id="apiKeyResultItemTemplate">
-    <div class="api-key-result-item" style="margin-bottom: 8px;">
-      <div class="api-key-result-header"
-        style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 520;">
+    <div class="m3-api-result-item">
+      <div class="m3-api-result-header">
         <span class="api-key-result-icon"></span>
-        <span class="api-key-result-name"></span>
-        <span class="api-key-result-status" style="margin-left: auto;"></span>
+        <span class="api-key-result-name m3-title-small"></span>
+        <span class="api-key-result-status m3-badge"></span>
       </div>
-      <div class="api-key-result-failed-info" style="margin-top: 4px;"></div>
+      <div class="api-key-result-failed-info"></div>
     </div>
   </template>
 
-  
   <template id="failedKeyInfoTemplate">
-    <div style="font-size: 11px; color: #FF3B30; margin-left: 20px; font-family: monospace;">
-      • <code style="background: rgba(255,59,48,0.1); padding: 2px 6px; border-radius: 4px;"
-        class="failed-key-name"></code> → <span class="failed-key-status"></span>
+    <div class="m3-api-failed-code">
+      • <code class="failed-key-name"></code> → <span class="failed-key-status"></span>
     </div>
   </template>
 
-
-  <script src="options.js"></script>
   <template id="annotationShortcutTemplate">
-    <div class="form-row-item annotation-shortcut-row">
-      <div class="feature-info flex-center">
-        <div class="annotation-color-palette"></div>
+    <div class="m3-annotation-item annotation-shortcut-row">
+      <div class="m3-annotation-swatches-container">
+        <div class="annotation-color-palette m3-color-grid"></div>
       </div>
-      <div class="flex-center-gap12-mlauto">
-        <div class="shortcut-input annotation-shortcut-input" tabindex="0"></div>
-        <button class="remove-mapping-btn annotation-remove-btn" title="Remove">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
+      <div class="m3-annotation-key-actions">
+        <div class="shortcut-input m3-shortcut-box annotation-shortcut-input" tabindex="0"></div>
+        <button class="m3-icon-button annotation-remove-btn text-error" title="Remove">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
           </svg>
         </button>
       </div>
     </div>
   </template>
+
+  <!-- Google Drive Sync Dialog Overlay -->
+  <div class="m3-overlay is-hidden" id="sync-setup-overlay">
+    <div class="m3-modal">
+      <h3 class="m3-headline-small">Google Drive Sync Setup</h3>
+      <p class="m3-body-medium text-secondary">
+        Please upload your Google Cloud credentials JSON file (e.g. <code>client_secret_*.json</code>) to activate cloud synchronization.
+      </p>
+      
+      <div class="m3-modal-actions">
+        <input type="file" id="input-sync-credentials" accept=".json" class="hidden">
+        <button type="button" class="m3-btn m3-btn-filled" id="btn-upload-sync-json">Choose File</button>
+        <button type="button" class="m3-btn m3-btn-text" id="btn-cancel-sync-setup">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
 </body>
 
 </html>
