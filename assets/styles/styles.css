@@ -2590,9 +2590,10 @@ button {
 .spotlight-tabs-bar {
   display: flex !important;
   align-items: center;
-  background: #f3f3f3;
+  background: #f0f4f9;
   height: 40px;
   -webkit-app-region: drag;
+  padding: 0 8px;
 }
 
 .spotlight-tabs-list {
@@ -2602,7 +2603,7 @@ button {
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   height: 100%;
-  padding: 0 8px;
+  padding: 0 0 0 8px;
 }
 
 .spotlight-tabs-list::-webkit-scrollbar {
