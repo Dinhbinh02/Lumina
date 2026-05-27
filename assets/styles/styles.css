@@ -1396,10 +1396,10 @@ button {
 .lumina-input-container {
   width: 100% !important;
   flex: 1;
-  border-radius: 12px !important;
-  background: var(--lumina-input-bg) !important;
-  border: 1.5px solid var(--lumina-ui-border) !important;
-  box-shadow: none !important;
+  border-radius: 28px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
@@ -1408,31 +1408,17 @@ button {
   opacity: 1;
   pointer-events: auto !important;
   overflow: visible !important;
+  transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 [data-theme="dark"] .lumina-input-container {
-  border-color: var(--lumina-ui-border) !important;
-  box-shadow: none !important;
+  background: #1e1f20 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
 }
 
 .lumina-input-container::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: -1px !important;
-  padding: 1px !important;
-  background: linear-gradient(var(--lumina-primary-color),
-      #00D2FF,
-      var(--lumina-primary-color)) !important;
-  background-size: 100% 200% !important;
-  border-radius: 12px !important;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
-  mask-composite: exclude !important;
-  -webkit-mask-composite: destination-out !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
-  opacity: 0;
-  will-change: background-position, opacity;
+  display: none !important;
 }
 
 .lumina-chat-input {
@@ -1443,8 +1429,8 @@ button {
   background: transparent !important;
   box-shadow: none !important;
   font-family: var(--lumina-font-family) !important;
-  font-size: 1em !important;
-  line-height: 1.4 !important;
+  font-size: 1.02em !important;
+  line-height: 1.5 !important;
   letter-spacing: normal !important;
   outline: none !important;
   box-sizing: border-box !important;
@@ -1456,9 +1442,7 @@ button {
   max-height: 129px !important;
   min-height: 24px !important;
   height: auto;
-  padding: 5px 6px 7px 6px !important;
-  height: auto !important;
-  margin: 4px 0;
+  padding: 4px 8px 12px 8px !important;
   transform: translateZ(0);
   flex-grow: 1;
   min-width: 0;
@@ -1473,7 +1457,7 @@ button {
   grid-template-rows: auto auto;
   column-gap: 8px;
   row-gap: 8px;
-  padding: 8px;
+  padding: 12px;
   align-items: end;
   position: relative;
   overflow: visible;
@@ -1764,7 +1748,6 @@ button {
   cursor: pointer !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   flex-shrink: 0 !important;
-  border-radius: 12px !important;
 }
 
 .lumina-mic-btn svg {
@@ -1775,16 +1758,17 @@ button {
 .lumina-upload-btn,
 .lumina-mic-btn {
   width: 32px !important;
-  border-radius: 12px !important;
+  border-radius: 50% !important;
   padding: 0 !important;
 }
 
 .lumina-tools-toggle {
-  padding: 0 10px;
-  gap: 6px;
-  font-size: 0.9em;
-  font-weight: 520;
-  color: var(--lumina-text-secondary);
+  padding: 0 12px !important;
+  gap: 6px !important;
+  font-size: 0.9em !important;
+  font-weight: 500 !important;
+  color: var(--lumina-text-secondary) !important;
+  border-radius: 16px !important;
 }
 
 .lumina-tools-toggle.active {
@@ -1922,8 +1906,8 @@ button {
   height: 32px !important;
   width: 32px !important;
   border: none !important;
-  border-radius: 12px !important;
-  background: #d4d4d4 !important;
+  border-radius: 50% !important;
+  background: #c4c7c5 !important;
   color: #fff !important;
   cursor: default !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -1931,18 +1915,28 @@ button {
 }
 
 [data-theme="dark"] .lumina-action-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: #444746 !important;
 }
 
 .lumina-action-btn.active.send,
 .lumina-action-btn.pause {
-  background: var(--lumina-primary-color, #007aff) !important;
+  background: #0b57d0 !important;
   cursor: pointer !important;
+}
+
+[data-theme="dark"] .lumina-action-btn.active.send {
+  background: #a8c7fa !important;
+  color: #042f62 !important;
 }
 
 .lumina-action-btn.active.send svg,
 .lumina-action-btn.pause svg {
   filter: brightness(0) invert(1) !important;
+}
+
+[data-theme="dark"] .lumina-action-btn.active.send svg {
+  filter: none !important;
+  color: #042f62 !important;
 }
 
 .lumina-action-btn.pause {
@@ -2570,29 +2564,29 @@ button {
 .spotlight-tabs-bar {
   display: flex !important;
   align-items: center;
-  background: #f3f3f3;
-  height: 40px;
+  background: #f0f4f9;
+  height: 48px;
   -webkit-app-region: drag;
+  padding: 0 12px;
 }
 
 .spotlight-tabs-list {
   display: flex;
   flex: 1;
-  gap: 0;
+  gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
   background: transparent;
+  align-items: center;
 }
 
 .spotlight-tab.active {
   background: #ffffff !important;
-  color: #202124 !important;
-  box-shadow: none !important;
+  color: #1f1f1f !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
   z-index: 10 !important;
   position: relative !important;
-  border-radius: 12px 12px 0 0 !important;
-  margin-bottom: -1px !important;
-  padding-bottom: 1px !important;
+  border-radius: 18px !important;
 }
 
 .spotlight-tab.active:hover {
@@ -2601,43 +2595,26 @@ button {
 }
 
 .spotlight-tab.active::before {
-  content: "" !important;
-  position: absolute !important;
-  bottom: 0 !important;
-  left: -12px !important;
-  width: 12px !important;
-  height: 12px !important;
-  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px) !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
+  display: none !important;
 }
 
 .spotlight-tab.active::after {
-  content: "" !important;
-  position: absolute !important;
-  bottom: 0 !important;
-  right: -12px !important;
-  width: 12px !important;
-  height: 12px !important;
-  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px) !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
-  display: block !important;
+  display: none !important;
 }
 
 [data-theme="dark"] .spotlight-tab.active {
-  background: #000000 !important;
-  color: #e8eaed !important;
-  border: 1px solid #2d2d2d !important;
-  border-bottom: 1px solid #000000 !important;
+  background: #2d2f31 !important;
+  color: #e3e3e3 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
 [data-theme="dark"] .spotlight-tab.active::before {
-  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px) !important;
+  display: none !important;
 }
 
 [data-theme="dark"] .spotlight-tab.active::after {
-  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px) !important;
+  display: none !important;
 }
 
 .spotlight-tabs-list {
@@ -2665,13 +2642,13 @@ button {
   flex: 1 1 200px;
   min-width: 80px;
   max-width: 220px;
-  height: 100%;
+  height: 36px;
   background: transparent;
-  border-radius: 12px;
-  color: #5f6368;
+  border-radius: 18px;
+  color: #444746;
   cursor: pointer;
   position: relative;
-  transition: none;
+  transition: background-color 0.2s, color 0.2s;
   user-select: none;
   letter-spacing: 0;
   border-bottom: none;
@@ -2679,14 +2656,7 @@ button {
 }
 
 .spotlight-tab:not(.active)::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background-color: #dfe1e5;
-  pointer-events: none;
+  display: none !important;
 }
 
 .spotlight-tab-sub {
@@ -2694,9 +2664,9 @@ button {
   align-items: center;
   flex: 1;
   height: 100%;
-  padding: 0 4px;
+  padding: 0 12px;
   min-width: 0;
-  border-radius: 12px;
+  border-radius: 18px;
   cursor: pointer;
   position: relative;
   transition: background-color 0.15s;
@@ -2715,18 +2685,11 @@ button {
 }
 
 .spotlight-tab-sub+.spotlight-tab-sub::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background-color: rgba(0, 0, 0, 0.1);
-  pointer-events: none;
+  display: none !important;
 }
 
 .spotlight-tab:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.04);
   z-index: 1;
 }
 
@@ -2735,26 +2698,27 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin: 0 6px;
+  margin: 0 4px;
 }
 
 .spotlight-tab-close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   border: none;
   background: transparent;
-  color: #5f6368;
+  color: #444746;
   cursor: pointer;
   padding: 0;
   opacity: 0;
   pointer-events: none;
   transition: background-color 0.15s, color 0.15s, opacity 0.15s;
   flex-shrink: 0;
-  margin-right: 2px;
+  margin-left: 6px;
+  margin-right: -4px;
 }
 
 .spotlight-tab-sub:hover .spotlight-tab-close,
@@ -2765,31 +2729,31 @@ button {
 
 .spotlight-tab-close:hover {
   background: rgba(0, 0, 0, 0.1);
-  color: #202124;
+  color: #1f1f1f;
 }
 
 .spotlight-new-tab-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #5f6368;
+  color: #444746;
   margin: 0 4px;
   -webkit-app-region: no-drag;
-  transition: background 0.15s;
+  transition: background-color 0.2s;
   flex-shrink: 0;
   align-self: center;
   pointer-events: auto;
 }
 
 .spotlight-new-tab-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #202124;
+  background: rgba(0, 0, 0, 0.05);
+  color: #1f1f1f;
 }
 
 [data-theme="dark"] .spotlight-tabs-bar {
@@ -2802,31 +2766,31 @@ button {
 }
 
 [data-theme="dark"] .spotlight-tab {
-  color: #9aa0a6;
+  color: #c4c7c5;
   border-color: transparent;
 }
 
 [data-theme="dark"] .spotlight-tab:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: #e8eaed;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e3e3e3;
 }
 
 [data-theme="dark"] .spotlight-new-tab-btn {
-  color: #9aa0a6;
+  color: #c4c7c5;
 }
 
 [data-theme="dark"] .spotlight-new-tab-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e8eaed;
+  color: #e3e3e3;
 }
 
 [data-theme="dark"] .spotlight-tab-close {
-  color: #9aa0a6;
+  color: #c4c7c5;
 }
 
 [data-theme="dark"] .spotlight-tab-close:hover {
   background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: #e3e3e3;
 }
 
 [data-theme="dark"] .spotlight-tab.active .spotlight-tab-sub:hover {
@@ -4669,87 +4633,76 @@ button {
   display: inline-flex;
   align-items: center;
   height: 32px;
-  padding: 0 10px;
-  border-radius: 12px;
+  padding: 0 14px;
+  border-radius: 16px;
   background: transparent;
   cursor: pointer;
   user-select: none;
-  font-size: 0.9em;
-  font-weight: 520;
+  font-size: 0.85em;
+  font-weight: 500;
   color: var(--lumina-text-secondary);
-  border: 1.5px solid var(--lumina-border-color);
+  border: 1px solid var(--lumina-border-color);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   box-sizing: border-box;
 }
 
 .lumina-web-chip:hover {
-  border-color: var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(var(--lumina-primary-rgb), 0.05);
+  border-color: #0b57d0;
+  color: #0b57d0;
+  background: rgba(11, 87, 208, 0.04);
+}
+
+[data-theme="dark"] .lumina-web-chip:hover {
+  border-color: #a8c7fa;
+  color: #a8c7fa;
+  background: rgba(168, 199, 250, 0.08);
 }
 
 .lumina-web-chip.is-active {
-  border-width: 1.5px;
+  border-width: 1px;
   border-color: var(--lumina-primary-color) !important;
   color: #fff !important;
   background: var(--lumina-primary-color) !important;
   opacity: 1;
   box-shadow: none !important;
-  font-weight: 620;
+  font-weight: 500;
 }
 
 .lumina-web-chip.is-active:hover {
   background: var(--lumina-primary-color-dark, #0046b0) !important;
   border-color: var(--lumina-primary-color-dark, #0046b0) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active {
   background: var(--lumina-primary-color) !important;
+  border-color: var(--lumina-primary-color) !important;
   color: #fff !important;
+}
+
+[data-theme="dark"] .lumina-web-chip.is-active:hover {
+  background: var(--lumina-primary-color-dark, #0046b0) !important;
+  border-color: var(--lumina-primary-color-dark, #0046b0) !important;
 }
 
 .lumina-web-chip.is-ghost {
   border-style: dashed !important;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .lumina-web-chip.is-ghost:hover {
   opacity: 1;
-  border-color: var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
+  border-color: #0b57d0;
+  color: #0b57d0;
 }
 
-.lumina-web-chip-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px !important;
-  height: 32px !important;
-  min-width: 32px !important;
-  min-height: 32px !important;
-  border-radius: 12px !important;
-  border: 1.5px solid var(--lumina-border-color) !important;
-  background: transparent;
-  color: var(--lumina-text-secondary);
-  cursor: pointer;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  box-sizing: border-box !important;
-  font-size: 17px;
-  font-weight: 620;
-  line-height: 1;
-  padding: 0;
-  flex: 0 0 auto;
-  transition: all 0.2s ease;
+[data-theme="dark"] .lumina-web-chip.is-ghost:hover {
+  border-color: #a8c7fa;
+  color: #a8c7fa;
 }
 
-.lumina-web-chip-add:hover {
-  border-color: var(--lumina-primary-color);
-  color: var(--lumina-primary-color);
-  background: rgba(0, 86, 210, 0.05);
-}
+
 
 .lumina-web-tab-picker {
   position: fixed;
@@ -4898,7 +4851,6 @@ button {
   color: var(--lumina-text-secondary, #444);
   cursor: pointer;
   padding: 6px;
-  margin: 0 8px;
   border-radius: 8px;
   display: flex;
   align-items: center;
