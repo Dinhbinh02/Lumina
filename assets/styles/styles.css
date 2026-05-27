@@ -1340,7 +1340,7 @@ button {
   padding: 2px 6px !important;
   border-radius: 6px !important;
   font-size: 0.95em !important;
-  font-weight: 400 !important;
+  font-weight: 520 !important;
 }
 
 .lumina-chat-answer pre {
@@ -1353,7 +1353,7 @@ button {
   box-shadow: none !important;
   position: relative !important;
   white-space: pre !important;
-  font-weight: 400 !important;
+  font-weight: 520 !important;
 }
 
 [data-theme="dark"] .lumina-chat-answer pre,
@@ -1369,7 +1369,7 @@ button {
   font-size: 0.95em !important;
   line-height: 1.5 !important;
   min-width: 100%;
-  font-weight: 400 !important;
+  font-weight: 520 !important;
 }
 
 .lumina-chat-answer ol,
@@ -2590,57 +2590,9 @@ button {
 .spotlight-tabs-bar {
   display: flex !important;
   align-items: center;
-  background: #f0f4f9;
-  height: 48px;
+  background: #f3f3f3;
+  height: 40px;
   -webkit-app-region: drag;
-  padding: 0 12px;
-}
-
-.spotlight-tabs-list {
-  display: flex;
-  flex: 1;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  background: transparent;
-  align-items: center;
-}
-
-.spotlight-tab.active {
-  background: #ffffff !important;
-  color: #1f1f1f !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
-  z-index: 10 !important;
-  position: relative !important;
-  border-radius: 18px !important;
-}
-
-.spotlight-tab.active:hover {
-  background: #ffffff !important;
-  z-index: 10 !important;
-}
-
-.spotlight-tab.active::before {
-  display: none !important;
-}
-
-.spotlight-tab.active::after {
-  display: none !important;
-}
-
-[data-theme="dark"] .spotlight-tab.active {
-  background: #2d2f31 !important;
-  color: #e3e3e3 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-[data-theme="dark"] .spotlight-tab.active::before {
-  display: none !important;
-}
-
-[data-theme="dark"] .spotlight-tab.active::after {
-  display: none !important;
 }
 
 .spotlight-tabs-list {
@@ -2650,12 +2602,7 @@ button {
   scrollbar-width: none;
   -webkit-app-region: no-drag;
   height: 100%;
-  padding-right: 10px;
-  margin-left: -44px;
-  padding-left: 44px;
-  pointer-events: none;
-  z-index: 2;
-  position: relative;
+  padding: 0 8px;
 }
 
 .spotlight-tabs-list::-webkit-scrollbar {
@@ -2668,21 +2615,38 @@ button {
   flex: 1 1 200px;
   min-width: 80px;
   max-width: 220px;
-  height: 36px;
+  height: 100%;
   background: transparent;
-  border-radius: 18px;
-  color: #444746;
+  border-radius: 12px;
+  color: #5f6368;
   cursor: pointer;
   position: relative;
-  transition: background-color 0.2s, color 0.2s;
+  transition: none;
   user-select: none;
   letter-spacing: 0;
   border-bottom: none;
-  pointer-events: auto;
+}
+
+.spotlight-tab-group-indicator {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  border-radius: 0 0 6px 6px;
+  z-index: 5;
+  pointer-events: none;
 }
 
 .spotlight-tab:not(.active)::after {
-  display: none !important;
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background-color: #dfe1e5;
+  pointer-events: none;
 }
 
 .spotlight-tab-sub {
@@ -2690,9 +2654,9 @@ button {
   align-items: center;
   flex: 1;
   height: 100%;
-  padding: 0 12px;
+  padding: 0 4px;
   min-width: 0;
-  border-radius: 18px;
+  border-radius: 12px;
   cursor: pointer;
   position: relative;
   transition: background-color 0.15s;
@@ -2711,12 +2675,60 @@ button {
 }
 
 .spotlight-tab-sub+.spotlight-tab-sub::before {
-  display: none !important;
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
 }
 
 .spotlight-tab:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.05);
   z-index: 1;
+}
+
+.spotlight-tab.active {
+  background: #ffffff;
+  color: #202124;
+  box-shadow: none;
+  z-index: 10;
+  position: relative;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+}
+
+.spotlight-tab.active:hover {
+  background: #ffffff;
+  z-index: 10;
+}
+
+.spotlight-tab.active::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -12px;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at top left, transparent 12px, #ffffff 12.5px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.spotlight-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: -12px;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at top right, transparent 12px, #ffffff 12.5px);
+  z-index: 1;
+  pointer-events: none;
+  display: block;
 }
 
 .spotlight-tab-title {
@@ -2724,27 +2736,26 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin: 0 4px;
+  margin: 0 6px;
 }
 
 .spotlight-tab-close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: #444746;
+  color: #5f6368;
   cursor: pointer;
   padding: 0;
   opacity: 0;
   pointer-events: none;
   transition: background-color 0.15s, color 0.15s, opacity 0.15s;
   flex-shrink: 0;
-  margin-left: 6px;
-  margin-right: -4px;
+  margin-right: 2px;
 }
 
 .spotlight-tab-sub:hover .spotlight-tab-close,
@@ -2755,31 +2766,43 @@ button {
 
 .spotlight-tab-close:hover {
   background: rgba(0, 0, 0, 0.1);
-  color: #1f1f1f;
+  color: #202124;
+}
+
+.spotlight-tab-close svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  stroke-width: 2;
 }
 
 .spotlight-new-tab-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #444746;
+  color: #5f6368;
   margin: 0 4px;
   -webkit-app-region: no-drag;
-  transition: background-color 0.2s;
+  transition: background 0.15s;
   flex-shrink: 0;
   align-self: center;
-  pointer-events: auto;
+}
+
+.spotlight-new-tab-btn svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.2;
 }
 
 .spotlight-new-tab-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #1f1f1f;
+  background: rgba(0, 0, 0, 0.06);
+  color: #202124;
 }
 
 [data-theme="dark"] .spotlight-tabs-bar {
@@ -2792,13 +2815,33 @@ button {
 }
 
 [data-theme="dark"] .spotlight-tab {
-  color: #c4c7c5;
+  color: #9aa0a6;
   border-color: transparent;
 }
 
 [data-theme="dark"] .spotlight-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e3e3e3;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-tab.active {
+  background: #000000;
+  color: #e8eaed;
+  border: 1px solid #2d2d2d;
+  border-bottom: 1px solid #000000;
+}
+
+[data-theme="dark"] .spotlight-tab.active:hover {
+  background: #000000;
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .spotlight-tab.active::before {
+  background: radial-gradient(circle at top left, transparent 12px, #000000 12.5px);
+}
+
+[data-theme="dark"] .spotlight-tab.active::after {
+  background: radial-gradient(circle at top right, transparent 12px, #000000 12.5px);
 }
 
 [data-theme="dark"] .spotlight-new-tab-btn {
