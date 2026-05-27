@@ -2446,15 +2446,7 @@ function syncCurrentBrowserTab() {
 }
 
 function formatHeadTailTitle(text) {
-    const safeText = (text || '').trim().replace(/\s+/g, ' ');
-    if (!safeText) return 'Untitled';
-
-    const words = safeText.split(' ');
-    if (words.length <= 6) return safeText;
-
-    const head = words.slice(0, 4).join(' ');
-    const tail = words.slice(-2).join(' ');
-    return `${head}... ${tail}`;
+    return (text || '').trim().replace(/\s+/g, ' ') || 'Untitled';
 }
 
 function closeWebTabPicker() {
