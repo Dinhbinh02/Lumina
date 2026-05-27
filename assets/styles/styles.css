@@ -1340,6 +1340,7 @@ button {
   padding: 2px 6px !important;
   border-radius: 6px !important;
   font-size: 0.95em !important;
+  font-weight: 400 !important;
 }
 
 .lumina-chat-answer pre {
@@ -1352,6 +1353,7 @@ button {
   box-shadow: none !important;
   position: relative !important;
   white-space: pre !important;
+  font-weight: 400 !important;
 }
 
 [data-theme="dark"] .lumina-chat-answer pre,
@@ -1367,6 +1369,7 @@ button {
   font-size: 0.95em !important;
   line-height: 1.5 !important;
   min-width: 100%;
+  font-weight: 400 !important;
 }
 
 .lumina-chat-answer ol,
@@ -4686,7 +4689,6 @@ button {
 
 .lumina-web-chip.is-active {
   border-width: 1px;
-  border-color: rgba(0, 86, 210, 0.25) !important;
   color: var(--lumina-primary-color) !important;
   background: rgba(0, 86, 210, 0.08) !important;
   opacity: 1;
@@ -4696,19 +4698,16 @@ button {
 
 .lumina-web-chip.is-active:hover {
   background: rgba(0, 86, 210, 0.15) !important;
-  border-color: rgba(0, 86, 210, 0.4) !important;
   box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active {
   background: rgba(10, 132, 255, 0.15) !important;
-  border-color: rgba(10, 132, 255, 0.35) !important;
   color: var(--lumina-primary-color) !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active:hover {
   background: rgba(10, 132, 255, 0.25) !important;
-  border-color: rgba(10, 132, 255, 0.5) !important;
 }
 
 .lumina-web-chip.is-ghost {
