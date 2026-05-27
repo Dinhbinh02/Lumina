@@ -924,7 +924,8 @@ button {
   position: relative;
 }
 
-.lumina-chat-question {
+.lumina-chat-question,
+.qa-question {
   align-self: flex-end !important;
   background: #e9eef6 !important;
   backdrop-filter: none !important;
@@ -1027,11 +1028,13 @@ button {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-[data-theme="dark"] .lumina-chat-question {
+[data-theme="dark"] .lumina-chat-question,
+[data-theme="dark"] .qa-question {
   background: rgba(255, 255, 255, 0.08) !important;
 }
 
-.lumina-chat-question::after {
+.lumina-chat-question::after,
+.qa-question::after {
   content: "" !important;
   position: absolute !important;
   bottom: 0 !important;
@@ -1046,11 +1049,13 @@ button {
   opacity: 1 !important;
 }
 
-[data-theme="dark"] .lumina-chat-question::after {
+[data-theme="dark"] .lumina-chat-question::after,
+[data-theme="dark"] .qa-question::after {
   background: linear-gradient(to bottom, transparent, rgba(60, 60, 60, 1)) !important;
 }
 
-.lumina-chat-question:not(.proofread-question):hover {
+.lumina-chat-question:not(.proofread-question):hover,
+.qa-question:not(.proofread-question):hover {
   background: #e9eef6;
   border-color: transparent;
 }
@@ -2590,7 +2595,7 @@ button {
 .spotlight-tabs-bar {
   display: flex !important;
   align-items: center;
-  background: #f0f4f9;
+  background: #e9eef6;
   height: 40px;
   -webkit-app-region: drag;
   padding: 0 8px;
