@@ -2397,7 +2397,8 @@ function syncCurrentBrowserTab() {
                     currentBrowserTab = {
                         tabId: realTab.id,
                         title: realTab.title || 'Untitled',
-                        url: realTab.url
+                        url: realTab.url,
+                        favIconUrl: realTab.favIconUrl
                     };
                     loadCurrentWebSelection();
                     updateWebChips();
@@ -2418,7 +2419,8 @@ function syncCurrentBrowserTab() {
             currentBrowserTab = {
                 tabId: activeTab.id,
                 title: activeTab.title || 'Untitled',
-                url: activeTab.url
+                url: activeTab.url,
+                favIconUrl: activeTab.favIconUrl
             };
             loadCurrentWebSelection();
             updateWebChips();
@@ -2448,9 +2450,9 @@ function formatHeadTailTitle(text) {
     if (!safeText) return 'Untitled';
 
     const words = safeText.split(' ');
-    if (words.length <= 4) return safeText;
+    if (words.length <= 6) return safeText;
 
-    const head = words.slice(0, 2).join(' ');
+    const head = words.slice(0, 4).join(' ');
     const tail = words.slice(-2).join(' ');
     return `${head}... ${tail}`;
 }
@@ -2671,7 +2673,7 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
     });
 }
 
-function createWebChipElement(source, selectedSources, spotlightTabId, addButton) {
+function createWebChipElement(source, selectedSources, spotlightTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
 
@@ -2679,12 +2681,34 @@ function createWebChipElement(source, selectedSources, spotlightTabId, addButton
     chip.className = `lumina-web-chip ${source.isActive ? 'is-active' : ''} ${isGhost ? 'is-ghost' : ''}`;
     chip.removeAttribute('title');
 
-    
     if (source.isSummary) {
         const totalTokens = selectedSources.reduce((sum, s) => sum + (parseInt(s.tokens) || 0), 0);
         chip.dataset.tokens = totalTokens;
     } else {
         chip.dataset.tokens = parseInt(source.tokens) || 0;
+    }
+
+    if (!hasMultipleTabs) {
+        let favIconUrl = source.favIconUrl;
+        if (!favIconUrl && source.url) {
+            try {
+                const domain = new URL(source.url).hostname;
+                favIconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+            } catch (e) {}
+        }
+        if (favIconUrl) {
+            const faviconImg = document.createElement('img');
+            faviconImg.src = favIconUrl;
+            faviconImg.style.width = '14px';
+            faviconImg.style.height = '14px';
+            faviconImg.style.marginRight = '6px';
+            faviconImg.style.borderRadius = '2px';
+            faviconImg.style.flexShrink = '0';
+            faviconImg.onerror = () => {
+                faviconImg.style.display = 'none';
+            };
+            chip.appendChild(faviconImg);
+        }
     }
 
     const titleSpan = document.createElement('span');
@@ -2792,50 +2816,35 @@ function updateWebChips() {
         }
 
         
-        const addButton = document.createElement('button');
-        addButton.type = 'button';
-        addButton.className = 'lumina-web-chip-add';
-        addButton.textContent = '+';
-        addButton.setAttribute('aria-label', 'Select web tabs');
-        addButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            openWebTabPicker(addButton, spotlightTabId);
-        });
-        container.appendChild(addButton);
-
-        
         const selectedSources = getWebSelectionForScope(spotlightTabId);
 
-        
-        
-        if (selectedSources.length > 0) {
-            const count = selectedSources.length;
-            const summarySource = {
-                tabId: 'summary',
-                title: `${count} ${count === 1 ? 'tab' : 'tabs'}`,
-                isActive: true,
-                isSummary: true
-            };
-            container.appendChild(createWebChipElement(summarySource, selectedSources, spotlightTabId, addButton));
-        }
-
-        
         const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
         if (onValidWebPage) {
             const currentTabId = String(currentBrowserTab.tabId);
             const isCurrentPinned = selectedSources.some(s => String(s.tabId) === currentTabId);
 
-            if (!isCurrentPinned) {
+            if (isCurrentPinned) {
+                const activeData = {
+                    tabId: currentBrowserTab.tabId,
+                    title: currentBrowserTab.title,
+                    url: currentBrowserTab.url,
+                    favIconUrl: currentBrowserTab.favIconUrl,
+                    isActive: true,
+                    isGhost: false,
+                    tokens: currentBrowserTabTokens.get(String(currentBrowserTab.tabId)) || 0
+                };
+                container.appendChild(createWebChipElement(activeData, selectedSources, spotlightTabId));
+            } else {
                 const ghostData = {
                     tabId: currentBrowserTab.tabId,
                     title: currentBrowserTab.title,
                     url: currentBrowserTab.url,
-                    displayTitle: 'Current Tab',
+                    favIconUrl: currentBrowserTab.favIconUrl,
                     isActive: false,
                     isGhost: true,
                     tokens: currentBrowserTabTokens.get(String(currentBrowserTab.tabId)) || 0
                 };
-                container.appendChild(createWebChipElement(ghostData, selectedSources, spotlightTabId, addButton));
+                container.appendChild(createWebChipElement(ghostData, selectedSources, spotlightTabId));
             }
         }
     });
@@ -3680,10 +3689,17 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 
 
-    
-    let webSourceScope = isSpotlightWindow ? [] : getWebSelectionForScope(currentTab.id);
+    let webSourceScope = [];
+    if (!isSpotlightWindow && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
+        const selection = getWebSelectionForScope(currentTab.id);
+        const isCurrentPinned = selection.some(s => String(s.tabId) === String(currentBrowserTab.tabId));
+        if (isCurrentPinned) {
+            webSourceScope = [
+                { tabId: currentBrowserTab.tabId, url: currentBrowserTab.url, title: currentBrowserTab.title || 'Current Tab' }
+            ];
+        }
+    }
 
-    
     if (shouldReadPage && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const alreadyPinned = webSourceScope.some(s => s.tabId === currentBrowserTab.tabId);
         if (!alreadyPinned) {
@@ -4892,7 +4908,8 @@ async function handleYouTubeTrigger(triggerInfo) {
             currentBrowserTab = {
                 tabId: ytTab.id,
                 title: ytTab.title || 'Untitled',
-                url: ytTab.url
+                url: ytTab.url,
+                favIconUrl: ytTab.favIconUrl
             };
 
             
