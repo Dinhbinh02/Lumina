@@ -1467,7 +1467,7 @@ button {
   max-height: 129px !important;
   min-height: 24px !important;
   height: auto;
-  padding: 0px 6px 6px 6px !important;
+  padding: 4px 6px 6px 6px !important;
   transform: translateZ(0);
   flex-grow: 1;
   min-width: 0;
@@ -1482,7 +1482,7 @@ button {
   grid-template-rows: auto auto;
   column-gap: 8px;
   row-gap: 2px;
-  padding: 12px;
+  padding: 8px;
   align-items: end;
   position: relative;
   overflow: visible;
@@ -4739,7 +4739,6 @@ button {
 .lumina-web-chip.is-active {
   border-width: 1px;
   border-color: transparent !important;
-  color: var(--lumina-primary-color) !important;
   background: rgba(0, 86, 210, 0.08) !important;
   opacity: 1;
   box-shadow: none !important;
@@ -4755,7 +4754,6 @@ button {
 [data-theme="dark"] .lumina-web-chip.is-active {
   background: rgba(10, 132, 255, 0.15) !important;
   border-color: transparent !important;
-  color: var(--lumina-primary-color) !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active:hover {
