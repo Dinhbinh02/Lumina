@@ -2447,7 +2447,12 @@ chrome.runtime.onConnect.addListener((port) => {
 
 async function translateText(text, targetLang = 'vi') {
     
-    const fromLang = 'auto';
+    let fromLang = 'auto';
+    if (targetLang === 'en') {
+        fromLang = 'vi';
+    } else if (targetLang === 'vi') {
+        fromLang = 'en';
+    }
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
 
     try {

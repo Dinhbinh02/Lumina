@@ -773,6 +773,55 @@
     document.addEventListener('keydown', async (event) => {
         if (isExtensionDisabled) return;
 
+        const pairs = { '(': ')', '{': '}', '[': ']' };
+        if (pairs[event.key]) {
+            const activeEl = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
+                ? LuminaChatUI.getDeepActiveElement()
+                : document.activeElement;
+            const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+            if (isInput) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                const openChar = event.key;
+                const closeChar = pairs[openChar];
+                
+                if (activeEl.isContentEditable) {
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        const selectedText = sel.toString();
+                        document.execCommand('insertText', false, openChar + selectedText + closeChar);
+                        
+                        const range = sel.getRangeAt(0);
+                        if (range.startContainer.nodeType === 3) {
+                            const newOffset = Math.max(0, range.startOffset - 1);
+                            range.setStart(range.startContainer, newOffset);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                        activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } else {
+                    const start = activeEl.selectionStart;
+                    const end = activeEl.selectionEnd;
+                    const val = activeEl.value;
+                    
+                    const before = val.substring(0, start);
+                    const selectedText = val.substring(start, end);
+                    const after = val.substring(end);
+                    
+                    activeEl.value = before + openChar + selectedText + closeChar + after;
+                    
+                    activeEl.focus();
+                    const newCursor = start + 1 + selectedText.length;
+                    activeEl.setSelectionRange(newCursor, newCursor);
+                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                return;
+            }
+        }
+
         
         if (matchesShortcut(event, 'translateInput')) {
             const activeElement = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
@@ -783,27 +832,89 @@
             if (isInput) {
                 if (activeElement.__luminaTranslating) return;
                 
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
+                let textToTranslate = '';
+                let hasSelection = false;
+                let selectionStart = 0;
+                let selectionEnd = 0;
+                let paragraphNode = null;
 
-                let text = '';
                 if (activeElement.isContentEditable) {
-                    text = activeElement.innerText || activeElement.textContent || '';
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        const range = sel.getRangeAt(0);
+                        if (activeElement.contains(range.commonAncestorContainer)) {
+                            hasSelection = !sel.isCollapsed && sel.toString().trim().length > 0;
+                            if (hasSelection) {
+                                textToTranslate = sel.toString();
+                            } else {
+                                let node = range.startContainer;
+                                const blockTags = ['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'ARTICLE', 'SECTION', 'TR', 'TD'];
+                                let parent = node.nodeType === 3 ? node.parentNode : node;
+                                while (parent && parent !== activeElement) {
+                                    if (parent.tagName && blockTags.includes(parent.tagName)) {
+                                        break;
+                                    }
+                                    parent = parent.parentNode;
+                                }
+                                paragraphNode = (parent && parent !== activeElement) ? parent : activeElement;
+                                textToTranslate = paragraphNode.innerText || paragraphNode.textContent || '';
+                            }
+                        }
+                    }
                 } else {
-                    text = activeElement.value || '';
+                    selectionStart = activeElement.selectionStart;
+                    selectionEnd = activeElement.selectionEnd;
+                    hasSelection = selectionStart !== selectionEnd;
+
+                    if (hasSelection) {
+                        textToTranslate = activeElement.value.substring(selectionStart, selectionEnd);
+                    } else {
+                        if (activeElement.tagName === 'INPUT') {
+                            textToTranslate = activeElement.value || '';
+                            selectionStart = 0;
+                            selectionEnd = textToTranslate.length;
+                        } else {
+                            const val = activeElement.value || '';
+                            const cursor = activeElement.selectionStart;
+                            const startIdx = val.lastIndexOf('\n', cursor - 1) + 1;
+                            let endIdx = val.indexOf('\n', cursor);
+                            if (endIdx === -1) endIdx = val.length;
+
+                            textToTranslate = val.substring(startIdx, endIdx);
+                            selectionStart = startIdx;
+                            selectionEnd = endIdx;
+                        }
+                    }
                 }
 
-                text = text.trim();
-                if (text.length > 0) {
+                textToTranslate = textToTranslate.trim();
+                if (textToTranslate.length > 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
                     activeElement.__luminaTranslating = true;
                     
-                    const originalTransition = activeElement.style.transition || '';
-                    const originalOpacity = activeElement.style.opacity || '';
+                    let targetEl = activeElement;
+                    if (activeElement.isContentEditable) {
+                        if (hasSelection) {
+                            const sel = window.getSelection();
+                            if (sel && sel.rangeCount > 0) {
+                                const range = sel.getRangeAt(0);
+                                let commonNode = range.commonAncestorContainer;
+                                targetEl = commonNode.nodeType === 3 ? commonNode.parentNode : commonNode;
+                            }
+                        } else if (paragraphNode) {
+                            targetEl = paragraphNode;
+                        }
+                    }
+
+                    const originalTransition = targetEl.style.transition || '';
+                    const originalOpacity = targetEl.style.opacity || '';
                     const originalPointerEvents = activeElement.style.pointerEvents || '';
                     
-                    activeElement.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                    activeElement.style.opacity = '0.6';
+                    targetEl.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    targetEl.style.opacity = '0.8';
                     activeElement.style.pointerEvents = 'none';
 
                     let isPulsing = true;
@@ -814,7 +925,7 @@
                         const now = Date.now();
                         if (now - lastPulse > 600) {
                             goingDown = !goingDown;
-                            activeElement.style.opacity = goingDown ? '0.6' : '0.85';
+                            targetEl.style.opacity = goingDown ? '0.8' : '0.95';
                             lastPulse = now;
                         }
                         requestAnimationFrame(smoothPulse);
@@ -824,36 +935,46 @@
                     try {
                         chrome.runtime.sendMessage({
                             action: 'translate_input_text',
-                            text: text
+                            text: textToTranslate
                         }, (response) => {
                             isPulsing = false;
-                            activeElement.style.opacity = '1';
+                            targetEl.style.opacity = '1';
                             
                             setTimeout(() => {
-                                activeElement.style.transition = originalTransition;
-                                activeElement.style.opacity = originalOpacity;
+                                targetEl.style.transition = originalTransition;
+                                targetEl.style.opacity = originalOpacity;
                                 activeElement.style.pointerEvents = originalPointerEvents;
                                 activeElement.__luminaTranslating = false;
                             }, 600);
 
                             if (response && response.translatedText) {
                                 if (activeElement.isContentEditable) {
-                                    activeElement.innerText = response.translatedText;
-                                    
-                                    activeElement.focus();
-                                    const range = document.createRange();
-                                    const sel = window.getSelection();
-                                    range.selectNodeContents(activeElement);
-                                    range.collapse(false);
-                                    sel.removeAllRanges();
-                                    sel.addRange(range);
-                                    
-                                    activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                                    const cleanedText = response.translatedText.replace(/\n\n/g, '\n');
+                                    if (hasSelection) {
+                                        document.execCommand('insertText', false, cleanedText);
+                                        activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                                    } else {
+                                        if (paragraphNode) {
+                                            activeElement.focus();
+                                            const sel = window.getSelection();
+                                            const range = document.createRange();
+                                            range.selectNodeContents(paragraphNode);
+                                            sel.removeAllRanges();
+                                            sel.addRange(range);
+                                            
+                                            document.execCommand('insertText', false, cleanedText);
+                                            activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                                        }
+                                    }
                                 } else {
-                                    activeElement.value = response.translatedText;
+                                    const val = activeElement.value || '';
+                                    const before = val.substring(0, selectionStart);
+                                    const after = val.substring(selectionEnd);
+                                    activeElement.value = before + response.translatedText + after;
                                     
                                     activeElement.focus();
-                                    activeElement.setSelectionRange(response.translatedText.length, response.translatedText.length);
+                                    const newCursorPos = selectionStart + response.translatedText.length;
+                                    activeElement.setSelectionRange(newCursorPos, newCursorPos);
                                     
                                     activeElement.dispatchEvent(new Event('input', { bubbles: true }));
                                 }

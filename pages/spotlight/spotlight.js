@@ -1118,15 +1118,6 @@ async function initTabs() {
             resetChat();
             return;
         }
-        if ((e.metaKey || e.ctrlKey) && !isNaN(parseInt(e.key))) {
-            const index = parseInt(e.key) - 1;
-            if (index >= 0 && index < 9) {
-                e.preventDefault();
-                if (index < tabGroups.length) {
-                    switchGroup(index);
-                }
-            }
-        }
     }, true);
 }
 
@@ -1387,6 +1378,10 @@ function switchGroup(groupIndex) {
 
     loadCurrentWebSelection(primaryTab?.id || null);
     updateWebChips();
+
+    if (typeof window.updateTopbarModelSelector === 'function') {
+        window.updateTopbarModelSelector();
+    }
 
     renderTabs();
     saveTabsState();
@@ -2962,6 +2957,9 @@ async function init() {
     
     initSpotlightAskSelection();
 
+    // Initialize topbar model selector
+    initTopbarModelSelector();
+
     
     const inputAreaPrimary = document.getElementById('input-area-primary');
     const inputAreaSecondary = document.getElementById('input-area-secondary');
@@ -3914,14 +3912,22 @@ function setupGlobalListeners() {
 
     if (panePrimary) {
         panePrimary.addEventListener('mouseenter', (e) => {
+            const old = hoveredPane;
             hoveredPane = 'primary';
             transferFocusOnPaneEnter(sharedInputUI?.inputEl, e);
+            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
+                window.updateTopbarModelSelector();
+            }
         });
     }
     if (paneSecondary) {
         paneSecondary.addEventListener('mouseenter', (e) => {
+            const old = hoveredPane;
             hoveredPane = 'secondary';
             transferFocusOnPaneEnter(sharedInputUISecondary?.inputEl, e);
+            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
+                window.updateTopbarModelSelector();
+            }
         });
     }
 
@@ -3929,13 +3935,72 @@ function setupGlobalListeners() {
     
     
     if (sharedInputUI?.inputEl) {
-        sharedInputUI.inputEl.addEventListener('focus', () => { hoveredPane = 'primary'; });
+        sharedInputUI.inputEl.addEventListener('focus', () => {
+            const old = hoveredPane;
+            hoveredPane = 'primary';
+            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
+                window.updateTopbarModelSelector();
+            }
+        });
     }
     if (sharedInputUISecondary?.inputEl) {
-        sharedInputUISecondary.inputEl.addEventListener('focus', () => { hoveredPane = 'secondary'; });
+        sharedInputUISecondary.inputEl.addEventListener('focus', () => {
+            const old = hoveredPane;
+            hoveredPane = 'secondary';
+            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
+                window.updateTopbarModelSelector();
+            }
+        });
     }
 
     document.addEventListener('keydown', (event) => {
+        const pairs = { '(': ')', '{': '}', '[': ']' };
+        if (pairs[event.key]) {
+            const activeEl = document.activeElement;
+            const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+            if (isInput) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                const openChar = event.key;
+                const closeChar = pairs[openChar];
+                
+                if (activeEl.isContentEditable) {
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        const selectedText = sel.toString();
+                        document.execCommand('insertText', false, openChar + selectedText + closeChar);
+                        
+                        const range = sel.getRangeAt(0);
+                        if (range.startContainer.nodeType === 3) {
+                            const newOffset = Math.max(0, range.startOffset - 1);
+                            range.setStart(range.startContainer, newOffset);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                        activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } else {
+                    const start = activeEl.selectionStart;
+                    const end = activeEl.selectionEnd;
+                    const val = activeEl.value;
+                    
+                    const before = val.substring(0, start);
+                    const selectedText = val.substring(start, end);
+                    const after = val.substring(end);
+                    
+                    activeEl.value = before + openChar + selectedText + closeChar + after;
+                    
+                    activeEl.focus();
+                    const newCursor = start + 1 + selectedText.length;
+                    activeEl.setSelectionRange(newCursor, newCursor);
+                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                return;
+            }
+        }
+
         const activeElement = document.activeElement;
         const selection = window.getSelection().toString().trim();
         const isEditing = activeElement && (
@@ -3963,27 +4028,89 @@ function setupGlobalListeners() {
             if (isEditingLocal) {
                 if (activeEl.__luminaTranslating) return;
 
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
+                let textToTranslate = '';
+                let hasSelection = false;
+                let selectionStart = 0;
+                let selectionEnd = 0;
+                let paragraphNode = null;
 
-                let text = '';
                 if (activeEl.isContentEditable) {
-                    text = activeEl.innerText || activeEl.textContent || '';
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        const range = sel.getRangeAt(0);
+                        if (activeEl.contains(range.commonAncestorContainer)) {
+                            hasSelection = !sel.isCollapsed && sel.toString().trim().length > 0;
+                            if (hasSelection) {
+                                textToTranslate = sel.toString();
+                            } else {
+                                let node = range.startContainer;
+                                const blockTags = ['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'ARTICLE', 'SECTION', 'TR', 'TD'];
+                                let parent = node.nodeType === 3 ? node.parentNode : node;
+                                while (parent && parent !== activeEl) {
+                                    if (parent.tagName && blockTags.includes(parent.tagName)) {
+                                        break;
+                                    }
+                                    parent = parent.parentNode;
+                                }
+                                paragraphNode = (parent && parent !== activeEl) ? parent : activeEl;
+                                textToTranslate = paragraphNode.innerText || paragraphNode.textContent || '';
+                            }
+                        }
+                    }
                 } else {
-                    text = activeEl.value || '';
+                    selectionStart = activeEl.selectionStart;
+                    selectionEnd = activeEl.selectionEnd;
+                    hasSelection = selectionStart !== selectionEnd;
+
+                    if (hasSelection) {
+                        textToTranslate = activeEl.value.substring(selectionStart, selectionEnd);
+                    } else {
+                        if (activeEl.tagName === 'INPUT') {
+                            textToTranslate = activeEl.value || '';
+                            selectionStart = 0;
+                            selectionEnd = textToTranslate.length;
+                        } else {
+                            const val = activeEl.value || '';
+                            const cursor = activeEl.selectionStart;
+                            const startIdx = val.lastIndexOf('\n', cursor - 1) + 1;
+                            let endIdx = val.indexOf('\n', cursor);
+                            if (endIdx === -1) endIdx = val.length;
+
+                            textToTranslate = val.substring(startIdx, endIdx);
+                            selectionStart = startIdx;
+                            selectionEnd = endIdx;
+                        }
+                    }
                 }
 
-                text = text.trim();
-                if (text.length > 0) {
+                textToTranslate = textToTranslate.trim();
+                if (textToTranslate.length > 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
                     activeEl.__luminaTranslating = true;
                     
-                    const originalTransition = activeEl.style.transition || '';
-                    const originalOpacity = activeEl.style.opacity || '';
+                    let targetEl = activeEl;
+                    if (activeEl.isContentEditable) {
+                        if (hasSelection) {
+                            const sel = window.getSelection();
+                            if (sel && sel.rangeCount > 0) {
+                                const range = sel.getRangeAt(0);
+                                let commonNode = range.commonAncestorContainer;
+                                targetEl = commonNode.nodeType === 3 ? commonNode.parentNode : commonNode;
+                            }
+                        } else if (paragraphNode) {
+                            targetEl = paragraphNode;
+                        }
+                    }
+
+                    const originalTransition = targetEl.style.transition || '';
+                    const originalOpacity = targetEl.style.opacity || '';
                     const originalPointerEvents = activeEl.style.pointerEvents || '';
 
-                    activeEl.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                    activeEl.style.opacity = '0.6';
+                    targetEl.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    targetEl.style.opacity = '0.8';
                     activeEl.style.pointerEvents = 'none';
 
                     let isPulsing = true;
@@ -3994,7 +4121,7 @@ function setupGlobalListeners() {
                         const now = Date.now();
                         if (now - lastPulse > 600) {
                             goingDown = !goingDown;
-                            activeEl.style.opacity = goingDown ? '0.6' : '0.85';
+                            targetEl.style.opacity = goingDown ? '0.8' : '0.95';
                             lastPulse = now;
                         }
                         requestAnimationFrame(smoothPulse);
@@ -4004,33 +4131,47 @@ function setupGlobalListeners() {
                     try {
                         chrome.runtime.sendMessage({
                             action: 'translate_input_text',
-                            text: text
+                            text: textToTranslate
                         }, (response) => {
                             isPulsing = false;
-                            activeEl.style.opacity = '1';
+                            targetEl.style.opacity = '1';
 
                             setTimeout(() => {
-                                activeEl.style.transition = originalTransition;
-                                activeEl.style.opacity = originalOpacity;
+                                targetEl.style.transition = originalTransition;
+                                targetEl.style.opacity = originalOpacity;
                                 activeEl.style.pointerEvents = originalPointerEvents;
                                 activeEl.__luminaTranslating = false;
                             }, 600);
 
                             if (response && response.translatedText) {
                                 if (activeEl.isContentEditable) {
-                                    activeEl.innerText = response.translatedText;
-                                    activeEl.focus();
-                                    const range = document.createRange();
-                                    const sel = window.getSelection();
-                                    range.selectNodeContents(activeEl);
-                                    range.collapse(false);
-                                    sel.removeAllRanges();
-                                    sel.addRange(range);
-                                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                                    const cleanedText = response.translatedText.replace(/\n\n/g, '\n');
+                                    if (hasSelection) {
+                                        document.execCommand('insertText', false, cleanedText);
+                                        activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                                    } else {
+                                        if (paragraphNode) {
+                                            activeEl.focus();
+                                            const sel = window.getSelection();
+                                            const range = document.createRange();
+                                            range.selectNodeContents(paragraphNode);
+                                            sel.removeAllRanges();
+                                            sel.addRange(range);
+                                            
+                                            document.execCommand('insertText', false, cleanedText);
+                                            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                                        }
+                                    }
                                 } else {
-                                    activeEl.value = response.translatedText;
+                                    const val = activeEl.value || '';
+                                    const before = val.substring(0, selectionStart);
+                                    const after = val.substring(selectionEnd);
+                                    activeEl.value = before + response.translatedText + after;
+                                    
                                     activeEl.focus();
-                                    activeEl.setSelectionRange(response.translatedText.length, response.translatedText.length);
+                                    const newCursorPos = selectionStart + response.translatedText.length;
+                                    activeEl.setSelectionRange(newCursorPos, newCursorPos);
+                                    
                                     activeEl.dispatchEvent(new Event('input', { bubbles: true }));
                                 }
                             }
@@ -5297,4 +5438,113 @@ async function renderDropdownMenu() {
             dropdown.style.display = 'none';
         });
     }
+}
+
+function initTopbarModelSelector() {
+    const selector = document.getElementById('topbar-model-selector');
+    if (!selector) return;
+    const btn = document.getElementById('topbar-model-btn');
+    const label = document.getElementById('topbar-model-label');
+    const dropdown = document.getElementById('topbar-model-dropdown');
+    if (!btn || !dropdown) return;
+
+    const render = (data) => {
+        const chain = data.modelChains?.text || [];
+        
+        // Find current model of active tab
+        const activeTab = (isSplitMode && hoveredPane === 'secondary')
+            ? tabs[secondaryActiveTabIndex]
+            : tabs[activeTabIndex];
+        let currentModel = activeTab?.selectedModel?.model;
+        let currentProviderId = activeTab?.selectedModel?.providerId;
+
+        const lastUsed = data.lastUsedModel;
+        if (!currentModel && lastUsed && lastUsed.model) {
+            currentModel = lastUsed.model;
+            currentProviderId = lastUsed.providerId;
+        }
+        if (!currentModel && chain.length > 0) {
+            currentModel = chain[0].model;
+            currentProviderId = chain[0].providerId;
+        }
+
+        if (activeTab && currentModel) {
+            activeTab.selectedModel = { model: currentModel, providerId: currentProviderId };
+            const targetSharedUI = (isSplitMode && hoveredPane === 'secondary') ? sharedInputUISecondary : sharedInputUI;
+            if (targetSharedUI) {
+                targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
+            }
+        }
+
+        if (currentModel && label) {
+            label.textContent = currentModel;
+        }
+
+        dropdown.innerHTML = '';
+        if (chain.length === 0) {
+            dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:#70757a;">No models</div>';
+            return;
+        }
+
+        const header = document.createElement('div');
+        header.style.cssText = 'padding:6px 12px; font-size:11px; font-weight:600; color:#70757a; text-transform:uppercase; letter-spacing:0.5px; font-family:\'Google Sans\', sans-serif;';
+        header.textContent = 'MODELS';
+        dropdown.appendChild(header);
+
+        chain.forEach((item) => {
+            const el = document.createElement('button');
+            const isActive = item.model === currentModel && item.providerId === currentProviderId;
+            el.className = `lumina-model-item${isActive ? ' active' : ''}`;
+            el.innerHTML = `<span class="model-name">${item.model}</span>`;
+            el.onclick = (e) => {
+                e.stopPropagation();
+                if (label) label.textContent = item.model;
+                dropdown.classList.remove('active');
+                dropdown.querySelectorAll('.lumina-model-item').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
+
+                // Update active tab model
+                const currentActiveTab = (isSplitMode && hoveredPane === 'secondary')
+                    ? tabs[secondaryActiveTabIndex]
+                    : tabs[activeTabIndex];
+                const targetSharedUI = (isSplitMode && hoveredPane === 'secondary') ? sharedInputUISecondary : sharedInputUI;
+
+                if (currentActiveTab) {
+                    currentActiveTab.selectedModel = { model: item.model, providerId: item.providerId };
+                    if (targetSharedUI) {
+                        targetSharedUI.activeTabModel = { ...currentActiveTab.selectedModel };
+                        targetSharedUI._updateTokenLimitFromModel();
+                    }
+                }
+
+                chrome.storage.local.set({ lastUsedModel: { model: item.model, providerId: item.providerId } });
+            };
+            dropdown.appendChild(el);
+        });
+    };
+
+    const fetchAndRender = () => {
+        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel'], render);
+    };
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dropdown.classList.contains('active')) {
+            dropdown.classList.remove('active');
+        } else {
+            // Close other dropdowns
+            const moreDropdown = document.getElementById('topbar-dropdown-menu');
+            if (moreDropdown) moreDropdown.style.display = 'none';
+            fetchAndRender();
+            dropdown.classList.add('active');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!selector.contains(e.target) && dropdown.classList.contains('active')) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    window.updateTopbarModelSelector = fetchAndRender;
 }

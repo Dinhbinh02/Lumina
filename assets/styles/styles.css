@@ -1456,7 +1456,7 @@ button {
   max-height: 129px !important;
   min-height: 24px !important;
   height: auto;
-  padding: 4px 6px 6px 6px !important;
+  padding: 6px 6px 10px 6px !important;
   transform: translateZ(0);
   flex-grow: 1;
   min-width: 0;
@@ -1544,26 +1544,50 @@ button {
 
 .lumina-token-counter {
   position: relative;
-  display: flex;
+  display: flex !important;
   align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0;
-  background: transparent !important;
-  border: none !important;
-  font-size: 0.9em !important;
+  justify-content: center;
+  height: 32px !important;
+  padding: 0 10px !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
   cursor: pointer;
   user-select: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  color: var(--lumina-text-primary) !important;
+  color: var(--lumina-text-secondary, #70757a) !important;
+  order: 2 !important;
+  margin-left: 2px !important;
+}
+
+[data-theme="dark"] .lumina-token-counter {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--lumina-text-secondary, #a1a1a6) !important;
 }
 
 .lumina-token-counter:hover {
-  cursor: pointer;
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: var(--lumina-text-primary, #1f1f1f) !important;
+}
+
+[data-theme="dark"] .lumina-token-counter:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }
 
 .lumina-token-counter.is-active {
-  color: var(--lumina-primary-color) !important;
+  background: rgba(0, 122, 255, 0.08) !important;
+  border-color: rgba(0, 122, 255, 0.2) !important;
+  color: var(--lumina-primary-color, #007aff) !important;
+}
+
+[data-theme="dark"] .lumina-token-counter.is-active {
+  background: rgba(10, 132, 255, 0.15) !important;
+  border-color: rgba(10, 132, 255, 0.3) !important;
+  color: #0a84ff !important;
 }
 
 .lumina-token-details {
@@ -1582,8 +1606,7 @@ button {
   min-width: 165px !important;
   z-index: 10000 !important;
   box-shadow: var(--lumina-shadow-lg) !important;
-
-
+  font-size: 12px !important;
   opacity: 0;
   visibility: hidden;
   transform: translateY(8px);
@@ -1608,7 +1631,7 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  font-size: 11px;
+  font-size: 1em;
 }
 
 .lumina-token-detail-item .detail-label {
@@ -1627,9 +1650,9 @@ button {
   border: 1px solid var(--lumina-ui-border);
   border-radius: 6px;
   color: var(--lumina-text-primary);
-  font-size: 11px;
+  font-size: 1em;
   padding: 4px 8px;
-  width: 70px;
+  width: 95px;
   text-align: right;
   outline: none;
   font-family: 'Google Sans Code', 'Source Code Pro', monospace;
@@ -1772,8 +1795,8 @@ button {
 }
 
 .lumina-upload-btn {
-  width: 36px !important;
-  height: 36px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 10px !important;
   padding: 0 !important;
   background: #f1f3f8 !important;
@@ -1786,8 +1809,8 @@ button {
 }
 
 .lumina-mic-btn {
-  width: 36px !important;
-  height: 36px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 10px !important;
   padding: 0 !important;
   background: #f1f3f8 !important;
@@ -1940,8 +1963,8 @@ button {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 36px !important;
-  width: 36px !important;
+  height: 32px !important;
+  width: 32px !important;
   border: none !important;
   border-radius: 10px !important;
   background: #f1f3f8 !important;
@@ -5063,7 +5086,7 @@ button {
   align-items: center;
   gap: 8px;
   height: 46px;
-  padding: 0 16px;
+  padding: 0 10px;
   background: var(--lumina-ui-bg, #ffffff);
   flex-shrink: 0;
   z-index: 10;
@@ -5076,7 +5099,7 @@ button {
 .topbar__action-btn {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5430,4 +5453,119 @@ button {
 
 .topbar__dropdown-menu.expanded .dropdown-chat-list {
   max-height: 350px;
+}
+
+/* Hide model selector inside chat input area */
+.lumina-input-bar .lumina-model-selector {
+  display: none !important;
+}
+
+/* Style model selector inside topbar */
+.topbar .lumina-model-selector {
+  display: flex !important;
+  align-items: center;
+  position: relative;
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.topbar .lumina-model-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px;
+  height: 32px !important;
+  padding: 0 12px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 10px !important;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1em !important;
+  font-weight: 500;
+  color: #1f1f1f !important;
+  transition: background 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .topbar .lumina-model-btn {
+  background: #2c2c2e !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.topbar .lumina-model-btn:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="dark"] .topbar .lumina-model-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.topbar .lumina-model-dropdown {
+  position: absolute;
+  top: 100% !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  margin-top: 6px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  min-width: 180px !important;
+  width: auto !important;
+  max-height: 300px !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-10px) scale(0.95) !important;
+  transform-origin: top left !important;
+  transition: opacity 0.2s, transform 0.2s !important;
+  flex-direction: column !important;
+  padding: 6px 0 !important;
+}
+
+.topbar .lumina-model-dropdown.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+[data-theme="dark"] .topbar .lumina-model-dropdown {
+  background: #1c1c1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+.topbar .lumina-model-item {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 8px 16px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #1f1f1f !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: background 0.15s;
+}
+
+[data-theme="dark"] .topbar .lumina-model-item {
+  color: #ffffff !important;
+}
+
+.topbar .lumina-model-item:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .topbar .lumina-model-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.topbar .lumina-model-item.active {
+  color: #007aff !important;
+  font-weight: 600 !important;
 }
