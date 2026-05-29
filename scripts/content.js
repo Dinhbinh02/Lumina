@@ -672,6 +672,9 @@
 
         if (isLuminaInput) {
             
+            if (matchesShortcut(event, 'translateInput')) {
+                return;
+            }
             
             if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab') {
                 return;
@@ -694,6 +697,9 @@
             );
 
             if (isLuminaInput) {
+                if (matchesShortcut(e, 'translateInput')) {
+                    return;
+                }
                 if (e.key === 'Enter' || e.key === 'Escape' || e.key === 'Tab') {
                     return;
                 }
@@ -768,6 +774,107 @@
         if (isExtensionDisabled) return;
 
         
+        if (matchesShortcut(event, 'translateInput')) {
+            const activeElement = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
+                ? LuminaChatUI.getDeepActiveElement()
+                : document.activeElement;
+            const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
+            
+            if (isInput) {
+                if (activeElement.__luminaTranslating) return;
+                
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                let text = '';
+                if (activeElement.isContentEditable) {
+                    text = activeElement.innerText || activeElement.textContent || '';
+                } else {
+                    text = activeElement.value || '';
+                }
+
+                text = text.trim();
+                if (text.length > 0) {
+                    activeElement.__luminaTranslating = true;
+                    
+                    const originalTransition = activeElement.style.transition || '';
+                    const originalOpacity = activeElement.style.opacity || '';
+                    const originalPointerEvents = activeElement.style.pointerEvents || '';
+                    
+                    activeElement.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    activeElement.style.opacity = '0.6';
+                    activeElement.style.pointerEvents = 'none';
+
+                    let isPulsing = true;
+                    let lastPulse = Date.now();
+                    let goingDown = true;
+                    function smoothPulse() {
+                        if (!isPulsing) return;
+                        const now = Date.now();
+                        if (now - lastPulse > 600) {
+                            goingDown = !goingDown;
+                            activeElement.style.opacity = goingDown ? '0.6' : '0.85';
+                            lastPulse = now;
+                        }
+                        requestAnimationFrame(smoothPulse);
+                    }
+                    requestAnimationFrame(smoothPulse);
+
+                    try {
+                        chrome.runtime.sendMessage({
+                            action: 'translate_input_text',
+                            text: text
+                        }, (response) => {
+                            isPulsing = false;
+                            activeElement.style.opacity = '1';
+                            
+                            setTimeout(() => {
+                                activeElement.style.transition = originalTransition;
+                                activeElement.style.opacity = originalOpacity;
+                                activeElement.style.pointerEvents = originalPointerEvents;
+                                activeElement.__luminaTranslating = false;
+                            }, 600);
+
+                            if (response && response.translatedText) {
+                                if (activeElement.isContentEditable) {
+                                    activeElement.innerText = response.translatedText;
+                                    
+                                    activeElement.focus();
+                                    const range = document.createRange();
+                                    const sel = window.getSelection();
+                                    range.selectNodeContents(activeElement);
+                                    range.collapse(false);
+                                    sel.removeAllRanges();
+                                    sel.addRange(range);
+                                    
+                                    activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                                } else {
+                                    activeElement.value = response.translatedText;
+                                    
+                                    activeElement.focus();
+                                    activeElement.setSelectionRange(response.translatedText.length, response.translatedText.length);
+                                    
+                                    activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                                }
+                            }
+                        });
+                    } catch (err) {
+                        isPulsing = false;
+                        activeElement.style.opacity = '1';
+                        setTimeout(() => {
+                            activeElement.style.transition = originalTransition;
+                            activeElement.style.opacity = originalOpacity;
+                            activeElement.style.pointerEvents = originalPointerEvents;
+                            activeElement.__luminaTranslating = false;
+                        }, 600);
+                        console.error('[Lumina] Send message for translateInput failed:', err);
+                    }
+                }
+                return;
+            }
+        }
+
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
             
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;

@@ -41,6 +41,9 @@ function bindContainerWheelForward(containerEl) {
 
 const isWebApp = new URLSearchParams(window.location.search).get('webapp') === '1';
 const isSidePanel = new URLSearchParams(window.location.search).get('sidepanel') === '1';
+if (isSidePanel) {
+    document.body.classList.add('is-sidepanel');
+}
 
 const STORAGE_PREFIX = isSidePanel ? 'sidepanel' : 'spotlight';
 const KEYS = {
@@ -857,8 +860,10 @@ function ensureTabHistoryLoaded(tab) {
 }
 
 async function initTabs() {
-    const tabsBar = document.getElementById('tabs-bar');
-    if (tabsBar) tabsBar.style.display = 'flex';
+    const topBar = document.getElementById('spotlight-topbar');
+    if (topBar) {
+        topBar.style.display = 'flex';
+    }
 
     const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
     const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
@@ -1043,10 +1048,36 @@ async function initTabs() {
     
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) {
-        
         const newBtn = newTabBtn.cloneNode(true);
         newTabBtn.parentNode.replaceChild(newBtn, newTabBtn);
         newBtn.addEventListener('click', () => createTab());
+    }
+
+    const topbarNewChatBtn = document.getElementById('topbar-new-chat-btn');
+    if (topbarNewChatBtn) {
+        topbarNewChatBtn.addEventListener('click', () => createTab());
+    }
+
+    const topbarMoreBtn = document.getElementById('topbar-more-btn');
+    const topbarDropdown = document.getElementById('topbar-dropdown-menu');
+    if (topbarMoreBtn && topbarDropdown) {
+        topbarMoreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = topbarDropdown.style.display === 'flex';
+            if (isOpen) {
+                topbarDropdown.style.display = 'none';
+            } else {
+                topbarDropdown.style.display = 'flex';
+                topbarDropdown.classList.remove('expanded');
+                renderDropdownMenu();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!topbarDropdown.contains(e.target) && e.target !== topbarMoreBtn) {
+                topbarDropdown.style.display = 'none';
+            }
+        });
     }
 
     
@@ -1921,15 +1952,6 @@ function renderTabs() {
     if (newTabBtn) {
         list.appendChild(newTabBtn);
     }
-
-    const tabsBar = document.getElementById('tabs-bar');
-    if (tabsBar) {
-        if (tabGroups.length < 1) {
-            tabsBar.style.display = 'none';
-        } else {
-            tabsBar.style.display = 'flex';
-        }
-    }
 }
 
 function handleMouseMove(e) {
@@ -2788,8 +2810,7 @@ function updateWebChips() {
         container.innerHTML = '';
 
         
-        if (!isSidePanel && !isWebApp) return;
-
+        // Allowed in Spotlight window as well
         const spotlightTabId = getSpotlightTabIdForPane(container);
         if (!spotlightTabId) {
             container.style.display = 'none';
@@ -2993,6 +3014,22 @@ async function init() {
     }
 
     setupPort();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSessionId = urlParams.get('session_id');
+    if (urlSessionId) {
+        setTimeout(async () => {
+            const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+            const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+            const meta = sessions[urlSessionId];
+            const contentKey = `lumina_session_${urlSessionId}`;
+            const contentData = await chrome.storage.local.get([contentKey]);
+            const messages = contentData[contentKey];
+            if (messages && meta) {
+                window.loadHistoryIntoNewTab(messages, meta, urlSessionId);
+            }
+        }, 300);
+    }
 
     
     setupRegenerateButtons();
@@ -3912,6 +3949,106 @@ function setupGlobalListeners() {
             modifierKeyPressedAlone = true;
         } else {
             modifierKeyPressedAlone = false;
+        }
+
+        
+        if (matchesShortcut(event, 'translateInput', shortcuts)) {
+            const activeEl = document.activeElement;
+            const isEditingLocal = activeEl && (
+                activeEl.tagName === 'INPUT' ||
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable
+            );
+
+            if (isEditingLocal) {
+                if (activeEl.__luminaTranslating) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+
+                let text = '';
+                if (activeEl.isContentEditable) {
+                    text = activeEl.innerText || activeEl.textContent || '';
+                } else {
+                    text = activeEl.value || '';
+                }
+
+                text = text.trim();
+                if (text.length > 0) {
+                    activeEl.__luminaTranslating = true;
+                    
+                    const originalTransition = activeEl.style.transition || '';
+                    const originalOpacity = activeEl.style.opacity || '';
+                    const originalPointerEvents = activeEl.style.pointerEvents || '';
+
+                    activeEl.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    activeEl.style.opacity = '0.6';
+                    activeEl.style.pointerEvents = 'none';
+
+                    let isPulsing = true;
+                    let lastPulse = Date.now();
+                    let goingDown = true;
+                    function smoothPulse() {
+                        if (!isPulsing) return;
+                        const now = Date.now();
+                        if (now - lastPulse > 600) {
+                            goingDown = !goingDown;
+                            activeEl.style.opacity = goingDown ? '0.6' : '0.85';
+                            lastPulse = now;
+                        }
+                        requestAnimationFrame(smoothPulse);
+                    }
+                    requestAnimationFrame(smoothPulse);
+
+                    try {
+                        chrome.runtime.sendMessage({
+                            action: 'translate_input_text',
+                            text: text
+                        }, (response) => {
+                            isPulsing = false;
+                            activeEl.style.opacity = '1';
+
+                            setTimeout(() => {
+                                activeEl.style.transition = originalTransition;
+                                activeEl.style.opacity = originalOpacity;
+                                activeEl.style.pointerEvents = originalPointerEvents;
+                                activeEl.__luminaTranslating = false;
+                            }, 600);
+
+                            if (response && response.translatedText) {
+                                if (activeEl.isContentEditable) {
+                                    activeEl.innerText = response.translatedText;
+                                    activeEl.focus();
+                                    const range = document.createRange();
+                                    const sel = window.getSelection();
+                                    range.selectNodeContents(activeEl);
+                                    range.collapse(false);
+                                    sel.removeAllRanges();
+                                    sel.addRange(range);
+                                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                                } else {
+                                    activeEl.value = response.translatedText;
+                                    activeEl.focus();
+                                    activeEl.setSelectionRange(response.translatedText.length, response.translatedText.length);
+                                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+                                }
+                            }
+                        });
+                    } catch (err) {
+                        isPulsing = false;
+                        activeEl.style.opacity = '1';
+                        setTimeout(() => {
+                            activeEl.style.transition = originalTransition;
+                            activeEl.style.opacity = originalOpacity;
+                            activeEl.style.pointerEvents = originalPointerEvents;
+                            activeEl.__luminaTranslating = false;
+                        }, 600);
+                        console.error('[Lumina Spotlight] translateInput failed:', err);
+                    }
+                }
+                return;
+            }
         }
 
         const shortcutActions = Object.keys(shortcuts);
@@ -5040,3 +5177,124 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         }
     }
 };
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+}
+
+async function renderDropdownMenu() {
+    const dropdown = document.getElementById('topbar-dropdown-menu');
+    if (!dropdown) return;
+
+    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+    const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+    const historyData = Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
+    
+    const isExpanded = dropdown.classList.contains('expanded');
+    const displayLimit = isExpanded ? 15 : 5;
+    const recentSessions = historyData.slice(0, displayLimit);
+
+    let html = '';
+    
+    html += `<div class="dropdown-section-title">Recent Chats</div>`;
+    html += `<div class="dropdown-chat-list">`;
+    
+    if (recentSessions.length === 0) {
+        html += `<div class="dropdown-item empty-state">No recent chats</div>`;
+    } else {
+        recentSessions.forEach(session => {
+            let displayTitle = session.title;
+            if (!session.isRenamed && session.questions && session.questions.length > 0) {
+                displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+            }
+            if (!displayTitle) displayTitle = "Untitled Chat";
+            
+            if (displayTitle.length > 40) {
+                displayTitle = displayTitle.substring(0, 37) + '...';
+            }
+
+            html += `
+                <div class="dropdown-item chat-item" data-session-id="${session.id}">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    <span class="item-text">${escapeHtml(displayTitle)}</span>
+                </div>
+            `;
+        });
+    }
+
+    if (historyData.length > displayLimit && !isExpanded) {
+        html += `
+            <div class="dropdown-item more-item" id="dropdown-more-btn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                <span class="item-text">More</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret-icon"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+        `;
+    }
+
+    html += `</div>`;
+    html += `<div class="dropdown-divider"></div>`;
+
+    html += `
+        <div class="dropdown-item action-item" id="dropdown-continue-btn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <span class="item-text">Continue Chat in New Tab</span>
+        </div>
+        <div class="dropdown-item action-item" id="dropdown-settings-btn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span class="item-text">Settings & Help</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret-icon"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+    `;
+
+    dropdown.innerHTML = html;
+
+    dropdown.querySelectorAll('.chat-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const sid = item.dataset.sessionId;
+            const contentKey = `lumina_session_${sid}`;
+            const contentData = await chrome.storage.local.get([contentKey]);
+            const messages = contentData[contentKey];
+            const meta = sessions[sid];
+            if (messages && meta) {
+                window.loadHistoryIntoNewTab(messages, meta, sid);
+            }
+            dropdown.style.display = 'none';
+        });
+    });
+
+    const moreBtn = dropdown.querySelector('.more-item');
+    if (moreBtn) {
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.add('expanded');
+            renderDropdownMenu();
+        });
+    }
+
+    const continueBtn = dropdown.querySelector('#dropdown-continue-btn');
+    if (continueBtn) {
+        continueBtn.addEventListener('click', () => {
+            const activeTab = tabs[activeTabIndex];
+            let url = chrome.runtime.getURL('pages/spotlight/spotlight.html') + '?webapp=1';
+            if (activeTab && activeTab.sessionId) {
+                url += `&session_id=${activeTab.sessionId}`;
+            }
+            chrome.tabs.create({ url });
+            dropdown.style.display = 'none';
+        });
+    }
+
+    const settingsBtn = dropdown.querySelector('#dropdown-settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            chrome.runtime.openOptionsPage();
+            dropdown.style.display = 'none';
+        });
+    }
+}

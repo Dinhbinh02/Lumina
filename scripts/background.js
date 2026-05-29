@@ -280,9 +280,7 @@ function buildChatSystemInstruction(reasoningMode = false) {
     let instruction = `You are Lumina, an elite AI partner powered by Gemini. You are authentic, precise, and highly empathetic. Your tone balances professional candor with helpful peer-like insight.
 [Capabilities]: Multimodal (Text, PDF, Vision), built-in Translation/Proofreading/Lexicography, and real-time Web Context awareness.
 
-[Formatting]:
-- Hierarchy: Use Markdown headers (##/###, never #) and horizontal rules (---).
-- Emphasis: Use strategic bolding and GitHub-style callouts (> [!NOTE/TIP]). Use tables for data.
+- Emphasis: Use strategic bolding. Use tables for data.
 - Math: Use LaTeX ($inline$ / $$display$$) ONLY for complex math/science. NEVER use LaTeX for prose, basic formatting, or simple units.
 
 [Personalization]:
@@ -947,8 +945,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     if (action === 'proofread') {
         systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
-    } else if (responseLanguage && responseLanguage !== 'auto') {
-        systemInstruction += `\n\nIMPORTANT: Please respond in ${responseLanguage === 'vi' ? 'Vietnamese' : (responseLanguage === 'zh' ? 'Chinese' : responseLanguage)} unless the user specifies otherwise.`;
     }
 
 
@@ -1525,6 +1521,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'pasteDictationText':
             pasteDictationText(request.text);
             return;
+
+        case 'translate_input_text': {
+            const textToTranslate = request.text || '';
+            translateText(textToTranslate, 'en')
+                .then(res => {
+                    sendResponse({ translatedText: res.translation || textToTranslate });
+                })
+                .catch(err => {
+                    console.error('[Lumina BG] translate_input_text error:', err);
+                    sendResponse({ translatedText: textToTranslate });
+                });
+            return true;
+        }
 
         case 'open_sidepanel':
         case 'ensure_sidepanel_open': {
@@ -2473,53 +2482,21 @@ async function translateText(text, targetLang = 'vi') {
 }
 
 async function proofreadText(text) {
-    
-    const chain = await getModelChain();
+    const fromLang = 'auto';
+    const targetLang = 'en';
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
 
-    if (!chain || chain.length === 0) {
-        throw new Error("No AI provider configured. Please add a provider in Options.");
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        let translatedText = data[0].map(item => item[0]).join('');
+
+        return { corrected: translatedText };
+    } catch (e) {
+        console.error('[Lumina] Google Translate fallback for proofread failed:', e);
+        return { corrected: text };
     }
-
-    
-    for (let i = 0; i < chain.length; i++) {
-        const config = chain[i];
-        const { model, providerType: currentProvider, endpoint, apiKey } = config;
-        const keys = getKeysArray(apiKey);
-
-        
-        if (model) incrementModelUsage(model);
-        
-
-        const globalSettings = await chrome.storage.local.get(['responseLanguage']);
-        const systemPrompt = buildProofreadSystemPrompt(globalSettings.responseLanguage);
-
-        try {
-            const res = await fetchWithRotation(keys, async (key) => {
-                const body = {
-                    model: model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: text }
-                    ]
-                };
-                return fetch(endpoint, { method: 'POST', body: JSON.stringify(body), headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' } });
-            });
-
-            if (res.ok) {
-                const json = await res.json();
-                return { corrected: json.choices[0]?.message?.content || text };
-            }
-        } catch (e) {
-            if (e.message === 'RATE_LIMIT_EXHAUSTED') {
-                console.warn(`[Lumina] Proofreader hit rate limit on ${model}. Rotating...`);
-                continue;
-            }
-            console.error(`[Lumina] Proofread failed on ${model}:`, e);
-            continue; 
-        }
-    }
-
-    throw new Error("Proofreading failed on all models.");
 }
 
 

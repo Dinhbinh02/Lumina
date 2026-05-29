@@ -2507,6 +2507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     audio: { code: 'ShiftLeft', key: 'Shift', display: isMac ? '⇧L' : 'ShiftL', shiftKey: true },
     resetChat: { code: 'Mouse0', key: 'Mouse0', display: 'Left', metaKey: true, shiftKey: true },
     regenerate: { code: 'KeyR', key: 'r', display: 'R' },
+    translateInput: { code: 'KeyE', key: 'e', display: 'E', altKey: true },
     annotationShortcuts: [
       { key: 'h', code: 'KeyH', color: '#FFFB78', display: 'H' }
     ]
@@ -3753,5 +3754,37 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('[Options] Mic permission denied:', err);
       });
   }
+
+  async function updateOptionsStorageUsage() {
+    const storageText = document.getElementById('options-storage-usage-text');
+    if (!storageText) return;
+    const bytes = await ChatHistoryManager.getStorageUsage();
+    const mb = (bytes / (1024 * 1024)).toFixed(1);
+    storageText.textContent = `${mb} MB`;
+  }
+
+  const optionsDeleteAllBtn = document.getElementById('options-delete-all-btn');
+  if (optionsDeleteAllBtn) {
+    optionsDeleteAllBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete all chat history? This action cannot be undone.')) {
+        return;
+      }
+      optionsDeleteAllBtn.disabled = true;
+      optionsDeleteAllBtn.textContent = 'Deleting...';
+      try {
+        await ChatHistoryManager.clearAllHistory();
+        await updateOptionsStorageUsage();
+        alert('All chat history deleted successfully.');
+      } catch (err) {
+        console.error('Delete all failed:', err);
+        alert('Failed to delete history: ' + err.message);
+      } finally {
+        optionsDeleteAllBtn.disabled = false;
+        optionsDeleteAllBtn.textContent = 'Delete All Chats';
+      }
+    });
+  }
+
+  updateOptionsStorageUsage();
 });
 
