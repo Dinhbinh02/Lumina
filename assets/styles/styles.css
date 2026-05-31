@@ -1095,7 +1095,7 @@ button {
 }
 
 .lumina-chat-answer p {
-  margin-bottom: 0.8em !important;
+  margin-bottom: 0.5em !important;
   margin-top: 0 !important;
   line-height: 1.65 !important;
   color: inherit !important;
@@ -1125,8 +1125,8 @@ button {
 .lumina-chat-answer h2 code,
 .lumina-chat-answer h3 code,
 .lumina-chat-answer h4 code {
-  margin-top: 1.25em !important;
-  margin-bottom: 0.6em !important;
+  margin-top: 0.9em !important;
+  margin-bottom: 0.4em !important;
   line-height: 1.35 !important;
   color: var(--lumina-text-primary) !important;
   font-weight: 600 !important;
@@ -1153,7 +1153,7 @@ button {
 
 .lumina-chat-answer ul,
 .lumina-chat-answer ol {
-  margin-bottom: 0.8em !important;
+  margin-bottom: 0.5em !important;
   margin-top: 0 !important;
   padding-left: 1.5em !important;
 }
@@ -1163,11 +1163,28 @@ button {
   margin-bottom: 0 !important;
 }
 
+.lumina-chat-answer ul ul,
+.lumina-chat-answer ul ol,
+.lumina-chat-answer ol ul,
+.lumina-chat-answer ol ol {
+  margin-top: 0.2em !important;
+  margin-bottom: 0.2em !important;
+}
+
 .lumina-chat-answer li {
-  margin-bottom: 0.45em !important;
+  margin-top: 2px !important;
+  margin-bottom: 0.25em !important;
   line-height: 1.65 !important;
   padding-left: 0.2em !important;
-  margin: 4px 0;
+}
+
+.lumina-chat-answer li p {
+  margin-top: 0 !important;
+  margin-bottom: 4px !important;
+}
+
+.lumina-chat-answer li p:last-child {
+  margin-bottom: 0 !important;
 }
 
 .lumina-chat-answer li:last-child {

@@ -906,28 +906,51 @@
                             }
                         } else if (paragraphNode) {
                             targetEl = paragraphNode;
+                            activeElement.focus();
+                            const sel = window.getSelection();
+                            const range = document.createRange();
+                            range.selectNodeContents(paragraphNode);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
                         }
+                    } else {
+                        activeElement.focus();
+                        activeElement.setSelectionRange(selectionStart, selectionEnd);
                     }
 
-                    const originalTransition = targetEl.style.transition || '';
-                    const originalOpacity = targetEl.style.opacity || '';
                     const originalPointerEvents = activeElement.style.pointerEvents || '';
-                    
-                    targetEl.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                    targetEl.style.opacity = '0.8';
                     activeElement.style.pointerEvents = 'none';
 
+                    const defaultColorStyle = window.getComputedStyle(activeElement).color || 'rgb(0,0,0)';
+                    const rgbMatch = defaultColorStyle.match(/\d+/g);
+                    const defaultRGB = rgbMatch ? rgbMatch.slice(0, 3).map(Number) : [0, 0, 0];
+
+                    let styleEl = document.getElementById('lumina-pulse-style');
+                    if (!styleEl) {
+                        styleEl = document.createElement('style');
+                        styleEl.id = 'lumina-pulse-style';
+                        document.head.appendChild(styleEl);
+                    }
+                    activeElement.classList.add('lumina-pulse-active');
+
                     let isPulsing = true;
-                    let lastPulse = Date.now();
-                    let goingDown = true;
+                    const startTime = Date.now();
+
                     function smoothPulse() {
                         if (!isPulsing) return;
-                        const now = Date.now();
-                        if (now - lastPulse > 600) {
-                            goingDown = !goingDown;
-                            targetEl.style.opacity = goingDown ? '0.8' : '0.95';
-                            lastPulse = now;
-                        }
+                        const elapsed = Date.now() - startTime;
+                        const pulseFactor = 0.5 + 0.5 * Math.sin(elapsed * 0.005);
+
+                        const r = Math.round(defaultRGB[0] + (26 - defaultRGB[0]) * pulseFactor);
+                        const g = Math.round(defaultRGB[1] + (115 - defaultRGB[1]) * pulseFactor);
+                        const b = Math.round(defaultRGB[2] + (232 - defaultRGB[2]) * pulseFactor);
+
+                        styleEl.textContent = `
+                          .lumina-pulse-active::selection {
+                            background-color: transparent !important;
+                            color: rgb(${r}, ${g}, ${b}) !important;
+                          }
+                        `;
                         requestAnimationFrame(smoothPulse);
                     }
                     requestAnimationFrame(smoothPulse);
@@ -938,11 +961,10 @@
                             text: textToTranslate
                         }, (response) => {
                             isPulsing = false;
-                            targetEl.style.opacity = '1';
+                            activeElement.classList.remove('lumina-pulse-active');
+                            if (styleEl) styleEl.textContent = '';
                             
                             setTimeout(() => {
-                                targetEl.style.transition = originalTransition;
-                                targetEl.style.opacity = originalOpacity;
                                 activeElement.style.pointerEvents = originalPointerEvents;
                                 activeElement.__luminaTranslating = false;
                             }, 600);
@@ -982,10 +1004,9 @@
                         });
                     } catch (err) {
                         isPulsing = false;
-                        activeElement.style.opacity = '1';
+                        activeElement.classList.remove('lumina-pulse-active');
+                        if (styleEl) styleEl.textContent = '';
                         setTimeout(() => {
-                            activeElement.style.transition = originalTransition;
-                            activeElement.style.opacity = originalOpacity;
                             activeElement.style.pointerEvents = originalPointerEvents;
                             activeElement.__luminaTranslating = false;
                         }, 600);
