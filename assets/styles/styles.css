@@ -1301,8 +1301,8 @@ button {
 .lumina-chat-answer table {
   margin: 0 !important;
   border-collapse: collapse !important;
-  width: max-content !important;
-  min-width: 100% !important;
+  width: 100% !important;
+  table-layout: auto !important;
   font-size: 0.93em !important;
   line-height: 1.65 !important;
 }
@@ -1310,14 +1310,22 @@ button {
 .lumina-chat-answer th,
 .lumina-chat-answer td {
   padding: 8px 12px !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1)) !important;
   line-height: 1.65 !important;
   text-align: left !important;
+  max-width: 320px !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
 }
 
 .lumina-chat-answer th {
   background: rgba(0, 0, 0, 0.04) !important;
   font-weight: 600 !important;
+}
+
+[data-theme="dark"] .lumina-chat-answer th {
+  background: rgba(255, 255, 255, 0.04) !important;
 }
 
 .lumina-chat-answer hr {
