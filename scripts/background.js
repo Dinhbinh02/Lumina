@@ -1524,52 +1524,74 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case 'translate_input_text': {
             const textToTranslate = request.text || '';
-            const firstUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(textToTranslate)}`;
 
-            fetch(firstUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    const detectedLang = data[2];
-                    const translatedToVi = data[0].map(item => item[0]).join('');
+            const runGoogleTranslate = (text, callback) => {
+                const firstUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
+                fetch(firstUrl)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        const detectedLang = data[2];
+                        const translatedToVi = data[0].map(item => item[0]).join('');
 
-                    if (detectedLang === 'en') {
-                        const secondUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=en&dt=t&q=${encodeURIComponent(translatedToVi)}`;
-                        return fetch(secondUrl)
-                            .then(response => {
-                                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                                return response.json();
+                        if (detectedLang === 'en') {
+                            const secondUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=en&dt=t&q=${encodeURIComponent(translatedToVi)}`;
+                            return fetch(secondUrl)
+                                .then(response => {
+                                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                                    return response.json();
+                                })
+                                .then(data2 => {
+                                    const finalEnText = data2[0].map(item => item[0]).join('');
+                                    callback({ translatedText: finalEnText });
+                                });
+                        } else {
+                            const secondUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+                            return fetch(secondUrl)
+                                .then(response => {
+                                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                                    return response.json();
+                                })
+                                .then(data2 => {
+                                    const finalEnText = data2[0].map(item => item[0]).join('');
+                                    callback({ translatedText: finalEnText });
+                                });
+                        }
+                    })
+                    .catch(err => {
+                        console.error("[Lumina BG] translate_input_text round-trip failed, falling back to direct translate:", err);
+                        translateText(text, "en")
+                            .then(res => {
+                                callback({ translatedText: res.translation || text });
                             })
-                            .then(data2 => {
-                                const finalEnText = data2[0].map(item => item[0]).join('');
-                                sendResponse({ translatedText: finalEnText });
+                            .catch(fallbackErr => {
+                                console.error("[Lumina BG] translate_input_text fallback failed:", fallbackErr);
+                                callback({ translatedText: text });
                             });
-                    } else {
-                        const secondUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(textToTranslate)}`;
-                        return fetch(secondUrl)
-                            .then(response => {
-                                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                                return response.json();
-                            })
-                            .then(data2 => {
-                                const finalEnText = data2[0].map(item => item[0]).join('');
-                                sendResponse({ translatedText: finalEnText });
-                            });
-                    }
-                })
-                .catch(err => {
-                    console.error("[Lumina BG] translate_input_text round-trip failed, falling back to direct translate:", err);
-                    translateText(textToTranslate, "en")
-                        .then(res => {
-                            sendResponse({ translatedText: res.translation || textToTranslate });
-                        })
-                        .catch(fallbackErr => {
-                            console.error("[Lumina BG] translate_input_text fallback failed:", fallbackErr);
-                            sendResponse({ translatedText: textToTranslate });
+                    });
+            };
+
+            chrome.storage.local.get(['translateInputEngine', 'dictProvider', 'dictModel'], async (items) => {
+                const engine = items.translateInputEngine || 'google';
+                if (engine === 'ai' && items.dictProvider && items.dictModel) {
+                    try {
+                        const systemPrompt = "Translate the user's text into English naturally and colloquially. Output ONLY the final translation, without any introduction, explanations, or quotes. Keep the original format.";
+                        const translatedText = await generateOneOffCompletion(textToTranslate, systemPrompt, {
+                            providerId: items.dictProvider,
+                            model: items.dictModel
                         });
-                });
+                        const cleanedText = translatedText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                        sendResponse({ translatedText: cleanedText });
+                    } catch (err) {
+                        console.error("[Lumina BG] AI translation failed, falling back to Google Translate:", err);
+                        runGoogleTranslate(textToTranslate, sendResponse);
+                    }
+                } else {
+                    runGoogleTranslate(textToTranslate, sendResponse);
+                }
+            });
             return true;
         }
 
