@@ -1793,7 +1793,7 @@ function normalizeRestoredHistory(historyEl) {
         questionEl.innerHTML = '';
         questionEl.appendChild(contentDiv);
 
-        row.classList.remove('lumina-question-row-editing');
+        if (row) row.classList.remove('lumina-question-row-editing');
         if (pinBtn) {
             pinBtn.classList.toggle('is-active', !!wasPinned);
             pinBtn.setAttribute('aria-pressed', wasPinned ? 'true' : 'false');
@@ -3088,6 +3088,9 @@ async function init() {
         setupGlobalListeners();
         setupWebSourceTracking(); 
         isInitializing = false;
+        if (typeof LuminaSync !== 'undefined') {
+            LuminaSync.syncData(true).catch(() => {});
+        }
     });
 
     
