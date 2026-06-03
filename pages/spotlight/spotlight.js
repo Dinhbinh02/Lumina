@@ -65,6 +65,9 @@ let activeGroupIndex = -1;
 let activeTabIndex = -1; 
 let tabCounter = 1;
 
+// Cache nội dung trang web theo tabId+url, tránh fetch lại mỗi lần gửi
+const pageContextCache = new Map(); // key: `${tabId}::${url}` => pageContext string
+
 
 let chatUI = null; 
 let sharedInputUI = null; 
@@ -274,16 +277,34 @@ async function fetchFreshWebContent(tabId) {
         if (!results) return null;
 
         
-        const seenFingerprints = new Set();
         const texts = [];
+        const cleanTextForCompare = (str) => {
+            return str.replace(/\[Context Source:[^\]]+\]/g, '')
+                      .replace(/URL:[^\n]+/g, '')
+                      .replace(/--- \[Segment \d+\] ---/g, '')
+                      .replace(/[^a-zA-Z0-9]/g, '')
+                      .toLowerCase();
+        };
+
         for (const r of results) {
             const ctx = r.result;
             if (!ctx || !ctx.content) continue;
             const text = ctx.content.trim();
             if (text.length < 100) continue;
-            const fp = text.substring(0, 500);
-            if (seenFingerprints.has(fp)) continue;
-            seenFingerprints.add(fp);
+
+            const cleanedNew = cleanTextForCompare(text);
+            if (cleanedNew.length < 50) continue;
+
+            const prefix = cleanedNew.substring(0, 200);
+            let isDuplicate = false;
+            for (const existing of texts) {
+                if (cleanTextForCompare(existing).includes(prefix)) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (isDuplicate) continue;
+
             texts.push(text);
         }
         return texts.length > 0 ? texts.join('\n\n') : null;
@@ -1747,6 +1768,7 @@ function normalizeRestoredHistory(historyEl) {
         const pinBtn = row ? row.querySelector('.lumina-question-pin-btn') : null;
         const wasPinned = questionEl.classList.contains('is-pinned-question') ||
             (pinBtn && (pinBtn.classList.contains('is-active') || pinBtn.getAttribute('aria-pressed') === 'true'));
+        if (pinBtn) pinBtn.remove();
         const rawText = questionEl.dataset.rawText || questionEl.textContent.trim();
 
         questionEl.className = `lumina-chat-question ${entryType}-question`;
@@ -2793,29 +2815,20 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
 }
 
 function updateWebChips() {
-    
     if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
-        try {
-            LuminaChatUI.prototype._hideTagTooltip();
-        } catch (e) {  }
+        try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
     }
 
     const containers = document.querySelectorAll('.lumina-web-chips-group');
     containers.forEach(container => {
-        container.innerHTML = '';
-
-        
-        // Allowed in Spotlight window as well
         const spotlightTabId = getSpotlightTabIdForPane(container);
         if (!spotlightTabId) {
             container.style.display = 'none';
             return;
         }
 
-        
         container.style.display = 'flex';
 
-        
         if (!container.dataset.muteHandlerSet) {
             container.addEventListener('mouseleave', () => {
                 container.dataset.muteTooltips = 'false';
@@ -2823,13 +2836,28 @@ function updateWebChips() {
             container.dataset.muteHandlerSet = 'true';
         }
 
-        
         const selectedSources = getWebSelectionForScope(spotlightTabId);
-
         const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
+
+        // Tính fingerprint của state hiện tại
+        let newFingerprint = '';
         if (onValidWebPage) {
             const currentTabId = String(currentBrowserTab.tabId);
             const isCurrentPinned = selectedSources.some(s => String(s.tabId) === currentTabId);
+            const tokens = currentBrowserTabTokens.get(currentTabId) || 0;
+            newFingerprint = `${currentTabId}|${isCurrentPinned ? 'active' : 'ghost'}|${tokens}|${currentBrowserTab.title || ''}`;
+        }
+
+        // Chỉ rebuild DOM khi state thực sự thay đổi
+        if (container.dataset.chipFingerprint === newFingerprint) return;
+        container.dataset.chipFingerprint = newFingerprint;
+
+        container.innerHTML = '';
+
+        if (onValidWebPage) {
+            const currentTabId = String(currentBrowserTab.tabId);
+            const isCurrentPinned = selectedSources.some(s => String(s.tabId) === currentTabId);
+            const tokens = currentBrowserTabTokens.get(currentTabId) || 0;
 
             if (isCurrentPinned) {
                 const activeData = {
@@ -2839,7 +2867,7 @@ function updateWebChips() {
                     favIconUrl: currentBrowserTab.favIconUrl,
                     isActive: true,
                     isGhost: false,
-                    tokens: currentBrowserTabTokens.get(String(currentBrowserTab.tabId)) || 0
+                    tokens
                 };
                 container.appendChild(createWebChipElement(activeData, selectedSources, spotlightTabId));
             } else {
@@ -2850,7 +2878,7 @@ function updateWebChips() {
                     favIconUrl: currentBrowserTab.favIconUrl,
                     isActive: false,
                     isGhost: true,
-                    tokens: currentBrowserTabTokens.get(String(currentBrowserTab.tabId)) || 0
+                    tokens
                 };
                 container.appendChild(createWebChipElement(ghostData, selectedSources, spotlightTabId));
             }
@@ -3700,12 +3728,8 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     let pageContext = "";
     const isSpotlightWindow = !isSidePanel && !isWebApp;
 
-    
-    
-    
     const shouldReadPage = isSpotlightWindow ? false : ((extra.readPage !== undefined) ? extra.readPage : readWebpageEnabled);
 
-    
     let tabModel = currentTab?.selectedModel;
     if (!tabModel) {
         const isSecondaryTab = isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
@@ -3715,7 +3739,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-
+    // Xây dựng danh sách tab cần lấy nội dung
     let webSourceScope = [];
     if (!isSpotlightWindow && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const selection = getWebSelectionForScope(currentTab.id);
@@ -3726,7 +3750,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             ];
         }
     }
-
     if (shouldReadPage && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const alreadyPinned = webSourceScope.some(s => s.tabId === currentBrowserTab.tabId);
         if (!alreadyPinned) {
@@ -3737,11 +3760,16 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-
-
     if (webSourceScope.length > 0) {
         try {
             const results = await Promise.all(webSourceScope.map(async (source) => {
+                const cacheKey = `${source.tabId}::${source.url}`;
+
+                // Dùng cache nếu URL chưa đổi
+                if (pageContextCache.has(cacheKey)) {
+                    return pageContextCache.get(cacheKey); // mảng ctx objects
+                }
+
                 try {
                     const tabResults = await chrome.scripting.executeScript({
                         target: { tabId: source.tabId, allFrames: true },
@@ -3751,30 +3779,36 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                                 : null;
                         }
                     });
-                    return tabResults ? tabResults.map(tr => tr.result).filter(Boolean) : [];
+                    const ctxList = tabResults ? tabResults.map(tr => tr.result).filter(Boolean) : [];
+                    pageContextCache.set(cacheKey, ctxList);
+                    return ctxList;
                 } catch (e) {
                     console.warn(`[Spotlight] Could not read tab ${source.tabId}:`, e);
                 }
                 return [];
             }));
 
-            
             const flatResults = results.flat().filter(r => r && r.content);
 
-            
             const uniqueResults = [];
-            const seenContents = new Set();
-
+            const cleanTextForCompare = (str) => {
+                return str.replace(/\[Context Source:[^\]]+\]/g, '')
+                          .replace(/URL:[^\n]+/g, '')
+                          .replace(/--- \[Segment \d+\] ---/g, '')
+                          .replace(/[^a-zA-Z0-9]/g, '')
+                          .toLowerCase();
+            };
             flatResults.forEach(ctx => {
                 const text = ctx.content.trim();
-                if (text.length < 30) return; 
-
-                
-                const fingerprint = text.substring(0, 500);
-                if (seenContents.has(fingerprint)) return;
-
-                uniqueResults.push(ctx);
-                seenContents.add(fingerprint);
+                if (text.length < 30) return;
+                const cleanedNew = cleanTextForCompare(text);
+                if (cleanedNew.length < 30) return;
+                const prefix = cleanedNew.substring(0, 200);
+                let isDuplicate = false;
+                for (const existing of uniqueResults) {
+                    if (cleanTextForCompare(existing.content).includes(prefix)) { isDuplicate = true; break; }
+                }
+                if (!isDuplicate) uniqueResults.push(ctx);
             });
 
             if (uniqueResults.length > 0) {
@@ -3786,16 +3820,13 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 });
                 pageContext = pieces.join("\n\n---\n\n");
 
-                
                 const currentUrl = currentBrowserTab ? currentBrowserTab.url : "";
                 if (currentTab && currentTab.lastContextUrl && currentTab.lastContextUrl !== currentUrl) {
-                    
                     const transitionMarker = `[SYSTEM NOTE: The user has navigated to a new page. Please prioritize the following context and ignore conflicting information from previous messages in this conversation.]`;
                     pageContext = transitionMarker + "\n\n" + pageContext;
                 }
                 if (currentTab) currentTab.lastContextUrl = currentUrl;
             }
-
         } catch (err) {
             console.error("[Spotlight] Failed to read pinned tabs:", err);
         }

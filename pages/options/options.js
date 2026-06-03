@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const contentSections = document.querySelectorAll('.content-section');
   let currentActiveSectionId = null;
   let isInitialLoad = true;
+  let listenersAttached = false;
 
   function switchSection(sectionId, restoreScroll = false) {
     if (currentActiveSectionId === sectionId) return;
@@ -421,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let targetTab = (tabs && tabs.length > 0) ? tabs[0] : null;
 
 
-      if (targetTab && targetTab.url.startsWith('chrome-extension://')) {
+      if (targetTab && targetTab.url && targetTab.url.startsWith('chrome-extension://')) {
         chrome.tabs.query({ lastFocusedWindow: true }, (allTabs) => {
 
           const realTab = allTabs.find(t => t.url && !t.url.startsWith('chrome-extension://') && !t.url.startsWith('chrome://'));
@@ -1424,14 +1425,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  initializeProviders().then(() => {
-    renderProviders();
-    populateProviderDropdowns();
-    populateChainDropdowns();
-  });
+  function loadAllSettings() {
+    initializeProviders().then(() => {
+      renderProviders();
+      populateProviderDropdowns();
+      populateChainDropdowns();
+    });
 
-
-  chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine'], (items) => {
+    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine'], (items) => {
 
     setTimeout(() => {
 
@@ -1655,7 +1656,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof applyDomainSpecificSettings === 'function') {
       applyDomainSpecificSettings();
     }
+    listenersAttached = true;
   });
+}
+
+loadAllSettings();
 
 
   function saveOptions() {
@@ -3508,6 +3513,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const userEmail = document.getElementById('userEmail');
   const syncBtn = document.getElementById('syncBtn');
   const syncStatus = document.getElementById('syncStatus');
+  const syncCard = document.getElementById('sync-card');
 
   function updateAuthUI(isAuthenticated, user) {
     if (isAuthenticated && user) {
@@ -3555,13 +3561,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const user = await LuminaAuth.login();
       updateStatus('Signed in successfully', 'success');
       googleLoginBtn.innerHTML = originalHTML;
+      
+      // Auto sync immediately on login to pull remote data
+      try {
+        await LuminaSync.syncData();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (syncErr) {
+        console.error('Initial sync failed:', syncErr);
+        updateStatus('Initial sync failed: ' + syncErr.message, 'error');
+      }
     } catch (e) {
       console.error(e);
-      if (e && e.message === "credentials_required") {
-        syncSetupOverlay.classList.remove("is-hidden");
-      } else {
-        updateStatus('Sign in failed: ' + e.message, 'error');
-      }
+      updateStatus('Sign in failed: ' + e.message, 'error');
+      // Always show setup overlay on failure to allow re-uploading file
+      syncSetupOverlay.classList.remove("is-hidden");
       googleLoginBtn.innerHTML = 'Sign in with Google';
     } finally {
       googleLoginBtn.disabled = false;
@@ -3626,7 +3641,10 @@ document.addEventListener('DOMContentLoaded', () => {
       syncBtn.disabled = true;
       try {
         await LuminaSync.syncUp();
-        updateStatus('Settings synchronized to the cloud', 'success');
+        updateStatus('Settings synchronized successfully', 'success');
+        setTimeout(() => {
+          loadAllSettings();
+        }, 1000);
       } catch (e) {
         updateStatus('Sync failed: ' + e.message, 'error');
       } finally {

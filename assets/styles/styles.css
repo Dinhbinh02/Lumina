@@ -486,11 +486,6 @@ button {
   fill: currentColor;
 }
 
-.lumina-question-pin-btn .lumina-svg-icon {
-  width: 16px !important;
-  height: 16px !important;
-}
-
 .lumina-attach-toggle svg {
   margin-right: 0;
 }
@@ -950,72 +945,6 @@ button {
   min-width: 0 !important;
 }
 
-.lumina-question-pin-btn {
-  position: relative !important;
-  margin-top: 6px !important;
-  flex: 0 0 auto !important;
-  width: 30px !important;
-  height: 30px !important;
-  border-radius: 50% !important;
-  border: none !important;
-  outline: none !important;
-  appearance: none !important;
-  background: transparent !important;
-  color: var(--lumina-text-secondary) !important;
-  box-shadow: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  z-index: 20 !important;
-  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
-}
-
-.lumina-question-row:hover>.lumina-question-pin-btn {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-.lumina-question-pin-btn.is-active {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  background: transparent !important;
-  color: var(--lumina-primary-color) !important;
-  border: none !important;
-}
-
-.lumina-question-pin-btn.is-active .lumina-svg-icon {
-  -webkit-mask-image: url("../icons/lumina/star.svg") !important;
-  mask-image: url("../icons/lumina/star.svg") !important;
-}
-
-.lumina-question-row:focus-within>.lumina-question-pin-btn {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-.lumina-question-pin-btn:hover {
-  opacity: 1 !important;
-  background: rgba(0, 86, 210, 0.05) !important;
-  color: var(--lumina-primary-color) !important;
-}
-
-.lumina-question-row.lumina-question-row-editing>.lumina-question-pin-btn {
-  display: none !important;
-}
-
-[data-theme="dark"] .lumina-question-pin-btn {
-  background: transparent !important;
-  border: none !important;
-  color: #f5f5f7 !important;
-  box-shadow: none !important;
-}
-
-[data-theme="dark"] .lumina-question-pin-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
 
 [data-theme="dark"] .lumina-chat-question,
 [data-theme="dark"] .qa-question {
@@ -1360,6 +1289,7 @@ button {
   border-radius: 6px !important;
   font-size: 0.95em !important;
   font-weight: 500 !important;
+  font-family: 'Google Sans Code', 'Source Code Pro', monospace !important;
 }
 
 .lumina-chat-answer pre {
@@ -1481,7 +1411,7 @@ button {
   max-height: 129px !important;
   min-height: 24px !important;
   height: auto;
-  padding: 6px 6px 10px 6px !important;
+  padding: 2px 6px 12px 6px !important;
   transform: translateZ(0);
   flex-grow: 1;
   min-width: 0;
@@ -2315,6 +2245,45 @@ button {
   gap: 8px !important;
   color: var(--lumina-text-secondary) !important;
   font-size: 0.95em !important;
+  padding: 4px 8px !important;
+}
+
+.lumina-dots-loader {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3.5px;
+  height: 12px;
+}
+
+.lumina-dots-loader span {
+  width: 5px;
+  height: 5px;
+  background-color: var(--lumina-text-secondary, #606060);
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: lumina-dots-bounce 1.2s infinite ease-in-out both;
+}
+
+.lumina-dots-loader span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.lumina-dots-loader span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes lumina-dots-bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
 }
 
 .lumina-mic-btn:hover {
@@ -5593,4 +5562,53 @@ button {
 .topbar .lumina-model-item.active {
   color: #007aff !important;
   font-weight: 600 !important;
+}
+
+.lumina-answer-content {
+  padding-bottom: 12px !important;
+}
+
+.lumina-edit-btn.lumina-edit-pin.is-active {
+  background: #eab308 !important;
+  color: #000000 !important;
+}
+
+.lumina-edit-btn.lumina-edit-pin.is-active:hover {
+  background: #ca8a04 !important;
+}
+
+.lumina-chat-question.qa-question.is-pinned-question {
+  background: rgba(234, 179, 8, calc(0.15 + var(--lumina-ui-opacity, 0.75) * 0.05)) !important;
+}
+
+.lumina-chat-question.qa-question.is-pinned-question:hover {
+  background: rgba(234, 179, 8, calc(0.2 + var(--lumina-ui-opacity, 0.75) * 0.05)) !important;
+}
+
+.is-pinned-question .lumina-edit-cancel {
+  background: #ffffff !important;
+  color: #1c1c1e !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+.is-pinned-question .lumina-edit-cancel:hover {
+  background: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .is-pinned-question .lumina-edit-cancel {
+  background: #27272a !important;
+  color: #f4f4f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .is-pinned-question .lumina-edit-cancel:hover {
+  background: #3f3f46 !important;
+}
+
+.lumina-chat-question.is-pinned-question::after {
+  display: none !important;
+}
+
+.lumina-chat-question.is-pinned-question.is-editing {
+  border-color: #ca8a04 !important;
 }

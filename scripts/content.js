@@ -2093,25 +2093,21 @@
             return (text.length < minThreshold && (hasAppRoot || isVite || hasLMS)) || hasSpinner;
         };
 
-        
-        if (isPossiblyEmptySPA()) {
+        const shouldDelay = !forceRefresh && isPossiblyEmptySPA();
+        if (shouldDelay) {
             await new Promise(r => setTimeout(r, 1500));
         }
 
         let retries = 0;
-        const MAX_RETRIES = 2;
+        const maxRetries = forceRefresh ? 0 : 2;
         let finalOutput = null;
 
-        while (retries <= MAX_RETRIES) {
+        while (retries <= maxRetries) {
             finalOutput = await performExtraction(doc, url);
-            
-            
             if (finalOutput && finalOutput.content && finalOutput.content.length > 500) {
                 break;
             }
-
-            
-            if (retries < MAX_RETRIES) {
+            if (retries < maxRetries) {
                 await new Promise(r => setTimeout(r, 1000));
             }
             retries++;
