@@ -288,6 +288,7 @@ function buildChatSystemInstruction(reasoningMode = false) {
 - Treat context as factual and invisible. Never say "Based on what you told me..." or literally reference system terms/tags like "Reference Context", "[Reference Context]", "CURRENT CONTEXT", "[CURRENT CONTEXT]", "Webpage Source Content", "webpage content", "context", "context provided", etc. Refer to the information naturally as if you already know it (e.g. "Trong bài đọc này...", "Trong đoạn văn này..."). Integrate memory and webpage context seamlessly without over-fitting.
 
 [Communication]:
+- Directness: ALWAYS answer directly. Do NOT include conversational filler, introductory remarks (e.g., "Dưới đây là...", "Here is...", "Sure, I can help with that..."), or concluding pleasantries/outro remarks (e.g., "Hy vọng bài viết này giúp ích...", "Chúc bạn học tốt..."). Jump straight into the requested content.
 - No Hedging: Never use fillers like "I hope this helps".
 - Vibe Matching: Adapt your tone to the user's style.
 - Clarification: Ask max ONE high-impact question at the start if needed.
@@ -467,17 +468,46 @@ function decodeBase64Utf8(base64) {
     } catch (_) { return ''; }
 }
 
+function filterParentAttachments(attachments) {
+    if (!attachments || !Array.isArray(attachments)) return [];
+    const parentIds = new Set();
+    for (const item of attachments) {
+        if (item && typeof item === 'object' && item.parentAttachmentId) {
+            parentIds.add(item.parentAttachmentId);
+        }
+    }
+    return attachments.filter(item => {
+        if (item && typeof item === 'object' && item.attachmentId && parentIds.has(item.attachmentId)) {
+            return false;
+        }
+        return true;
+    });
+}
+
 function processAttachments(attachments) {
     const parts = [];
     const unsupported = [];
     if (!attachments || !Array.isArray(attachments)) return { parts, unsupported };
-    for (const item of attachments) {
+    const filteredAttachments = filterParentAttachments(attachments);
+    for (const item of filteredAttachments) {
         if (typeof item === 'string') {
             if (item.startsWith('data:text/')) {
                 const matches = item.match(/^data:([^;]+);base64,(.+)$/i);
                 const decoded = matches ? decodeBase64Utf8(matches[2]) : '';
                 if (decoded) parts.push({ type: "text", text: `[Attached text file]\n${decoded}` });
-            } else { parts.push({ type: "image_url", image_url: { url: item, detail: "auto" } }); }
+            } else if (item.startsWith('data:')) {
+                const matches = item.match(/^data:([^;]+);base64,(.+)$/i);
+                if (matches) {
+                    const mime = normalizeMimeType(matches[1]);
+                    if (mime.startsWith('image/')) {
+                        parts.push({ type: "image_url", image_url: { url: item, detail: "auto" } });
+                    } else {
+                        unsupported.push({ name: 'Attached file', mimeType: mime });
+                    }
+                }
+            } else {
+                parts.push({ type: "image_url", image_url: { url: item, detail: "auto" } });
+            }
         } else if (typeof item === 'object') {
             const mimeType = normalizeMimeType(item.mimeType || '');
             const itemName = item.name || 'Unnamed file';
@@ -498,10 +528,82 @@ function processAttachments(attachments) {
                     if (format === 'mpeg') format = 'mp3';
                     parts.push({ type: "input_audio", input_audio: { data: base64Data, format } });
                 }
-            } else {
+            } else if (mimeType.startsWith('image/')) {
                 let url = item.dataUrl || item.previewUrl;
                 if (!url && mimeType && item.data) url = `data:${mimeType};base64,${item.data}`;
                 if (url) parts.push({ type: "image_url", image_url: { url, detail: item.detail || "auto" } });
+            } else {
+                unsupported.push({ name: itemName, mimeType });
+            }
+        }
+    }
+    return { parts, unsupported };
+}
+
+function processAttachmentsForGemini(attachments) {
+    const parts = [];
+    const unsupported = [];
+    if (!attachments || !Array.isArray(attachments)) return { parts, unsupported };
+    const filteredAttachments = filterParentAttachments(attachments);
+    for (const item of filteredAttachments) {
+        if (typeof item === 'string') {
+            if (item.startsWith('data:text/')) {
+                const matches = item.match(/^data:([^;]+);base64,(.+)$/i);
+                const decoded = matches ? decodeBase64Utf8(matches[2]) : '';
+                if (decoded) parts.push({ text: `[Attached text file]\n${decoded}` });
+            } else if (item.startsWith('data:')) {
+                const matches = item.match(/^data:([^;]+);base64,(.+)$/i);
+                if (matches) {
+                    const mime = normalizeMimeType(matches[1]);
+                    const isImage = mime.startsWith('image/');
+                    const isVideo = mime.startsWith('video/');
+                    const isAudio = mime.startsWith('audio/');
+                    const isPDF = mime === 'application/pdf';
+                    if (isImage || isVideo || isAudio || isPDF) {
+                        parts.push({
+                            inlineData: {
+                                mimeType: mime,
+                                data: matches[2]
+                            }
+                        });
+                    } else {
+                        unsupported.push({ name: 'Attached file', mimeType: mime });
+                    }
+                }
+            }
+        } else if (typeof item === 'object') {
+            const mimeType = normalizeMimeType(item.mimeType || '');
+            const itemName = item.name || 'Unnamed file';
+            if (mimeType && !isSupportedAttachmentMime(mimeType)) { unsupported.push({ name: itemName, mimeType }); continue; }
+            if (isTextAttachmentMime(mimeType)) {
+                const textContent = decodeBase64Utf8(getBase64FromAttachment(item));
+                if (textContent) parts.push({ text: `[Attached file: ${itemName} (${mimeType})]\n${textContent}` });
+                continue;
+            }
+            let base64Data = item.data;
+            if (!base64Data && item.dataUrl) {
+                const matches = item.dataUrl.match(/^data:(.+?);base64,(.+)$/);
+                if (matches) base64Data = matches[2];
+            }
+            if (!base64Data && item.previewUrl && item.previewUrl.startsWith('data:')) {
+                const matches = item.previewUrl.match(/^data:(.+?);base64,(.+)$/);
+                if (matches) base64Data = matches[2];
+            }
+            if (base64Data && mimeType) {
+                const isImage = mimeType.startsWith('image/');
+                const isVideo = mimeType.startsWith('video/');
+                const isAudio = mimeType.startsWith('audio/');
+                const isPDF = mimeType === 'application/pdf';
+                if (!isImage && !isVideo && !isAudio && !isPDF) {
+                    unsupported.push({ name: itemName, mimeType });
+                    continue;
+                }
+                parts.push({
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data
+                    }
+                });
             }
         }
     }
@@ -509,7 +611,99 @@ function processAttachments(attachments) {
 }
 
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
-    const { model, endpoint, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
+    const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
+
+    if (providerType === 'gemini') {
+        const geminiContents = [];
+        for (const msg of msgs) {
+            const attachments = msg.files || msg.images;
+            const role = msg.role === 'model' ? 'model' : 'user';
+            if (attachments && attachments.length > 0) {
+                const parts = [];
+                if (msg.text) parts.push({ text: msg.text });
+                const processed = processAttachmentsForGemini(attachments);
+                parts.push(...processed.parts);
+                if (processed.unsupported.length > 0) {
+                    parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+                }
+                geminiContents.push({ role, parts });
+            } else {
+                geminiContents.push({ role, parts: [{ text: msg.text || '' }] });
+            }
+        }
+
+        if (imageData && imageData.length > 0) {
+            const parts = [];
+            if (currentQ) parts.push({ text: currentQ });
+            const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
+            const processed = processAttachmentsForGemini(currentAttachments);
+            parts.push(...processed.parts);
+            if (processed.unsupported.length > 0) {
+                parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+            }
+            geminiContents.push({ role: 'user', parts });
+        } else {
+            geminiContents.push({ role: 'user', parts: [{ text: currentQ || '' }] });
+        }
+
+        const generationConfig = {
+            ...parsedCustomParams
+        };
+
+        const isGemini3 = /gemini-[3-9]/i.test(model);
+        if (!isGemini3) {
+            generationConfig.temperature = temperature;
+            generationConfig.topP = topP;
+        }
+
+        if (Number.isFinite(maxTokens) && maxTokens > 0) {
+            generationConfig.maxOutputTokens = maxTokens;
+        } else {
+            generationConfig.maxOutputTokens = 65536;
+        }
+
+        let level = normalizedThinkingLevel || 'minimal';
+        if (level === 'none') {
+            level = 'minimal';
+        }
+
+        if (isGemini3) {
+            generationConfig.thinkingConfig = {
+                includeThoughts: true,
+                thinkingLevel: level
+            };
+        } else {
+            let budget = -1; // Default dynamic thinking (-1)
+            if (level === 'minimal') {
+                budget = 0;
+            } else if (level === 'low') {
+                budget = 1024;
+            } else if (level === 'medium') {
+                budget = -1;
+            } else if (level === 'high') {
+                budget = 4096;
+            }
+            generationConfig.thinkingConfig = {
+                includeThoughts: budget > 0 || budget === -1,
+                thinkingBudget: budget
+            };
+        }
+
+        const geminiBody = {
+            contents: geminiContents,
+            generationConfig,
+            ...(sysPrompt ? {
+                system_instruction: {
+                    parts: [{ text: sysPrompt }]
+                }
+            } : {})
+        };
+
+        const method = isStreaming ? 'streamGenerateContent' : 'generateContent';
+        const url = `${endpoint.replace(/\/$/, '')}/${model}:${method}${isStreaming ? '?alt=sse' : ''}`;
+        return { url, body: geminiBody };
+    }
+
     const openaiMessages = [{ role: 'system', content: sysPrompt }];
 
     
@@ -571,8 +765,12 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const hasCustomTokenLimit = Object.prototype.hasOwnProperty.call(openaiBody, 'max_tokens')
         || Object.prototype.hasOwnProperty.call(openaiBody, 'max_completion_tokens')
         || Object.prototype.hasOwnProperty.call(openaiBody, 'max_output_tokens');
-    if (!hasCustomTokenLimit && Number.isFinite(maxTokens) && maxTokens > 0) {
-        openaiBody.max_tokens = maxTokens;
+    if (!hasCustomTokenLimit) {
+        if (Number.isFinite(maxTokens) && maxTokens > 0) {
+            openaiBody.max_tokens = maxTokens;
+        } else {
+            openaiBody.max_tokens = 8192;
+        }
     }
 
     if (normalizedThinkingLevel === 'none') {
@@ -1004,6 +1202,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const payloadParams = {
         model,
         endpoint,
+        providerType: currentProvider,
         temperature,
         topP,
         maxTokens,
@@ -1026,12 +1225,19 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     let response = await fetchWithRotation(keys, async (key) => {
         const payload = await buildApiPayload(fullMessages, augmentedQuestion, systemInstruction, key, payloadParams);
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (key) {
+            if (currentProvider === 'gemini') {
+                headers['x-goog-api-key'] = key;
+            } else {
+                headers['Authorization'] = `Bearer ${key}`;
+            }
+        }
         return fetch(payload.url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(key ? { 'Authorization': `Bearer ${key}` } : {})
-            },
+            headers: headers,
             body: JSON.stringify(payload.body),
             signal: controller ? controller.signal : null
         });
@@ -1112,31 +1318,44 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 lastFinishReason = finishReason;
             }
 
-            let content = delta.content;
-            if (Array.isArray(content)) {
-                content = content
-                    .map((part) => {
-                        if (typeof part === 'string') return part;
-                        if (part && typeof part.text === 'string') return part.text;
-                        if (part && typeof part.content === 'string') return part.content;
-                        return '';
-                    })
-                    .join('');
-            }
-            if (!content && typeof choice.message?.content === 'string') {
-                content = choice.message.content;
-            }
+            let content = '';
+            let reasoning = '';
 
-            let reasoning = delta.reasoning || delta.reasoning_content || delta.reasoningContent || '';
-            if (Array.isArray(reasoning)) {
-                reasoning = reasoning
-                    .map((part) => {
-                        if (typeof part === 'string') return part;
-                        if (part && typeof part.text === 'string') return part.text;
-                        if (part && typeof part.content === 'string') return part.content;
-                        return '';
-                    })
-                    .join('');
+            if (choice.content?.parts) {
+                for (const part of choice.content.parts) {
+                    if (part.thought === true) {
+                        reasoning += part.text || '';
+                    } else {
+                        content += part.text || '';
+                    }
+                }
+            } else {
+                content = delta.content || '';
+                if (Array.isArray(content)) {
+                    content = content
+                        .map((part) => {
+                            if (typeof part === 'string') return part;
+                            if (part && typeof part.text === 'string') return part.text;
+                            if (part && typeof part.content === 'string') return part.content;
+                            return '';
+                        })
+                        .join('');
+                }
+                if (!content && typeof choice.message?.content === 'string') {
+                    content = choice.message.content;
+                }
+
+                reasoning = delta.reasoning || delta.reasoning_content || delta.reasoningContent || '';
+                if (Array.isArray(reasoning)) {
+                    reasoning = reasoning
+                        .map((part) => {
+                            if (typeof part === 'string') return part;
+                            if (part && typeof part.text === 'string') return part.text;
+                            if (part && typeof part.content === 'string') return part.content;
+                            return '';
+                        })
+                        .join('');
+                }
             }
 
             if (typeof reasoning === 'string' && reasoning.length > 0) {
@@ -1188,44 +1407,59 @@ async function executeChatRequest(config, messages, initialContext, question, po
         }
     };
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-            const flushChunk = decoder.decode();
-            if (flushChunk) {
-                buffer += flushChunk;
-            }
+    let keepAliveInterval = setInterval(() => {
+        try {
+            chrome.runtime.getPlatformInfo(() => {});
+        } catch (e) {
+            console.error('[Lumina] Keep-alive error:', e);
+        }
+    }, 5000);
 
-            
-            const tailDeltas = [];
-            const trailingBufferLength = buffer ? buffer.length : 0;
-            while (buffer && buffer.length > 0) {
-                const lfIdx = buffer.indexOf('\n\n');
-                const crlfIdx = buffer.indexOf('\r\n\r\n');
-                let splitIdx = -1;
-                let splitLen = 0;
-
-                if (crlfIdx !== -1 && (lfIdx === -1 || crlfIdx < lfIdx)) {
-                    splitIdx = crlfIdx;
-                    splitLen = 4;
-                } else if (lfIdx !== -1) {
-                    splitIdx = lfIdx;
-                    splitLen = 2;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                const flushChunk = decoder.decode();
+                if (flushChunk) {
+                    buffer += flushChunk;
                 }
 
-                if (splitIdx === -1) break;
-                const rawEvent = buffer.slice(0, splitIdx);
-                buffer = buffer.slice(splitIdx + splitLen);
-                processSSEEvent(rawEvent, tailDeltas);
+                const tailDeltas = [];
+                if (buffer && buffer.length > 0) {
+                    const lines = buffer.split('\n');
+                    for (const line of lines) {
+                        processSSEEvent(line, tailDeltas);
+                    }
+                }
+
+                for (const text of tailDeltas) {
+                    fullToolResponse += text;
+                    const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
+                    if (filteredText.length > 0) {
+                        emittedChunks += 1;
+                        const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
+                        if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                        else port.postMessage(chunkMsg);
+                    }
+                }
+
+                break;
+            }
+            const chunk = decoder.decode(value, { stream: true });
+
+            const textDeltas = [];
+            buffer += chunk;
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                processSSEEvent(line, textDeltas);
             }
 
-            if (buffer && buffer.trim().length > 0) {
-                processSSEEvent(buffer, tailDeltas);
-                buffer = '';
-            }
-
-            for (const text of tailDeltas) {
+            for (const text of textDeltas) {
                 fullToolResponse += text;
+                
                 const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
                 if (filteredText.length > 0) {
                     emittedChunks += 1;
@@ -1234,49 +1468,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     else port.postMessage(chunkMsg);
                 }
             }
-
-
-            break;
         }
-        const chunk = decoder.decode(value, { stream: true });
-
-        
-        const textDeltas = [];
-        buffer += chunk;
-
-        while (buffer && buffer.length > 0) {
-            const lfIdx = buffer.indexOf('\n\n');
-            const crlfIdx = buffer.indexOf('\r\n\r\n');
-            let splitIdx = -1;
-            let splitLen = 0;
-
-            if (crlfIdx !== -1 && (lfIdx === -1 || crlfIdx < lfIdx)) {
-                splitIdx = crlfIdx;
-                splitLen = 4;
-            } else if (lfIdx !== -1) {
-                splitIdx = lfIdx;
-                splitLen = 2;
-            }
-
-            if (splitIdx === -1) break;
-
-            const rawEvent = buffer.slice(0, splitIdx);
-            buffer = buffer.slice(splitIdx + splitLen);
-            processSSEEvent(rawEvent, textDeltas);
-        }
-
-        
-        for (const text of textDeltas) {
-            fullToolResponse += text;
-            
-            const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
-            if (filteredText.length > 0) {
-                emittedChunks += 1;
-                const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
-                if (sessionId) broadcastToSession(sessionId, chunkMsg);
-                else port.postMessage(chunkMsg);
-            }
-        }
+    } finally {
+        clearInterval(keepAliveInterval);
     }
 
     
@@ -1324,21 +1518,44 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
 
     const response = await fetchWithRotation(keys, async (key) => {
         const endpoint = (provider.endpoint || 'https://api.groq.com/openai/v1/chat/completions').replace(/\/$/, "");
-        return fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(key ? { 'Authorization': `Bearer ${key}` } : {})
-            },
-            body: JSON.stringify({
-                model: modelToUse,
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
+        if (provider.providerType === 'gemini') {
+            const url = `${endpoint}/${modelToUse}:generateContent`;
+            const body = {
+                contents: [
+                    { role: 'user', parts: [{ text: prompt }] }
                 ],
-                temperature: 0.3
-            })
-        });
+                system_instruction: {
+                    parts: [{ text: systemInstruction }]
+                },
+                generationConfig: {
+                    temperature: 0.3
+                }
+            };
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(key ? { 'x-goog-api-key': key } : {})
+                },
+                body: JSON.stringify(body)
+            });
+        } else {
+            return fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(key ? { 'Authorization': `Bearer ${key}` } : {})
+                },
+                body: JSON.stringify({
+                    model: modelToUse,
+                    messages: [
+                        { role: 'system', content: systemInstruction },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.3
+                })
+            });
+        }
     }, requestOptions);
 
     if (!response.ok) {
@@ -1346,6 +1563,9 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
         throw new Error(`${provider.providerType} error (${response.status}): ${errText.substring(0, 100)}`);
     }
     const result = await response.json();
+    if (provider.providerType === 'gemini') {
+        return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
     return result.choices?.[0]?.message?.content || '';
 }
 
@@ -1366,7 +1586,29 @@ async function bridgeLog(...args) {
 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'keep_alive_start') {
+        const sid = request.sessionId;
+        if (sid) {
+            if (!globalThis.keepAliveResponses) {
+                globalThis.keepAliveResponses = new Map();
+            }
+            globalThis.keepAliveResponses.set(sid, sendResponse);
+        }
+        return true; 
+    }
 
+    if (request.action === 'keep_alive_stop') {
+        const sid = request.sessionId;
+        if (sid && globalThis.keepAliveResponses && globalThis.keepAliveResponses.has(sid)) {
+            const pendingSendResponse = globalThis.keepAliveResponses.get(sid);
+            try {
+                pendingSendResponse({ success: true, stopped: true });
+            } catch (e) {}
+            globalThis.keepAliveResponses.delete(sid);
+        }
+        sendResponse({ success: true });
+        return false;
+    }
 
     if (request.type === 'LUMINA_CONTENT_UPDATED' && sender.tab) {
         
@@ -1774,18 +2016,59 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             if (!provider.apiKey) continue;
                             const keys = provider.apiKey.split(',').map(k => k.trim()).filter(k => k);
                             let modelToUse = targetModel;
+                            let isGemini = provider.type === 'gemini' || isGeminiOpenAIEndpoint(provider.endpoint);
                             if (activeModelConfig && provider.id !== activeModelConfig.providerId) {
-                                if (isGeminiOpenAIEndpoint(provider.endpoint)) modelToUse = 'gemini-3-flash-preview';
+                                if (isGemini) modelToUse = 'gemini-3.5-flash';
                                 else if (provider.type === 'openai') modelToUse = 'gpt-4o-mini';
                                 else if (provider.type === 'groq') modelToUse = 'llama-3.3-70b-versatile';
                             }
                             for (const key of keys) {
                                 try {
-                                    const endpoint = normalizeOpenAICompatibleEndpoint(provider.endpoint || 'https://api.groq.com/openai/v1/chat/completions', '/chat/completions');
-                                    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { 'Authorization': `Bearer ${key}` } : {}) }, body: JSON.stringify({ model: modelToUse, messages: [{ role: 'system', content: 'You are a memory consolidation assistant.' }, { role: 'user', content: prompt }], temperature: 0.3, max_tokens: 8192 }) });
+                                    let response;
+                                    if (provider.type === 'gemini') {
+                                        const url = `${provider.endpoint.replace(/\/$/, '')}/${modelToUse}:generateContent`;
+                                        response = await fetch(url, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                ...(key ? { 'x-goog-api-key': key } : {})
+                                            },
+                                            body: JSON.stringify({
+                                                contents: [
+                                                    { role: 'user', parts: [{ text: prompt }] }
+                                                ],
+                                                system_instruction: {
+                                                    parts: [{ text: 'You are a memory consolidation assistant.' }]
+                                                },
+                                                generationConfig: {
+                                                    temperature: 0.3
+                                                }
+                                            })
+                                        });
+                                    } else {
+                                        const endpoint = normalizeOpenAICompatibleEndpoint(provider.endpoint || 'https://api.groq.com/openai/v1/chat/completions', '/chat/completions');
+                                        response = await fetch(endpoint, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                ...(key ? { 'Authorization': `Bearer ${key}` } : {})
+                                            },
+                                            body: JSON.stringify({
+                                                model: modelToUse,
+                                                messages: [
+                                                    { role: 'system', content: 'You are a memory consolidation assistant.' },
+                                                    { role: 'user', content: prompt }
+                                                ],
+                                                temperature: 0.3,
+                                                max_tokens: 8192
+                                            })
+                                        });
+                                    }
                                     if (!response.ok) continue;
                                     const result = await response.json();
-                                    const text = result.choices?.[0]?.message?.content || '';
+                                    const text = provider.type === 'gemini'
+                                        ? (result.candidates?.[0]?.content?.parts?.[0]?.text || '')
+                                        : (result.choices?.[0]?.message?.content || '');
                                     if (text) return text;
                                 } catch (err) { lastError = err; continue; }
                             }
@@ -2226,22 +2509,50 @@ chrome.runtime.onConnect.addListener((port) => {
                     if (sessionPorts.get(sid).size === 0) {
                         sessionPorts.delete(sid);
                         
-                        const controller = sessionControllers.get(sid);
-                        if (controller) {
-                            controller.abort();
-                            sessionControllers.delete(sid);
+                        const timeoutId = setTimeout(() => {
+                            if (!sessionPorts.has(sid)) {
+                                const controller = sessionControllers.get(sid);
+                                if (controller) {
+                                    controller.abort();
+                                    sessionControllers.delete(sid);
+                                }
+                                if (globalThis.keepAliveResponses && globalThis.keepAliveResponses.has(sid)) {
+                                    const pendingSendResponse = globalThis.keepAliveResponses.get(sid);
+                                    try {
+                                        pendingSendResponse({ success: true, aborted: true });
+                                    } catch (e) {}
+                                    globalThis.keepAliveResponses.delete(sid);
+                                }
+                            }
+                        }, 5000);
+
+                        if (!globalThis.sessionAbortTimeouts) {
+                            globalThis.sessionAbortTimeouts = new Map();
                         }
+                        globalThis.sessionAbortTimeouts.set(sid, timeoutId);
                     }
                 }
             }
         });
 
         port.onMessage.addListener(async (msg) => {
+            if (msg.action === 'ping') {
+                try {
+                    chrome.runtime.getPlatformInfo(() => {});
+                } catch (e) {}
+                return;
+            }
+
             if (msg.action === 'register_sessions' && Array.isArray(msg.sessionIds)) {
                 msg.sessionIds.forEach(sid => {
                     registeredSessions.add(sid);
                     if (!sessionPorts.has(sid)) sessionPorts.set(sid, new Set());
                     sessionPorts.get(sid).add(port);
+
+                    if (globalThis.sessionAbortTimeouts && globalThis.sessionAbortTimeouts.has(sid)) {
+                        clearTimeout(globalThis.sessionAbortTimeouts.get(sid));
+                        globalThis.sessionAbortTimeouts.delete(sid);
+                    }
                 });
                 return;
             }
@@ -2262,6 +2573,11 @@ chrome.runtime.onConnect.addListener((port) => {
                 registeredSessions.add(msg.sessionId);
                 if (!sessionPorts.has(msg.sessionId)) sessionPorts.set(msg.sessionId, new Set());
                 sessionPorts.get(msg.sessionId).add(port);
+
+                if (globalThis.sessionAbortTimeouts && globalThis.sessionAbortTimeouts.has(msg.sessionId)) {
+                    clearTimeout(globalThis.sessionAbortTimeouts.get(msg.sessionId));
+                    globalThis.sessionAbortTimeouts.delete(msg.sessionId);
+                }
             }
 
 

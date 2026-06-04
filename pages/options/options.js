@@ -792,8 +792,8 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         id: 'gemini-default',
         name: 'Gemini',
-        type: 'openai',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        type: 'gemini',
+        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
         apiKey: ''
       },
       {
@@ -870,8 +870,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentProviders.some(p => p.id === def.id)) {
           currentProviders.push(def);
         }
-      });
     }
+
+    // Automatically migrate legacy Gemini OpenAI provider to native Gemini provider
+    currentProviders.forEach(p => {
+      if (p.id === 'gemini-default' && p.type === 'openai') {
+        p.type = 'gemini';
+        p.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
+      }
+    });
 
     const order = defaultProviders.map(p => p.id);
     currentProviders.sort((a, b) => {
@@ -2105,21 +2112,33 @@ loadAllSettings();
       console.log('[Lumina Options] Fetching models for provider:', provider.name, 'type:', provider.type, 'endpoint:', provider.endpoint, 'hasKey:', !!firstKey);
 
 
-      let modelsUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/models');
-
-
-      if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) {
-        modelsUrl = 'https://api.groq.com/openai/v1/models';
+      let response;
+      if (provider.type === 'gemini') {
+        const baseUrl = provider.endpoint.includes('/models')
+          ? provider.endpoint.split('/models')[0] + '/models'
+          : 'https://generativelanguage.googleapis.com/v1beta/models';
+        const url = firstKey ? `${baseUrl}?key=${firstKey}` : baseUrl;
+        response = await fetch(url);
+      } else {
+        let modelsUrl = normalizeOpenAICompatibleEndpoint(provider.endpoint, '/models');
+        if (provider.type === 'groq' || provider.endpoint.includes('groq.com')) {
+          modelsUrl = 'https://api.groq.com/openai/v1/models';
+        }
+        response = await fetch(modelsUrl, {
+          headers: firstKey ? { 'Authorization': `Bearer ${firstKey}` } : {}
+        });
       }
-
-      const response = await fetch(modelsUrl, {
-        headers: firstKey ? { 'Authorization': `Bearer ${firstKey}` } : {}
-      });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.data) {
-          models = data.data.map(m => m.id);
+        if (provider.type === 'gemini') {
+          if (data.models) {
+            models = data.models.map(m => m.name.replace('models/', ''));
+          }
+        } else {
+          if (data.data) {
+            models = data.data.map(m => m.id);
+          }
         }
       }
 

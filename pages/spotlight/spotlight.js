@@ -548,6 +548,33 @@ function bindHistoryScroll(tab) {
     }, { passive: true });
 }
 
+function showTopbarLoading() {
+    const bar = document.getElementById('topbar-progress');
+    if (bar) {
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(0)';
+        bar.classList.add('active');
+        // Force reflow
+        bar.offsetHeight;
+        bar.style.transition = 'transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.2s ease';
+        bar.style.transform = 'scaleX(0.85)';
+    }
+}
+
+function hideTopbarLoading() {
+    const bar = document.getElementById('topbar-progress');
+    if (bar) {
+        bar.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+        bar.style.transform = 'scaleX(1)';
+        setTimeout(() => {
+            bar.classList.remove('active');
+            setTimeout(() => {
+                bar.style.transform = 'scaleX(0)';
+            }, 150);
+        }, 150);
+    }
+}
+
 function restoreScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
     const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
@@ -577,27 +604,38 @@ function restoreLatestScrollPosition(tab) {
     if (entries.length === 0) return;
 
     const latestEntry = entries[entries.length - 1];
-    
     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
 
     tab.historyEl.scrollTop = targetScrollTop;
+    tab.scrollTop = targetScrollTop;
 }
 
 function scheduleScrollRestore(tab) {
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            if (tab?.restoreLatestOnOpen) {
-                restoreLatestScrollPosition(tab);
-                tab.restoreLatestOnOpen = false;
-                return;
-            }
-
+    showTopbarLoading();
+    if (tab?.historyEl) {
+        tab.historyEl.style.opacity = '0';
+        tab.historyEl.style.transition = 'none';
+    }
+    const performRestore = async () => {
+        if (tab?.historyEl?.__processingPromises) {
+            try {
+                await Promise.all(tab.historyEl.__processingPromises);
+            } catch (e) {}
+            tab.historyEl.__processingPromises = null;
+        }
+        if (tab?.restoreLatestOnOpen) {
+            restoreLatestScrollPosition(tab);
+            tab.restoreLatestOnOpen = false;
+        } else {
             restoreScrollPosition(tab);
-            setTimeout(() => {
-                restoreScrollPosition(tab);
-            }, 50);
-        });
-    });
+        }
+        if (tab?.historyEl) {
+            tab.historyEl.style.opacity = '1';
+            tab.historyEl.style.transition = '';
+        }
+        hideTopbarLoading();
+    };
+    setTimeout(performRestore, 40);
 }
 
 
@@ -696,7 +734,7 @@ async function handleRemoteSync(changes, areaName) {
 
                 renderTabs();
                 if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
-                switchGroup(activeGroupIndex); 
+                switchGroup(activeGroupIndex, true); 
                 syncSessionsWithBackground();
             }
         }
@@ -869,9 +907,9 @@ function ensureTabHistoryLoaded(tab) {
         historyEl.innerHTML = tab.rawHistoryHtml;
         tab.rawHistoryHtml = null;
         normalizeRestoredHistory(historyEl);
-        historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions').forEach(ans => {
-            LuminaChatUI.processContainer(ans);
-        });
+        historyEl.__processingPromises = Array.from(
+            historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions')
+        ).map(ans => LuminaChatUI.processContainer(ans));
         historyEl.querySelectorAll('.lumina-trans-sentence').forEach(s => s.classList.remove('hovered'));
         historyEl.querySelectorAll('.lumina-dict-entry[data-entry-type="translation"]').forEach(entry => {
             LuminaChatUI._setupTranslationHighlight(entry);
@@ -904,160 +942,101 @@ async function initTabs() {
     try {
         const data = await chrome.storage.local.get([
             KEYS.tabs,
-            KEYS.tabCounter,
-            KEYS.tabGroups,
-            KEYS.activeGroupIndex,
-            KEYS.groupCounter,
             KEYS.activeTabIndex,
-            KEYS.isSplitMode,
-            KEYS.secondaryTabIndex,
-            KEYS.splitRatio,
-            'spotlight_tabs',
-            'spotlight_tab_counter',
-            'spotlight_tab_groups',
-            'spotlight_active_group_index',
-            'spotlight_group_counter'
+            'lumina_youtube_trigger'
         ]);
 
-        if (isSidePanel && !data[KEYS.tabs] && data.spotlight_tabs) {
-            data[KEYS.tabs] = data.spotlight_tabs;
-            data[KEYS.tabCounter] = data.spotlight_tab_counter;
-            data[KEYS.tabGroups] = data.spotlight_tab_groups;
-            data[KEYS.activeGroupIndex] = data.spotlight_active_group_index;
-            data[KEYS.groupCounter] = data.spotlight_group_counter;
-        }
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSessionId = urlParams.get('session_id');
 
-        if (data[KEYS.groupCounter]) {
-            groupCounter = data[KEYS.groupCounter];
-        }
-
+        let savedTab = null;
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 0) {
-            tabs = [];
-            const processedSessionIds = new Set();
-            const historyKeys = [];
+            const activeIdx = data[KEYS.activeTabIndex] || 0;
+            savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
+        }
 
-            data[KEYS.tabs].forEach(meta => {
-                if (meta.sessionId && !processedSessionIds.has(meta.sessionId)) {
-                    processedSessionIds.add(meta.sessionId);
-                    historyKeys.push(`spotlight_history_${meta.sessionId}`);
+        let sessionId;
+        let historyHtml = '';
+        let tabTitle = 'Chat';
+
+        if (urlSessionId) {
+            sessionId = urlSessionId;
+            const historyKey = `spotlight_history_${sessionId}`;
+            const historyData = await chrome.storage.local.get([historyKey]);
+            historyHtml = historyData[historyKey] || '';
+
+            const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+            const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+            const meta = sessions[urlSessionId] || {};
+            tabTitle = meta.title || 'Chat';
+
+            if (!historyHtml) {
+                const contentKey = `lumina_session_${urlSessionId}`;
+                const contentData = await chrome.storage.local.get([contentKey]);
+                const messages = contentData[contentKey];
+                if (messages) {
+                    const chatData = {
+                        ...meta,
+                        messages: messages,
+                        sessionId: sessionId,
+                        timestamp: meta.createdAt || meta.updatedAt
+                    };
+                    await ChatHistoryManager.restoreChat(chatData, initialHistory);
+                    normalizeRestoredHistory(initialHistory);
                 }
-            });
-            processedSessionIds.clear();
-
-            const historiesData = historyKeys.length > 0 ? await chrome.storage.local.get(historyKeys) : {};
-
-            for (let i = 0; i < data[KEYS.tabs].length; i++) {
-                const meta = data[KEYS.tabs][i];
-                if (!meta.sessionId || processedSessionIds.has(meta.sessionId)) {
-                    console.log('[Spotlight] Skipping duplicate or invalid session:', meta.sessionId);
-                    continue;
-                }
-                processedSessionIds.add(meta.sessionId);
-                let historyEl;
-
-                if (i === 0 && initialHistory) {
-                    historyEl = initialHistory;
-                } else {
-                    historyEl = document.createElement('div');
-                    historyEl.className = 'lumina-chat-scroll-content';
-                    const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
-                    primaryContainer.appendChild(historyEl);
-                }
-
-                historyEl.style.display = 'none';
-
-                const historyKey = `spotlight_history_${meta.sessionId}`;
-                const historyHtml = historiesData[historyKey] || '';
-
-                const tab = {
-                    id: meta.id,
-                    title: meta.title || 'New Tab',
-                    sessionId: meta.sessionId,
-                    scrollTop: (typeof meta.scrollTop === 'number' && meta.scrollTop > 999999)
-                        ? -1
-                        : (meta.scrollTop ?? -1),
-                    scrollAnchorIndex: meta.scrollAnchorIndex ?? null,
-                    scrollAnchorOffset: meta.scrollAnchorOffset ?? null,
-                    isAtBottom: meta.isAtBottom ?? (typeof meta.scrollTop === 'number' && meta.scrollTop > 999999),
-                    restoreLatestOnOpen: true,
-                    historyEl: historyEl,
-                    chatUIInstance: new LuminaChatUI(container, {
-                        isSpotlight: true,
-                        skipInputSetup: true,
-                        onSubmit: (text, images, extra) => handleSubmit(text, images, extra, tab)
-                    }),
-                    rawHistoryHtml: historyHtml
-                };
-                tab.chatUIInstance.historyEl = historyEl;
-                tab.chatUIInstance.initListeners(historyEl);
-                bindHistoryScroll(tab);
-                tabs.push(tab);
             }
-
-            if (data[KEYS.tabGroups] && data[KEYS.tabGroups].length > 0) {
-                tabGroups = data[KEYS.tabGroups];
-                tabGroups.forEach(g => {
-                    g.tabIds = g.tabIds.filter(id => tabs.some(t => t.id === id));
-                });
-                tabGroups = tabGroups.filter(g => g.tabIds.length > 0);
-                activeGroupIndex = data[KEYS.activeGroupIndex] || 0;
-            } else {
-                tabGroups = [];
-                let skipSecondary = false;
-
-                if (data[KEYS.isSplitMode] && data[KEYS.secondaryTabIndex] != null) {
-                    const t1 = tabs[data[KEYS.activeTabIndex]];
-                    const t2 = tabs[data[KEYS.secondaryTabIndex]];
-                    if (t1 && t2 && t1 !== t2) {
-                        tabGroups.push({
-                            id: `group-migrated-split`,
-                            tabIds: [t1.id, t2.id],
-                            ratio: data[KEYS.splitRatio] || 50
-                        });
-                        skipSecondary = true;
-                    }
-                }
-
-                tabs.forEach((t, i) => {
-                    if (skipSecondary && (i === data[KEYS.activeTabIndex] || i === data[KEYS.secondaryTabIndex])) {
-                        return;
-                    }
-                    tabGroups.push({ id: `group-${groupCounter++}`, tabIds: [t.id] });
-                });
-
-                activeGroupIndex = 0;
-            }
-
-            const referencedTabIds = new Set(tabGroups.flatMap(g => g.tabIds));
-            tabs = tabs.filter(t => {
-                if (referencedTabIds.has(t.id)) return true;
-                if (t.historyEl) t.historyEl.remove();
-                return false;
-            });
-
-            normalizeTabs();
-
-            if (tabGroups.length === 0) {
-                createTab(true);
-            } else {
-                activeGroupIndex = -1;
-                const savedIndex = data[KEYS.activeGroupIndex] || 0;
-                switchGroup(Math.min(Math.max(0, savedIndex), tabGroups.length - 1));
-            }
-
-            chrome.storage.local.get(['lumina_youtube_trigger'], (ytData) => {
-                if (ytData.lumina_youtube_trigger) {
-                    setTimeout(() => handleYouTubeTrigger(ytData.lumina_youtube_trigger), 100);
-                }
-            });
-
         } else {
-            createTab(true);
+            sessionId = savedTab?.sessionId || ('session_' + Date.now() + Math.random().toString(36).substr(2, 5));
+            const historyKey = `spotlight_history_${sessionId}`;
+            const historyData = await chrome.storage.local.get([historyKey]);
+            historyHtml = historyData[historyKey] || '';
+            tabTitle = savedTab?.title || 'Chat';
+        }
+
+        const singleTab = {
+            id: 'tab-1',
+            title: tabTitle,
+            sessionId: sessionId,
+            scrollTop: savedTab?.scrollTop ?? -1,
+            scrollAnchorIndex: savedTab?.scrollAnchorIndex ?? null,
+            scrollAnchorOffset: savedTab?.scrollAnchorOffset ?? null,
+            isAtBottom: savedTab?.isAtBottom ?? true,
+            restoreLatestOnOpen: true,
+            historyEl: initialHistory,
+            chatUIInstance: new LuminaChatUI(container, {
+                isSpotlight: true,
+                skipInputSetup: true,
+                onSubmit: (text, images, extra) => handleSubmit(text, images, extra, singleTab)
+            }),
+            rawHistoryHtml: historyHtml
+        };
+        singleTab.chatUIInstance.historyEl = initialHistory;
+        singleTab.chatUIInstance.initListeners(initialHistory);
+        bindHistoryScroll(singleTab);
+        tabs.push(singleTab);
+
+        ensureTabHistoryLoaded(singleTab);
+        initialHistory.style.display = 'block';
+
+        activeTabIndex = 0;
+        activeGroupIndex = 0;
+        tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
+
+        scheduleScrollRestore(singleTab);
+
+        const modelData = await chrome.storage.local.get(['lastUsedModel']);
+        if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
+            singleTab.selectedModel = { ...modelData.lastUsedModel };
+            if (singleTab.chatUIInstance) {
+                singleTab.chatUIInstance.activeTabModel = { ...modelData.lastUsedModel };
+            }
+        }
+
+        if (data.lumina_youtube_trigger) {
+            setTimeout(() => handleYouTubeTrigger(data.lumina_youtube_trigger), 100);
         }
     } catch (e) {
         console.error('[Spotlight] initTabs failed:', e);
-        
-        if (tabs.length === 0) createTab(true);
     }
 
     
@@ -1143,148 +1122,14 @@ async function initTabs() {
 }
 
 function createTab(switchToIt = true) {
-    tabCounter++;
-    const newTabId = `tab-${tabCounter}`;
-
-    const newHistory = document.createElement('div');
-    newHistory.className = 'lumina-chat-scroll-content';
-    newHistory.id = `chat-history-${newTabId}`;
-    newHistory.style.display = 'none';
-
-    
-    const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
-    primaryContainer.appendChild(newHistory);
-
-    const newTab = {
-        id: newTabId,
-        title: 'New Tab',
-        historyEl: newHistory,
-        chatUIInstance: null,
-        scrollTop: -1,
-        isAtBottom: false,
-        restoreLatestOnOpen: true,
-        sessionId: 'session_' + Date.now() + Math.random().toString(36).substr(2, 5),
-        selectedModel: null
-    };
-
-    newTab.chatUIInstance = new LuminaChatUI(container, {
-        isSpotlight: true,
-        skipInputSetup: true,
-        onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
-    });
-    newTab.chatUIInstance.historyEl = newHistory;
-    newTab.chatUIInstance.initListeners(newHistory); 
-    bindHistoryScroll(newTab);
-
-    chrome.storage.local.get(['lastUsedModel'], (data) => {
-        if (data.lastUsedModel && data.lastUsedModel.model) {
-            
-            if (!newTab.selectedModel) {
-                newTab.selectedModel = { ...data.lastUsedModel };
-            }
-            if (newTab.chatUIInstance && !newTab.chatUIInstance.activeTabModel) {
-                newTab.chatUIInstance.activeTabModel = { ...data.lastUsedModel };
-            }
-        }
-    });
-
-    tabs.push(newTab);
-
-    
-    tabGroups.push({ id: `group-${groupCounter++}`, tabIds: [newTab.id], ratio: 50 });
-
-    normalizeTabs();
-
-    if (switchToIt) {
-        switchGroup(tabGroups.length - 1);
-    }
+    resetChat();
 }
 
 function duplicateTab(index) {
-    if (index < 0 || index >= tabs.length) return;
-    const sourceTab = tabs[index];
-    ensureTabHistoryLoaded(sourceTab);
-
-    tabCounter++;
-    const newTabId = `tab-${tabCounter}`;
-
-    const newHistory = document.createElement('div');
-    newHistory.className = 'lumina-chat-scroll-content';
-    newHistory.id = `chat-history-${newTabId}`;
-    newHistory.style.display = 'none';
-    const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
-    primaryContainer.appendChild(newHistory);
-
-    const newTab = {
-        id: newTabId,
-        title: sourceTab.title,
-        historyEl: newHistory,
-        chatUIInstance: new LuminaChatUI(container, {
-            isSpotlight: true,
-            skipInputSetup: true,
-            onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
-        }),
-        scrollTop: sourceTab.scrollTop ?? -1,
-        isAtBottom: !!sourceTab.isAtBottom,
-        restoreLatestOnOpen: true,
-        sessionId: sourceTab.sessionId, 
-        selectedModel: sourceTab.selectedModel ? { ...sourceTab.selectedModel } : null
-    };
-    newTab.chatUIInstance.historyEl = newHistory;
-    newTab.chatUIInstance.initListeners(newHistory); 
-    bindHistoryScroll(newTab);
-
-    
-    newHistory.innerHTML = sourceTab.historyEl.innerHTML;
-    normalizeRestoredHistory(newHistory);
-    newTab.chatUIInstance.clearEntryMargins();
-
-    if (streamingTab && streamingTab.id === sourceTab.id) {
-        const entries = newHistory.querySelectorAll('.lumina-dict-entry');
-        if (entries.length > 0) {
-            const lastEntry = entries[entries.length - 1];
-            newTab.chatUIInstance.currentEntryDiv = lastEntry;
-            newTab.chatUIInstance.currentAnswerDiv = lastEntry.querySelector('.lumina-chat-answer');
-        }
-    }
-
-    
-    tabs.splice(index + 1, 0, newTab);
-
-    
-    const sourceGroupIndex = tabGroups.findIndex(g => g.tabIds.includes(sourceTab.id));
-    const tempGroup = { id: `group-${groupCounter++}`, tabIds: [newTab.id], ratio: 50 };
-    if (sourceGroupIndex >= 0) {
-        tabGroups.splice(sourceGroupIndex + 1, 0, tempGroup);
-        const sourceGroup = tabGroups[sourceGroupIndex];
-
-        
-        if (sourceGroup.tabIds.length >= 2 && sourceGroup.tabIds[1] === sourceTab.id) {
-            const tab0 = tabs.find(t => t.id === sourceGroup.tabIds[0]);
-            const tab1 = sourceTab;
-
-            
-            if (tab0 && sharedInputUI?.getInputState) tab0.inputState = sharedInputUI.getInputState();
-            if (tab1 && sharedInputUISecondary?.getInputState) tab1.inputStateSecondary = sharedInputUISecondary.getInputState();
-
-            
-            [sourceGroup.tabIds[0], sourceGroup.tabIds[1]] = [sourceGroup.tabIds[1], sourceGroup.tabIds[0]];
-            sourceGroup.ratio = 100 - (sourceGroup.ratio || 50);
-
-            
-            if (tab1) tab1.inputState = tab1.inputStateSecondary;
-            if (tab0) tab0.inputStateSecondary = tab0.inputState;
-        }
-    } else {
-        tabGroups.push(tempGroup);
-    }
-
-    
-    applySplit(sourceTab.id, newTab.id);
-    normalizeTabs();
+    // No-op in single tab mode
 }
 
-function switchGroup(groupIndex) {
+function switchGroup(groupIndex, skipScrollRestore = false) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
 
     const previousGroup = (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) ? tabGroups[activeGroupIndex] : null;
@@ -1353,7 +1198,7 @@ function switchGroup(groupIndex) {
             sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
             if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
         }
-        syncTabUI(primaryTab);
+        syncTabUI(primaryTab, false, skipScrollRestore);
         primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
 
         
@@ -1370,7 +1215,7 @@ function switchGroup(groupIndex) {
             sharedInputUISecondary.activeTabModel = secondaryTab.selectedModel ? { ...secondaryTab.selectedModel } : null;
             if (typeof sharedInputUISecondary.refreshModelSelector === 'function') sharedInputUISecondary.refreshModelSelector();
         }
-        syncTabUI(secondaryTab, true);
+        syncTabUI(secondaryTab, true, skipScrollRestore);
         secondaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
 
     } else {
@@ -1393,7 +1238,7 @@ function switchGroup(groupIndex) {
             sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
             if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
         }
-        syncTabUI(primaryTab);
+        syncTabUI(primaryTab, false, skipScrollRestore);
         primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
     }
 
@@ -1428,7 +1273,7 @@ function activateSubTab(groupIndex, targetTabId) {
     switchGroup(groupIndex);
 }
 
-function syncTabUI(tab, isSecondary = false) {
+function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
     if (!tab || !tab.historyEl) return;
 
     if (tab.scrollTop !== -1) {
@@ -1458,7 +1303,9 @@ function syncTabUI(tab, isSecondary = false) {
         }
     }
 
-    scheduleScrollRestore(tab);
+    if (!skipScrollRestore) {
+        scheduleScrollRestore(tab);
+    }
 }
 
 function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
@@ -2985,9 +2832,6 @@ async function init() {
     
     initSpotlightAskSelection();
 
-    // Initialize topbar model selector
-    initTopbarModelSelector();
-
     
     const inputAreaPrimary = document.getElementById('input-area-primary');
     const inputAreaSecondary = document.getElementById('input-area-secondary');
@@ -3039,23 +2883,12 @@ async function init() {
         }
     }
 
+    // Initialize topbar model selector
+    initTopbarModelSelector();
+
     setupPort();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSessionId = urlParams.get('session_id');
-    if (urlSessionId) {
-        setTimeout(async () => {
-            const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-            const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
-            const meta = sessions[urlSessionId];
-            const contentKey = `lumina_session_${urlSessionId}`;
-            const contentData = await chrome.storage.local.get([contentKey]);
-            const messages = contentData[contentKey];
-            if (messages && meta) {
-                window.loadHistoryIntoNewTab(messages, meta, urlSessionId);
-            }
-        }, 300);
-    }
+    // History loaded directly in initTabs if urlSessionId is present
 
     
     setupRegenerateButtons();
@@ -5316,7 +5149,9 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
 
     
     if (typeof ChatHistoryManager !== 'undefined' && typeof ChatHistoryManager.restoreChat === 'function') {
-        
+        showTopbarLoading();
+        activeTab.historyEl.style.opacity = '0';
+        activeTab.historyEl.style.transition = 'none';
         activeTab.historyEl.innerHTML = '';
 
         await ChatHistoryManager.restoreChat(chatData, activeTab.historyEl);
@@ -5328,7 +5163,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         saveTabsState();
 
         
-        syncTabUI(activeTab);
+        syncTabUI(activeTab, false, true);
 
         if (targetIndex !== null && messages && messages[targetIndex]) {
             
@@ -5366,10 +5201,33 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                     activeTab.historyEl.scrollTop = activeTab.historyEl.scrollHeight;
                     activeTab.scrollTop = -1;
                 }
+                activeTab.historyEl.style.opacity = '1';
+                activeTab.historyEl.style.transition = '';
+                hideTopbarLoading();
             }, 60);
         } else {
-            activeTab.historyEl.scrollTop = activeTab.historyEl.scrollHeight;
-            activeTab.scrollTop = -1;
+            const performRestore = async () => {
+                if (activeTab.historyEl.__processingPromises) {
+                    try {
+                        await Promise.all(activeTab.historyEl.__processingPromises);
+                    } catch (e) {}
+                    activeTab.historyEl.__processingPromises = null;
+                }
+                const entries = activeTab.historyEl.querySelectorAll('.lumina-dict-entry');
+                if (entries.length > 0) {
+                    const latestEntry = entries[entries.length - 1];
+                    const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, activeTab.historyEl);
+                    activeTab.historyEl.scrollTop = targetScrollTop;
+                    activeTab.scrollTop = targetScrollTop;
+                } else {
+                    activeTab.historyEl.scrollTop = activeTab.historyEl.scrollHeight;
+                    activeTab.scrollTop = -1;
+                }
+                activeTab.historyEl.style.opacity = '1';
+                activeTab.historyEl.style.transition = '';
+                hideTopbarLoading();
+            };
+            setTimeout(performRestore, 40);
         }
     }
 };
@@ -5602,4 +5460,5 @@ function initTopbarModelSelector() {
     });
 
     window.updateTopbarModelSelector = fetchAndRender;
+    fetchAndRender();
 }
