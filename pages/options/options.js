@@ -870,6 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentProviders.some(p => p.id === def.id)) {
           currentProviders.push(def);
         }
+      });
     }
 
     // Automatically migrate legacy Gemini OpenAI provider to native Gemini provider

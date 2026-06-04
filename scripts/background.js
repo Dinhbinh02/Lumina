@@ -19,6 +19,7 @@ let sessionOpenWindows = new Set();
 
 const sessionPorts = new Map(); 
 const sessionControllers = new Map(); 
+const activeUploads = new Map(); 
 
 function broadcastToSession(sessionId, message) {
     if (!sessionId) return;
@@ -232,9 +233,6 @@ async function incrementModelUsage(modelId) {
     }
 }
 
-function isGeminiOpenAIEndpoint(endpoint) {
-    return typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com/v1beta/openai');
-}
 
 function normalizeOpenAICompatibleEndpoint(endpoint, targetPath) {
     if (typeof endpoint !== 'string') return endpoint;
@@ -356,13 +354,30 @@ Provide a high-quality dictionary entry for the English word or phrase: "${word}
 }
 
 
-async function getGeminiApiKey() {
+async function getGeminiApiKey(providerId = null) {
     const data = await chrome.storage.local.get(['providers']);
     const providers = data.providers || [];
-    const geminiProvider = providers.find(p => isGeminiOpenAIEndpoint(p.endpoint) && p.apiKey);
-    if (geminiProvider && geminiProvider.apiKey) {
-        const keys = geminiProvider.apiKey.split(',').map(k => k.trim()).filter(k => k);
-        return keys[0] || null;
+    let provider = null;
+    if (providerId) {
+        provider = providers.find(p => p.id === providerId && p.apiKey);
+    }
+    if (!provider) {
+        provider = providers.find(p => (p.type === 'gemini' || (typeof p.endpoint === 'string' && p.endpoint.includes('generativelanguage.googleapis.com'))) && p.apiKey);
+    }
+    if (provider && provider.apiKey) {
+        const keys = provider.apiKey.split(',').map(k => k.trim()).filter(k => k);
+        if (keys.length === 0) return null;
+        const groupKey = 'rot_' + keys.join(',').substring(0, 32).replace(/[^a-zA-Z0-9]/g, '');
+        const today = getTodayString();
+        let activeIndex = 0;
+        try {
+            const rotData = await chrome.storage.local.get([groupKey]);
+            const state = rotData[groupKey];
+            if (state && state.date === today && state.index >= 0 && state.index < keys.length) {
+                activeIndex = state.index;
+            }
+        } catch (e) {}
+        return keys[activeIndex] || keys[0];
     }
     return null;
 }
@@ -555,20 +570,7 @@ function processAttachmentsForGemini(attachments) {
                 const matches = item.match(/^data:([^;]+);base64,(.+)$/i);
                 if (matches) {
                     const mime = normalizeMimeType(matches[1]);
-                    const isImage = mime.startsWith('image/');
-                    const isVideo = mime.startsWith('video/');
-                    const isAudio = mime.startsWith('audio/');
-                    const isPDF = mime === 'application/pdf';
-                    if (isImage || isVideo || isAudio || isPDF) {
-                        parts.push({
-                            inlineData: {
-                                mimeType: mime,
-                                data: matches[2]
-                            }
-                        });
-                    } else {
-                        unsupported.push({ name: 'Attached file', mimeType: mime });
-                    }
+                    unsupported.push({ name: 'Inline file', mimeType: mime });
                 }
             }
         } else if (typeof item === 'object') {
@@ -580,30 +582,15 @@ function processAttachmentsForGemini(attachments) {
                 if (textContent) parts.push({ text: `[Attached file: ${itemName} (${mimeType})]\n${textContent}` });
                 continue;
             }
-            let base64Data = item.data;
-            if (!base64Data && item.dataUrl) {
-                const matches = item.dataUrl.match(/^data:(.+?);base64,(.+)$/);
-                if (matches) base64Data = matches[2];
-            }
-            if (!base64Data && item.previewUrl && item.previewUrl.startsWith('data:')) {
-                const matches = item.previewUrl.match(/^data:(.+?);base64,(.+)$/);
-                if (matches) base64Data = matches[2];
-            }
-            if (base64Data && mimeType) {
-                const isImage = mimeType.startsWith('image/');
-                const isVideo = mimeType.startsWith('video/');
-                const isAudio = mimeType.startsWith('audio/');
-                const isPDF = mimeType === 'application/pdf';
-                if (!isImage && !isVideo && !isAudio && !isPDF) {
-                    unsupported.push({ name: itemName, mimeType });
-                    continue;
-                }
+            if (item.fileUri) {
                 parts.push({
-                    inlineData: {
-                        mimeType: mimeType,
-                        data: base64Data
+                    fileData: {
+                        fileUri: item.fileUri,
+                        mimeType: mimeType
                     }
                 });
+            } else {
+                unsupported.push({ name: itemName, mimeType });
             }
         }
     }
@@ -613,7 +600,8 @@ function processAttachmentsForGemini(attachments) {
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
 
-    if (providerType === 'gemini') {
+    const isGemini = providerType === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
+    if (isGemini) {
         const geminiContents = [];
         for (const msg of msgs) {
             const attachments = msg.files || msg.images;
@@ -700,7 +688,16 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         };
 
         const method = isStreaming ? 'streamGenerateContent' : 'generateContent';
-        const url = `${endpoint.replace(/\/$/, '')}/${model}:${method}${isStreaming ? '?alt=sse' : ''}`;
+        let baseEndpoint = endpoint.replace(/\/$/, '')
+                                   .replace(/\/openai\/chat\/completions$/, '')
+                                   .replace(/\/chat\/completions$/, '')
+                                   .replace(/\/openai$/, '')
+                                   .replace(/\/models$/, '');
+        let urlModel = model;
+        if (!urlModel.startsWith('models/')) {
+            urlModel = 'models/' + urlModel;
+        }
+        const url = `${baseEndpoint}/${urlModel}:${method}${isStreaming ? '?alt=sse' : ''}`;
         return { url, body: geminiBody };
     }
 
@@ -773,21 +770,8 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         }
     }
 
-    if (normalizedThinkingLevel === 'none') {
-        if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) openaiBody.reasoning_effort = 'none';
-    } else if (normalizedThinkingLevel) {
+    if (normalizedThinkingLevel) {
         openaiBody.reasoning_effort = normalizedThinkingLevel;
-    } else if (isGeminiOpenAIEndpoint(endpoint) && isGemini25Model) {
-        openaiBody.reasoning_effort = 'none';
-    }
-
-    if (isGeminiOpenAIEndpoint(endpoint)) {
-        if (reasoningMode) {
-            if (!openaiBody.extra_body) openaiBody.extra_body = {};
-            if (!openaiBody.extra_body.google) openaiBody.extra_body.google = {};
-            openaiBody.extra_body.google.thinking_config = { include_thoughts: true };
-        }
-        const isGroundingSupported = /gemini-[3-9]/i.test(model);
     }
 
     return { url: normalizeOpenAICompatibleEndpoint(endpoint, '/chat/completions'), body: openaiBody };
@@ -1215,7 +1199,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     let controller = null;
     if (sessionId) {
-        
         if (sessionControllers.has(sessionId)) {
             sessionControllers.get(sessionId).abort();
         }
@@ -1223,13 +1206,16 @@ async function executeChatRequest(config, messages, initialContext, question, po
         sessionControllers.set(sessionId, controller);
     }
 
+    let requestedUrl = endpoint;
     let response = await fetchWithRotation(keys, async (key) => {
         const payload = await buildApiPayload(fullMessages, augmentedQuestion, systemInstruction, key, payloadParams);
+        requestedUrl = payload.url;
         const headers = {
             'Content-Type': 'application/json'
         };
         if (key) {
-            if (currentProvider === 'gemini') {
+            const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
+            if (isGemini) {
                 headers['x-goog-api-key'] = key;
             } else {
                 headers['Authorization'] = `Bearer ${key}`;
@@ -1252,7 +1238,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             errorData = { raw: errorText };
         }
         console.error('[Lumina] API Error:', {
-            endpoint,
+            endpoint: requestedUrl,
             status: response.status,
             statusText: response.statusText,
             errorData
@@ -1264,7 +1250,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             (typeof errorData?.message === 'string' && errorData.message.trim()) ||
             (typeof errorText === 'string' && errorText.trim()) ||
             '';
-        const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${endpoint}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
+        const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${requestedUrl}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
         if (
             response.status === 429 ||
             /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)
@@ -1745,6 +1731,104 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
         }
 
+        case 'upload_gemini_file': {
+            (async () => {
+                const attachmentId = request.attachmentId;
+                const controller = new AbortController();
+                if (attachmentId) {
+                    activeUploads.set(attachmentId, controller);
+                }
+
+                try {
+                    const key = await getGeminiApiKey(request.providerId);
+                    if (!key) {
+                        sendResponse({ success: false, error: 'Gemini API key is not configured.' });
+                        return;
+                    }
+
+                    const binaryString = atob(request.fileData);
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+
+                    const initUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${key}`;
+                    const initResponse = await fetch(initUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-Goog-Upload-Protocol': 'resumable',
+                            'X-Goog-Upload-Command': 'start',
+                            'X-Goog-Upload-Header-Content-Length': len.toString(),
+                            'X-Goog-Upload-Header-Content-Type': request.mimeType,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            file: {
+                                display_name: request.fileName
+                            }
+                        }),
+                        signal: controller.signal
+                    });
+
+                    if (!initResponse.ok) {
+                        const errText = await initResponse.text();
+                        throw new Error(`Initiate upload failed: ${initResponse.status} ${errText}`);
+                    }
+
+                    const uploadUrl = initResponse.headers.get('x-goog-upload-url');
+                    if (!uploadUrl) {
+                        throw new Error('No upload URL returned from initiate response');
+                    }
+
+                    const uploadResponse = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Length': len.toString(),
+                            'X-Goog-Upload-Offset': '0',
+                            'X-Goog-Upload-Command': 'upload, finalize'
+                        },
+                        body: bytes,
+                        signal: controller.signal
+                    });
+
+                    if (!uploadResponse.ok) {
+                        const errText = await uploadResponse.text();
+                        throw new Error(`Finalize upload failed: ${uploadResponse.status} ${errText}`);
+                    }
+
+                    const fileInfo = await uploadResponse.json();
+                    if (!fileInfo || !fileInfo.file) {
+                        throw new Error('Upload finalized but no file info was returned');
+                    }
+
+                    sendResponse({ success: true, file: fileInfo.file });
+                } catch (e) {
+                    console.error('[Lumina Upload] error:', e);
+                    sendResponse({ success: false, error: e.message });
+                } finally {
+                    if (attachmentId) {
+                        activeUploads.delete(attachmentId);
+                    }
+                }
+            })();
+            return true;
+        }
+
+        case 'abort_gemini_upload': {
+            const attachmentId = request.attachmentId;
+            if (attachmentId && activeUploads.has(attachmentId)) {
+                try {
+                    activeUploads.get(attachmentId).abort();
+                    activeUploads.delete(attachmentId);
+                } catch (e) {
+                    console.warn('[Lumina BG] Error aborting upload:', e);
+                }
+            }
+            sendResponse({ success: true });
+            return;
+        }
+
         case 'get_system_tokens': {
             const reasoningMode = request.reasoningMode || false;
             const isProofread = request.isProofread || false;
@@ -2016,7 +2100,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             if (!provider.apiKey) continue;
                             const keys = provider.apiKey.split(',').map(k => k.trim()).filter(k => k);
                             let modelToUse = targetModel;
-                            let isGemini = provider.type === 'gemini' || isGeminiOpenAIEndpoint(provider.endpoint);
+                            let isGemini = provider.type === 'gemini' || (typeof provider.endpoint === 'string' && provider.endpoint.includes('generativelanguage.googleapis.com'));
                             if (activeModelConfig && provider.id !== activeModelConfig.providerId) {
                                 if (isGemini) modelToUse = 'gemini-3.5-flash';
                                 else if (provider.type === 'openai') modelToUse = 'gpt-4o-mini';
