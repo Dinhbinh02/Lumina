@@ -1302,7 +1302,7 @@ button {
   box-shadow: none !important;
   position: relative !important;
   white-space: pre !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
 }
 
 [data-theme="dark"] .lumina-chat-answer pre,
@@ -1318,7 +1318,7 @@ button {
   font-size: 0.95em !important;
   line-height: 1.5 !important;
   min-width: 100%;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
 }
 
 .lumina-chat-answer ol,
@@ -1504,22 +1504,22 @@ button {
   justify-content: center;
   height: 32px !important;
   padding: 0 10px !important;
-  background: rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: #f1f3f8 !important;
+  border: none !important;
   border-radius: 10px !important;
   font-size: 12px !important;
   font-weight: 400 !important;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--lumina-text-secondary, #70757a) !important;
   order: 2 !important;
   margin-left: 2px !important;
 }
 
 [data-theme="dark"] .lumina-token-counter {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   color: var(--lumina-text-secondary, #a1a1a6) !important;
 }
 
@@ -1529,49 +1529,50 @@ button {
 }
 
 [data-theme="dark"] .lumina-token-counter:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   color: #ffffff !important;
 }
 
 .lumina-token-counter.is-active {
-  background: rgba(0, 122, 255, 0.08) !important;
-  border-color: rgba(0, 122, 255, 0.2) !important;
-  color: var(--lumina-primary-color, #007aff) !important;
+  background: #f1f3f8 !important;
+  border: none !important;
+  color: var(--lumina-text-primary) !important;
 }
 
 [data-theme="dark"] .lumina-token-counter.is-active {
-  background: rgba(10, 132, 255, 0.15) !important;
-  border-color: rgba(10, 132, 255, 0.3) !important;
-  color: #0a84ff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  color: #ffffff !important;
 }
 
 .lumina-token-details {
   position: absolute !important;
-  bottom: calc(100% + 12px) !important;
+  bottom: calc(100% + 8px) !important;
   left: 0 !important;
   right: auto !important;
-  background: var(--lumina-ui-bg) !important;
-  backdrop-filter: none !important;
-  border: 1px solid var(--lumina-ui-border, #e0e0e0) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 12px !important;
   padding: 12px !important;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 165px !important;
+  gap: 6px;
+  min-width: 170px !important;
   z-index: 10000 !important;
-  box-shadow: var(--lumina-shadow-lg) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08) !important;
   font-size: 12px !important;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(8px);
+  transform: translateY(4px);
   pointer-events: none;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+  transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.15s;
 }
 
 [data-theme="dark"] .lumina-token-details {
-  background: var(--lumina-ui-bg) !important;
-  border: 1px solid var(--lumina-ui-border) !important;
+  background: rgba(32, 33, 36, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
 .lumina-token-counter.is-expanded .lumina-token-details {
@@ -1586,7 +1587,7 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  font-size: 1em;
+  line-height: 1.4;
 }
 
 .lumina-token-detail-item .detail-label {
@@ -1601,22 +1602,24 @@ button {
 }
 
 .lumina-token-limit-input {
-  background: rgba(var(--lumina-ui-base-rgb), 0.05);
-  border: 1px solid var(--lumina-ui-border);
-  border-radius: 6px;
-  color: var(--lumina-text-primary);
-  font-size: 1em;
-  padding: 4px 8px;
-  width: 95px;
+  background: #f1f3f8 !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  color: var(--lumina-text-primary) !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  width: 80px !important;
   text-align: right;
   outline: none;
   font-family: 'Google Sans Code', 'Source Code Pro', monospace;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   user-select: text;
   cursor: text;
   pointer-events: auto;
-  appearance: textfield;
-  -moz-appearance: textfield;
+}
+
+[data-theme="dark"] .lumina-token-limit-input {
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 
 .lumina-token-limit-input::-webkit-outer-spin-button,
@@ -1626,9 +1629,13 @@ button {
 }
 
 .lumina-token-limit-input:focus {
-  border-color: var(--lumina-primary-color);
-  background: rgba(var(--lumina-primary-rgb), 0.05);
-  box-shadow: 0 0 0 2px rgba(var(--lumina-primary-rgb), 0.1);
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  background: #ffffff !important;
+}
+
+[data-theme="dark"] .lumina-token-limit-input:focus {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: #202124 !important;
 }
 
 .lumina-token-history.is-truncated {
@@ -1639,8 +1646,12 @@ button {
 
 .lumina-token-divider {
   height: 1px;
-  background: var(--lumina-ui-border);
-  margin: 2px 0;
+  background: rgba(0, 0, 0, 0.06) !important;
+  margin: 4px 0;
+}
+
+[data-theme="dark"] .lumina-token-divider {
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 
 .lumina-token-total-row {
@@ -1648,12 +1659,13 @@ button {
 }
 
 .lumina-token-total-row .detail-label {
-  color: var(--lumina-text-primary);
-  font-weight: 400;
+  color: var(--lumina-text-primary) !important;
+  font-weight: 500 !important;
 }
 
 .lumina-token-total-row .detail-value {
-  color: var(--lumina-primary-color);
+  color: var(--lumina-text-primary) !important;
+  font-weight: 600 !important;
 }
 
 .lumina-model-btn svg,
@@ -1745,8 +1757,8 @@ button {
 }
 
 .lumina-mic-btn svg {
-  width: 18px !important;
-  height: 18px !important;
+  width: 15px !important;
+  height: 15px !important;
 }
 
 .lumina-upload-btn {
@@ -5565,7 +5577,7 @@ button {
 }
 
 .lumina-answer-content {
-  padding-bottom: 12px !important;
+  padding-bottom: 8px !important;
 }
 
 .lumina-edit-btn.lumina-edit-pin.is-active {
@@ -5611,4 +5623,36 @@ button {
 
 .lumina-chat-question.is-pinned-question.is-editing {
   border-color: #ca8a04 !important;
+}
+
+.lumina-answer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lumina-answer-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--lumina-text-primary) !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-answer-action-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .lumina-answer-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-answer-action-btn.is-active {
+  color: var(--lumina-accent-color, #1a73e8) !important;
 }
