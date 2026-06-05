@@ -314,7 +314,7 @@ You have access to the following skills. You must be extremely conservative when
        * **3. Primary Subject Focus**: The visual must directly illustrate the core of the query with clear informational weight—never trigger generic, decorative "stock photos".
    - Format: \`![Detailed caption describing the image in English](image-search://query_keywords)\` where \`query_keywords\` is url-encoded.
    - Caption Rule: The detailed caption in the square brackets \`[...]\` MUST be written in English. Do NOT translate it to Vietnamese or write it in Vietnamese under any circumstances, even if the rest of your response is in Vietnamese. (e.g. \`![A heavy lorry truck driving on the highway](image-search://...)\`).
-   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally.
+   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally. Crucially, preserve the specific country or region context in the query (e.g., if the user is asking about Vietnam, include "vietnam" or local entities/brands like "sjc", "doji" in the query, e.g. "vietnam gold price chart" instead of just "gold price chart").
    - Placement: Always place the image markdown tag in the middle of your response (e.g., integrated naturally between paragraphs or sections where it is most relevant to the text content), NEVER at the very beginning or the very end of your response.
    
 2. Diagram & Illustration Skill:
@@ -322,7 +322,7 @@ You have access to the following skills. You must be extremely conservative when
    - Trigger: Use ONLY when explaining complex mechanisms, technical systems, scientific workflows/cycles, or when the user explicitly asks for a diagram or chart. Do NOT use for simple explanations, purely linguistic/dictionary definitions, or general text-based queries.
    - Format: \`![Detailed caption describing the diagram in English](image-search://query_keywords+diagram)\` or \`![Detailed caption describing the schema in English](image-search://query_keywords+schema)\` where \`query_keywords\` is url-encoded.
    - Caption Rule: The detailed caption in the square brackets \`[...]\` MUST be written in English. Do NOT translate it to Vietnamese or write it in Vietnamese under any circumstances, even if the rest of your response is in Vietnamese. (e.g. \`![Electrical circuit diagram of a transformer](image-search://...)\`).
-   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese concepts).
+   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese concepts). Crucially, preserve the specific country or region context in the query (e.g., if the user is asking about Vietnam, include "vietnam" or local entities/brands like "sjc", "doji" in the query, e.g. "vietnam gold price diagram" instead of just "gold price diagram").
    - Placement: Always place the diagram/illustration markdown tag in the middle of your response (e.g., integrated naturally between paragraphs or technical explanations), NEVER at the very beginning or the very end of your response.
    
 3. YouTube Video Skill / Search Tool (\`youtube:search\`):
