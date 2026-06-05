@@ -1538,14 +1538,22 @@ async function executeChatRequest(config, messages, initialContext, question, po
         if (searchMatch && enableWebSearch && tavilyApiKey && !searchPerformed) {
             const searchQuery = searchMatch.query;
             const statusMsg = {
-                action: 'status_update',
-                text: `Searching the web for "${searchQuery}"...`,
+                action: 'web_search_status',
+                status: 'searching',
                 sessionId: sessionId
             };
             if (sessionId) broadcastToSession(sessionId, statusMsg);
             else port.postMessage(statusMsg);
 
             const searchResults = await performTavilySearch(searchQuery, tavilyApiKey);
+
+            const completedMsg = {
+                action: 'web_search_status',
+                status: 'completed',
+                sessionId: sessionId
+            };
+            if (sessionId) broadcastToSession(sessionId, completedMsg);
+            else port.postMessage(completedMsg);
 
             // Append messages for the second pass
             currentMessages.push({

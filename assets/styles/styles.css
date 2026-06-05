@@ -6038,3 +6038,12 @@ button {
 .lumina-image-wrapper.is-loading .lumina-image-caption {
   display: none !important;
 }
+
+@keyframes lumina-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
