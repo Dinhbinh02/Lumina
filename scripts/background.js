@@ -1440,6 +1440,77 @@ async function executeChatRequest(config, messages, initialContext, question, po
             }
         };
 
+        function isToolCallPrefix(str) {
+            const clean = str.replace(/\s+/g, '');
+            if (!clean) return true; // empty/whitespace is fine
+            
+            const patterns = [
+                /^\{$/,
+                /^\{"t?o?o?l?"?$/,
+                /^\{"tool":?$/,
+                /^\{"tool":"s?e?a?r?c?h?_?w?e?b?"?$/,
+                /^\{"tool":"search_web",?$/,
+                /^\{"tool":"search_web","a?r?g?s?"?$/,
+                /^\{"tool":"search_web","args":?$/,
+                /^\{"tool":"search_web","args":\{$/,
+                /^\{"tool":"search_web","args":\{"q?u?e?r?y?"?$/,
+                /^\{"tool":"search_web","args":\{"query":?$/,
+                /^\{"tool":"search_web","args":\{"query":"[^"]*"$/,
+                /^\{"tool":"search_web","args":\{"query":"[^"]*"\}?$/,
+                /^\{"tool":"search_web","args":\{"query":"[^"]*"\}\}?$/
+            ];
+            
+            return patterns.some(p => p.test(clean));
+        }
+
+        let toolCallBuffer = '';
+
+        const emitChunk = (text) => {
+            fullToolResponse += text;
+            
+            if (toolCallBuffer || text.includes('{')) {
+                toolCallBuffer += text;
+                if (isToolCallPrefix(toolCallBuffer)) {
+                    return;
+                } else {
+                    const toEmit = toolCallBuffer;
+                    toolCallBuffer = '';
+                    if (toEmit.length > 0) {
+                        emittedChunks += 1;
+                        const chunkMsg = { action: 'chunk', chunk: toEmit, sessionId };
+                        if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                        else port.postMessage(chunkMsg);
+                    }
+                }
+            } else {
+                if (text.length > 0) {
+                    emittedChunks += 1;
+                    const chunkMsg = { action: 'chunk', chunk: text, sessionId };
+                    if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                    else port.postMessage(chunkMsg);
+                }
+            }
+        };
+
+        const flushToolCallBuffer = () => {
+            if (toolCallBuffer) {
+                const clean = toolCallBuffer.replace(/\s+/g, '');
+                const isComplete = /^\{"tool":"search_web","args":\{"query":"[^"]*"\}\}$/.test(clean);
+                if (!isComplete) {
+                    const toEmit = toolCallBuffer;
+                    toolCallBuffer = '';
+                    if (toEmit.length > 0) {
+                        emittedChunks += 1;
+                        const chunkMsg = { action: 'chunk', chunk: toEmit, sessionId };
+                        if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                        else port.postMessage(chunkMsg);
+                    }
+                } else {
+                    toolCallBuffer = '';
+                }
+            }
+        };
+
         let keepAliveInterval = setInterval(() => {
             try {
                 chrome.runtime.getPlatformInfo(() => {});
@@ -1466,14 +1537,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     }
 
                     for (const text of tailDeltas) {
-                        fullToolResponse += text;
-                        const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
-                        if (filteredText.length > 0) {
-                            emittedChunks += 1;
-                            const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
-                            if (sessionId) broadcastToSession(sessionId, chunkMsg);
-                            else port.postMessage(chunkMsg);
-                        }
+                        emitChunk(text);
                     }
                     break;
                 }
@@ -1490,18 +1554,12 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 }
 
                 for (const text of textDeltas) {
-                    fullToolResponse += text;
-                    const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
-                    if (filteredText.length > 0) {
-                        emittedChunks += 1;
-                        const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
-                        if (sessionId) broadcastToSession(sessionId, chunkMsg);
-                        else port.postMessage(chunkMsg);
-                    }
+                    emitChunk(text);
                 }
             }
         } finally {
             clearInterval(keepAliveInterval);
+            flushToolCallBuffer();
         }
 
         if (isInReasoning) {
