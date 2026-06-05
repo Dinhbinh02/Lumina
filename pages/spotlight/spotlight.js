@@ -45,6 +45,16 @@ if (isSidePanel) {
     document.body.classList.add('is-sidepanel');
 }
 
+function updateUrlSessionId(sessionId) {
+    if (!sessionId) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('session_id') !== sessionId) {
+        urlParams.set('session_id', sessionId);
+        const newUrl = window.location.pathname + '?' + urlParams.toString();
+        window.history.pushState({ path: newUrl }, '', newUrl);
+    }
+}
+
 const STORAGE_PREFIX = isSidePanel ? 'sidepanel' : 'spotlight';
 const KEYS = {
     tabs: `${STORAGE_PREFIX}_tabs`,
@@ -1285,6 +1295,9 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
 
     renderTabs();
     saveTabsState();
+    if (primaryTab && primaryTab.sessionId) {
+        updateUrlSessionId(primaryTab.sessionId);
+    }
 }
 
 function activateSubTab(groupIndex, targetTabId) {
@@ -2924,9 +2937,6 @@ async function init() {
         setupGlobalListeners();
         setupWebSourceTracking(); 
         isInitializing = false;
-        if (typeof LuminaSync !== 'undefined') {
-            LuminaSync.syncData(true).catch(() => {});
-        }
     });
 
     
@@ -4437,6 +4447,7 @@ function resetChat() {
                 secondaryTab.title = 'New Tab';
                 secondaryTab.sessionId = newSessionId;
                 secondaryTab.scrollTop = -1;
+                updateUrlSessionId(newSessionId);
             }
         }
 
@@ -4460,15 +4471,17 @@ function resetChat() {
         if (activeTabIndex !== -1) {
             const activeTab = tabs[activeTabIndex];
 
-            
-            if (port && activeTab.sessionId) {
-                port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
-            }
+            if (activeTab) {
+                if (port && activeTab.sessionId) {
+                    port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
+                }
 
-            const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
-            activeTab.title = 'New Tab';
-            activeTab.sessionId = newSessionId;
-            activeTab.scrollTop = -1;
+                const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
+                activeTab.title = 'New Tab';
+                activeTab.sessionId = newSessionId;
+                activeTab.scrollTop = -1;
+                updateUrlSessionId(newSessionId);
+            }
         }
 
         chatUI.clearHistory();
@@ -5121,8 +5134,8 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     const activeTab = tabs[activeTabIndex];
     if (!activeTab) return;
 
-    
     activeTab.sessionId = historySessionId;
+    updateUrlSessionId(historySessionId);
 
     
     let displayTitle = meta.title || "Restored Chat";

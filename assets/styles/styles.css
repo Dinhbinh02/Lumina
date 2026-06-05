@@ -6034,3 +6034,7 @@ button {
   border: none;
   display: block;
 }
+
+.lumina-image-wrapper.is-loading .lumina-image-caption {
+  display: none !important;
+}
