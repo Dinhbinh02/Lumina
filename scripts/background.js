@@ -272,7 +272,7 @@ function isGeminiModel(modelName) {
     return m.includes('gemini') || m.includes('google');
 }
 
-function buildChatSystemInstruction(reasoningMode = false) {
+function buildChatSystemInstruction(reasoningMode = false, enableWebSearch = false, tavilyApiKey = '') {
     const currentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     let instruction = `You are an authentic, adaptive AI collaborator and a knowledgeable peer. Your goal is to address the user's true intent with insightful, yet clear and concise responses. Your tone must be warm, and approachable. Actively balance empathy with candor: validate the user's feelings, efforts, or frustrations, and explain concepts clearly without ever sounding like a formal, pedantic, or rigid lecturer.
@@ -372,6 +372,21 @@ What the user says in the current conversation always takes priority. Explicit q
 
     if (reasoningMode) {
         instruction += `\n\n[Reasoning Mode]: Formulate a comprehensive strategy, cross-verify facts internally, and simulate alternative solutions before answering.`;
+    }
+
+    if (enableWebSearch && tavilyApiKey) {
+        instruction += `\n\n[Web Search Tool]:
+Use the Web Search tool to access up-to-date information from the web or when responding to the user requires information about their location.
+Some examples of when to use the tool include:
+- Local Information: Respond to questions that require information about the user's location, such as the weather, local businesses, or events.
+- Freshness: If up-to-date information on a topic could potentially change or enhance the answer, perform a search any time you would otherwise refuse to answer a question because your knowledge might be out of date.
+- Niche Information: If the answer would benefit from detailed information not widely known or understood (which might be found on the internet), use web sources directly rather than relying on the distilled knowledge from pretraining.
+- Accuracy: If the cost of a small mistake or outdated information is high (e.g., using an outdated version of a software library or not knowing the date of the next game for a sports team).
+
+To use this tool, output EXACTLY the following JSON block on a single line, and then STOP writing further content:
+{"tool": "search_web", "args": {"query": "search query keywords"}}
+
+Do NOT write anything else after this JSON block. The system will execute the search, fetch the results, append them to the conversation, and invoke you again to formulate the final answer.`;
     }
 
     return instruction;
@@ -1148,16 +1163,16 @@ async function fetchPageContent(url) {
     }
 }
 
-
-
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Lumina BG][${action}]`;
 
-    
+    const searchSettings = await chrome.storage.local.get(['enableWebSearch', 'tavilyApiKey']);
+    const enableWebSearch = !!searchSettings.enableWebSearch;
+    const tavilyApiKey = searchSettings.tavilyApiKey || '';
+
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
 
-    
     const providerId = config.providerId;
     const compositeKey = providerId ? `${providerId}:${model}` : model;
 
@@ -1169,7 +1184,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
 
-    
     let parsedCustomParams = {};
     if (customParams) {
         if (typeof customParams === 'object') {
@@ -1184,7 +1198,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const isGemini25Model = /gemini-2\.5/i.test(normalizedModelName);
     const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
 
-    
     if (model) {
         incrementModelUsage(model);
     }
@@ -1196,15 +1209,12 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const keys = getKeysArray(apiKey);
 
     const reasoningMode = !!globalSettings.reasoningMode;
-    let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode);
+    let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode, enableWebSearch, tavilyApiKey);
 
     if (action === 'proofread') {
         systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
     }
 
-
-
-    
     try {
         const userMemoryAddition = await UserMemory.getSystemPromptAddition();
         if (userMemoryAddition) {
@@ -1214,284 +1224,268 @@ async function executeChatRequest(config, messages, initialContext, question, po
         console.error('[Lumina] Failed to load user memory:', e);
     }
 
-
-    let fullMessages = [...messages];
+    let currentMessages = [...messages];
     let augmentedQuestion = question;
 
     if (action === 'proofread') {
-        
-        
-        
         if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
-            fullMessages = [];
+            currentMessages = [];
         }
-
         if (!systemOverride) {
-            
             augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
         }
     }
 
-    
     if (initialContext && initialContext.trim().length > 0) {
-        
-        
         let processedContext = optimizeContextString(initialContext);
-        const actualTokens = LuminaToken.count(processedContext);
         console.log("%c[Lumina Context Debug] Web Source Content:", "color: #34c759; font-weight: bold;", processedContext);
 
-        
-        
-        
-        
-        if (fullMessages.length > 0) {
-            
+        if (currentMessages.length > 0) {
             const contextInstruction = `\n\n### Webpage Source Content:\n${processedContext}\n\n(Note: This content is for background reference only. Prioritize the user's current goal in the history.)`;
             systemInstruction += contextInstruction;
             systemInstruction += "\nIMPORTANT: If context is provided, prioritize its information and avoid making unsupported claims.";
         } else {
-            
             augmentedQuestion = `### Webpage Source Content:\n${processedContext}\n\n---\n\n### User Instruction:\n${augmentedQuestion}`;
         }
     }
 
-    
     const payloadParams = {
-        model,
-        endpoint,
-        providerType: currentProvider,
-        temperature,
-        topP,
-        maxTokens,
-        parsedCustomParams,
-        normalizedThinkingLevel,
-        isGemini25Model,
-        reasoningMode,
-        imageData
+        model, endpoint, providerType: currentProvider,
+        temperature, topP, maxTokens, parsedCustomParams,
+        normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData
     };
 
-    let controller = null;
-    if (sessionId) {
-        if (sessionControllers.has(sessionId)) {
-            sessionControllers.get(sessionId).abort();
-        }
-        controller = new AbortController();
-        sessionControllers.set(sessionId, controller);
-    }
+    let searchPerformed = false;
 
-    let requestedUrl = endpoint;
-    let response = await fetchWithRotation(keys, async (key) => {
-        const payload = await buildApiPayload(fullMessages, augmentedQuestion, systemInstruction, key, payloadParams);
-        requestedUrl = payload.url;
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        if (key) {
-            const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
-            if (isGemini) {
-                headers['x-goog-api-key'] = key;
-            } else {
-                headers['Authorization'] = `Bearer ${key}`;
+    for (let pass = 0; pass < 2; pass++) {
+        let controller = null;
+        if (sessionId) {
+            if (sessionControllers.has(sessionId)) {
+                try { sessionControllers.get(sessionId).abort(); } catch (e) {}
             }
+            controller = new AbortController();
+            sessionControllers.set(sessionId, controller);
         }
-        return fetch(payload.url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload.body),
-            signal: controller ? controller.signal : null
-        });
-    }, requestOptions);
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
+        let requestedUrl = endpoint;
+        let response;
         try {
-            errorData = JSON.parse(errorText);
-        } catch (e) {
-            errorData = { raw: errorText };
-        }
-        console.error('[Lumina] API Error:', {
-            endpoint: requestedUrl,
-            status: response.status,
-            statusText: response.statusText,
-            errorData
-        });
-
-        
-        const errMsg =
-            (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
-            (typeof errorData?.message === 'string' && errorData.message.trim()) ||
-            (typeof errorText === 'string' && errorText.trim()) ||
-            '';
-        const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${requestedUrl}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
-        if (
-            response.status === 429 ||
-            /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)
-        ) {
-            throw new Error('RATE_LIMIT_EXHAUSTED');
-        }
-
-        throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
-    }
-
-
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-
-    let buffer = '';
-    let fullToolResponse = '';
-    let emittedChunks = 0;
-    let lastFinishReason = null;
-    let sawDoneSignal = false;
-    let lastUsage = null;
-
-    
-    let isInReasoning = false;
-
-    const collectDeltasFromPayload = (payloadStr, textDeltas) => {
-        if (!payloadStr) return false;
-        const trimmedPayload = payloadStr.trim();
-        if (!trimmedPayload) return false;
-
-        if (trimmedPayload === '[DONE]' || trimmedPayload.includes('[DONE]')) {
-            sawDoneSignal = true;
-            return true;
-        }
-
-        try {
-            const json = JSON.parse(trimmedPayload);
-            const choice = json.choices?.[0] || json.candidates?.[0] || {};
-            const delta = choice.delta || {};
-            const finishReason = choice.finish_reason
-                || choice.finishReason
-                || json.finish_reason
-                || json.finishReason
-                || null;
-
-            if (json.usage) {
-                lastUsage = json.usage;
-            }
-
-            if (finishReason) {
-                lastFinishReason = finishReason;
-            }
-
-            let content = '';
-            let reasoning = '';
-
-            if (choice.content?.parts) {
-                for (const part of choice.content.parts) {
-                    if (part.thought === true) {
-                        reasoning += part.text || '';
+            response = await fetchWithRotation(keys, async (key) => {
+                const payload = await buildApiPayload(currentMessages, augmentedQuestion, systemInstruction, key, payloadParams);
+                requestedUrl = payload.url;
+                const headers = { 'Content-Type': 'application/json' };
+                if (key) {
+                    const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
+                    if (isGemini) {
+                        headers['x-goog-api-key'] = key;
                     } else {
-                        content += part.text || '';
+                        headers['Authorization'] = `Bearer ${key}`;
                     }
                 }
-            } else {
-                content = delta.content || '';
-                if (Array.isArray(content)) {
-                    content = content
-                        .map((part) => {
-                            if (typeof part === 'string') return part;
-                            if (part && typeof part.text === 'string') return part.text;
-                            if (part && typeof part.content === 'string') return part.content;
-                            return '';
-                        })
-                        .join('');
-                }
-                if (!content && typeof choice.message?.content === 'string') {
-                    content = choice.message.content;
-                }
-
-                reasoning = delta.reasoning || delta.reasoning_content || delta.reasoningContent || '';
-                if (Array.isArray(reasoning)) {
-                    reasoning = reasoning
-                        .map((part) => {
-                            if (typeof part === 'string') return part;
-                            if (part && typeof part.text === 'string') return part.text;
-                            if (part && typeof part.content === 'string') return part.content;
-                            return '';
-                        })
-                        .join('');
-                }
-            }
-
-            if (typeof reasoning === 'string' && reasoning.length > 0) {
-                
-                if (!isInReasoning) {
-                    textDeltas.push('<think>');
-                    isInReasoning = true;
-                }
-                textDeltas.push(reasoning);
-            }
-
-            if (typeof content === 'string' && content.length > 0) {
-                
-                if (isInReasoning) {
-                    textDeltas.push('</think>');
-                    isInReasoning = false;
-                }
-                textDeltas.push(content);
-            }
-
-            return true;
+                return fetch(payload.url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload.body),
+                    signal: controller ? controller.signal : null
+                });
+            }, requestOptions);
         } catch (e) {
-            
-            return false;
-        }
-    };
-
-    const processSSEEvent = (rawEvent, textDeltas) => {
-        if (!rawEvent) return;
-        const lines = rawEvent.split(/\r?\n/);
-        const dataLines = [];
-
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
-            if (!trimmed.startsWith('data:')) continue;
-            dataLines.push(trimmed.slice(5).trimStart());
+            if (pass > 0) {
+                const errMsg = { action: 'chunk', chunk: `\n*Failed to generate answer from search results: ${e.message}*`, sessionId };
+                if (sessionId) broadcastToSession(sessionId, errMsg);
+                else port.postMessage(errMsg);
+                break;
+            }
+            throw e;
         }
 
-        if (dataLines.length === 0) return;
-
-        const combinedPayload = dataLines.join('\n').trim();
-        const parsedCombined = collectDeltasFromPayload(combinedPayload, textDeltas);
-        if (!parsedCombined && dataLines.length > 1) {
-            
-            dataLines.forEach((payloadLine) => {
-                collectDeltasFromPayload(payloadLine, textDeltas);
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { raw: errorText };
+            }
+            console.error('[Lumina] API Error:', {
+                endpoint: requestedUrl,
+                status: response.status,
+                statusText: response.statusText,
+                errorData
             });
+
+            const errMsg =
+                (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
+                (typeof errorData?.message === 'string' && errorData.message.trim()) ||
+                (typeof errorText === 'string' && errorText.trim()) || '';
+            const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${requestedUrl}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
+            if (response.status === 429 || /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)) {
+                throw new Error('RATE_LIMIT_EXHAUSTED');
+            }
+            throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
         }
-    };
 
-    let keepAliveInterval = setInterval(() => {
-        try {
-            chrome.runtime.getPlatformInfo(() => {});
-        } catch (e) {
-            console.error('[Lumina] Keep-alive error:', e);
-        }
-    }, 5000);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
 
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                const flushChunk = decoder.decode();
-                if (flushChunk) {
-                    buffer += flushChunk;
-                }
+        let buffer = '';
+        let fullToolResponse = '';
+        let emittedChunks = 0;
+        let lastFinishReason = null;
+        let sawDoneSignal = false;
+        let lastUsage = null;
+        let isInReasoning = false;
 
-                const tailDeltas = [];
-                if (buffer && buffer.length > 0) {
-                    const lines = buffer.split('\n');
-                    for (const line of lines) {
-                        processSSEEvent(line, tailDeltas);
+        const collectDeltasFromPayload = (payloadStr, textDeltas) => {
+            if (!payloadStr) return false;
+            const trimmedPayload = payloadStr.trim();
+            if (!trimmedPayload) return false;
+
+            if (trimmedPayload === '[DONE]' || trimmedPayload.includes('[DONE]')) {
+                sawDoneSignal = true;
+                return true;
+            }
+
+            try {
+                const json = JSON.parse(trimmedPayload);
+                const choice = json.choices?.[0] || json.candidates?.[0] || {};
+                const delta = choice.delta || {};
+                const finishReason = choice.finish_reason || choice.finishReason || json.finish_reason || json.finishReason || null;
+
+                if (json.usage) lastUsage = json.usage;
+                if (finishReason) lastFinishReason = finishReason;
+
+                let content = '';
+                let reasoning = '';
+
+                if (choice.content?.parts) {
+                    for (const part of choice.content.parts) {
+                        if (part.thought === true) {
+                            reasoning += part.text || '';
+                        } else {
+                            content += part.text || '';
+                        }
+                    }
+                } else {
+                    content = delta.content || '';
+                    if (Array.isArray(content)) {
+                        content = content.map((part) => {
+                            if (typeof part === 'string') return part;
+                            if (part && typeof part.text === 'string') return part.text;
+                            if (part && typeof part.content === 'string') return part.content;
+                            return '';
+                        }).join('');
+                    }
+                    if (!content && typeof choice.message?.content === 'string') {
+                        content = choice.message.content;
+                    }
+
+                    reasoning = delta.reasoning || delta.reasoning_content || delta.reasoningContent || '';
+                    if (Array.isArray(reasoning)) {
+                        reasoning = reasoning.map((part) => {
+                            if (typeof part === 'string') return part;
+                            if (part && typeof part.text === 'string') return part.text;
+                            if (part && typeof part.content === 'string') return part.content;
+                            return '';
+                        }).join('');
                     }
                 }
 
-                for (const text of tailDeltas) {
+                if (typeof reasoning === 'string' && reasoning.length > 0) {
+                    if (!isInReasoning) {
+                        textDeltas.push('<think>');
+                        isInReasoning = true;
+                    }
+                    textDeltas.push(reasoning);
+                }
+
+                if (typeof content === 'string' && content.length > 0) {
+                    if (isInReasoning) {
+                        textDeltas.push('</think>');
+                        isInReasoning = false;
+                    }
+                    textDeltas.push(content);
+                }
+
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
+
+        const processSSEEvent = (rawEvent, textDeltas) => {
+            if (!rawEvent) return;
+            const lines = rawEvent.split(/\r?\n/);
+            const dataLines = [];
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
+                if (!trimmed.startsWith('data:')) continue;
+                dataLines.push(trimmed.slice(5).trimStart());
+            }
+
+            if (dataLines.length === 0) return;
+
+            const combinedPayload = dataLines.join('\n').trim();
+            const parsedCombined = collectDeltasFromPayload(combinedPayload, textDeltas);
+            if (!parsedCombined && dataLines.length > 1) {
+                dataLines.forEach((payloadLine) => {
+                    collectDeltasFromPayload(payloadLine, textDeltas);
+                });
+            }
+        };
+
+        let keepAliveInterval = setInterval(() => {
+            try {
+                chrome.runtime.getPlatformInfo(() => {});
+            } catch (e) {
+                console.error('[Lumina] Keep-alive error:', e);
+            }
+        }, 5000);
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    const flushChunk = decoder.decode();
+                    if (flushChunk) {
+                        buffer += flushChunk;
+                    }
+
+                    const tailDeltas = [];
+                    if (buffer && buffer.length > 0) {
+                        const lines = buffer.split('\n');
+                        for (const line of lines) {
+                            processSSEEvent(line, tailDeltas);
+                        }
+                    }
+
+                    for (const text of tailDeltas) {
+                        fullToolResponse += text;
+                        const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
+                        if (filteredText.length > 0) {
+                            emittedChunks += 1;
+                            const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
+                            if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                            else port.postMessage(chunkMsg);
+                        }
+                    }
+                    break;
+                }
+                const chunk = decoder.decode(value, { stream: true });
+
+                const textDeltas = [];
+                buffer += chunk;
+
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    processSSEEvent(line, textDeltas);
+                }
+
+                for (const text of textDeltas) {
                     fullToolResponse += text;
                     const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
                     if (filteredText.length > 0) {
@@ -1501,50 +1495,75 @@ async function executeChatRequest(config, messages, initialContext, question, po
                         else port.postMessage(chunkMsg);
                     }
                 }
-
-                break;
             }
-            const chunk = decoder.decode(value, { stream: true });
+        } finally {
+            clearInterval(keepAliveInterval);
+        }
 
-            const textDeltas = [];
-            buffer += chunk;
+        if (isInReasoning) {
+            const thinkEndMsg = { action: 'chunk', chunk: '</think>', sessionId };
+            if (sessionId) broadcastToSession(sessionId, thinkEndMsg);
+            else port.postMessage(thinkEndMsg);
+            fullToolResponse += '</think>';
+            isInReasoning = false;
+        }
 
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
-
-            for (const line of lines) {
-                processSSEEvent(line, textDeltas);
-            }
-
-            for (const text of textDeltas) {
-                fullToolResponse += text;
-                
-                const filteredText = text.replace(/\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{[^}]+\}\s*\}/g, '');
-                if (filteredText.length > 0) {
-                    emittedChunks += 1;
-                    const chunkMsg = { action: 'chunk', chunk: filteredText, sessionId };
-                    if (sessionId) broadcastToSession(sessionId, chunkMsg);
-                    else port.postMessage(chunkMsg);
+        // Check if tool search_web is requested and not yet performed
+        let searchMatch = null;
+        const toolRegex = /\{"tool"\s*:\s*"search_web"\s*,\s*"args"\s*:\s*\{"query"\s*:\s*"([^"]+)"\}\s*\}/;
+        const match = fullToolResponse.match(toolRegex);
+        if (match) {
+            searchMatch = { query: match[1] };
+        } else {
+            const searchIndex = fullToolResponse.indexOf('"search_web"');
+            if (searchIndex !== -1) {
+                const startIdx = fullToolResponse.lastIndexOf('{', searchIndex);
+                const endIdx = fullToolResponse.indexOf('}', searchIndex);
+                if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+                    try {
+                        const jsonStr = fullToolResponse.slice(startIdx, endIdx + 1);
+                        const obj = JSON.parse(jsonStr);
+                        if (obj.tool === 'search_web' && obj.args && obj.args.query) {
+                            searchMatch = { query: obj.args.query };
+                        }
+                    } catch (e) {}
                 }
             }
         }
-    } finally {
-        clearInterval(keepAliveInterval);
+
+        if (searchMatch && enableWebSearch && tavilyApiKey && !searchPerformed) {
+            const searchQuery = searchMatch.query;
+            const statusMsg = {
+                action: 'status_update',
+                text: `Searching the web for "${searchQuery}"...`,
+                sessionId: sessionId
+            };
+            if (sessionId) broadcastToSession(sessionId, statusMsg);
+            else port.postMessage(statusMsg);
+
+            const searchResults = await performTavilySearch(searchQuery, tavilyApiKey);
+
+            // Append messages for the second pass
+            currentMessages.push({
+                role: 'user',
+                text: question
+            });
+            currentMessages.push({
+                role: currentProvider === 'gemini' ? 'model' : 'assistant',
+                text: `{"tool": "search_web", "args": {"query": "${searchQuery}"}}`
+            });
+            currentMessages.push({
+                role: 'user',
+                text: `### Web Search Results for "${searchQuery}":\n${searchResults}`
+            });
+
+            augmentedQuestion = "Please write your final response using the search results.";
+            searchPerformed = true;
+            continue; // Go to next pass (generate final response)
+        }
+
+        break; // Exit loop if no search was requested or already performed
     }
-
-    
-    
-    if (isInReasoning) {
-        const thinkEndMsg = { action: 'chunk', chunk: '</think>', sessionId };
-        if (sessionId) broadcastToSession(sessionId, thinkEndMsg);
-        else port.postMessage(thinkEndMsg);
-        fullToolResponse += '</think>';
-        isInReasoning = false;
-    }
-
-
-
-    
 }
 
 
@@ -3593,3 +3612,39 @@ async function fetchAIDict(word) {
         }
     }
 }
+
+async function performTavilySearch(query, apiKey) {
+    try {
+        console.log(`[Lumina] Performing Tavily Search for: "${query}"`);
+        const response = await fetch('https://api.tavily.com/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_key: apiKey,
+                query: query,
+                search_depth: 'basic',
+                include_answer: false
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Tavily API responded with status ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        if (Array.isArray(data.results)) {
+            return data.results.map((r, idx) => `[Result ${idx + 1}]
+Title: ${r.title}
+URL: ${r.url}
+Snippet: ${r.content}`).join('\n\n');
+        }
+        return 'No results found.';
+    } catch (e) {
+        console.error('[Lumina] Tavily search error:', e);
+        return `Failed to perform search: ${e.message}`;
+    }
+}
+

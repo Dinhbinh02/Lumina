@@ -344,6 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const siteToggle = document.getElementById('siteToggle');
   const siteToggleLabel = document.getElementById('siteToggleLabel');
   const deepLApiKeyInput = document.getElementById('deepLApiKey');
+  const enableWebSearchCheckbox = document.getElementById('enableWebSearch');
+  const tavilyApiKeyInput = document.getElementById('tavilyApiKey');
   const temperatureInput = document.getElementById('temperature');
   const temperatureValue = document.getElementById('temperatureValue');
   const topPInput = document.getElementById('topP');
@@ -1440,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', () => {
       populateChainDropdowns();
     });
 
-    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine', 'historyRetentionMonths'], (items) => {
+    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine', 'historyRetentionMonths', 'enableWebSearch', 'tavilyApiKey'], (items) => {
 
     setTimeout(() => {
 
@@ -1514,6 +1516,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     if (items.deepLApiKey && deepLApiKeyInput) deepLApiKeyInput.value = items.deepLApiKey;
+
+    if (enableWebSearchCheckbox) {
+      enableWebSearchCheckbox.checked = items.enableWebSearch !== undefined ? items.enableWebSearch : false;
+    }
+    if (items.tavilyApiKey !== undefined && tavilyApiKeyInput) {
+      tavilyApiKeyInput.value = items.tavilyApiKey;
+    }
 
     if (items.googleClientId && googleClientIdInput) googleClientIdInput.value = items.googleClientId;
     if (items.githubClientId && githubClientIdInput) {
@@ -1813,6 +1822,8 @@ loadAllSettings();
         annotationShortcuts: annotationShortcutsExport,
         autoHideInputEnabled: document.getElementById('autoHideInputEnabled')?.checked || false,
         audioSpeed: audioSpeed,
+        enableWebSearch: enableWebSearchCheckbox ? enableWebSearchCheckbox.checked : false,
+        tavilyApiKey: tavilyApiKeyInput ? tavilyApiKeyInput.value.trim() : '',
         memoryThreshold: parseInt(document.getElementById('memoryThreshold')?.value, 10) || 14,
         maxTokens: document.getElementById('maxTokens')?.value || null,
         historyRetentionMonths: parseInt(document.getElementById('options-history-retention-input')?.dataset.value, 10) !== undefined ? parseInt(document.getElementById('options-history-retention-input')?.dataset.value, 10) : 3
@@ -1874,6 +1885,8 @@ loadAllSettings();
 
     deepLApiKeyInput,
     fontSizeInput,
+    enableWebSearchCheckbox,
+    tavilyApiKeyInput,
   ].filter(Boolean);
 
   inputs.forEach(input => {

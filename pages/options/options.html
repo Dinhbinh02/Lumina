@@ -283,6 +283,40 @@
           </div>
         </div>
 
+        <!-- Web Search Card -->
+        <div class="m3-card m3-elevation-1">
+          <div class="m3-card-header">
+            <div class="m3-card-title-group">
+              <h2 class="m3-title-large">🌐 Web Search (Tavily)</h2>
+              <p class="m3-body-medium text-secondary">Configure Tavily API to enable real-time internet search for AI models.</p>
+            </div>
+          </div>
+
+          <div class="m3-card-content">
+            <div class="m3-setting-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">Enable Web Search</span>
+                <span class="m3-body-medium text-secondary">Allow AI models to use the Web Search tool when up-to-date information is needed.</span>
+              </div>
+              <label class="m3-switch">
+                <input type="checkbox" id="enableWebSearch">
+                <span class="m3-switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="m3-divider"></div>
+
+            <div class="m3-text-field-container">
+              <div class="m3-label-row">
+                <label for="tavilyApiKey" class="m3-field-label">Tavily API Key</label>
+                <a href="https://tavily.com/" target="_blank" class="m3-text-link">Get Tavily API Key</a>
+              </div>
+              <input type="password" id="tavilyApiKey" class="m3-text-input" placeholder="tvly-...">
+              <p class="m3-helper-text">Enter your Tavily API Key to power the internet search capability.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Persistent Instructions Card -->
         <div class="m3-card m3-elevation-1">
           <div class="m3-card-header">
