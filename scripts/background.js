@@ -1623,6 +1623,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             const statusMsg = {
                 action: 'web_search_status',
                 status: 'searching',
+                query: searchQuery,
                 sessionId: sessionId
             };
             if (sessionId) broadcastToSession(sessionId, statusMsg);

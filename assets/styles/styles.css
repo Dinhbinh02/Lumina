@@ -4382,18 +4382,17 @@ button {
 .lumina-searching-indicator span {
   font-weight: 500 !important;
   letter-spacing: 0.3px;
-  background: linear-gradient(90deg,
-      var(--lumina-text-secondary) 0%,
-      var(--lumina-text-secondary) 40%,
-      var(--lumina-text-primary) 50%,
-      var(--lumina-text-secondary) 60%,
-      var(--lumina-text-secondary) 100%);
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: lumina-shimmer 2s linear infinite;
+  color: var(--lumina-text-secondary);
+  animation: lumina-pulse-text 2.5s ease-in-out infinite;
+}
+
+@keyframes lumina-pulse-text {
+  0%, 100% {
+    color: var(--lumina-text-secondary);
+  }
+  50% {
+    color: var(--lumina-text-primary);
+  }
 }
 
 .lumina-search-stepper {
