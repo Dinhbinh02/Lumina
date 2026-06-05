@@ -1455,9 +1455,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 /^\{"tool":"search_web","args":\{$/,
                 /^\{"tool":"search_web","args":\{"q?u?e?r?y?"?$/,
                 /^\{"tool":"search_web","args":\{"query":?$/,
-                /^\{"tool":"search_web","args":\{"query":"[^"]*"$/,
-                /^\{"tool":"search_web","args":\{"query":"[^"]*"\}?$/,
-                /^\{"tool":"search_web","args":\{"query":"[^"]*"\}\}?$/
+                /^\{"tool":"search_web","args":\{"query":"[^"]*("(\}\}?)?)?$/
             ];
             
             return patterns.some(p => p.test(clean));
