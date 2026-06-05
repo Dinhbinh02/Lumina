@@ -1260,6 +1260,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     };
 
     let searchPerformed = false;
+    let pendingWebSearchCompleted = false;
 
     for (let pass = 0; pass < 2; pass++) {
         let controller = null;
@@ -1293,40 +1294,46 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     signal: controller ? controller.signal : null
                 });
             }, requestOptions);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch (e) {
+                    errorData = { raw: errorText };
+                }
+                console.error('[Lumina] API Error:', {
+                    endpoint: requestedUrl,
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorData
+                });
+
+                const errMsg =
+                    (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
+                    (typeof errorData?.message === 'string' && errorData.message.trim()) ||
+                    (typeof errorText === 'string' && errorText.trim()) || '';
+                const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${requestedUrl}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
+                if (response.status === 429 || /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)) {
+                    throw new Error('RATE_LIMIT_EXHAUSTED');
+                }
+                throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
+            }
         } catch (e) {
             if (pass > 0) {
+                if (pendingWebSearchCompleted) {
+                    pendingWebSearchCompleted = false;
+                    const completedMsg = { action: 'web_search_status', status: 'completed', sessionId };
+                    if (sessionId) broadcastToSession(sessionId, completedMsg);
+                    else port.postMessage(completedMsg);
+                }
                 const errMsg = { action: 'chunk', chunk: `\n*Failed to generate answer from search results: ${e.message}*`, sessionId };
                 if (sessionId) broadcastToSession(sessionId, errMsg);
                 else port.postMessage(errMsg);
                 break;
             }
             throw e;
-        }
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            let errorData;
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (e) {
-                errorData = { raw: errorText };
-            }
-            console.error('[Lumina] API Error:', {
-                endpoint: requestedUrl,
-                status: response.status,
-                statusText: response.statusText,
-                errorData
-            });
-
-            const errMsg =
-                (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
-                (typeof errorData?.message === 'string' && errorData.message.trim()) ||
-                (typeof errorText === 'string' && errorText.trim()) || '';
-            const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${requestedUrl}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
-            if (response.status === 429 || /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)) {
-                throw new Error('RATE_LIMIT_EXHAUSTED');
-            }
-            throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
         }
 
         const reader = response.body.getReader();
@@ -1464,6 +1471,16 @@ async function executeChatRequest(config, messages, initialContext, question, po
         let toolCallBuffer = '';
 
         const emitChunk = (text) => {
+            if (pendingWebSearchCompleted && text.length > 0) {
+                pendingWebSearchCompleted = false;
+                const completedMsg = {
+                    action: 'web_search_status',
+                    status: 'completed',
+                    sessionId: sessionId
+                };
+                if (sessionId) broadcastToSession(sessionId, completedMsg);
+                else port.postMessage(completedMsg);
+            }
             fullToolResponse += text;
             
             if (toolCallBuffer || text.includes('{')) {
@@ -1558,6 +1575,16 @@ async function executeChatRequest(config, messages, initialContext, question, po
         } finally {
             clearInterval(keepAliveInterval);
             flushToolCallBuffer();
+            if (pendingWebSearchCompleted) {
+                pendingWebSearchCompleted = false;
+                const completedMsg = {
+                    action: 'web_search_status',
+                    status: 'completed',
+                    sessionId: sessionId
+                };
+                if (sessionId) broadcastToSession(sessionId, completedMsg);
+                else port.postMessage(completedMsg);
+            }
         }
 
         if (isInReasoning) {
@@ -1602,14 +1629,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             else port.postMessage(statusMsg);
 
             const searchResults = await performTavilySearch(searchQuery, tavilyApiKey);
-
-            const completedMsg = {
-                action: 'web_search_status',
-                status: 'completed',
-                sessionId: sessionId
-            };
-            if (sessionId) broadcastToSession(sessionId, completedMsg);
-            else port.postMessage(completedMsg);
+            pendingWebSearchCompleted = true;
 
             // Append messages for the second pass
             currentMessages.push({
