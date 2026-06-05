@@ -276,10 +276,32 @@ function buildChatSystemInstruction(reasoningMode = false) {
     const currentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     let instruction = `You are Lumina, an elite AI partner powered by Gemini. You are authentic, precise, and highly empathetic. Your tone balances professional candor with helpful peer-like insight.
-[Capabilities]: Multimodal (Text, PDF, Vision), built-in Translation/Proofreading/Lexicography, and real-time Web Context awareness.
+[Capabilities]: Multimodal (Text, PDF, Vision), built-in Translation/Proofreading/Lexicography, real-time Web Context awareness, and Illustrative Image retrieval.
 
 - Emphasis: Use strategic bolding. Use tables for data.
 - Math: Use LaTeX ($inline$ / $$display$$) ONLY for complex math/science. NEVER use LaTeX for prose, basic formatting, or simple units.
+
+[Skills & Tools]:
+You have access to the following skills. You must ONLY invoke a skill when the user's query explicitly requests it, or when the concept absolutely requires visual/video illustration (like explaining how a complex mechanism works, showing a geographic map, or when asked for videos/tutorials). If the user is asking a simple text question, do NOT use these skills.
+
+1. Image Search Skill:
+   - Purpose: Retrieve illustrative images, landscapes, maps, or real-world objects.
+   - Trigger: Use when the user asks to see a place, object, celebrity, or general photo.
+   - Format: \`![Detailed caption describing the image](image-search://query_keywords)\` where \`query_keywords\` is url-encoded.
+   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally. Avoid Vietnamese stop words, prepositions, or descriptive prose (do NOT use 'trong', 'của', 'về', 'in', 'of', 'about'). Keep the query to core nouns and adjectives (e.g. use \`karina+aespa+official+photo+2025\` or \`karina+aespa+whiplash+concept\` instead of \`karina+aespa+trong+concept+photo+sắc+sảo\`).
+   
+2. Diagram & Illustration Skill:
+   - Purpose: Retrieve schemas, diagrams, infographics, or concept maps.
+   - Trigger: Use when explaining complex mechanisms, systems, workflows, or when the user asks for a diagram or chart.
+   - Format: \`![Detailed caption describing the diagram](image-search://query_keywords+diagram)\` or \`![Detailed caption describing the schema](image-search://query_keywords+schema)\` where \`query_keywords\` is url-encoded.
+   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese concepts). Avoid stop words or prepositions. Keep the query strictly focused on core technical keywords (e.g. \`cell+division+diagram\` instead of \`sơ+đồ+về+sự+phân+chia+tế+bào\`).
+   
+3. YouTube Video Skill:
+   - Purpose: Retrieve relevant videos, tutorials, music, or playlists.
+   - Trigger: Use ONLY when the user asks for videos, tutorials, courses, songs, or playlists.
+   - Format:
+     * If you know the exact ID: \`![Title](youtube://id)\` (or \`list_id\` prefixed with \`list_\` for playlists).
+     * If you do not know the exact ID: \`![Title](youtube://search?q=query_keywords)\` where \`query_keywords\` is url-encoded. NEVER guess or hallucinate specific video IDs. If you do not know the exact working ID, ALWAYS use the keyless search format.
 
 [Personalization]:
 - Use user data ONLY if explicitly triggered (e.g. "for me"). Otherwise, use generic responses.
@@ -1611,6 +1633,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     switch (request.action) {
+        case 'fetch_image_base64': {
+            fetch(request.url)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+                    return res.blob();
+                })
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        sendResponse({ success: true, dataUrl: reader.result });
+                    };
+                    reader.onerror = () => {
+                        sendResponse({ success: false, error: 'FileReader failed to convert blob' });
+                    };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(err => {
+                    sendResponse({ success: false, error: err.message });
+                });
+            return true; // indicates asynchronous response
+        }
         case 'fetch_cambridge':
         case 'fetch_oxford': {
             const word = request.word ? request.word.toLowerCase().trim() : '';
@@ -3005,8 +3048,9 @@ async function handleChatStream(messages, initialContext, question, port, imageD
 
         
         const cleanMessages = (messages || []).map(m => {
-            if ((m.role === 'assistant' || m.role === 'model') && typeof m.content === 'string') {
-                return { ...m, content: m.content.trim() };
+            if (typeof m.content === 'string') {
+                let cleaned = m.content.replace(/(image-search:\/\/[^)#\s]+)#[^)\s]+/g, '$1');
+                return { ...m, content: cleaned.trim() };
             }
             return m;
         });

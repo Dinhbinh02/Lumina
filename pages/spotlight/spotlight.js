@@ -648,6 +648,9 @@ async function handleRemoteSync(changes, areaName) {
         const newGroupsMeta = changes[KEYS.tabGroups] ? changes[KEYS.tabGroups].newValue : null;
 
         if (newTabsMeta) {
+            const currentActiveTab = tabs[activeTabIndex];
+            const currentActiveSessionId = currentActiveTab ? currentActiveTab.sessionId : null;
+
             
             const currentTabIds = tabs.map(t => t.id).join(',');
             const nextTabIds = newTabsMeta.map(t => t.id).join(',');
@@ -713,6 +716,7 @@ async function handleRemoteSync(changes, areaName) {
                             rawHistoryHtml: historyHtml
                         };
                         newTab.chatUIInstance.historyEl = historyEl;
+                        historyEl.dataset.sessionId = newTab.sessionId;
                         newTab.chatUIInstance.initListeners(historyEl);
                         bindHistoryScroll(newTab);
                         tabs.push(newTab);
@@ -732,9 +736,38 @@ async function handleRemoteSync(changes, areaName) {
                 const counterData = await chrome.storage.local.get([KEYS.tabCounter]);
                 if (counterData[KEYS.tabCounter]) tabCounter = counterData[KEYS.tabCounter];
 
+                // Calculate the new activeGroupIndex based on the active sessionId to prevent focus/tab resets
+                let resolvedActiveGroupIndex = activeGroupIndex;
+                if (currentActiveSessionId) {
+                    const targetTab = tabs.find(t => t.sessionId === currentActiveSessionId);
+                    if (targetTab) {
+                        const idx = tabGroups.findIndex(g => g.tabIds.includes(targetTab.id));
+                        if (idx !== -1) {
+                            resolvedActiveGroupIndex = idx;
+                        }
+                    }
+                }
+                if (resolvedActiveGroupIndex === -1 || resolvedActiveGroupIndex >= tabGroups.length) {
+                    resolvedActiveGroupIndex = 0;
+                }
+
                 renderTabs();
                 if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
-                switchGroup(activeGroupIndex, true); 
+
+                if (activeGroupIndex !== resolvedActiveGroupIndex) {
+                    switchGroup(resolvedActiveGroupIndex, true); 
+                } else {
+                    activeGroupIndex = resolvedActiveGroupIndex;
+                    const group = tabGroups[activeGroupIndex];
+                    if (group) {
+                        const primaryTab = tabs.find(t => t.id === group.tabIds[0]);
+                        activeTabIndex = tabs.indexOf(primaryTab);
+                        const secondaryTab = group.tabIds.length > 1 ? tabs.find(t => t.id === group.tabIds[1]) : null;
+                        if (secondaryTab) {
+                            secondaryActiveTabIndex = tabs.indexOf(secondaryTab);
+                        }
+                    }
+                }
                 syncSessionsWithBackground();
             }
         }
@@ -1011,6 +1044,7 @@ async function initTabs() {
             rawHistoryHtml: historyHtml
         };
         singleTab.chatUIInstance.historyEl = initialHistory;
+        initialHistory.dataset.sessionId = singleTab.sessionId;
         singleTab.chatUIInstance.initListeners(initialHistory);
         bindHistoryScroll(singleTab);
         tabs.push(singleTab);
@@ -2592,37 +2626,6 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
     const titleSpan = document.createElement('span');
     titleSpan.textContent = source.displayTitle || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
     chip.appendChild(titleSpan);
-
-    chip.addEventListener('mouseenter', () => {
-        
-        const container = chip.closest('.lumina-web-chips-group');
-        if (container && container.dataset.muteTooltips === 'true') return;
-
-        if (window.LuminaChatUI && typeof LuminaChatUI.prototype._showTagTooltip === 'function') {
-            if (hasMultipleTabs) {
-                
-                const showNumbers = selectedSources.length > 1;
-                const html = selectedSources.map((s, idx) => {
-                    const numberSpan = showNumbers
-                        ? `<span style="color: rgba(255,255,255,0.4); margin-right: 8px; flex-shrink: 0; font-family: monospace;">${idx + 1}.</span>`
-                        : '';
-                    return `<div style="margin-bottom: ${idx === selectedSources.length - 1 ? '0' : '4px'}; display: flex; align-items: flex-start; line-height: 1.4;">` +
-                        numberSpan +
-                        `<span>${s.title || 'Untitled'}</span>` +
-                        `</div>`;
-                }).join('');
-                LuminaChatUI.prototype._showTagTooltip(chip, html, true);
-            } else {
-                LuminaChatUI.prototype._showTagTooltip(chip, source.title || '');
-            }
-        }
-    });
-
-    chip.addEventListener('mouseleave', () => {
-        if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
-            LuminaChatUI.prototype._hideTagTooltip();
-        }
-    });
 
     chip.addEventListener('click', (event) => {
         event.stopPropagation();

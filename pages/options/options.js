@@ -1440,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
       populateChainDropdowns();
     });
 
-    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine'], (items) => {
+    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine', 'historyRetentionMonths'], (items) => {
 
     setTimeout(() => {
 
@@ -1553,6 +1553,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (autoHideInputEnabledCheckbox) {
       autoHideInputEnabledCheckbox.checked = items.autoHideInputEnabled !== undefined ? items.autoHideInputEnabled : false;
       autoHideInputEnabledCheckbox.addEventListener('change', saveOptions);
+    }
+
+    const historyRetentionInput = document.getElementById('options-history-retention-input');
+    const historyRetentionMenu = document.getElementById('options-history-retention-menu');
+    const retentionOptions = [
+      { label: '1 Month', value: '1' },
+      { label: '3 Months', value: '3' },
+      { label: '6 Months', value: '6' },
+      { label: '12 Months', value: '12' },
+      { label: 'Forever', value: '0' }
+    ];
+
+    if (historyRetentionInput && historyRetentionMenu) {
+      const savedVal = items.historyRetentionMonths !== undefined ? items.historyRetentionMonths : 3;
+      const matchingOpt = retentionOptions.find(opt => parseInt(opt.value, 10) === parseInt(savedVal, 10));
+      historyRetentionInput.value = matchingOpt ? matchingOpt.label : '3 Months';
+      historyRetentionInput.dataset.value = matchingOpt ? matchingOpt.value : '3';
+
+      historyRetentionInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = historyRetentionMenu.style.display === 'block';
+        historyRetentionMenu.style.display = isVisible ? 'none' : 'block';
+
+        if (!isVisible) {
+          historyRetentionMenu.innerHTML = retentionOptions.map(opt =>
+            `<div class="dropdown-item" data-value="${opt.value}">${opt.label}</div>`
+          ).join('');
+
+          historyRetentionMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', async (evt) => {
+              evt.stopPropagation();
+              historyRetentionInput.value = item.textContent;
+              historyRetentionInput.dataset.value = item.dataset.value;
+              historyRetentionMenu.style.display = 'none';
+
+              saveOptions();
+              if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.cleanupHistoryByAge) {
+                await ChatHistoryManager.cleanupHistoryByAge();
+                if (typeof updateOptionsStorageUsage === 'function') {
+                  updateOptionsStorageUsage();
+                }
+              }
+            });
+          });
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!historyRetentionInput.contains(e.target) && !historyRetentionMenu.contains(e.target)) {
+          historyRetentionMenu.style.display = 'none';
+        }
+      });
     }
 
 
@@ -1762,7 +1814,8 @@ loadAllSettings();
         autoHideInputEnabled: document.getElementById('autoHideInputEnabled')?.checked || false,
         audioSpeed: audioSpeed,
         memoryThreshold: parseInt(document.getElementById('memoryThreshold')?.value, 10) || 14,
-        maxTokens: document.getElementById('maxTokens')?.value || null
+        maxTokens: document.getElementById('maxTokens')?.value || null,
+        historyRetentionMonths: parseInt(document.getElementById('options-history-retention-input')?.dataset.value, 10) !== undefined ? parseInt(document.getElementById('options-history-retention-input')?.dataset.value, 10) : 3
       };
 
 
