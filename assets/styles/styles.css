@@ -766,19 +766,18 @@ button {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-y: overlay;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   overflow-anchor: auto;
-  scrollbar-gutter: stable;
-  padding: 10px 0px 16px 10px !important;
+  padding: 10px 0 16px 10px !important;
   width: 100%;
   position: relative;
   box-sizing: border-box;
 }
-
 .lumina-chat-scroll-content::-webkit-scrollbar {
   width: 10px !important;
   height: 10px !important;
@@ -5215,7 +5214,8 @@ button {
 .lumina-spotlight-page .lumina-chat-scroll-content {
   flex: 1;
   overflow-y: auto;
-  padding: 10px 0px 0 10px;
+  overflow-y: overlay;
+  padding: 10px 0 0 10px;
   width: 100%;
   position: relative;
 }
@@ -5578,7 +5578,7 @@ button {
 }
 
 .is-sidepanel .lumina-chat-scroll-content {
-  padding: 10px !important;
+  padding: 10px 0 10px 10px !important;
   scrollbar-gutter: auto !important;
 }
 

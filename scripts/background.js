@@ -237,8 +237,12 @@ async function incrementModelUsage(modelId) {
 function normalizeOpenAICompatibleEndpoint(endpoint, targetPath) {
     if (typeof endpoint !== 'string') return endpoint;
 
-    const trimmed = endpoint.trim().replace(/\/+$/, '');
+    let trimmed = endpoint.trim().replace(/\/+$/, '');
     if (!trimmed) return trimmed;
+
+    if (trimmed.includes('api.groq.com') && !trimmed.includes('/openai')) {
+        trimmed = trimmed.replace('/v1', '/openai/v1');
+    }
 
     const knownSuffixes = ['/chat/completions', '/models', '/audio/transcriptions'];
     for (const suffix of knownSuffixes) {
@@ -284,7 +288,7 @@ function buildChatSystemInstruction(reasoningMode = false, enableWebSearch = fal
 
 Mirror the user's vocabulary level. If they write casually or use simple language, respond accessibly — define technical terms inline on first use (e.g., "lipolysis (breaking down fat)"). Never assume expertise the user hasn't demonstrated.
 
-Use LaTeX only for formal/complex math/science (equations, formulas, complex variables) where standard text is insufficient. Enclose all LaTeX using $inline$ or $$display$$ (always for standalone equations). Never render LaTeX in a code block unless the user explicitly asks for it. Strictly Avoid LaTeX for simple formatting (use Markdown), non-technical contexts and regular prose (e.g., resumes, letters, essays, CVs, cooking, weather, etc.), or simple units/numbers (e.g., render 180°C or 10%).
+Use LaTeX only for formal/complex math/science (equations, formulas, complex variables) where standard text is insufficient. Enclose all LaTeX using $inline$ or $$display$$ (always for standalone equations). Never render LaTeX in a code block unless the user explicitly asks for it. Strictly Avoid LaTeX for simple formatting (use Markdown), non-technical contexts and regular prose (e.g., resumes, letters, essays, CVs, cooking, weather, etc.), or simple units/numbers (e.g., render 180°C or 10%). Note: "LaTeX" here refers strictly to the mathematical typesetting language; do not confuse it with the physical rubber/liquid material "latex".
 
 For time-sensitive user queries that require up-to-date information, you MUST follow the provided current time (date and year) when formulating search queries in tool calls. Remember it is ${currentYear} this year. Crucially, your pre-training cutoff is before ${currentYear}. Any current date/time information, real-time prices, or news in the conversation history was retrieved via tools; you do NOT possess pre-trained knowledge of ${currentYear}. Therefore, you MUST call the \`search_web\` tool for any query about current/recent events, real-time prices, weather, or ${currentYear} in general.
 
@@ -306,10 +310,10 @@ You can enrich your responses by embedding images, diagrams, or YouTube videos u
 
 1. Illustrative Images:
    - Purpose: Show real-world objects, animals, plants, landscapes, styles, or physical subjects.
-   - When to use: You MUST embed an image for concrete, physical, mechanical, botanical, or biological terms/nouns (e.g., "levers", "mangrove", "glacier", "heart anatomy", or animal species like "blackbird") to aid visual understanding. This instruction applies even if the query is a dictionary definition request, translation, or word explanation (e.g., when explaining what a "blackbird" or "pneumatic cylinder" is). If the query is an adjective or concept describing physical mechanisms, systems, or devices (e.g., "pneumatic", "hydraulic"), you MUST embed an image of its core physical application or device (e.g. "pneumatic cylinder" or "pneumatic system"). Do NOT use for purely abstract concepts, grammatical rules, or general linguistic syntax explanations (unless the specific word/noun being defined is a concrete physical or biological entity, in which case you MUST embed its image).
+   - When to use: You MUST embed an image for concrete, physical, mechanical, botanical, or biological terms/nouns (e.g., "levers", "mangrove", "glacier", "heart anatomy", "latex (rubber/liquid material)", or animal species like "blackbird") to aid visual understanding. This instruction applies even if the query is a dictionary definition request, translation, or word explanation (e.g., when explaining what a "blackbird" or "pneumatic cylinder" is). If the query is an adjective or concept describing physical mechanisms, systems, or devices (e.g., "pneumatic", "hydraulic"), you MUST embed an image of its core physical application or device (e.g. "pneumatic cylinder" or "pneumatic system"). Do NOT use for purely abstract concepts, grammatical rules, or general linguistic syntax explanations (unless the specific word/noun being defined is a concrete physical or biological entity, in which case you MUST embed its image).
    - Format: \`![Detailed caption describing the image in English](image-search://query_keywords)\` where \`query_keywords\` is url-encoded.
    - Caption Rule: The caption in the square brackets \`[...]\` MUST be written in English (e.g. \`![A simple lever mechanism](image-search://...)\`).
-   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally. Crucially, preserve specific country/region context (e.g., if asking about gold price in Vietnam, use "vietnam+gold+price" in the query).
+   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally. Crucially, preserve specific country/region context (e.g., if asking about gold price in Vietnam, use "vietnam+gold+price" in the query). Avoid abstract adjectives or commercial product/marketing terms alone (e.g. searching "invigorating+shower" or "hydrating+cream" will return e-commerce product bottles); instead, use concrete, action-oriented, and subject-focused nouns and verbs that describe the actual scene/subject (e.g. "person+taking+refreshing+shower", "skin+moisturizer+application").
    - Placement: Always place the image markdown tag in the middle of your response (integrated naturally between paragraphs), NEVER at the very beginning or the very end of your response.
 
 2. Diagrams & Illustrations:
@@ -363,7 +367,7 @@ What the user says in the current conversation always takes priority. Explicit q
 [Reasoning & Integrity]:
 - Use First Principles thinking, detect edge cases, optimize for 80/20 efficiency.
 - Current year: 2026. Local time: ${currentTime}.
-- Prioritize accuracy/safety. No professional medical/legal/financial advice. Refuse harmful requests.`;
+- Prioritize accuracy. No professional medical/legal/financial advice.`;
 
     if (reasoningMode) {
         instruction += `\n\n[Reasoning Mode]: Formulate a comprehensive strategy, cross-verify facts internally, and simulate alternative solutions before answering.`;
@@ -777,6 +781,13 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         const geminiBody = {
             contents: geminiContents,
             generationConfig,
+            safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
+            ],
             ...(sysPrompt ? {
                 system_instruction: {
                     parts: [{ text: sysPrompt }]
@@ -794,28 +805,31 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                 geminiBody.tools.push({
                     url_context: {}
                 });
-                geminiBody.toolConfig = {
-                    includeServerSideToolInvocations: true
-                };
-            }
-            geminiBody.tools.push({
-                functionDeclarations: [
-                    {
-                        name: "search_web",
-                        description: "Searches the web for up-to-date information, real-time facts, local info, or fresh data.",
-                        parameters: {
-                            type: "OBJECT",
-                            properties: {
-                                query: {
-                                    type: "STRING",
-                                    description: "The search query keywords"
-                                }
-                            },
-                            required: ["query"]
+                if (!/gemini-2\.5-flash-lite/i.test(model)) {
+                    geminiBody.toolConfig = {
+                        includeServerSideToolInvocations: true
+                    };
+                }
+            } else {
+                geminiBody.tools.push({
+                    functionDeclarations: [
+                        {
+                            name: "search_web",
+                            description: "Searches the web for up-to-date information, real-time facts, local info, or fresh data.",
+                            parameters: {
+                                type: "OBJECT",
+                                properties: {
+                                    query: {
+                                        type: "STRING",
+                                        description: "The search query keywords"
+                                    }
+                                },
+                                required: ["query"]
+                            }
                         }
-                    }
-                ]
-            });
+                    ]
+                });
+            }
         }
 
         const method = isStreaming ? 'streamGenerateContent' : 'generateContent';
@@ -3411,30 +3425,16 @@ Example Output:
                 responseMimeType: 'application/json'
             };
             
-            let level = normalizedThinkingLevel || 'minimal';
-            if (level === 'none') {
-                level = 'minimal';
-            }
             const isGemini3 = /gemini-[3-9]/i.test(modelToUse);
             if (isGemini3) {
                 geminiConfig.thinkingConfig = {
                     includeThoughts: true,
-                    thinkingLevel: level
+                    thinkingLevel: 'minimal'
                 };
             } else {
-                let budget = -1; // Default dynamic thinking (-1)
-                if (level === 'minimal') {
-                    budget = 0;
-                } else if (level === 'low') {
-                    budget = 1024;
-                } else if (level === 'medium') {
-                    budget = -1;
-                } else if (level === 'high') {
-                    budget = 4096;
-                }
                 geminiConfig.thinkingConfig = {
-                    includeThoughts: budget > 0 || budget === -1,
-                    thinkingBudget: budget
+                    includeThoughts: false,
+                    thinkingBudget: 0
                 };
             }
             

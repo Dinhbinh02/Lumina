@@ -1958,8 +1958,20 @@ function initSpotlightAskSelection() {
     if (window.LuminaSelection) {
         LuminaSelection.init({
             shadowRoot: null,
-            onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate) => {
-                if (isDictionary || isTranslate) {
+            onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
+                if (isAudio) {
+                    playSpotlightAudio(displayQuery);
+                    return;
+                }
+                if (isTranslate) {
+                    const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
+                        ? secondaryActiveTabIndex
+                        : activeTabIndex;
+                    const targetTab = tabs[targetTabIdx];
+                    handleSubmit(query, [], { mode: 'translate' }, targetTab || null, displayQuery);
+                    return;
+                }
+                if (isDictionary) {
                     const selection = window.getSelection();
                     const text = selection.toString().trim() || displayQuery;
                     if (text) {
@@ -1968,11 +1980,9 @@ function initSpotlightAskSelection() {
                         LuminaDictionaryPopup.show(text, {
                             x: rect.left,
                             y: rect.bottom + 5,
-                            source: isTranslate ? 'translate' : 'cambridge'
+                            source: 'cambridge'
                         });
-                        if (isDictionary) {
-                            playSpotlightAudio(text);
-                        }
+                        playSpotlightAudio(text);
                         return;
                     }
                 }

@@ -255,8 +255,16 @@
         if (window.LuminaSelection) {
             LuminaSelection.init({
                 shadowRoot: luminaShadowRoot,
-                onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate) => {
-                    if (isDictionary || isTranslate) {
+                onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
+                    if (isAudio) {
+                        playCombinedAudio(displayQuery);
+                        return;
+                    }
+                    if (isTranslate) {
+                        triggerSidePanelQuery(query, displayQuery, 'translate', range);
+                        return;
+                    }
+                    if (isDictionary) {
                         const selection = window.getSelection();
                         const text = selection.toString().trim() || displayQuery;
                         if (text) {
@@ -265,11 +273,9 @@
                             LuminaDictionaryPopup.show(text, {
                                 x: rect.left,
                                 y: rect.bottom + 5,
-                                source: isTranslate ? 'translate' : 'cambridge'
+                                source: 'cambridge'
                             });
-                            if (isDictionary) {
-                                playCombinedAudio(text);
-                            }
+                            playCombinedAudio(text);
                             return;
                         }
                     }
@@ -322,12 +328,21 @@
 
 
     
-    document.addEventListener('mouseup', (e) => {
+    window.addEventListener('mouseup', (e) => {
         if (isExtensionDisabled) return;
 
         const path = e.composedPath();
         const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host');
         if (isInsideShadow) return;
+
+        // Block propagation if there is selected text to disable the website's own selection popups
+        if (askSelectionPopupEnabled) {
+            const sel = window.getSelection();
+            const selText = sel ? sel.toString().trim() : '';
+            if (selText.length > 0) {
+                e.stopPropagation();
+            }
+        }
 
         const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
         const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
@@ -372,7 +387,7 @@
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
             }
         }, 50);
-    });
+    }, true);
     
 
     
