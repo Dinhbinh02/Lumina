@@ -445,6 +445,7 @@ body {
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
   outline: none;
+  flex-shrink: 0;
 }
 
 .m3-icon-button:hover {
@@ -752,6 +753,7 @@ body {
   display: inline-block;
   width: 52px;
   height: 32px;
+  flex-shrink: 0;
 }
 
 .m3-switch input {
@@ -1552,3 +1554,10 @@ html[data-theme="dark"] .m3-provider-status-badge.inactive {
   color: var(--md-sys-color-text-secondary);
   border-color: var(--md-sys-color-outline-variant);
 }
+
+.shortcut-input.mapping-key-input {
+  width: 90px;
+  min-width: 90px;
+  padding: 0 8px;
+}
+

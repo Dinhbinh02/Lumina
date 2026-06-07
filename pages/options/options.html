@@ -266,6 +266,25 @@
 
             <div class="m3-divider"></div>
 
+            <div class="m3-setting-row">
+              <div class="m3-setting-info">
+                <span class="m3-title-medium">General Translation Engine</span>
+                <span class="m3-body-medium text-secondary">Choose engine used for selection & sidebar translations</span>
+              </div>
+              <div class="m3-segmented-control">
+                <label class="m3-segment-option">
+                  <input type="radio" name="translateEngine" value="google" checked>
+                  <span class="m3-segment-label">Google</span>
+                </label>
+                <label class="m3-segment-option">
+                  <input type="radio" name="translateEngine" value="ai">
+                  <span class="m3-segment-label">AI Model</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="m3-divider"></div>
+
             <h3 class="m3-title-medium">Dictionary Lookup Model</h3>
             <div class="m3-grid-cols-2 gap-16">
               <div class="m3-dropdown-field-container">
@@ -279,40 +298,6 @@
                 <input type="text" id="dictModel" class="m3-text-input" placeholder="Select or type Model...">
                 <div id="dictModelList" class="m3-dropdown-menu"></div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Web Search Card -->
-        <div class="m3-card m3-elevation-1">
-          <div class="m3-card-header">
-            <div class="m3-card-title-group">
-              <h2 class="m3-title-large">🌐 Web Search (Tavily)</h2>
-              <p class="m3-body-medium text-secondary">Configure Tavily API to enable real-time internet search for AI models.</p>
-            </div>
-          </div>
-
-          <div class="m3-card-content">
-            <div class="m3-setting-row">
-              <div class="m3-setting-info">
-                <span class="m3-title-medium">Enable Web Search</span>
-                <span class="m3-body-medium text-secondary">Allow AI models to use the Web Search tool when up-to-date information is needed.</span>
-              </div>
-              <label class="m3-switch">
-                <input type="checkbox" id="enableWebSearch">
-                <span class="m3-switch-slider"></span>
-              </label>
-            </div>
-
-            <div class="m3-divider"></div>
-
-            <div class="m3-text-field-container">
-              <div class="m3-label-row">
-                <label for="tavilyApiKey" class="m3-field-label">Tavily API Key</label>
-                <a href="https://tavily.com/" target="_blank" class="m3-text-link">Get Tavily API Key</a>
-              </div>
-              <input type="password" id="tavilyApiKey" class="m3-text-input" placeholder="tvly-...">
-              <p class="m3-helper-text">Enter your Tavily API Key to power the internet search capability.</p>
             </div>
           </div>
         </div>
@@ -811,6 +796,10 @@
             data-placeholder="Enter @ to insert variables..."></div>
         </div>
       </div>
+      <label class="m3-switch mapping-highlight-switch" title="Highlight text on execution" style="transform: scale(0.8); margin: 0 4px;">
+        <input type="checkbox" class="mapping-highlight-toggle" checked>
+        <span class="m3-switch-slider"></span>
+      </label>
       <button class="m3-icon-button mapping-delete-btn text-error" title="Delete Mapping">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"></polyline>
@@ -883,6 +872,10 @@
       </div>
       <div class="m3-annotation-key-actions">
         <div class="shortcut-input m3-shortcut-box annotation-shortcut-input" tabindex="0"></div>
+        <label class="m3-switch" title="Enable/Disable highlight shortcut" style="transform: scale(0.8); margin: 0 -2px;">
+          <input type="checkbox" class="annotation-shortcut-toggle" checked>
+          <span class="m3-switch-slider"></span>
+        </label>
         <button class="m3-icon-button annotation-remove-btn text-error" title="Remove">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"></polyline>

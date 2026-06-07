@@ -344,8 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const siteToggle = document.getElementById('siteToggle');
   const siteToggleLabel = document.getElementById('siteToggleLabel');
   const deepLApiKeyInput = document.getElementById('deepLApiKey');
-  const enableWebSearchCheckbox = document.getElementById('enableWebSearch');
-  const tavilyApiKeyInput = document.getElementById('tavilyApiKey');
   const temperatureInput = document.getElementById('temperature');
   const temperatureValue = document.getElementById('temperatureValue');
   const topPInput = document.getElementById('topP');
@@ -1442,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
       populateChainDropdowns();
     });
 
-    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine', 'historyRetentionMonths', 'enableWebSearch', 'tavilyApiKey'], (items) => {
+    chrome.storage.local.get(['globalDefaults', 'modelChains', 'advancedParamsByModel', 'provider', 'model', 'fontSize', 'popupWidth', 'popupHeight', 'responseLanguage', 'disabledDomains', 'theme', 'memoryThreshold', 'compactionSize', 'questionMappings', 'autoHideInputEnabled', 'deepLApiKey', 'temperature', 'topP', 'customParams', 'dictProvider', 'dictModel', 'audioSpeed', 'autoAudio', 'googleClientId', 'githubClientId', 'displayMode', 'dictLanguage', 'translateInputEngine', 'translateEngine', 'historyRetentionMonths', 'enableWebSearch'], (items) => {
 
     setTimeout(() => {
 
@@ -1517,12 +1515,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (items.deepLApiKey && deepLApiKeyInput) deepLApiKeyInput.value = items.deepLApiKey;
 
-    if (enableWebSearchCheckbox) {
-      enableWebSearchCheckbox.checked = items.enableWebSearch !== undefined ? items.enableWebSearch : false;
-    }
-    if (items.tavilyApiKey !== undefined && tavilyApiKeyInput) {
-      tavilyApiKeyInput.value = items.tavilyApiKey;
-    }
+
 
     if (items.googleClientId && googleClientIdInput) googleClientIdInput.value = items.googleClientId;
     if (items.githubClientId && githubClientIdInput) {
@@ -1551,6 +1544,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputEngine = items.translateInputEngine || 'google';
     const inputEngineRadio = document.querySelector(`input[name="translateInputEngine"][value="${inputEngine}"]`);
     if (inputEngineRadio) inputEngineRadio.checked = true;
+
+    const engine = items.translateEngine || 'google';
+    const engineRadio = document.querySelector(`input[name="translateEngine"][value="${engine}"]`);
+    if (engineRadio) engineRadio.checked = true;
 
 
 
@@ -1757,6 +1754,7 @@ loadAllSettings();
     document.querySelectorAll('.annotation-shortcut-row').forEach((row) => {
       const activeSwatch = row.querySelector('.color-swatch.active');
       const keyInput = row.querySelector('.annotation-shortcut-input');
+      const toggleInput = row.querySelector('.annotation-shortcut-toggle');
 
       if (keyInput) {
         try {
@@ -1765,7 +1763,8 @@ loadAllSettings();
 
           annotationShortcutsExport.push({
             ...keyData,
-            color: activeSwatch ? activeSwatch.dataset.color : '#FFFB78'
+            color: activeSwatch ? activeSwatch.dataset.color : '#FFFB78',
+            enabled: toggleInput ? toggleInput.checked : true
           });
         } catch (e) {
           console.error('Error parsing annotation key data', e);
@@ -1789,18 +1788,21 @@ loadAllSettings();
       document.querySelectorAll('.mapping-item').forEach((row) => {
         const keyInput = row.querySelector('.mapping-key-input');
         const promptInput = row.querySelector('.mapping-prompt');
+        const toggleInput = row.querySelector('.mapping-highlight-toggle');
         const prompt = promptInput ? (promptInput.innerText || promptInput.textContent).trim() : '';
 
         if (keyInput) {
           try {
             const keyStr = keyInput.dataset.key;
             const keyData = (keyStr && keyStr !== '') ? JSON.parse(keyStr) : null;
+            const enableHighlight = toggleInput ? toggleInput.checked : true;
 
-            questionMappingsExport.push({ keyData, prompt });
+            questionMappingsExport.push({ keyData, prompt, enableHighlight });
           } catch (e) {
             console.error('Error parsing key data', e);
 
-            questionMappingsExport.push({ keyData: null, prompt });
+            const enableHighlight = toggleInput ? toggleInput.checked : true;
+            questionMappingsExport.push({ keyData: null, prompt, enableHighlight });
           }
         }
       });
@@ -1817,13 +1819,13 @@ loadAllSettings();
         responseLanguage: responseLanguage,
         dictLanguage: document.querySelector('input[name="dictLanguage"]:checked')?.value || 'en',
         translateInputEngine: document.querySelector('input[name="translateInputEngine"]:checked')?.value || 'google',
+        translateEngine: document.querySelector('input[name="translateEngine"]:checked')?.value || 'google',
         theme: theme,
         shortcuts: shortcuts,
         annotationShortcuts: annotationShortcutsExport,
         autoHideInputEnabled: document.getElementById('autoHideInputEnabled')?.checked || false,
         audioSpeed: audioSpeed,
-        enableWebSearch: enableWebSearchCheckbox ? enableWebSearchCheckbox.checked : false,
-        tavilyApiKey: tavilyApiKeyInput ? tavilyApiKeyInput.value.trim() : '',
+        enableWebSearch: true,
         memoryThreshold: parseInt(document.getElementById('memoryThreshold')?.value, 10) || 14,
         maxTokens: document.getElementById('maxTokens')?.value || null,
         historyRetentionMonths: parseInt(document.getElementById('options-history-retention-input')?.dataset.value, 10) !== undefined ? parseInt(document.getElementById('options-history-retention-input')?.dataset.value, 10) : 3
@@ -1885,8 +1887,6 @@ loadAllSettings();
 
     deepLApiKeyInput,
     fontSizeInput,
-    enableWebSearchCheckbox,
-    tavilyApiKeyInput,
   ].filter(Boolean);
 
   inputs.forEach(input => {
@@ -1925,6 +1925,10 @@ loadAllSettings();
   });
 
   document.querySelectorAll('input[name="translateInputEngine"]').forEach(radio => {
+    radio.addEventListener('change', saveOptions);
+  });
+
+  document.querySelectorAll('input[name="translateEngine"]').forEach(radio => {
     radio.addEventListener('change', saveOptions);
   });
 
@@ -3227,7 +3231,7 @@ loadAllSettings();
     });
   }
 
-  function renderMappingRow(keyDataOrSimpleKey = null, prompt = '') {
+  function renderMappingRow(keyDataOrSimpleKey = null, prompt = '', enableHighlight = null) {
     const mappingsList = document.getElementById('questionMappingsList');
     if (!mappingsList) return;
 
@@ -3247,10 +3251,28 @@ loadAllSettings();
 
     const keyDisplay = div.querySelector('.mapping-key-input');
     const promptInput = div.querySelector('.mapping-prompt');
+    const toggleInput = div.querySelector('.mapping-highlight-toggle');
     const deleteBtn = div.querySelector('.mapping-delete-btn');
 
     if (keyData) {
       renderShortcutDisplay(keyDisplay, keyData);
+    }
+
+    let isTranslation = false;
+    if (prompt) {
+      const promptLower = prompt.toLowerCase();
+      isTranslation =
+        promptLower.includes('dịch') ||
+        promptLower.includes('translate') ||
+        promptLower.includes('vietnamese') ||
+        promptLower.includes('tiếng việt') ||
+        promptLower.includes('chuyển ngữ') ||
+        (promptLower.includes('nghĩa') && (promptLower.includes('việt') || promptLower.includes('viet')));
+    }
+
+    if (toggleInput) {
+      toggleInput.checked = (enableHighlight !== null && enableHighlight !== undefined) ? (enableHighlight !== false) : !isTranslation;
+      toggleInput.addEventListener('change', saveOptions);
     }
     if (prompt) {
 
@@ -3295,7 +3317,7 @@ loadAllSettings();
       savedMappings.forEach(m => {
 
         const data = m.keyData || m.key;
-        renderMappingRow(data, m.prompt);
+        renderMappingRow(data, m.prompt, m.enableHighlight);
       });
       refreshMappingNumbers();
     }
@@ -3338,7 +3360,14 @@ loadAllSettings();
 
     const palette = div.querySelector('.annotation-color-palette');
     const keyInput = div.querySelector('.annotation-shortcut-input');
+    const toggleInput = div.querySelector('.annotation-shortcut-toggle');
     const deleteBtn = div.querySelector('.annotation-remove-btn');
+
+    if (toggleInput) {
+      toggleInput.checked = data ? (data.enabled !== false) : true;
+      toggleInput.addEventListener('change', saveOptions);
+    }
+
 
 
     const currentColor = data && data.color ? data.color : ANNOTATION_COLORS[0];

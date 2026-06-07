@@ -687,9 +687,12 @@ async function handleRemoteSync(changes, areaName) {
                     let existing = tabs.find(t => t.id === meta.id);
 
                     if (existing) {
-                        const sessionChanged = existing.sessionId !== meta.sessionId;
+                        const isCurrentActive = (activeTabIndex !== -1 && tabs[activeTabIndex] && tabs[activeTabIndex].id === existing.id);
+                        const sessionChanged = !isCurrentActive && existing.sessionId !== meta.sessionId;
                         existing.title = meta.title;
-                        existing.sessionId = meta.sessionId;
+                        if (!isCurrentActive) {
+                            existing.sessionId = meta.sessionId;
+                        }
 
                         if (sessionChanged) {
                             const historyKey = `spotlight_history_${meta.sessionId}`;
@@ -947,17 +950,73 @@ function normalizeTabs() {
 function ensureTabHistoryLoaded(tab) {
     if (tab && tab.rawHistoryHtml) {
         const historyEl = tab.historyEl;
-        historyEl.innerHTML = tab.rawHistoryHtml;
+        const rawHtml = tab.rawHistoryHtml;
         tab.rawHistoryHtml = null;
-        normalizeRestoredHistory(historyEl);
-        historyEl.__processingPromises = Array.from(
-            historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions')
-        ).map(ans => LuminaChatUI.processContainer(ans));
-        historyEl.querySelectorAll('.lumina-trans-sentence').forEach(s => s.classList.remove('hovered'));
-        historyEl.querySelectorAll('.lumina-dict-entry[data-entry-type="translation"]').forEach(entry => {
-            LuminaChatUI._setupTranslationHighlight(entry);
-            LuminaChatUI.balanceTranslationCard(entry);
-        });
+
+        // Parse HTML off-screen using DOMParser
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawHtml, 'text/html');
+        const entries = Array.from(doc.body.querySelectorAll('.lumina-dict-entry'));
+
+        if (entries.length === 0) return;
+
+        // Load the most recent 3 entries immediately
+        const immediateCount = Math.min(3, entries.length);
+        const immediateEntries = entries.slice(entries.length - immediateCount);
+        const remainingEntries = entries.slice(0, entries.length - immediateCount);
+
+        const appendBatch = (batch, prepend = false) => {
+            const fragment = document.createDocumentFragment();
+            batch.forEach(entry => fragment.appendChild(entry));
+
+            if (prepend && historyEl.firstChild) {
+                historyEl.insertBefore(fragment, historyEl.firstChild);
+            } else {
+                historyEl.appendChild(fragment);
+            }
+
+            normalizeRestoredHistory(historyEl);
+
+            const promises = [];
+            batch.forEach(entry => {
+                entry.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions').forEach(ans => {
+                    promises.push(LuminaChatUI.processContainer(ans));
+                });
+            });
+
+            if (historyEl.__processingPromises) {
+                historyEl.__processingPromises.push(...promises);
+            } else {
+                historyEl.__processingPromises = promises;
+            }
+
+            batch.forEach(entry => {
+                entry.querySelectorAll('.lumina-trans-sentence').forEach(s => s.classList.remove('hovered'));
+                if (entry.dataset.entryType === 'translation') {
+                    LuminaChatUI._setupTranslationHighlight(entry);
+                    LuminaChatUI.balanceTranslationCard(entry);
+                } else {
+                    entry.querySelectorAll('.lumina-dict-entry[data-entry-type="translation"]').forEach(subEntry => {
+                        LuminaChatUI._setupTranslationHighlight(subEntry);
+                        LuminaChatUI.balanceTranslationCard(subEntry);
+                    });
+                }
+            });
+        };
+
+        // Append active/recent entries first
+        appendBatch(immediateEntries);
+
+        // Load remaining entries progressively in chunks of 5
+        if (remainingEntries.length > 0) {
+            const loadNextChunk = () => {
+                if (remainingEntries.length === 0) return;
+                const chunk = remainingEntries.splice(-5);
+                appendBatch(chunk, true);
+                setTimeout(loadNextChunk, 30);
+            };
+            setTimeout(loadNextChunk, 40);
+        }
     }
 }
 
@@ -1002,6 +1061,8 @@ async function initTabs() {
         let historyHtml = '';
         let tabTitle = 'Chat';
 
+        let hasAsyncHistoryLoad = false;
+
         if (urlSessionId) {
             sessionId = urlSessionId;
             const historyKey = `spotlight_history_${sessionId}`;
@@ -1024,8 +1085,15 @@ async function initTabs() {
                         sessionId: sessionId,
                         timestamp: meta.createdAt || meta.updatedAt
                     };
-                    await ChatHistoryManager.restoreChat(chatData, initialHistory);
-                    normalizeRestoredHistory(initialHistory);
+                    hasAsyncHistoryLoad = true;
+                    // Trigger restoreChat asynchronously
+                    setTimeout(async () => {
+                        showTopbarLoading();
+                        await ChatHistoryManager.restoreChat(chatData, initialHistory);
+                        normalizeRestoredHistory(initialHistory);
+                        scheduleScrollRestore(singleTab);
+                        hideTopbarLoading();
+                    }, 0);
                 }
             }
         } else {
@@ -1059,14 +1127,20 @@ async function initTabs() {
         bindHistoryScroll(singleTab);
         tabs.push(singleTab);
 
-        ensureTabHistoryLoaded(singleTab);
-        initialHistory.style.display = 'block';
+        if (hasAsyncHistoryLoad) {
+            initialHistory.style.display = 'block';
+        } else {
+            // Load history HTML asynchronously so page rendering finishes instantly
+            setTimeout(() => {
+                ensureTabHistoryLoaded(singleTab);
+                initialHistory.style.display = 'block';
+                scheduleScrollRestore(singleTab);
+            }, 0);
+        }
 
         activeTabIndex = 0;
         activeGroupIndex = 0;
         tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
-
-        scheduleScrollRestore(singleTab);
 
         const modelData = await chrome.storage.local.get(['lastUsedModel']);
         if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
@@ -1650,6 +1724,8 @@ function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
 
     historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
+        if (entry.__normalized) return;
+        entry.__normalized = true;
         
         entry.style.removeProperty('min-height');
 
@@ -3726,7 +3802,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             
             syncTabs.forEach(tab => {
                 tab.chatUIInstance.removeLoading();
-                tab.chatUIInstance.currentAnswerDiv = null;
+                if (tab.chatUIInstance.currentAnswerDiv) {
+                    tab.chatUIInstance.appendError('aborted');
+                }
             });
             if (sharedInputUI) {
                 sharedInputUI.isGenerating = false;

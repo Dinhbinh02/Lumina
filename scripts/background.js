@@ -272,12 +272,13 @@ function isGeminiModel(modelName) {
     return m.includes('gemini') || m.includes('google');
 }
 
-function buildChatSystemInstruction(reasoningMode = false, enableWebSearch = false, tavilyApiKey = '') {
+function buildChatSystemInstruction(reasoningMode = false, enableWebSearch = false) {
     let userTimeZone = 'UTC';
     try {
         userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     } catch (e) {}
     const currentTime = new Date().toLocaleString('en-US', { timeZone: userTimeZone });
+    const currentYear = new Date().getFullYear();
 
     let instruction = `You are an authentic, adaptive AI collaborator and a knowledgeable peer. Your goal is to address the user's true intent with insightful, yet clear and concise responses. Your tone must be warm, and approachable. Actively balance empathy with candor: validate the user's feelings, efforts, or frustrations, and explain concepts clearly without ever sounding like a formal, pedantic, or rigid lecturer.
 
@@ -285,7 +286,7 @@ Mirror the user's vocabulary level. If they write casually or use simple languag
 
 Use LaTeX only for formal/complex math/science (equations, formulas, complex variables) where standard text is insufficient. Enclose all LaTeX using $inline$ or $$display$$ (always for standalone equations). Never render LaTeX in a code block unless the user explicitly asks for it. Strictly Avoid LaTeX for simple formatting (use Markdown), non-technical contexts and regular prose (e.g., resumes, letters, essays, CVs, cooking, weather, etc.), or simple units/numbers (e.g., render 180°C or 10%).
 
-For time-sensitive user queries that require up-to-date information, you MUST follow the provided current time (date and year) when formulating search queries in tool calls. Remember it is 2026 this year.
+For time-sensitive user queries that require up-to-date information, you MUST follow the provided current time (date and year) when formulating search queries in tool calls. Remember it is ${currentYear} this year. Crucially, your pre-training cutoff is before ${currentYear}. Any current date/time information, real-time prices, or news in the conversation history was retrieved via tools; you do NOT possess pre-trained knowledge of ${currentYear}. Therefore, you MUST call the \`search_web\` tool for any query about current/recent events, real-time prices, weather, or ${currentYear} in general.
 
 [Response Guiding Principles]
 * Use the Formatting Toolkit given below effectively: Use the formatting tools to create a clear, scannable, organized and easy to digest response, avoiding dense walls of text. Prioritize scannability that achieves clarity at a glance.
@@ -299,50 +300,40 @@ For time-sensitive user queries that require up-to-date information, you MUST fo
 * Tables: To organize and compare data for quick reference. Use a Markdown table ONLY when comparing >=3 items across >=2 attributes. Never duplicate table content as bullet points below.
 * Blockquotes (>): To highlight important notes, examples, or quotes.
 
-[Skills & Tools]:
-You have access to the following skills. You must be extremely conservative when invoking them:
-- Markdown is your default. Headers, bullets, numbered lists, and tables handle most content. Every component/image/video adds friction — earn it.
-- NEVER use these skills for purely linguistic, grammatical, translation, idiomatic, lexical/dictionary queries, abstract non-physical concepts, general text-based reasoning, or chat (e.g., explaining what the English phrase "get lodged" means, defining an abstract feeling, translating text, or writing code).
+[Multimedia Integration (Markdown Syntax)]
+You can enrich your responses by embedding images, diagrams, or YouTube videos using the following special markdown formats. Do not treat these as native API tools; simply output the markdown tags naturally in your response text when relevant. Crucially, NEVER ask the user if they want to see an image, diagram, or video. Just embed it directly inside the response.
 
-1. Image Search Skill:
-   - Purpose: Retrieve illustrative images, landscapes, maps, or real-world objects.
-   - Gating: When to Trigger the image search tool:
-     You MUST use this tool to retrieve images whenever a visual clarifies text, fulfills a specific request, or aids identification of physical subjects.
-     * Image Relevance Test:
-       * **1. Informational & Visual Utility**: Education (complex concepts, technical systems), Identification (physical subjects, styles, design trends), Comparison (characteristics side-by-side), History (past states of objects), Explanation (ratios, proportions, or spatial relationships), Character identification.
-       * **2. Concrete Subject**: Must be a specific, physical object, style/trend, structure, or concrete diagram—never trigger search for abstract, non-physical concepts.
-       * **3. Primary Subject Focus**: The visual must directly illustrate the core of the query with clear informational weight—never trigger generic, decorative "stock photos".
+
+1. Illustrative Images:
+   - Purpose: Show real-world objects, animals, plants, landscapes, styles, or physical subjects.
+   - When to use: You MUST embed an image for concrete, physical, mechanical, botanical, or biological terms/nouns (e.g., "levers", "mangrove", "glacier", "heart anatomy", or animal species like "blackbird") to aid visual understanding. This instruction applies even if the query is a dictionary definition request, translation, or word explanation (e.g., when explaining what a "blackbird" or "pneumatic cylinder" is). If the query is an adjective or concept describing physical mechanisms, systems, or devices (e.g., "pneumatic", "hydraulic"), you MUST embed an image of its core physical application or device (e.g. "pneumatic cylinder" or "pneumatic system"). Do NOT use for purely abstract concepts, grammatical rules, or general linguistic syntax explanations (unless the specific word/noun being defined is a concrete physical or biological entity, in which case you MUST embed its image).
    - Format: \`![Detailed caption describing the image in English](image-search://query_keywords)\` where \`query_keywords\` is url-encoded.
-   - Caption Rule: The detailed caption in the square brackets \`[...]\` MUST be written in English. Do NOT translate it to Vietnamese or write it in Vietnamese under any circumstances, even if the rest of your response is in Vietnamese. (e.g. \`![A heavy lorry truck driving on the highway](image-search://...)\`).
-   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally. Crucially, preserve the specific country or region context in the query (e.g., if the user is asking about Vietnam, include "vietnam" or local entities/brands like "sjc", "doji" in the query, e.g. "vietnam gold price chart" instead of just "gold price chart").
-   - Placement: Always place the image markdown tag in the middle of your response (e.g., integrated naturally between paragraphs or sections where it is most relevant to the text content), NEVER at the very beginning or the very end of your response.
-   
-2. Diagram & Illustration Skill:
-   - Purpose: Retrieve schemas, diagrams, infographics, or concept maps.
-   - Trigger: Use ONLY when explaining complex mechanisms, technical systems, scientific workflows/cycles, or when the user explicitly asks for a diagram or chart. Do NOT use for simple explanations, purely linguistic/dictionary definitions, or general text-based queries.
-   - Format: \`![Detailed caption describing the diagram in English](image-search://query_keywords+diagram)\` or \`![Detailed caption describing the schema in English](image-search://query_keywords+schema)\` where \`query_keywords\` is url-encoded.
-   - Caption Rule: The detailed caption in the square brackets \`[...]\` MUST be written in English. Do NOT translate it to Vietnamese or write it in Vietnamese under any circumstances, even if the rest of your response is in Vietnamese. (e.g. \`![Electrical circuit diagram of a transformer](image-search://...)\`).
-   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese concepts). Crucially, preserve the specific country or region context in the query (e.g., if the user is asking about Vietnam, include "vietnam" or local entities/brands like "sjc", "doji" in the query, e.g. "vietnam gold price diagram" instead of just "gold price diagram").
-   - Placement: Always place the diagram/illustration markdown tag in the middle of your response (e.g., integrated naturally between paragraphs or technical explanations), NEVER at the very beginning or the very end of your response.
-   
-3. YouTube Video Skill / Search Tool (\`youtube:search\`):
-   - Purpose: Retrieve relevant videos, channels, or playlists on YouTube.
-   - Trigger: Always use YouTube search for queries about videos, channels, playlists, tutorials, courses, songs, or mixes (except for questions relating to video popularity).
+   - Caption Rule: The caption in the square brackets \`[...]\` MUST be written in English (e.g. \`![A simple lever mechanism](image-search://...)\`).
+   - Query Rule: Always use English keywords for \`query_keywords\` (except for local Vietnamese locations) as media is indexed globally. Crucially, preserve specific country/region context (e.g., if asking about gold price in Vietnam, use "vietnam+gold+price" in the query).
+   - Placement: Always place the image markdown tag in the middle of your response (integrated naturally between paragraphs), NEVER at the very beginning or the very end of your response.
+
+2. Diagrams & Illustrations:
+   - Purpose: Retrieve schemas, infographics, concept maps, mechanical systems, or scientific cycles.
+   - Format: \`![Detailed caption describing the diagram in English](image-search://query_keywords+diagram)\` or \`![Detailed caption describing the schema in English](image-search://query_keywords+schema)\`.
+   - Rules: Same caption/query/placement rules as Illustrative Images. MUST be used for physical mechanisms, anatomy, or cycles to enhance explanations.
+
+3. YouTube Videos:
+   - Purpose: Embed tutorials, courses, songs, or mixes.
    - Format:
      * If you know the exact ID: \`![Title](youtube://id)\` (or \`list_id\` prefixed with \`list_\` for playlists).
-     * If you do not know the exact ID: \`![Title](youtube://search?q=query_keywords)\` where \`query_keywords\` is url-encoded. NEVER guess or hallucinate specific video IDs. If you do not know the exact working ID, ALWAYS use the keyless search format.
+     * If you do not know the exact ID: \`![Title](youtube://search?q=query_keywords)\` where \`query_keywords\` is url-encoded. NEVER guess or hallucinate specific video IDs.
 
-4. Python Interpreter Tool (\`google:ds_python_interpreter\`):
-   - Purpose: Execute Python code in a secure, isolated sandboxed Linux container (gVisor).
-   - Trigger: Use for advanced computations, data analysis, scientific calculations, and algorithmic scripting.
+[Skills & Tools]
+You have access to the following native API tools:
 
-5. Web Search Tool (\`google:search\`):
-   - Purpose: Search the web for relevant information and fetch page snippets.
+1. Web Search Tool (\`search_web\`):
+   - Purpose: Search the web for up-to-date information, real-time facts, local info, or fresh data.
    - Trigger: Use when up-to-date knowledge, real-time facts, or verification is needed.
 
-6. Google Workspace Search Tool (\`gemkick_corpus:search\`):
-   - Purpose: Query and fetch content of user's Gmail and Google Drive items.
-   - Trigger: Use when queries explicitly require retrieving emails, messages, or files from the user's Google Workspace accounts. Check \`GMAIL\` and \`GOOGLE_DRIVE\` corpuses accordingly.
+2. URL Context / Browse Tool (\`url_context\`):
+   - Purpose: Retrieve the full, live content of public web pages, articles, or PDFs.
+   - Trigger: Automatically enabled when you are provided with search result URLs. You must use this tool to fetch and read the full page contents of the URLs in the search results to formulate a detailed, accurate, and precise response based on the fetched content instead of relying only on the snippets.
+
 
 [Personalization]:
 * When user data is relevant to the request, use it to improve the response.
@@ -378,19 +369,32 @@ What the user says in the current conversation always takes priority. Explicit q
         instruction += `\n\n[Reasoning Mode]: Formulate a comprehensive strategy, cross-verify facts internally, and simulate alternative solutions before answering.`;
     }
 
-    if (enableWebSearch && tavilyApiKey) {
-        instruction += `\n\n[Web Search Tool]:
-Use the Web Search tool to access up-to-date information from the web or when responding to the user requires information about their location.
-Some examples of when to use the tool include:
-- Local Information: Respond to questions that require information about the user's location, such as the weather, local businesses, or events.
-- Freshness: If up-to-date information on a topic could potentially change or enhance the answer, perform a search any time you would otherwise refuse to answer a question because your knowledge might be out of date.
-- Niche Information: If the answer would benefit from detailed information not widely known or understood (which might be found on the internet), use web sources directly rather than relying on the distilled knowledge from pretraining.
-- Accuracy: If the cost of a small mistake or outdated information is high (e.g., using an outdated version of a software library or not knowing the date of the next game for a sports team).
+    if (enableWebSearch) {
+        instruction += `\n\n[Web Search Tool — Judgment Guide]:
+You have access to a web search tool. Use it when the answer genuinely requires information you cannot reliably know — not for every query.
 
-To use this tool, output EXACTLY the following JSON block on a single line, and then STOP writing further content:
+**Search when:**
+- The answer depends on real-time or frequently changing data: live prices (gold, stocks, fuel, exchange rates), weather, sports scores, breaking news.
+- The user asks about something time-specific: "today", "now", "latest", "current", "this week", or a specific recent date.
+- Your training data likely predates the relevant facts (e.g. events from ${currentYear - 1}–${currentYear}, recently released software, updated laws or regulations).
+- A factual claim is verifiable and being wrong would matter to the user.
+- Local intent: nearby businesses, events, opening hours, directions.
+- Health, medication, or clinical queries where accuracy is critical.
+
+**Do NOT search when:**
+- The question is conceptual, mathematical, linguistic, or creative — your training knowledge is sufficient.
+- The user is asking for your opinion, a summary of something already in context, or a task you can perform directly (writing, translation, coding, etc.).
+- The query is small talk or general reasoning with no factual dependency.
+
+**Query tips:**
+- Keep queries short and specific. Break complex questions into simpler individual queries.
+- Include location or time context when relevant (e.g. "gold price Vietnam ${currentYear}").
+- Always use the current year (${currentYear}) when searching for current/recent facts.
+
+You can call the tool natively. If your environment does not support native function calling, trigger a search by outputting exactly this JSON on a single line, then STOP — write nothing after it:
 {"tool": "search_web", "args": {"query": "search query keywords"}}
 
-Do NOT write anything else after this JSON block. The system will execute the search, fetch the results, append them to the conversation, and invoke you again to formulate the final answer.`;
+The system will execute the search, inject the results, and invoke you again to produce the final answer.`;
     }
 
     return instruction;
@@ -691,13 +695,14 @@ function processAttachmentsForGemini(attachments) {
 
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
+    const enableWebSearch = true;
 
     const isGemini = providerType === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
     if (isGemini) {
         const geminiContents = [];
         for (const msg of msgs) {
             const attachments = msg.files || msg.images;
-            const role = msg.role === 'model' ? 'model' : 'user';
+            const role = (msg.role === 'model' || msg.role === 'assistant') ? 'model' : 'user';
             if (attachments && attachments.length > 0) {
                 const parts = [];
                 if (msg.text) parts.push({ text: msg.text });
@@ -779,6 +784,40 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             } : {})
         };
 
+        if (enableWebSearch) {
+            const hasUrl = /https?:\/\/[^\s]+/.test(currentQ || '');
+            const isSecondPassSearch = (currentQ || '').includes('### Web Search Results for');
+            const useUrlContext = hasUrl || isSecondPassSearch;
+
+            geminiBody.tools = [];
+            if (useUrlContext) {
+                geminiBody.tools.push({
+                    url_context: {}
+                });
+                geminiBody.toolConfig = {
+                    includeServerSideToolInvocations: true
+                };
+            }
+            geminiBody.tools.push({
+                functionDeclarations: [
+                    {
+                        name: "search_web",
+                        description: "Searches the web for up-to-date information, real-time facts, local info, or fresh data.",
+                        parameters: {
+                            type: "OBJECT",
+                            properties: {
+                                query: {
+                                    type: "STRING",
+                                    description: "The search query keywords"
+                                }
+                            },
+                            required: ["query"]
+                        }
+                    }
+                ]
+            });
+        }
+
         const method = isStreaming ? 'streamGenerateContent' : 'generateContent';
         let baseEndpoint = endpoint.replace(/\/$/, '')
                                    .replace(/\/openai\/chat\/completions$/, '')
@@ -827,9 +866,9 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             if (processed.unsupported.length > 0) {
                 parts.push({ type: "text", text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
             }
-            openaiMessages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: parts });
+            openaiMessages.push({ role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user', content: parts });
         } else {
-            openaiMessages.push({ role: msg.role === 'model' ? 'assistant' : 'user', content: msg.text });
+            openaiMessages.push({ role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user', content: msg.text });
         }
     }
 
@@ -849,6 +888,28 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         ...(isStreaming ? { stream_options: { include_usage: true } } : {}),
         ...parsedCustomParams
     };
+
+    if (enableWebSearch) {
+        openaiBody.tools = [
+            {
+                type: "function",
+                function: {
+                    name: "search_web",
+                    description: "Searches the web for up-to-date information, real-time facts, local info, or fresh data.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            query: {
+                                type: "string",
+                                description: "The search query keywords"
+                            }
+                        },
+                        required: ["query"]
+                    }
+                }
+            }
+        ];
+    }
 
     
     const hasCustomTokenLimit = Object.prototype.hasOwnProperty.call(openaiBody, 'max_tokens')
@@ -1171,9 +1232,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Lumina BG][${action}]`;
 
-    const searchSettings = await chrome.storage.local.get(['enableWebSearch', 'tavilyApiKey']);
-    const enableWebSearch = !!searchSettings.enableWebSearch;
-    const tavilyApiKey = searchSettings.tavilyApiKey || '';
+    const enableWebSearch = true;
 
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
 
@@ -1213,7 +1272,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const keys = getKeysArray(apiKey);
 
     const reasoningMode = !!globalSettings.reasoningMode;
-    let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode, enableWebSearch, tavilyApiKey);
+    let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode, enableWebSearch);
 
     if (action === 'proofread') {
         systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
@@ -1347,6 +1406,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
         let lastUsage = null;
         let isInReasoning = false;
 
+        let activeToolCallName = null;
+        let activeToolCallArgs = '';
+
         const collectDeltasFromPayload = (payloadStr, textDeltas) => {
             if (!payloadStr) return false;
             const trimmedPayload = payloadStr.trim();
@@ -1366,6 +1428,19 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 if (json.usage) lastUsage = json.usage;
                 if (finishReason) lastFinishReason = finishReason;
 
+                if (delta.tool_calls) {
+                    for (const tc of delta.tool_calls) {
+                        if (tc.function) {
+                            if (tc.function.name) {
+                                activeToolCallName = tc.function.name;
+                            }
+                            if (tc.function.arguments) {
+                                activeToolCallArgs += tc.function.arguments;
+                            }
+                        }
+                    }
+                }
+
                 let content = '';
                 let reasoning = '';
 
@@ -1373,6 +1448,13 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     for (const part of choice.content.parts) {
                         if (part.thought === true) {
                             reasoning += part.text || '';
+                        } else if (part.functionCall) {
+                            const fcName = part.functionCall.name;
+                            if (fcName === 'google:search' || fcName === 'search_web' || fcName === 'googleSearch') {
+                                activeToolCallName = 'search_web';
+                                const query = part.functionCall.args?.query || '';
+                                activeToolCallArgs = JSON.stringify({ query });
+                            }
                         } else {
                             content += part.text || '';
                         }
@@ -1526,6 +1608,33 @@ async function executeChatRequest(config, messages, initialContext, question, po
             }
         };
 
+        let nonSseBuffer = '';
+        const detectAndExtractJsonError = (str) => {
+            if (!str || typeof str !== 'string') return null;
+            const trimmed = str.trim();
+            if (!trimmed) return null;
+
+            if (trimmed.includes('"error"') && (trimmed.includes('{') || trimmed.startsWith('{'))) {
+                const firstBrace = trimmed.indexOf('{');
+                const lastBrace = trimmed.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                    const potentialJson = trimmed.slice(firstBrace, lastBrace + 1);
+                    try {
+                        const parsed = JSON.parse(potentialJson);
+                        if (parsed && parsed.error) {
+                            return parsed.error.message || parsed.error.status || 'AI Service Error';
+                        }
+                    } catch (e) {
+                        const msgMatch = trimmed.match(/"message"\s*:\s*"([^"]+)"/);
+                        if (msgMatch && msgMatch[1]) {
+                            return msgMatch[1];
+                        }
+                    }
+                }
+            }
+            return null;
+        };
+
         let keepAliveInterval = setInterval(() => {
             try {
                 chrome.runtime.getPlatformInfo(() => {});
@@ -1547,8 +1656,19 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     if (buffer && buffer.length > 0) {
                         const lines = buffer.split('\n');
                         for (const line of lines) {
-                            processSSEEvent(line, tailDeltas);
+                            const trimmed = line.trim();
+                            if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
+                            if (trimmed.startsWith('data:')) {
+                                processSSEEvent(line, tailDeltas);
+                            } else {
+                                nonSseBuffer += (nonSseBuffer ? '\n' : '') + line;
+                            }
                         }
+                    }
+
+                    const errorMsg = detectAndExtractJsonError(nonSseBuffer) || detectAndExtractJsonError(buffer);
+                    if (errorMsg) {
+                        throw new Error(errorMsg);
                     }
 
                     for (const text of tailDeltas) {
@@ -1565,7 +1685,17 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 buffer = lines.pop();
 
                 for (const line of lines) {
-                    processSSEEvent(line, textDeltas);
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
+                    if (trimmed.startsWith('data:')) {
+                        processSSEEvent(line, textDeltas);
+                    } else {
+                        nonSseBuffer += (nonSseBuffer ? '\n' : '') + line;
+                        const errorMsg = detectAndExtractJsonError(nonSseBuffer);
+                        if (errorMsg) {
+                            throw new Error(errorMsg);
+                        }
+                    }
                 }
 
                 for (const text of textDeltas) {
@@ -1618,7 +1748,21 @@ async function executeChatRequest(config, messages, initialContext, question, po
             }
         }
 
-        if (searchMatch && enableWebSearch && tavilyApiKey && !searchPerformed) {
+        if (!searchMatch && activeToolCallName === 'search_web' && activeToolCallArgs) {
+            try {
+                const parsed = JSON.parse(activeToolCallArgs);
+                if (parsed.query) {
+                    searchMatch = { query: parsed.query };
+                }
+            } catch (e) {
+                const m = activeToolCallArgs.match(/"query"\s*:\s*"([^"]+)"/);
+                if (m) {
+                    searchMatch = { query: m[1] };
+                }
+            }
+        }
+
+        if (searchMatch && enableWebSearch && !searchPerformed) {
             const searchQuery = searchMatch.query;
             const statusMsg = {
                 action: 'web_search_status',
@@ -1629,7 +1773,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             if (sessionId) broadcastToSession(sessionId, statusMsg);
             else port.postMessage(statusMsg);
 
-            const searchResults = await performTavilySearch(searchQuery, tavilyApiKey);
+            const searchResults = await performWebSearch(searchQuery);
             pendingWebSearchCompleted = true;
 
             // Append messages for the second pass
@@ -1641,12 +1785,14 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 role: currentProvider === 'gemini' ? 'model' : 'assistant',
                 text: `{"tool": "search_web", "args": {"query": "${searchQuery}"}}`
             });
-            currentMessages.push({
-                role: 'user',
-                text: `### Web Search Results for "${searchQuery}":\n${searchResults}`
-            });
+            const searchUrls = extractUrlsFromSearchResults(searchResults);
+            let finalPrompt = `### Web Search Results for "${searchQuery}":\n${searchResults}`;
+            if (searchUrls.length > 0) {
+                finalPrompt += `\n\nSearch result URLs to fetch and read via URL Context / Browse tool:\n` + searchUrls.join('\n');
+            }
+            finalPrompt += `\n\n---\n\nPlease use the URL Context / Browse tool to fetch and read the full contents of the search result URLs to provide a detailed, accurate answer based on the retrieved web content.`;
 
-            augmentedQuestion = "Please write your final response using the search results.";
+            augmentedQuestion = finalPrompt;
             searchPerformed = true;
             continue; // Go to next pass (generate final response)
         }
@@ -3108,7 +3254,7 @@ chrome.runtime.onConnect.addListener((port) => {
 
 
 
-async function translateText(text, targetLang = 'vi') {
+async function translateTextGoogle(text, targetLang = 'vi') {
     
     let fromLang = 'auto';
     if (targetLang === 'en') {
@@ -3146,6 +3292,251 @@ async function translateText(text, targetLang = 'vi') {
             original: text,
             translation: text + " (Translation failed)"
         };
+    }
+}
+
+function extractJsonArray(text) {
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '').trim();
+    }
+    const startIdx = cleanText.indexOf('[');
+    const endIdx = cleanText.lastIndexOf(']');
+    if (startIdx !== -1 && endIdx !== -1) {
+        cleanText = cleanText.substring(startIdx, endIdx + 1);
+    }
+    return JSON.parse(cleanText);
+}
+
+async function getActiveModelForTranslation() {
+    const data = await chrome.storage.local.get([
+        'lastUsedModel',
+        'providers',
+        'advancedParamsByModel'
+    ]);
+    
+    let config = null;
+    if (data.lastUsedModel && data.lastUsedModel.model) {
+        const provider = data.providers?.find(p => p.id === data.lastUsedModel.providerId);
+        if (provider) {
+            config = {
+                model: data.lastUsedModel.model,
+                providerId: data.lastUsedModel.providerId,
+                providerType: provider.type,
+                apiKey: provider.apiKey,
+                endpoint: provider.endpoint,
+                defaultModel: provider.defaultModel
+            };
+        }
+    }
+    
+    if (!config) {
+        const chain = await getModelChain('text');
+        if (chain && chain.length > 0) {
+            config = chain[0];
+        }
+    }
+    
+    if (!config) return null;
+    
+    const advancedParamsByModel = data.advancedParamsByModel || {};
+    const compositeKey = config.providerId ? `${config.providerId}:${config.model}` : config.model;
+    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[config.model] || {};
+    
+    const currentModel = config.model;
+    const isGemini = config.providerType === 'gemini' || 
+                     (currentModel && currentModel.toLowerCase().includes('gemini'));
+    const isGemma4 = /gemma-4/i.test(currentModel);
+    
+    let thinkingLevel = modelParams.thinkingLevel || (isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none'));
+    if (isGemma4) {
+        if (thinkingLevel !== 'high') {
+            thinkingLevel = 'minimal';
+        }
+    } else if (isGemini && thinkingLevel === 'none') {
+        thinkingLevel = 'minimal';
+    }
+    
+    return { config, thinkingLevel };
+}
+
+async function translateTextWithAI(text, config, thinkingLevel, targetLang = 'vi') {
+    const targetLanguageName = targetLang === 'en' ? 'English' : 'Vietnamese';
+    
+    const systemPrompt = `You are a professional, context-aware translator.
+Translate the user's text into the target language: ${targetLanguageName}.
+You MUST respond with a valid JSON array of objects representing sentence-by-sentence translation.
+Do not include any conversational filler, markdown formatting blocks (like \`\`\`json), or text outside the JSON array.
+
+Each object in the JSON array MUST have:
+1. "src": The exact original sentence from the input.
+2. "tgt": The translated sentence.
+
+Example Input:
+Hello. How are you today?
+
+Example Output:
+[
+  {"src": "Hello.", "tgt": "Xin chào."},
+  {"src": "How are you today?", "tgt": "Hôm nay bạn thế nào?"}
+]`;
+
+    const keys = getKeysArray(config.apiKey);
+    const modelToUse = config.model;
+    
+    const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
+    
+    const response = await fetchWithRotation(keys, async (key) => {
+        let payloadUrl = '';
+        let payloadBody = {};
+        
+        if (config.providerType === 'gemini') {
+            let baseEndpoint = config.endpoint.replace(/\/$/, '')
+                                       .replace(/\/openai\/chat\/completions$/, '')
+                                       .replace(/\/chat\/completions$/, '')
+                                       .replace(/\/openai$/, '')
+                                       .replace(/\/models$/, '');
+            let urlModel = modelToUse;
+            if (!urlModel.startsWith('models/')) {
+                urlModel = 'models/' + urlModel;
+            }
+            payloadUrl = `${baseEndpoint}/${urlModel}:generateContent`;
+            
+            const contents = [
+                { role: 'user', parts: [{ text: text }] }
+            ];
+            
+            const geminiConfig = {
+                temperature: 0.3,
+                responseMimeType: 'application/json'
+            };
+            
+            let level = normalizedThinkingLevel || 'minimal';
+            if (level === 'none') {
+                level = 'minimal';
+            }
+            const isGemini3 = /gemini-[3-9]/i.test(modelToUse);
+            if (isGemini3) {
+                geminiConfig.thinkingConfig = {
+                    includeThoughts: true,
+                    thinkingLevel: level
+                };
+            } else {
+                let budget = -1; // Default dynamic thinking (-1)
+                if (level === 'minimal') {
+                    budget = 0;
+                } else if (level === 'low') {
+                    budget = 1024;
+                } else if (level === 'medium') {
+                    budget = -1;
+                } else if (level === 'high') {
+                    budget = 4096;
+                }
+                geminiConfig.thinkingConfig = {
+                    includeThoughts: budget > 0 || budget === -1,
+                    thinkingBudget: budget
+                };
+            }
+            
+            payloadBody = {
+                contents,
+                system_instruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: geminiConfig
+            };
+        } else {
+            payloadUrl = normalizeOpenAICompatibleEndpoint(config.endpoint || 'https://api.groq.com/openai/v1/chat/completions', '/chat/completions');
+            
+            const openaiBody = {
+                model: modelToUse,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: text }
+                ],
+                temperature: 0.3,
+                response_format: { type: 'json_object' }
+            };
+            
+            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+                openaiBody.reasoning_effort = normalizedThinkingLevel;
+            }
+            
+            payloadBody = openaiBody;
+        }
+        
+        const headers = { 'Content-Type': 'application/json' };
+        if (key) {
+            if (config.providerType === 'gemini') {
+                headers['x-goog-api-key'] = key;
+            } else {
+                headers['Authorization'] = `Bearer ${key}`;
+            }
+        }
+        
+        return fetch(payloadUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payloadBody)
+        });
+    });
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`AI Translation request failed: HTTP ${response.status} - ${errorText}`);
+    }
+    
+    const resData = await response.json();
+    let responseText = '';
+    if (config.providerType === 'gemini') {
+        responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+        responseText = resData.choices?.[0]?.message?.content || '';
+    }
+    
+    let sentences = [];
+    try {
+        sentences = extractJsonArray(responseText);
+    } catch (e) {
+        console.error('[Lumina] Failed to parse JSON translation response:', responseText, e);
+        throw new Error('Invalid JSON format from AI Translation');
+    }
+    
+    if (!Array.isArray(sentences) || sentences.length === 0) {
+        throw new Error('AI Translation returned empty or invalid structure');
+    }
+    
+    const translatedText = sentences.map(s => s.tgt || '').join(' ');
+    
+    return {
+        type: 'ai_translation',
+        original: text,
+        translation: translatedText,
+        fromProvider: 'ai',
+        model: modelToUse,
+        sentences: sentences,
+        showAudio: true
+    };
+}
+
+async function translateText(text, targetLang = 'vi') {
+    const settings = await chrome.storage.local.get(['translateEngine']);
+    const engine = settings.translateEngine || 'google';
+
+    if (engine === 'ai') {
+        try {
+            const active = await getActiveModelForTranslation();
+            if (!active) {
+                console.warn('[Lumina] No active AI model found, falling back to Google Translate.');
+                return translateTextGoogle(text, targetLang);
+            }
+            return await translateTextWithAI(text, active.config, active.thinkingLevel, targetLang);
+        } catch (err) {
+            console.error('[Lumina] AI Translation failed, falling back to Google:', err);
+            return translateTextGoogle(text, targetLang);
+        }
+    } else {
+        return translateTextGoogle(text, targetLang);
     }
 }
 
@@ -3702,38 +4093,118 @@ async function fetchAIDict(word) {
     }
 }
 
-async function performTavilySearch(query, apiKey) {
-    try {
-        console.log(`[Lumina] Performing Tavily Search for: "${query}"`);
-        const response = await fetch('https://api.tavily.com/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                api_key: apiKey,
-                query: query,
-                search_depth: 'basic',
-                include_answer: false
-            })
-        });
+const SEARXNG_INSTANCES = [
+    'https://searx.be',
+    'https://searx.or.tz',
+    'https://search.privacyredirect.com',
+    'https://searx.work',
+    'https://searx.nixnet.services',
+    'https://searx.tiekoetter.com',
+    'https://searx.space'
+];
 
+async function performSearXNGSearch(query) {
+    const instances = [...SEARXNG_INSTANCES].sort(() => Math.random() - 0.5);
+    for (const instance of instances) {
+        try {
+            console.log(`[Lumina] Trying SearXNG Search at ${instance} for: "${query}"`);
+            const url = `${instance}/search?q=${encodeURIComponent(query)}&format=json`;
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data && Array.isArray(data.results) && data.results.length > 0) {
+                    return data.results.slice(0, 5).map((r, idx) => {
+                        return `[Result ${idx + 1}]
+Title: ${r.title || ''}
+URL: ${r.url}
+Snippet: ${r.content || ''}`;
+                    }).join('\n\n');
+                }
+            }
+        } catch (e) {
+            console.warn(`[Lumina] SearXNG instance ${instance} failed:`, e);
+        }
+    }
+    return 'No results found.';
+}
+
+async function performWebSearch(query) {
+    try {
+        console.log(`[Lumina] Performing DuckDuckGo Search for: "${query}"`);
+        const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Tavily API responded with status ${response.status}: ${errorText}`);
+            throw new Error(`DDG responded with status ${response.status}`);
+        }
+        const html = await response.text();
+        
+        if (html.includes('anomaly') || html.includes('captcha') || !html.includes('result__url')) {
+            console.warn('[Lumina] DuckDuckGo blocked or returned no results. Trying SearXNG fallback...');
+            return await performSearXNGSearch(query);
         }
 
-        const data = await response.json();
-        if (Array.isArray(data.results)) {
-            return data.results.map((r, idx) => `[Result ${idx + 1}]
+        const results = [];
+        const blocks = html.split('<div class="result results_links results_links_deep web-result ">');
+        for (let i = 1; i < blocks.length && results.length < 5; i++) {
+            const block = blocks[i];
+            const urlMatch = block.match(/<a class="result__url"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+            const snippetMatch = block.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+            if (urlMatch) {
+                let rawUrl = urlMatch[1];
+                let title = urlMatch[2].replace(/<[^>]*>/g, '').trim();
+                let snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+                
+                let actualUrl = rawUrl;
+                if (rawUrl.includes('uddg=')) {
+                    try {
+                        const searchParams = new URLSearchParams(rawUrl.split('?')[1]);
+                        const uddg = searchParams.get('uddg');
+                        if (uddg) actualUrl = decodeURIComponent(uddg);
+                    } catch (e) {
+                        try {
+                            const matchUddg = rawUrl.match(/[?&]uddg=([^&]+)/);
+                            if (matchUddg) actualUrl = decodeURIComponent(matchUddg[1]);
+                        } catch (err) {}
+                    }
+                }
+                
+                title = title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+                snippet = snippet.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+                
+                results.push({ title, url: actualUrl, content: snippet });
+            }
+        }
+
+        if (results.length > 0) {
+            return results.map((r, idx) => `[Result ${idx + 1}]
 Title: ${r.title}
 URL: ${r.url}
 Snippet: ${r.content}`).join('\n\n');
         }
-        return 'No results found.';
+
+        return await performSearXNGSearch(query);
     } catch (e) {
-        console.error('[Lumina] Tavily search error:', e);
-        return `Failed to perform search: ${e.message}`;
+        console.error('[Lumina] DDG search error, falling back to SearXNG...', e);
+        return await performSearXNGSearch(query);
     }
+}
+
+function extractUrlsFromSearchResults(text) {
+    if (!text) return [];
+    const urls = [];
+    const regex = /URL:\s*(https?:\/\/[^\s\n\)\>\]]+)/g;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+        urls.push(match[1]);
+    }
+    return urls;
 }
 
