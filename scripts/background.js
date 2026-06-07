@@ -2026,7 +2026,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'fetch_images': {
             const keyword = request.keyword;
             const cleanKeyword = `${keyword} -watermark -stock -site:shutterstock.com -site:alamy.com -site:123rf.com -site:depositphotos.com -site:dreamstime.com -site:gettyimages.com`;
-            const url = `https://www.google.com/search?q=${encodeURIComponent(cleanKeyword)}&udm=2&tbs=isz:l`;
+            const url = `https://www.google.com/search?q=${encodeURIComponent(cleanKeyword)}&udm=2&tbs=isz:l,iar:w`;
 
             fetch(url, {
                 headers: {

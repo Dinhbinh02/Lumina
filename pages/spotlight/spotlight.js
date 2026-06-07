@@ -8,32 +8,32 @@ function bindContainerWheelForward(containerEl) {
     containerEl.__luminaWheelBound = true;
     let cachedScrollable = null;
 
-    
-    
-    
+
+
+
     function attachScrollContentBlocker(scrollable) {
         if (!scrollable || scrollable.__luminaWheelStop) return;
         scrollable.__luminaWheelStop = true;
         scrollable.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
     }
 
-    
+
     containerEl.addEventListener('wheel', (e) => {
-        
+
         if (!cachedScrollable || cachedScrollable.style.display === 'none') {
             cachedScrollable = containerEl.querySelector('.lumina-chat-scroll-content:not([style*="display: none"])');
             if (cachedScrollable) attachScrollContentBlocker(cachedScrollable);
         }
         if (!cachedScrollable) return;
         e.preventDefault();
-        
+
         let delta = e.deltaY;
         if (e.deltaMode === 1) delta *= 16;
         else if (e.deltaMode === 2) delta *= cachedScrollable.clientHeight;
         cachedScrollable.scrollBy({ top: delta, behavior: 'instant' });
     }, { passive: false });
 
-    
+
     const existing = containerEl.querySelector('.lumina-chat-scroll-content');
     if (existing) attachScrollContentBlocker(existing);
 }
@@ -70,20 +70,20 @@ const KEYS = {
 
 
 let tabs = [];
-let tabGroups = []; 
+let tabGroups = [];
 let activeGroupIndex = -1;
-let activeTabIndex = -1; 
+let activeTabIndex = -1;
 let tabCounter = 1;
 
 // Cache nội dung trang web theo tabId+url, tránh fetch lại mỗi lần gửi
 const pageContextCache = new Map(); // key: `${tabId}::${url}` => pageContext string
 
 
-let chatUI = null; 
-let sharedInputUI = null; 
-let sharedInputUISecondary = null; 
-let chatUISecondary = null; 
-let hoveredPane = 'primary'; 
+let chatUI = null;
+let sharedInputUI = null;
+let sharedInputUISecondary = null;
+let chatUISecondary = null;
+let hoveredPane = 'primary';
 
 
 function getHoveredInputEl() {
@@ -114,10 +114,10 @@ function redirectToPinnedQuestion() {
     }
 }
 
-let isSplitMode = false; 
-let secondaryActiveTabIndex = -1; 
+let isSplitMode = false;
+let secondaryActiveTabIndex = -1;
 let resizerDragging = false;
-let sidebarTargetTabId = null; 
+let sidebarTargetTabId = null;
 let splitHoverTimer = null;
 let splitHoverTargetIndex = -1;
 let isApplyingSplit = false;
@@ -127,9 +127,9 @@ let shortcuts = {};
 let questionMappings = [];
 let askSelectionPopupEnabled = false;
 let advancedParamsByModel = {};
-let pinnedWebSources = []; 
-let webSourceSelectionsByPageTabId = {}; 
-let currentBrowserTab = null; 
+let pinnedWebSources = [];
+let webSourceSelectionsByPageTabId = {};
+let currentBrowserTab = null;
 let webTabPickerEl = null;
 let webTabPickerAnchorEl = null;
 let webTabPickerOutsideHandler = null;
@@ -149,14 +149,14 @@ let lastSubmitText = "";
 let readWebpageEnabled = false;
 
 const GROUP_COLORS = [
-    '#4285f4', 
-    '#34a853', 
-    '#fbbc05', 
-    '#ea4335', 
-    '#a142f4', 
-    '#24c1e0', 
-    '#ff6d01', 
-    '#ff33b5'  
+    '#4285f4',
+    '#34a853',
+    '#fbbc05',
+    '#ea4335',
+    '#a142f4',
+    '#24c1e0',
+    '#ff6d01',
+    '#ff33b5'
 ];
 
 
@@ -171,21 +171,11 @@ function applyFontSize(size) {
 
 const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
 
-const currentBrowserTabTokens = new Map(); 
+const currentBrowserTabTokens = new Map();
 
 function getSpotlightTabIdForPane(container) {
-    if (!container) return null;
-
-    const pane = container.closest('.spotlight-pane');
-    if (pane && pane.id === 'pane-secondary') {
-        return secondaryActiveTabIndex >= 0 && tabs[secondaryActiveTabIndex] ? tabs[secondaryActiveTabIndex].id : null;
-    }
-
     return activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
 }
-
-
-
 
 function getWebSelectionScopeKey(spotlightTabId) {
     if (spotlightTabId == null || !currentBrowserTab) return null;
@@ -246,7 +236,7 @@ function getWebSelectionForScope(spotlightTabId) {
     const scopeKey = getWebSelectionScopeKey(spotlightTabId);
     if (!scopeKey) return [];
 
-    
+
     webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(scopeKey);
     return webSourceSelectionsByPageTabId[scopeKey] || [];
 }
@@ -265,7 +255,7 @@ function saveWebSelectionForScope(spotlightTabId, selection) {
     webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
     writeWebSelectionToStorage(scopeKey, normalizedSelection);
 
-    
+
     if (normalizedSelection.length > 0) {
         refreshWebSourceTokens(spotlightTabId, normalizedSelection);
     }
@@ -286,14 +276,14 @@ async function fetchFreshWebContent(tabId) {
 
         if (!results) return null;
 
-        
+
         const texts = [];
         const cleanTextForCompare = (str) => {
             return str.replace(/\[Context Source:[^\]]+\]/g, '')
-                      .replace(/URL:[^\n]+/g, '')
-                      .replace(/--- \[Segment \d+\] ---/g, '')
-                      .replace(/[^a-zA-Z0-9]/g, '')
-                      .toLowerCase();
+                .replace(/URL:[^\n]+/g, '')
+                .replace(/--- \[Segment \d+\] ---/g, '')
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase();
         };
 
         for (const r of results) {
@@ -357,7 +347,7 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
         }
         updateWebChips();
 
-        
+
         const affectedTabs = spotlightTabId
             ? tabs.filter(t => t.id === spotlightTabId)
             : tabs;
@@ -393,7 +383,7 @@ function loadCurrentWebSelection(spotlightTabId = null) {
 function updateWebSelectionForTab(tabId, updater) {
     const stringTabId = String(tabId);
 
-    
+
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
@@ -401,10 +391,10 @@ function updateWebSelectionForTab(tabId, updater) {
     storageKeys.forEach((storageKey) => {
         const scopeKey = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
 
-        
+
         const selection = readWebSelectionFromStorage(scopeKey);
 
-        
+
         let changed = false;
         const updatedSelection = selection.map((source) => {
             if (String(source.tabId) === stringTabId) {
@@ -429,7 +419,7 @@ function updateWebSelectionForTab(tabId, updater) {
 function refreshWebSourceTokensForTab(tabId) {
     const stringTabId = String(tabId);
 
-    
+
     const pinnedMatch = pinnedWebSources.find(s => String(s.tabId) === stringTabId);
     if (pinnedMatch) {
         const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
@@ -438,8 +428,8 @@ function refreshWebSourceTokensForTab(tabId) {
         }
     }
 
-    
-    
+
+
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
@@ -454,7 +444,7 @@ function refreshWebSourceTokensForTab(tabId) {
         }
     });
 
-    
+
     if (currentBrowserTab && String(currentBrowserTab.tabId) === stringTabId) {
         (async () => {
             const text = await fetchFreshWebContent(stringTabId);
@@ -473,7 +463,7 @@ function refreshWebSourceTokensForTab(tabId) {
 
 function isSelectionInsideEditable() {
     const sel = window.getSelection();
-    
+
     if (sel && sel.rangeCount > 0 && sel.toString().trim().length > 0) {
         let node = sel.anchorNode;
         while (node && node !== document.documentElement) {
@@ -490,7 +480,7 @@ function isSelectionInsideEditable() {
         }
     }
 
-    
+
     const active = document.activeElement;
     if (active && (
         ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(active.tagName) ||
@@ -520,20 +510,20 @@ function bindHistoryScroll(tab) {
             tab.isAtBottom = true;
             tab.scrollAnchorIndex = null;
             tab.scrollAnchorOffset = null;
-            
+
             tab.userScrolledUp = false;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = false;
         } else {
             tab.scrollTop = scrollTop;
             tab.isAtBottom = false;
-            
+
             tab.userScrolledUp = true;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = true;
         }
         const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
         if (entries.length > 0) {
             if (nearBottom) {
-                
+
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => {
                     saveTabsState();
@@ -602,7 +592,7 @@ function restoreScrollPosition(tab) {
 
     if (tab.scrollAnchorIndex != null && tab.scrollAnchorIndex < entries.length) {
         const anchor = entries[tab.scrollAnchorIndex];
-        
+
         const baseTarget = LuminaChatUI.calculateInitialScrollTarget(anchor, tab.historyEl);
         tab.historyEl.scrollTop = baseTarget + (tab.scrollAnchorOffset || 0);
     }
@@ -630,7 +620,7 @@ function scheduleScrollRestore(tab) {
         if (tab?.historyEl?.__processingPromises) {
             try {
                 await Promise.all(tab.historyEl.__processingPromises);
-            } catch (e) {}
+            } catch (e) { }
             tab.historyEl.__processingPromises = null;
         }
         if (tab?.restoreLatestOnOpen) {
@@ -652,7 +642,7 @@ function scheduleScrollRestore(tab) {
 async function handleRemoteSync(changes, areaName) {
     if (areaName !== 'local') return;
 
-    
+
     if (changes[KEYS.tabs] || changes[KEYS.tabGroups]) {
         const newTabsMeta = changes[KEYS.tabs] ? changes[KEYS.tabs].newValue : null;
         const newGroupsMeta = changes[KEYS.tabGroups] ? changes[KEYS.tabGroups].newValue : null;
@@ -661,7 +651,7 @@ async function handleRemoteSync(changes, areaName) {
             const currentActiveTab = tabs[activeTabIndex];
             const currentActiveSessionId = currentActiveTab ? currentActiveTab.sessionId : null;
 
-            
+
             const currentTabIds = tabs.map(t => t.id).join(',');
             const nextTabIds = newTabsMeta.map(t => t.id).join(',');
 
@@ -673,7 +663,7 @@ async function handleRemoteSync(changes, areaName) {
 
             if (currentTabIds !== nextTabIds || metadataChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
 
-                
+
                 const nextIds = new Set(newTabsMeta.map(m => m.id));
                 tabs = tabs.filter(t => {
                     if (nextIds.has(t.id)) return true;
@@ -681,7 +671,7 @@ async function handleRemoteSync(changes, areaName) {
                     return false;
                 });
 
-                
+
                 for (let i = 0; i < newTabsMeta.length; i++) {
                     const meta = newTabsMeta[i];
                     let existing = tabs.find(t => t.id === meta.id);
@@ -709,7 +699,7 @@ async function handleRemoteSync(changes, areaName) {
                         const historyEl = document.createElement('div');
                         historyEl.className = 'lumina-chat-scroll-content';
                         historyEl.style.display = 'none';
-                        const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
+                        const primaryContainer = document.querySelector('.lumina-chat-container') || container;
                         primaryContainer.appendChild(historyEl);
 
                         const historyKey = `spotlight_history_${meta.sessionId}`;
@@ -736,7 +726,7 @@ async function handleRemoteSync(changes, areaName) {
                     }
                 }
 
-                
+
                 tabs.sort((a, b) => {
                     const idxA = newTabsMeta.findIndex(m => m.id === a.id);
                     const idxB = newTabsMeta.findIndex(m => m.id === b.id);
@@ -745,7 +735,7 @@ async function handleRemoteSync(changes, areaName) {
 
                 if (newGroupsMeta) tabGroups = newGroupsMeta;
 
-                
+
                 const counterData = await chrome.storage.local.get([KEYS.tabCounter]);
                 if (counterData[KEYS.tabCounter]) tabCounter = counterData[KEYS.tabCounter];
 
@@ -768,7 +758,7 @@ async function handleRemoteSync(changes, areaName) {
                 if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
 
                 if (activeGroupIndex !== resolvedActiveGroupIndex) {
-                    switchGroup(resolvedActiveGroupIndex, true); 
+                    switchGroup(resolvedActiveGroupIndex, true);
                 } else {
                     activeGroupIndex = resolvedActiveGroupIndex;
                     const group = tabGroups[activeGroupIndex];
@@ -786,15 +776,15 @@ async function handleRemoteSync(changes, areaName) {
         }
     }
 
-    
+
     for (const key in changes) {
         if (key.startsWith('spotlight_history_')) {
             const sid = key.replace('spotlight_history_', '');
 
-            
+
             const affected = tabs.filter(t => t.sessionId === sid);
             if (affected.length > 0) {
-                
+
                 const isGeneratingLocally = (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid);
 
                 if (!isGeneratingLocally) {
@@ -806,14 +796,14 @@ async function handleRemoteSync(changes, areaName) {
                                 return;
                             }
                             if (tab.historyEl && tab.historyEl.innerHTML !== newHtml) {
-                                
-                                
+
+
                                 const hasLocalMinHeight = tab.historyEl.querySelector('.lumina-dict-entry[style*="min-height"]');
                                 if (hasLocalMinHeight && !newHtml.includes('min-height')) {
                                     return;
                                 }
 
-                                
+
                                 const wasAtBottom = Math.abs(tab.historyEl.scrollHeight - tab.historyEl.scrollTop - tab.historyEl.clientHeight) < 30;
                                 const savedScrollTop = tab.historyEl.scrollTop;
 
@@ -821,7 +811,7 @@ async function handleRemoteSync(changes, areaName) {
                                 normalizeRestoredHistory(tab.historyEl);
                                 if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
 
-                                
+
                                 const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
                                 const lastEntry = entries[entries.length - 1];
                                 if (lastEntry && tab.chatUIInstance) {
@@ -829,11 +819,11 @@ async function handleRemoteSync(changes, areaName) {
                                     tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
                                 }
 
-                                
+
                                 if (!wasAtBottom) {
                                     tab.historyEl.scrollTop = savedScrollTop;
                                 } else {
-                                    
+
                                     requestAnimationFrame(() => {
                                         if (tab.historyEl) {
                                             tab.historyEl.scrollTop = tab.historyEl.scrollHeight;
@@ -841,12 +831,12 @@ async function handleRemoteSync(changes, areaName) {
                                     });
                                 }
 
-                                
+
                                 tab.historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions').forEach(ans => {
                                     LuminaChatUI.processContainer(ans);
                                 });
 
-                                
+
                                 tab.historyEl.querySelectorAll('.lumina-dict-entry[data-entry-type="translation"]').forEach(entry => {
                                     LuminaChatUI._setupTranslationHighlight(entry);
                                     LuminaChatUI.balanceTranslationCard(entry, false);
@@ -859,12 +849,12 @@ async function handleRemoteSync(changes, areaName) {
         }
     }
 
-    
+
     if (changes['lumina_chat_sessions']) {
         const oldSessions = changes['lumina_chat_sessions'].oldValue || {};
         const newSessions = changes['lumina_chat_sessions'].newValue || {};
 
-        
+
         const deletedIds = Object.keys(oldSessions).filter(id => !newSessions[id]);
 
         if (deletedIds.length > 0) {
@@ -872,7 +862,7 @@ async function handleRemoteSync(changes, areaName) {
 
             if (tabsToClose.length > 0) {
 
-                
+
                 tabsToClose.forEach(tab => {
                     if (tab.historyEl) tab.historyEl.remove();
                     tabGroups.forEach(g => {
@@ -880,16 +870,16 @@ async function handleRemoteSync(changes, areaName) {
                     });
                 });
 
-                
+
                 tabs = tabs.filter(t => !tabsToClose.includes(t));
 
-                
+
                 tabGroups = tabGroups.filter(g => g.tabIds.length > 0);
 
                 if (tabs.length === 0) {
                     createTab();
                 } else {
-                    
+
                     const idMap = {};
                     tabs.forEach((t, i) => {
                         const newId = `tab-${i + 1}`;
@@ -902,7 +892,7 @@ async function handleRemoteSync(changes, areaName) {
                     });
                     tabCounter = tabs.length;
 
-                    
+
                     if (activeGroupIndex >= tabGroups.length) {
                         activeGroupIndex = Math.max(0, tabGroups.length - 1);
                     }
@@ -933,14 +923,14 @@ function normalizeTabs() {
         }
     });
 
-    
+
     tabGroups.forEach(group => {
         if (group.tabIds) {
             group.tabIds = group.tabIds.map(oldId => idMap[oldId] || oldId);
         }
     });
 
-    
+
     tabCounter = tabs.length;
 
     renderTabs();
@@ -1026,12 +1016,10 @@ async function initTabs() {
         topBar.style.display = 'flex';
     }
 
-    const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container') || container;
-    const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
-    [primaryContainer, secondaryContainer].forEach(c => {
-        if (!c) return;
-        c.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
-    });
+    const primaryContainer = document.querySelector('.lumina-chat-container') || container;
+    if (primaryContainer) {
+        primaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
+    }
 
     tabs = [];
 
@@ -1157,13 +1145,11 @@ async function initTabs() {
         console.error('[Spotlight] initTabs failed:', e);
     }
 
-    
-    const primaryC = document.querySelector('#pane-primary .lumina-chat-container') || container;
-    const secondaryC = document.querySelector('#pane-secondary .lumina-chat-container');
-    bindContainerWheelForward(primaryC);
-    if (secondaryC) bindContainerWheelForward(secondaryC);
 
-    
+    const primaryC = document.querySelector('.lumina-chat-container') || container;
+    bindContainerWheelForward(primaryC);
+
+
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) {
         const newBtn = newTabBtn.cloneNode(true);
@@ -1198,7 +1184,7 @@ async function initTabs() {
         });
     }
 
-    
+
     window.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 't') {
             e.preventDefault();
@@ -1214,7 +1200,7 @@ async function initTabs() {
             e.preventDefault();
             let targetIdx = activeTabIndex;
             try {
-                
+
                 const hoverEls = document.querySelectorAll(':hover');
                 if (hoverEls.length > 0) {
                     const deepestHover = hoverEls[hoverEls.length - 1];
@@ -1256,7 +1242,7 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
         ? tabs.find(t => t.id === previousGroup.tabIds[1])
         : null;
 
-    
+
     if (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) {
         const oldGroup = tabGroups[activeGroupIndex];
         const oldPrimary = tabs.find(t => t.id === oldGroup.tabIds[0]);
@@ -1269,7 +1255,7 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     previousPrimaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
     previousSecondaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
 
-    
+
     tabs.forEach(t => {
         if (t.historyEl) t.historyEl.style.display = 'none';
     });
@@ -1287,78 +1273,24 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
 
     activeTabIndex = tabs.indexOf(primaryTab);
 
-    isSplitMode = !!secondaryTab;
+    isSplitMode = false;
 
-    const divider = document.getElementById('pane-divider');
-    const secondaryPane = document.getElementById('pane-secondary');
-    const primaryPane = document.getElementById('pane-primary');
+    secondaryActiveTabIndex = -1;
 
-    if (isSplitMode) {
-        secondaryActiveTabIndex = tabs.indexOf(secondaryTab);
+    const primaryContainer = document.querySelector('.lumina-chat-container');
+    primaryContainer.appendChild(primaryTab.historyEl);
+    primaryTab.historyEl.style.display = 'block';
 
-        if (divider) divider.style.display = 'block';
-        if (secondaryPane) secondaryPane.style.display = 'flex';
-
-        const ratio = group.ratio || 50;
-        primaryPane.style.flex = ratio;
-        secondaryPane.style.flex = (100 - ratio);
-
-        
-        const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container');
-        primaryContainer.appendChild(primaryTab.historyEl);
-        primaryTab.historyEl.style.display = 'block';
-
-        chatUI = primaryTab.chatUIInstance;
-        chatUI.inputPaneEl = document.getElementById('input-area-primary');
-        if (sharedInputUI) {
-            sharedInputUI.historyEl = primaryTab.historyEl;
-            sharedInputUI.restoreInputState(primaryTab.inputState || null);
-            sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
-            if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-        }
-        syncTabUI(primaryTab, false, skipScrollRestore);
-        primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
-
-        
-        const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
-        secondaryContainer.appendChild(secondaryTab.historyEl);
-        secondaryTab.historyEl.style.display = 'block';
-        bindContainerWheelForward(secondaryContainer);
-
-        chatUISecondary = secondaryTab.chatUIInstance;
-        chatUISecondary.inputPaneEl = document.getElementById('input-area-secondary');
-        if (sharedInputUISecondary) {
-            sharedInputUISecondary.historyEl = secondaryTab.historyEl;
-            sharedInputUISecondary.restoreInputState(secondaryTab.inputStateSecondary || null);
-            sharedInputUISecondary.activeTabModel = secondaryTab.selectedModel ? { ...secondaryTab.selectedModel } : null;
-            if (typeof sharedInputUISecondary.refreshModelSelector === 'function') sharedInputUISecondary.refreshModelSelector();
-        }
-        syncTabUI(secondaryTab, true, skipScrollRestore);
-        secondaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
-
-    } else {
-        secondaryActiveTabIndex = -1;
-
-        if (divider) divider.style.display = 'none';
-        if (secondaryPane) secondaryPane.style.display = 'none';
-        primaryPane.style.flex = '1';
-
-        
-        const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container');
-        primaryContainer.appendChild(primaryTab.historyEl);
-        primaryTab.historyEl.style.display = 'block';
-
-        chatUI = primaryTab.chatUIInstance;
-        chatUI.inputPaneEl = document.getElementById('input-area-primary');
-        if (sharedInputUI) {
-            sharedInputUI.historyEl = primaryTab.historyEl;
-            sharedInputUI.restoreInputState(primaryTab.inputState || null);
-            sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
-            if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-        }
-        syncTabUI(primaryTab, false, skipScrollRestore);
-        primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
+    chatUI = primaryTab.chatUIInstance;
+    chatUI.inputPaneEl = document.getElementById('input-area');
+    if (sharedInputUI) {
+        sharedInputUI.historyEl = primaryTab.historyEl;
+        sharedInputUI.restoreInputState(primaryTab.inputState || null);
+        sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
+        if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
     }
+    syncTabUI(primaryTab, false, skipScrollRestore);
+    primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
 
     loadCurrentWebSelection(primaryTab?.id || null);
     updateWebChips();
@@ -1409,19 +1341,10 @@ function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
         });
     }
 
-    if (!isSecondary) {
-        const regenBtn = document.querySelector('#pane-primary #lumina-regenerate-btn') ||
-            document.getElementById('lumina-regenerate-btn');
-        if (regenBtn) {
-            const hasEntry = tab.historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card');
-            regenBtn.style.display = hasEntry ? 'flex' : 'none';
-        }
-    } else {
-        const regenBtn = document.querySelector('#pane-secondary #lumina-regenerate-btn');
-        if (regenBtn) {
-            const hasEntry = tab.historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card');
-            regenBtn.style.display = hasEntry ? 'flex' : 'none';
-        }
+    const regenBtn = document.getElementById('lumina-regenerate-btn');
+    if (regenBtn) {
+        const hasEntry = tab.historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card');
+        regenBtn.style.display = hasEntry ? 'flex' : 'none';
     }
 
     if (!skipScrollRestore) {
@@ -1432,15 +1355,15 @@ function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
 function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
     isApplyingSplit = true;
 
-    
+
     const group1Idx = tabGroups.findIndex(g => g.tabIds.includes(primaryTabId));
     let group2Idx = tabGroups.findIndex(g => g.tabIds.includes(secondaryTabId));
 
     if (group1Idx === -1 || group2Idx === -1) return;
 
-    
+
     if (group1Idx === group2Idx) {
-        
+
         const g = tabGroups[group1Idx];
         if (g.tabIds[0] !== primaryTabId) {
             g.tabIds.reverse();
@@ -1450,18 +1373,18 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
         return;
     }
 
-    
+
     const g1 = tabGroups[group1Idx];
     const g2 = tabGroups[group2Idx];
 
     g2.tabIds = g2.tabIds.filter(id => id !== secondaryTabId);
 
-    
+
     if (g1.tabIds.length >= 2) {
         const expelledTabId = g1.tabIds[1];
         g1.tabIds = [g1.tabIds[0]];
 
-        
+
         const tabIndex = tabs.findIndex(t => t.id === expelledTabId);
         if (tabIndex !== -1) {
             const tabToRemove = tabs[tabIndex];
@@ -1470,17 +1393,17 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
         }
     }
 
-    
+
     g1.tabIds.push(secondaryTabId);
     g1.ratio = ratio;
 
-    
+
     if (g2.tabIds.length === 0) {
         const idxToRemove = tabGroups.findIndex(g => g.id === g2.id);
         if (idxToRemove !== -1) tabGroups.splice(idxToRemove, 1);
     }
 
-    
+
     const newG1Idx = tabGroups.findIndex(g => g.id === g1.id);
 
     switchGroup(newG1Idx);
@@ -1489,117 +1412,9 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
 }
 
 function deactivateSplit() {
-    if (activeGroupIndex < 0 || activeGroupIndex >= tabGroups.length) return;
-    const group = tabGroups[activeGroupIndex];
-    if (group.tabIds.length < 2) return;
-
-    
-    const expelledTabId = group.tabIds[1];
-    group.tabIds = [group.tabIds[0]];
-
-    tabGroups.splice(activeGroupIndex + 1, 0, { id: `group-${groupCounter++}`, tabIds: [expelledTabId], ratio: 50 });
-
-    switchGroup(activeGroupIndex);
-    saveTabsState();
 }
 
 function setupResizer() {
-    const divider = document.getElementById('pane-divider');
-    const overlay = document.getElementById('resizing-overlay');
-    const primaryPane = document.getElementById('pane-primary');
-    const secondaryPane = document.getElementById('pane-secondary');
-
-    if (!divider || !overlay) return;
-
-    let lastMouseDownTime = 0;
-    let lastMouseDownX = 0;
-
-    divider.onmousedown = (e) => {
-        const now = Date.now();
-        const timeSinceLast = now - lastMouseDownTime;
-        const moveSinceLast = Math.abs(e.clientX - lastMouseDownX);
-
-        
-        if (timeSinceLast < 400 && moveSinceLast < 5) {
-            lastMouseDownTime = 0; 
-            if (!isSplitMode) return;
-            const group = tabGroups[activeGroupIndex];
-            if (!group || group.tabIds.length < 2) return;
-
-            const tab0 = tabs.find(t => t.id === group.tabIds[0]); 
-            const tab1 = tabs.find(t => t.id === group.tabIds[1]); 
-
-            
-            if (tab0 && sharedInputUI?.getInputState) tab0.inputState = sharedInputUI.getInputState();
-            if (tab1 && sharedInputUISecondary?.getInputState) tab1.inputStateSecondary = sharedInputUISecondary.getInputState();
-
-            
-            [group.tabIds[0], group.tabIds[1]] = [group.tabIds[1], group.tabIds[0]];
-
-            
-            group.ratio = 100 - (group.ratio || 50);
-
-            
-            
-            
-            if (tab0 && tab1) {
-                const promoted = tab1.inputStateSecondary;
-                const demoted = tab0.inputState;
-                tab1.inputState = promoted;
-                tab0.inputStateSecondary = demoted;
-            }
-
-            switchGroup(activeGroupIndex);
-            saveTabsState();
-            return;
-        }
-
-        lastMouseDownTime = now;
-        lastMouseDownX = e.clientX;
-
-        resizerDragging = true;
-        divider.classList.add('dragging');
-        overlay.style.display = 'block';
-
-        const SNAP_CENTER = 50;
-        const SNAP_ZONE = 2; 
-
-        const onMouseMove = (moveEvent) => {
-            if (!resizerDragging) return;
-            const containerWidth = document.getElementById('spotlight-main-area').clientWidth;
-            let ratio = (moveEvent.pageX / containerWidth) * 100;
-            ratio = Math.max(20, Math.min(80, ratio)); 
-
-            
-            if (Math.abs(ratio - SNAP_CENTER) <= SNAP_ZONE) {
-                ratio = SNAP_CENTER;
-                divider.classList.add('snapped');
-            } else {
-                divider.classList.remove('snapped');
-            }
-
-            primaryPane.style.flex = ratio;
-            secondaryPane.style.flex = (100 - ratio);
-
-            
-            if (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) {
-                tabGroups[activeGroupIndex].ratio = ratio;
-            }
-        };
-
-        const onMouseUp = () => {
-            resizerDragging = false;
-            divider.classList.remove('dragging');
-            divider.classList.remove('snapped');
-            overlay.style.display = 'none';
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
-            saveTabsState();
-        };
-
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-    };
 }
 
 function closeTab(tabId) {
@@ -1608,14 +1423,14 @@ function closeTab(tabId) {
 
     const tabToRemove = tabs[tabIndex];
 
-    
+
     const groupIdx = tabGroups.findIndex(g => g.tabIds.includes(tabId));
     if (groupIdx !== -1) {
         const group = tabGroups[groupIdx];
         group.tabIds = group.tabIds.filter(id => id !== tabId);
 
         if (group.tabIds.length === 0) {
-            
+
             tabGroups.splice(groupIdx, 1);
             if (activeGroupIndex >= tabGroups.length) {
                 activeGroupIndex = Math.max(0, tabGroups.length - 1);
@@ -1623,27 +1438,27 @@ function closeTab(tabId) {
                 activeGroupIndex--;
             }
         } else if (activeGroupIndex === groupIdx) {
-            
-            
+
+
         }
     }
 
-    
+
     tabs.splice(tabIndex, 1);
     if (tabToRemove.historyEl) tabToRemove.historyEl.remove();
 
-    
+
     if (tabToRemove.sessionId) {
         chrome.storage.local.remove([`spotlight_history_${tabToRemove.sessionId}`]);
     }
 
-    
+
     const storageKeys = Object.keys(localStorage).filter(key =>
         key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${tabId}_`)
     );
     storageKeys.forEach(key => localStorage.removeItem(key));
 
-    
+
     const idMap = {};
     tabs.forEach((t, i) => {
         const newId = `tab-${i + 1}`;
@@ -1667,14 +1482,14 @@ function closeTab(tabId) {
 function closeGroup(groupIndex) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
     const group = tabGroups[groupIndex];
-    
+
     const idsToClose = [...group.tabIds];
 
     idsToClose.forEach(id => closeTab(id));
 }
 
 function updateTabTitle(chatUIInstance, title) {
-    
+
     const tab = tabs.find(t => t.chatUIInstance === chatUIInstance);
     if (tab) {
         tab.title = title;
@@ -1696,14 +1511,14 @@ function saveTabsState() {
 
     chrome.storage.local.set({
         [KEYS.tabs]: tabsMetadata,
-        [KEYS.tabCounter]: tabCounter, 
-        [KEYS.activeTabIndex]: activeTabIndex, 
+        [KEYS.tabCounter]: tabCounter,
+        [KEYS.activeTabIndex]: activeTabIndex,
         [KEYS.tabGroups]: tabGroups,
         [KEYS.activeGroupIndex]: activeGroupIndex,
         [KEYS.groupCounter]: groupCounter
     });
 
-    
+
     tabs.forEach(tab => {
         if (tab.sessionId) {
             if (tab.rawHistoryHtml) {
@@ -1726,7 +1541,7 @@ function normalizeRestoredHistory(historyEl) {
     historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
         if (entry.__normalized) return;
         entry.__normalized = true;
-        
+
         entry.style.removeProperty('min-height');
 
         let questionEl = entry.querySelector('.lumina-chat-question') || entry.querySelector('[data-entry-type]');
@@ -1777,17 +1592,17 @@ let startX = 0;
 let draggedElement = null;
 let initialRects = [];
 let totalDeltaX = 0;
-let groupPreviewTargetIndex = -1; 
+let groupPreviewTargetIndex = -1;
 
 function getGroupColor(sessionId, tabIndex) {
-    
+
     if (isSplitMode) {
         if (tabIndex === activeTabIndex || tabIndex === secondaryActiveTabIndex) {
-            return '#0056D2'; 
+            return '#0056D2';
         }
     }
 
-    
+
     const sessionCount = {};
     tabs.forEach(t => {
         sessionCount[t.sessionId] = (sessionCount[t.sessionId] || 0) + 1;
@@ -1816,11 +1631,11 @@ function renderTabs() {
         const groupEl = document.createElement('div');
         const isActive = groupIndex === activeGroupIndex;
         const isSplitGroup = group.tabIds.length > 1;
-        
+
         groupEl.className = `spotlight-tab ${isActive ? 'active' : ''} ${isSplitGroup ? 'is-split' : ''}`;
         groupEl.dataset.groupIndex = groupIndex;
 
-        
+
         group.tabIds.forEach((tabId, subIdx) => {
             const tab = tabs.find(t => t.id === tabId);
             if (!tab) return;
@@ -1841,7 +1656,7 @@ function renderTabs() {
             closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" /></svg>';
             closeBtn.onclick = (e) => {
                 e.stopPropagation();
-                
+
                 if (isSplitGroup && !isActive && subIdx === group.tabIds.length - 1) {
                     closeGroup(groupIndex);
                 } else {
@@ -1852,7 +1667,7 @@ function renderTabs() {
             subTabEl.appendChild(titleSpan);
             subTabEl.appendChild(closeBtn);
 
-            
+
             let subTabClickTimer = null;
             subTabEl.onmousedown = (e) => {
                 if (e.target.closest('.spotlight-tab-close')) return;
@@ -1861,7 +1676,7 @@ function renderTabs() {
                 let isInactiveTab = false;
 
                 if (groupIndex === activeGroupIndex) {
-                    
+
                     if (subTabClickTimer) {
                         clearTimeout(subTabClickTimer);
                         subTabClickTimer = null;
@@ -1874,11 +1689,11 @@ function renderTabs() {
                         }, 300);
                     }
                 } else {
-                    
+
                     isInactiveTab = true;
                 }
 
-                
+
                 isDragging = false;
                 initialDraggedIndex = groupIndex;
                 startX = e.pageX;
@@ -1887,10 +1702,10 @@ function renderTabs() {
                 const onMouseMove = (moveEvent) => {
                     if (Math.abs(moveEvent.pageX - startX) > 5) {
                         if (!isDragging) {
-                            
+
                             if (isInactiveTab) {
                                 switchGroup(groupIndex);
-                                
+
                                 const list = document.getElementById('tabs-list');
                                 draggedElement = list.querySelector(`[data-group-index="${groupIndex}"]`);
                             }
@@ -1918,10 +1733,10 @@ function renderTabs() {
                     if (isDragging) {
                         handleMouseUp();
                     } else if (isInactiveTab) {
-                        
+
                         activateSubTab(groupIndex, tabId);
                     } else if (isSplitGroup) {
-                        
+
                         activateSubTab(groupIndex, tabId);
                     }
                 };
@@ -1959,8 +1774,8 @@ function handleMouseMove(e) {
     const currentRightEdge = currentLeftEdge + draggedWidth;
     const draggedCenterX = currentLeftEdge + draggedWidth / 2;
 
-    
-    
+
+
     let newGroupPreviewTarget = -1;
     if (draggedGroup && draggedGroup.tabIds.length === 1) {
         groupEls.forEach((el, idx) => {
@@ -1972,12 +1787,12 @@ function handleMouseMove(e) {
             const twoThird = elRect.left + elRect.width * 2 / 3;
             const comingFromRight = initialDraggedIndex > idx;
             if (comingFromRight) {
-                
+
                 if (currentLeftEdge > oneThird && currentLeftEdge <= twoThird) {
                     newGroupPreviewTarget = idx;
                 }
             } else {
-                
+
                 if (currentRightEdge >= oneThird && currentRightEdge < twoThird) {
                     newGroupPreviewTarget = idx;
                 }
@@ -1985,7 +1800,7 @@ function handleMouseMove(e) {
         });
     }
 
-    
+
     if (newGroupPreviewTarget !== groupPreviewTargetIndex) {
         if (groupPreviewTargetIndex !== -1 && groupEls[groupPreviewTargetIndex]) {
             groupEls[groupPreviewTargetIndex].classList.remove('group-merge-preview');
@@ -1998,7 +1813,7 @@ function handleMouseMove(e) {
         }
     }
 
-    
+
     if (groupPreviewTargetIndex !== -1) {
         groupEls.forEach((el, idx) => {
             if (idx !== initialDraggedIndex) el.style.transform = '';
@@ -2006,15 +1821,15 @@ function handleMouseMove(e) {
         return;
     }
 
-    
+
     groupEls.forEach((el, idx) => {
         if (idx === initialDraggedIndex) return;
 
         const elRect = initialRects[idx];
 
-        
+
         if (el === newTabBtn) {
-            const marginLeft = 4; 
+            const marginLeft = 4;
             const triggerLeft = elRect.left - marginLeft;
             if (currentRightEdge > triggerLeft) {
                 const pushDistance = currentRightEdge - triggerLeft;
@@ -2045,7 +1860,7 @@ function handleMouseUp() {
     const list = document.getElementById('tabs-list');
     const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
 
-    
+
     if (groupPreviewTargetIndex !== -1) {
         const targetGroup = tabGroups[groupPreviewTargetIndex];
         const draggedGroup = tabGroups[initialDraggedIndex];
@@ -2054,7 +1869,7 @@ function handleMouseUp() {
             const primaryTabId = targetGroup.tabIds[0];
             const secondaryTabId = draggedGroup.tabIds[0];
 
-            
+
             groupEls.forEach(el => {
                 el.style.transform = '';
                 el.style.zIndex = '';
@@ -2079,7 +1894,7 @@ function handleMouseUp() {
         groupPreviewTargetIndex = -1;
     }
 
-    
+
     const draggedWidth = initialRects[initialDraggedIndex].width;
     const currentLeftEdge = initialRects[initialDraggedIndex].left + totalDeltaX;
     const currentRightEdge = currentLeftEdge + draggedWidth;
@@ -2110,7 +1925,7 @@ function handleMouseUp() {
         }
     }
 
-    
+
     groupEls.forEach(el => {
         el.style.transform = '';
         el.style.zIndex = '';
@@ -2142,7 +1957,7 @@ function handleMouseUp() {
 function initSpotlightAskSelection() {
     if (window.LuminaSelection) {
         LuminaSelection.init({
-            shadowRoot: null, 
+            shadowRoot: null,
             onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate) => {
                 if (isDictionary || isTranslate) {
                     const selection = window.getSelection();
@@ -2162,7 +1977,7 @@ function initSpotlightAskSelection() {
                     }
                 }
 
-                
+
                 if (window.LuminaAnnotation && range) {
                     window.LuminaAnnotation.highlight(range);
                 }
@@ -2172,7 +1987,7 @@ function initSpotlightAskSelection() {
                     : activeTabIndex;
                 const targetTab = tabs[targetTabIdx];
 
-                
+
                 if (sourceEntry && targetTab && targetTab.chatUIInstance) {
                     const questionDiv = sourceEntry.querySelector('.lumina-chat-question');
                     if (questionDiv) {
@@ -2236,14 +2051,14 @@ function initSpotlightAskSelection() {
                 return;
             }
 
-            
+
             const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
             if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
                 if (window.LuminaSelection) LuminaSelection.hide();
                 return;
             }
 
-            
+
             const commonNode = range.commonAncestorContainer;
             const secondaryPane = document.getElementById('pane-secondary');
             spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -2277,7 +2092,7 @@ function handleCommentSubmission(entry) {
         });
         constructedPrompt += "\nPlease revise the content accordingly.";
 
-        
+
         let targetTabIdx = -1;
         const paneSecondary = document.getElementById('pane-secondary');
         const isInSecondary = paneSecondary && paneSecondary.contains(entry);
@@ -2290,7 +2105,7 @@ function handleCommentSubmission(entry) {
 
         let targetTab = (targetTabIdx >= 0) ? tabs[targetTabIdx] : null;
 
-        
+
         if (!targetTab) {
             console.warn('[Lumina DEBUG] No targetTab found by index, searching tabs array...');
             targetTab = tabs.find(t => t && t.chatUIInstance) || null;
@@ -2307,7 +2122,7 @@ function handleCommentSubmission(entry) {
             console.error('[Lumina DEBUG] handleSubmit is NOT a function!');
         }
 
-        
+
         const btn = entry.querySelector('.lumina-send-comment-btn');
         if (btn) btn.remove();
 
@@ -2319,19 +2134,19 @@ function handleCommentSubmission(entry) {
 
 
 function setupWebSourceTracking() {
-    
+
     syncCurrentBrowserTab();
 
-    
+
     chrome.tabs.onActivated.addListener(() => {
         syncCurrentBrowserTab();
     });
 
-    
+
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'complete' || changeInfo.title || changeInfo.url) {
-            
-            
+
+
             if (tab.active) {
                 syncCurrentBrowserTab();
             }
@@ -2351,27 +2166,27 @@ function setupWebSourceTracking() {
                 refreshWebTabPicker();
             }
 
-            
+
             if (changeInfo.status === 'complete') {
                 refreshWebSourceTokensForTab(tabId);
             }
         }
     });
 
-    
+
     chrome.tabs.onRemoved.addListener((tabId) => {
         updateWebSelectionForTab(tabId, (source, sourceTabId) => {
             if (String(source.tabId) === sourceTabId) return null;
             return source;
         });
 
-        
+
         pinnedWebSources = pinnedWebSources.filter((source) => String(source.tabId) !== String(tabId));
 
-        
+
         syncCurrentBrowserTab();
 
-        
+
         updateWebChips();
     });
 }
@@ -2381,8 +2196,8 @@ function isWebPageUrl(url) {
 }
 
 function syncCurrentBrowserTab() {
-    
-    
+
+
     const queryOptions = isSidePanel ? { active: true, currentWindow: true } : { active: true, lastFocusedWindow: true };
 
     chrome.tabs.query(queryOptions, (tabs) => {
@@ -2390,14 +2205,14 @@ function syncCurrentBrowserTab() {
 
         saveCurrentWebSelection();
 
-        
-        
+
+
         if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
-            
+
             chrome.windows.getAll({ populate: true }, (windows) => {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
-                    .sort((a, b) => b.id - a.id); 
+                    .sort((a, b) => b.id - a.id);
 
                 const realTab = sortedWindows
                     .map(w => w.tabs.find(t => t.active))
@@ -2412,7 +2227,7 @@ function syncCurrentBrowserTab() {
                     loadCurrentWebSelection();
                     updateWebChips();
                     refreshWebSourceTokensForTab(realTab.id);
-                    
+
                     [chatUI, chatUISecondary].forEach(ui => {
                         if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
                     });
@@ -2434,7 +2249,7 @@ function syncCurrentBrowserTab() {
             loadCurrentWebSelection();
             updateWebChips();
             refreshWebSourceTokensForTab(activeTab.id);
-            
+
             [chatUI, chatUISecondary].forEach(ui => {
                 if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
             });
@@ -2442,7 +2257,7 @@ function syncCurrentBrowserTab() {
             currentBrowserTab = null;
             pinnedWebSources = [];
             updateWebChips();
-            
+
             [chatUI, chatUISecondary].forEach(ui => {
                 if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
             });
@@ -2549,7 +2364,7 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                     if (activeSpotlightTabId) {
                         saveWebSelectionForScope(activeSpotlightTabId, nextSelection);
 
-                        
+
                         const primaryTabId = getCurrentSpotlightTabId();
                         if (String(activeSpotlightTabId) === String(primaryTabId)) {
                             pinnedWebSources = nextSelection.map((item) => ({ ...item }));
@@ -2695,7 +2510,7 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
             try {
                 const domain = new URL(source.url).hostname;
                 favIconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-            } catch (e) {}
+            } catch (e) { }
         }
         if (favIconUrl) {
             const faviconImg = document.createElement('img');
@@ -2722,16 +2537,16 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
         const container = chip.closest('.lumina-web-chips-group');
         if (container) container.dataset.muteTooltips = 'true';
 
-        
+
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
             try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
         }
 
         if (source.isSummary) {
-            
+
             saveWebSelectionForScope(spotlightTabId, []);
 
-            
+
             const activeId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
             if (String(spotlightTabId) === String(activeId)) {
                 pinnedWebSources = [];
@@ -2742,10 +2557,10 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
         }
 
         if (isGhost) {
-            
+
             toggleWebSourcePin(source, true, spotlightTabId);
         } else {
-            
+
             toggleWebSourcePin(source, null, spotlightTabId);
         }
     });
@@ -2866,7 +2681,7 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
     const idx = currentSelection.findIndex(p => String(p.tabId) === String(source.tabId));
     if (idx > -1) {
         if (forceState === true) {
-            
+
             currentSelection[idx] = {
                 tabId: source.tabId,
                 title: source.title || currentSelection[idx].title || 'Untitled',
@@ -2876,11 +2691,11 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
             updateWebChips();
             return;
         }
-        
+
         currentSelection.splice(idx, 1);
     } else {
-        if (forceState === false) return; 
-        
+        if (forceState === false) return;
+
         currentSelection.push({
             tabId: source.tabId,
             title: source.title,
@@ -2889,7 +2704,7 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
     }
     saveWebSelectionForScope(targetSpotlightTabId, currentSelection);
 
-    
+
     const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
     if (String(targetSpotlightTabId) === String(activeTabId)) {
         pinnedWebSources = currentSelection.map((item) => ({ ...item }));
@@ -2921,16 +2736,15 @@ async function init() {
         }
     });
 
-    
+
     initSpotlightAskSelection();
 
-    
-    const inputAreaPrimary = document.getElementById('input-area-primary');
-    const inputAreaSecondary = document.getElementById('input-area-secondary');
 
-    if (inputAreaPrimary) {
-        inputAreaPrimary.innerHTML = LuminaChatUI.getChatInputHTML(true); 
-        sharedInputUI = new LuminaChatUI(inputAreaPrimary, {
+    const inputArea = document.getElementById('input-area');
+
+    if (inputArea) {
+        inputArea.innerHTML = LuminaChatUI.getChatInputHTML(true);
+        sharedInputUI = new LuminaChatUI(inputArea, {
             isSpotlight: true,
             isPrimaryInput: true,
             alwaysExpanded: true,
@@ -2941,35 +2755,22 @@ async function init() {
         });
     }
 
-    if (inputAreaSecondary) {
-        inputAreaSecondary.innerHTML = LuminaChatUI.getChatInputHTML(false);
-        sharedInputUISecondary = new LuminaChatUI(inputAreaSecondary, {
-            isSpotlight: true,
-            isPrimaryInput: true, 
-            alwaysExpanded: true,
-            onSubmit: (text, images, extra) => {
-                const activeTab = tabs[secondaryActiveTabIndex];
-                if (activeTab) handleSubmit(text, images, extra, activeTab);
-            }
-        });
-    }
 
-    
     setupResizer();
 
-    
+
     await initTabs();
 
-    
+
     if (tabs.length === 0) {
         createTab();
     } else {
-        
+
         if (tabs[activeTabIndex]) {
             chatUI = tabs[activeTabIndex].chatUIInstance;
             if (sharedInputUI) {
                 sharedInputUI.historyEl = tabs[activeTabIndex].historyEl;
-                
+
                 sharedInputUI._updateActionBtnState();
             }
         }
@@ -2982,10 +2783,10 @@ async function init() {
 
     // History loaded directly in initTabs if urlSessionId is present
 
-    
+
     setupRegenerateButtons();
 
-    
+
     chrome.storage.local.get(['shortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
@@ -2996,10 +2797,10 @@ async function init() {
             applyFontSize(items.globalDefaults.fontSize);
         }
 
-        
+
         if (items.pendingMicToggle) {
             const diff = Date.now() - items.pendingMicToggle;
-            if (diff < 5000) { 
+            if (diff < 5000) {
                 chrome.storage.local.remove(['pendingMicToggle']);
                 setTimeout(() => {
                     const micBtn = document.getElementById('mic-btn');
@@ -3011,14 +2812,14 @@ async function init() {
         }
 
         setupGlobalListeners();
-        setupWebSourceTracking(); 
+        setupWebSourceTracking();
         isInitializing = false;
     });
 
-    
+
     chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'local') {
-            
+
             chrome.windows.getCurrent((win) => {
                 const pendingKey = win ? `pending_sidepanel_query_${win.id}` : null;
                 if (pendingKey && changes[pendingKey] && changes[pendingKey].newValue) {
@@ -3026,7 +2827,7 @@ async function init() {
                 }
             });
 
-            
+
             if (changes.shortcuts) shortcuts = changes.shortcuts.newValue || {};
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
             if (changes.askSelectionPopupEnabled) {
@@ -3036,30 +2837,30 @@ async function init() {
             if (changes.readWebpage) readWebpageEnabled = !!changes.readWebpage.newValue;
             if (changes.advancedParamsByModel) advancedParamsByModel = changes.advancedParamsByModel.newValue || {};
 
-            
+
             if (changes.fontSize) {
                 applyFontSize(changes.fontSize.newValue);
             } else if (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.fontSize) {
                 applyFontSize(changes.globalDefaults.newValue.fontSize);
             }
 
-            
+
             handleRemoteSync(changes, areaName);
         }
     });
 
-    
+
     function processPendingQuery(data, storageKey) {
         if (!data) return;
 
-        
+
         if (storageKey) {
             chrome.storage.local.remove([storageKey]);
         }
 
         const { query, displayQuery, queryId, mode, sourceTab, timestamp } = data;
 
-        
+
         if (timestamp && (Date.now() - timestamp > 120000)) {
             console.log('[Spotlight] Skipping stale pending query:', queryId);
             return;
@@ -3074,22 +2875,22 @@ async function init() {
             if (currentTab && !isInitializing) {
                 if (queryId) handledQueryIds.add(queryId);
 
-                
+
                 if (sourceTab) {
                     toggleWebSourcePin(sourceTab, true);
                 }
 
                 handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
             } else {
-                
+
                 setTimeout(checkReady, 50);
             }
         };
         checkReady();
     }
 
-    
-    
+
+
     document.addEventListener('lumina:spotlight-model-change', (e) => {
         const isSecondary = e.target.closest('#pane-secondary') !== null;
         const targetIndex = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
@@ -3101,20 +2902,20 @@ async function init() {
             if (targetSharedUI) {
                 targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
             }
-            
+
             chrome.storage.local.set({ lastUsedModel: activeTab.selectedModel });
         }
     });
 
     chrome.runtime.onMessage.addListener((request) => {
         if (request.action === 'settings_updated') {
-            
+
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
             if (size) applyFontSize(size);
         } else if (request.action === 'clear_selection') {
-            
+
             window.getSelection().removeAllRanges();
-            
+
             ensureFocus();
         } else if (request.action === 'new_chat') {
             resetChat();
@@ -3128,7 +2929,7 @@ async function init() {
                     }
                     if (queryId) handledQueryIds.add(queryId);
 
-                    
+
                     if (sourceTab) {
                         toggleWebSourcePin(sourceTab, true);
                     }
@@ -3145,7 +2946,7 @@ async function init() {
         }
     });
 
-    
+
     chrome.windows.getCurrent(async (win) => {
         if (!win || !win.id) return;
         const key = `pending_sidepanel_query_${win.id}`;
@@ -3172,30 +2973,30 @@ async function init() {
         });
     }
 
-    
+
     function ensureFocus() {
         const targetInput = getHoveredInputEl();
         if (!targetInput) return;
 
-        
+
         const sidebar = document.getElementById('spotlight-sidebar');
         if (sidebar && sidebar.classList.contains('active')) return;
 
         const setCursorToEnd = (el) => {
             try {
                 el.focus();
-                
+
                 const len = el.value.length;
                 el.setSelectionRange(len, len);
             } catch (e) {
-                
+
             }
         };
 
-        
+
         setCursorToEnd(targetInput);
 
-        
+
         setTimeout(() => {
             const sidebar = document.getElementById('spotlight-sidebar');
             const el = getHoveredInputEl();
@@ -3208,26 +3009,26 @@ async function init() {
         }, 150);
     }
 
-    
+
     ensureFocus();
 
-    
+
     window.addEventListener('focus', () => {
         const selection = window.getSelection().toString().trim();
-        
+
         if (selection && (selection.includes('--lumina-') || selection.includes('var(--lumina'))) {
             window.getSelection().removeAllRanges();
             ensureFocus();
             return;
         }
 
-        
+
         if (!selection) {
             ensureFocus();
         }
     });
 
-    
+
     setInterval(() => {
         if (tabs[activeTabIndex]) {
             const currentScroll = tabs[activeTabIndex].historyEl.scrollTop;
@@ -3238,7 +3039,7 @@ async function init() {
         }
     }, 5000);
 
-    
+
     const updateReadTitles = () => {
         if (typeof sharedInputUI?.refreshReadPageTitle === 'function') sharedInputUI.refreshReadPageTitle();
         if (typeof sharedInputUISecondary?.refreshReadPageTitle === 'function') sharedInputUISecondary.refreshReadPageTitle();
@@ -3266,14 +3067,14 @@ function setupPort() {
     try {
         port = chrome.runtime.connect({ name: 'lumina-chat-stream' });
 
-        
+
         syncSessionsWithBackground();
 
         port.onMessage.addListener((msg) => {
-            
+
             let affectedTabs = [];
 
-            
+
             if (msg.sessionId) {
                 affectedTabs = tabs.filter(t => t.sessionId === msg.sessionId);
             } else if (streamingTab && streamingTab.sessionId) {
@@ -3308,7 +3109,7 @@ function setupPort() {
                 return;
             }
 
-            
+
             if (msg.action === 'web_search_status') {
                 affectedTabs.forEach(tab => {
                     tab.chatUIInstance.handleWebSearchStatus(msg);
@@ -3318,42 +3119,42 @@ function setupPort() {
 
 
 
-            
+
             if (msg.action === 'chunk' && msg.chunk) {
-                
+
                 affectedTabs.forEach(tab => {
-                    
+
                     tab.chatUIInstance.appendChunk(msg.chunk, false);
                 });
             }
 
-            
+
             if (msg.action === 'done') {
                 const sid = msg.sessionId || (streamingTab?.sessionId);
 
-                
+
                 affectedTabs.forEach(tab => {
                     const targetUI = tab.chatUIInstance;
                     const answerDiv = targetUI.currentAnswerDiv;
                     const isRegen = !!targetUI._regenScrollLocked;
-                    
+
                     const skipScroll = isRegen || tab.id !== streamingTab?.id;
                     const skipMargin = isRegen;
                     targetUI.finishAnswer(skipMargin, skipScroll);
 
-                    
+
                     if (isRegen && targetUI._regenScrollContainer) {
                         const lockedContainer = targetUI._regenScrollContainer;
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
-                                
+
                                 lockedContainer.style.overflowAnchor = '';
-                                
-                                
+
+
                                 targetUI._regenScrollLocked = false;
                                 targetUI._regenScrollContainer = null;
                                 targetUI._regenScrollPosition = null;
-                                
+
                                 const sh = lockedContainer.scrollHeight;
                                 const vh = lockedContainer.clientHeight;
                                 const pos = lockedContainer.scrollTop;
@@ -3362,7 +3163,7 @@ function setupPort() {
                             });
                         });
                     }
-                    
+
 
                     requestAnimationFrame(() => {
                         if (sharedInputUI) {
@@ -3379,14 +3180,14 @@ function setupPort() {
                                 const nav = entry.querySelector('.lumina-answer-nav');
                                 if (nav) nav.style.display = 'flex';
 
-                                
+
                                 if (targetUI._regenEntryType === 'translation' && targetUI._regenSourceText) {
                                     const latestTranslation = answerDiv.textContent.trim();
                                     chrome.runtime.sendMessage({
                                         action: 'update_translation_cache',
                                         text: targetUI._regenSourceText,
                                         translation: latestTranslation,
-                                        targetLang: 'vi' 
+                                        targetLang: 'vi'
                                     });
                                 }
                             }
@@ -3395,7 +3196,7 @@ function setupPort() {
                 });
 
                 saveTabsState();
-                
+
                 streamingTab = null;
                 streamDebugState = null;
             }
@@ -3403,15 +3204,15 @@ function setupPort() {
 
         port.onDisconnect.addListener(() => {
             const lastError = chrome.runtime.lastError;
-            
+
             if (streamingTab || (streamDebugState && streamDebugState.chunkCount > 0)) {
 
             } else {
             }
 
-            port = null; 
+            port = null;
 
-            
+
             if (streamingTab && streamingTab.sessionId) {
                 const affectedTabs = tabs.filter(t => t.sessionId === streamingTab.sessionId);
                 affectedTabs.forEach(t => {
@@ -3448,14 +3249,14 @@ function setupPort() {
 }
 
 
-let streamingTab = null; 
+let streamingTab = null;
 let streamDebugState = null;
 
 async function handleSubmit(text, images, extra = {}, targetTab = null, displayQuery = null) {
     const currentTab = targetTab || tabs[activeTabIndex];
     if (!currentTab) return;
 
-    
+
     const now = Date.now();
     const isVeryClose = lastSubmitTime && (now - lastSubmitTime < 250);
     const isDuplicateText = lastSubmitTime && (now - lastSubmitTime < 1000) && lastSubmitText === text;
@@ -3467,23 +3268,23 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     lastSubmitTime = now;
     lastSubmitText = text;
 
-    
+
     const targetChatUI = currentTab.chatUIInstance;
 
-    
+
     if (currentTab === tabs[activeTabIndex]) {
         chatUI = targetChatUI;
     }
 
-    
+
     currentTab.userScrolledUp = false;
     if (targetChatUI) targetChatUI.disableAutoScroll = false;
 
-    
+
     if (sharedInputUI) sharedInputUI.isGenerating = true;
     if (sharedInputUISecondary) sharedInputUISecondary.isGenerating = true;
 
-    
+
     const translateMatch = text && text.match(/^translate:?\s*([\s\S]*)/i);
     const proofreadMatch = !translateMatch && text && text.match(/^proofread:?\s*([\s\S]*)/i);
 
@@ -3495,12 +3296,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         extra = { ...extra, mode: 'proofread' };
     }
 
-    
+
     if (currentTab) {
         const rawText = displayQuery || text || (images.length > 0 ? 'Video/Image Analysis' : 'Chat');
         const newTitle = rawText.length > 20 ? rawText.substring(0, 20) + '...' : rawText;
 
-        
+
         tabs.forEach(t => {
             if (t.sessionId === currentTab.sessionId) {
                 t.title = newTitle;
@@ -3511,7 +3312,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         saveTabsState();
     }
 
-    
+
     streamingTab = currentTab;
     streamDebugState = {
         tabId: currentTab.id,
@@ -3526,7 +3327,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     };
 
 
-    
+
     if (extra.mode === 'translate') {
         await targetChatUI.handleTranslation(text);
         if (sharedInputUI) {
@@ -3559,7 +3360,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 
     if (extra.mode === 'websource') {
-        
+
         tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
             t.chatUIInstance.openWebSource(extra.source, text);
         });
@@ -3574,18 +3375,18 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         return;
     }
 
-    
+
     let untilEntryId = null;
     if (extra.isRecheck || extra.isRegenerate) {
         untilEntryId = extra.entryId;
         if (!untilEntryId) {
-            
+
             const lastEntry = targetChatUI.historyEl.querySelector('.lumina-dict-entry:last-child');
             untilEntryId = lastEntry ? lastEntry.dataset.entryId : null;
         }
     }
 
-    
+
     const isSecondaryTabForSubmit = typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && currentTab === tabs[secondaryActiveTabIndex];
     const activeInputUI = isSecondaryTabForSubmit ? sharedInputUISecondary : sharedInputUI;
     if (targetChatUI && activeInputUI) {
@@ -3596,7 +3397,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
     let apiText = text;
 
-    
+
     if (extra.isRegenerate && !text) {
         const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : null;
         if (targetEntry) {
@@ -3608,17 +3409,17 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    
+
     let streamAction = 'chat_stream';
     if (extra.mode === 'proofread') {
         streamAction = 'proofread';
     }
 
-    
+
     const syncTabs = tabs.filter(t => t.sessionId === currentTab.sessionId);
 
     syncTabs.forEach(t => {
-        
+
         const skipMargin = t !== currentTab;
         const ui = t.chatUIInstance;
 
@@ -3631,16 +3432,16 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             });
             ui.showLoading();
         } else {
-            
+
             if (t !== currentTab) {
-                
+
                 t.historyEl.innerHTML = currentTab.historyEl.innerHTML;
                 ui._setupHistoryDelegation(t.historyEl);
                 ui.initListeners(t.historyEl);
                 ui.syncStateFromDOM();
             }
 
-            
+
             const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
             if (targetEntry) {
                 ui.clearAnswer(targetEntry);
@@ -3718,10 +3519,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             const uniqueResults = [];
             const cleanTextForCompare = (str) => {
                 return str.replace(/\[Context Source:[^\]]+\]/g, '')
-                          .replace(/URL:[^\n]+/g, '')
-                          .replace(/--- \[Segment \d+\] ---/g, '')
-                          .replace(/[^a-zA-Z0-9]/g, '')
-                          .toLowerCase();
+                    .replace(/URL:[^\n]+/g, '')
+                    .replace(/--- \[Segment \d+\] ---/g, '')
+                    .replace(/[^a-zA-Z0-9]/g, '')
+                    .toLowerCase();
             };
             flatResults.forEach(ctx => {
                 const text = ctx.content.trim();
@@ -3757,7 +3558,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    
+
     const message = {
         action: streamAction,
         sessionId: currentTab?.sessionId,
@@ -3777,12 +3578,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     };
 
-    
+
     if (tabModel) {
         chrome.storage.local.set({ lastUsedModel: tabModel });
     }
 
-    
+
     const sendMessage = () => {
         if (!port) setupPort();
         if (!port) throw new Error("Could not establish connection");
@@ -3794,12 +3595,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 if (sid) {
                     port.postMessage({ action: 'stop_chat', sessionId: sid });
                 } else {
-                    
+
                     port.disconnect();
                     port = null;
                 }
             }
-            
+
             syncTabs.forEach(tab => {
                 tab.chatUIInstance.removeLoading();
                 if (tab.chatUIInstance.currentAnswerDiv) {
@@ -3850,61 +3651,12 @@ async function handleTranslation(text) {
 
 
 function setupGlobalListeners() {
-    
-    const panePrimary = document.getElementById('pane-primary');
-    const paneSecondary = document.getElementById('pane-secondary');
+    hoveredPane = 'primary';
 
-    
-    
-    
-    function transferFocusOnPaneEnter(inputEl, e) {
-        if (!inputEl) return;
-        if (!isSplitMode) return;
-        if (e.buttons !== 0) return; 
-        const selection = window.getSelection();
-        if (selection && selection.toString().trim().length > 0) return; 
-        const sidebar = document.getElementById('spotlight-sidebar');
-        if (sidebar && sidebar.classList.contains('active')) return;
-        inputEl.focus();
-    }
-
-    if (panePrimary) {
-        panePrimary.addEventListener('mouseenter', (e) => {
-            const old = hoveredPane;
-            hoveredPane = 'primary';
-            transferFocusOnPaneEnter(sharedInputUI?.inputEl, e);
-            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
-                window.updateTopbarModelSelector();
-            }
-        });
-    }
-    if (paneSecondary) {
-        paneSecondary.addEventListener('mouseenter', (e) => {
-            const old = hoveredPane;
-            hoveredPane = 'secondary';
-            transferFocusOnPaneEnter(sharedInputUISecondary?.inputEl, e);
-            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
-                window.updateTopbarModelSelector();
-            }
-        });
-    }
-
-    
-    
-    
     if (sharedInputUI?.inputEl) {
         sharedInputUI.inputEl.addEventListener('focus', () => {
             const old = hoveredPane;
             hoveredPane = 'primary';
-            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
-                window.updateTopbarModelSelector();
-            }
-        });
-    }
-    if (sharedInputUISecondary?.inputEl) {
-        sharedInputUISecondary.inputEl.addEventListener('focus', () => {
-            const old = hoveredPane;
-            hoveredPane = 'secondary';
             if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
                 window.updateTopbarModelSelector();
             }
@@ -3922,13 +3674,13 @@ function setupGlobalListeners() {
                 event.stopImmediatePropagation();
                 const openChar = event.key;
                 const closeChar = pairs[openChar];
-                
+
                 if (activeEl.isContentEditable) {
                     const sel = window.getSelection();
                     if (sel && sel.rangeCount > 0) {
                         const selectedText = sel.toString();
                         document.execCommand('insertText', false, openChar + selectedText + closeChar);
-                        
+
                         const range = sel.getRangeAt(0);
                         if (range.startContainer.nodeType === 3) {
                             const newOffset = Math.max(0, range.startOffset - 1);
@@ -3943,13 +3695,13 @@ function setupGlobalListeners() {
                     const start = activeEl.selectionStart;
                     const end = activeEl.selectionEnd;
                     const val = activeEl.value;
-                    
+
                     const before = val.substring(0, start);
                     const selectedText = val.substring(start, end);
                     const after = val.substring(end);
-                    
+
                     activeEl.value = before + openChar + selectedText + closeChar + after;
-                    
+
                     activeEl.focus();
                     const newCursor = start + 1 + selectedText.length;
                     activeEl.setSelectionRange(newCursor, newCursor);
@@ -3967,14 +3719,14 @@ function setupGlobalListeners() {
             activeElement.isContentEditable
         );
 
-        
+
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
             modifierKeyPressedAlone = true;
         } else {
             modifierKeyPressedAlone = false;
         }
 
-        
+
         if (matchesShortcut(event, 'translateInput', shortcuts)) {
             const activeEl = document.activeElement;
             const isEditingLocal = activeEl && (
@@ -4048,7 +3800,7 @@ function setupGlobalListeners() {
                     event.stopImmediatePropagation();
 
                     activeEl.__luminaTranslating = true;
-                    
+
                     let targetEl = activeEl;
                     if (activeEl.isContentEditable) {
                         if (hasSelection) {
@@ -4137,7 +3889,7 @@ function setupGlobalListeners() {
                                             range.selectNodeContents(paragraphNode);
                                             sel.removeAllRanges();
                                             sel.addRange(range);
-                                            
+
                                             document.execCommand('insertText', false, cleanedText);
                                             activeEl.dispatchEvent(new Event('input', { bubbles: true }));
                                         }
@@ -4147,11 +3899,11 @@ function setupGlobalListeners() {
                                     const before = val.substring(0, selectionStart);
                                     const after = val.substring(selectionEnd);
                                     activeEl.value = before + response.translatedText + after;
-                                    
+
                                     activeEl.focus();
                                     const newCursorPos = selectionStart + response.translatedText.length;
                                     activeEl.setSelectionRange(newCursorPos, newCursorPos);
-                                    
+
                                     activeEl.dispatchEvent(new Event('input', { bubbles: true }));
                                 }
                             }
@@ -4177,20 +3929,20 @@ function setupGlobalListeners() {
             if (!shortcut) continue;
             if (!isShortcutMatchImmediate(event, shortcut)) continue;
 
-            
-            
+
+
             if (isEditing) {
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
                 if (!hasModifier && !isOverridingShortcut) continue;
             }
 
-            
-            
+
+
             if ((action === 'translate' || action === 'askLumina' || action === 'audio') && !selection) {
-                
+
                 if (action === 'audio' && _spotlightCurrentAudio) {
-                    
+
                 } else {
                     continue;
                 }
@@ -4202,7 +3954,7 @@ function setupGlobalListeners() {
             return;
         }
 
-        
+
         if (selection && questionMappings && questionMappings.length > 0) {
             if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
                 for (const mapping of questionMappings) {
@@ -4233,18 +3985,18 @@ function setupGlobalListeners() {
                             fullQuestion = `"${selection}" ${mapping.prompt}`;
                         }
 
-                        
+
                         const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
                             ? secondaryActiveTabIndex
                             : activeTabIndex;
                         const targetTab = tabs[targetTabIdx];
 
-                        
+
                         if (targetTab && targetTab.chatUIInstance) {
                             const sel = window.getSelection();
                             const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                             if (range && range.startContainer) {
-                                
+
                                 if (window.LuminaAnnotation) {
                                     window.LuminaAnnotation.highlight(range);
                                 }
@@ -4273,10 +4025,10 @@ function setupGlobalListeners() {
 
         const inputEl = getHoveredInputEl();
 
-        
+
         if (event.key === ' ' && !selection) return;
 
-        
+
 
         if (event.key === 'Enter') {
             const activeEl = document.activeElement;
@@ -4306,15 +4058,15 @@ function setupGlobalListeners() {
             }
         }
 
-        
+
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-            
+
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
 
-            
+
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
@@ -4328,32 +4080,32 @@ function setupGlobalListeners() {
             return;
         }
 
-        
+
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
 
-            
+
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
             const inputEl = getHoveredInputEl();
             if (inputEl) {
                 inputEl.focus();
-                
+
                 return;
             }
         }
 
-        
-        
+
+
         if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.length === 1) {
             return;
         }
 
-        
+
         if (matchesShortcut(event, 'audio', shortcuts)) {
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
             event.preventDefault();
@@ -4366,7 +4118,7 @@ function setupGlobalListeners() {
                 const sel = window.getSelection();
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.LuminaSelection) {
-                    
+
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -4382,10 +4134,10 @@ function setupGlobalListeners() {
             return;
         }
 
-        
+
         if (selection && (window.LuminaSelection && !LuminaSelection.isInsideEditable())) {
 
-            
+
             if (matchesShortcut(event, 'askLumina', shortcuts)) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -4395,7 +4147,7 @@ function setupGlobalListeners() {
                 if (range && window.LuminaSelection) {
                     const text = selection;
 
-                    
+
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
@@ -4408,7 +4160,7 @@ function setupGlobalListeners() {
                 }
             }
 
-            
+
             if (matchesShortcut(event, 'translate', shortcuts)) {
 
                 event.preventDefault();
@@ -4421,15 +4173,15 @@ function setupGlobalListeners() {
 
         }
 
-        
+
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-            
+
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
 
-            
+
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
@@ -4437,38 +4189,38 @@ function setupGlobalListeners() {
             return;
         }
 
-        
+
         if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
 
-        
-        
-        
+
+
+
         const isWrongPaneFocused = isSplitMode && inputEl && activeElement !== inputEl &&
             (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
 
-        
+
         if ((!isEditing || isWrongPaneFocused) && inputEl) {
-            
+
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
 
-            
-            
+
+
             const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
 
             if (selection && !isTypeable) {
-                
+
                 return;
             }
 
-            
-            
+
+
             if (!isTypeable) {
                 inputEl.focus();
                 return;
             }
 
-            
+
             event.stopPropagation();
             event.stopImmediatePropagation();
             event.preventDefault();
@@ -4486,7 +4238,7 @@ function setupGlobalListeners() {
         }
     }, true);
 
-    
+
     document.addEventListener('mousedown', (event) => {
         const redirectShortcut = shortcuts.redirect;
         if (redirectShortcut && isShortcutMatch(event, redirectShortcut)) {
@@ -4509,14 +4261,14 @@ function setupGlobalListeners() {
 function resetChat() {
     stopSpotlightAudio();
 
-    
+
     const isSecondaryTarget = isSplitMode && hoveredPane === 'secondary';
 
     if (isSecondaryTarget) {
         if (secondaryActiveTabIndex !== -1) {
             const secondaryTab = tabs[secondaryActiveTabIndex];
             if (secondaryTab) {
-                
+
                 if (port && secondaryTab.sessionId) {
                     port.postMessage({ action: 'stop_chat', sessionId: secondaryTab.sessionId });
                 }
@@ -4581,7 +4333,7 @@ function resetChat() {
 function setupRegenerateButtons() {
     const buttons = document.querySelectorAll('#lumina-regenerate-btn');
     buttons.forEach(btn => {
-        
+
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
 
@@ -4623,7 +4375,7 @@ document.addEventListener('mousedown', (e) => {
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.button === 0) {
         const focused = document.activeElement;
         if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable)) {
-            e.preventDefault(); 
+            e.preventDefault();
             const enterEvent = new KeyboardEvent('keydown', {
                 key: 'Enter',
                 code: 'Enter',
@@ -4645,7 +4397,7 @@ document.addEventListener('copy', (e) => {
     const range = sel.getRangeAt(0);
     const fragment = range.cloneContents();
 
-    
+
     function getVisibleText(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             return node.textContent;
@@ -4655,29 +4407,29 @@ document.addEventListener('copy', (e) => {
         const el = node;
         const tag = el.tagName.toLowerCase();
 
-        
+
         if (['button', 'svg', 'mat-icon', 'script', 'style', 'noscript'].includes(tag)) {
             return '';
         }
 
-        
+
         if (el.getAttribute('aria-hidden') === 'true') {
             return '';
         }
 
-        
+
         const className = el.className?.toString() || '';
         if (/\b(icon|material-icons|google-symbols|fa-|glyphicon)\b/i.test(className)) {
             return '';
         }
 
-        
+
         let text = '';
         for (const child of el.childNodes) {
             text += getVisibleText(child);
         }
 
-        
+
         if (['div', 'p', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
             text = '\n' + text + '\n';
         }
@@ -4687,7 +4439,7 @@ document.addEventListener('copy', (e) => {
 
     let extracted = getVisibleText(fragment);
 
-    
+
     extracted = extracted
         .replace(/\n{3,}/g, '\n\n')
         .replace(/[ \t]+/g, ' ')
@@ -4712,21 +4464,21 @@ function triggerRegenerate(targetUI = null) {
     const history = tUI?.historyEl;
     if (!history) return;
 
-    
+
     const lastEntry = history.lastElementChild;
     if (!lastEntry || !lastEntry.classList.contains('lumina-dict-entry')) return;
 
     const entryType = lastEntry.dataset.entryType;
     let originalQuestion = null;
 
-    
+
     if (entryType === 'translation') {
         const transSource = lastEntry.querySelector('.lumina-translation-source .lumina-translation-text');
         if (transSource) {
             const sourceText = transSource.textContent.trim();
             originalQuestion = `Translate this text: "${sourceText}"`;
 
-            
+
             if (tUI) {
                 tUI._regenSourceText = sourceText;
                 tUI._regenEntryType = 'translation';
@@ -4740,13 +4492,13 @@ function triggerRegenerate(targetUI = null) {
         }
     }
 
-    
+
     if (!originalQuestion) {
         const questionEl = lastEntry.querySelector('.lumina-chat-question');
         if (questionEl) {
             originalQuestion = questionEl.textContent.trim();
 
-            
+
             const contextEl = lastEntry.querySelector('.lumina-chat-context');
             if (contextEl) {
                 const ctxText = contextEl.dataset.fullText || contextEl.textContent.trim();
@@ -4801,22 +4553,22 @@ function updateVersionNav(entryElement, activeIndex, totalCount) {
 function isShortcutMatch(event, shortcut) {
     if (!shortcut) return false;
 
-    
+
     const isLoneModifierShortcut = ['Control', 'Alt', 'Shift', 'Meta'].includes(shortcut.key);
 
     if (isLoneModifierShortcut) {
-        
+
         if (event.type !== 'keyup') return false;
         if (event.key !== shortcut.key) return false;
-        
-        
+
+
         const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
         if (isSideSpecific && shortcut.code !== event.code) return false;
-        
+
         return modifierKeyPressedAlone;
     }
 
-    
+
     let keyMatch = false;
     if (event.type === 'mousedown' || event.type === 'mouseup' || event.type === 'click') {
         const buttonCode = 'Mouse' + event.button;
@@ -4829,7 +4581,7 @@ function isShortcutMatch(event, shortcut) {
 
     if (!keyMatch) return false;
 
-    
+
     const wantsCtrl = !!shortcut.ctrlKey;
     const wantsMeta = !!shortcut.metaKey;
 
@@ -4840,7 +4592,7 @@ function isShortcutMatch(event, shortcut) {
     const altMatch = !!shortcut.altKey === event.altKey;
     const metaMatch = wantsMeta ? event.metaKey : (!event.metaKey || wantsCtrl);
 
-    
+
     if (!shortcut.ctrlKey && !shortcut.shiftKey && !shortcut.altKey && !shortcut.metaKey) {
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
     }
@@ -4874,7 +4626,7 @@ function dispatchConfiguredShortcutAction(action) {
             stopSpotlightAudio();
         }
     } else if (action === 'luminaChat') {
-        
+
     } else if (action === 'askLumina') {
         const sel = window.getSelection();
         const text = sel ? sel.toString().trim() : '';
@@ -4933,9 +4685,9 @@ async function playSpotlightAudio(text) {
             for (const chunk of chunks) await playBase64Audio(chunk, speed);
             return;
         }
-    } catch (e) {  }
+    } catch (e) { }
 
-    
+
     try {
         const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed });
         if (!result || !result.chunks || result.chunks.length === 0) return;
@@ -4980,7 +4732,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
             const byteArray = new Uint8Array(byteString.length);
             for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
 
-            
+
             let silenceOffset = 0;
             try {
                 const ctx = getSpotlightAudioCtx();
@@ -4993,11 +4745,11 @@ function playBase64Audio(base64Data, speed = 1.0) {
                         break;
                     }
                 }
-            } catch (e) {  }
+            } catch (e) { }
 
             if (_spotlightAudioAborted) { resolve(); return; }
 
-            
+
             const mime = parts[0].split(':')[1].split(';')[0];
             const blob = new Blob([byteArray], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
@@ -5009,7 +4761,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
             audio.onerror = (e) => { _spotlightCurrentAudio = null; URL.revokeObjectURL(blobUrl); reject(e); };
             audio.play().catch(reject);
         } catch (e) {
-            
+
             try {
                 const audio = new Audio(base64Data);
                 audio.playbackRate = speed;
@@ -5068,12 +4820,12 @@ function hideSpotlightDictLauncher() {
 
 function showSpotlightDictionaryPopup(word, x, y) {
     console.log('[Spotlight Debug] Opening Dictionary Popup for:', word);
-    
-    
-    
-    
 
-    
+
+
+
+
+
     const existing = document.getElementById('lumina-spotlight-dict-popup');
     if (existing) existing.remove();
 
@@ -5102,7 +4854,7 @@ function showSpotlightDictionaryPopup(word, x, y) {
 
 
 window.addEventListener('mousedown', (e) => {
-    
+
     if (window.mouseupTimer) {
         clearTimeout(window.mouseupTimer);
     }
@@ -5147,12 +4899,12 @@ async function handleYouTubeTrigger(triggerInfo) {
     console.log('[Spotlight YT] activeTabIndex:', activeTabIndex, 'activeTab exists:', !!activeTab);
 
     if (!activeTab) {
-        
+
         setTimeout(() => handleYouTubeTrigger(triggerInfo), 200);
         return;
     }
 
-    
+
     const handleFoundTab = (ytTab) => {
         console.log('[Spotlight YT] Processing YouTube tab:', ytTab ? ytTab.id : 'NOT FOUND');
 
@@ -5164,11 +4916,11 @@ async function handleYouTubeTrigger(triggerInfo) {
                 favIconUrl: ytTab.favIconUrl
             };
 
-            
+
             console.log('[Spotlight YT] Pinning to active tab:', activeTab.id);
             toggleWebSourcePin(currentBrowserTab, true, activeTab.id);
 
-            
+
             chrome.storage.local.remove('lumina_youtube_trigger');
         } else {
             console.warn('[Spotlight YT] Could not find any corresponding YouTube tab.');
@@ -5208,17 +4960,17 @@ async function handleYouTubeTrigger(triggerInfo) {
 window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null) {
     if (tabs.length === 0) return;
 
-    
+
     const activeTab = tabs[activeTabIndex];
     if (!activeTab) return;
 
     activeTab.sessionId = historySessionId;
     updateUrlSessionId(historySessionId);
 
-    
+
     let displayTitle = meta.title || "Restored Chat";
     if (!meta.isRenamed && messages && messages.length > 0) {
-        
+
         for (let i = messages.length - 1; i >= 0; i--) {
             const m = messages[i];
             if (m.type === 'question') {
@@ -5231,9 +4983,9 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         }
     }
     activeTab.title = displayTitle;
-    activeTab.selectedModel = null; 
+    activeTab.selectedModel = null;
 
-    
+
     const chatData = {
         ...meta,
         messages: messages,
@@ -5241,7 +4993,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         timestamp: meta.createdAt || meta.updatedAt
     };
 
-    
+
     if (typeof ChatHistoryManager !== 'undefined' && typeof ChatHistoryManager.restoreChat === 'function') {
         showTopbarLoading();
         activeTab.historyEl.style.opacity = '0';
@@ -5250,27 +5002,27 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
 
         await ChatHistoryManager.restoreChat(chatData, activeTab.historyEl);
 
-        
+
         normalizeRestoredHistory(activeTab.historyEl);
         console.log('[Spotlight] history restored, rendering active tab');
         renderTabs();
         saveTabsState();
 
-        
+
         syncTabUI(activeTab, false, true);
 
         if (targetIndex !== null && messages && messages[targetIndex]) {
-            
+
             setTimeout(() => {
                 const targetNode = activeTab.historyEl.querySelector(`.lumina-chat-question[data-message-index="${targetIndex}"]`);
 
                 if (targetNode) {
                     const targetEntry = targetNode.closest('.lumina-dict-entry');
                     if (targetEntry) {
-                        
+
                         const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(targetEntry, activeTab.historyEl);
 
-                        
+
                         const maxScroll = Math.max(0, activeTab.historyEl.scrollHeight - activeTab.historyEl.clientHeight);
                         const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScroll));
 
@@ -5279,11 +5031,11 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                             behavior: 'instant'
                         });
 
-                        
+
                         activeTab.scrollTop = finalScrollTop;
                         activeTab.isAtBottom = (finalScrollTop >= maxScroll - 10);
 
-                        
+
                         targetNode.style.transition = 'background-color 0.5s';
                         const originalBg = targetNode.style.backgroundColor;
                         targetNode.style.backgroundColor = 'rgba(0, 86, 210, 0.1)';
@@ -5304,7 +5056,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 if (activeTab.historyEl.__processingPromises) {
                     try {
                         await Promise.all(activeTab.historyEl.__processingPromises);
-                    } catch (e) {}
+                    } catch (e) { }
                     activeTab.historyEl.__processingPromises = null;
                 }
                 const entries = activeTab.historyEl.querySelectorAll('.lumina-dict-entry');
@@ -5329,10 +5081,10 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;")
-              .replace(/'/g, "&#039;");
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 async function renderDropdownMenu() {
@@ -5342,16 +5094,16 @@ async function renderDropdownMenu() {
     const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
     const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
     const historyData = Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
-    
+
     const isExpanded = dropdown.classList.contains('expanded');
     const displayLimit = isExpanded ? 15 : 5;
     const recentSessions = historyData.slice(0, displayLimit);
 
     let html = '';
-    
+
     html += `<div class="dropdown-section-title">Recent Chats</div>`;
     html += `<div class="dropdown-chat-list">`;
-    
+
     if (recentSessions.length === 0) {
         html += `<div class="dropdown-item empty-state">No recent chats</div>`;
     } else {
@@ -5361,7 +5113,7 @@ async function renderDropdownMenu() {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
             }
             if (!displayTitle) displayTitle = "Untitled Chat";
-            
+
             if (displayTitle.length > 40) {
                 displayTitle = displayTitle.substring(0, 37) + '...';
             }
@@ -5457,7 +5209,7 @@ function initTopbarModelSelector() {
 
     const render = (data) => {
         const chain = data.modelChains?.text || [];
-        
+
         // Find current model of active tab
         const activeTab = (isSplitMode && hoveredPane === 'secondary')
             ? tabs[secondaryActiveTabIndex]

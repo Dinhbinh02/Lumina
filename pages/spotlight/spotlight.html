@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina</title>
+    <script>
+        if (new URLSearchParams(window.location.search).get('sidepanel') === '1') {
+            document.documentElement.classList.add('is-sidepanel');
+        }
+    </script>
     <link rel="stylesheet" href="../../assets/styles/styles.css">
     <link rel="stylesheet" href="../../lib/vendor/katex/katex.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,25 +44,11 @@
     </header>
 
     <div class="layout">
-        <div class="spotlight-main-area" id="spotlight-main-area">
-            <div class="spotlight-pane" id="pane-primary">
-                <div class="lumina-chat-container">
-                    <div class="lumina-chat-scroll-content" id="chat-history">
-                    </div>
-                </div>
-                <div class="lumina-chat-input-container" id="input-area-primary">
-                </div>
+        <div class="lumina-chat-container">
+            <div class="lumina-chat-scroll-content" id="chat-history">
             </div>
-
-            <div class="spotlight-pane-divider" id="pane-divider" style="display: none;"></div>
-
-            <div class="spotlight-pane" id="pane-secondary" style="display: none;">
-                <div class="lumina-chat-container">
-                    
-                </div>
-                <div class="lumina-chat-input-container" id="input-area-secondary">
-                </div>
-            </div>
+        </div>
+        <div class="lumina-chat-input-container" id="input-area">
         </div>
     </div>
 
