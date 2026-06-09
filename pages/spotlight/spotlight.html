@@ -10,7 +10,9 @@
     <link rel="stylesheet" href="../../lib/vendor/katex/katex.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Google+Sans+Text:wght@400;500;600&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Google+Sans+Text:wght@400;500;600&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap"
+        rel="stylesheet">
 </head>
 
 <body class="lumina-spotlight-page" data-theme="light">
@@ -19,19 +21,38 @@
     <header class="topbar" id="spotlight-topbar">
         <div class="lumina-model-selector" id="topbar-model-selector">
             <button class="lumina-model-btn" id="topbar-model-btn">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" style="opacity: 0.6; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;"><path d="M6 9l6 6 6-6"/></svg>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                    style="opacity: 0.6; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
                 <span class="lumina-current-model" id="topbar-model-label">Loading...</span>
             </button>
             <div class="lumina-model-dropdown" id="topbar-model-dropdown"></div>
         </div>
         <div class="topbar__spacer"></div>
         <div class="topbar__actions">
+            <button class="topbar__action-btn" id="topbar-popout-btn" title="Pop out" style="display:none;">
+                <svg id="topbar-popout-icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h6v6" />
+                    <path d="M10 14L21 3" />
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                </svg>
+            </button>
             <button class="topbar__action-btn" id="topbar-new-chat-btn" title="New Chat">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
             </button>
             <div class="topbar__menu-container">
                 <button class="topbar__action-btn" id="topbar-more-btn" title="More Options">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <circle cx="12" cy="5" r="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="12" cy="19" r="2" />
+                    </svg>
                 </button>
                 <div class="topbar__dropdown-menu" id="topbar-dropdown-menu" style="display: none;"></div>
             </div>

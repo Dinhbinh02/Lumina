@@ -1184,6 +1184,192 @@ async function initTabs() {
         });
     }
 
+    // Pop-out / Dock-back button — Document Picture-in-Picture (Always on Top)
+    const topbarPopoutBtn = document.getElementById('topbar-popout-btn');
+    const topbarPopoutIcon = document.getElementById('topbar-popout-icon');
+
+    if (topbarPopoutBtn && isSidePanel) {
+        topbarPopoutBtn.style.display = 'flex';
+        topbarPopoutBtn.title = 'Pop out (Always on Top)';
+
+        let _pipWindow = null;
+
+        const ICON_POPOUT = `<path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>`;
+        const ICON_DOCK   = `<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/>`;
+
+        function setPopoutIcon(isDocked) {
+            if (topbarPopoutIcon) topbarPopoutIcon.innerHTML = isDocked ? ICON_DOCK : ICON_POPOUT;
+            topbarPopoutBtn.title = isDocked ? 'Dock back to side panel' : 'Pop out (Always on Top)';
+        }
+
+        function restoreLayoutToSidePanel(fromDoc) {
+            const layout = fromDoc ? fromDoc.querySelector('.layout') : null;
+            const fileInput = fromDoc ? fromDoc.getElementById('file-input') : null;
+            const placeholder = document.getElementById('lumina-pip-placeholder');
+            if (placeholder) placeholder.remove();
+            if (layout) {
+                const topbar = document.getElementById('spotlight-topbar');
+                if (topbar && topbar.parentNode) {
+                    topbar.parentNode.insertBefore(layout, topbar.nextSibling);
+                } else {
+                    document.body.appendChild(layout);
+                }
+            }
+            if (fileInput) document.body.appendChild(fileInput);
+            setPopoutIcon(false);
+            _pipWindow = null;
+        }
+
+        function openWithWindowsCreate() {
+            console.log('[Lumina] Opening pop-out via chrome.windows.create');
+            const activeTab = tabs[activeTabIndex];
+            const sessionId = activeTab?.sessionId || '';
+            const url = chrome.runtime.getURL(
+                'pages/spotlight/spotlight.html?popout=1' +
+                (sessionId ? '&session_id=' + encodeURIComponent(sessionId) : '')
+            );
+            chrome.windows.create({ url, type: 'popup', width: 480, height: 700, focused: true }, (win) => {
+                if (chrome.runtime.lastError) {
+                    console.error('[Lumina] windows.create error:', chrome.runtime.lastError.message);
+                } else {
+                    console.log('[Lumina] Popup window created:', win?.id);
+                }
+            });
+        }
+
+        function openWithDocPiP() {
+            console.log('[Lumina] Trying Document PiP...');
+
+            // Timeout guard: if requestWindow doesn't respond in 2s, fallback
+            let settled = false;
+            const fallbackTimer = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    console.warn('[Lumina] PiP requestWindow timed out, using fallback');
+                    openWithWindowsCreate();
+                }
+            }, 2000);
+
+            window.documentPictureInPicture.requestWindow({
+                width: 480,
+                height: 700,
+                disallowReturnToOpener: false,
+            }).then(function(pipWin) {
+                clearTimeout(fallbackTimer);
+                if (settled) return;
+                settled = true;
+
+                console.log('[Lumina] PiP window opened OK');
+                _pipWindow = pipWin;
+
+                // 1. Basic body reset + flex layout for PiP window
+                pipWin.document.documentElement.style.cssText = 'height:100%;margin:0;padding:0;';
+                pipWin.document.body.style.cssText = 'margin:0;padding:0;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;background:var(--lumina-ui-bg,#fff);font-family:var(--lumina-font-family,"Google Sans",sans-serif);';
+
+                // 2. Mirror theme + body classes
+                var srcTheme = document.body.getAttribute('data-theme') || 'light';
+                pipWin.document.documentElement.setAttribute('data-theme', srcTheme);
+                pipWin.document.body.className = document.body.className + ' lumina-pip-window';
+
+                // 3. Load CSS via proper extension URL (chrome.runtime.getURL works in PiP window)
+                var cssUrl = chrome.runtime.getURL('assets/styles/styles.css');
+                var mainLink = pipWin.document.createElement('link');
+                mainLink.rel = 'stylesheet';
+                mainLink.href = cssUrl;
+                pipWin.document.head.appendChild(mainLink);
+                console.log('[Lumina] CSS link injected:', cssUrl);
+
+                // 4. Copy CSS custom properties (variables) from root
+                try {
+                    var rootStyles = getComputedStyle(document.documentElement);
+                    var varsToSync = [
+                        '--lumina-ui-bg', '--lumina-ui-bg-light', '--lumina-ui-base-rgb',
+                        '--lumina-primary-color', '--lumina-primary-rgb',
+                        '--lumina-text-primary', '--lumina-text-secondary', '--lumina-text-tertiary',
+                        '--lumina-chat-bg', '--lumina-font-family', '--lumina-fontSize',
+                        '--lumina-border-color', '--lumina-ui-opacity'
+                    ];
+                    var varStyle = pipWin.document.createElement('style');
+                    var varCss = ':root{';
+                    varsToSync.forEach(function(v) {
+                        var val = rootStyles.getPropertyValue(v).trim();
+                        if (val) varCss += v + ':' + val + ';';
+                    });
+                    varCss += '}';
+                    varStyle.textContent = varCss;
+                    pipWin.document.head.appendChild(varStyle);
+                    console.log('[Lumina] CSS variables copied');
+                } catch(e) {
+                    console.warn('[Lumina] CSS var copy error:', e);
+                }
+
+                // 5. Move .layout and #file-input into PiP
+                var layout = document.querySelector('.layout');
+                var fileInput = document.getElementById('file-input');
+                console.log('[Lumina] layout found:', !!layout, '| fileInput found:', !!fileInput);
+                if (layout) {
+                    // Ensure layout fills PiP body
+                    layout.style.flex = '1';
+                    layout.style.minHeight = '0';
+                    layout.style.display = 'flex';
+                    layout.style.flexDirection = 'column';
+                    pipWin.document.body.appendChild(layout);
+                    console.log('[Lumina] layout moved to PiP');
+                }
+                if (fileInput) pipWin.document.body.appendChild(fileInput);
+
+                // 6. Show placeholder in side panel
+                var placeholder = document.createElement('div');
+                placeholder.id = 'lumina-pip-placeholder';
+                placeholder.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--lumina-text-secondary,#888);font-size:0.9em;padding:24px;text-align:center;';
+                placeholder.innerHTML = '<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span>Chat is popped out.<br>Close the floating window to return.</span>';
+                document.body.appendChild(placeholder);
+                console.log('[Lumina] placeholder added to side panel');
+
+                // 7. Sync theme changes side panel → PiP
+                var themeObserver = new MutationObserver(function() {
+                    var t = document.body.getAttribute('data-theme') || 'light';
+                    pipWin.document.documentElement.setAttribute('data-theme', t);
+                });
+                themeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+
+                setPopoutIcon(true);
+
+                // 8. Restore when PiP closes
+                pipWin.addEventListener('pagehide', function() {
+                    console.log('[Lumina] PiP closed, restoring layout');
+                    themeObserver.disconnect();
+                    restoreLayoutToSidePanel(pipWin.document);
+                });
+
+            }).catch(function(err) {
+                clearTimeout(fallbackTimer);
+                if (!settled) {
+                    settled = true;
+                    console.warn('[Lumina] Document PiP failed:', err);
+                    openWithWindowsCreate();
+                }
+            });
+        }
+
+        topbarPopoutBtn.addEventListener('click', function() {
+            console.log('[Lumina] Pop-out button clicked, isSidePanel=' + isSidePanel);
+
+            if (_pipWindow && !_pipWindow.closed) {
+                _pipWindow.focus();
+                return;
+            }
+
+            if (typeof window.documentPictureInPicture !== 'undefined') {
+                console.log('[Lumina] documentPictureInPicture IS available');
+                openWithDocPiP();
+            } else {
+                console.log('[Lumina] documentPictureInPicture NOT available, using fallback');
+                openWithWindowsCreate();
+            }
+        });
+    }
+
 
     window.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 't') {

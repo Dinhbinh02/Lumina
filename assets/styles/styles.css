@@ -773,7 +773,7 @@ button {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   overflow-anchor: auto;
-  padding: 10px 0 16px 10px !important;
+  padding: 10px 0 16px 8px !important;
   width: 100%;
   position: relative;
   box-sizing: border-box;
@@ -1345,7 +1345,7 @@ button {
   max-width: 740px;
   margin: 0 auto;
   box-sizing: border-box;
-  padding: 0 10px 6px 10px;
+  padding: 0 8px 6px 8px;
   z-index: 20;
   background: var(--lumina-chat-bg, transparent);
   display: flex;
@@ -1361,8 +1361,8 @@ button {
   content: "" !important;
   position: absolute !important;
   top: -40px !important;
-  left: -10px !important;
-  right: -10px !important;
+  left: -8px !important;
+  right: -8px !important;
   height: 40px !important;
   background: linear-gradient(to bottom, transparent, rgb(var(--lumina-ui-base-rgb))) !important;
   pointer-events: none !important;
@@ -5466,7 +5466,7 @@ button {
   align-items: center;
   gap: 8px;
   height: 46px;
-  padding: 0 10px;
+  padding: 0 8px;
   background: var(--lumina-ui-bg, #ffffff);
   flex-shrink: 0;
   z-index: 10;
