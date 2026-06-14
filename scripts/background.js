@@ -994,7 +994,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         }
     }
 
-    if (normalizedThinkingLevel) {
+    if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
         openaiBody.reasoning_effort = normalizedThinkingLevel;
     }
 
@@ -2410,7 +2410,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             if (maxTokens) {
                                 body.max_tokens = maxTokens;
                             }
-                            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+                            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
                                 body.reasoning_effort = normalizedThinkingLevel;
                             }
 
@@ -3715,7 +3715,7 @@ Example Output:
                 response_format: { type: 'json_object' }
             };
             
-            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
                 openaiBody.reasoning_effort = normalizedThinkingLevel;
             }
             

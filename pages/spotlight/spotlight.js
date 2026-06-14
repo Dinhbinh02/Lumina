@@ -1001,6 +1001,14 @@ function ensureTabHistoryLoaded(tab) {
         // Append active/recent entries first
         appendBatch(immediateEntries);
 
+        const allEntries = historyEl.querySelectorAll('.lumina-dict-entry');
+        if (allEntries.length > 0) {
+            const lastEntry = allEntries[allEntries.length - 1];
+            requestAnimationFrame(() => {
+                tab.chatUIInstance.adjustEntryMargin(lastEntry, 'none');
+            });
+        }
+
         // Load remaining entries progressively in chunks of 5
         if (remainingEntries.length > 0) {
             const loadNextChunk = () => {
@@ -1629,6 +1637,32 @@ function normalizeRestoredHistory(historyEl) {
             pinBtn.classList.toggle('is-active', !!wasPinned);
             pinBtn.setAttribute('aria-pressed', wasPinned ? 'true' : 'false');
             pinBtn.style.display = '';
+        }
+
+        // Re-inject question actions to attach event listeners
+        if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.injectQuestionActions === 'function') {
+            LuminaChatUI.injectQuestionActions(questionEl);
+        }
+
+        // Re-attach version navigation button listeners
+        const nav = entry.querySelector('.lumina-answer-nav');
+        if (nav) {
+            const prevBtn = nav.querySelector('.nav-prev');
+            const nextBtn = nav.querySelector('.nav-next');
+            if (prevBtn && nextBtn) {
+                const newPrev = prevBtn.cloneNode(true);
+                const newNext = nextBtn.cloneNode(true);
+                prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+                nextBtn.parentNode.replaceChild(newNext, nextBtn);
+                newPrev.addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    showAnswerVersion(entry, 'prev');
+                });
+                newNext.addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    showAnswerVersion(entry, 'next');
+                });
+            }
         }
     });
 }
@@ -3336,19 +3370,32 @@ function initSidebar() {
                     const sidKey = activeTab.sessionId || 'null';
                     const saved = sessionSettings[sidKey] || {};
                     let changed = false;
-                    if (JSON.stringify(activeTab.selectedModel) !== JSON.stringify(saved.selectedModel)) {
-                        activeTab.selectedModel = saved.selectedModel || null;
-                        if (sharedInputUI) sharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
+                    if (saved.selectedModel && JSON.stringify(activeTab.selectedModel) !== JSON.stringify(saved.selectedModel)) {
+                        activeTab.selectedModel = saved.selectedModel;
+                        if (sharedInputUI) sharedInputUI.activeTabModel = { ...saved.selectedModel };
                         changed = true;
-                    }
-                    if (activeTab.thinkingLevel !== saved.thinkingLevel) {
-                        activeTab.thinkingLevel = saved.thinkingLevel || null;
-                        if (sharedInputUI) sharedInputUI.thinkingLevel = activeTab.thinkingLevel;
-                        changed = true;
+
+                        chrome.storage.local.get(['advancedParamsByModel'], (res) => {
+                            const advParams = res.advancedParamsByModel || {};
+                            const modelObj = saved.selectedModel;
+                            const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
+                            const modelParams = advParams[compositeKey] || advParams[modelObj.model] || {};
+
+                            const isGemini = (modelObj.providerId && modelObj.providerId.toLowerCase().includes('gemini')) || 
+                                             (modelObj.model && modelObj.model.toLowerCase().includes('gemini'));
+                            const isGemma4 = /gemma-4/i.test(modelObj.model);
+                            const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+                            const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
+
+                            activeTab.thinkingLevel = newThinkingLevel;
+                            if (sharedInputUI) {
+                                sharedInputUI.thinkingLevel = newThinkingLevel;
+                                if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+                            }
+                        });
                     }
                     if (changed && sharedInputUI) {
                         if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-                        if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
                         if (typeof window.updateTopbarModelSelector === 'function') window.updateTopbarModelSelector();
                     }
                 }
@@ -5594,8 +5641,22 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     const sidKey = historySessionId || 'null';
     const savedSettings = sessionSettings[sidKey] || {};
     activeTab.selectedModel = savedSettings.selectedModel || meta.selectedModel || null;
-    activeTab.thinkingLevel = savedSettings.thinkingLevel || meta.thinkingLevel || null;
+
+    // Load thinking level strictly from advancedParamsByModel
+    const localData = await chrome.storage.local.get(['advancedParamsByModel']);
+    const advParams = localData.advancedParamsByModel || {};
+    const modelObj = activeTab.selectedModel;
+    const compositeKey = modelObj ? (modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model) : '';
+    const modelParams = advParams[compositeKey] || advParams[modelObj?.model] || {};
+
+    const isGemini = modelObj ? ((modelObj.providerId && modelObj.providerId.toLowerCase().includes('gemini')) || 
+                                 (modelObj.model && modelObj.model.toLowerCase().includes('gemini'))) : false;
+    const isGemma4 = modelObj ? /gemma-4/i.test(modelObj.model) : false;
+    const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+    
+    activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
     activeTab.sparkId = meta.sparkId || null;
+
     if (sharedInputUI) {
         sharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
         sharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
@@ -5943,11 +6004,33 @@ function initTopbarModelSelector() {
                     }
                     
                     const sidKey = currentActiveTab.sessionId || 'null';
-                    chrome.storage.local.get(['lumina_session_settings'], (res) => {
+                    chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
                         const settings = res.lumina_session_settings || {};
                         if (!settings[sidKey]) settings[sidKey] = {};
                         settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
-                        chrome.storage.local.set({ lumina_session_settings: settings });
+
+                        // Load and sync thinkingLevel for the new model
+                        const advancedParamsByModel = res.advancedParamsByModel || {};
+                        const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
+                        const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[item.model] || {};
+
+                        const isGemini = (item.providerId && item.providerId.toLowerCase().includes('gemini')) || 
+                                         (item.model && item.model.toLowerCase().includes('gemini'));
+                        const isGemma4 = /gemma-4/i.test(item.model);
+                        const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+                        const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
+
+                        currentActiveTab.thinkingLevel = newThinkingLevel;
+                        settings[sidKey].thinkingLevel = newThinkingLevel;
+                        if (targetSharedUI) {
+                            targetSharedUI.thinkingLevel = newThinkingLevel;
+                        }
+
+                        chrome.storage.local.set({ lumina_session_settings: settings }, () => {
+                            if (targetSharedUI && typeof targetSharedUI.refreshReasoningSelector === 'function') {
+                                targetSharedUI.refreshReasoningSelector();
+                            }
+                        });
                     });
                 }
 
@@ -5958,7 +6041,17 @@ function initTopbarModelSelector() {
     };
 
     const fetchAndRender = () => {
-        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel'], (data) => {
+        const activeTab = (isSplitMode && hoveredPane === 'secondary')
+            ? tabs[secondaryActiveTabIndex]
+            : tabs[activeTabIndex];
+        const sidKey = activeTab?.sessionId || 'null';
+
+        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings'], (data) => {
+            const settings = data.lumina_session_settings || {};
+            const saved = settings[sidKey] || {};
+            if (activeTab && saved.selectedModel) {
+                activeTab.selectedModel = saved.selectedModel;
+            }
             render(data);
             updateTopbarSparkTitle();
         });
