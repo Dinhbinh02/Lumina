@@ -1716,6 +1716,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+
+
     window._dictPlusSettingsLoaded = true;
 
 
@@ -3901,6 +3903,59 @@ loadAllSettings();
     storageText.textContent = `${mb} MB`;
   }
 
+  async function renderStoredFilesList() {
+    const listContainer = document.getElementById('options-stored-files-list');
+    if (!listContainer) return;
+
+    chrome.runtime.sendMessage({ action: 'get_stored_files' }, (response) => {
+      if (!response || !response.success || !Array.isArray(response.files)) {
+        listContainer.innerHTML = `<p class="m3-body-medium text-secondary italic">Failed to load attachments.</p>`;
+        return;
+      }
+
+      const files = response.files;
+      if (files.length === 0) {
+        listContainer.innerHTML = `<p class="m3-body-medium text-secondary italic">No attachments stored locally.</p>`;
+        return;
+      }
+
+      listContainer.innerHTML = files.map(file => {
+        const sizeKB = (file.size / 1024).toFixed(1);
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const displaySize = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+        const modifiedDate = new Date(file.lastModified).toLocaleDateString();
+
+        return `
+          <div class="m3-stored-file-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(0,0,0,0.04); border-radius: 8px; border: 1px solid rgba(0,0,0,0.08);">
+            <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden; margin-right: 12px;">
+              <span class="m3-body-medium" style="font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${file.displayName}">${file.displayName}</span>
+              <span class="m3-body-small text-secondary">Size: ${displaySize} | Updated: ${modifiedDate}</span>
+            </div>
+            <button type="button" class="m3-btn m3-btn-text text-error delete-stored-file-btn" data-raw-name="${file.rawName}" style="padding: 4px 8px; min-width: auto; height: auto;">
+              Delete
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // Add click listeners to delete buttons
+      listContainer.querySelectorAll('.delete-stored-file-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const rawName = btn.dataset.rawName;
+          if (confirm('Are you sure you want to delete this cached file locally?')) {
+            chrome.runtime.sendMessage({ action: 'delete_stored_file', fileName: rawName }, (delRes) => {
+              if (delRes && delRes.success) {
+                renderStoredFilesList();
+              } else {
+                alert('Failed to delete file.');
+              }
+            });
+          }
+        });
+      });
+    });
+  }
+
   const optionsDeleteAllBtn = document.getElementById('options-delete-all-btn');
   if (optionsDeleteAllBtn) {
     optionsDeleteAllBtn.addEventListener('click', async () => {
@@ -3912,6 +3967,7 @@ loadAllSettings();
       try {
         await ChatHistoryManager.clearAllHistory();
         await updateOptionsStorageUsage();
+        await renderStoredFilesList();
         alert('All chat history deleted successfully.');
       } catch (err) {
         console.error('Delete all failed:', err);
@@ -3924,5 +3980,6 @@ loadAllSettings();
   }
 
   updateOptionsStorageUsage();
+  renderStoredFilesList();
 });
 

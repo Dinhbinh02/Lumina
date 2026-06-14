@@ -284,7 +284,7 @@ function buildChatSystemInstruction(reasoningMode = false, enableWebSearch = fal
     const currentTime = new Date().toLocaleString('en-US', { timeZone: userTimeZone });
     const currentYear = new Date().getFullYear();
 
-    let instruction = `You are an authentic, adaptive AI collaborator and a knowledgeable peer. Your goal is to address the user's true intent with insightful, yet clear and concise responses. Your tone must be warm, and approachable. Actively balance empathy with candor: validate the user's feelings, efforts, or frustrations, and explain concepts clearly without ever sounding like a formal, pedantic, or rigid lecturer.
+    let instruction = `You are an authentic, adaptive AI collaborator and a knowledgeable peer. Your goal is to address the user's true intent with insightful and comprehensive responses. Your tone must be warm, and approachable. Actively balance empathy with candor: validate the user's feelings, efforts, or frustrations, and explain concepts clearly without ever sounding like a formal, pedantic, or rigid lecturer.
 
 Mirror the user's vocabulary level. If they write casually or use simple language, respond accessibly — define technical terms inline on first use (e.g., "lipolysis (breaking down fat)"). Never assume expertise the user hasn't demonstrated.
 
@@ -293,7 +293,7 @@ Use LaTeX only for formal/complex math/science (equations, formulas, complex var
 For time-sensitive user queries that require up-to-date information, you MUST follow the provided current time (date and year) when formulating search queries in tool calls. Remember it is ${currentYear} this year. Crucially, your pre-training cutoff is before ${currentYear}. Any current date/time information, real-time prices, or news in the conversation history was retrieved via tools; you do NOT possess pre-trained knowledge of ${currentYear}. Therefore, you MUST call the \`search_web\` tool for any query about current/recent events, real-time prices, weather, or ${currentYear} in general.
 
 [Response Guiding Principles]
-* Use the Formatting Toolkit given below effectively: Use the formatting tools to create a clear, scannable, organized and easy to digest response, avoiding dense walls of text. Prioritize scannability that achieves clarity at a glance.
+* Use the Formatting Toolkit given below effectively: Use the formatting tools to create a clear, scannable, organized and easy to digest response. Prioritize clarity.
 * Natural conversations fluctuate. Your formatting should too. Avoid falling into a mechanical rhythm of using the exact same layout or footer for every single turn. Match format to content, not habit. Markdown and natural prose are your default.
 
 [Your Formatting Toolkit]
@@ -548,6 +548,38 @@ const MIME_ALIASES = {
     'application/javascript': 'text/javascript', 'text/x-python-script': 'text/x-python', 'application/x-javascript': 'text/javascript'
 };
 
+function uint8ArrayToBase64(uint8Array) {
+    let binary = '';
+    const len = uint8Array.byteLength;
+    const chunk = 8192;
+    for (let i = 0; i < len; i += chunk) {
+        const slice = uint8Array.subarray(i, i + chunk);
+        binary += String.fromCharCode.apply(null, slice);
+    }
+    return btoa(binary);
+}
+
+async function readOpfsFileAsBase64(fileUri, fileName) {
+    try {
+        const root = await navigator.storage.getDirectory();
+        let opfsFileEntry = null;
+        for await (const entry of root.values()) {
+            if (entry.kind === 'file' && entry.name.endsWith(`_${fileName}`)) {
+                opfsFileEntry = entry;
+                break;
+            }
+        }
+        if (opfsFileEntry) {
+            const fileObj = await opfsFileEntry.getFile();
+            const buffer = await fileObj.arrayBuffer();
+            return uint8ArrayToBase64(new Uint8Array(buffer));
+        }
+    } catch (e) {
+        console.error(`[Lumina OPFS Read] Failed to read ${fileName}:`, e);
+    }
+    return null;
+}
+
 function normalizeMimeType(mimeType) {
     const mt = String(mimeType || '').toLowerCase().trim();
     return MIME_ALIASES[mt] || mt;
@@ -655,7 +687,7 @@ function processAttachments(attachments) {
     return { parts, unsupported };
 }
 
-function processAttachmentsForGemini(attachments) {
+async function processAttachmentsForGemini(attachments) {
     const parts = [];
     const unsupported = [];
     if (!attachments || !Array.isArray(attachments)) return { parts, unsupported };
@@ -683,12 +715,26 @@ function processAttachmentsForGemini(attachments) {
                 continue;
             }
             if (item.fileUri) {
-                parts.push({
-                    fileData: {
-                        fileUri: item.fileUri,
-                        mimeType: mimeType
+                if (item.fileUri.startsWith('local-opfs://')) {
+                    const b64Data = await readOpfsFileAsBase64(item.fileUri, itemName);
+                    if (b64Data) {
+                        parts.push({
+                            inlineData: {
+                                data: b64Data,
+                                mimeType: mimeType
+                            }
+                        });
+                    } else {
+                        unsupported.push({ name: itemName, mimeType });
                     }
-                });
+                } else {
+                    parts.push({
+                        fileData: {
+                            fileUri: item.fileUri,
+                            mimeType: mimeType
+                        }
+                    });
+                }
             } else {
                 unsupported.push({ name: itemName, mimeType });
             }
@@ -698,7 +744,7 @@ function processAttachmentsForGemini(attachments) {
 }
 
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
-    const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true } = params;
+    const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true, cachedContent = null } = params;
     const enableWebSearch = true;
 
     const isGemini = providerType === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
@@ -709,12 +755,16 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             const role = (msg.role === 'model' || msg.role === 'assistant') ? 'model' : 'user';
             if (attachments && attachments.length > 0) {
                 const parts = [];
-                if (msg.text) parts.push({ text: msg.text });
-                const processed = processAttachmentsForGemini(attachments);
-                parts.push(...processed.parts);
-                if (processed.unsupported.length > 0) {
-                    parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+                // If cachedContent is active, we skip appending the fileData/fileUri parameters to save bandwidth and avoid API conflicts.
+                if (!cachedContent) {
+                    const processed = await processAttachmentsForGemini(attachments);
+                    parts.push(...processed.parts);
+                    if (processed.unsupported.length > 0) {
+                        parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+                    }
                 }
+                if (msg.text) parts.push({ text: msg.text });
+                if (parts.length === 0) parts.push({ text: '' });
                 geminiContents.push({ role, parts });
             } else {
                 geminiContents.push({ role, parts: [{ text: msg.text || '' }] });
@@ -723,13 +773,16 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
 
         if (imageData && imageData.length > 0) {
             const parts = [];
-            if (currentQ) parts.push({ text: currentQ });
-            const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
-            const processed = processAttachmentsForGemini(currentAttachments);
-            parts.push(...processed.parts);
-            if (processed.unsupported.length > 0) {
-                parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+            if (!cachedContent) {
+                const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
+                const processed = await processAttachmentsForGemini(currentAttachments);
+                parts.push(...processed.parts);
+                if (processed.unsupported.length > 0) {
+                    parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
+                }
             }
+            if (currentQ) parts.push({ text: currentQ });
+            if (parts.length === 0) parts.push({ text: '' });
             geminiContents.push({ role: 'user', parts });
         } else {
             geminiContents.push({ role: 'user', parts: [{ text: currentQ || '' }] });
@@ -792,15 +845,38 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                 system_instruction: {
                     parts: [{ text: sysPrompt }]
                 }
-            } : {})
+            } : {}),
+            ...(cachedContent ? { cachedContent } : {})
         };
 
         if (enableWebSearch) {
-            const hasUrl = /https?:\/\/[^\s]+/.test(currentQ || '');
+            const hasUrlInHistory = msgs && msgs.some(m => /https?:\/\/[^\s]+/.test(m.text || ''));
+            const hasUrl = hasUrlInHistory || /https?:\/\/[^\s]+/.test(currentQ || '');
             const isSecondPassSearch = (currentQ || '').includes('### Web Search Results for');
             const useUrlContext = hasUrl || isSecondPassSearch;
 
             geminiBody.tools = [];
+            
+            // Always provide the search_web tool so the model can search the web if needed
+            geminiBody.tools.push({
+                functionDeclarations: [
+                    {
+                        name: "search_web",
+                        description: "Searches the web for up-to-date information, real-time facts, local info, or fresh data.",
+                        parameters: {
+                            type: "OBJECT",
+                            properties: {
+                                query: {
+                                    type: "STRING",
+                                    description: "The search query keywords"
+                                }
+                            },
+                            required: ["query"]
+                        }
+                    }
+                ]
+            });
+
             if (useUrlContext) {
                 geminiBody.tools.push({
                     url_context: {}
@@ -810,25 +886,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                         includeServerSideToolInvocations: true
                     };
                 }
-            } else {
-                geminiBody.tools.push({
-                    functionDeclarations: [
-                        {
-                            name: "search_web",
-                            description: "Searches the web for up-to-date information, real-time facts, local info, or fresh data.",
-                            parameters: {
-                                type: "OBJECT",
-                                properties: {
-                                    query: {
-                                        type: "STRING",
-                                        description: "The search query keywords"
-                                    }
-                                },
-                                required: ["query"]
-                            }
-                        }
-                    ]
-                });
             }
         }
 
@@ -1329,7 +1386,8 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
         temperature, topP, maxTokens, parsedCustomParams,
-        normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData
+        normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData,
+        cachedContent: null
     };
 
     let searchPerformed = false;
@@ -2094,21 +2152,100 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
         }
 
+        // Helper functions for OPFS storage
+        case 'get_stored_files': {
+            (async () => {
+                try {
+                    const root = await navigator.storage.getDirectory();
+                    const files = [];
+                    for await (const entry of root.values()) {
+                        if (entry.kind === 'file') {
+                            const file = await entry.getFile();
+                            // Parse name to extract session, attachment, and filename
+                            // format: <session_id>_<attachment_id>_<file_name>
+                            const parts = entry.name.split('_');
+                            let sessionId = 'unknown';
+                            let attachmentId = 'unknown';
+                            let displayName = entry.name;
+                            if (parts.length >= 3) {
+                                sessionId = parts[0] + '_' + parts[1];
+                                attachmentId = parts[2];
+                                displayName = parts.slice(3).join('_');
+                            }
+                            files.push({
+                                rawName: entry.name,
+                                displayName: displayName,
+                                sessionId: sessionId,
+                                attachmentId: attachmentId,
+                                size: file.size,
+                                lastModified: file.lastModified
+                            });
+                        }
+                    }
+                    // Sort descending by size
+                    files.sort((a, b) => b.size - a.size);
+                    sendResponse({ success: true, files });
+                } catch (e) {
+                    console.error('[OPFS get_stored_files] error:', e);
+                    sendResponse({ success: false, error: e.message });
+                }
+            })();
+            return true;
+        }
+
+        case 'delete_stored_file': {
+            (async () => {
+                try {
+                    const root = await navigator.storage.getDirectory();
+                    await root.removeEntry(request.fileName);
+                    sendResponse({ success: true });
+                } catch (e) {
+                    console.error('[OPFS delete_stored_file] error:', e);
+                    sendResponse({ success: false, error: e.message });
+                }
+            })();
+            return true;
+        }
+
+        case 'cleanup_opfs_files': {
+            (async () => {
+                try {
+                    const root = await navigator.storage.getDirectory();
+                    const sessionsResult = await chrome.storage.local.get(['lumina_chat_sessions']);
+                    const sessions = sessionsResult.lumina_chat_sessions || {};
+                    const activeSessionIds = new Set(Object.keys(sessions));
+
+                    for await (const entry of root.values()) {
+                        if (entry.kind === 'file') {
+                            const parts = entry.name.split('_');
+                            if (parts.length >= 2) {
+                                const fileSessionId = parts[0] + '_' + parts[1]; // session_timestamp format
+                                if (!activeSessionIds.has(fileSessionId)) {
+                                    await root.removeEntry(entry.name);
+                                    console.log(`[OPFS Cleanup] Deleted orphaned file: ${entry.name}`);
+                                }
+                            }
+                        }
+                    }
+                    sendResponse({ success: true });
+                } catch (e) {
+                    console.error('[OPFS cleanup_opfs_files] error:', e);
+                    sendResponse({ success: false, error: e.message });
+                }
+            })();
+            return true;
+        }
+
         case 'upload_gemini_file': {
             (async () => {
-                const attachmentId = request.attachmentId;
+                const attachmentId = request.attachmentId || `att_${Date.now()}`;
+                const sessionId = request.sessionId || 'temp_session';
                 const controller = new AbortController();
                 if (attachmentId) {
                     activeUploads.set(attachmentId, controller);
                 }
 
                 try {
-                    const key = await getGeminiApiKey(request.providerId);
-                    if (!key) {
-                        sendResponse({ success: false, error: 'Gemini API key is not configured.' });
-                        return;
-                    }
-
                     const binaryString = atob(request.fileData);
                     const len = binaryString.length;
                     const bytes = new Uint8Array(len);
@@ -2116,56 +2253,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         bytes[i] = binaryString.charCodeAt(i);
                     }
 
-                    const initUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${key}`;
-                    const initResponse = await fetch(initUrl, {
-                        method: 'POST',
-                        headers: {
-                            'X-Goog-Upload-Protocol': 'resumable',
-                            'X-Goog-Upload-Command': 'start',
-                            'X-Goog-Upload-Header-Content-Length': len.toString(),
-                            'X-Goog-Upload-Header-Content-Type': request.mimeType,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            file: {
-                                display_name: request.fileName
-                            }
-                        }),
-                        signal: controller.signal
+                    // 1. Write file to OPFS for persistent local backup
+                    try {
+                        const root = await navigator.storage.getDirectory();
+                        // Format: <session_id>_<attachment_id>_<file_name>
+                        const opfsFileName = `${sessionId}_${attachmentId}_${request.fileName}`;
+                        const fileHandle = await root.getFileHandle(opfsFileName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(bytes);
+                        await writable.close();
+                        console.log(`[OPFS Storage] Wrote ${opfsFileName} of size ${len} bytes`);
+                    } catch (storeErr) {
+                        console.error('[OPFS Storage] Failed to write file locally:', storeErr);
+                    }
+
+                    // File is now saved successfully in OPFS. 
+                    // We generate a local file reference URI (avoiding external host uploads).
+                    const fileUrl = `local-opfs://${sessionId}/${attachmentId}/${request.fileName}`;
+
+                    sendResponse({
+                        success: true,
+                        file: {
+                            uri: fileUrl,
+                            name: request.fileName
+                        }
                     });
-
-                    if (!initResponse.ok) {
-                        const errText = await initResponse.text();
-                        throw new Error(`Initiate upload failed: ${initResponse.status} ${errText}`);
-                    }
-
-                    const uploadUrl = initResponse.headers.get('x-goog-upload-url');
-                    if (!uploadUrl) {
-                        throw new Error('No upload URL returned from initiate response');
-                    }
-
-                    const uploadResponse = await fetch(uploadUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Length': len.toString(),
-                            'X-Goog-Upload-Offset': '0',
-                            'X-Goog-Upload-Command': 'upload, finalize'
-                        },
-                        body: bytes,
-                        signal: controller.signal
-                    });
-
-                    if (!uploadResponse.ok) {
-                        const errText = await uploadResponse.text();
-                        throw new Error(`Finalize upload failed: ${uploadResponse.status} ${errText}`);
-                    }
-
-                    const fileInfo = await uploadResponse.json();
-                    if (!fileInfo || !fileInfo.file) {
-                        throw new Error('Upload finalized but no file info was returned');
-                    }
-
-                    sendResponse({ success: true, file: fileInfo.file });
                 } catch (e) {
                     console.error('[Lumina Upload] error:', e);
                     sendResponse({ success: false, error: e.message });

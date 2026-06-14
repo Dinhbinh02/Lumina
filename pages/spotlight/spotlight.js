@@ -3175,7 +3175,7 @@ async function init() {
         if (!targetInput) return;
 
 
-        const sidebar = document.getElementById('spotlight-sidebar');
+        const sidebar = document.getElementById('lumina-sidebar');
         if (sidebar && sidebar.classList.contains('active')) return;
 
         const setCursorToEnd = (el) => {
@@ -3194,12 +3194,12 @@ async function init() {
 
 
         setTimeout(() => {
-            const sidebar = document.getElementById('spotlight-sidebar');
+            const sidebar = document.getElementById('lumina-sidebar');
             const el = getHoveredInputEl();
             if (el && (!sidebar || !sidebar.classList.contains('active'))) setCursorToEnd(el);
         }, 50);
         setTimeout(() => {
-            const sidebar = document.getElementById('spotlight-sidebar');
+            const sidebar = document.getElementById('lumina-sidebar');
             const el = getHoveredInputEl();
             if (el && (!sidebar || !sidebar.classList.contains('active'))) setCursorToEnd(el);
         }, 150);
@@ -3248,6 +3248,173 @@ async function init() {
             }
         });
     }
+
+    initSidebar();
+}
+
+function initSidebar() {
+    const sidebar = document.getElementById('lumina-sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle-btn');
+    const hamburgerBtn = document.getElementById('topbar-hamburger-btn');
+    const newChatBtn = document.getElementById('sidebar-new-chat-btn');
+    const settingsBtn = document.getElementById('sidebar-settings-btn');
+    const searchBtn = document.getElementById('sidebar-search-btn');
+
+    // Create backdrop for mobile sidebar overlay
+    let backdrop = document.querySelector('.sidebar-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.className = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+    }
+
+    // Load collapsed state from localStorage
+    const isCollapsed = localStorage.getItem('lumina_sidebar_collapsed') === 'true';
+    if (isCollapsed && sidebar) {
+        sidebar.classList.add('sidebar-collapsed');
+    }
+
+    // Toggle sidebar on desktop
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent trigger click on sidebar container
+            sidebar.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('lumina_sidebar_collapsed', sidebar.classList.contains('sidebar-collapsed'));
+        });
+    }
+
+    // Expand sidebar when clicking on it in collapsed state
+    if (sidebar) {
+        sidebar.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                sidebar.classList.remove('sidebar-collapsed');
+                localStorage.setItem('lumina_sidebar_collapsed', 'false');
+            }
+        });
+    }
+
+    // Toggle sidebar on mobile
+    if (hamburgerBtn && sidebar) {
+        hamburgerBtn.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            backdrop.classList.add('active');
+            document.body.classList.add('sidebar-open');
+        });
+    }
+
+    // Close mobile sidebar on backdrop click
+    const closeMobileSidebar = () => {
+        if (sidebar) sidebar.classList.remove('active');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
+    };
+
+    if (backdrop) {
+        backdrop.addEventListener('click', closeMobileSidebar);
+    }
+
+    // On mobile, the desktop collapse button can also close the sidebar
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 900) {
+                closeMobileSidebar();
+            }
+        });
+    }
+
+    // Bind sidebar actions
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            resetChat();
+            closeMobileSidebar();
+        });
+    }
+
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.openOptionsPage) {
+                chrome.runtime.openOptionsPage();
+            } else {
+                window.open(chrome.runtime.getURL('pages/options/options.html'));
+            }
+            closeMobileSidebar();
+        });
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            const input = getHoveredInputEl();
+            if (input) {
+                input.focus();
+            }
+            closeMobileSidebar();
+        });
+    }
+
+    // Initial render of recent chats
+    renderRecentChatsSidebar();
+
+    // Listen to storage changes to keep recent chats synchronized
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes[ChatHistoryManager.STORAGE_KEY]) {
+            renderRecentChatsSidebar();
+        }
+    });
+}
+
+async function renderRecentChatsSidebar() {
+    const listContainer = document.getElementById('sidebar-recent-chats');
+    if (!listContainer) return;
+
+    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+    const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+    const historyData = Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
+
+    let html = '';
+    if (historyData.length === 0) {
+        html = '<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-sidebar-text-muted); text-align: center;">No recent chats</div>';
+    } else {
+        // Show up to 20 chats in the sidebar
+        historyData.slice(0, 20).forEach(session => {
+            let displayTitle = session.title;
+            if (!session.isRenamed && session.questions && session.questions.length > 0) {
+                displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+            }
+            if (!displayTitle) displayTitle = "Untitled Chat";
+
+            if (displayTitle.length > 40) {
+                displayTitle = displayTitle.substring(0, 37) + '...';
+            }
+
+            html += `
+                <div class="recent-chat-item" data-session-id="${session.id}" title="${escapeHtml(displayTitle)}">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <span>${escapeHtml(displayTitle)}</span>
+                </div>
+            `;
+        });
+    }
+
+    listContainer.innerHTML = html;
+
+    listContainer.querySelectorAll('.recent-chat-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const sid = item.dataset.sessionId;
+            const contentKey = `lumina_session_${sid}`;
+            const contentData = await chrome.storage.local.get([contentKey]);
+            const messages = contentData[contentKey];
+            const meta = sessions[sid];
+            if (messages && meta) {
+                window.loadHistoryIntoNewTab(messages, meta, sid);
+            }
+            // Close mobile sidebar after selecting a chat
+            const sidebar = document.getElementById('lumina-sidebar');
+            const backdrop = document.querySelector('.sidebar-backdrop');
+            if (sidebar) sidebar.classList.remove('active');
+            if (backdrop) backdrop.classList.remove('active');
+            document.body.classList.remove('sidebar-open');
+        });
+    });
 }
 
 
