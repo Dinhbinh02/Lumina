@@ -1314,7 +1314,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const temperature = requestOptions.temperature ?? modelParams.temperature ?? 1.0;
     const topP = modelParams.topP ?? 1.0;
     const maxTokens = requestOptions.maxTokens ?? modelParams.maxTokens ?? null;
-    const thinkingLevel = modelParams.thinkingLevel || null;
+    const thinkingLevel = requestOptions.thinkingLevel ?? modelParams.thinkingLevel ?? null;
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
 
@@ -2304,7 +2304,152 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
         }
 
+        case 'preview_spark': {
+            (async () => {
+                try {
+                    const { messages, model, providerId } = request;
+                    const data = await chrome.storage.local.get(['providers', 'advancedParamsByModel']);
+                    const found = data.providers?.find(p => p.id === providerId);
+                    if (!found) {
+                        sendResponse({ error: 'Provider not found' });
+                        return;
+                    }
+
+                    const keys = getKeysArray(found.apiKey);
+                    const endpoint = (found.endpoint || '').replace(/\/$/, '');
+                    const modelToUse = model || found.model || 'gemini-2.0-flash';
+
+                    const advancedParamsByModel = data.advancedParamsByModel || {};
+                    const compositeKey = providerId ? `${providerId}:${modelToUse}` : modelToUse;
+                    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelToUse] || {};
+
+                    const temperature = modelParams.temperature ?? 0.7;
+                    const topP = modelParams.topP ?? 1.0;
+                    const maxTokens = modelParams.maxTokens ?? null;
+                    const thinkingLevel = modelParams.thinkingLevel || null;
+                    const customParams = modelParams.customParams || {};
+
+                    let parsedCustomParams = {};
+                    if (customParams) {
+                        if (typeof customParams === 'object') {
+                            parsedCustomParams = customParams;
+                        } else if (typeof customParams === 'string') {
+                            try { parsedCustomParams = JSON.parse(customParams); } catch (e) { }
+                        }
+                    }
+
+                    const normalizedModelName = modelToUse.toLowerCase();
+                    const isGemini3 = /gemini-[3-9]/i.test(modelToUse);
+                    const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
+
+                    const response = await fetchWithRotation(keys, async (key) => {
+                        if (found.type === 'gemini') {
+                            const url = `${endpoint}/${modelToUse}:generateContent`;
+                            
+                            const generationConfig = {
+                                ...parsedCustomParams
+                            };
+                            if (!isGemini3) {
+                                generationConfig.temperature = temperature;
+                                generationConfig.topP = topP;
+                            }
+                            if (Number.isFinite(maxTokens) && maxTokens > 0) {
+                                generationConfig.maxOutputTokens = maxTokens;
+                            }
+
+                            let level = normalizedThinkingLevel || 'minimal';
+                            if (level === 'none') {
+                                level = 'minimal';
+                            }
+                            if (isGemini3) {
+                                generationConfig.thinkingConfig = {
+                                    includeThoughts: true,
+                                    thinkingLevel: level
+                                };
+                            } else {
+                                let budget = -1;
+                                if (level === 'minimal') {
+                                    budget = 0;
+                                } else if (level === 'low') {
+                                    budget = 1024;
+                                } else if (level === 'medium') {
+                                    budget = -1;
+                                } else if (level === 'high') {
+                                    budget = 4096;
+                                }
+                                generationConfig.thinkingConfig = {
+                                    includeThoughts: budget > 0 || budget === -1,
+                                    thinkingBudget: budget
+                                };
+                            }
+
+                            return fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(key ? { 'x-goog-api-key': key } : {})
+                                },
+                                body: JSON.stringify({
+                                    contents: messages,
+                                    generationConfig: generationConfig
+                                })
+                            });
+                        } else {
+                            const openAiMessages = messages.map(m => ({
+                                role: m.role === 'model' ? 'assistant' : m.role,
+                                content: m.parts?.[0]?.text || ''
+                            }));
+                            
+                            const body = {
+                                model: modelToUse,
+                                messages: openAiMessages,
+                                temperature: temperature,
+                                top_p: topP,
+                                ...parsedCustomParams
+                            };
+                            if (maxTokens) {
+                                body.max_tokens = maxTokens;
+                            }
+                            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+                                body.reasoning_effort = normalizedThinkingLevel;
+                            }
+
+                            return fetch(endpoint || 'https://api.openai.com/v1/chat/completions', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(key ? { 'Authorization': `Bearer ${key}` } : {})
+                                },
+                                body: JSON.stringify(body)
+                            });
+                        }
+                    }, {});
+
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        sendResponse({ error: `API error (${response.status}): ${errText.slice(0, 200)}` });
+                        return;
+                    }
+
+                    const result = await response.json();
+                    let text = '';
+                    if (found.type === 'gemini') {
+                        text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    } else {
+                        text = result.choices?.[0]?.message?.content || '';
+                    }
+                    sendResponse({ text });
+                } catch (e) {
+                    console.error('[Lumina BG] preview_spark error:', e);
+                    sendResponse({ error: e.message });
+                }
+            })();
+            return true;
+        }
+
+
         case 'get_system_tokens': {
+
             const reasoningMode = request.reasoningMode || false;
             const isProofread = request.isProofread || false;
             let prompt = "";
@@ -4227,6 +4372,10 @@ async function performSearXNGSearch(query) {
                 }
             });
             if (response.ok) {
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error(`Response is not JSON (Content-Type: ${contentType})`);
+                }
                 const data = await response.json();
                 if (data && Array.isArray(data.results) && data.results.length > 0) {
                     return data.results.slice(0, 5).map((r, idx) => {
@@ -4238,7 +4387,7 @@ Snippet: ${r.content || ''}`;
                 }
             }
         } catch (e) {
-            console.warn(`[Lumina] SearXNG instance ${instance} failed:`, e);
+            console.warn(`[Lumina] SearXNG instance ${instance} failed: ${e.message || e}`);
         }
     }
     return 'No results found.';
