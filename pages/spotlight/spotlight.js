@@ -109,19 +109,7 @@ function getShortcutTargetTab() {
     return tabs[activeTabIndex] || null;
 }
 
-function redirectToPinnedQuestion() {
-    const targetTab = getShortcutTargetTab();
-    const targetUI = targetTab?.chatUIInstance;
-    if (!targetUI) return;
 
-    if (typeof targetUI.refreshPinnedQuestionState === 'function') {
-        targetUI.refreshPinnedQuestionState();
-    }
-
-    if (typeof targetUI._scrollToPinnedQuestion === 'function') {
-        targetUI._scrollToPinnedQuestion();
-    }
-}
 
 let isSplitMode = false;
 let secondaryActiveTabIndex = -1;
@@ -1294,9 +1282,6 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
         }
     }
 
-    previousPrimaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
-    previousSecondaryTab?.chatUIInstance?._detachPinnedQuestionChip?.();
-
 
     tabs.forEach(t => {
         if (t.historyEl) t.historyEl.style.display = 'none';
@@ -1339,7 +1324,7 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     }
     updateInputPlaceholder();
     syncTabUI(primaryTab, false, skipScrollRestore);
-    primaryTab.chatUIInstance?.refreshPinnedQuestionState?.();
+
 
     loadCurrentWebSelection(primaryTab?.id || null);
     updateWebChips();
@@ -1816,6 +1801,9 @@ function renderTabs() {
         list.appendChild(newTabBtn);
     }
     updateRecentChatsActiveState();
+    if (typeof updateSidebarSparksActiveState === 'function') {
+        updateSidebarSparksActiveState();
+    }
 }
 
 function handleMouseMove(e) {
@@ -2060,14 +2048,6 @@ function initSpotlightAskSelection() {
                 const targetTab = tabs[targetTabIdx];
 
 
-                if (sourceEntry && targetTab && targetTab.chatUIInstance) {
-                    const questionDiv = sourceEntry.querySelector('.lumina-chat-question');
-                    if (questionDiv) {
-                        setTimeout(() => {
-                            targetTab.chatUIInstance._setPinnedQuestion(questionDiv);
-                        }, 50);
-                    }
-                }
 
                 handleSubmit(query, [], { mode: isDictionary ? 'dictionary' : 'qa' }, targetTab || null, displayQuery);
             },
@@ -3253,6 +3233,89 @@ function initSidebar() {
         });
     }
 
+    const userProfileEl = document.querySelector('.user-profile');
+    if (userProfileEl) {
+        userProfileEl.style.cursor = 'pointer';
+        userProfileEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            let ctxMenu = document.getElementById('user-profile-context-menu');
+            if (!ctxMenu) {
+                ctxMenu = document.createElement('div');
+                ctxMenu.id = 'user-profile-context-menu';
+                ctxMenu.className = 'sidebar-chat-context-menu';
+                ctxMenu.style.display = 'none';
+                
+                const currentName = (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated && LuminaAuth.user) ? (LuminaAuth.user.name || "User") : "Lumina User";
+                const isAuth = typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated;
+                
+                ctxMenu.innerHTML = `
+                    <div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">
+                        ${currentName}
+                    </div>
+                    <div class="sidebar-ctx-divider"></div>
+                    <div class="sidebar-ctx-item" data-action="sync">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        <span>Sync now</span>
+                    </div>
+                    <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="logout">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                        <span>${isAuth ? 'Sign out' : 'Sign in'}</span>
+                    </div>
+                `;
+                document.body.appendChild(ctxMenu);
+                
+                ctxMenu.querySelectorAll('.sidebar-ctx-item').forEach(item => {
+                    item.addEventListener('click', async (e) => {
+                        const action = item.dataset.action;
+                        ctxMenu.style.display = 'none';
+                        if (action === 'sync') {
+                            if (typeof LuminaSync !== 'undefined') {
+                                LuminaSync.syncUp().catch(err => console.error("Sync failed:", err));
+                            }
+                        } else if (action === 'logout') {
+                            if (typeof LuminaAuth !== 'undefined') {
+                                if (LuminaAuth.isAuthenticated) {
+                                    LuminaAuth.logout();
+                                } else {
+                                    LuminaAuth.login();
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+            
+            const isAuth = typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated;
+            const currentName = (isAuth && LuminaAuth.user) ? (LuminaAuth.user.name || "User") : "Lumina User";
+            const nameHeader = ctxMenu.querySelector('.sidebar-ctx-header-name');
+            if (nameHeader) {
+                nameHeader.textContent = currentName;
+            }
+            const logoutSpan = ctxMenu.querySelector('[data-action="logout"] span');
+            if (logoutSpan) {
+                logoutSpan.textContent = isAuth ? 'Sign out' : 'Sign in';
+            }
+            
+            const rect = userProfileEl.getBoundingClientRect();
+            ctxMenu.style.display = 'block';
+            let top = rect.top - ctxMenu.offsetHeight - 6;
+            let left = rect.left;
+            if (top < 4) top = 4;
+            ctxMenu.style.top = top + 'px';
+            ctxMenu.style.left = left + 'px';
+        });
+    }
+
+    document.addEventListener('mousedown', (e) => {
+        const userCtxMenu = document.getElementById('user-profile-context-menu');
+        if (userCtxMenu && userCtxMenu.style.display !== 'none') {
+            if (!userCtxMenu.contains(e.target) && !e.target.closest('.user-profile')) {
+                userCtxMenu.style.display = 'none';
+            }
+        }
+    });
+
     // Initial render of recent chats
     renderRecentChatsSidebar();
 
@@ -3306,6 +3369,13 @@ function updateRecentChatsActiveState() {
     });
 }
 
+function updateSidebarSparksActiveState() {
+    document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(item => {
+        item.classList.remove('active');
+    });
+}
+window.updateSidebarSparksActiveState = updateSidebarSparksActiveState;
+
 async function renderRecentChatsSidebar() {
     const listContainer = document.getElementById('sidebar-recent-chats');
     if (!listContainer) return;
@@ -3313,7 +3383,14 @@ async function renderRecentChatsSidebar() {
     const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
     const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
     const historyData = Object.values(sessions)
-        .sort((a, b) => b.updatedAt - a.updatedAt);
+        .sort((a, b) => {
+            const aPinned = !!a.pinned;
+            const bPinned = !!b.pinned;
+            if (aPinned !== bPinned) {
+                return aPinned ? -1 : 1;
+            }
+            return b.updatedAt - a.updatedAt;
+        });
 
     const sparksRes = await chrome.storage.local.get(['lumina_sparks']);
     const sparksMap = sparksRes.lumina_sparks || {};
@@ -3355,11 +3432,17 @@ async function renderRecentChatsSidebar() {
             }
 
             const isActive = session.id === activeSessionId ? ' active' : '';
+            const pinHTML = session.pinned ? `
+                <span class="recent-chat-item__pin-icon" title="Pinned">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
+                </span>
+            ` : '';
 
             html += `
                 <div class="recent-chat-item${isActive}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" title="${escapeHtml(displayTitle)}">
                     ${iconHTML}
                     <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
+                    ${pinHTML}
                     <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                     </button>
@@ -3379,11 +3462,11 @@ async function renderRecentChatsSidebar() {
         ctxMenu.style.display = 'none';
         ctxMenu.innerHTML = `
             <div class="sidebar-ctx-item" data-action="pin">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 2 2-2 5H9l-2-5 2-2L8 3z"/></svg>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
                 <span>Pin</span>
             </div>
             <div class="sidebar-ctx-item" data-action="rename">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                 <span>Rename</span>
             </div>
             <div class="sidebar-ctx-item" data-action="duplicate">
@@ -3418,9 +3501,38 @@ async function renderRecentChatsSidebar() {
                 if (action === 'pin') {
                     const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
                     const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-                    if (store[sid]) {
-                        store[sid].pinned = !store[sid].pinned;
+                    const session = store[sid];
+                    if (session) {
+                        const currentlyPinned = !!session.pinned;
+                        if (!currentlyPinned) {
+                            let currentTitle = session.title || 'Untitled Chat';
+                            if (!session.isRenamed && session.questions && session.questions.length > 0) {
+                                currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
+                            }
+                            const newTitle = await window.showCustomPopup({
+                                title: 'Pin this chat',
+                                body: '',
+                                isInput: true,
+                                defaultValue: currentTitle,
+                                confirmLabel: 'Pin'
+                            });
+                            if (newTitle === null) return;
+                            session.pinned = true;
+                            if (newTitle.trim()) {
+                                session.title = newTitle.trim();
+                                session.isRenamed = true;
+                            }
+                        } else {
+                            session.pinned = false;
+                        }
                         await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: store });
+                        if (session.isRenamed) {
+                            const activeTab = tabs[activeTabIndex];
+                            if (activeTab && activeTab.sessionId === sid) {
+                                activeTab.title = session.title;
+                                renderTabs();
+                            }
+                        }
                         renderRecentChatsSidebar();
                     }
                 } else if (action === 'rename') {
@@ -3431,14 +3543,26 @@ async function renderRecentChatsSidebar() {
                     if (!meta?.isRenamed && meta?.questions?.length > 0) {
                         currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
                     }
-                    const newTitle = prompt('Rename chat:', currentTitle);
+                    const newTitle = await window.showCustomPopup({
+                        title: 'Rename Chat',
+                        body: 'Enter a new title for this conversation:',
+                        isInput: true,
+                        defaultValue: currentTitle,
+                        confirmLabel: 'Rename'
+                    });
                     if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
                         await ChatHistoryManager.renameChat(sid, newTitle.trim());
                     }
                 } else if (action === 'duplicate') {
                     await ChatHistoryManager.duplicateChat(sid);
                 } else if (action === 'delete') {
-                    if (confirm('Delete this chat? This cannot be undone.')) {
+                    const confirmed = await window.showCustomPopup({
+                        title: 'Delete Chat',
+                        body: 'Are you sure you want to delete this chat? This action cannot be undone.',
+                        confirmLabel: 'Delete',
+                        isDanger: true
+                    });
+                    if (confirmed) {
                         await ChatHistoryManager.deleteChat(sid);
                     }
                 }
@@ -3453,13 +3577,26 @@ async function renderRecentChatsSidebar() {
             const sid = btn.dataset.sessionId;
             const parentItem = btn.closest('.recent-chat-item');
 
-            // Recheck pinned state for label
+            // Recheck pinned state for label and icon
             ctxMenu.dataset.sessionId = sid;
-            const pinItem = ctxMenu.querySelector('[data-action="pin"] span');
+            const pinItem = ctxMenu.querySelector('[data-action="pin"]');
             if (pinItem) {
                 chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]).then(res => {
                     const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-                    pinItem.textContent = store[sid]?.pinned ? 'Unpin' : 'Pin';
+                    const isPinned = !!store[sid]?.pinned;
+                    const textEl = pinItem.querySelector('span');
+                    if (textEl) textEl.textContent = isPinned ? 'Unpin' : 'Pin';
+                    
+                    const svgContainer = pinItem.querySelector('svg');
+                    if (svgContainer) {
+                        if (isPinned) {
+                            svgContainer.setAttribute('stroke-width', '1.8');
+                            svgContainer.innerHTML = `<path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" />`;
+                        } else {
+                            svgContainer.setAttribute('stroke-width', '2.0');
+                            svgContainer.innerHTML = `<path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" />`;
+                        }
+                    }
                 });
             }
 
@@ -3485,6 +3622,12 @@ async function renderRecentChatsSidebar() {
     listContainer.querySelectorAll('.recent-chat-item').forEach(item => {
         item.addEventListener('click', async (e) => {
             if (e.target.closest('.recent-chat-item__menu-btn')) return;
+            
+            // Set active immediately to prevent lag/delay
+            listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+            
             const sid = item.dataset.sessionId;
             const contentKey = `lumina_session_${sid}`;
             const contentData = await chrome.storage.local.get([contentKey]);
@@ -3938,9 +4081,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    // Xây dựng danh sách tab cần lấy nội dung
+    // Xây dựng danh sách tab cần lấy nội dung (Chỉ kích hoạt khi ở isSidePanel)
     let webSourceScope = [];
-    if (!isSpotlightWindow && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
+    if (isSidePanel && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const selection = getWebSelectionForScope(currentTab.id);
         const isCurrentPinned = selection.some(s => String(s.tabId) === String(currentBrowserTab.tabId));
         if (isCurrentPinned) {
@@ -3949,7 +4092,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             ];
         }
     }
-    if (shouldReadPage && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
+    if (isSidePanel && shouldReadPage && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const alreadyPinned = webSourceScope.some(s => s.tabId === currentBrowserTab.tabId);
         if (!alreadyPinned) {
             webSourceScope = [
@@ -4495,17 +4638,6 @@ function setupGlobalListeners() {
                                 if (window.LuminaAnnotation) {
                                     window.LuminaAnnotation.highlight(range);
                                 }
-
-                                const node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
-                                const sourceEntry = node ? node.closest('.lumina-dict-entry') : null;
-                                if (sourceEntry) {
-                                    const questionDiv = sourceEntry.querySelector('.lumina-chat-question');
-                                    if (questionDiv) {
-                                        setTimeout(() => {
-                                            targetTab.chatUIInstance._setPinnedQuestion(questionDiv);
-                                        }, 50);
-                                    }
-                                }
                             }
                         }
 
@@ -4735,12 +4867,7 @@ function setupGlobalListeners() {
 
 
     document.addEventListener('mousedown', (event) => {
-        const redirectShortcut = shortcuts.redirect;
-        if (redirectShortcut && isShortcutMatch(event, redirectShortcut)) {
-            event.preventDefault();
-            redirectToPinnedQuestion();
-            return;
-        }
+
 
         const resetShortcut = shortcuts.resetChat;
         if (!resetShortcut) return;
@@ -5125,8 +5252,7 @@ function dispatchConfiguredShortcutAction(action) {
         sel.removeAllRanges();
     } else if (action === 'resetChat') {
         resetChat();
-    } else if (action === 'redirect') {
-        redirectToPinnedQuestion();
+
     } else if (action === 'micToggle') {
         const targetPane = (hoveredPane === 'secondary' && isSplitMode) ? 'secondary' : 'primary';
         const inputArea = document.getElementById(`input-area-${targetPane}`);
@@ -5605,15 +5731,18 @@ async function renderDropdownMenu() {
     }
 
     const isPinned = sessionMeta?.pinned || false;
+    const pinSVG = isPinned 
+        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" /></svg>`
+        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>`;
 
     const html = `
         <div class="dropdown-section-title">This chat</div>
         <div class="dropdown-item action-item" id="dropdown-pin-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M12 17v5M8 3h8l-1 6 2 2-2 5H9l-2-5 2-2L8 3z"/></svg>
+            ${pinSVG}
             <span class="item-text">${isPinned ? 'Unpin' : 'Pin'}</span>
         </div>
         <div class="dropdown-item action-item" id="dropdown-rename-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
             <span class="item-text">Rename</span>
         </div>
         <div class="dropdown-item action-item" id="dropdown-duplicate-btn">
@@ -5624,15 +5753,6 @@ async function renderDropdownMenu() {
         <div class="dropdown-item action-item action-item--danger" id="dropdown-delete-btn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             <span class="item-text">Delete</span>
-        </div>
-        <div class="dropdown-divider"></div>
-        <div class="dropdown-item action-item" id="dropdown-continue-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            <span class="item-text">Open in New Tab</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-settings-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span class="item-text">Settings</span>
         </div>
     `;
 
@@ -5645,9 +5765,42 @@ async function renderDropdownMenu() {
         if (!sessionId) return;
         const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
         const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-        if (store[sessionId]) {
-            store[sessionId].pinned = !store[sessionId].pinned;
+        const session = store[sessionId];
+        if (session) {
+            const currentlyPinned = !!session.pinned;
+            if (!currentlyPinned) {
+                let currentTitle = session.title || 'Untitled Chat';
+                if (!session.isRenamed && session.questions && session.questions.length > 0) {
+                    currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
+                }
+                const newTitle = await window.showCustomPopup({
+                    title: 'Pin this chat',
+                    body: '',
+                    isInput: true,
+                    defaultValue: currentTitle,
+                    confirmLabel: 'Pin'
+                });
+                if (newTitle === null) {
+                    hide();
+                    return;
+                }
+                session.pinned = true;
+                if (newTitle.trim()) {
+                    session.title = newTitle.trim();
+                    session.isRenamed = true;
+                }
+            } else {
+                session.pinned = false;
+            }
             await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: store });
+            if (session.isRenamed) {
+                const activeTab = tabs[activeTabIndex];
+                if (activeTab && activeTab.sessionId === sessionId) {
+                    activeTab.title = session.title;
+                    renderTabs();
+                }
+            }
+            renderRecentChatsSidebar();
         }
         hide();
     });
@@ -5659,7 +5812,13 @@ async function renderDropdownMenu() {
         if (!sessionMeta.isRenamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
             currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
         }
-        const newTitle = prompt('Rename chat:', currentTitle);
+        const newTitle = await window.showCustomPopup({
+            title: 'Rename Chat',
+            body: '',
+            isInput: true,
+            defaultValue: currentTitle,
+            confirmLabel: 'Rename'
+        });
         if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
             await ChatHistoryManager.renameChat(sessionId, newTitle.trim());
         }
@@ -5676,7 +5835,13 @@ async function renderDropdownMenu() {
     // Delete
     dropdown.querySelector('#dropdown-delete-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
-        if (confirm('Delete this chat? This cannot be undone.')) {
+        const confirmed = await window.showCustomPopup({
+            title: 'Delete Chat',
+            body: 'Are you sure you want to delete this chat? This action cannot be undone.',
+            confirmLabel: 'Delete',
+            isDanger: true
+        });
+        if (confirmed) {
             await ChatHistoryManager.deleteChat(sessionId);
         }
         hide();
@@ -5883,9 +6048,14 @@ function updateSidebarUserProfile(isAuthenticated, user) {
             const initials = (user.name || "U").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
             avatarEl.textContent = initials;
         }
-    } else {
-        avatarEl.textContent = "DB";
-        nameEl.textContent = "Dinh Binh";
+    } else if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isInitialized) {
+        avatarEl.textContent = "LU";
+        nameEl.textContent = "Lumina User";
+    }
+
+    const profileEl = document.querySelector('.user-profile');
+    if (profileEl) {
+        profileEl.style.visibility = 'visible';
     }
 }
 
@@ -5893,3 +6063,81 @@ if (typeof LuminaAuth !== 'undefined') {
     LuminaAuth.addListener(updateSidebarUserProfile);
     updateSidebarUserProfile(LuminaAuth.isAuthenticated, LuminaAuth.user);
 }
+
+if (typeof LuminaSync !== 'undefined') {
+    LuminaSync.addListener((status) => {
+        const wrapper = document.getElementById('user-avatar-wrapper');
+        if (wrapper) {
+            wrapper.classList.toggle('is-syncing', status === 'Syncing...');
+        }
+    });
+}
+
+window.showCustomPopup = function({ title, body, isInput = false, defaultValue = '', placeholder = '', confirmLabel = 'Confirm', isDanger = false }) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'lumina-custom-popup-overlay';
+        
+        let inputHtml = '';
+        if (isInput) {
+            inputHtml = `<input type="text" class="lumina-custom-popup-input" placeholder="${placeholder}" value="${defaultValue.replace(/"/g, '&quot;')}">`;
+        }
+        
+        const primaryBtnClass = isDanger ? 'lumina-custom-popup-btn-danger' : 'lumina-custom-popup-btn-primary';
+        const bodyHtml = body ? `<div class="lumina-custom-popup-body">${body}</div>` : '';
+        
+        overlay.innerHTML = `
+            <div class="lumina-custom-popup-box">
+                <h3 class="lumina-custom-popup-title">${title}</h3>
+                ${bodyHtml}
+                ${inputHtml}
+                <div class="lumina-custom-popup-actions">
+                    <button class="lumina-custom-popup-btn btn-cancel">Cancel</button>
+                    <button class="lumina-custom-popup-btn ${primaryBtnClass} btn-confirm">${confirmLabel}</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        requestAnimationFrame(() => overlay.classList.add('active'));
+        
+        const inputEl = overlay.querySelector('.lumina-custom-popup-input');
+        if (inputEl) {
+            inputEl.focus();
+            inputEl.select();
+            inputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirm();
+                } else if (e.key === 'Escape') {
+                    cancel();
+                }
+            });
+        } else {
+            overlay.querySelector('.btn-confirm').focus();
+        }
+        
+        const closePopup = () => {
+            overlay.classList.remove('active');
+            overlay.style.pointerEvents = 'none';
+            setTimeout(() => overlay.remove(), 200);
+        };
+        
+        const confirm = () => {
+            const value = inputEl ? inputEl.value : true;
+            closePopup();
+            resolve(value);
+        };
+        
+        const cancel = () => {
+            closePopup();
+            resolve(null);
+        };
+        
+        overlay.querySelector('.btn-confirm').addEventListener('click', confirm);
+        overlay.querySelector('.btn-cancel').addEventListener('click', cancel);
+        overlay.addEventListener('mousedown', (e) => {
+            if (e.target === overlay) cancel();
+        });
+    });
+};

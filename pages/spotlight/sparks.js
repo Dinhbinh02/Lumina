@@ -551,13 +551,12 @@ async function sidebarSparksRenderList() {
 
     list.forEach(spark => {
         const color = getSparkColor(spark.name);
-        const activeClass = (activeTab && activeTab.sparkId === spark.id) ? 'active' : '';
         const avatarHTML = spark.avatar
             ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
             : (spark.name || '?')[0].toUpperCase();
         const bgStyle = spark.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
         html += `
-            <div class="sidebar-spark-item ${activeClass}" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
+            <div class="sidebar-spark-item" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
                 <div class="sidebar-spark-item__avatar" style="${bgStyle}">${avatarHTML}</div>
                 <span class="sidebar-spark-item__title">${escapeHtml(spark.name)}</span>
                 <button class="sidebar-spark-item__menu-btn" data-spark-id="${spark.id}" title="More options" tabindex="-1">
@@ -593,11 +592,11 @@ function showSparkContextMenu(btn, sparkId) {
         ctxMenu.style.display = 'none';
         ctxMenu.innerHTML = `
             <div class="sidebar-ctx-item" data-action="edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                 <span>Edit</span>
             </div>
-            <div class="sidebar-ctx-item" data-action="delete">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="delete">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
                 <span>Delete</span>
             </div>
         `;
@@ -619,7 +618,13 @@ function showSparkContextMenu(btn, sparkId) {
         if (action === 'edit') {
             sparksOpenEditor(sparkId);
         } else if (action === 'delete') {
-            if (confirm('Delete this spark?')) {
+            const confirmed = await window.showCustomPopup({
+                title: 'Delete Spark',
+                body: 'Are you sure you want to delete this Spark?',
+                confirmLabel: 'Delete',
+                isDanger: true
+            });
+            if (confirmed) {
                 await sparksDelete(sparkId);
                 sidebarSparksRenderList();
                 if (typeof sparksRenderList === 'function') sparksRenderList();
@@ -650,13 +655,7 @@ async function openSparkChat(sparkId) {
     sparksClosePage();
 
     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.sidebar-spark-item').forEach(el => {
-        if (el.dataset.sparkId === sparkId) {
-            el.classList.add('active');
-        } else {
-            el.classList.remove('active');
-        }
-    });
+    document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
 
     const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
     if (activeTab) {
@@ -928,7 +927,7 @@ function openAvatarCropper(imageSrc, callback) {
         const drawScale = 150 / 250;
         ctx.drawImage(img, posX * drawScale, posY * drawScale, imgWidth * scale * drawScale, imgHeight * scale * drawScale);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const dataUrl = canvas.toDataURL('image/png');
         callback(dataUrl);
 
         window.removeEventListener('mousemove', moveHandler);
