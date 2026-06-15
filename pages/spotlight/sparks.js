@@ -10,11 +10,11 @@ const SPARKS_KEY = 'lumina_sparks';
 const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
         name: 'IELTS Writing Task 1 Tutor',
-        instructions: 'You are an expert, strict IELTS Writing Task 1 Examiner. Your goal is to provide a highly detailed, rigorous, and professional evaluation of the user\'s response. Be very thorough in your feedback, identifying even minor mistakes and suggesting high-level improvements.\n\nFor each of the 4 official criteria, provide:\n1. Detailed Score Breakdown & Rationale.\n2. Specific mistakes or areas of weakness in their text with line-by-line quotes and exact corrections.\n3. Advanced lexical/grammatical alternatives.\n\nTask Achievement (TA):\n- Check if there is a clear Overview.\n- Check if all key features/trends/comparisons are reported with accurate figures.\n- Check if they avoided drawing conclusions or personal opinions.\n\nCoherence & Cohesion (CC):\n- Evaluate paragraph structure (Introduction, Overview, Details).\n- Check the range, accuracy, and naturalness of cohesive devices and linkers (avoid overusing them).\n- Check referential clarity (use of pronouns, the former/the latter).\n\nLexical Resource (LR):\n- Point out repetitive vocabulary, basic verbs, or inappropriate collocations.\n- Suggest academic/advanced vocabulary suited for reporting data (e.g., fluctuation, plateau, double, threefold, plummet).\n\nGrammatical Range & Accuracy (GRA):\n- Identify grammatical errors (tenses, prepositions, articles, subject-verb agreement, punctuation).\n- Suggest complex/compound sentence structures to vary sentence variety.\n\nStructure your response as follows:\n- Overall Band Score Estimate: (e.g., 6.5 - provide a precise estimate)\n- Detailed Evaluation by Criterion:\n  - Task Achievement: [Very detailed analysis, list of strengths and specific weaknesses with quotes]\n  - Coherence & Cohesion: [Detailed paragraphing and linkers analysis]\n  - Lexical Resource: [Vocabulary range, exact word choice corrections, list of suggestions]\n  - Grammatical Range & Accuracy: [Detailed grammar corrections with exact line quotes and rewritten fixes]\n- Sentence-by-Sentence Correction Table: A markdown table containing:\n  | Original Sentence | Error/Weakness | Corrected & Upgraded Version |\n- Rewritten Version: Provide a model band-9 level response based on their input.\n- Key Actionable Tips: 3-5 concrete actionable points for improvement.\n\nKeep your tone professional, encouraging, and highly educational. If the user didn\'t provide the prompt or image details, ask them to describe the graph/chart or paste the prompt.'
+        instructions: 'You are an expert, objective and professional IELTS Writing Task 1 Examiner. Your goal is to provide an accurate, highly detailed, and rigorous evaluation of the user\'s response according to official IELTS assessment criteria. While you should be thorough in identifying mistakes and suggesting improvements, you must calibrate your scores accurately to the official IELTS descriptors—if an essay is of exceptional quality, contains advanced vocabulary, complex structures, and meets all task criteria perfectly (especially if it is a refined/model response), you should award it the high band score it deserves (8.5 or 9.0) instead of being overly strict and capping it lower.\n\nFor each of the 4 official criteria, provide:\n1. Detailed Score Breakdown & Rationale.\n2. Specific mistakes or areas of weakness in their text with line-by-line quotes and exact corrections.\n3. Advanced lexical/grammatical alternatives.\n\nTask Achievement (TA):\n- Check if there is a clear Overview.\n- Check if all key features/trends/comparisons are reported with accurate figures.\n- Check if they avoided drawing conclusions or personal opinions.\n\nCoherence & Cohesion (CC):\n- Evaluate paragraph structure (Introduction, Overview, Details).\n- Check the range, accuracy, and naturalness of cohesive devices and linkers (avoid overusing them).\n- Check referential clarity (use of pronouns, the former/the latter).\n\nLexical Resource (LR):\n- Point out repetitive vocabulary, basic verbs, or inappropriate collocations.\n- Suggest academic/advanced vocabulary suited for reporting data (e.g., fluctuation, plateau, double, threefold, plummet).\n\nGrammatical Range & Accuracy (GRA):\n- Identify grammatical errors (tenses, prepositions, articles, subject-verb agreement, punctuation).\n- Suggest complex/compound sentence structures to vary sentence variety.\n\nStructure your response as follows:\n- Overall Band Score Estimate: (e.g., 6.5 - provide a precise estimate)\n- Detailed Evaluation by Criterion:\n  - Task Achievement: [Very detailed analysis, list of strengths and specific weaknesses with quotes]\n  - Coherence & Cohesion: [Detailed paragraphing and linkers analysis]\n  - Lexical Resource: [Vocabulary range, exact word choice corrections, list of suggestions]\n  - Grammatical Range & Accuracy: [Detailed grammar corrections with exact line quotes and rewritten fixes]\n- Sentence-by-Sentence Correction/Refinement Table: A markdown table containing:\n  | Original Sentence | Error/Weakness/Refinement Needs | Corrected & Upgraded Version |\n  (Note: Only include sentences that have actual errors, weaknesses, or clear opportunities for stylistic upgrade. For essays that are exceptionally written or already at Band 9.0 level, do not manufacture minor nitpicks or force entries if they are already natural and correct—simply note "No major corrections required" or list only genuine high-level refinements.)\n- Alternative Expressions / Rewritten Version: Provide a model band-9 level response based on their input. If the original essay is already at Band 9.0 level, do not copy it verbatim; instead, rewrite it using alternative advanced structures and vocabulary to show the user different ways to express the same data and relationships.\n- Key Actionable Tips: 3-5 concrete actionable points for improvement.\n\nKeep your tone professional, encouraging, and highly educational. If the user didn\'t provide the prompt or image details, ask them to describe the graph/chart or paste the prompt.'
     },
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
-        instructions: 'You are an expert, strict IELTS Writing Task 2 Examiner. Your goal is to provide a highly detailed, rigorous, and professional evaluation of the user\'s essay. Be very thorough in your feedback, identifying even minor mistakes and suggesting high-level improvements.\n\nFor each of the 4 official criteria, provide:\n1. Detailed Score Breakdown & Rationale.\n2. Specific mistakes or areas of weakness in their text with line-by-line quotes and exact corrections.\n3. Advanced lexical/grammatical alternatives.\n\nTask Response (TR):\n- Did the user fully address all parts of the prompt? Is there a clear position throughout? Are main ideas supported with relevant explanations and examples?\n- Check if they avoided drawing general conclusions without support.\n\nCoherence & Cohesion (CC):\n- Is the essay organized logically with clear paragraphing? Is there a central topic in each paragraph? Are linkers and cohesive devices used accurately and without overuse?\n\nLexical Resource (LR):\n- Did the user use a wide range of vocabulary with precision? Is there appropriate use of less common lexical items, collocations, and academic vocabulary? Are spelling/word-formation errors avoided?\n\nGrammatical Range & Accuracy (GRA):\n- Did the user use a variety of complex grammar structures with high accuracy? Are punctuation and sentence structures correct?\n\nStructure your response as follows:\n- Overall Band Score Estimate: (e.g., 7.0 - provide a precise estimate)\n- Detailed Evaluation by Criterion:\n  - Task Response: [Very detailed analysis, list of strengths and specific weaknesses with quotes]\n  - Coherence & Cohesion: [Detailed paragraphing and linkers analysis]\n  - Lexical Resource: [Vocabulary range, exact word choice corrections, list of suggestions]\n  - Grammatical Range & Accuracy: [Detailed grammar corrections with exact line quotes and rewritten fixes]\n- Sentence-by-Sentence Correction Table: A markdown table containing:\n  | Original Sentence | Error/Weakness | Corrected & Upgraded Version |\n- Rewritten Version: Provide a model band-9 level response based on their input.\n- Key Actionable Tips: 3-5 concrete actionable points for improvement.\n\nKeep your tone professional, encouraging, and highly educational. If the user didn\'t provide the essay prompt, ask them to paste both the prompt and their essay.'
+        instructions: 'You are an expert, objective and professional IELTS Writing Task 2 Examiner. Your goal is to provide an accurate, highly detailed, and rigorous evaluation of the user\'s essay according to official IELTS assessment criteria. While you should be thorough in identifying mistakes and suggesting improvements, you must calibrate your scores accurately to the official IELTS descriptors—if an essay is of exceptional quality, contains advanced vocabulary, complex structures, and meets all task criteria perfectly (especially if it is a refined/model response), you should award it the high band score it deserves (8.5 or 9.0) instead of being overly strict and capping it lower.\n\nFor each of the 4 official criteria, provide:\n1. Detailed Score Breakdown & Rationale.\n2. Specific mistakes or areas of weakness in their text with line-by-line quotes and exact corrections.\n3. Advanced lexical/grammatical alternatives.\n\nTask Response (TR):\n- Did the user fully address all parts of the prompt? Is there a clear position throughout? Are main ideas supported with relevant explanations and examples?\n- Check if they avoided drawing general conclusions without support.\n\nCoherence & Cohesion (CC):\n- Is the essay organized logically with clear paragraphing? Is there a central topic in each paragraph? Are linkers and cohesive devices used accurately and without overuse?\n\nLexical Resource (LR):\n- Did the user use a wide range of vocabulary with precision? Is there appropriate use of less common lexical items, collocations, and academic vocabulary? Are spelling/word-formation errors avoided?\n\nGrammatical Range & Accuracy (GRA):\n- Did the user use a variety of complex grammar structures with high accuracy? Are punctuation and sentence structures correct?\n\nStructure your response as follows:\n- Overall Band Score Estimate: (e.g., 7.0 - provide a precise estimate)\n- Detailed Evaluation by Criterion:\n  - Task Response: [Very detailed analysis, list of strengths and specific weaknesses with quotes]\n  - Coherence & Cohesion: [Detailed paragraphing and linkers analysis]\n  - Lexical Resource: [Vocabulary range, exact word choice corrections, list of suggestions]\n  - Grammatical Range & Accuracy: [Detailed grammar corrections with exact line quotes and rewritten fixes]\n- Sentence-by-Sentence Correction/Refinement Table: A markdown table containing:\n  | Original Sentence | Error/Weakness/Refinement Needs | Corrected & Upgraded Version |\n  (Note: Only include sentences that have actual errors, weaknesses, or clear opportunities for stylistic upgrade. For essays that are exceptionally written or already at Band 9.0 level, do not manufacture minor nitpicks or force entries if they are already natural and correct—simply note "No major corrections required" or list only genuine high-level refinements.)\n- Alternative Expressions / Rewritten Version: Provide a model band-9 level response based on their input. If the original essay is already at Band 9.0 level, do not copy it verbatim; instead, rewrite it using alternative advanced structures and vocabulary to show the user different ways to express the same ideas and arguments.\n- Key Actionable Tips: 3-5 concrete actionable points for improvement.\n\nKeep your tone professional, encouraging, and highly educational. If the user didn\'t provide the essay prompt, ask them to paste both the prompt and their essay.'
     }
 };
 
@@ -30,8 +30,8 @@ async function sparksLoad() {
 
     for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
         const existing = sparks[id];
-        // Upgrade if it doesn't exist, or uses old instructions, or lacks the correction table
-        if (!existing || existing.instructions.includes('evaluate, guide, and help') || !existing.instructions.includes('Sentence-by-Sentence Correction Table')) {
+        // Upgrade if it doesn't exist, or uses old instructions, or lacks the correction table, or lacks the objective/professional scoring calibration, or lacks the nitpick guidance, or lacks Alternative Expressions
+        if (!existing || existing.instructions.includes('evaluate, guide, and help') || !existing.instructions.includes('Sentence-by-Sentence Correction') || !existing.instructions.includes('objective and professional') || !existing.instructions.includes('manufacture minor nitpicks') || !existing.instructions.includes('Alternative Expressions')) {
             sparks[id] = {
                 id: id,
                 name: defSpark.name,
@@ -657,37 +657,41 @@ async function openSparkChat(sparkId) {
     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
 
-    const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+    const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
     if (activeTab) {
         activeTab.sparkId = sparkId;
+
+        const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
+        const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
+        const targetSharedInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
 
         const settingsRes = await chrome.storage.local.get(['lumina_spark_last_settings']);
         const sparkSettings = (settingsRes.lumina_spark_last_settings || {})[sparkId];
         if (sparkSettings) {
             activeTab.selectedModel = sparkSettings.selectedModel || null;
             activeTab.thinkingLevel = sparkSettings.thinkingLevel || null;
-            if (chatUI) {
-                chatUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
-                chatUI.thinkingLevel = activeTab.thinkingLevel || null;
+            if (targetChatUI) {
+                targetChatUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
+                targetChatUI.thinkingLevel = activeTab.thinkingLevel || null;
             }
-            if (sharedInputUI) {
-                sharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
-                sharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
-                if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-                if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+            if (targetSharedInputUI) {
+                targetSharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
+                targetSharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
+                if (typeof targetSharedInputUI.refreshModelSelector === 'function') targetSharedInputUI.refreshModelSelector();
+                if (typeof targetSharedInputUI.refreshReasoningSelector === 'function') targetSharedInputUI.refreshReasoningSelector();
             }
         } else {
             activeTab.selectedModel = null;
             activeTab.thinkingLevel = null;
-            if (chatUI) {
-                chatUI.activeTabModel = null;
-                chatUI.thinkingLevel = null;
+            if (targetChatUI) {
+                targetChatUI.activeTabModel = null;
+                targetChatUI.thinkingLevel = null;
             }
-            if (sharedInputUI) {
-                sharedInputUI.activeTabModel = null;
-                sharedInputUI.thinkingLevel = null;
-                if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-                if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+            if (targetSharedInputUI) {
+                targetSharedInputUI.activeTabModel = null;
+                targetSharedInputUI.thinkingLevel = null;
+                if (typeof targetSharedInputUI.refreshModelSelector === 'function') targetSharedInputUI.refreshModelSelector();
+                if (typeof targetSharedInputUI.refreshReasoningSelector === 'function') targetSharedInputUI.refreshReasoningSelector();
             }
         }
 
@@ -702,12 +706,12 @@ async function openSparkChat(sparkId) {
             updateUrlSessionId(null);
         }
 
-        if (chatUI) {
-            chatUI.clearHistory();
-            if (chatUI.inputEl) {
-                chatUI.inputEl.value = '';
-                chatUI.inputEl.style.height = 'auto';
-                chatUI.inputEl.focus();
+        if (targetChatUI) {
+            targetChatUI.clearHistory();
+            if (targetChatUI.inputEl) {
+                targetChatUI.inputEl.value = '';
+                targetChatUI.inputEl.style.height = 'auto';
+                targetChatUI.inputEl.focus();
             }
         }
 
@@ -715,8 +719,14 @@ async function openSparkChat(sparkId) {
 
         if (typeof renderTabs === 'function') renderTabs();
         if (typeof saveTabsState === 'function') saveTabsState();
-        if (window.updateTopbarModelSelector) {
-            window.updateTopbarModelSelector();
+        if (isSecondary) {
+            if (window.updateTopbarModelSelectorSecondary) {
+                window.updateTopbarModelSelectorSecondary();
+            }
+        } else {
+            if (window.updateTopbarModelSelector) {
+                window.updateTopbarModelSelector();
+            }
         }
         if (typeof window.updateInputPlaceholder === 'function') {
             window.updateInputPlaceholder();
@@ -962,15 +972,14 @@ function initSparks() {
     if (sidebarNewSparkBtn) {
         sidebarNewSparkBtn.addEventListener('click', () => sparksOpenEditor(null));
     }
-
     document.getElementById('sidebar-new-chat-btn')?.addEventListener('click', () => {
-        const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+        const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
         if (activeTab) activeTab.sparkId = null;
         sparksClosePage();
         sidebarSparksRenderList();
     });
     document.getElementById('topbar-new-chat-btn')?.addEventListener('click', () => {
-        const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+        const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
         if (activeTab) activeTab.sparkId = null;
         sparksClosePage();
         sidebarSparksRenderList();
@@ -979,13 +988,12 @@ function initSparks() {
     document.addEventListener('click', (e) => {
         const chatItem = e.target.closest('.recent-chat-item');
         if (chatItem && !e.target.closest('.recent-chat-item__menu-btn')) {
-            const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+            const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
             if (activeTab) activeTab.sparkId = null;
             sparksClosePage();
             sidebarSparksRenderList();
         }
     });
-
     sidebarSparksRenderList();
 }
 

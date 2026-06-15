@@ -46,6 +46,9 @@ if (isSidePanel) {
 }
 
 function updateUrlSessionId(sessionId) {
+    if (typeof isSplitMode !== 'undefined' && isSplitMode) {
+        sessionId = null;
+    }
     const urlParams = new URLSearchParams(window.location.search);
     if (!sessionId) {
         if (urlParams.has('session_id')) {
@@ -118,6 +121,191 @@ let sidebarTargetTabId = null;
 let splitHoverTimer = null;
 let splitHoverTargetIndex = -1;
 let isApplyingSplit = false;
+
+window.getActiveSpotlightTab = function() {
+    const isSecondary = isSplitMode && hoveredPane === 'secondary';
+    const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
+    return (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
+};
+
+function updatePaneHighlight() {
+    const panePrimary = document.getElementById('pane-primary');
+    const paneSecondary = document.getElementById('pane-secondary');
+    if (!panePrimary) return;
+
+    if (isSplitMode) {
+        if (hoveredPane === 'secondary') {
+            panePrimary.classList.remove('active');
+            paneSecondary?.classList.add('active');
+            if (sharedInputUISecondary?.inputEl && document.activeElement !== sharedInputUISecondary.inputEl) {
+                sharedInputUISecondary.inputEl.focus();
+            }
+        } else {
+            paneSecondary?.classList.remove('active');
+            panePrimary.classList.add('active');
+            if (sharedInputUI?.inputEl && document.activeElement !== sharedInputUI.inputEl) {
+                sharedInputUI.inputEl.focus();
+            }
+        }
+    } else {
+        paneSecondary?.classList.remove('active');
+        panePrimary.classList.add('active');
+    }
+}
+
+async function toggleSplitMode() {
+    const splitContainer = document.getElementById('split-container');
+    const paneSecondary = document.getElementById('pane-secondary');
+    const resizer = document.getElementById('spotlight-resizer');
+    const panePrimary = document.getElementById('pane-primary');
+    if (!splitContainer) return;
+
+    if (isSplitMode) {
+        // Turn off split mode
+        isSplitMode = false;
+        secondaryActiveTabIndex = -1;
+        chatUISecondary = null;
+
+        splitContainer.classList.remove('split-mode');
+        if (paneSecondary) paneSecondary.style.display = 'none';
+        if (resizer) resizer.style.display = 'none';
+
+        if (panePrimary) panePrimary.style.flex = '';
+        if (paneSecondary) paneSecondary.style.flex = '';
+
+        if (tabs.length > 1) {
+            const secTab = tabs[1];
+            if (secTab) {
+                if (secTab.historyEl) {
+                    secTab.historyEl.style.display = 'none';
+                }
+            }
+            tabs = tabs.slice(0, 1);
+        }
+
+        const currentGroup = tabGroups[activeGroupIndex];
+        if (currentGroup) {
+            currentGroup.tabIds = currentGroup.tabIds.slice(0, 1);
+            currentGroup.ratio = 100;
+        }
+
+        hoveredPane = 'primary';
+        updatePaneHighlight();
+
+        await chrome.storage.local.set({ [KEYS.isSplitMode]: false });
+        saveTabsState();
+        
+        updateUrlSessionId(tabs[0]?.sessionId || null);
+        updateRecentChatsActiveState();
+        if (typeof sidebarSparksRenderList === 'function') {
+            sidebarSparksRenderList();
+        }
+    } else {
+        // Turn on split mode
+        if (window.innerWidth < 900) {
+            return;
+        }
+
+        isSplitMode = true;
+        secondaryActiveTabIndex = 1;
+
+        splitContainer.classList.add('split-mode');
+        if (paneSecondary) paneSecondary.style.display = 'flex';
+        if (resizer) resizer.style.display = 'flex';
+
+        // Load custom ratio or default 50
+        const storageData = await chrome.storage.local.get([KEYS.splitRatio]);
+        const ratio = storageData[KEYS.splitRatio] || 50;
+        if (panePrimary && paneSecondary) {
+            panePrimary.style.flex = `${ratio}`;
+            paneSecondary.style.flex = `${100 - ratio}`;
+        }
+
+        const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
+        if (secondaryContainer) {
+            secondaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
+        }
+
+        const initialHistorySecondary = document.createElement('div');
+        initialHistorySecondary.id = 'chat-history-secondary';
+        initialHistorySecondary.className = 'lumina-chat-scroll-content';
+        initialHistorySecondary.style.display = 'block';
+        if (secondaryContainer) secondaryContainer.appendChild(initialHistorySecondary);
+
+        let modelObj = null;
+        try {
+            const modelData = await chrome.storage.local.get(['lastUsedModel']);
+            if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
+                modelObj = { ...modelData.lastUsedModel };
+            }
+        } catch(e) {}
+
+        const secondaryTab = {
+            id: 'tab-secondary',
+            title: 'Chat 2',
+            sessionId: null,
+            sparkId: null,
+            scrollTop: -1,
+            isAtBottom: true,
+            restoreLatestOnOpen: true,
+            historyEl: initialHistorySecondary,
+            selectedModel: modelObj,
+            thinkingLevel: null,
+            chatUIInstance: new LuminaChatUI(secondaryContainer || container, {
+                isSpotlight: true,
+                skipInputSetup: true,
+                onSubmit: (text, images, extra) => handleSubmit(text, images, extra, secondaryTab)
+            }),
+            rawHistoryHtml: ''
+        };
+        secondaryTab.chatUIInstance.historyEl = initialHistorySecondary;
+        secondaryTab.chatUIInstance.initListeners(initialHistorySecondary);
+        bindHistoryScroll(secondaryTab);
+
+        if (tabs.length > 1) {
+            tabs[1] = secondaryTab;
+        } else {
+            tabs.push(secondaryTab);
+        }
+
+        const currentGroup = tabGroups[activeGroupIndex];
+        if (currentGroup) {
+            if (!currentGroup.tabIds.includes(secondaryTab.id)) {
+                currentGroup.tabIds.push(secondaryTab.id);
+            }
+            currentGroup.ratio = ratio;
+        }
+
+        chatUISecondary = secondaryTab.chatUIInstance;
+        if (sharedInputUISecondary) {
+            sharedInputUISecondary.historyEl = initialHistorySecondary;
+            sharedInputUISecondary.restoreInputState(secondaryTab.inputStateSecondary || null);
+            sharedInputUISecondary.activeTabModel = secondaryTab.selectedModel ? { ...secondaryTab.selectedModel } : null;
+            sharedInputUISecondary.thinkingLevel = secondaryTab.thinkingLevel || null;
+            if (typeof sharedInputUISecondary.refreshModelSelector === 'function') sharedInputUISecondary.refreshModelSelector();
+            if (typeof sharedInputUISecondary.refreshReasoningSelector === 'function') sharedInputUISecondary.refreshReasoningSelector();
+            sharedInputUISecondary._updateActionBtnState();
+        }
+
+        initTopbarModelSelector('secondary');
+
+        hoveredPane = 'secondary';
+        updatePaneHighlight();
+
+        await chrome.storage.local.set({ [KEYS.isSplitMode]: true });
+        saveTabsState();
+
+        updateUrlSessionId(null);
+        updateRecentChatsActiveState();
+        if (typeof sidebarSparksRenderList === 'function') {
+            sidebarSparksRenderList();
+        }
+    }
+    updateWelcomeScreenState('primary');
+    if (isSplitMode) {
+        updateWelcomeScreenState('secondary');
+    }
+}
 
 let port = null;
 let shortcuts = {};
@@ -343,14 +531,6 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
             }
         }
         updateWebChips();
-
-
-        const affectedTabs = spotlightTabId
-            ? tabs.filter(t => t.id === spotlightTabId)
-            : tabs;
-        affectedTabs.forEach(t => {
-            if (t.chatUIInstance) t.chatUIInstance._throttledUpdateTokenCount();
-        });
     }
 }
 
@@ -449,7 +629,6 @@ function refreshWebSourceTokensForTab(tabId) {
                 const count = (typeof LuminaToken !== 'undefined') ? LuminaToken.count(text) : Math.ceil(text.length / 4);
                 currentBrowserTabTokens.set(stringTabId, count);
                 updateWebChips();
-                tabs.forEach(t => { if (t.chatUIInstance) t.chatUIInstance._throttledUpdateTokenCount(); });
             } else {
                 currentBrowserTabTokens.delete(stringTabId);
                 updateWebChips();
@@ -550,8 +729,9 @@ function bindHistoryScroll(tab) {
     }, { passive: true });
 }
 
-function showTopbarLoading() {
-    const bar = document.getElementById('topbar-progress');
+function showTopbarLoading(pane) {
+    const barId = (pane === 'secondary') ? 'topbar-progress-secondary' : 'topbar-progress';
+    const bar = document.getElementById(barId);
     if (bar) {
         bar.style.transition = 'none';
         bar.style.transform = 'scaleX(0)';
@@ -563,8 +743,9 @@ function showTopbarLoading() {
     }
 }
 
-function hideTopbarLoading() {
-    const bar = document.getElementById('topbar-progress');
+function hideTopbarLoading(pane) {
+    const barId = (pane === 'secondary') ? 'topbar-progress-secondary' : 'topbar-progress';
+    const bar = document.getElementById(barId);
     if (bar) {
         bar.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
         bar.style.transform = 'scaleX(1)';
@@ -613,7 +794,8 @@ function restoreLatestScrollPosition(tab) {
 }
 
 function scheduleScrollRestore(tab) {
-    showTopbarLoading();
+    const _ssrPane = (typeof secondaryTab !== 'undefined' && tab === secondaryTab) ? 'secondary' : 'primary';
+    showTopbarLoading(_ssrPane);
     if (tab?.historyEl) {
         tab.historyEl.style.opacity = '0';
         tab.historyEl.style.transition = 'none';
@@ -635,7 +817,7 @@ function scheduleScrollRestore(tab) {
             tab.historyEl.style.opacity = '1';
             tab.historyEl.style.transition = '';
         }
-        hideTopbarLoading();
+        hideTopbarLoading(_ssrPane);
     };
     setTimeout(performRestore, 40);
 }
@@ -862,50 +1044,31 @@ async function handleRemoteSync(changes, areaName) {
         const deletedIds = Object.keys(oldSessions).filter(id => !newSessions[id]);
 
         if (deletedIds.length > 0) {
-            const tabsToClose = tabs.filter(t => t.sessionId && deletedIds.includes(t.sessionId));
-
-            if (tabsToClose.length > 0) {
-
-
-                tabsToClose.forEach(tab => {
-                    if (tab.historyEl) tab.historyEl.remove();
-                    tabGroups.forEach(g => {
-                        g.tabIds = g.tabIds.filter(id => id !== tab.id);
-                    });
-                });
-
-
-                tabs = tabs.filter(t => !tabsToClose.includes(t));
-
-
-                tabGroups = tabGroups.filter(g => g.tabIds.length > 0);
-
-                if (tabs.length === 0) {
-                    createTab();
-                } else {
-
-                    const idMap = {};
-                    tabs.forEach((t, i) => {
-                        const newId = `tab-${i + 1}`;
-                        idMap[t.id] = newId;
-                        t.id = newId;
-                        if (t.historyEl) t.historyEl.id = `chat-history-tab-${i + 1}`;
-                    });
-                    tabGroups.forEach(g => {
-                        g.tabIds = g.tabIds.map(id => idMap[id] || id);
-                    });
-                    tabCounter = tabs.length;
-
-
-                    if (activeGroupIndex >= tabGroups.length) {
-                        activeGroupIndex = Math.max(0, tabGroups.length - 1);
+            let updated = false;
+            tabs.forEach((tab, index) => {
+                if (tab.sessionId && deletedIds.includes(tab.sessionId)) {
+                    const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
+                    const isActive = (index === activeTabIndex);
+                    if (isActive || isSecondary) {
+                        resetChat(isSecondary);
+                        updated = true;
+                    } else {
+                        tab.title = 'New Tab';
+                        tab.sessionId = null;
+                        tab.sparkId = null;
+                        tab.rawHistoryHtml = null;
+                        if (tab.historyEl) {
+                            tab.historyEl.removeAttribute('data-session-id');
+                            tab.historyEl.innerHTML = '';
+                        }
+                        updated = true;
                     }
-
-                    renderTabs();
-                    if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
-                    switchGroup(activeGroupIndex);
-                    saveTabsState();
                 }
+            });
+            if (updated) {
+                renderTabs();
+                if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
+                saveTabsState();
             }
         }
     }
@@ -1028,9 +1191,14 @@ async function initTabs() {
         topBar.style.display = 'flex';
     }
 
-    const primaryContainer = document.querySelector('.lumina-chat-container') || container;
+    const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container');
+    const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
+    
     if (primaryContainer) {
         primaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
+    }
+    if (secondaryContainer) {
+        secondaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
     }
 
     tabs = [];
@@ -1039,12 +1207,21 @@ async function initTabs() {
     initialHistory.id = 'chat-history';
     initialHistory.className = 'lumina-chat-scroll-content';
     initialHistory.style.display = 'none';
-    primaryContainer.appendChild(initialHistory);
+    if (primaryContainer) primaryContainer.appendChild(initialHistory);
+
+    const initialHistorySecondary = document.createElement('div');
+    initialHistorySecondary.id = 'chat-history-secondary';
+    initialHistorySecondary.className = 'lumina-chat-scroll-content';
+    initialHistorySecondary.style.display = 'none';
+    if (secondaryContainer) secondaryContainer.appendChild(initialHistorySecondary);
 
     try {
         const data = await chrome.storage.local.get([
             KEYS.tabs,
             KEYS.activeTabIndex,
+            KEYS.secondaryTabIndex,
+            KEYS.isSplitMode,
+            KEYS.splitRatio,
             'lumina_youtube_trigger',
             'lumina_session_settings',
             'lumina_sparks'
@@ -1061,26 +1238,24 @@ async function initTabs() {
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
 
-        let sessionId;
+        let sessionId = urlSessionId || savedTab?.sessionId || null;
         let historyHtml = '';
         let tabTitle = 'Chat';
         let meta = {};
-
         let hasAsyncHistoryLoad = false;
 
-        if (urlSessionId) {
-            sessionId = urlSessionId;
+        if (sessionId) {
             const historyKey = `spotlight_history_${sessionId}`;
             const historyData = await chrome.storage.local.get([historyKey]);
             historyHtml = historyData[historyKey] || '';
 
             const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
             const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
-            meta = sessions[urlSessionId] || {};
+            meta = sessions[sessionId] || {};
             tabTitle = meta.title || 'Chat';
 
             if (!historyHtml) {
-                const contentKey = `lumina_session_${urlSessionId}`;
+                const contentKey = `lumina_session_${sessionId}`;
                 const contentData = await chrome.storage.local.get([contentKey]);
                 const messages = contentData[contentKey];
                 if (messages) {
@@ -1091,7 +1266,6 @@ async function initTabs() {
                         timestamp: meta.createdAt || meta.updatedAt
                     };
                     hasAsyncHistoryLoad = true;
-                    // Trigger restoreChat asynchronously
                     setTimeout(async () => {
                         showTopbarLoading();
                         await ChatHistoryManager.restoreChat(chatData, initialHistory);
@@ -1102,16 +1276,6 @@ async function initTabs() {
                     }, 0);
                 }
             }
-        } else {
-            sessionId = savedTab?.sessionId || null;
-            if (sessionId) {
-                const historyKey = `spotlight_history_${sessionId}`;
-                const historyData = await chrome.storage.local.get([historyKey]);
-                historyHtml = historyData[historyKey] || '';
-            } else {
-                historyHtml = '';
-            }
-            tabTitle = savedTab?.title || 'Chat';
         }
 
         const singleTab = {
@@ -1148,7 +1312,6 @@ async function initTabs() {
         if (hasAsyncHistoryLoad) {
             initialHistory.style.display = 'block';
         } else {
-            // Load history HTML asynchronously so page rendering finishes instantly
             setTimeout(() => {
                 ensureTabHistoryLoaded(singleTab);
                 initialHistory.style.display = 'block';
@@ -1160,11 +1323,129 @@ async function initTabs() {
         activeGroupIndex = 0;
         tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
 
+        // Check split mode
+        let storedSplitMode = data[KEYS.isSplitMode] ?? false;
+        if (storedSplitMode && window.innerWidth < 900) {
+            storedSplitMode = false;
+        }
+
+        if (storedSplitMode) {
+            isSplitMode = true;
+            secondaryActiveTabIndex = 1;
+            const splitContainer = document.getElementById('split-container');
+            splitContainer?.classList.add('split-mode');
+            const paneSecondary = document.getElementById('pane-secondary');
+            const resizer = document.getElementById('spotlight-resizer');
+            const panePrimary = document.getElementById('pane-primary');
+            if (paneSecondary) paneSecondary.style.display = 'flex';
+            if (resizer) resizer.style.display = 'flex';
+
+            let ratio = data[KEYS.splitRatio] || 50;
+            if (panePrimary && paneSecondary) {
+                panePrimary.style.flex = `${ratio}`;
+                paneSecondary.style.flex = `${100 - ratio}`;
+            }
+
+            let savedSecTab = null;
+            if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
+                savedSecTab = data[KEYS.tabs][1];
+            }
+
+            let secSessionId = savedSecTab?.sessionId || null;
+            let secHistoryHtml = '';
+            let secTabTitle = savedSecTab?.title || 'Chat 2';
+            let secMeta = {};
+            let secHasAsyncHistoryLoad = false;
+
+            if (secSessionId) {
+                const historyKey = `spotlight_history_${secSessionId}`;
+                const historyData = await chrome.storage.local.get([historyKey]);
+                secHistoryHtml = historyData[historyKey] || '';
+
+                const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+                const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+                secMeta = sessions[secSessionId] || {};
+                secTabTitle = secMeta.title || 'Chat 2';
+
+                if (!secHistoryHtml) {
+                    const contentKey = `lumina_session_${secSessionId}`;
+                    const contentData = await chrome.storage.local.get([contentKey]);
+                    const messages = contentData[contentKey];
+                    if (messages) {
+                        const chatData = {
+                            ...secMeta,
+                            messages: messages,
+                            sessionId: secSessionId,
+                            timestamp: secMeta.createdAt || secMeta.updatedAt
+                        };
+                        secHasAsyncHistoryLoad = true;
+                        setTimeout(async () => {
+                            showTopbarLoading('secondary');
+                            await ChatHistoryManager.restoreChat(chatData, initialHistorySecondary);
+                            secondaryTab.rawHistoryHtml = null;
+                            normalizeRestoredHistory(initialHistorySecondary);
+                            scheduleScrollRestore(secondaryTab);
+                            hideTopbarLoading('secondary');
+                        }, 0);
+                    }
+                }
+            }
+
+            const secondaryTab = {
+                id: 'tab-secondary',
+                title: secTabTitle,
+                sessionId: secSessionId,
+                sparkId: savedSecTab?.sparkId || null,
+                scrollTop: savedSecTab?.scrollTop ?? -1,
+                scrollAnchorIndex: savedSecTab?.scrollAnchorIndex ?? null,
+                scrollAnchorOffset: savedSecTab?.scrollAnchorOffset ?? null,
+                isAtBottom: savedSecTab?.isAtBottom ?? true,
+                restoreLatestOnOpen: true,
+                historyEl: initialHistorySecondary,
+                selectedModel: (sessionSettings[secSessionId || 'null']?.selectedModel) || savedSecTab?.selectedModel || secMeta.selectedModel || null,
+                thinkingLevel: (sessionSettings[secSessionId || 'null']?.thinkingLevel) || savedSecTab?.thinkingLevel || secMeta.thinkingLevel || null,
+                chatUIInstance: new LuminaChatUI(secondaryContainer || container, {
+                    isSpotlight: true,
+                    skipInputSetup: true,
+                    onSubmit: (text, images, extra) => handleSubmit(text, images, extra, secondaryTab)
+                }),
+                rawHistoryHtml: secHistoryHtml
+            };
+            secondaryTab.chatUIInstance.historyEl = initialHistorySecondary;
+            secondaryTab.chatUIInstance.thinkingLevel = secondaryTab.thinkingLevel || null;
+            if (secondaryTab.sessionId) {
+                initialHistorySecondary.dataset.sessionId = secondaryTab.sessionId;
+            } else {
+                initialHistorySecondary.removeAttribute('data-session-id');
+            }
+            secondaryTab.chatUIInstance.initListeners(initialHistorySecondary);
+            bindHistoryScroll(secondaryTab);
+            tabs.push(secondaryTab);
+            chatUISecondary = secondaryTab.chatUIInstance;
+
+            setTimeout(() => {
+                initTopbarModelSelector('secondary');
+            }, 0);
+
+            if (secHasAsyncHistoryLoad) {
+                initialHistorySecondary.style.display = 'block';
+            } else {
+                setTimeout(() => {
+                    ensureTabHistoryLoaded(secondaryTab);
+                    initialHistorySecondary.style.display = 'block';
+                    scheduleScrollRestore(secondaryTab);
+                }, 0);
+            }
+        }
+
         const modelData = await chrome.storage.local.get(['lastUsedModel']);
         if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
-            singleTab.selectedModel = { ...modelData.lastUsedModel };
-            if (singleTab.chatUIInstance) {
-                singleTab.chatUIInstance.activeTabModel = { ...modelData.lastUsedModel };
+            if (!singleTab.selectedModel) singleTab.selectedModel = { ...modelData.lastUsedModel };
+            singleTab.chatUIInstance.activeTabModel = { ...singleTab.selectedModel };
+            
+            if (storedSplitMode && tabs[1]) {
+                if (!tabs[1].selectedModel) tabs[1].selectedModel = { ...modelData.lastUsedModel };
+                tabs[1].chatUIInstance.activeTabModel = { ...tabs[1].selectedModel };
             }
         }
 
@@ -1187,10 +1468,15 @@ async function initTabs() {
         newBtn.addEventListener('click', () => createTab());
     }
 
-    const topbarNewChatBtn = document.getElementById('topbar-new-chat-btn');
-    if (topbarNewChatBtn) {
-        topbarNewChatBtn.addEventListener('click', () => createTab());
-    }
+     const topbarNewChatBtn = document.getElementById('topbar-new-chat-btn');
+     if (topbarNewChatBtn) {
+         topbarNewChatBtn.addEventListener('click', () => resetChat(false));
+     }
+ 
+     const topbarNewChatBtnSec = document.getElementById('topbar-new-chat-btn-secondary');
+     if (topbarNewChatBtnSec) {
+         topbarNewChatBtnSec.addEventListener('click', () => resetChat(true));
+     }
 
     const topbarMoreBtn = document.getElementById('topbar-more-btn');
     const topbarDropdown = document.getElementById('topbar-dropdown-menu');
@@ -1201,15 +1487,51 @@ async function initTabs() {
             if (isOpen) {
                 topbarDropdown.style.display = 'none';
             } else {
+                const secModelDropdown = document.getElementById('topbar-model-dropdown-secondary');
+                const mainModelDropdown = document.getElementById('topbar-model-dropdown');
+                const secMoreDropdown = document.getElementById('topbar-dropdown-menu-secondary');
+                if (secModelDropdown) secModelDropdown.classList.remove('active');
+                if (mainModelDropdown) mainModelDropdown.classList.remove('active');
+                if (secMoreDropdown) secMoreDropdown.style.display = 'none';
+
                 topbarDropdown.style.display = 'flex';
                 topbarDropdown.classList.remove('expanded');
-                renderDropdownMenu();
+                renderDropdownMenu('primary');
             }
         });
 
         document.addEventListener('click', (e) => {
             if (!topbarDropdown.contains(e.target) && e.target !== topbarMoreBtn) {
                 topbarDropdown.style.display = 'none';
+            }
+        });
+    }
+
+    const topbarMoreBtnSec = document.getElementById('topbar-more-btn-secondary');
+    const topbarDropdownSec = document.getElementById('topbar-dropdown-menu-secondary');
+    if (topbarMoreBtnSec && topbarDropdownSec) {
+        topbarMoreBtnSec.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = topbarDropdownSec.style.display === 'flex';
+            if (isOpen) {
+                topbarDropdownSec.style.display = 'none';
+            } else {
+                const mainModelDropdown = document.getElementById('topbar-model-dropdown');
+                const secModelDropdown = document.getElementById('topbar-model-dropdown-secondary');
+                const mainMoreDropdown = document.getElementById('topbar-dropdown-menu');
+                if (mainModelDropdown) mainModelDropdown.classList.remove('active');
+                if (secModelDropdown) secModelDropdown.classList.remove('active');
+                if (mainMoreDropdown) mainMoreDropdown.style.display = 'none';
+
+                topbarDropdownSec.style.display = 'flex';
+                topbarDropdownSec.classList.remove('expanded');
+                renderDropdownMenu('secondary');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!topbarDropdownSec.contains(e.target) && e.target !== topbarMoreBtnSec) {
+                topbarDropdownSec.style.display = 'none';
             }
         });
     }
@@ -1256,7 +1578,8 @@ async function initTabs() {
 }
 
 function createTab(switchToIt = true) {
-    resetChat();
+    const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
+    resetChat(isSecondary);
 }
 
 function duplicateTab(index) {
@@ -1457,6 +1780,56 @@ function deactivateSplit() {
 }
 
 function setupResizer() {
+    const resizer = document.getElementById('spotlight-resizer');
+    const panePrimary = document.getElementById('pane-primary');
+    const paneSecondary = document.getElementById('pane-secondary');
+    const splitContainer = document.getElementById('split-container');
+    if (!resizer || !panePrimary || !paneSecondary || !splitContainer) return;
+
+    let isDragging = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        isDragging = true;
+        resizerDragging = true;
+        resizer.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const containerRect = splitContainer.getBoundingClientRect();
+        const paddingLeft = parseFloat(window.getComputedStyle(splitContainer).paddingLeft) || 0;
+        const paddingRight = parseFloat(window.getComputedStyle(splitContainer).paddingRight) || 0;
+        
+        const relativeX = e.clientX - containerRect.left - paddingLeft;
+        const availableWidth = containerRect.width - paddingLeft - paddingRight - resizer.offsetWidth;
+        
+        if (availableWidth <= 0) return;
+
+        let percentage = (relativeX / availableWidth) * 100;
+        if (percentage < 20) percentage = 20;
+        if (percentage > 80) percentage = 80;
+
+        // Auto-snap to center (50%) when close (between 47.5% and 52.5%)
+        if (percentage >= 47.5 && percentage <= 52.5) {
+            percentage = 50;
+        }
+
+        panePrimary.style.flex = `${percentage}`;
+        paneSecondary.style.flex = `${100 - percentage}`;
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            resizerDragging = false;
+            resizer.classList.remove('dragging');
+            document.body.style.cursor = '';
+            chrome.storage.local.set({ [KEYS.splitRatio]: parseFloat(panePrimary.style.flex) || 50 });
+        }
+    });
 }
 
 function closeTab(tabId) {
@@ -2314,9 +2687,6 @@ function syncCurrentBrowserTab() {
                     updateWebChips();
                     refreshWebSourceTokensForTab(realTab.id);
 
-                    [chatUI, chatUISecondary].forEach(ui => {
-                        if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
-                    });
                     if (webTabPickerEl) {
                         refreshWebTabPicker();
                     }
@@ -2335,18 +2705,10 @@ function syncCurrentBrowserTab() {
             loadCurrentWebSelection();
             updateWebChips();
             refreshWebSourceTokensForTab(activeTab.id);
-
-            [chatUI, chatUISecondary].forEach(ui => {
-                if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
-            });
         } else {
             currentBrowserTab = null;
             pinnedWebSources = [];
             updateWebChips();
-
-            [chatUI, chatUISecondary].forEach(ui => {
-                if (ui && typeof ui._throttledUpdateTokenCount === 'function') ui._throttledUpdateTokenCount();
-            });
         }
         updateWebChips();
         if (webTabPickerEl) {
@@ -2822,6 +3184,35 @@ async function init() {
         }
     });
 
+    if (isSidePanel) {
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const el = entry.target;
+                const hasScroll = el.scrollHeight > el.clientHeight;
+                el.classList.toggle('has-scrollbar', hasScroll);
+            }
+        });
+        const mutationObserver = new MutationObserver(() => {
+            document.querySelectorAll('.lumina-chat-scroll-content').forEach(el => {
+                if (!el.__observedForScrollbar) {
+                    el.__observedForScrollbar = true;
+                    observer.observe(el);
+                    const hasScroll = el.scrollHeight > el.clientHeight;
+                    el.classList.toggle('has-scrollbar', hasScroll);
+                }
+            });
+        });
+        mutationObserver.observe(document.body, { childList: true, subtree: true });
+        document.querySelectorAll('.lumina-chat-scroll-content').forEach(el => {
+            if (!el.__observedForScrollbar) {
+                el.__observedForScrollbar = true;
+                observer.observe(el);
+                const hasScroll = el.scrollHeight > el.clientHeight;
+                el.classList.toggle('has-scrollbar', hasScroll);
+            }
+        });
+    }
+
 
     initSpotlightAskSelection();
 
@@ -2841,6 +3232,21 @@ async function init() {
         });
     }
 
+    const inputAreaSecondary = document.getElementById('input-area-secondary');
+    if (inputAreaSecondary) {
+        inputAreaSecondary.innerHTML = LuminaChatUI.getChatInputHTML(true);
+        sharedInputUISecondary = new LuminaChatUI(inputAreaSecondary, {
+            isSpotlight: true,
+            isPrimaryInput: false,
+            alwaysExpanded: true,
+            onSubmit: (text, images, extra) => {
+                if (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0) {
+                    const secTab = tabs[secondaryActiveTabIndex];
+                    if (secTab) handleSubmit(text, images, extra, secTab);
+                }
+            }
+        });
+    }
 
     setupResizer();
 
@@ -2860,11 +3266,71 @@ async function init() {
                 sharedInputUI._updateActionBtnState();
             }
         }
+        if (isSplitMode && tabs[secondaryActiveTabIndex]) {
+            chatUISecondary = tabs[secondaryActiveTabIndex].chatUIInstance;
+            if (sharedInputUISecondary) {
+                sharedInputUISecondary.historyEl = tabs[secondaryActiveTabIndex].historyEl;
+                sharedInputUISecondary._updateActionBtnState();
+            }
+        }
     }
 
-    // Initialize topbar model selector
-    initTopbarModelSelector();
+    // Initialize topbar model selectors
+    initTopbarModelSelector('primary');
+    if (isSplitMode) {
+        initTopbarModelSelector('secondary');
+    }
     updateInputPlaceholder();
+    updatePaneHighlight();
+    updateWelcomeScreenState('primary');
+    if (isSplitMode) {
+        updateWelcomeScreenState('secondary');
+    }
+
+    // Wire up split screen toggles
+    document.querySelectorAll('.split-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', toggleSplitMode);
+    });
+
+    // Setup click detection on the panes
+    const panePrimary = document.getElementById('pane-primary');
+    const paneSecondary = document.getElementById('pane-secondary');
+
+    if (panePrimary) {
+        const setPrimary = () => {
+            if (isSplitMode && hoveredPane !== 'primary') {
+                hoveredPane = 'primary';
+                updatePaneHighlight();
+                updateInputPlaceholder();
+                updateRecentChatsActiveState();
+                if (typeof window.updateTopbarModelSelector === 'function') {
+                    window.updateTopbarModelSelector();
+                }
+            }
+        };
+        panePrimary.addEventListener('click', setPrimary, true);
+    }
+
+    if (paneSecondary) {
+        const setSecondary = () => {
+            if (isSplitMode && hoveredPane !== 'secondary') {
+                hoveredPane = 'secondary';
+                updatePaneHighlight();
+                updateInputPlaceholder();
+                updateRecentChatsActiveState();
+                if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
+                    window.updateTopbarModelSelectorSecondary();
+                }
+            }
+        };
+        paneSecondary.addEventListener('click', setSecondary, true);
+    }
+
+    window.addEventListener('resize', () => {
+        if (isSplitMode && window.innerWidth < 900) {
+            toggleSplitMode();
+        }
+    });
 
     setupPort();
 
@@ -2986,6 +3452,9 @@ async function init() {
         const activeTab = tabs[targetIndex];
         if (activeTab && e.detail) {
             activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
+            if (activeTab.chatUIInstance) {
+                activeTab.chatUIInstance.activeTabModel = { ...activeTab.selectedModel };
+            }
             if (targetSharedUI) {
                 targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
             }
@@ -3225,10 +3694,9 @@ function initSidebar() {
         backdrop.addEventListener('click', closeMobileSidebar);
     }
 
-    // Bind sidebar actions
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
-            resetChat();
+            resetChat(null);
             closeMobileSidebar();
         });
     }
@@ -3388,6 +3856,9 @@ function initSidebar() {
                             const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
 
                             activeTab.thinkingLevel = newThinkingLevel;
+                            if (activeTab.chatUIInstance) {
+                                activeTab.chatUIInstance.thinkingLevel = newThinkingLevel;
+                            }
                             if (sharedInputUI) {
                                 sharedInputUI.thinkingLevel = newThinkingLevel;
                                 if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
@@ -3405,10 +3876,14 @@ function initSidebar() {
 }
 
 function updateRecentChatsActiveState() {
-    const activeTab = tabs[activeTabIndex];
+    const isSec = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
+    const targetIdx = isSec ? secondaryActiveTabIndex : activeTabIndex;
+    const activeTab = (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
     const activeSessionId = activeTab ? activeTab.sessionId : null;
+
     document.querySelectorAll('#sidebar-recent-chats .recent-chat-item').forEach(item => {
-        if (item.dataset.sessionId === activeSessionId) {
+        const sid = item.dataset.sessionId;
+        if (activeSessionId && sid === activeSessionId) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
@@ -3611,6 +4086,12 @@ async function renderRecentChatsSidebar() {
                     });
                     if (confirmed) {
                         await ChatHistoryManager.deleteChat(sid);
+                        tabs.forEach((tab, index) => {
+                            if (tab.sessionId === sid) {
+                                const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
+                                resetChat(isSecondary);
+                            }
+                        });
                     }
                 }
             });
@@ -3734,13 +4215,11 @@ function setupPort() {
                     targetUI.currentAnswerDiv = null;
                 });
 
-                if (sharedInputUI) {
-                    sharedInputUI.isGenerating = false;
-                    sharedInputUI._updateActionBtnState();
-                }
-                if (sharedInputUISecondary) {
-                    sharedInputUISecondary.isGenerating = false;
-                    sharedInputUISecondary._updateActionBtnState();
+                const _streamingIsSec = typeof isSplitMode !== 'undefined' && isSplitMode && streamingTab === tabs[secondaryActiveTabIndex];
+                const _streamingInputUI = _streamingIsSec ? sharedInputUISecondary : sharedInputUI;
+                if (_streamingInputUI) {
+                    _streamingInputUI.isGenerating = false;
+                    _streamingInputUI._updateActionBtnState();
                 }
                 streamingTab = null;
                 return;
@@ -3803,13 +4282,11 @@ function setupPort() {
 
 
                     requestAnimationFrame(() => {
-                        if (sharedInputUI) {
-                            sharedInputUI.isGenerating = false;
-                            sharedInputUI._updateActionBtnState();
-                        }
-                        if (sharedInputUISecondary) {
-                            sharedInputUISecondary.isGenerating = false;
-                            sharedInputUISecondary._updateActionBtnState();
+                        const _doneIsSec = typeof isSplitMode !== 'undefined' && isSplitMode && streamingTab === tabs[secondaryActiveTabIndex];
+                        const _doneInputUI = _doneIsSec ? sharedInputUISecondary : sharedInputUI;
+                        if (_doneInputUI) {
+                            _doneInputUI.isGenerating = false;
+                            _doneInputUI._updateActionBtnState();
                         }
                         if (answerDiv) {
                             const entry = answerDiv.closest('.lumina-dict-entry');
@@ -3943,9 +4420,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     currentTab.userScrolledUp = false;
     if (targetChatUI) targetChatUI.disableAutoScroll = false;
 
-
-    if (sharedInputUI) sharedInputUI.isGenerating = true;
-    if (sharedInputUISecondary) sharedInputUISecondary.isGenerating = true;
+    const _isSecTab = typeof isSplitMode !== 'undefined' && isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
+    const _activeInputUI = _isSecTab ? sharedInputUISecondary : sharedInputUI;
+    if (_activeInputUI) _activeInputUI.isGenerating = true;
 
 
     const translateMatch = text && text.match(/^translate:?\s*([\s\S]*)/i);
@@ -3993,13 +4470,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
 
     if (extra.mode === 'translate') {
         await targetChatUI.handleTranslation(text);
-        if (sharedInputUI) {
-            sharedInputUI.isGenerating = false;
-            sharedInputUI._updateActionBtnState();
-        }
-        if (sharedInputUISecondary) {
-            sharedInputUISecondary.isGenerating = false;
-            sharedInputUISecondary._updateActionBtnState();
+        if (_activeInputUI) {
+            _activeInputUI.isGenerating = false;
+            _activeInputUI._updateActionBtnState();
         }
         saveTabsState();
         return;
@@ -4009,13 +4482,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         const word = displayQuery || (text ? text.replace(/^Define: /i, '').trim() : '');
         if (word) {
             await targetChatUI.handleDictionary(word);
-            if (sharedInputUI) {
-                sharedInputUI.isGenerating = false;
-                sharedInputUI._updateActionBtnState();
-            }
-            if (sharedInputUISecondary) {
-                sharedInputUISecondary.isGenerating = false;
-                sharedInputUISecondary._updateActionBtnState();
+            if (_activeInputUI) {
+                _activeInputUI.isGenerating = false;
+                _activeInputUI._updateActionBtnState();
             }
             saveTabsState();
             return;
@@ -4027,13 +4496,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
             t.chatUIInstance.openWebSource(extra.source, text);
         });
-        if (sharedInputUI) {
-            sharedInputUI.isGenerating = false;
-            sharedInputUI._updateActionBtnState();
-        }
-        if (sharedInputUISecondary) {
-            sharedInputUISecondary.isGenerating = false;
-            sharedInputUISecondary._updateActionBtnState();
+        if (_activeInputUI) {
+            _activeInputUI.isGenerating = false;
+            _activeInputUI._updateActionBtnState();
         }
         return;
     }
@@ -4094,6 +4559,8 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 displayText: displayQuery
             });
             ui.showLoading();
+            const pane = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0 && t === tabs[secondaryActiveTabIndex]) ? 'secondary' : 'primary';
+            updateWelcomeScreenState(pane);
         } else {
 
             if (t !== currentTab) {
@@ -4292,25 +4759,16 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                     tab.chatUIInstance.appendError('aborted');
                 }
             });
-            if (sharedInputUI) {
-                sharedInputUI.isGenerating = false;
-                sharedInputUI._updateActionBtnState();
-            }
-            if (sharedInputUISecondary) {
-                sharedInputUISecondary.isGenerating = false;
-                sharedInputUISecondary._updateActionBtnState();
+            if (_activeInputUI) {
+                _activeInputUI.isGenerating = false;
+                _activeInputUI._updateActionBtnState();
             }
         };
 
-        if (sharedInputUI) {
-            sharedInputUI.isGenerating = true;
-            sharedInputUI.onStop = stopHandler;
-            sharedInputUI._updateActionBtnState();
-        }
-        if (sharedInputUISecondary) {
-            sharedInputUISecondary.isGenerating = true;
-            sharedInputUISecondary.onStop = stopHandler;
-            sharedInputUISecondary._updateActionBtnState();
+        if (_activeInputUI) {
+            _activeInputUI.isGenerating = true;
+            _activeInputUI.onStop = stopHandler;
+            _activeInputUI._updateActionBtnState();
         }
     };
 
@@ -4340,10 +4798,26 @@ function setupGlobalListeners() {
 
     if (sharedInputUI?.inputEl) {
         sharedInputUI.inputEl.addEventListener('focus', () => {
-            const old = hoveredPane;
-            hoveredPane = 'primary';
-            if (old !== hoveredPane && typeof window.updateTopbarModelSelector === 'function') {
-                window.updateTopbarModelSelector();
+            if (hoveredPane !== 'primary') {
+                hoveredPane = 'primary';
+                updatePaneHighlight();
+                updateInputPlaceholder();
+                if (typeof window.updateTopbarModelSelector === 'function') {
+                    window.updateTopbarModelSelector();
+                }
+            }
+        });
+    }
+
+    if (sharedInputUISecondary?.inputEl) {
+        sharedInputUISecondary.inputEl.addEventListener('focus', () => {
+            if (hoveredPane !== 'secondary') {
+                hoveredPane = 'secondary';
+                updatePaneHighlight();
+                updateInputPlaceholder();
+                if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
+                    window.updateTopbarModelSelectorSecondary();
+                }
             }
         });
     }
@@ -4869,8 +5343,8 @@ function setupGlobalListeners() {
 
 
 
-        const isWrongPaneFocused = isSplitMode && inputEl && activeElement !== inputEl &&
-            (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
+        const isWrongPaneFocused = isSplitMode && inputEl && 
+            (inputEl === sharedInputUI?.inputEl ? activeElement === sharedInputUISecondary?.inputEl : activeElement === sharedInputUI?.inputEl);
 
 
         if ((!isEditing || isWrongPaneFocused) && inputEl) {
@@ -4927,11 +5401,15 @@ function setupGlobalListeners() {
 }
 
 
-function resetChat() {
+function resetChat(isSecondary = null) {
+    if (isSecondary === null) {
+        isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
+    }
     stopSpotlightAudio();
 
-    if (activeTabIndex !== -1) {
-        const activeTab = tabs[activeTabIndex];
+    const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
+    if (targetIdx !== -1) {
+        const activeTab = tabs[targetIdx];
  
         if (activeTab) {
             if (port && activeTab.sessionId) {
@@ -4949,29 +5427,38 @@ function resetChat() {
             }
             activeTab.sparkId = null;
             activeTab.scrollTop = -1;
-            updateUrlSessionId(null);
+            if (!isSecondary) {
+                updateUrlSessionId(null);
+            }
             if (typeof sidebarSparksRenderList === 'function') {
                 sidebarSparksRenderList();
             }
         }
     }
  
-    if (chatUI) {
-        chatUI.clearHistory();
+    const targetUI = isSecondary ? chatUISecondary : chatUI;
+    if (targetUI) {
+        targetUI.clearHistory();
         const savedSettings = sessionSettings['null'] || {};
-        chatUI.activeTabModel = savedSettings.selectedModel ? { ...savedSettings.selectedModel } : null;
-        chatUI.thinkingLevel = savedSettings.thinkingLevel || null;
-        if (typeof chatUI.refreshModelSelector === 'function') chatUI.refreshModelSelector();
-        if (typeof chatUI.refreshReasoningSelector === 'function') chatUI.refreshReasoningSelector();
-        if (chatUI.inputEl) {
-            chatUI.inputEl.value = '';
-            chatUI.inputEl.style.height = 'auto';
-            chatUI.inputEl.focus();
+        targetUI.activeTabModel = savedSettings.selectedModel ? { ...savedSettings.selectedModel } : null;
+        targetUI.thinkingLevel = savedSettings.thinkingLevel || null;
+        if (typeof targetUI.refreshModelSelector === 'function') targetUI.refreshModelSelector();
+        if (typeof targetUI.refreshReasoningSelector === 'function') targetUI.refreshReasoningSelector();
+        if (targetUI.inputEl) {
+            targetUI.inputEl.value = '';
+            targetUI.inputEl.style.height = 'auto';
+            targetUI.inputEl.focus();
         }
     }
 
-    if (typeof window.updateTopbarModelSelector === 'function') {
-        window.updateTopbarModelSelector();
+    if (isSecondary) {
+        if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
+            window.updateTopbarModelSelectorSecondary();
+        }
+    } else {
+        if (typeof window.updateTopbarModelSelector === 'function') {
+            window.updateTopbarModelSelector();
+        }
     }
 
     renderTabs();
@@ -4979,6 +5466,7 @@ function resetChat() {
     if (typeof updateTopbarSparkTitle === 'function') {
         updateTopbarSparkTitle();
     }
+    updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
     updateInputPlaceholder();
 
     const regenBtn = document.getElementById('lumina-regenerate-btn');
@@ -5623,17 +6111,16 @@ async function handleYouTubeTrigger(triggerInfo) {
 window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null) {
     if (tabs.length === 0) return;
 
-
-    const activeTab = tabs[activeTabIndex];
+    const isSecondary = isSplitMode && hoveredPane === 'secondary';
+    const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
+    const activeTab = tabs[targetIdx];
     if (!activeTab) return;
 
     activeTab.sessionId = historySessionId;
     updateUrlSessionId(historySessionId);
 
-
     let displayTitle = meta.title || "Restored Chat";
     if (!meta.isRenamed && messages && messages.length > 0) {
-
         for (let i = messages.length - 1; i >= 0; i--) {
             const m = messages[i];
             if (m.type === 'question') {
@@ -5665,19 +6152,48 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
     activeTab.sparkId = meta.sparkId || null;
 
-    if (sharedInputUI) {
-        sharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
-        sharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
-        if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-        if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+    // Save model and thinking level state to lumina_session_settings so selectors fetch them correctly
+    try {
+        const res = await chrome.storage.local.get(['lumina_session_settings']);
+        const settings = res.lumina_session_settings || {};
+        if (!settings[sidKey]) settings[sidKey] = {};
+        if (activeTab.selectedModel) {
+            settings[sidKey].selectedModel = activeTab.selectedModel;
+        }
+        if (activeTab.thinkingLevel) {
+            settings[sidKey].thinkingLevel = activeTab.thinkingLevel;
+        }
+        await chrome.storage.local.set({ lumina_session_settings: settings });
+        // Update local sessionSettings cache immediately so we don't have to wait for the storage listener
+        sessionSettings = settings;
+    } catch (e) {
+        console.error('Failed to sync session settings', e);
     }
-    if (typeof window.updateTopbarModelSelector === 'function') {
-        window.updateTopbarModelSelector();
+
+    const targetInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
+    if (targetInputUI) {
+        targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
+        targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
+        if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
+        if (typeof targetInputUI.refreshReasoningSelector === 'function') targetInputUI.refreshReasoningSelector();
+        
+        // Restore input state
+        targetInputUI.restoreInputState(isSecondary ? activeTab.inputStateSecondary || null : activeTab.inputState || null);
+    }
+
+    updateInputPlaceholder();
+    if (isSecondary) {
+        if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
+            window.updateTopbarModelSelectorSecondary();
+        }
+    } else {
+        if (typeof window.updateTopbarModelSelector === 'function') {
+            window.updateTopbarModelSelector();
+        }
     }
     if (typeof sidebarSparksRenderList === 'function') {
         sidebarSparksRenderList();
     }
-
 
     const chatData = {
         ...meta,
@@ -5686,9 +6202,8 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         timestamp: meta.createdAt || meta.updatedAt
     };
 
-
     if (typeof ChatHistoryManager !== 'undefined' && typeof ChatHistoryManager.restoreChat === 'function') {
-        showTopbarLoading();
+        showTopbarLoading(isSecondary ? 'secondary' : 'primary');
         if (activeTab.historyEl) {
             activeTab.historyEl.dataset.sessionId = historySessionId;
         }
@@ -5698,16 +6213,15 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
 
         await ChatHistoryManager.restoreChat(chatData, activeTab.historyEl);
 
-
         normalizeRestoredHistory(activeTab.historyEl);
+        updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
         renderTabs();
         saveTabsState();
         if (typeof updateTopbarSparkTitle === 'function') {
             updateTopbarSparkTitle();
         }
 
-
-        syncTabUI(activeTab, false, true);
+        syncTabUI(activeTab, isSecondary, true);
 
         if (targetIndex !== null && messages && messages[targetIndex]) {
 
@@ -5747,7 +6261,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 }
                 activeTab.historyEl.style.opacity = '1';
                 activeTab.historyEl.style.transition = '';
-                hideTopbarLoading();
+                hideTopbarLoading(isSecondary ? 'secondary' : 'primary');
             }, 60);
         } else {
             const performRestore = async () => {
@@ -5769,7 +6283,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 }
                 activeTab.historyEl.style.opacity = '1';
                 activeTab.historyEl.style.transition = '';
-                hideTopbarLoading();
+                hideTopbarLoading(isSecondary ? 'secondary' : 'primary');
             };
             setTimeout(performRestore, 40);
         }
@@ -5785,11 +6299,13 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
-async function renderDropdownMenu() {
-    const dropdown = document.getElementById('topbar-dropdown-menu');
+async function renderDropdownMenu(pane = 'primary') {
+    const isSec = (pane === 'secondary');
+    const dropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
     if (!dropdown) return;
 
-    const activeTab = tabs[activeTabIndex];
+    const targetIdx = isSec ? secondaryActiveTabIndex : activeTabIndex;
+    const activeTab = tabs[targetIdx];
     const sessionId = activeTab?.sessionId || null;
 
     let sessionMeta = null;
@@ -5863,9 +6379,9 @@ async function renderDropdownMenu() {
             }
             await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: store });
             if (session.isRenamed) {
-                const activeTab = tabs[activeTabIndex];
-                if (activeTab && activeTab.sessionId === sessionId) {
-                    activeTab.title = session.title;
+                const currentActiveTab = tabs[targetIdx];
+                if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
+                    currentActiveTab.title = session.title;
                     renderTabs();
                 }
             }
@@ -5912,6 +6428,12 @@ async function renderDropdownMenu() {
         });
         if (confirmed) {
             await ChatHistoryManager.deleteChat(sessionId);
+            tabs.forEach((tab, index) => {
+                if (tab.sessionId === sessionId) {
+                    const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
+                    resetChat(isSecondary);
+                }
+            });
         }
         hide();
     });
@@ -5931,19 +6453,39 @@ async function renderDropdownMenu() {
     });
 }
 
-function initTopbarModelSelector() {
-    const selector = document.getElementById('topbar-model-selector');
+function initTopbarModelSelector(pane = 'primary') {
+    const isSec = (pane === 'secondary');
+    const selectorId = isSec ? 'topbar-model-selector-secondary' : 'topbar-model-selector';
+    const btnId = isSec ? 'topbar-model-btn-secondary' : 'topbar-model-btn';
+    const labelId = isSec ? 'topbar-model-label-secondary' : 'topbar-model-label';
+    const dropdownId = isSec ? 'topbar-model-dropdown-secondary' : 'topbar-model-dropdown';
+
+    const selector = document.getElementById(selectorId);
     if (!selector) return;
-    const btn = document.getElementById('topbar-model-btn');
-    const label = document.getElementById('topbar-model-label');
-    const dropdown = document.getElementById('topbar-model-dropdown');
+    const btn = document.getElementById(btnId);
+    const label = document.getElementById(labelId);
+    const dropdown = document.getElementById(dropdownId);
     if (!btn || !dropdown) return;
+
+    if (btn.dataset.initializedModelSelector) {
+        if (isSec) {
+            if (window.updateTopbarModelSelectorSecondary) {
+                window.updateTopbarModelSelectorSecondary();
+            }
+        } else {
+            if (window.updateTopbarModelSelector) {
+                window.updateTopbarModelSelector();
+            }
+        }
+        return;
+    }
+    btn.dataset.initializedModelSelector = 'true';
 
     const render = (data) => {
         const chain = data.modelChains?.text || [];
 
         // Find current model of active tab
-        const activeTab = (isSplitMode && hoveredPane === 'secondary')
+        const activeTab = isSec
             ? tabs[secondaryActiveTabIndex]
             : tabs[activeTabIndex];
         let currentModel = activeTab?.selectedModel?.model;
@@ -5961,7 +6503,7 @@ function initTopbarModelSelector() {
 
         if (activeTab && currentModel) {
             activeTab.selectedModel = { model: currentModel, providerId: currentProviderId };
-            const targetSharedUI = (isSplitMode && hoveredPane === 'secondary') ? sharedInputUISecondary : sharedInputUI;
+            const targetSharedUI = isSec ? sharedInputUISecondary : sharedInputUI;
             if (targetSharedUI) {
                 targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
                 targetSharedUI.thinkingLevel = activeTab.thinkingLevel || null;
@@ -5981,11 +6523,6 @@ function initTopbarModelSelector() {
             return;
         }
 
-        const header = document.createElement('div');
-        header.style.cssText = 'padding:6px 12px; font-size:11px; font-weight:600; color:#70757a; text-transform:uppercase; letter-spacing:0.5px; font-family:\'Google Sans\', sans-serif;';
-        header.textContent = 'MODELS';
-        dropdown.appendChild(header);
-
         chain.forEach((item) => {
             const el = document.createElement('button');
             const isActive = item.model === currentModel && item.providerId === currentProviderId;
@@ -5999,16 +6536,18 @@ function initTopbarModelSelector() {
                 el.classList.add('active');
 
                 // Update active tab model
-                const currentActiveTab = (isSplitMode && hoveredPane === 'secondary')
+                const currentActiveTab = isSec
                     ? tabs[secondaryActiveTabIndex]
                     : tabs[activeTabIndex];
-                const targetSharedUI = (isSplitMode && hoveredPane === 'secondary') ? sharedInputUISecondary : sharedInputUI;
+                const targetSharedUI = isSec ? sharedInputUISecondary : sharedInputUI;
 
                 if (currentActiveTab) {
                     currentActiveTab.selectedModel = { model: item.model, providerId: item.providerId };
+                    if (currentActiveTab.chatUIInstance) {
+                        currentActiveTab.chatUIInstance.activeTabModel = { ...currentActiveTab.selectedModel };
+                    }
                     if (targetSharedUI) {
                         targetSharedUI.activeTabModel = { ...currentActiveTab.selectedModel };
-                        targetSharedUI._updateTokenLimitFromModel();
                     }
                     
                     const sidKey = currentActiveTab.sessionId || 'null';
@@ -6030,6 +6569,9 @@ function initTopbarModelSelector() {
 
                         currentActiveTab.thinkingLevel = newThinkingLevel;
                         settings[sidKey].thinkingLevel = newThinkingLevel;
+                        if (currentActiveTab.chatUIInstance) {
+                            currentActiveTab.chatUIInstance.thinkingLevel = newThinkingLevel;
+                        }
                         if (targetSharedUI) {
                             targetSharedUI.thinkingLevel = newThinkingLevel;
                         }
@@ -6038,6 +6580,7 @@ function initTopbarModelSelector() {
                             if (targetSharedUI && typeof targetSharedUI.refreshReasoningSelector === 'function') {
                                 targetSharedUI.refreshReasoningSelector();
                             }
+                            fetchAndRender();
                         });
                     });
                 }
@@ -6046,19 +6589,173 @@ function initTopbarModelSelector() {
             };
             dropdown.appendChild(el);
         });
+
+        // Divider
+        const divider = document.createElement('div');
+        divider.className = 'lumina-model-divider';
+        dropdown.appendChild(divider);
+
+        // Thinking level item
+        const thinkingItem = document.createElement('div');
+        thinkingItem.className = 'lumina-model-item lumina-thinking-parent-item';
+        thinkingItem.style.position = 'relative';
+        thinkingItem.style.display = 'flex';
+        thinkingItem.style.alignItems = 'center';
+        thinkingItem.style.justifyContent = 'space-between';
+        thinkingItem.style.cursor = 'pointer';
+
+        const currentLevel = activeTab?.thinkingLevel || 'none';
+        const titleMap = {
+            'minimal': 'Minimal',
+            'low': 'Low',
+            'medium': 'Standard',
+            'high': 'Extended',
+            'none': 'None'
+        };
+
+        thinkingItem.innerHTML = `
+            <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
+                <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
+                <span style="font-size:11px; color:var(--lumina-text-secondary);">${titleMap[currentLevel] || 'None'}</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        `;
+
+        // Submenu
+        const submenu = document.createElement('div');
+        submenu.className = 'lumina-thinking-submenu';
+
+        const providers = data.providers || [];
+        const provider = providers.find(p => p.id === currentProviderId);
+        const isGemini = (provider ? (provider.type === 'gemini') : false) ||
+            (currentModel && currentModel.toLowerCase().includes('gemini')) ||
+            (currentProviderId && currentProviderId.toLowerCase().includes('gemini'));
+        const isGemma4 = currentModel ? /gemma-4/i.test(currentModel) : false;
+        const isGemma = currentModel ? (/gemma/i.test(currentModel) && !isGemma4) : false;
+
+        let options = [];
+        if (isGemma4) {
+            options = [
+                { value: 'minimal', title: 'Minimal', desc: 'Minimal thinking, very fast' },
+                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
+            ];
+        } else if (isGemma) {
+            options = [
+                { value: 'none', title: 'None', desc: 'Thinking is not supported' }
+            ];
+        } else if (isGemini) {
+            options = [
+                { value: 'minimal', title: 'Minimal', desc: 'Minimal thinking, very fast' },
+                { value: 'low', title: 'Low', desc: 'Short thinking, fast response' },
+                { value: 'medium', title: 'Standard', desc: 'Best for most questions' },
+                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
+            ];
+        } else {
+            options = [
+                { value: 'none', title: 'None', desc: 'No reasoning, fastest response' },
+                { value: 'low', title: 'Low', desc: 'Quick reasoning, low latency' },
+                { value: 'medium', title: 'Standard', desc: 'Best for most questions' },
+                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
+            ];
+        }
+
+        options.forEach((opt) => {
+            const optEl = document.createElement('button');
+            const isActive = currentLevel === opt.value;
+            optEl.className = `lumina-thinking-opt-item ${isActive ? 'active' : ''}`;
+            
+            const checkmarkIcon = isActive ? `
+                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--lumina-primary);">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+            ` : `
+                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px;"></span>
+            `;
+
+            optEl.innerHTML = `
+                ${checkmarkIcon}
+                <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
+                    <span class="reasoning-title" style="font-size:13px; font-weight:500;">${opt.title}</span>
+                    <span class="reasoning-desc" style="font-size:11px; color:var(--lumina-text-secondary);">${opt.desc}</span>
+                </div>
+            `;
+
+            optEl.onclick = (e) => {
+                e.stopPropagation();
+                
+                const currentActiveTab = isSec
+                    ? tabs[secondaryActiveTabIndex]
+                    : tabs[activeTabIndex];
+                const targetSharedUI = isSec ? sharedInputUISecondary : sharedInputUI;
+
+                if (currentActiveTab) {
+                    currentActiveTab.thinkingLevel = opt.value;
+                    if (currentActiveTab.chatUIInstance) {
+                        currentActiveTab.chatUIInstance.thinkingLevel = opt.value;
+                    }
+                    if (targetSharedUI) {
+                        targetSharedUI.thinkingLevel = opt.value;
+                    }
+                    
+                    const sidKey = currentActiveTab.sessionId || 'null';
+                    chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
+                        const settings = res.lumina_session_settings || {};
+                        if (!settings[sidKey]) settings[sidKey] = {};
+                        settings[sidKey].thinkingLevel = opt.value;
+
+                        const advancedParamsByModel = res.advancedParamsByModel || {};
+                        const compositeKey = currentProviderId ? `${currentProviderId}:${currentModel}` : currentModel;
+                        const key = compositeKey;
+                        if (!advancedParamsByModel[key]) advancedParamsByModel[key] = {};
+                        if (opt.value === 'none' || opt.value === 'off') {
+                            delete advancedParamsByModel[key].thinkingLevel;
+                        } else {
+                            advancedParamsByModel[key].thinkingLevel = opt.value;
+                        }
+
+                        chrome.storage.local.set({ lumina_session_settings: settings, advancedParamsByModel }, () => {
+                            if (targetSharedUI && typeof targetSharedUI.refreshSystemTokens === 'function') {
+                                targetSharedUI.refreshSystemTokens();
+                            }
+                            dropdown.classList.remove('active');
+                            fetchAndRender();
+                        });
+                    });
+                }
+            };
+            submenu.appendChild(optEl);
+        });
+
+        thinkingItem.appendChild(submenu);
+        dropdown.appendChild(thinkingItem);
     };
 
     const fetchAndRender = () => {
-        const activeTab = (isSplitMode && hoveredPane === 'secondary')
+        const activeTab = isSec
             ? tabs[secondaryActiveTabIndex]
             : tabs[activeTabIndex];
         const sidKey = activeTab?.sessionId || 'null';
 
-        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings'], (data) => {
+        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], (data) => {
             const settings = data.lumina_session_settings || {};
             const saved = settings[sidKey] || {};
             if (activeTab && saved.selectedModel) {
                 activeTab.selectedModel = saved.selectedModel;
+            }
+            if (activeTab) {
+                const modelObj = activeTab.selectedModel;
+                if (modelObj) {
+                    const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
+                    const advancedParamsByModel = data.advancedParamsByModel || {};
+                    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelObj.model] || {};
+
+                    const isGemini = (modelObj.providerId && modelObj.providerId.toLowerCase().includes('gemini')) || 
+                                     (modelObj.model && modelObj.model.toLowerCase().includes('gemini'));
+                    const isGemma4 = /gemma-4/i.test(modelObj.model);
+                    const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+
+                    activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
+                }
             }
             render(data);
             updateTopbarSparkTitle();
@@ -6071,7 +6768,7 @@ function initTopbarModelSelector() {
             dropdown.classList.remove('active');
         } else {
             // Close other dropdowns
-            const moreDropdown = document.getElementById('topbar-dropdown-menu');
+            const moreDropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
             if (moreDropdown) moreDropdown.style.display = 'none';
             fetchAndRender();
             dropdown.classList.add('active');
@@ -6084,36 +6781,19 @@ function initTopbarModelSelector() {
         }
     });
 
-    window.updateTopbarModelSelector = fetchAndRender;
+    if (isSec) {
+        window.updateTopbarModelSelectorSecondary = fetchAndRender;
+    } else {
+        window.updateTopbarModelSelector = fetchAndRender;
+    }
     fetchAndRender();
 }
 
 function updateTopbarSparkTitle() {
-    const titleEl = document.getElementById('topbar-spark-title');
     const selectorEl = document.getElementById('topbar-model-selector');
-    if (!titleEl) return;
-
-    const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined')
-        ? tabs[activeTabIndex]
-        : null;
-
-    if (activeTab && activeTab.sparkId) {
-        chrome.storage.local.get(['lumina_sparks']).then(res => {
-            const sparks = res.lumina_sparks || {};
-            const spark = sparks[activeTab.sparkId];
-            if (spark) {
-                titleEl.textContent = spark.name;
-                titleEl.style.display = 'block';
-                if (selectorEl) selectorEl.style.display = 'none';
-            } else {
-                titleEl.style.display = 'none';
-                if (selectorEl) selectorEl.style.display = 'block';
-            }
-        });
-    } else {
-        titleEl.style.display = 'none';
-        if (selectorEl) selectorEl.style.display = 'block';
-    }
+    if (selectorEl) selectorEl.style.display = 'block';
+    const selectorElSec = document.getElementById('topbar-model-selector-secondary');
+    if (selectorElSec) selectorElSec.style.display = 'block';
 }
 
 window.updateTopbarSparkTitle = updateTopbarSparkTitle;
@@ -6163,6 +6843,43 @@ function updateSidebarUserProfile(isAuthenticated, user) {
 if (typeof LuminaAuth !== 'undefined') {
     LuminaAuth.addListener(updateSidebarUserProfile);
     updateSidebarUserProfile(LuminaAuth.isAuthenticated, LuminaAuth.user);
+}
+
+function updateWelcomeScreenState(pane = 'primary') {
+    const isSec = (pane === 'secondary');
+    const layout = document.getElementById(isSec ? 'chat-layout-secondary' : 'chat-layout');
+    if (!layout) return;
+
+    const targetTab = isSec
+        ? (secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null)
+        : (activeTabIndex >= 0 ? tabs[activeTabIndex] : null);
+
+    const historyEl = targetTab ? targetTab.historyEl : document.getElementById(isSec ? 'chat-history-secondary' : 'chat-history');
+    if (!historyEl) return;
+
+    const hasEntries = historyEl.querySelector('.lumina-dict-entry') !== null;
+    const chatContainer = layout.querySelector('.lumina-chat-container');
+    if (!chatContainer) return;
+    let welcomeEl = chatContainer.querySelector('.lumina-homepage-welcome');
+
+    if (!hasEntries) {
+        layout.classList.add('new-chat-homepage');
+        if (!welcomeEl) {
+            welcomeEl = document.createElement('div');
+            welcomeEl.className = 'lumina-homepage-welcome';
+            welcomeEl.innerHTML = `<div class="welcome-title">Where should we start?</div>`;
+            if (historyEl && historyEl.parentNode === chatContainer) {
+                chatContainer.insertBefore(welcomeEl, historyEl);
+            } else {
+                chatContainer.appendChild(welcomeEl);
+            }
+        }
+    } else {
+        layout.classList.remove('new-chat-homepage');
+        if (welcomeEl) {
+            welcomeEl.remove();
+        }
+    }
 }
 
 if (typeof LuminaSync !== 'undefined') {
