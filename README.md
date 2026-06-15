@@ -29,6 +29,7 @@ Designed with privacy and speed in mind, Lumina stores data locally in the brows
 - **Custom prompts** — Personalize system prompts and assistant behavior.
 - **Anki integration** — Generate and manage flashcards more efficiently.
 - **Key rotation** — Use multiple API keys to reduce rate-limit interruptions.
+- **Google Drive Sync** — Seamlessly back up and sync settings and history using native Chrome identity.
 - **Privacy-first storage** — Keep API keys and history inside your browser.
 
 ## Installation
@@ -44,8 +45,8 @@ Designed with privacy and speed in mind, Lumina stores data locally in the brows
 After loading the extension:
 
 1. Open the Lumina popup or side panel.
-2. Configure your preferred provider.
-3. Add API keys.
+2. Configure your preferred provider and add API keys.
+3. (Optional) To enable sync, go to settings, click **Sign in with Google**, and authorize the extension.
 4. Customize shortcuts and prompts to match your workflow.
 
 ## Usage
