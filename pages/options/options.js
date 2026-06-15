@@ -3663,11 +3663,6 @@ loadAllSettings();
   }
 
 
-  const syncSetupOverlay = document.getElementById('sync-setup-overlay');
-  const inputSyncCredentials = document.getElementById('input-sync-credentials');
-  const btnUploadSyncJson = document.getElementById('btn-upload-sync-json');
-  const btnCancelSyncSetup = document.getElementById('btn-cancel-sync-setup');
-
   async function loginGoogle() {
     try {
       googleLoginBtn.disabled = true;
@@ -3692,8 +3687,6 @@ loadAllSettings();
     } catch (e) {
       console.error(e);
       updateStatus('Sign in failed: ' + e.message, 'error');
-      // Always show setup overlay on failure to allow re-uploading file
-      syncSetupOverlay.classList.remove("is-hidden");
       googleLoginBtn.innerHTML = 'Sign in with Google';
     } finally {
       googleLoginBtn.disabled = false;
@@ -3702,48 +3695,6 @@ loadAllSettings();
 
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', loginGoogle);
-  }
-
-  if (btnCancelSyncSetup) {
-    btnCancelSyncSetup.addEventListener("click", () => {
-      syncSetupOverlay.classList.add("is-hidden");
-    });
-  }
-
-  if (btnUploadSyncJson) {
-    btnUploadSyncJson.addEventListener("click", () => {
-      inputSyncCredentials.click();
-    });
-  }
-
-  if (inputSyncCredentials) {
-    inputSyncCredentials.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        try {
-          const text = evt.target.result;
-          const data = JSON.parse(text);
-          const config = data.web || data.installed;
-          if (!config || !config.client_id || !config.client_secret) {
-            throw new Error("Invalid credentials JSON format. Missing client_id or client_secret.");
-          }
-          await chrome.storage.local.set({
-            client_id: config.client_id,
-            client_secret: config.client_secret
-          });
-          syncSetupOverlay.classList.add("is-hidden");
-          updateStatus("Credentials configured successfully!", "success");
-          loginGoogle();
-        } catch (err) {
-          console.error("Error reading credentials file:", err);
-          updateStatus(`Configuration failed: ${err.message}`, "error");
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = "";
-    });
   }
 
   if (googleLogoutBtn) {

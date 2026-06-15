@@ -6353,6 +6353,7 @@ button {
   white-space: nowrap;
   box-sizing: border-box;
   height: 30px;
+  flex-shrink: 0;
 }
 
 #sidebar-new-spark-btn {
@@ -6429,6 +6430,7 @@ button {
   white-space: nowrap;
   text-overflow: ellipsis;
   height: 32px;
+  flex-shrink: 0;
 }
 
 .recent-chat-item:hover {
@@ -7451,6 +7453,7 @@ button {
   white-space: nowrap;
   height: 36px;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .sidebar-spark-item:hover {

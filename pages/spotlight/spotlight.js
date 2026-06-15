@@ -5542,6 +5542,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
         if (changes.lumina_youtube_trigger && changes.lumina_youtube_trigger.newValue) {
             handleYouTubeTrigger(changes.lumina_youtube_trigger.newValue);
         }
+        if (changes.lumina_sparks) {
+            if (typeof sidebarSparksRenderList === 'function') {
+                sidebarSparksRenderList();
+            }
+            if (typeof sparksRenderList === 'function') {
+                sparksRenderList();
+            }
+        }
     }
 });
 
