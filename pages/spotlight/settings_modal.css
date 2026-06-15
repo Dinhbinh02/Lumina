@@ -1,0 +1,1195 @@
+@keyframes lumina-settings-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes lumina-settings-bg-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lumina-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: lumina-settings-bg-fade 0.2s ease-out;
+}
+
+[data-theme="dark"] .lumina-settings-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.lumina-settings-dialog {
+  width: 780px;
+  max-width: 90vw;
+  height: 600px;
+  max-height: 85vh;
+  background: #ffffff !important;
+  border-radius: 12px;
+  box-shadow: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2);
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  animation: lumina-settings-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .lumina-settings-dialog {
+  background: #171717 !important;
+  box-shadow: 0 24px 38px 3px rgba(0,0,0,0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.lumina-settings-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--lumina-text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lumina-settings-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-primary, #111827);
+}
+
+[data-theme="dark"] .lumina-settings-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.lumina-settings-body {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.lumina-settings-sidebar {
+  width: 220px;
+  background: #f9f9f9 !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 8px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .lumina-settings-sidebar {
+  background: #1f1f1f !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.lumina-settings-sidebar-header {
+  margin-bottom: 12px;
+  padding-left: 12px;
+  display: none;
+}
+
+.lumina-settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lumina-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent !important;
+  border: none;
+  color: #0f0f0f !important;
+  font-family: var(--lumina-font-family);
+  font-size: 13.5px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+[data-theme="dark"] .lumina-settings-nav-item {
+  color: #ececec !important;
+}
+
+.lumina-settings-nav-item svg {
+  opacity: 0.6;
+  stroke-width: 1.8;
+  width: 16px;
+  height: 16px;
+}
+
+.lumina-settings-nav-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="dark"] .lumina-settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.lumina-settings-nav-item.active {
+  background: rgba(0, 0, 0, 0.06) !important;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .lumina-settings-nav-item.active {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.lumina-settings-main {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+  background: #ffffff !important;
+}
+
+[data-theme="dark"] .lumina-settings-main {
+  background: #171717 !important;
+}
+
+.lumina-settings-section {
+  display: none;
+}
+
+.lumina-settings-section.active {
+  display: block;
+}
+
+.lumina-settings-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--lumina-text-primary);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 12px;
+}
+
+[data-theme="dark"] .lumina-settings-section-title {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-settings-card {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-bottom: 28px;
+}
+
+.lumina-settings-card-header {
+  margin-bottom: 12px;
+}
+
+.lumina-settings-card-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-settings-card-header p {
+  font-size: 12.5px;
+  color: var(--lumina-text-secondary);
+  margin: 0;
+}
+
+.lumina-settings-card-body h4 {
+  font-size: 13.5px;
+  font-weight: 500;
+  margin: 18px 0 8px 0;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-settings-card-body p.desc-small {
+  font-size: 12px;
+  color: var(--lumina-text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.lumina-settings-group {
+  display: flex;
+  flex-direction: column;
+  background: transparent !important;
+  border: none !important;
+  margin-bottom: 24px;
+}
+
+.lumina-settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .lumina-settings-row {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.lumina-settings-row:last-child {
+  border-bottom: none;
+}
+
+.lumina-settings-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.lumina-settings-row-info .title {
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-settings-row-info .desc {
+  font-size: 12px;
+  color: var(--lumina-text-secondary);
+  line-height: 1.4;
+}
+
+.lumina-settings-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  align-self: center;
+}
+
+.lumina-settings-select,
+.lumina-settings-field input,
+.lumina-settings-field textarea,
+.lumina-settings-form input {
+  font-family: var(--lumina-font-family);
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: var(--lumina-text-primary);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+[data-theme="dark"] .lumina-settings-select,
+[data-theme="dark"] .lumina-settings-field input,
+[data-theme="dark"] .lumina-settings-field textarea,
+[data-theme="dark"] .lumina-settings-form input {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #202020;
+}
+
+.lumina-settings-select:focus,
+.lumina-settings-field input:focus,
+.lumina-settings-field textarea:focus,
+.lumina-settings-form input:focus {
+  border-color: #000000;
+}
+
+[data-theme="dark"] .lumina-settings-select:focus,
+[data-theme="dark"] .lumina-settings-field input:focus,
+[data-theme="dark"] .lumina-settings-field textarea:focus,
+[data-theme="dark"] .lumina-settings-form input:focus {
+  border-color: #ffffff;
+}
+
+.lumina-settings-select {
+  cursor: pointer;
+  min-width: 120px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23888888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+.lumina-settings-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
+}
+
+.lumina-settings-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.lumina-settings-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e5e7eb;
+  transition: .2s ease-in-out;
+  border-radius: 20px;
+}
+
+[data-theme="dark"] .lumina-settings-switch .slider {
+  background-color: #374151;
+}
+
+.lumina-settings-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s ease-in-out;
+  border-radius: 50%;
+}
+
+.lumina-settings-switch input:checked + .slider {
+  background-color: #10b981;
+}
+
+.lumina-settings-switch input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+.lumina-settings-btn-play {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--lumina-text-primary);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-right: 8px;
+}
+
+[data-theme="dark"] .lumina-settings-btn-play {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lumina-settings-btn-play:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .lumina-settings-btn-play:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.voice-control-row {
+  display: flex;
+  align-items: center;
+}
+
+.lumina-settings-row-split {
+  display: flex;
+  gap: 12px;
+}
+
+.lumina-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex: 1;
+}
+
+.lumina-settings-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-settings-divider {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 16px 0;
+}
+
+[data-theme="dark"] .lumina-settings-divider {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-settings-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.lumina-settings-slider-row .label {
+  font-size: 12.5px;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-settings-slider-row .slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lumina-settings-slider-row .slider-side-label {
+  font-size: 11px;
+  color: var(--lumina-text-secondary);
+  width: 120px;
+}
+
+.lumina-settings-slider-row .slider-side-label:last-child {
+  text-align: right;
+}
+
+.lumina-settings-slider-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .lumina-settings-slider-row input[type="range"] {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-settings-slider-row input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.lumina-settings-segmented {
+  display: flex;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .lumina-settings-segmented {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lumina-settings-segmented label {
+  cursor: pointer;
+}
+
+.lumina-settings-segmented input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.lumina-settings-segmented span {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-settings-segmented input:checked + span {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] .lumina-settings-segmented input:checked + span {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
+.lumina-settings-btn {
+  font-family: var(--lumina-font-family);
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.lumina-settings-btn.primary {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.lumina-settings-btn.primary:hover {
+  background: #059669;
+}
+
+.lumina-settings-btn.secondary {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: var(--lumina-text-primary);
+}
+
+[data-theme="dark"] .lumina-settings-btn.secondary {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lumina-settings-btn.secondary:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .lumina-settings-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-settings-btn.danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.lumina-settings-btn.danger:hover {
+  background: #dc2626;
+}
+
+.lumina-settings-btn.text {
+  background: transparent;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-settings-btn.text:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.lumina-settings-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.flex-grow {
+  flex: 1;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.font-semibold {
+  font-weight: 500;
+}
+
+.text-error {
+  color: #ef4444 !important;
+}
+
+.lumina-settings-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.lumina-settings-provider-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+[data-theme="dark"] .lumina-settings-provider-card {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-settings-provider-card:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .lumina-settings-provider-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.provider-item-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.provider-logo-container {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.provider-title {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.provider-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.provider-badge.active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.provider-badge.inactive {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-secondary);
+}
+
+[data-theme="dark"] .provider-badge.inactive {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-settings-form {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+[data-theme="dark"] .lumina-settings-form {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-settings-field-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.lumina-settings-field-header a {
+  font-size: 11.5px;
+  color: #10b981;
+  text-decoration: none;
+}
+
+.lumina-settings-helper {
+  font-size: 10.5px;
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-settings-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.lumina-settings-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.lumina-settings-dropdown-wrapper input {
+  width: 100%;
+  cursor: pointer;
+}
+
+.lumina-settings-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-top: 2px;
+  display: none;
+}
+
+[data-theme="dark"] .lumina-settings-dropdown-menu {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-settings-dropdown-menu div {
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lumina-settings-dropdown-menu div:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .lumina-settings-dropdown-menu div:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-settings-chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lumina-settings-chain-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-theme="dark"] .lumina-settings-chain-card {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.chain-drag-handle {
+  cursor: grab;
+  color: var(--lumina-text-tertiary);
+  display: flex;
+  align-items: center;
+}
+
+.chain-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lumina-text-secondary);
+  background: rgba(0,0,0,0.04);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="dark"] .chain-number {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chain-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chain-model-name {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.chain-provider-name {
+  font-size: 11px;
+  color: var(--lumina-text-secondary);
+}
+
+.chain-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.lumina-settings-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--lumina-text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lumina-settings-icon-btn:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+[data-theme="dark"] .lumina-settings-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-settings-params-panel {
+  width: 100%;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding-top: 10px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+[data-theme="dark"] .lumina-settings-params-panel {
+  border-top-color: rgba(255,255,255,0.06);
+}
+
+.lumina-settings-param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lumina-settings-param-row label {
+  font-size: 11.5px;
+  color: var(--lumina-text-secondary);
+}
+
+.param-custom-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.lumina-settings-btn-link {
+  background: transparent;
+  border: none;
+  color: #10b981;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.lumina-settings-custom-param-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.lumina-settings-custom-param-row input {
+  flex: 1;
+  padding: 5px 8px;
+}
+
+.lumina-settings-custom-param-row button {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: var(--lumina-text-tertiary);
+  cursor: pointer;
+}
+
+.lumina-settings-shortcut-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  min-width: 100px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--lumina-text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+[data-theme="dark"] .lumina-settings-shortcut-box {
+  background: #202020;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lumina-settings-shortcut-box .placeholder {
+  color: var(--lumina-text-tertiary);
+}
+
+.lumina-settings-shortcut-box .recording {
+  color: #10b981;
+}
+
+.lumina-settings-mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lumina-settings-mapping-item {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-theme="dark"] .lumina-settings-mapping-item {
+  background: #202020;
+  border-color: rgba(255,255,255,0.06);
+}
+
+.mapping-number {
+  font-size: 11px;
+  color: var(--lumina-text-secondary);
+}
+
+.mapping-row-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mapping-key-input {
+  min-width: 80px;
+  padding: 4px 8px;
+  height: 24px;
+}
+
+.mapping-arrow {
+  color: var(--lumina-text-tertiary);
+}
+
+.mapping-prompt-container {
+  flex: 1;
+}
+
+.mapping-prompt {
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  background: #ffffff;
+  min-height: 24px;
+  outline: none;
+}
+
+[data-theme="dark"] .mapping-prompt {
+  background: #202020;
+  border-color: rgba(255,255,255,0.1);
+}
+
+.lumina-settings-instruction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lumina-settings-fact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fact-index {
+  font-size: 11px;
+  color: var(--lumina-text-secondary);
+}
+
+.fact-text {
+  flex: 1;
+}
+
+.lumina-settings-auth-container {
+  padding: 8px 0;
+}
+
+.lumina-settings-auth-container p.desc {
+  font-size: 12.5px;
+  color: var(--lumina-text-secondary);
+  line-height: 1.5;
+}
+
+.lumina-settings-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lumina-settings-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.08);
+}
+
+.profile-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-meta .highlight {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.lumina-settings-opfs-section h4 {
+  font-size: 12.5px;
+  margin-bottom: 2px;
+}
+
+.lumina-settings-opfs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+[data-theme="dark"] .lumina-settings-opfs-list {
+  background: #202020;
+  border-color: rgba(255,255,255,0.08);
+}
+
+.lumina-settings-results-panel {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+[data-theme="dark"] .lumina-settings-results-panel {
+  background: #202020;
+  border-color: rgba(255,255,255,0.08);
+}
+
+.lumina-settings-results-title {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.lumina-settings-api-result-item {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+[data-theme="dark"] .lumina-settings-api-result-item {
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+
+.lumina-settings-failed-key-info {
+  font-size: 11px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .lumina-settings-dialog {
+    width: 96vw;
+    height: 94vh;
+    max-height: 94vh;
+    flex-direction: column;
+    border-radius: 12px;
+  }
+
+  .lumina-settings-close-btn {
+    top: 10px;
+    right: 10px;
+  }
+
+  .lumina-settings-body {
+    flex-direction: column;
+  }
+
+  .lumina-settings-sidebar {
+    width: 100%;
+    padding: 12px;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  [data-theme="dark"] .lumina-settings-sidebar {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .lumina-settings-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+
+  .lumina-settings-nav-item {
+    padding: 6px 10px;
+    white-space: nowrap;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  [data-theme="dark"] .lumina-settings-nav-item {
+    background: #202020;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .lumina-settings-nav-item.active {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+  }
+
+  .lumina-settings-main {
+    padding: 20px;
+  }
+
+  .lumina-settings-row-split {
+    flex-direction: column;
+    gap: 0;
+  }
+}

@@ -7,6 +7,7 @@
     <title>Lumina</title>
     <script src="init.js"></script>
     <link rel="stylesheet" href="../../assets/styles/styles.css">
+    <link rel="stylesheet" href="settings_modal.css">
     <link rel="stylesheet" href="../../lib/vendor/katex/katex.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,6 +250,814 @@
 
     <input type="file" id="file-input" multiple style="display: none;">
 
+    <!-- ==================== LUMINA SETTINGS OVERLAY ==================== -->
+    <div class="lumina-settings-overlay" id="lumina-settings-overlay" style="display: none;">
+        <div class="lumina-settings-dialog">
+            <button type="button" class="lumina-settings-close-btn" id="lumina-settings-close-btn" aria-label="Close Settings">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <div class="lumina-settings-body">
+                <aside class="lumina-settings-sidebar">
+                    <div class="lumina-settings-sidebar-header">
+                        <span class="lumina-settings-title">Settings</span>
+                    </div>
+                    <nav class="lumina-settings-nav" id="lumina-settings-nav">
+                        <button type="button" class="lumina-settings-nav-item active" data-section="general">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                            General
+                        </button>
+                        <button type="button" class="lumina-settings-nav-item" data-section="appearance">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="2" x2="12" y2="22"></line>
+                                <path d="M12 6H18"></path>
+                                <path d="M12 18H18"></path>
+                                <path d="M12 12H18"></path>
+                            </svg>
+                            Appearance
+                        </button>
+                        <button type="button" class="lumina-settings-nav-item" data-section="personalization">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 14a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 17c-4.97 0-9 2.24-9 5h18c0-2.76-4.03-5-9-5z"></path>
+                            </svg>
+                            Personalization
+                        </button>
+                        <button type="button" class="lumina-settings-nav-item" data-section="keyboard">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                                <line x1="6" y1="8" x2="6" y2="8"></line>
+                                <line x1="10" y1="8" x2="10" y2="8"></line>
+                                <line x1="14" y1="8" x2="14" y2="8"></line>
+                                <line x1="18" y1="8" x2="18" y2="8"></line>
+                                <line x1="6" y1="12" x2="6" y2="12"></line>
+                                <line x1="10" y1="12" x2="10" y2="12"></line>
+                                <line x1="14" y1="12" x2="14" y2="12"></line>
+                                <line x1="18" y1="12" x2="18" y2="12"></line>
+                                <line x1="7" y1="16" x2="17" y2="16"></line>
+                            </svg>
+                            Keyboard
+                        </button>
+                        <button type="button" class="lumina-settings-nav-item" data-section="account">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a10 10 0 0 0-10 10c0 5.52 4.48 10 10 10s10-4.48 10-10A10 10 0 0 0 12 2zm0 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"></path>
+                            </svg>
+                            Account
+                        </button>
+                    </nav>
+                </aside>
+
+                <main class="lumina-settings-main">
+                    <!-- Section General -->
+                    <section class="lumina-settings-section active" id="lumina-settings-sec-general">
+                        <h2 class="lumina-settings-section-title">General Settings</h2>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>🔑 AI Providers</h3>
+                                <p>Configure API keys and Endpoint URLs for AI services.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div class="lumina-settings-provider-grid" id="lumina-provider-list"></div>
+                                <div class="lumina-settings-provider-form-container" id="lumina-provider-form-container"></div>
+                                
+                                <div class="lumina-settings-actions-row">
+                                    <button type="button" id="lumina-add-provider-btn" class="lumina-settings-btn primary">Add Provider</button>
+                                    <button type="button" id="lumina-check-apikeys-btn" class="lumina-settings-btn secondary">Check API Keys</button>
+                                </div>
+                                
+                                <div id="lumina-apikey-results" class="lumina-settings-results-panel hidden">
+                                    <div class="lumina-settings-results-title">API Key Status:</div>
+                                    <div id="lumina-apikey-results-list" class="lumina-settings-list"></div>
+                                </div>
+                                
+                                <!-- Add/Edit Provider Form (inline) -->
+                                <div id="lumina-provider-form" class="lumina-settings-form hidden">
+                                    <input type="hidden" id="lumina-provider-form-id">
+                                    <input type="hidden" id="lumina-provider-form-type" value="openai">
+                                    
+                                    <div class="lumina-settings-field">
+                                        <label for="lumina-provider-form-name">Name *</label>
+                                        <input type="text" id="lumina-provider-form-name" placeholder="e.g. Gemini, DeepSeek, Local LLM">
+                                    </div>
+                                    <div class="lumina-settings-field">
+                                        <label for="lumina-provider-form-endpoint">Endpoint URL *</label>
+                                        <input type="text" id="lumina-provider-form-endpoint" placeholder="e.g. https://api.groq.com/openai/v1">
+                                    </div>
+                                    <div class="lumina-settings-field">
+                                        <div class="lumina-settings-field-header">
+                                            <label for="lumina-provider-form-apikey">API Key</label>
+                                            <a id="lumina-provider-apikey-link" href="#" target="_blank" class="hidden">Get API Key</a>
+                                        </div>
+                                        <input type="password" id="lumina-provider-form-apikey" placeholder="Enter API Key">
+                                        <p class="lumina-settings-helper">Multiple keys separated by commas. Auto-switches on rate limit.</p>
+                                    </div>
+                                    <div class="lumina-settings-form-actions">
+                                        <button type="button" id="lumina-cancel-provider-btn" class="lumina-settings-btn text">Cancel</button>
+                                        <button type="button" id="lumina-save-provider-btn" class="lumina-settings-btn primary">Save Provider</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>📝 Model Management</h3>
+                                <p>Manage and customize your active model pipeline chain.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <h4>Add New Model</h4>
+                                <div class="lumina-settings-row-split">
+                                    <div class="lumina-settings-field">
+                                        <label for="lumina-text-chain-provider">Provider</label>
+                                        <div class="lumina-settings-dropdown-wrapper">
+                                            <input type="text" id="lumina-text-chain-provider" readonly placeholder="Select Provider...">
+                                            <div id="lumina-text-chain-provider-list" class="lumina-settings-dropdown-menu"></div>
+                                        </div>
+                                    </div>
+                                    <div class="lumina-settings-field">
+                                        <label for="lumina-text-chain-model">Model</label>
+                                        <div class="lumina-settings-dropdown-wrapper">
+                                            <input type="text" id="lumina-text-chain-model" placeholder="Select or type Model...">
+                                            <div id="lumina-text-chain-model-list" class="lumina-settings-dropdown-menu"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <h4>Model List</h4>
+                                <div id="lumina-text-chain-list" class="lumina-settings-chain-list">
+                                    <div class="lumina-settings-empty-state">No models added yet. Select a provider and model above.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>🧠 Intelligent Features</h3>
+                                <p>Fine-tune dictionary and automation interactions.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Definition Language</span>
+                                        <span class="desc">Output language used for dictionary definitions</span>
+                                    </div>
+                                    <div class="lumina-settings-segmented">
+                                        <label>
+                                            <input type="radio" name="lumina-dictLanguage" value="en" checked>
+                                            <span>English</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="lumina-dictLanguage" value="vi">
+                                            <span>Vietnamese</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Translate Input Shortcut Engine</span>
+                                        <span class="desc">Choose engine used to translate input field text</span>
+                                    </div>
+                                    <div class="lumina-settings-segmented">
+                                        <label>
+                                            <input type="radio" name="lumina-translateInputEngine" value="google" checked>
+                                            <span>Google</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="lumina-translateInputEngine" value="ai">
+                                            <span>AI Model</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">General Translation Engine</span>
+                                        <span class="desc">Choose engine used for selection & sidebar translations</span>
+                                    </div>
+                                    <div class="lumina-settings-segmented">
+                                        <label>
+                                            <input type="radio" name="lumina-translateEngine" value="google" checked>
+                                            <span>Google</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="lumina-translateEngine" value="ai">
+                                            <span>AI Model</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <h4>Dictionary Lookup Model</h4>
+                                <div class="lumina-settings-row-split">
+                                    <div class="lumina-settings-field">
+                                        <label for="lumina-dict-provider">Provider</label>
+                                        <div class="lumina-settings-dropdown-wrapper">
+                                            <input type="text" id="lumina-dict-provider" readonly placeholder="Select Provider...">
+                                            <div id="lumina-dict-provider-list" class="lumina-settings-dropdown-menu"></div>
+                                        </div>
+                                    </div>
+                                    <div class="lumina-settings-field">
+                                        <label for="lumina-dict-model">Model</label>
+                                        <div class="lumina-settings-dropdown-wrapper">
+                                            <input type="text" id="lumina-dict-model" placeholder="Select or type Model...">
+                                            <div id="lumina-dict-model-list" class="lumina-settings-dropdown-menu"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section Appearance -->
+                    <section class="lumina-settings-section" id="lumina-settings-sec-appearance">
+                        <h2 class="lumina-settings-section-title">Appearance Settings</h2>
+                        
+                        <div class="lumina-settings-group">
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Appearance</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <select id="lumina-settings-theme" class="lumina-settings-select">
+                                        <option value="auto">System</option>
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Contrast</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <select id="lumina-settings-contrast" class="lumina-settings-select">
+                                        <option value="auto">System</option>
+                                        <option value="standard">Standard</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Accent color</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <select id="lumina-settings-accent" class="lumina-settings-select">
+                                        <option value="default">Default</option>
+                                        <option value="amber">Amber</option>
+                                        <option value="emerald">Emerald</option>
+                                        <option value="sky">Sky</option>
+                                        <option value="indigo">Indigo</option>
+                                        <option value="rose">Rose</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Language</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <select id="lumina-settings-language" class="lumina-settings-select">
+                                        <option value="auto">Auto-detect</option>
+                                        <option value="en">English</option>
+                                        <option value="vi">Tiếng Việt</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Enable Dictation</span>
+                                    <span class="desc">Use dictation in the chat composer.</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <label class="lumina-settings-switch">
+                                        <input type="checkbox" id="lumina-settings-dictation-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Spoken language</span>
+                                    <span class="desc">For best results, select the language you mainly speak. If it's not listed, it may still be supported via auto-detection.</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <select id="lumina-settings-spoken-lang" class="lumina-settings-select">
+                                        <option value="auto">Auto-detect</option>
+                                        <option value="en">English</option>
+                                        <option value="vi">Tiếng Việt</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Voice</span>
+                                </div>
+                                <div class="lumina-settings-control voice-control-row">
+                                    <button type="button" id="lumina-settings-voice-play-btn" class="lumina-settings-btn-play">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                        Play
+                                    </button>
+                                    <select id="lumina-settings-voice-select" class="lumina-settings-select">
+                                        <option value="sol">Sol</option>
+                                        <option value="cove">Cove</option>
+                                        <option value="ember">Ember</option>
+                                        <option value="breeze">Breeze</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="lumina-settings-row">
+                                <div class="lumina-settings-row-info">
+                                    <span class="title">Separate Voice</span>
+                                    <span class="desc">Keep ChatGPT Voice in a separate full screen, without real time transcripts and visuals.</span>
+                                </div>
+                                <div class="lumina-settings-control">
+                                    <label class="lumina-settings-switch">
+                                        <input type="checkbox" id="lumina-settings-separate-voice">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section Personalization -->
+                    <section class="lumina-settings-section" id="lumina-settings-sec-personalization">
+                        <h2 class="lumina-settings-section-title">Personalization</h2>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>Base style and tone</h3>
+                                <p>Set the style and tone of how ChatGPT responds to you. This doesn't impact capabilities.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div class="lumina-settings-field">
+                                    <select id="lumina-settings-base-tone" class="lumina-settings-select font-semibold">
+                                        <option value="default">Default</option>
+                                        <option value="professional">Professional (Polished and precise)</option>
+                                        <option value="friendly">Friendly (Warm and chatty)</option>
+                                        <option value="candid">Candid (Direct and encouraging)</option>
+                                        <option value="quirky">Quirky (Playful and imaginative)</option>
+                                        <option value="efficient">Efficient (Concise and plain)</option>
+                                        <option value="cynical">Cynical (Critical and sarcastic)</option>
+                                    </select>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <h4>Characteristics</h4>
+                                <p class="desc-small">Choose additional customizations on top of your base style and tone.</p>
+                                
+                                <div class="lumina-settings-slider-row">
+                                    <span class="label">Warm</span>
+                                    <div class="slider-container">
+                                        <span class="slider-side-label">Less</span>
+                                        <input type="range" id="lumina-settings-char-warm" min="1" max="3" step="1" value="2">
+                                        <span class="slider-side-label">More</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="lumina-settings-slider-row">
+                                    <span class="label">Enthusiastic</span>
+                                    <div class="slider-container">
+                                        <span class="slider-side-label">Less</span>
+                                        <input type="range" id="lumina-settings-char-enthusiastic" min="1" max="3" step="1" value="2">
+                                        <span class="slider-side-label">More</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="lumina-settings-slider-row">
+                                    <span class="label">Headers & Lists</span>
+                                    <div class="slider-container">
+                                        <span class="slider-side-label">Less</span>
+                                        <input type="range" id="lumina-settings-char-headers" min="1" max="3" step="1" value="2">
+                                        <span class="slider-side-label">More</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="lumina-settings-slider-row">
+                                    <span class="label">Emoji</span>
+                                    <div class="slider-container">
+                                        <span class="slider-side-label">Less</span>
+                                        <input type="range" id="lumina-settings-char-emoji" min="1" max="3" step="1" value="2">
+                                        <span class="slider-side-label">More</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>Custom Instructions</h3>
+                                <p>Additional behavior, style, and tone preferences.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <h4>About you</h4>
+                                <div class="lumina-settings-field">
+                                    <label for="lumina-settings-about-nickname">Nickname</label>
+                                    <input type="text" id="lumina-settings-about-nickname" placeholder="What should Lumina call you?">
+                                </div>
+                                <div class="lumina-settings-field">
+                                    <label for="lumina-settings-about-occupation">Occupation</label>
+                                    <input type="text" id="lumina-settings-about-occupation" placeholder="e.g. Engineering student at University of Waterloo">
+                                </div>
+                                <div class="lumina-settings-field">
+                                    <label for="lumina-settings-about-interests">More about you</label>
+                                    <textarea id="lumina-settings-about-interests" placeholder="Interests, values, or preferences to keep in mind" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>💡 Persistent Instructions</h3>
+                                <p>Instructions Lumina will always respect across your chats.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div class="lumina-settings-field">
+                                    <label for="lumina-new-fact-input">Add Instruction</label>
+                                    <input type="text" id="lumina-new-fact-input" placeholder="e.g. Always write answers in a professional, concise tone.">
+                                </div>
+                                <hr class="lumina-settings-divider">
+                                <h4>Active Instructions</h4>
+                                <div id="lumina-user-facts-list" class="lumina-settings-instruction-list">
+                                    <div class="lumina-settings-empty-state">No instructions added yet. Add one above.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section Keyboard -->
+                    <section class="lumina-settings-section" id="lumina-settings-sec-keyboard">
+                        <h2 class="lumina-settings-section-title">Keyboard</h2>
+                        <p class="desc-small" style="margin-bottom: 20px;">To change a shortcut, select the key combination, and then type the new keys.</p>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>Shortcuts Management</h3>
+                                <p>Customize shortcuts for quick actions.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Toggle Sidepanel</span>
+                                        <span class="desc">Global shortcut to show or hide the assistant panel</span>
+                                    </div>
+                                    <button type="button" id="lumina-config-shortcut-btn" class="lumina-settings-btn secondary">Configure</button>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">New Chat</span>
+                                        <span class="desc">Reset currently active side panel conversation</span>
+                                    </div>
+                                    <div class="lumina-settings-shortcut-box shortcut-input" data-action="resetChat" tabindex="0"></div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Translate</span>
+                                        <span class="desc">Instant translation for selection</span>
+                                    </div>
+                                    <div class="lumina-settings-shortcut-box shortcut-input" data-action="translate" tabindex="0"></div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Read aloud</span>
+                                        <span class="desc">Speak selection aloud.</span>
+                                    </div>
+                                    <div class="lumina-settings-shortcut-box shortcut-input" data-action="audio" tabindex="0"></div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Ask Lumina</span>
+                                        <span class="desc">Quick ask action key shortcut</span>
+                                    </div>
+                                    <div class="lumina-settings-shortcut-box shortcut-input" data-action="askLumina" tabindex="0"></div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Toggle Mic</span>
+                                        <span class="desc">Voice-dictation microphone toggle</span>
+                                    </div>
+                                    <div class="lumina-settings-shortcut-box shortcut-input" data-action="micToggle" tabindex="0"></div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Translate Input</span>
+                                        <span class="desc">Auto-translate all text in current input/textarea field to English</span>
+                                    </div>
+                                    <div class="lumina-settings-shortcut-box shortcut-input" data-action="translateInput" tabindex="0"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>🔗 Custom Mappings</h3>
+                                <p>Select text + Key to auto-ask.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div id="lumina-question-mappings-list" class="lumina-settings-mapping-list"></div>
+                                <button type="button" id="lumina-add-mapping-btn" class="lumina-settings-btn secondary w-100 mt-16">Add Mapping</button>
+                            </div>
+                        </div>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>🖍️ Annotation Shortcuts</h3>
+                                <p>Select text + Key to highlight.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div id="lumina-annotation-shortcuts-list" class="lumina-settings-mapping-list"></div>
+                                <button type="button" id="lumina-add-annotation-shortcut-btn" class="lumina-settings-btn secondary w-100 mt-16">Add Shortcut</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section Account -->
+                    <section class="lumina-settings-section" id="lumina-settings-sec-account">
+                        <h2 class="lumina-settings-section-title">Account</h2>
+                        
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header">
+                                <h3>☁️ Cloud & Backup</h3>
+                                <p>Keep your profiles in sync across all devices.</p>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <!-- Auth status -->
+                                <div id="lumina-auth-logged-out" class="lumina-settings-auth-container">
+                                    <p class="desc">Sign in to sync your configuration parameters across Chrome browsers.</p>
+                                    <button type="button" id="lumina-google-login-btn" class="lumina-settings-btn primary">Sign in with Google</button>
+                                </div>
+                                
+                                <div id="lumina-auth-logged-in" class="lumina-settings-auth-container hidden">
+                                    <div class="lumina-settings-profile-row">
+                                        <img id="lumina-user-avatar" src="" alt="Avatar" class="lumina-settings-avatar">
+                                        <div class="profile-meta">
+                                            <span id="lumina-user-name" class="font-semibold">User Profile</span>
+                                            <span id="lumina-user-email" class="desc-small">user@example.com</span>
+                                            <span id="lumina-sync-status" class="desc-small highlight"></span>
+                                        </div>
+                                    </div>
+                                    <div class="lumina-settings-actions-row mt-16">
+                                        <button type="button" id="lumina-sync-btn" class="lumina-settings-btn secondary flex-grow">Sync Now</button>
+                                        <button type="button" id="lumina-google-logout-btn" class="lumina-settings-btn danger flex-grow">Sign Out</button>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">File Backup</span>
+                                        <span class="desc">Export or Import settings locally via JSON file</span>
+                                    </div>
+                                    <div class="lumina-settings-actions-row">
+                                        <button type="button" id="lumina-export-settings-btn" class="lumina-settings-btn secondary">Export</button>
+                                        <input type="file" id="lumina-import-settings-file" accept=".json" class="hidden">
+                                        <button type="button" id="lumina-import-settings-btn" class="lumina-settings-btn secondary">Import</button>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">Storage & History</span>
+                                        <span class="desc"><span id="lumina-storage-usage-text">0 MB</span> of chat history stored locally</span>
+                                    </div>
+                                    <div class="lumina-settings-actions-row">
+                                        <button type="button" id="lumina-delete-all-btn" class="lumina-settings-btn danger">Delete All Chats</button>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <div class="lumina-settings-row">
+                                    <div class="lumina-settings-row-info">
+                                        <span class="title">History Retention Period</span>
+                                        <span class="desc">Automatically purge chat history and image cache older than the selected duration.</span>
+                                    </div>
+                                    <div class="lumina-settings-control">
+                                        <div class="lumina-settings-dropdown-wrapper">
+                                            <input type="text" id="lumina-history-retention-input" readonly value="3 Months" data-value="3">
+                                            <div id="lumina-history-retention-menu" class="lumina-settings-dropdown-menu"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="lumina-settings-divider">
+                                
+                                <!-- Stored Attachment Files (OPFS File Manager) -->
+                                <div class="lumina-settings-opfs-section">
+                                    <h4>📂 Cached Attachments (OPFS)</h4>
+                                    <p class="desc-small">Files are stored locally in Chrome's Origin Private File System. Sorted by size.</p>
+                                    <div id="lumina-stored-files-list" class="lumina-settings-opfs-list">
+                                        <p class="desc-small italic">No attachments stored locally.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SETTINGS TEMPLATES ==================== -->
+    <template id="lumina-providerItemTemplate">
+        <div class="lumina-settings-provider-card provider-item">
+            <div class="provider-item-content">
+                <div class="provider-logo-container"></div>
+                <div class="provider-info">
+                    <span class="provider-title provider-item-name"></span>
+                    <span class="provider-badge"></span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="lumina-chainItemTemplate">
+        <div class="lumina-settings-chain-card chain-item">
+            <div class="chain-drag-handle">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="9" x2="16" y2="9"></line>
+                    <line x1="8" y1="15" x2="16" y2="15"></line>
+                </svg>
+            </div>
+            <span class="chain-number"></span>
+            <div class="chain-details">
+                <span class="chain-model-name"></span>
+                <span class="chain-provider-name"></span>
+            </div>
+            <div class="chain-actions">
+                <button type="button" class="lumina-settings-icon-btn configure" title="Configure Parameters">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="lumina-settings-icon-btn remove text-error" title="Remove">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="chain-item-params-container w-100"></div>
+        </div>
+    </template>
+
+    <template id="lumina-chainParamsTemplate">
+        <div class="lumina-settings-params-panel chain-params-panel">
+            <div class="lumina-settings-param-row">
+                <label>Temperature <span class="temp-value desc-small"></span></label>
+                <input type="range" class="param-temperature" min="0" max="2" step="0.1">
+            </div>
+            <div class="lumina-settings-param-row">
+                <label>Top P <span class="topp-value desc-small"></span></label>
+                <input type="range" class="param-topp" min="0" max="1" step="0.05">
+            </div>
+            <div class="lumina-settings-param-row">
+                <label>Thinking Level</label>
+                <select class="lumina-settings-select param-thinking-level">
+                    <option value="none">None</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="lumina-settings-param-row mt-12">
+                <div class="param-custom-header">
+                    <span class="font-semibold">Custom Parameters</span>
+                    <button type="button" class="lumina-settings-btn-link add-custom-param">+ Add</button>
+                </div>
+                <div class="custom-params-list"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="lumina-customParamRowTemplate">
+        <div class="lumina-settings-custom-param-row custom-param-row">
+            <input type="text" class="custom-param-key" placeholder="Key">
+            <input type="text" class="custom-param-value" placeholder="Value">
+            <button type="button" class="remove-custom-param">×</button>
+        </div>
+    </template>
+
+    <template id="lumina-mappingRowTemplate">
+        <div class="lumina-settings-mapping-item mapping-item">
+            <div class="mapping-number"></div>
+            <div class="mapping-row-content">
+                <div class="lumina-settings-shortcut-box mapping-key-input" tabindex="0">
+                    <span class="placeholder">None</span>
+                </div>
+                <span class="mapping-arrow">→</span>
+                <div class="mapping-prompt-container">
+                    <div contenteditable="true" class="mapping-prompt" data-placeholder="Enter @ to insert variables..."></div>
+                </div>
+            </div>
+            <label class="lumina-settings-switch" title="Highlight text on execution">
+                <input type="checkbox" class="mapping-highlight-toggle" checked>
+                <span class="slider"></span>
+            </label>
+            <button type="button" class="lumina-settings-icon-btn mapping-delete-btn text-error" title="Delete Mapping">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    </template>
+
+    <template id="lumina-userFactItemTemplate">
+        <div class="lumina-settings-fact-item fact-item">
+            <span class="fact-index"></span>
+            <input type="text" class="fact-text" style="flex-grow: 1;">
+            <button type="button" class="fact-remove-btn text-error">×</button>
+        </div>
+    </template>
+
+    <template id="lumina-annotationShortcutTemplate">
+        <div class="lumina-settings-annotation-item annotation-shortcut-row">
+            <div class="annotation-swatches-container">
+                <div class="annotation-color-palette color-grid"></div>
+            </div>
+            <div class="annotation-key-actions">
+                <div class="lumina-settings-shortcut-box annotation-shortcut-input" tabindex="0"></div>
+                <label class="lumina-settings-switch" title="Enable/Disable highlight shortcut">
+                    <input type="checkbox" class="annotation-shortcut-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <button type="button" class="lumina-settings-icon-btn annotation-remove-btn text-error" title="Remove">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="lumina-apiKeyResultItemTemplate">
+        <div class="lumina-settings-api-result-item">
+            <div class="api-result-header">
+                <span class="api-key-result-icon"></span>
+                <span class="api-key-result-name font-semibold"></span>
+                <span class="api-key-result-status badge"></span>
+            </div>
+            <div class="api-key-result-failed-info"></div>
+        </div>
+    </template>
+
+    <template id="lumina-failedKeyInfoTemplate">
+        <div class="lumina-settings-failed-key-info">
+            • <code class="failed-key-name"></code> → <span class="failed-key-status"></span>
+        </div>
+    </template>
+
+    <input type="file" id="file-input" multiple style="display: none;">
+
     <script src="../../lib/vendor/katex/katex.min.js" defer></script>
     <script src="../../lib/vendor/katex/auto-render.min.js" defer></script>
     <script src="../../lib/vendor/marked.min.js" defer></script>
@@ -265,6 +1074,7 @@
     <script src="../../lib/ui/history_panel.js" defer></script>
     <script src="../../lib/vendor/gpt-tokenizer.js" defer></script>
     <script src="../../lib/core/token_utils.js" defer></script>
+    <script src="settings_modal.js" defer></script>
     <script src="spotlight.js" defer></script>
     <script src="sparks.js" defer></script>
 </body>

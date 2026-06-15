@@ -3282,6 +3282,17 @@ async function init() {
     }
     updateInputPlaceholder();
     updatePaneHighlight();
+
+    if (typeof tabs !== 'undefined') {
+        tabs.forEach((tab) => {
+            if (tab && tab.sparkId && !tab.sessionId) {
+                if (typeof renderSparkWelcomeScreen === 'function') {
+                    renderSparkWelcomeScreen(tab);
+                }
+            }
+        });
+    }
+
     updateWelcomeScreenState('primary');
     if (isSplitMode) {
         updateWelcomeScreenState('secondary');
@@ -3716,11 +3727,7 @@ function initSidebar() {
 
     if (settingsBtn) {
         settingsBtn.addEventListener('click', () => {
-            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.openOptionsPage) {
-                chrome.runtime.openOptionsPage();
-            } else {
-                window.open(chrome.runtime.getURL('pages/options/options.html'));
-            }
+            chrome.runtime.openOptionsPage();
             closeMobileSidebar();
         });
     }
@@ -4282,7 +4289,7 @@ function setupPort() {
 
 
                     requestAnimationFrame(() => {
-                        const _doneIsSec = typeof isSplitMode !== 'undefined' && isSplitMode && streamingTab === tabs[secondaryActiveTabIndex];
+                        const _doneIsSec = typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex];
                         const _doneInputUI = _doneIsSec ? sharedInputUISecondary : sharedInputUI;
                         if (_doneInputUI) {
                             _doneInputUI.isGenerating = false;
@@ -6857,12 +6864,13 @@ function updateWelcomeScreenState(pane = 'primary') {
     const historyEl = targetTab ? targetTab.historyEl : document.getElementById(isSec ? 'chat-history-secondary' : 'chat-history');
     if (!historyEl) return;
 
+    const isSpark = targetTab && targetTab.sparkId;
     const hasEntries = historyEl.querySelector('.lumina-dict-entry') !== null;
     const chatContainer = layout.querySelector('.lumina-chat-container');
     if (!chatContainer) return;
     let welcomeEl = chatContainer.querySelector('.lumina-homepage-welcome');
 
-    if (!hasEntries) {
+    if (!hasEntries && !isSpark) {
         layout.classList.add('new-chat-homepage');
         if (!welcomeEl) {
             welcomeEl = document.createElement('div');
