@@ -3112,7 +3112,7 @@ button {
   transform: translateZ(0);
   scroll-margin-top: 20px;
   width: 100%;
-  max-width: 740px;
+  max-width: 660px;
   margin: 0 auto;
 }
 
@@ -6236,9 +6236,8 @@ button {
 
 .brand-name {
   color: var(--lumina-sidebar-text);
-  font-family: 'Outfit', 'Google Sans', sans-serif;
   font-weight: 500;
-  font-size: 19px;
+  font-size: 16px;
   letter-spacing: -0.2px;
 }
 
@@ -8106,7 +8105,9 @@ button {
   }
 }
 
-.lumina-chat-answer del, .sparks-msg del, .lumina-chat-history del {
+.lumina-chat-answer del,
+.sparks-msg del,
+.lumina-chat-history del {
   background-color: rgba(239, 68, 68, 0.12);
   color: #e53e3e;
   text-decoration: line-through;
@@ -8115,7 +8116,10 @@ button {
   margin-right: 4px;
   display: inline-block;
 }
-.lumina-chat-answer del + strong, .sparks-msg del + strong, .lumina-chat-history del + strong {
+
+.lumina-chat-answer del+strong,
+.sparks-msg del+strong,
+.lumina-chat-history del+strong {
   background-color: rgba(46, 204, 113, 0.15);
   color: #2ecc71;
   padding: 2px 6px;
@@ -8123,7 +8127,10 @@ button {
   font-weight: 600;
   display: inline-block;
 }
-.lumina-chat-answer ins, .sparks-msg ins, .lumina-chat-history ins {
+
+.lumina-chat-answer ins,
+.sparks-msg ins,
+.lumina-chat-history ins {
   background-color: rgba(46, 204, 113, 0.15);
   color: #2ecc71;
   text-decoration: none;
@@ -8132,15 +8139,24 @@ button {
   font-weight: 600;
   display: inline-block;
 }
-[data-theme="dark"] .lumina-chat-answer del, [data-theme="dark"] .sparks-msg del, [data-theme="dark"] .lumina-chat-history del {
+
+[data-theme="dark"] .lumina-chat-answer del,
+[data-theme="dark"] .sparks-msg del,
+[data-theme="dark"] .lumina-chat-history del {
   background-color: rgba(239, 68, 68, 0.2);
   color: #fc8181;
 }
-[data-theme="dark"] .lumina-chat-answer del + strong, [data-theme="dark"] .sparks-msg del + strong, [data-theme="dark"] .lumina-chat-history del + strong {
+
+[data-theme="dark"] .lumina-chat-answer del+strong,
+[data-theme="dark"] .sparks-msg del+strong,
+[data-theme="dark"] .lumina-chat-history del+strong {
   background-color: rgba(46, 204, 113, 0.25);
   color: #2ecc71;
 }
-[data-theme="dark"] .lumina-chat-answer ins, [data-theme="dark"] .sparks-msg ins, [data-theme="dark"] .lumina-chat-history ins {
+
+[data-theme="dark"] .lumina-chat-answer ins,
+[data-theme="dark"] .sparks-msg ins,
+[data-theme="dark"] .lumina-chat-history ins {
   background-color: rgba(46, 204, 113, 0.25);
   color: #2ecc71;
 }
