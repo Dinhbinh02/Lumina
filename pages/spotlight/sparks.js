@@ -30,14 +30,14 @@ async function sparksLoad() {
 
     for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
         const existing = sparks[id];
-        if (!existing || existing.instructions.includes('evaluate, guide, and help') || !existing.instructions.includes('Sentence-by-Sentence Correction') || !existing.instructions.includes('objective and professional') || !existing.instructions.includes('manufacture minor nitpicks') || !existing.instructions.includes('Alternative Expressions') || !existing.instructions.includes('Inline Essay Correction')) {
+        if (!existing) {
             sparks[id] = {
                 id: id,
                 name: defSpark.name,
                 instructions: defSpark.instructions,
-                avatar: existing?.avatar || null,
-                knowledgeFiles: existing?.knowledgeFiles || [],
-                createdAt: existing?.createdAt || Date.now(),
+                avatar: null,
+                knowledgeFiles: [],
+                createdAt: Date.now(),
                 updatedAt: Date.now()
             };
             needsSave = true;
@@ -977,13 +977,21 @@ function initSparks() {
     }
     document.getElementById('sidebar-new-chat-btn')?.addEventListener('click', () => {
         const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
-        if (activeTab) activeTab.sparkId = null;
+        if (activeTab) {
+            activeTab.sparkId = null;
+            if (typeof renderTabs === 'function') renderTabs();
+            if (typeof saveTabsState === 'function') saveTabsState();
+        }
         sparksClosePage();
         sidebarSparksRenderList();
     });
     document.getElementById('topbar-new-chat-btn')?.addEventListener('click', () => {
         const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
-        if (activeTab) activeTab.sparkId = null;
+        if (activeTab) {
+            activeTab.sparkId = null;
+            if (typeof renderTabs === 'function') renderTabs();
+            if (typeof saveTabsState === 'function') saveTabsState();
+        }
         sparksClosePage();
         sidebarSparksRenderList();
     });
@@ -992,7 +1000,12 @@ function initSparks() {
         const chatItem = e.target.closest('.recent-chat-item');
         if (chatItem && !e.target.closest('.recent-chat-item__menu-btn')) {
             const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
-            if (activeTab) activeTab.sparkId = null;
+            if (activeTab) {
+                const sparkId = chatItem.dataset.sparkId || null;
+                activeTab.sparkId = sparkId;
+                if (typeof renderTabs === 'function') renderTabs();
+                if (typeof saveTabsState === 'function') saveTabsState();
+            }
             sparksClosePage();
             sidebarSparksRenderList();
         }

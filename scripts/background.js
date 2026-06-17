@@ -1353,9 +1353,11 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
 
     try {
-        const userMemoryAddition = await UserMemory.getSystemPromptAddition();
-        if (userMemoryAddition) {
-            systemInstruction += userMemoryAddition;
+        if (!systemOverride) {
+            const userMemoryAddition = await UserMemory.getSystemPromptAddition();
+            if (userMemoryAddition) {
+                systemInstruction += userMemoryAddition;
+            }
         }
     } catch (e) {
         console.error('[Lumina] Failed to load user memory:', e);

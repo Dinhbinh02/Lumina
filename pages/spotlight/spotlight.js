@@ -65,8 +65,18 @@ function updateUrlSessionId(sessionId) {
     }
 }
 
+const instanceId = (() => {
+    let instId = sessionStorage.getItem('lumina_spotlight_instance_id');
+    if (!instId) {
+        instId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
+        sessionStorage.setItem('lumina_spotlight_instance_id', instId);
+    }
+    return instId;
+})();
+
 const STORAGE_PREFIX = isSidePanel ? 'sidepanel' : 'spotlight';
-const KEYS = {
+
+const GLOBAL_KEYS = {
     tabs: `${STORAGE_PREFIX}_tabs`,
     tabCounter: `${STORAGE_PREFIX}_tab_counter`,
     activeTabIndex: `${STORAGE_PREFIX}_active_tab_index`,
@@ -76,6 +86,18 @@ const KEYS = {
     isSplitMode: `${STORAGE_PREFIX}_is_split_mode`,
     secondaryTabIndex: `${STORAGE_PREFIX}_secondary_tab_index`,
     splitRatio: `${STORAGE_PREFIX}_split_ratio`
+};
+
+const KEYS = {
+    tabs: `${STORAGE_PREFIX}_tabs_${instanceId}`,
+    tabCounter: `${STORAGE_PREFIX}_tab_counter_${instanceId}`,
+    activeTabIndex: `${STORAGE_PREFIX}_active_tab_index_${instanceId}`,
+    tabGroups: `${STORAGE_PREFIX}_tab_groups_${instanceId}`,
+    activeGroupIndex: `${STORAGE_PREFIX}_active_group_index_${instanceId}`,
+    groupCounter: `${STORAGE_PREFIX}_group_counter_${instanceId}`,
+    isSplitMode: `${STORAGE_PREFIX}_is_split_mode_${instanceId}`,
+    secondaryTabIndex: `${STORAGE_PREFIX}_secondary_tab_index_${instanceId}`,
+    splitRatio: `${STORAGE_PREFIX}_split_ratio_${instanceId}`
 };
 
 
@@ -192,7 +214,10 @@ async function toggleSplitMode() {
         hoveredPane = 'primary';
         updatePaneHighlight();
 
-        await chrome.storage.local.set({ [KEYS.isSplitMode]: false });
+        await chrome.storage.local.set({
+            [KEYS.isSplitMode]: false,
+            [GLOBAL_KEYS.isSplitMode]: false
+        });
         saveTabsState();
         
         updateUrlSessionId(tabs[0]?.sessionId || null);
@@ -292,7 +317,10 @@ async function toggleSplitMode() {
         hoveredPane = 'secondary';
         updatePaneHighlight();
 
-        await chrome.storage.local.set({ [KEYS.isSplitMode]: true });
+        await chrome.storage.local.set({
+            [KEYS.isSplitMode]: true,
+            [GLOBAL_KEYS.isSplitMode]: true
+        });
         saveTabsState();
 
         updateUrlSessionId(null);
@@ -842,7 +870,7 @@ async function handleRemoteSync(changes, areaName) {
             const metadataChanged = newTabsMeta.some((meta, i) => {
                 const t = tabs[i];
                 if (!t) return true;
-                return t.title !== meta.title || t.sessionId !== meta.sessionId;
+                return t.title !== meta.title || t.sessionId !== meta.sessionId || (t.sparkId || null) !== (meta.sparkId || null);
             });
 
             if (currentTabIds !== nextTabIds || metadataChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
@@ -864,9 +892,22 @@ async function handleRemoteSync(changes, areaName) {
                         const isCurrentActive = (activeTabIndex !== -1 && tabs[activeTabIndex] && tabs[activeTabIndex].id === existing.id);
                         const sessionChanged = !isCurrentActive && existing.sessionId !== meta.sessionId;
                         existing.title = meta.title;
+                        const oldSparkId = existing.sparkId;
                         existing.sparkId = meta.sparkId || null;
                         if (!isCurrentActive) {
                             existing.sessionId = meta.sessionId;
+                        }
+
+                        if (isCurrentActive && oldSparkId !== existing.sparkId) {
+                            if (existing.sparkId) {
+                                if (typeof openSparkChat === 'function') {
+                                    openSparkChat(existing.sparkId);
+                                }
+                            } else {
+                                if (typeof resetChat === 'function') {
+                                    resetChat();
+                                }
+                            }
                         }
 
                         if (sessionChanged) {
@@ -1216,6 +1257,46 @@ async function initTabs() {
     if (secondaryContainer) secondaryContainer.appendChild(initialHistorySecondary);
 
     try {
+        let namespacedExists = false;
+        try {
+            const check = await chrome.storage.local.get([KEYS.tabs]);
+            if (check[KEYS.tabs] && check[KEYS.tabs].length > 0) {
+                namespacedExists = true;
+            }
+        } catch (e) {}
+
+        if (!namespacedExists) {
+            try {
+                const globalData = await chrome.storage.local.get([
+                    GLOBAL_KEYS.tabs,
+                    GLOBAL_KEYS.activeTabIndex,
+                    GLOBAL_KEYS.secondaryTabIndex,
+                    GLOBAL_KEYS.isSplitMode,
+                    GLOBAL_KEYS.splitRatio,
+                    GLOBAL_KEYS.tabGroups,
+                    GLOBAL_KEYS.activeGroupIndex,
+                    GLOBAL_KEYS.tabCounter,
+                    GLOBAL_KEYS.groupCounter
+                ]);
+                if (globalData[GLOBAL_KEYS.tabs] && globalData[GLOBAL_KEYS.tabs].length > 0) {
+                    const toSet = {
+                        [KEYS.tabs]: globalData[GLOBAL_KEYS.tabs],
+                        [KEYS.activeTabIndex]: globalData[GLOBAL_KEYS.activeTabIndex] ?? 0,
+                        [KEYS.secondaryTabIndex]: globalData[GLOBAL_KEYS.secondaryTabIndex] ?? -1,
+                        [KEYS.isSplitMode]: globalData[GLOBAL_KEYS.isSplitMode] ?? false,
+                        [KEYS.splitRatio]: globalData[GLOBAL_KEYS.splitRatio] ?? 50,
+                        [KEYS.tabGroups]: globalData[GLOBAL_KEYS.tabGroups] || [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }],
+                        [KEYS.activeGroupIndex]: globalData[GLOBAL_KEYS.activeGroupIndex] ?? 0,
+                        [KEYS.tabCounter]: globalData[GLOBAL_KEYS.tabCounter] ?? 1,
+                        [KEYS.groupCounter]: globalData[GLOBAL_KEYS.groupCounter] ?? 1
+                    };
+                    await chrome.storage.local.set(toSet);
+                }
+            } catch (e) {
+                console.warn('[Spotlight] Failed to copy global keys to namespace keys:', e);
+            }
+        }
+
         const data = await chrome.storage.local.get([
             KEYS.tabs,
             KEYS.activeTabIndex,
@@ -1827,7 +1908,11 @@ function setupResizer() {
             resizerDragging = false;
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
-            chrome.storage.local.set({ [KEYS.splitRatio]: parseFloat(panePrimary.style.flex) || 50 });
+            const newRatio = parseFloat(panePrimary.style.flex) || 50;
+            chrome.storage.local.set({
+                [KEYS.splitRatio]: newRatio,
+                [GLOBAL_KEYS.splitRatio]: newRatio
+            });
         }
     });
 }
@@ -1939,7 +2024,15 @@ function saveTabsState(forceSaveChat = false) {
         [KEYS.activeTabIndex]: activeTabIndex,
         [KEYS.tabGroups]: tabGroups,
         [KEYS.activeGroupIndex]: activeGroupIndex,
-        [KEYS.groupCounter]: groupCounter
+        [KEYS.groupCounter]: groupCounter,
+
+        // Also write to global keys so new window sessions inherit this state
+        [GLOBAL_KEYS.tabs]: tabsMetadata,
+        [GLOBAL_KEYS.tabCounter]: tabCounter,
+        [GLOBAL_KEYS.activeTabIndex]: activeTabIndex,
+        [GLOBAL_KEYS.tabGroups]: tabGroups,
+        [GLOBAL_KEYS.activeGroupIndex]: activeGroupIndex,
+        [GLOBAL_KEYS.groupCounter]: groupCounter
     });
 
 

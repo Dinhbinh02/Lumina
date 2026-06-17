@@ -34,6 +34,15 @@ class LuminaSettingsModal {
     this.bindKeyboardTab();
     this.bindAccountTab();
 
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local' && changes.user_memory && this.overlay && this.overlay.style.display !== 'none') {
+        UserMemory.load().then(memory => {
+          this.userFacts = memory.facts || [];
+          this.renderUserFacts();
+        });
+      }
+    });
+
     this.initialized = true;
   }
 
@@ -67,7 +76,7 @@ class LuminaSettingsModal {
       'theme', 'contrast', 'accentColor', 'language', 'dictationEnabled', 'spokenLanguage',
       'voice', 'separateVoiceEnabled', 'baseTone', 'charWarm', 'charEnthusiastic',
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
-      'userFacts', 'questionMappings', 'annotationShortcuts', 'dictLanguage',
+      'questionMappings', 'annotationShortcuts', 'dictLanguage',
       'translateInputEngine', 'translateEngine', 'dictProvider', 'dictModel',
       'historyRetentionMonths'
     ];
@@ -123,8 +132,10 @@ class LuminaSettingsModal {
       document.getElementById('lumina-settings-about-occupation').value = items.aboutOccupation || '';
       document.getElementById('lumina-settings-about-interests').value = items.aboutInterests || '';
 
-      this.userFacts = items.userFacts || [];
-      this.renderUserFacts();
+      UserMemory.load().then(memory => {
+        this.userFacts = memory.facts || [];
+        this.renderUserFacts();
+      });
 
       this.questionMappings = items.questionMappings || [];
       this.renderQuestionMappings();
@@ -492,15 +503,14 @@ class LuminaSettingsModal {
     });
 
     const addFactInput = document.getElementById('lumina-new-fact-input');
-    addFactInput.addEventListener('keypress', (e) => {
+    addFactInput.addEventListener('keypress', async (e) => {
       if (e.key === 'Enter') {
         const val = addFactInput.value.trim();
         if (val) {
-          this.userFacts.push(val);
-          chrome.storage.local.set({ userFacts: this.userFacts }, () => {
-            this.renderUserFacts();
-            addFactInput.value = '';
-          });
+          const updatedFacts = await UserMemory.addFact(val);
+          this.userFacts = updatedFacts;
+          this.renderUserFacts();
+          addFactInput.value = '';
         }
       }
     });
@@ -521,13 +531,22 @@ class LuminaSettingsModal {
       const clone = temp.content.cloneNode(true);
       clone.querySelector('.fact-index').textContent = idx + 1;
       clone.querySelector('.fact-text').value = fact;
-      clone.querySelector('.fact-text').addEventListener('blur', (e) => {
-        this.userFacts[idx] = e.target.value;
-        chrome.storage.local.set({ userFacts: this.userFacts });
+      clone.querySelector('.fact-text').addEventListener('blur', async (e) => {
+        const newVal = e.target.value.trim();
+        if (newVal === '') {
+          const updatedFacts = await UserMemory.removeFact(idx);
+          this.userFacts = updatedFacts;
+          this.renderUserFacts();
+        } else if (newVal !== this.userFacts[idx]) {
+          const updatedFacts = await UserMemory.updateFact(idx, newVal);
+          this.userFacts = updatedFacts;
+          this.renderUserFacts();
+        }
       });
-      clone.querySelector('.fact-remove-btn').addEventListener('click', () => {
-        this.userFacts.splice(idx, 1);
-        chrome.storage.local.set({ userFacts: this.userFacts }, () => this.renderUserFacts());
+      clone.querySelector('.fact-remove-btn').addEventListener('click', async () => {
+        const updatedFacts = await UserMemory.removeFact(idx);
+        this.userFacts = updatedFacts;
+        this.renderUserFacts();
       });
       list.appendChild(clone);
     });
