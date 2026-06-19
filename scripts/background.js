@@ -13,6 +13,49 @@ const DEFAULTS = LUMINA_DEFAULTS;
 
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
 
+function getPromptApiNamespace() {
+    if (typeof chrome !== 'undefined' && chrome.ai && chrome.ai.languageModel) {
+        return chrome.ai.languageModel;
+    }
+    if (typeof chrome !== 'undefined' && chrome.aiLanguageModel) {
+        return chrome.aiLanguageModel;
+    }
+    if (typeof chrome !== 'undefined' && chrome.aiOriginTrial && chrome.aiOriginTrial.languageModel) {
+        return chrome.aiOriginTrial.languageModel;
+    }
+    if (typeof ai !== 'undefined' && ai.languageModel) {
+        return ai.languageModel;
+    }
+    if (typeof self !== 'undefined' && self.ai && self.ai.languageModel) {
+        return self.ai.languageModel;
+    }
+    return null;
+}
+
+// Auto-trigger Gemini Nano download if supported but not yet downloaded
+(async () => {
+    try {
+        const ns = getPromptApiNamespace();
+        if (ns) {
+            const capabilities = await ns.capabilities();
+            if (capabilities && capabilities.available === 'after-download') {
+                console.log("[Lumina BG] Gemini Nano is supported but not downloaded. Auto-triggering download...");
+                ns.create({
+                    monitor(m) {
+                        m.addEventListener('downloadprogress', (e) => {
+                            console.log(`[Lumina BG] Gemini Nano download progress: ${Math.round(e.loaded / e.total * 100)}%`);
+                        });
+                    }
+                }).catch(err => {
+                    console.warn("[Lumina BG] Auto-trigger download failed:", err);
+                });
+            }
+        }
+    } catch (e) {
+        console.warn("[Lumina BG] Failed to auto-trigger Prompt API download:", e);
+    }
+})();
+
 
 const sidePanelPorts = new Map();
 let sessionOpenWindows = new Set();
@@ -1003,6 +1046,16 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
 }
 
 async function getModelChain(type = 'text', preferredModel = null) {
+    if (preferredModel && preferredModel.providerId === 'builtin') {
+        return [{
+            model: preferredModel.model,
+            providerId: 'builtin',
+            providerType: 'builtin',
+            apiKey: '',
+            endpoint: '',
+            defaultModel: preferredModel.model
+        }];
+    }
     const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
 
 
@@ -1337,6 +1390,102 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
     if (model) {
         incrementModelUsage(model);
+    }
+
+    if (currentProvider === 'builtin') {
+        try {
+            const ns = getPromptApiNamespace();
+            if (!ns) {
+                throw new Error("Prompt API is not available in the service worker context.");
+            }
+
+            const capabilities = await ns.capabilities();
+            if (capabilities.available === 'no') {
+                throw new Error("Gemini Nano is not available on this device.");
+            }
+
+            let localSysInstruction = systemOverride || buildChatSystemInstruction(!!globalSettings.reasoningMode, false);
+            let currentMessages = [...messages];
+            let augmentedQuestion = question;
+
+            if (action === 'proofread') {
+                localSysInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
+                if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
+                    currentMessages = [];
+                }
+                if (!systemOverride) {
+                    augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
+                }
+            }
+
+            try {
+                if (!systemOverride) {
+                    const userMemoryAddition = await UserMemory.getSystemPromptAddition();
+                    if (userMemoryAddition) {
+                        localSysInstruction += userMemoryAddition;
+                    }
+                }
+            } catch (e) {
+                console.error('[Lumina] Failed to load user memory:', e);
+            }
+
+            if (initialContext && initialContext.trim().length > 0) {
+                let processedContext = optimizeContextString(initialContext);
+                if (currentMessages.length > 0) {
+                    const contextInstruction = `\n\n### Webpage Source Content:\n${processedContext}\n\n(Note: This content is for background reference only. Prioritize the user's current goal in the history.)`;
+                    localSysInstruction += contextInstruction;
+                    localSysInstruction += "\nIMPORTANT: If context is provided, prioritize its information and avoid making unsupported claims.";
+                } else {
+                    augmentedQuestion = `### Webpage Source Content:\n${processedContext}\n\n---\n\n### User Instruction:\n${augmentedQuestion}`;
+                }
+            }
+
+            let promptText = "";
+            if (localSysInstruction) {
+                promptText += `System Instructions:\n${localSysInstruction}\n\n`;
+            }
+            for (const msg of currentMessages) {
+                const roleName = msg.role === 'user' ? 'User' : 'Model';
+                promptText += `${roleName}: ${msg.text || msg.content}\n`;
+            }
+            promptText += `User: ${augmentedQuestion}\nModel:`;
+
+            console.log("[Lumina BG] Prompting built-in Gemini Nano with prompt length:", promptText.length);
+
+            const sessionOptions = {};
+            if (localSysInstruction) {
+                sessionOptions.systemPrompt = localSysInstruction;
+            }
+
+            const session = await ns.create(sessionOptions);
+            const stream = session.promptStreaming(promptText);
+
+            let lastText = "";
+            for await (const chunk of stream) {
+                let delta = "";
+                if (chunk.startsWith(lastText)) {
+                    delta = chunk.substring(lastText.length);
+                    lastText = chunk;
+                } else {
+                    delta = chunk;
+                    lastText += chunk;
+                }
+                if (delta) {
+                    const chunkMsg = { action: 'chunk', chunk: delta, sessionId };
+                    if (sessionId) broadcastToSession(sessionId, chunkMsg);
+                    else port.postMessage(chunkMsg);
+                }
+            }
+
+            try {
+                session.destroy();
+            } catch (e) {}
+
+            return;
+        } catch (err) {
+            console.error("[Lumina BG] Built-in Prompt API execution failed:", err);
+            throw new Error("Built-in Gemini Nano error: " + err.message);
+        }
     }
 
     if (!apiKey && !endpoint.includes('localhost') && !endpoint.includes('127.0.0.1')) {
