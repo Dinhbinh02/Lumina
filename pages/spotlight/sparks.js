@@ -581,6 +581,11 @@ async function sidebarSparksRenderList() {
         item.addEventListener('click', (e) => {
             if (e.target.closest('.sidebar-spark-item__menu-btn')) return;
             openSparkChat(item.dataset.sparkId);
+            const sidebar = document.getElementById('lumina-sidebar');
+            const backdrop = document.querySelector('.sidebar-backdrop');
+            if (sidebar) sidebar.classList.remove('active');
+            if (backdrop) backdrop.classList.remove('active');
+            document.body.classList.remove('sidebar-open');
         });
     });
 

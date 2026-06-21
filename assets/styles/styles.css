@@ -4466,8 +4466,8 @@ button {
 }
 
 .lumina-preview-img {
-  max-width: min(calc(100% - 20px), 380px);
-  max-height: 380px;
+  max-width: min(calc(100% - 20px), 90%);
+  max-height: 82vh;
   object-fit: contain;
   border-radius: 12px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
@@ -8237,4 +8237,21 @@ button {
 [data-theme="dark"] .lumina-chat-history ins {
   background-color: rgba(46, 204, 113, 0.25);
   color: #2ecc71;
+}
+
+.sidebar-toggle-svg .collapse-chevron {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform-origin: center;
+}
+
+.lumina-sidebar.sidebar-collapsed ~ .lumina-main-content .collapse-chevron {
+  opacity: 0;
+  transform: translateX(3px) scale(0.8);
+}
+
+@media (max-width: 900px) {
+  .lumina-sidebar:not(.active) ~ .lumina-main-content .collapse-chevron {
+    opacity: 0;
+    transform: translateX(3px) scale(0.8);
+  }
 }

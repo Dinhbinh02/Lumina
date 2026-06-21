@@ -1090,6 +1090,10 @@ async function handleRemoteSync(changes, areaName) {
     for (const key in changes) {
         if (key.startsWith('lumina_session_')) {
             const sid = key.replace('lumina_session_', '');
+            const lastLocalSave = window._localSavedSessions?.[sid];
+            if (lastLocalSave && (Date.now() - lastLocalSave < 1000)) {
+                continue;
+            }
 
             const affected = tabs.filter(t => t.sessionId === sid);
             if (affected.length > 0) {
@@ -2030,8 +2034,10 @@ function saveTabsState(forceSaveChat = false) {
     });
 
 
+    window._localSavedSessions = window._localSavedSessions || {};
     tabs.forEach(tab => {
         if (tab.sessionId && tab.historyEl) {
+            window._localSavedSessions[tab.sessionId] = Date.now();
             if (typeof ChatHistoryManager !== 'undefined') {
                 ChatHistoryManager.saveCurrentChat(tab.historyEl, tab.sessionId, tab.sparkId, forceSaveChat, {
                     selectedModel: tab.selectedModel,
@@ -3903,6 +3909,7 @@ function initSidebar() {
     // Toggle sidebar collapse/expand when clicking on empty space
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
+            if (window.innerWidth <= 900) return;
             const clickedInteractive = e.target.closest('button, a, .recent-chat-item, .sidebar-spark-item, .sidebar-brand, .user-profile, .recent-title, input, select');
             if (!clickedInteractive) {
                 if (sidebar.classList.contains('sidebar-collapsed')) {
