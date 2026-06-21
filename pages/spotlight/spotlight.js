@@ -541,9 +541,35 @@ function saveWebSelectionForScope(spotlightTabId, selection) {
 
 
 
+async function ensureContentScriptsInjected(tabId) {
+    try {
+        const checkResults = await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            func: () => typeof window.luminaExtractMainContent === 'function'
+        }).catch(() => null);
+
+        const isAlreadyInjected = checkResults && checkResults[0] && checkResults[0].result === true;
+        if (!isAlreadyInjected) {
+            console.log(`[Lumina] Re-injecting content scripts into tab ${tabId}...`);
+            const manifest = chrome.runtime.getManifest();
+            const contentScriptFiles = manifest.content_scripts?.[0]?.js || [];
+            if (contentScriptFiles.length > 0) {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tabId, allFrames: true },
+                    files: contentScriptFiles
+                });
+            }
+        }
+    } catch (e) {
+        console.warn(`[Lumina] Failed to inject content scripts into tab ${tabId}:`, e);
+    }
+}
+
 async function fetchFreshWebContent(tabId) {
     const tabInfo = await chrome.tabs.get(parseInt(tabId)).catch(() => null);
     if (!tabInfo || tabInfo.status !== 'complete') return null;
+
+    await ensureContentScriptsInjected(parseInt(tabId));
 
     try {
         const results = await chrome.scripting.executeScript({
@@ -1090,38 +1116,25 @@ async function handleRemoteSync(changes, areaName) {
                             if (tab.historyEl && tab.historyEl.innerHTML !== newHtml) {
 
 
-                                const hasLocalMinHeight = tab.historyEl.querySelector('.lumina-dict-entry[style*="min-height"]');
-                                if (hasLocalMinHeight && !newHtml.includes('min-height')) {
-                                    return;
-                                }
-
-
-                                const wasAtBottom = Math.abs(tab.historyEl.scrollHeight - tab.historyEl.scrollTop - tab.historyEl.clientHeight) < 30;
                                 const savedScrollTop = tab.historyEl.scrollTop;
 
                                 tab.historyEl.innerHTML = newHtml;
                                 normalizeRestoredHistory(tab.historyEl);
                                 if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
 
-
                                 const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
                                 const lastEntry = entries[entries.length - 1];
                                 if (lastEntry && tab.chatUIInstance) {
                                     tab.chatUIInstance.clearEntryMargins(lastEntry);
-                                    tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+                                    if (document.hasFocus()) {
+                                        tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+                                    } else {
+                                        lastEntry.style.removeProperty('min-height');
+                                    }
                                 }
 
-
-                                if (!wasAtBottom) {
-                                    tab.historyEl.scrollTop = savedScrollTop;
-                                } else {
-
-                                    requestAnimationFrame(() => {
-                                        if (tab.historyEl) {
-                                            tab.historyEl.scrollTop = tab.historyEl.scrollHeight;
-                                        }
-                                    });
-                                }
+                                // Always preserve the scroll position to prevent automatic scrolling/jumping on background sync updates
+                                tab.historyEl.scrollTop = savedScrollTop;
 
 
                                 tab.historyEl.querySelectorAll('.lumina-chat-answer, .lumina-translation-container, .lumina-answer-versions').forEach(ans => {
@@ -2234,6 +2247,77 @@ function normalizeRestoredHistory(historyEl) {
                 });
             }
         }
+
+        if (questionEl) {
+            const imgs = entry.querySelectorAll('img[data-attachment-id]');
+            let parsedImages = null;
+            if (questionEl.dataset.images) {
+                try {
+                    parsedImages = JSON.parse(questionEl.dataset.images);
+                } catch (e) {
+                    console.error('Failed to parse dataset.images', e);
+                }
+            }
+
+            const hydratedFiles = [];
+            const promises = [];
+
+            imgs.forEach(img => {
+                const attachmentId = img.dataset.attachmentId;
+                if (attachmentId) {
+                    const p = LuminaAttachmentDB.get(attachmentId).then(async (blob) => {
+                        if (blob) {
+                            const objectUrl = URL.createObjectURL(blob);
+                            img.src = objectUrl;
+                            img.onclick = (e) => {
+                                e.stopPropagation();
+                                const tab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+                                if (tab && tab.chatUIInstance) {
+                                    tab.chatUIInstance.showImagePreview(objectUrl, img.alt);
+                                }
+                            };
+
+                            const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                            if (dataUrl) {
+                                let fileObj = null;
+                                if (parsedImages && Array.isArray(parsedImages.files)) {
+                                    fileObj = parsedImages.files.find(f => f.attachmentId === attachmentId);
+                                }
+                                if (fileObj) {
+                                    fileObj.dataUrl = dataUrl;
+                                } else {
+                                    fileObj = {
+                                        name: img.alt || 'Image',
+                                        mimeType: blob.type,
+                                        isImage: true,
+                                        dataUrl: dataUrl,
+                                        attachmentId: attachmentId
+                                    };
+                                }
+                                hydratedFiles.push(fileObj);
+                            }
+                        }
+                    }).catch(err => {
+                        console.error('Failed to hydrate attachment', attachmentId, err);
+                    });
+                    promises.push(p);
+                }
+            });
+
+            if (promises.length > 0) {
+                Promise.all(promises).then(() => {
+                    if (hydratedFiles.length > 0) {
+                        questionEl._luminaImages = hydratedFiles;
+                        entry._luminaImages = hydratedFiles;
+                        questionEl.dataset.images = JSON.stringify({
+                            compact: true,
+                            count: hydratedFiles.length,
+                            files: hydratedFiles
+                        });
+                    }
+                });
+            }
+        }
     });
 }
 
@@ -2636,7 +2720,6 @@ function initSpotlightAskSelection() {
                             y: rect.bottom + 5,
                             source: 'cambridge'
                         });
-                        playSpotlightAudio(text);
                         return;
                     }
                 }
@@ -2852,19 +2935,12 @@ function isWebPageUrl(url) {
 }
 
 function syncCurrentBrowserTab() {
-
-
     const queryOptions = isSidePanel ? { active: true, currentWindow: true } : { active: true, lastFocusedWindow: true };
 
-    chrome.tabs.query(queryOptions, (tabs) => {
-        let activeTab = tabs[0];
-
+    const handleTabResult = (activeTab) => {
         saveCurrentWebSelection();
 
-
-
         if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
-
             chrome.windows.getAll({ populate: true }, (windows) => {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
@@ -2910,6 +2986,17 @@ function syncCurrentBrowserTab() {
         updateWebChips();
         if (webTabPickerEl) {
             refreshWebTabPicker();
+        }
+    };
+
+    chrome.tabs.query(queryOptions, (tabs) => {
+        const activeTab = tabs && tabs[0];
+        if (!activeTab && isSidePanel) {
+            chrome.tabs.query({ active: true, lastFocusedWindow: true }, (fallbackTabs) => {
+                handleTabResult(fallbackTabs && fallbackTabs[0]);
+            });
+        } else {
+            handleTabResult(activeTab);
         }
     });
 }
@@ -3134,6 +3221,24 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
     });
 }
 
+function getDomainDisplayName(url) {
+    if (!url) return '';
+    try {
+        let hostname = new URL(url).hostname;
+        if (hostname.startsWith('www.')) {
+            hostname = hostname.slice(4);
+        }
+        const parts = hostname.split('.');
+        if (parts.length > 0) {
+            const name = parts[0];
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        }
+        return hostname;
+    } catch (e) {
+        return '';
+    }
+}
+
 function createWebChipElement(source, selectedSources, spotlightTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
@@ -3173,7 +3278,11 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
     }
 
     const titleSpan = document.createElement('span');
-    titleSpan.textContent = source.displayTitle || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
+    let displayName = source.displayTitle;
+    if (!displayName && !hasMultipleTabs && source.url) {
+        displayName = getDomainDisplayName(source.url);
+    }
+    titleSpan.textContent = displayName || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
     chip.appendChild(titleSpan);
 
     chip.addEventListener('click', (event) => {
@@ -4785,7 +4894,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         targetChatUI.tokenLimit = activeInputUI.tokenLimit;
     }
 
-    const conversationHistory = targetChatUI.gatherMessages(untilEntryId);
+    const conversationHistory = targetChatUI.gatherMessages(untilEntryId, false, currentTab?.thinkingLevel || activeInputUI?.thinkingLevel || 'none');
 
     let apiText = text;
 
@@ -5787,6 +5896,31 @@ window.addEventListener('beforeunload', () => {
         }
     }
     saveTabsState();
+});
+
+window.addEventListener('focus', () => {
+    if (typeof tabs !== 'undefined' && Array.isArray(tabs) && typeof activeTabIndex !== 'undefined' && activeTabIndex >= 0) {
+        const activeTab = tabs[activeTabIndex];
+        if (activeTab && activeTab.historyEl && activeTab.chatUIInstance) {
+            const entries = activeTab.historyEl.querySelectorAll('.lumina-dict-entry');
+            const lastEntry = entries[entries.length - 1];
+            if (lastEntry) {
+                activeTab.chatUIInstance.clearEntryMargins(lastEntry);
+                activeTab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+            }
+        }
+        if (typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0) {
+            const secTab = tabs[secondaryActiveTabIndex];
+            if (secTab && secTab.historyEl && secTab.chatUIInstance) {
+                const entries = secTab.historyEl.querySelectorAll('.lumina-dict-entry');
+                const lastEntry = entries[entries.length - 1];
+                if (lastEntry) {
+                    secTab.chatUIInstance.clearEntryMargins(lastEntry);
+                    secTab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+                }
+            }
+        }
+    }
 });
 
 

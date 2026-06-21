@@ -301,6 +301,13 @@ button {
   pointer-events: auto !important;
   transform: translateZ(0) !important;
   will-change: transform, opacity !important;
+  font-family: var(--lumina-font-family, 'Google Sans', 'Google Sans Text', system-ui, -apple-system, sans-serif) !important;
+}
+
+.lumina-dictionary-popup *:not(.lumina-dict-ipa):not(.lumina-dict-popup-title),
+.lumina-dictionary-popup *:not(.lumina-dict-ipa):not(.lumina-dict-popup-title)::before,
+.lumina-dictionary-popup *:not(.lumina-dict-ipa):not(.lumina-dict-popup-title)::after {
+  font-family: var(--lumina-font-family, 'Google Sans', 'Google Sans Text', system-ui, -apple-system, sans-serif) !important;
 }
 
 .lumina-dict-body {
@@ -316,7 +323,7 @@ button {
 
 
 .lumina-dict-popup-item {
-  margin-bottom: 20px !important;
+  margin-bottom: 12px !important;
 }
 
 
@@ -645,13 +652,13 @@ button {
   border: none !important;
   outline: none !important;
   padding: 5px 12px !important;
-  font-size: 1em !important;
-  font-weight: 500 !important;
-  color: #1d1d1f !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: var(--lumina-text-primary) !important;
   min-height: 28px !important;
-  max-height: 300px !important;
+  max-height: 180px !important;
   overflow-y: auto !important;
-  line-height: 24px !important;
+  line-height: 1.5 !important;
   font-family: var(--lumina-font-family) !important;
   box-sizing: border-box !important;
   cursor: text !important;
@@ -659,18 +666,36 @@ button {
   white-space: pre-wrap !important;
   overflow-wrap: break-word !important;
   word-break: normal !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  letter-spacing: normal !important;
+  text-shadow: none !important;
+  resize: none !important;
+  field-sizing: content !important;
 }
 
-.lumina-ask-input-field:empty::before {
-  content: attr(data-placeholder);
-  color: #999 !important;
-  opacity: 0.7 !important;
+.lumina-ask-input-field::placeholder {
+  color: var(--lumina-text-secondary, #5f6368) !important;
+  opacity: 0.65 !important;
   pointer-events: none !important;
   font-weight: 400 !important;
+  font-family: var(--lumina-font-family) !important;
+  font-size: 15px !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  letter-spacing: normal !important;
+  text-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-ask-input-field {
-  color: #f5f5f7 !important;
+  color: var(--lumina-text-primary, #e8eaed) !important;
+}
+
+[data-theme="dark"] .lumina-ask-input-field::placeholder {
+  color: var(--lumina-text-secondary, #9aa0a6) !important;
+  opacity: 0.65 !important;
 }
 
 .lumina-image-preview-item.is-file {
@@ -1606,8 +1631,12 @@ button {
   order: 1 !important;
 }
 
-#tools-wrapper {
+.lumina-left-actions .lumina-web-chips-group {
   order: 2 !important;
+}
+
+#tools-wrapper {
+  order: 3 !important;
 }
 
 
@@ -1615,6 +1644,21 @@ button {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  color: var(--lumina-text-secondary, #5f6368) !important;
+  opacity: 0.65 !important;
+  font-weight: 400 !important;
+  font-family: var(--lumina-font-family) !important;
+  font-size: 15px !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  letter-spacing: normal !important;
+  text-shadow: none !important;
+}
+
+[data-theme="dark"] .lumina-input-bar .lumina-chat-input::placeholder {
+  color: var(--lumina-text-secondary, #9aa0a6) !important;
+  opacity: 0.65 !important;
 }
 
 
@@ -3082,7 +3126,7 @@ button {
 }
 
 .lumina-dict-meaning-text {
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   color: var(--lumina-text-primary);
   line-height: 1.65;
   display: inline;
@@ -3099,13 +3143,13 @@ button {
   padding-left: 12px;
   border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.4);
   font-size: 0.92em !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   line-height: 1.65;
 }
 
 .lumina-dict-translation {
   color: var(--lumina-text-secondary);
-  font-weight: 500 !important;
+  font-weight: 400 !important;
 }
 
 .lumina-dict-separator {
@@ -3343,7 +3387,7 @@ button {
   flex: 1 !important;
   min-height: 0 !important;
   overflow-y: auto !important;
-  padding: 14px 16px !important;
+  padding: 10px 12px !important;
   box-sizing: border-box !important;
   overscroll-behavior: contain !important;
   will-change: transform !important;
@@ -3523,25 +3567,27 @@ button {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 8px !important;
 }
 
 .lumina-dict-popup-item+.lumina-dict-popup-item {
-  margin-top: 24px !important;
+  margin-top: 14px !important;
   border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
-  padding-top: 16px !important;
+  padding-top: 10px !important;
 }
 
 .lumina-dict-popup-sense {
-  margin-top: 16px !important;
-  padding-left: 14px !important;
-  border-left: 2px solid var(--lumina-primary-color, #0076d6) !important;
-  margin-bottom: 12px !important;
-  margin-top: 12px;
-  padding-left: 14px;
-  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.15);
-  position: relative;
-  margin-bottom: 8px;
+  margin-top: 6px !important;
+  margin-bottom: 4px !important;
+  position: relative !important;
+}
+
+.lumina-dict-popup-meaning {
+  margin-bottom: 4px !important;
+}
+
+.lumina-dict-popup-meaning:last-child {
+  margin-bottom: 0 !important;
 }
 
 .lumina-dict-header-row {
@@ -3549,7 +3595,7 @@ button {
   justify-content: flex-start !important;
   align-items: baseline !important;
   gap: 8px !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 4px !important;
 }
 
 .lumina-dict-popup-pos {
@@ -3563,24 +3609,6 @@ button {
   line-height: 1.2 !important;
 }
 
-.lumina-dict-popup-meaning.ai-custom {
-  margin-bottom: 20px !important;
-}
-
-.lumina-dict-meaning-keywords {
-  font-weight: 700 !important;
-  font-size: 1.1em !important;
-  color: var(--lumina-primary-color) !important;
-  display: block !important;
-  margin-bottom: 4px !important;
-}
-
-.lumina-dict-meaning-explanation {
-  font-size: 1em !important;
-  line-height: 1.5 !important;
-  color: var(--lumina-text-primary) !important;
-  margin-bottom: 8px !important;
-}
 
 .lumina-dict-popup-examples {
   margin-top: 8px !important;
@@ -3618,7 +3646,8 @@ button {
   font-size: 0.9em !important;
 }
 
-.lumina-dict-popup-title {
+.lumina-dictionary-popup .lumina-dict-popup-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 1.4em !important;
   font-weight: 800 !important;
   color: var(--lumina-text-primary) !important;
@@ -3688,6 +3717,11 @@ button {
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
+  font-weight: 600 !important;
+}
+
+.lumina-dict-pron-group .lumina-dict-ipa {
+  font-weight: 500 !important;
 }
 
 .lumina-dict-pron-group.uk {
@@ -3700,16 +3734,16 @@ button {
 
 .lumina-dict-lang {
   font-size: 0.9em !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   line-height: 1.2 !important;
   text-transform: uppercase !important;
 }
 
 .lumina-dict-ipa {
-  font-family: "Noto Sans", "Lucida Sans Unicode", "Arial Unicode MS", sans-serif !important;
-  font-size: 1em !important;
-  letter-spacing: 0.02em !important;
-  font-weight: 500 !important;
+  font-family: "Lucida Sans Unicode", "Arial Unicode MS", "Doulos SIL", "Charis SIL", "Gentium Plus", sans-serif !important;
+  font-size: 0.95em !important;
+  letter-spacing: 0.03em !important;
+  font-weight: 600 !important;
   color: var(--lumina-text-primary) !important;
   line-height: 1.2 !important;
   margin-top: -1px !important;
@@ -3738,17 +3772,27 @@ button {
 }
 
 .lumina-dict-sense-indicator {
-  font-size: 0.9em !important;
+  font-size: 0.76em !important;
   font-weight: 700 !important;
   color: var(--lumina-primary-color) !important;
+  background: rgba(var(--lumina-primary-rgb, 0, 86, 210), 0.08) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  margin-bottom: 4px;
-  margin-left: -14px;
-  padding-left: 14px;
+  letter-spacing: 0.08em !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  display: inline-block !important;
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
   line-height: 1.2 !important;
-  display: block;
-  opacity: 0.9;
+}
+
+[data-theme="dark"] .lumina-dict-sense-indicator {
+  background: rgba(var(--lumina-primary-rgb, 0, 86, 210), 0.16) !important;
+  color: #58a6ff !important;
+}
+
+.lumina-dict-popup-sense:first-child .lumina-dict-sense-indicator {
+  margin-top: 0 !important;
 }
 
 .lumina-dict-popup-meaning:last-child {
@@ -6362,6 +6406,19 @@ button {
   flex-direction: column;
   overflow: hidden;
   margin-top: 8px;
+  position: relative !important;
+}
+
+.sidebar-recent-section::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 24px !important;
+  background: linear-gradient(to top, var(--lumina-sidebar-bg, var(--lumina-ui-bg, #ffffff)), transparent) !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
 }
 
 .recent-title {
@@ -6382,6 +6439,7 @@ button {
   flex-direction: column;
   gap: 2px;
   padding-right: 2px;
+  padding-bottom: 24px;
 }
 
 .recent-chats-list::-webkit-scrollbar {
@@ -6605,6 +6663,7 @@ button {
   padding: 0 6px;
   height: 46px;
   transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative !important;
 }
 
 .user-profile {

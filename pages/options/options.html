@@ -15,6 +15,7 @@
   <script src="../../lib/vendor/Sortable.min.js"></script>
   <script src="../../lib/core/constants.js"></script>
   <script src="../../lib/core/memory.js"></script>
+  <script src="../../lib/core/attachment_db.js"></script>
   <script src="../../lib/core/auth.js"></script>
   <script src="../../lib/core/chat_history.js"></script>
 
@@ -692,10 +693,10 @@
 
             <div class="m3-divider"></div>
 
-            <!-- Stored Attachment Files (OPFS File Manager) -->
+            <!-- Stored Attachment Files (Database File Manager) -->
             <div class="m3-stored-files-section">
-              <h3 class="m3-title-medium" style="margin-top: 16px; margin-bottom: 8px;">📂 Cached Attachments (OPFS)</h3>
-              <p class="m3-body-medium text-secondary" style="margin-bottom: 16px;">Files are stored locally in Chrome's Origin Private File System and managed by history retention policies. Sorted from heaviest to lightest.</p>
+              <h3 class="m3-title-medium" style="margin-top: 16px; margin-bottom: 8px;">📂 Cached Attachments</h3>
+              <p class="m3-body-medium text-secondary" style="margin-bottom: 16px;">Files are stored locally in the secure extension database. Sorted from heaviest to lightest.</p>
               
               <div id="options-stored-files-list" class="m3-stored-files-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
                 <p class="m3-body-medium text-secondary italic">No attachments stored locally.</p>

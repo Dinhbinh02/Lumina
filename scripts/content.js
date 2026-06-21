@@ -275,7 +275,6 @@
                                 y: rect.bottom + 5,
                                 source: 'cambridge'
                             });
-                            playCombinedAudio(text);
                             return;
                         }
                     }

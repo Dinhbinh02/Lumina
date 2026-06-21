@@ -775,13 +775,12 @@ class LuminaSettingsModal {
       reader.readAsText(file);
     });
 
-    document.getElementById('lumina-delete-all-btn').addEventListener('click', () => {
+    document.getElementById('lumina-delete-all-btn').addEventListener('click', async () => {
       if (confirm('Are you absolutely sure you want to delete all chat history? This cannot be undone.')) {
-        if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteAllChats) {
-          ChatHistoryManager.deleteAllChats(() => {
-            alert('All chat history deleted.');
-            this.updateStorageUsage();
-          });
+        if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.clearAllHistory) {
+          await ChatHistoryManager.clearAllHistory();
+          alert('All chat history deleted.');
+          this.updateStorageUsage();
         }
       }
     });
