@@ -4098,10 +4098,7 @@ function initSidebar() {
                                 const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
                                 const modelParams = advParams[compositeKey] || advParams[modelObj.model] || {};
 
-                                const isGemini = (modelObj.providerId && modelObj.providerId.toLowerCase().includes('gemini')) || 
-                                                 (modelObj.model && modelObj.model.toLowerCase().includes('gemini'));
-                                const isGemma4 = /gemma-4/i.test(modelObj.model);
-                                const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+                                const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                                 const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
 
                                 activeTab.thinkingLevel = newThinkingLevel;
@@ -4114,8 +4111,13 @@ function initSidebar() {
                                 }
                             });
                         }
-                        if (changed && sharedInputUI) {
-                            if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
+                        if (changed) {
+                            if (typeof saveTabsState === 'function') {
+                                saveTabsState();
+                            }
+                            if (sharedInputUI) {
+                                if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
+                            }
                             if (typeof window.updateTopbarModelSelector === 'function') window.updateTopbarModelSelector();
                         }
                     }
@@ -6433,10 +6435,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         const compositeKey = modelObj ? (modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model) : '';
         const modelParams = advParams[compositeKey] || advParams[modelObj?.model] || {};
 
-        const isGemini = modelObj ? ((modelObj.providerId && modelObj.providerId.toLowerCase().includes('gemini')) || 
-                                     (modelObj.model && modelObj.model.toLowerCase().includes('gemini'))) : false;
-        const isGemma4 = modelObj ? /gemma-4/i.test(modelObj.model) : false;
-        const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+        const defaultThinking = modelObj ? window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId) : 'none';
         
         activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
     }
@@ -6772,24 +6771,8 @@ function initTopbarModelSelector(pane = 'primary') {
     btn.dataset.initializedModelSelector = 'true';
 
     const render = (data) => {
-        const chain = [];
         const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
-        
-        chain.push({
-            model: 'Gemini Nano (Built-in)',
-            providerId: 'builtin',
-            supported: promptSupport.supported,
-            status: promptSupport.status,
-            reason: promptSupport.reason
-        });
-
-        if (data.modelChains?.text) {
-            data.modelChains.text.forEach(item => {
-                if (item.model !== 'Gemini Nano (Built-in)' && item.providerId !== 'builtin') {
-                    chain.push(item);
-                }
-            });
-        }
+        const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
 
         // Find current model of active tab
         const activeTab = isSec
@@ -6904,10 +6887,7 @@ function initTopbarModelSelector(pane = 'primary') {
                         const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
                         const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[item.model] || {};
 
-                        const isGemini = (item.providerId && item.providerId.toLowerCase().includes('gemini')) || 
-                                         (item.model && item.model.toLowerCase().includes('gemini'));
-                        const isGemma4 = /gemma-4/i.test(item.model);
-                        const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+                        const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
                         const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
 
                         currentActiveTab.thinkingLevel = newThinkingLevel;
@@ -6923,6 +6903,9 @@ function initTopbarModelSelector(pane = 'primary') {
                         chrome.storage.local.set({ lumina_session_settings: settings }, () => {
                             if (targetSharedUI && typeof targetSharedUI.refreshReasoningSelector === 'function') {
                                 targetSharedUI.refreshReasoningSelector();
+                            }
+                            if (typeof saveTabsState === 'function') {
+                                saveTabsState();
                             }
                             fetchAndRender();
                         });
@@ -6969,39 +6952,7 @@ function initTopbarModelSelector(pane = 'primary') {
         const submenu = document.createElement('div');
         submenu.className = 'lumina-thinking-submenu';
 
-        const providers = data.providers || [];
-        const provider = providers.find(p => p.id === currentProviderId);
-        const isGemini = (provider ? (provider.type === 'gemini') : false) ||
-            (currentModel && currentModel.toLowerCase().includes('gemini')) ||
-            (currentProviderId && currentProviderId.toLowerCase().includes('gemini'));
-        const isGemma4 = currentModel ? /gemma-4/i.test(currentModel) : false;
-        const isGemma = currentModel ? (/gemma/i.test(currentModel) && !isGemma4) : false;
-
-        let options = [];
-        if (isGemma4) {
-            options = [
-                { value: 'minimal', title: 'Minimal', desc: 'Minimal thinking, very fast' },
-                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
-            ];
-        } else if (isGemma) {
-            options = [
-                { value: 'none', title: 'None', desc: 'Thinking is not supported' }
-            ];
-        } else if (isGemini) {
-            options = [
-                { value: 'minimal', title: 'Minimal', desc: 'Minimal thinking, very fast' },
-                { value: 'low', title: 'Low', desc: 'Short thinking, fast response' },
-                { value: 'medium', title: 'Standard', desc: 'Best for most questions' },
-                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
-            ];
-        } else {
-            options = [
-                { value: 'none', title: 'None', desc: 'No reasoning, fastest response' },
-                { value: 'low', title: 'Low', desc: 'Quick reasoning, low latency' },
-                { value: 'medium', title: 'Standard', desc: 'Best for most questions' },
-                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
-            ];
-        }
+        const options = window.LuminaModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
 
         options.forEach((opt) => {
             const optEl = document.createElement('button');
@@ -7089,7 +7040,7 @@ function initTopbarModelSelector(pane = 'primary') {
             }
             const settings = data.lumina_session_settings || {};
             const saved = settings[sidKey] || {};
-            if (activeTab && saved.selectedModel) {
+            if (activeTab && !activeTab.selectedModel && saved.selectedModel) {
                 activeTab.selectedModel = saved.selectedModel;
             }
             if (activeTab) {
@@ -7099,10 +7050,7 @@ function initTopbarModelSelector(pane = 'primary') {
                     const advancedParamsByModel = data.advancedParamsByModel || {};
                     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelObj.model] || {};
 
-                    const isGemini = (modelObj.providerId && modelObj.providerId.toLowerCase().includes('gemini')) || 
-                                     (modelObj.model && modelObj.model.toLowerCase().includes('gemini'));
-                    const isGemma4 = /gemma-4/i.test(modelObj.model);
-                    const defaultThinking = isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+                    const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
 
                     activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
                 }

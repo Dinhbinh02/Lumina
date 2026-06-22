@@ -372,7 +372,8 @@
             }
 
             if (!askSelectionPopupEnabled || text.length === 0) {
-                if (window.LuminaSelection) LuminaSelection.hide();
+                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
 
