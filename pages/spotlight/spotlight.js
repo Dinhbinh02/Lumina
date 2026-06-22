@@ -4202,10 +4202,6 @@ async function renderRecentChatsSidebar() {
             }
             if (!displayTitle) displayTitle = "Untitled Chat";
 
-            if (displayTitle.length > 40) {
-                displayTitle = displayTitle.substring(0, 37) + '...';
-            }
-
             let iconHTML = '';
 
             const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
@@ -7207,29 +7203,59 @@ function getDynamicWelcomeTitle() {
     }
     
     let options = [];
-    if (hour >= 5 && hour < 12) {
+    if (hour >= 5 && hour < 8) {
+        // Early Morning
+        options = [
+            `Good morning, early bird${nameSuffix}!`,
+            `Morning${nameSuffix}! Starting early?`,
+            `Good morning! Ready for a fresh start?`,
+            `Rise and shine${nameSuffix}!`,
+            `Early start today! What's on your mind?`
+        ];
+    } else if (hour >= 8 && hour < 12) {
+        // Morning
         options = [
             `Good morning${nameSuffix}!`,
-            `Morning${nameSuffix}! Ready today?`,
-            `Good morning! Need help?`,
-            `Morning! What's next?`,
-            `Morning! Start your day.`
+            `Morning${nameSuffix}! Ready for today?`,
+            `Good morning! What's next?`,
+            `Ready to conquer the morning?`,
+            `Have a productive morning${nameSuffix}!`
         ];
-    } else if (hour >= 12 && hour < 18) {
+    } else if (hour >= 12 && hour < 17) {
+        // Afternoon
         options = [
             `Good afternoon${nameSuffix}!`,
             `Hello${nameSuffix}! What's next?`,
             `Afternoon! How can I help?`,
-            `Afternoon${nameSuffix}! Ready?`,
-            `Afternoon! Let's explore.`
+            `Hope your afternoon is going well!`,
+            `Afternoon focus mode!`
         ];
-    } else {
+    } else if (hour >= 17 && hour < 21) {
+        // Evening
         options = [
             `Good evening${nameSuffix}!`,
+            `Evening! Let's chat!`,
+            `Good evening! What's next?`,
+            `Evening${nameSuffix}! Gearing up?`,
+            `Hope you had a great day!`
+        ];
+    } else if (hour >= 21 && hour < 24) {
+        // Late Night
+        options = [
             `Working late${nameSuffix}?`,
-            `Night mode activated.`,
-            `Evening! Let's chat.`,
-            `Good evening! What's next?`
+            `Good evening! Burning the midnight oil?`,
+            `Late night thoughts? Let's chat!`,
+            `Quiet hours focus mode!`,
+            `Still going strong${nameSuffix}?`
+        ];
+    } else {
+        // Midnight / Overnight (0 - 5)
+        options = [
+            `Night owl mode${nameSuffix}!`,
+            `Still awake? What's on your mind?`,
+            `Midnight inspiration?`,
+            `Night mode activated!`,
+            `Shh, the world is asleep!`
         ];
     }
     
@@ -7238,7 +7264,7 @@ function getDynamicWelcomeTitle() {
         `Where should we start?`,
         `What's on your mind?`,
         `How can I help?`,
-        `Hello${nameSuffix}! Let's talk.`,
+        `Hello${nameSuffix}! Let's talk!`,
         `Ready to explore?`
     );
     

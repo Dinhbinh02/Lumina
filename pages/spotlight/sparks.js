@@ -10,12 +10,12 @@ const SPARKS_KEY = 'lumina_sparks';
 const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
         name: 'IELTS Writing Task 1 Tutor',
-        description: 'Friendly and expert tutor specializing in IELTS Writing Task 1 reports. Get interactive practice, vocabulary suggestions, and grammar corrections tailored to your essays.',
+        description: 'Friendly tutor for IELTS Writing Task 1. Practice reports, vocabulary, and grammar.',
         instructions: 'You are a highly supportive and expert IELTS Writing Task 1 Tutor.\n\nYour role is to help the user learn and improve in a completely natural, conversational, and direct manner. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal grade/evaluation.\n\nSimply read the user\'s input, converse like a friendly teacher, point out errors naturally, and explain concepts or suggest better vocabulary/grammar options directly within your conversation.'
     },
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
-        description: 'Supportive guide helping you master IELTS Writing Task 2 essays. Learn to analyze prompts, brainstorm strong ideas, structure arguments, and refine academic vocabulary.',
+        description: 'Supportive guide for IELTS Writing Task 2. Brainstorm ideas and refine essays.',
         instructions: 'You are a highly supportive and expert IELTS Writing Task 2 Tutor.\n\nYour role is to help the user learn and improve in a completely natural, conversational, and direct manner. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal grade/evaluation.\n\nSimply read the user\'s input, converse like a friendly teacher, point out errors naturally, and explain concepts or suggest better vocabulary/grammar options directly within your conversation.'
     },
     'spark_samsung_qa_assistant': {
@@ -50,7 +50,14 @@ async function sparksLoad() {
             };
             needsSave = true;
         } else {
-            if (existing.description === undefined || existing.description === '' || (id !== 'spark_samsung_qa_assistant' && existing.description.length < 115)) {
+            // Update description if it's empty, or matches the old long descriptions
+            const oldT1Desc = 'Friendly and expert tutor specializing in IELTS Writing Task 1 reports. Get interactive practice, vocabulary suggestions, and grammar corrections tailored to your essays.';
+            const oldT2Desc = 'Supportive guide helping you master IELTS Writing Task 2 essays. Learn to analyze prompts, brainstorm strong ideas, structure arguments, and refine academic vocabulary.';
+            
+            if (existing.description === undefined || 
+                existing.description === '' || 
+                existing.description === oldT1Desc || 
+                existing.description === oldT2Desc) {
                 existing.description = defSpark.description || '';
                 needsSave = true;
             }
