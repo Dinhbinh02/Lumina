@@ -1002,7 +1002,7 @@ async function renderSparkWelcomeScreen(activeTab) {
                 <div class="spark-welcome__recent-list">
                     ${sparkChats.map(s => {
             let displayTitle = s.title;
-            if (!s.isRenamed && s.questions && s.questions.length > 0) {
+            if (!s.isRenamed && !s.autoNamed && s.questions && s.questions.length > 0) {
                 displayTitle = s.questions[s.questions.length - 1].text || "Untitled Chat";
             }
             if (!displayTitle) displayTitle = "Untitled Chat";

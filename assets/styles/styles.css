@@ -6529,23 +6529,53 @@ button {
 }
 
 @keyframes naming-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -300% 0; }
+  100% { background-position: 300% 0; }
 }
 
-.recent-chat-item.is-naming .recent-chat-item__title {
+/* Full-item skeleton: wrap item in relative, add shimmer overlay via pseudo-element */
+.recent-chat-item.is-naming {
   position: relative !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* Sweep shine across the entire item */
+.recent-chat-item.is-naming::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.12) 60%,
+    transparent 100%
+  ) !important;
+  background-size: 300% 100% !important;
+  animation: naming-shimmer 1.4s infinite linear !important;
+  pointer-events: none !important;
+  border-radius: 6px !important;
+}
+
+/* Title becomes a skeleton bar */
+.recent-chat-item.is-naming .recent-chat-item__title {
+  display: block !important;
+  width: 70% !important;
+  height: 10px !important;
+  border-radius: 5px !important;
+  background: var(--lumina-sidebar-text-muted, rgba(128,128,128,0.3)) !important;
+  opacity: 0.45 !important;
+  overflow: hidden !important;
   color: transparent !important;
-  background: linear-gradient(90deg, var(--lumina-sidebar-text, #1f1f1f) 25%, var(--lumina-sidebar-text-muted, #888) 50%, var(--lumina-sidebar-text, #1f1f1f) 75%) !important;
-  background-size: 200% 100% !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  animation: naming-shimmer 1.5s infinite linear !important;
-  opacity: 0.8 !important;
+  text-overflow: unset !important;
+}
+
+/* Hide menu button during skeleton */
+.recent-chat-item.is-naming .recent-chat-item__menu-btn {
+  display: none !important;
 }
 
 /* 3-dot button — hidden by default, shown on hover */

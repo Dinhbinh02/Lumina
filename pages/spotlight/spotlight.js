@@ -4197,7 +4197,7 @@ async function renderRecentChatsSidebar() {
         const activeSessionId = activeTab ? activeTab.sessionId : null;
         historyData.slice(0, 30).forEach(session => {
             let displayTitle = session.title;
-            if (!session.isRenamed && session.questions && session.questions.length > 0) {
+            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
             }
             if (!displayTitle) displayTitle = "Untitled Chat";
@@ -4227,6 +4227,24 @@ async function renderRecentChatsSidebar() {
                 </div>
             `;
         });
+
+        // Inject skeleton for any naming session not yet in storage
+        if (window.namingSessionIds && window.namingSessionIds.size > 0) {
+            const storedIds = new Set(historyData.map(s => s.id));
+            window.namingSessionIds.forEach(namingSid => {
+                if (!storedIds.has(namingSid)) {
+                    const isActive = namingSid === activeSessionId ? ' active' : '';
+                    html = `
+                        <div class="recent-chat-item${isActive} is-naming" data-session-id="${namingSid}" data-spark-id="">
+                            <span class="recent-chat-item__title"></span>
+                            <button class="recent-chat-item__menu-btn" data-session-id="${namingSid}" title="More options" tabindex="-1">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                        </div>
+                    ` + html;
+                }
+            });
+        }
     }
 
     listContainer.innerHTML = html;
@@ -4284,7 +4302,7 @@ async function renderRecentChatsSidebar() {
                         const currentlyPinned = !!session.pinned;
                         if (!currentlyPinned) {
                             let currentTitle = session.title || 'Untitled Chat';
-                            if (!session.isRenamed && session.questions && session.questions.length > 0) {
+                            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
                                 currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
                             }
                             const newTitle = await window.showCustomPopup({
@@ -4318,7 +4336,7 @@ async function renderRecentChatsSidebar() {
                     const store = res[ChatHistoryManager.STORAGE_KEY] || {};
                     const meta = store[sid];
                     let currentTitle = meta?.title || 'Untitled Chat';
-                    if (!meta?.isRenamed && meta?.questions?.length > 0) {
+                    if (!meta?.isRenamed && !meta?.autoNamed && meta?.questions?.length > 0) {
                         currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
                     }
                     const newTitle = await window.showCustomPopup({
@@ -4566,11 +4584,6 @@ function setupPort() {
                 });
 
                 saveTabsState();
-
-                if (sid && affectedTabs.length > 0) {
-                    const tab = affectedTabs[0];
-                    triggerAutoNamingIfNeeded(sid, tab);
-                }
 
                 streamingTab = null;
                 streamDebugState = null;
@@ -4843,6 +4856,11 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     });
     saveTabsState(true);
+    // Refresh sidebar list so the new session (with skeleton) appears immediately
+    if (typeof renderRecentChatsSidebar === 'function') {
+        // Use a small defer so saveCurrentChat's async storage write can race ahead
+        setTimeout(renderRecentChatsSidebar, 0);
+    }
 
     let pageContext = "";
     const isSpotlightWindow = !isSidePanel && !isWebApp;
@@ -5045,6 +5063,24 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             console.error('[Spotlight] Retry failed:', retryE);
             targetChatUI.removeLoading();
             targetChatUI.appendError('Connection failed.');
+        }
+    }
+
+    // Fire title generation CONCURRENTLY with the main chat request
+    // Only for the very first message in this session (conversationHistory was empty before submit)
+    if (
+        !extra.isRegenerate &&
+        !extra.isRecheck &&
+        extra.mode !== 'translate' &&
+        extra.mode !== 'dictionary' &&
+        extra.mode !== 'proofread' &&
+        extra.mode !== 'websource' &&
+        conversationHistory.length === 0 &&
+        currentTab?.sessionId
+    ) {
+        const nameText = apiText || text;
+        if (nameText && nameText.trim()) {
+            startConcurrentAutoNaming(currentTab.sessionId, currentTab.selectedModel || tabModel, nameText.trim());
         }
     }
 }
@@ -6420,7 +6456,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     updateUrlSessionId(historySessionId);
 
     let displayTitle = meta.title || "Restored Chat";
-    if (!meta.isRenamed && messages && messages.length > 0) {
+    if (!meta.isRenamed && !meta.autoNamed && messages && messages.length > 0) {
         for (let i = messages.length - 1; i >= 0; i--) {
             const m = messages[i];
             if (m.type === 'question') {
@@ -6659,7 +6695,7 @@ async function renderDropdownMenu(pane = 'primary') {
             const currentlyPinned = !!session.pinned;
             if (!currentlyPinned) {
                 let currentTitle = session.title || 'Untitled Chat';
-                if (!session.isRenamed && session.questions && session.questions.length > 0) {
+                if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
                     currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
                 }
                 const newTitle = await window.showCustomPopup({
@@ -6698,7 +6734,7 @@ async function renderDropdownMenu(pane = 'primary') {
     dropdown.querySelector('#dropdown-rename-btn')?.addEventListener('click', async () => {
         if (!sessionId || !sessionMeta) return;
         let currentTitle = sessionMeta.title || 'Untitled Chat';
-        if (!sessionMeta.isRenamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
+        if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
             currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
         }
         const newTitle = await window.showCustomPopup({
@@ -7332,45 +7368,145 @@ window.showCustomPopup = function({ title, body, isInput = false, defaultValue =
 
 window.namingSessionIds = new Set();
 
+/**
+ * Fire chat title generation IN PARALLEL with the main AI request.
+ * Shows skeleton on the sidebar item immediately; writes title to storage
+ * once the session record appears (retries up to ~3 s).
+ */
+function startConcurrentAutoNaming(sessionId, modelObj, questionText) {
+    if (!sessionId || !questionText) return;
+    if (!window.namingSessionIds) window.namingSessionIds = new Set();
+    if (window.namingSessionIds.has(sessionId)) return;
+
+    window.namingSessionIds.add(sessionId);
+    // Render sidebar immediately so the skeleton appears
+    if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
+
+    chrome.runtime.sendMessage({
+        action: 'generate_chat_title',
+        modelObj: modelObj,
+        question: questionText
+    }, async (response) => {
+        if (chrome.runtime.lastError) {
+            console.warn('[AutoNaming] sendMessage error:', chrome.runtime.lastError.message);
+            window.namingSessionIds.delete(sessionId);
+            if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
+            return;
+        }
+
+        window.namingSessionIds.delete(sessionId);
+
+        if (response && response.success && response.title) {
+            const cleanTitle = response.title.trim();
+
+            // Update in-memory tabs & tab bar — do NOT call saveTabsState() here
+            // because its debounced saveCurrentChat would overwrite the title in storage
+            if (typeof tabs !== 'undefined') {
+                tabs.forEach(t => {
+                    if (t.sessionId === sessionId) t.title = cleanTitle;
+                });
+                if (typeof renderTabs === 'function') renderTabs();
+            }
+
+            // Write title + autoNamed flag to storage atomically.
+            // Retry if the session record hasn't been flushed yet (race on first message).
+            const tryWriteTitle = async (attemptsLeft) => {
+                const freshResult = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+                const freshSessions = freshResult[ChatHistoryManager.STORAGE_KEY] || {};
+                if (freshSessions[sessionId]) {
+                    freshSessions[sessionId].title = cleanTitle;
+                    freshSessions[sessionId].autoNamed = true;
+                    await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: freshSessions });
+                    // Re-render after confirmed storage write
+                    if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
+                } else if (attemptsLeft > 0) {
+                    setTimeout(() => tryWriteTitle(attemptsLeft - 1), 400);
+                } else {
+                    // Exhausted retries — still render to clear the skeleton
+                    if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
+                }
+            };
+            await tryWriteTitle(8);
+        } else {
+            console.warn('[AutoNaming] Title generation failed:', response?.error);
+            if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
+        }
+    });
+}
+
 async function triggerAutoNamingIfNeeded(sessionId, tab) {
-    if (!sessionId || !tab) return;
+    if (!sessionId || !tab) {
+        console.log("[AutoNaming] Missing sessionId or tab", { sessionId, tab });
+        return;
+    }
     
     try {
+        console.log("[AutoNaming] Starting for sessionId:", sessionId);
+        if (typeof ChatHistoryManager !== 'undefined' && tab.historyEl) {
+            console.log("[AutoNaming] Forcing saveCurrentChat");
+            await ChatHistoryManager.saveCurrentChat(tab.historyEl, sessionId, tab.sparkId, true, {
+                selectedModel: tab.selectedModel,
+                thinkingLevel: tab.thinkingLevel
+            });
+        }
+        
         const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
         const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
         const meta = sessions[sessionId];
-        if (!meta) return;
+        console.log("[AutoNaming] Session meta found:", meta);
+        if (!meta) {
+            console.log("[AutoNaming] No session meta found in storage.");
+            return;
+        }
         
-        if (meta.autoNamed || meta.isRenamed) return;
+        if (meta.autoNamed || meta.isRenamed) {
+            console.log("[AutoNaming] Session is already autoNamed or isRenamed:", { autoNamed: meta.autoNamed, isRenamed: meta.isRenamed });
+            return;
+        }
         
         const contentKey = `lumina_session_${sessionId}`;
         const contentData = await chrome.storage.local.get([contentKey]);
         const messages = contentData[contentKey] || [];
+        console.log("[AutoNaming] Found messages:", messages);
         
         const userMsgs = messages.filter(m => m.type === 'question');
-        if (userMsgs.length !== 1) return;
+        console.log("[AutoNaming] Filtered user questions count:", userMsgs.length);
+        if (userMsgs.length !== 1) {
+            console.log("[AutoNaming] User messages count is not 1, skipping.");
+            return;
+        }
         
         const questionMsg = userMsgs[0];
-        if (!questionMsg || !questionMsg.content) return;
+        if (!questionMsg || !questionMsg.content) {
+            console.log("[AutoNaming] Empty or missing user question content.");
+            return;
+        }
         
         if (!window.namingSessionIds) window.namingSessionIds = new Set();
-        if (window.namingSessionIds.has(sessionId)) return;
+        if (window.namingSessionIds.has(sessionId)) {
+            console.log("[AutoNaming] Session is already in the naming queue.");
+            return;
+        }
         
+        console.log("[AutoNaming] Adding session to naming queue and starting loading effect.");
         window.namingSessionIds.add(sessionId);
         
         if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
         
         const modelObj = tab.selectedModel;
+        console.log("[AutoNaming] Sending runtime message generate_chat_title with modelObj:", modelObj);
         
         chrome.runtime.sendMessage({
             action: 'generate_chat_title',
             modelObj: modelObj,
             question: questionMsg.content
         }, async (response) => {
+            console.log("[AutoNaming] Received generate_chat_title response:", response);
             window.namingSessionIds.delete(sessionId);
             
             if (response && response.success && response.title) {
                 const cleanTitle = response.title.trim();
+                console.log("[AutoNaming] Naming success. Clean title:", cleanTitle);
                 
                 const freshResult = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
                 const freshSessions = freshResult[ChatHistoryManager.STORAGE_KEY] || {};
@@ -7378,6 +7514,7 @@ async function triggerAutoNamingIfNeeded(sessionId, tab) {
                     freshSessions[sessionId].title = cleanTitle;
                     freshSessions[sessionId].autoNamed = true;
                     await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: freshSessions });
+                    console.log("[AutoNaming] Updated storage with new title.");
                 }
                 
                 tabs.forEach(t => {
