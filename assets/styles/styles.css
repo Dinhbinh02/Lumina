@@ -3196,7 +3196,7 @@ button {
   transform: translateZ(0);
   scroll-margin-top: 20px;
   width: 100%;
-  max-width: 660px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
@@ -7850,7 +7850,7 @@ button {
 }
 
 .spark-welcome__title {
-  font-size: clamp(1.3em, 8vw, 2.29em) !important;
+  font-size: clamp(1.6em, 5vw, 1.8em) !important;
   font-weight: 600;
   margin-bottom: 30px;
   color: var(--lumina-sidebar-text, #1f1f1f);
@@ -8315,7 +8315,7 @@ button {
 
 .layout.new-chat-homepage .welcome-title {
   font-family: 'Outfit', 'Google Sans', sans-serif !important;
-  font-size: clamp(1.3em, 8vw, 2.29em) !important;
+  font-size: clamp(1.8em, 5vw, 2.2em) !important;
   font-weight: 300 !important;
   color: #1f1f1f !important;
   text-align: center !important;
