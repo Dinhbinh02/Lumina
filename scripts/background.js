@@ -1858,8 +1858,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     switch (request.action) {
         case 'generate_chat_title': {
-            const { modelObj, question } = request;
-            generateChatTitleFromModel(modelObj, question)
+            const { modelObj, question, images, files } = request;
+            console.log("[generate_chat_title] Received in background:", { question, images, files });
+            generateChatTitleFromModel(modelObj, question, images, files)
                 .then(title => sendResponse({ success: true, title }))
                 .catch(err => sendResponse({ success: false, error: err.message }));
             return true; // async response
@@ -4178,7 +4179,7 @@ function extractUrlsFromSearchResults(text) {
     return urls;
 }
 
-async function generateChatTitleFromModel(modelObj, question) {
+async function generateChatTitleFromModel(modelObj, question, images, files) {
     const chain = await getModelChain('text', modelObj);
     if (!chain || chain.length === 0) {
         throw new Error("No configured models found.");
@@ -4203,15 +4204,23 @@ async function generateChatTitleFromModel(modelObj, question) {
         }
     }
 
+    const attachments = [];
+    if (Array.isArray(images)) attachments.push(...images);
+    if (Array.isArray(files)) attachments.push(...files);
+    console.log("[generateChatTitleFromModel] attachments built:", attachments);
+
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
         temperature: 0.3, topP: 1.0, maxTokens: 30, parsedCustomParams: {},
-        normalizedThinkingLevel: '', isGemini25Model: false, reasoningMode: false, imageData: null,
+        normalizedThinkingLevel: '', isGemini25Model: false, reasoningMode: false, 
+        imageData: attachments.length > 0 ? attachments : null,
         isStreaming: false, cachedContent: null
     };
+    console.log("[generateChatTitleFromModel] payloadParams:", payloadParams);
 
     const response = await fetchWithRotation(keys, async (key) => {
         const payload = await buildApiPayload([], question, systemInstruction, key, payloadParams);
+        console.log("[generateChatTitleFromModel] buildApiPayload result:", payload);
         const headers = { 'Content-Type': 'application/json' };
         if (key) {
             const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));

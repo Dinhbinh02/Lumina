@@ -5080,7 +5080,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     ) {
         const nameText = apiText || text;
         if (nameText && nameText.trim()) {
-            startConcurrentAutoNaming(currentTab.sessionId, currentTab.selectedModel || tabModel, nameText.trim());
+            startConcurrentAutoNaming(currentTab.sessionId, currentTab.selectedModel || tabModel, nameText.trim(), images);
         }
     }
 }
@@ -7373,7 +7373,7 @@ window.namingSessionIds = new Set();
  * Shows skeleton on the sidebar item immediately; writes title to storage
  * once the session record appears (retries up to ~3 s).
  */
-function startConcurrentAutoNaming(sessionId, modelObj, questionText) {
+function startConcurrentAutoNaming(sessionId, modelObj, questionText, images) {
     if (!sessionId || !questionText) return;
     if (!window.namingSessionIds) window.namingSessionIds = new Set();
     if (window.namingSessionIds.has(sessionId)) return;
@@ -7385,7 +7385,8 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText) {
     chrome.runtime.sendMessage({
         action: 'generate_chat_title',
         modelObj: modelObj,
-        question: questionText
+        question: questionText,
+        images: images
     }, async (response) => {
         if (chrome.runtime.lastError) {
             console.warn('[AutoNaming] sendMessage error:', chrome.runtime.lastError.message);
@@ -7434,107 +7435,4 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText) {
     });
 }
 
-async function triggerAutoNamingIfNeeded(sessionId, tab) {
-    if (!sessionId || !tab) {
-        console.log("[AutoNaming] Missing sessionId or tab", { sessionId, tab });
-        return;
-    }
-    
-    try {
-        console.log("[AutoNaming] Starting for sessionId:", sessionId);
-        if (typeof ChatHistoryManager !== 'undefined' && tab.historyEl) {
-            console.log("[AutoNaming] Forcing saveCurrentChat");
-            await ChatHistoryManager.saveCurrentChat(tab.historyEl, sessionId, tab.sparkId, true, {
-                selectedModel: tab.selectedModel,
-                thinkingLevel: tab.thinkingLevel
-            });
-        }
-        
-        const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-        const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
-        const meta = sessions[sessionId];
-        console.log("[AutoNaming] Session meta found:", meta);
-        if (!meta) {
-            console.log("[AutoNaming] No session meta found in storage.");
-            return;
-        }
-        
-        if (meta.autoNamed || meta.isRenamed) {
-            console.log("[AutoNaming] Session is already autoNamed or isRenamed:", { autoNamed: meta.autoNamed, isRenamed: meta.isRenamed });
-            return;
-        }
-        
-        const contentKey = `lumina_session_${sessionId}`;
-        const contentData = await chrome.storage.local.get([contentKey]);
-        const messages = contentData[contentKey] || [];
-        console.log("[AutoNaming] Found messages:", messages);
-        
-        const userMsgs = messages.filter(m => m.type === 'question');
-        console.log("[AutoNaming] Filtered user questions count:", userMsgs.length);
-        if (userMsgs.length !== 1) {
-            console.log("[AutoNaming] User messages count is not 1, skipping.");
-            return;
-        }
-        
-        const questionMsg = userMsgs[0];
-        if (!questionMsg || !questionMsg.content) {
-            console.log("[AutoNaming] Empty or missing user question content.");
-            return;
-        }
-        
-        if (!window.namingSessionIds) window.namingSessionIds = new Set();
-        if (window.namingSessionIds.has(sessionId)) {
-            console.log("[AutoNaming] Session is already in the naming queue.");
-            return;
-        }
-        
-        console.log("[AutoNaming] Adding session to naming queue and starting loading effect.");
-        window.namingSessionIds.add(sessionId);
-        
-        if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
-        
-        const modelObj = tab.selectedModel;
-        console.log("[AutoNaming] Sending runtime message generate_chat_title with modelObj:", modelObj);
-        
-        chrome.runtime.sendMessage({
-            action: 'generate_chat_title',
-            modelObj: modelObj,
-            question: questionMsg.content
-        }, async (response) => {
-            console.log("[AutoNaming] Received generate_chat_title response:", response);
-            window.namingSessionIds.delete(sessionId);
-            
-            if (response && response.success && response.title) {
-                const cleanTitle = response.title.trim();
-                console.log("[AutoNaming] Naming success. Clean title:", cleanTitle);
-                
-                const freshResult = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                const freshSessions = freshResult[ChatHistoryManager.STORAGE_KEY] || {};
-                if (freshSessions[sessionId]) {
-                    freshSessions[sessionId].title = cleanTitle;
-                    freshSessions[sessionId].autoNamed = true;
-                    await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: freshSessions });
-                    console.log("[AutoNaming] Updated storage with new title.");
-                }
-                
-                tabs.forEach(t => {
-                    if (t.sessionId === sessionId) {
-                        t.title = cleanTitle;
-                    }
-                });
-                
-                if (typeof renderTabs === 'function') renderTabs();
-                saveTabsState();
-            } else {
-                console.error("Auto naming failed:", response?.error);
-            }
-            
-            if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
-        });
-        
-    } catch (e) {
-        console.error("Error in triggerAutoNamingIfNeeded:", e);
-        if (window.namingSessionIds) window.namingSessionIds.delete(sessionId);
-        if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
-    }
-}
+
