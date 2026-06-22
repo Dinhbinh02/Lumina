@@ -33,7 +33,7 @@
                             </linearGradient>
                         </defs>
                         <path
-                            d="M12 12c-1.3-1.9-3.3-3.5-5.5-3.5C4 8.5 2 10.5 2 13s2 4.5 4.5 4.5c2.2 0 4.2-1.6 5.5-3.5 1.3 1.9 3.3 3.5 5.5 3.5 2.5 0 4.5-2 4.5-4.5s-2-4.5-4.5-4.5c-2.2 0-4.2 1.6-5.5 3.5z"
+                            d="M12 11c-1.3-1.9-3.3-3.5-5.5-3.5C4 7.5 2 9.5 2 12s2 4.5 4.5 4.5c2.2 0 4.2-1.6 5.5-3.5 1.3 1.9 3.3 3.5 5.5 3.5 2.5 0 4.5-2 4.5-4.5s-2-4.5-4.5-4.5c-2.2 0-4.2 1.6-5.5 3.5z"
                             stroke="url(#lumina-logo-grad)" stroke-width="2.5" stroke-linecap="round"
                             stroke-linejoin="round" />
                     </svg>
@@ -86,24 +86,28 @@
                 </button>
             </div>
 
-            <div class="sidebar-sparks-section" id="sidebar-sparks-section">
-                <div class="recent-title">Sparks</div>
-                <button class="sidebar-nav-item" id="sidebar-new-spark-btn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span class="nav-text">New spark</span>
-                </button>
-                <div class="sidebar-sparks-list" id="sidebar-sparks-list">
-                </div>
-            </div>
+            <div class="sidebar-scrollable-wrapper">
+                <div class="sidebar-scrollable-content">
+                    <div class="sidebar-sparks-section" id="sidebar-sparks-section">
+                        <div class="recent-title">Sparks</div>
+                        <button class="sidebar-nav-item" id="sidebar-new-spark-btn">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span class="nav-text">New spark</span>
+                        </button>
+                        <div class="sidebar-sparks-list" id="sidebar-sparks-list">
+                        </div>
+                    </div>
 
-            <div class="sidebar-recent-section">
-                <div class="recent-title">Recent</div>
-                <div class="recent-chats-list" id="sidebar-recent-chats">
-                    <!-- Dynamic chat history items -->
+                    <div class="sidebar-recent-section">
+                        <div class="recent-title">Recent</div>
+                        <div class="recent-chats-list" id="sidebar-recent-chats">
+                            <!-- Dynamic chat history items -->
+                        </div>
+                    </div>
                 </div>
             </div>
 

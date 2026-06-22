@@ -6292,6 +6292,7 @@ button {
   z-index: 1000;
   box-sizing: border-box;
   cursor: pointer;
+  will-change: transform, width;
 }
 
 .sidebar-header {
@@ -6331,6 +6332,7 @@ button {
 
 .sidebar-brand svg {
   flex-shrink: 0;
+  display: block;
 }
 
 .sidebar-toggle-btn,
@@ -6425,63 +6427,93 @@ button {
   height: 16px;
 }
 
-.sidebar-sparks-section {
-  display: flex;
-  flex-direction: column;
-  font-size: 13.5px;
-}
-
-/* Recent chats section */
-.sidebar-recent-section {
+.sidebar-scrollable-wrapper {
   flex: 1;
+  min-height: 0;
+  position: relative !important;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  margin-top: 8px;
-  position: relative !important;
-  font-size: 13.5px;
 }
 
-.sidebar-recent-section::after {
+.sidebar-scrollable-wrapper::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 6px !important;
+  background: linear-gradient(to bottom, var(--lumina-sidebar-bg, var(--lumina-ui-bg, #ffffff)), transparent) !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+  opacity: 0.8 !important;
+}
+
+.sidebar-scrollable-wrapper::after {
   content: "" !important;
   position: absolute !important;
   bottom: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  height: 24px !important;
+  height: 16px !important;
   background: linear-gradient(to top, var(--lumina-sidebar-bg, var(--lumina-ui-bg, #ffffff)), transparent) !important;
   pointer-events: none !important;
   z-index: 10 !important;
+  opacity: 0.95 !important;
+}
+
+.sidebar-scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 2px;
+  padding-bottom: 10px;
+}
+
+.sidebar-scrollable-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scrollable-content::-webkit-scrollbar-thumb {
+  background: var(--lumina-ui-border);
+  border-radius: 4px;
+}
+
+.sidebar-sparks-section {
+  display: flex;
+  flex-direction: column;
+  font-size: 13.5px;
+  gap: 4px;
+}
+
+.sidebar-sparks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Recent chats section */
+.sidebar-recent-section {
+  display: flex;
+  flex-direction: column;
+  font-size: 13.5px;
+  gap: 4px;
 }
 
 .recent-title {
-  font-size: 0.86em;
-  font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--lumina-sidebar-text-muted);
   padding: 4px 6px 0px 6px;
-  margin-bottom: 4px;
   cursor: default;
 }
 
 .recent-chats-list {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-right: 2px;
-  padding-bottom: 24px;
-}
-
-.recent-chats-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.recent-chats-list::-webkit-scrollbar-thumb {
-  background: var(--lumina-ui-border);
-  border-radius: 4px;
+  gap: 4px;
 }
 
 .recent-chat-item {
@@ -6496,7 +6528,7 @@ button {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  height: 32px;
+  height: 30px;
   flex-shrink: 0;
 }
 
@@ -6983,6 +7015,7 @@ button {
     /* Overlay on top of topbar */
     border-top-right-radius: 12px;
     border-bottom-right-radius: 12px;
+    overscroll-behavior: contain;
   }
 
   .lumina-sidebar.active {
@@ -7012,13 +7045,14 @@ button {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.56);
     z-index: 10000;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease;
+    will-change: opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .sidebar-backdrop.active {
@@ -7650,7 +7684,7 @@ button {
   transition: background-color 0.2s;
   overflow: hidden;
   white-space: nowrap;
-  height: 36px;
+  height: 30px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -7830,15 +7864,14 @@ button {
 .spark-welcome__recent {
   width: 100%;
   align-self: flex-start;
+  gap: 4px;
 }
 
 .spark-welcome__recent-title {
-  font-size: 0.78em;
-  font-weight: 600;
+  font-size: 0.93em;
+  font-weight: 400;
   color: var(--lumina-sidebar-text-muted, #70757a);
-  text-transform: uppercase;
   padding: 4px 6px;
-  margin-bottom: 4px;
   letter-spacing: 0.5px;
 }
 
