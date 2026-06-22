@@ -64,10 +64,53 @@ async function playBase64(data, speed) {
     await playSound(data, speed);
 }
 
+let audioCtx = null;
+let audioSource = null;
+
+function trimAudioBufferSilence(audioBuffer, threshold = 0.002) {
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    let firstSoundIndex = audioBuffer.length;
+
+    for (let c = 0; c < numChannels; c++) {
+        const channelData = audioBuffer.getChannelData(c);
+        for (let i = 0; i < channelData.length; i++) {
+            if (Math.abs(channelData[i]) > threshold) {
+                if (i < firstSoundIndex) {
+                    firstSoundIndex = i;
+                }
+                break;
+            }
+        }
+    }
+
+    if (firstSoundIndex >= audioBuffer.length || firstSoundIndex === 0) {
+        return audioBuffer;
+    }
+
+    const trimmedLength = audioBuffer.length - firstSoundIndex;
+    const trimmedBuffer = (audioCtx || new (window.AudioContext || window.webkitAudioContext)()).createBuffer(numChannels, trimmedLength, sampleRate);
+
+    for (let c = 0; c < numChannels; c++) {
+        const channelData = audioBuffer.getChannelData(c);
+        const trimmedChannelData = trimmedBuffer.getChannelData(c);
+        for (let i = 0; i < trimmedLength; i++) {
+            trimmedChannelData[i] = channelData[firstSoundIndex + i];
+        }
+    }
+    return trimmedBuffer;
+}
+
 function stopCurrentAudio() {
     if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
+    }
+    if (audioSource) {
+        try {
+            audioSource.stop();
+        } catch (e) {}
+        audioSource = null;
     }
     if (currentAudioResolve) {
         currentAudioResolve();
@@ -76,24 +119,42 @@ function stopCurrentAudio() {
 }
 
 function playSound(url, speed = 1.0) {
-    return new Promise((resolve, reject) => {
-        const audio = new Audio(url);
-        audio.playbackRate = speed;
-        currentAudio = audio;
+    return new Promise(async (resolve, reject) => {
         currentAudioResolve = resolve;
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
 
-        audio.onended = () => {
-            currentAudio = null;
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+            audioBuffer = trimAudioBufferSilence(audioBuffer);
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.playbackRate.value = speed;
+            source.connect(audioCtx.destination);
+
+            audioSource = source;
+
+            source.onended = () => {
+                if (audioSource === source) {
+                    audioSource = null;
+                    currentAudioResolve = null;
+                    resolve();
+                }
+            };
+
+            source.start(0);
+        } catch (err) {
+            audioSource = null;
             currentAudioResolve = null;
-            resolve();
-        };
-
-        audio.onerror = (e) => {
-            currentAudio = null;
-            currentAudioResolve = null;
-            reject(new Error('Audio playback failed'));
-        };
-
-        audio.play().catch(reject);
+            reject(err);
+        }
     });
 }

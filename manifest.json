@@ -18,8 +18,7 @@
     "cookies",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
-    "sidePanel",
-    "aiLanguageModelOriginTrial"
+    "sidePanel"
   ],
   "declarative_net_request": {
     "rule_resources": [

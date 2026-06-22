@@ -6,8 +6,14 @@
 body,
 button {
   font-family: var(--lumina-font-family);
-  font-size: 1em;
+  font-size: var(--lumina-fontSize, 13.5px);
   font-weight: 400;
+  margin: 0;
+}
+
+.lumina-sidebar button,
+.topbar button {
+  font-size: inherit;
 }
 
 ::selection {
@@ -189,7 +195,7 @@ button {
   color: #fff;
   padding: 6px 10px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 0.86em;
   max-width: 250px;
   pointer-events: none;
   opacity: 0;
@@ -652,7 +658,7 @@ button {
   border: none !important;
   outline: none !important;
   padding: 5px 12px !important;
-  font-size: 15px !important;
+  font-size: 1.07em !important;
   font-weight: 400 !important;
   color: var(--lumina-text-primary) !important;
   min-height: 28px !important;
@@ -681,7 +687,7 @@ button {
   pointer-events: none !important;
   font-weight: 400 !important;
   font-family: var(--lumina-font-family) !important;
-  font-size: 15px !important;
+  font-size: 1.07em !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
@@ -1029,7 +1035,7 @@ button {
 
 .lumina-question-edit-toolbar .lumina-edit-btn {
   font-family: inherit !important;
-  font-size: 13px !important;
+  font-size: 0.93em !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
 }
@@ -1147,6 +1153,25 @@ button {
   max-width: 100% !important;
   word-wrap: break-word !important;
   cursor: initial !important;
+}
+
+.lumina-spark-message-header {
+  font-size: 0.86em !important;
+  margin-bottom: 8px !important;
+  user-select: none !important;
+  display: block !important;
+  line-height: 1.2 !important;
+}
+
+.lumina-spark-message-header .lumina-spark-name {
+  color: var(--lumina-text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.lumina-spark-message-header .lumina-spark-separator,
+.lumina-spark-message-header .lumina-spark-type {
+  color: var(--lumina-text-tertiary) !important;
+  font-weight: 400 !important;
 }
 
 .lumina-chat-answer.is-stopped,
@@ -1648,7 +1673,7 @@ button {
   opacity: 0.65 !important;
   font-weight: 400 !important;
   font-family: var(--lumina-font-family) !important;
-  font-size: 15px !important;
+  font-size: 1.07em !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
@@ -1806,7 +1831,7 @@ button {
   box-shadow: none !important;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   gap: 4px !important;
-  font-size: 13.5px !important;
+  font-size: 0.96em !important;
 }
 
 [data-theme="dark"] .lumina-input-bar .lumina-reasoning-btn {
@@ -1823,7 +1848,7 @@ button {
 
 .lumina-input-bar .lumina-current-reasoning {
   color: var(--lumina-text-primary) !important;
-  font-size: 13.5px !important;
+  font-size: 0.96em !important;
   font-weight: 400 !important;
   white-space: nowrap;
   overflow: hidden;
@@ -1912,14 +1937,14 @@ button {
 }
 
 .lumina-reasoning-item .reasoning-title {
-  font-size: 13.5px !important;
+  font-size: 0.96em !important;
   font-weight: 500 !important;
   color: var(--lumina-text-primary) !important;
   line-height: 1.3 !important;
 }
 
 .lumina-reasoning-item .reasoning-desc {
-  font-size: 11px !important;
+  font-size: 0.79em !important;
   font-weight: 400 !important;
   color: var(--lumina-text-secondary, #70757a) !important;
   line-height: 1.3 !important;
@@ -2110,7 +2135,7 @@ button {
   border-radius: 8px !important;
   text-align: left !important;
   width: 100% !important;
-  font-size: 13px !important;
+  font-size: 0.93em !important;
   transition: background 0.15s ease;
 }
 
@@ -2304,7 +2329,7 @@ button {
   flex-direction: column !important;
   color: var(--lumina-primary-color, #0076d6) !important;
   font-weight: 600 !important;
-  font-size: 15px !important;
+  font-size: 1.07em !important;
   border: 2px dashed var(--lumina-primary-color, #0076d6) !important;
   border-radius: 12px !important;
   z-index: 1000 !important;
@@ -2354,11 +2379,11 @@ button {
 }
 
 .lumina-chat-question-files:has(img) {
-  height: 120px;
+  height: 80px;
 }
 
 .lumina-chat-question-files:has(img:only-child) {
-  height: 200px;
+  height: 120px;
 }
 
 .lumina-chat-question-files img {
@@ -2413,7 +2438,7 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: 0.93em;
   line-height: 1;
   letter-spacing: -0.01em;
   color: #273142;
@@ -2440,7 +2465,7 @@ button {
   display: inline-flex;
   align-items: center;
   align-self: center;
-  font-size: 10px;
+  font-size: 0.71em;
   opacity: 0.8;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -2720,7 +2745,6 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--lumina-text-primary);
-  font-size: 0.9em;
 }
 
 .lumina-model-dropdown {
@@ -2861,7 +2885,7 @@ button {
   cursor: pointer;
   width: 100%;
   transition: background 0.15s;
-  font-size: 13.5px !important;
+  font-size: 0.96em !important;
   padding: 6px 10px !important;
   border-radius: 8px !important;
   gap: 8px !important;
@@ -3535,7 +3559,7 @@ button {
 }
 
 .lumina-dict-status-icon {
-  font-size: 42px !important;
+  font-size: 3em !important;
   margin-bottom: 16px !important;
   line-height: 1 !important;
 }
@@ -4424,7 +4448,7 @@ button {
 .lumina-preview-scale {
   color: rgba(255, 255, 255, 0.9);
   font-family: system-ui, -apple-system, sans-serif;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 500;
   min-width: 42px;
   text-align: center;
@@ -4497,7 +4521,7 @@ button {
   right: 0;
   margin: 0 auto;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
+  font-size: 0.86em;
   font-family: var(--lumina-font-family-monospace, monospace);
   font-style: italic;
   text-align: center;
@@ -4973,7 +4997,7 @@ button {
 .lumina-edit-btn {
   padding: 6px 14px !important;
   border-radius: 8px !important;
-  font-size: 13px !important;
+  font-size: 0.93em !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
@@ -5227,7 +5251,7 @@ button {
   border: none;
   cursor: pointer;
   font-family: var(--lumina-font-family);
-  font-size: 14px;
+  font-size: 1em;
   font-weight: 600;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   width: calc(100% - 32px);
@@ -5406,7 +5430,7 @@ button {
 }
 
 .lumina-dict-translation-label {
-  font-size: 11px !important;
+  font-size: 0.79em !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
@@ -5503,6 +5527,7 @@ button {
   height: 46px;
   padding: 0 4px;
   background: var(--lumina-ui-bg, #ffffff);
+  font-size: 14px !important;
   flex-shrink: 0;
   z-index: 10000;
   position: relative;
@@ -5584,7 +5609,7 @@ button {
 
 .topbar__logo-text {
   font-family: 'Google Sans', sans-serif;
-  font-size: 15px;
+  font-size: 1.07em;
   font-weight: 600;
   color: var(--lumina-text-primary, #1f1f1f);
   letter-spacing: -0.2px;
@@ -5672,7 +5697,7 @@ button {
   background: var(--lumina-ui-bg, #ffffff);
   color: var(--lumina-text-primary, #1f1f1f);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
@@ -5723,7 +5748,7 @@ button {
 }
 
 .sync-profile__name {
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 500;
   color: var(--lumina-text-primary, #1f1f1f);
   white-space: nowrap;
@@ -5736,7 +5761,7 @@ button {
 }
 
 .sync-profile__status {
-  font-size: 11px;
+  font-size: 0.79em;
   color: var(--lumina-text-secondary, #70757a);
   white-space: nowrap;
   overflow: hidden;
@@ -5839,7 +5864,7 @@ button {
 }
 
 .dropdown-section-title {
-  font-size: 11px;
+  font-size: 0.79em;
   font-weight: 600;
   color: var(--lumina-text-secondary, #70757a);
   padding: 8px 12px 6px 12px;
@@ -5855,7 +5880,7 @@ button {
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--lumina-text-primary, #1f1f1f);
-  font-size: 13px;
+  font-size: 0.93em;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   user-select: none;
@@ -5970,7 +5995,7 @@ button {
   border-radius: 8px !important;
   cursor: pointer;
   font-family: inherit;
-  font-size: 1.05em !important;
+  font-size: 1em !important;
   font-weight: 500;
   color: #1f1f1f !important;
   transition: background 0.2s;
@@ -6033,7 +6058,7 @@ button {
   background: transparent !important;
   border: none !important;
   color: #1f1f1f !important;
-  font-size: 13.5px !important;
+  font-size: 0.96em !important;
   font-weight: 400 !important;
   cursor: pointer !important;
   text-align: left !important;
@@ -6172,7 +6197,7 @@ button {
 
 .lumina-image-caption {
   margin: 8px 0 0 0;
-  font-size: 12px;
+  font-size: 0.86em;
   color: var(--lumina-text-secondary);
   text-align: center;
   font-style: italic;
@@ -6260,6 +6285,7 @@ button {
   color: var(--lumina-sidebar-text);
   display: flex;
   flex-direction: column;
+  font-size: 13.5px !important;
   padding: 0 6px 6px 6px;
   gap: 8px;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -6287,7 +6313,7 @@ button {
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 1em;
   color: var(--lumina-sidebar-text);
   opacity: 1;
   transition: opacity 0.15s ease;
@@ -6299,7 +6325,7 @@ button {
 .brand-name {
   color: var(--lumina-sidebar-text);
   font-weight: 500;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: -0.2px;
 }
 
@@ -6347,7 +6373,7 @@ button {
 }
 
 /* Nav items */
-.sidebar-nav {
+.sidebar-nav-section {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -6361,12 +6387,12 @@ button {
   border: none;
   border-radius: 8px;
   padding: 0 6px;
-  font-size: 14px;
   font-weight: 400;
   color: var(--lumina-sidebar-text);
   cursor: pointer;
   width: 100%;
   text-align: left;
+  margin: 0;
   transition: background-color 0.2s, padding 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   white-space: nowrap;
@@ -6399,6 +6425,12 @@ button {
   height: 16px;
 }
 
+.sidebar-sparks-section {
+  display: flex;
+  flex-direction: column;
+  font-size: 13.5px;
+}
+
 /* Recent chats section */
 .sidebar-recent-section {
   flex: 1;
@@ -6407,6 +6439,7 @@ button {
   overflow: hidden;
   margin-top: 8px;
   position: relative !important;
+  font-size: 13.5px;
 }
 
 .sidebar-recent-section::after {
@@ -6422,12 +6455,12 @@ button {
 }
 
 .recent-title {
-  font-size: 12px;
+  font-size: 0.86em;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--lumina-sidebar-text-muted);
-  padding: 4px 6px;
+  padding: 4px 6px 0px 6px;
   margin-bottom: 4px;
   cursor: default;
 }
@@ -6456,7 +6489,6 @@ button {
   align-items: center;
   gap: 10px;
   padding: 6px 6px;
-  font-size: 13px;
   border-radius: 6px;
   color: var(--lumina-sidebar-text);
   cursor: pointer;
@@ -6490,6 +6522,30 @@ button {
   white-space: nowrap;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+.recent-chat-item__title::first-letter {
+  text-transform: uppercase;
+}
+
+@keyframes naming-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.recent-chat-item.is-naming .recent-chat-item__title {
+  position: relative !important;
+  color: transparent !important;
+  background: linear-gradient(90deg, var(--lumina-sidebar-text, #1f1f1f) 25%, var(--lumina-sidebar-text-muted, #888) 50%, var(--lumina-sidebar-text, #1f1f1f) 75%) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  animation: naming-shimmer 1.5s infinite linear !important;
+  opacity: 0.8 !important;
 }
 
 /* 3-dot button — hidden by default, shown on hover */
@@ -6546,20 +6602,6 @@ button {
   font-weight: 500;
 }
 
-.recent-chat-item__spark-avatar {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  color: #fff;
-  overflow: hidden;
-  line-height: 1;
-}
 
 /* Sidebar context menu popup */
 .sidebar-chat-context-menu {
@@ -6585,7 +6627,7 @@ button {
   gap: 10px;
   padding: 7px 12px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 500;
   color: var(--lumina-text-primary, #202124);
   cursor: pointer;
@@ -6724,7 +6766,7 @@ button {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 0.86em;
   flex-shrink: 0;
   border: none;
   box-sizing: border-box;
@@ -6733,7 +6775,7 @@ button {
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--lumina-sidebar-text);
   overflow: hidden;
@@ -6848,12 +6890,21 @@ button {
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__avatar {
-  width: 24px;
-  height: 24px;
-  font-size: 12px;
+  width: 20px;
+  height: 20px;
 }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section,
+.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section .recent-title,
+.lumina-sidebar.sidebar-collapsed #sidebar-new-spark-btn {
+  display: none !important;
+}
+
 .lumina-sidebar.sidebar-collapsed .sidebar-sparks-list {
   display: flex;
   flex-direction: column;
@@ -6964,7 +7015,7 @@ button {
 
 .sparks-page__title {
   font-family: 'Outfit', 'Google Sans', sans-serif;
-  font-size: 22px;
+  font-size: 1.57em;
   font-weight: 600;
   color: var(--lumina-sidebar-text);
 }
@@ -6978,7 +7029,7 @@ button {
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -7011,14 +7062,14 @@ button {
 }
 
 .sparks-empty p {
-  font-size: 16px;
+  font-size: 1.14em;
   font-weight: 600;
   margin: 0 0 6px 0;
   color: var(--lumina-sidebar-text);
 }
 
 .sparks-empty span {
-  font-size: 13px;
+  font-size: 0.93em;
   max-width: 320px;
   line-height: 1.5;
 }
@@ -7057,7 +7108,7 @@ button {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 1.29em;
   flex-shrink: 0;
 }
 
@@ -7067,7 +7118,7 @@ button {
 }
 
 .spark-card__name {
-  font-size: 14px;
+  font-size: 1em;
   font-weight: 600;
   color: var(--lumina-sidebar-text);
   margin-bottom: 4px;
@@ -7077,7 +7128,7 @@ button {
 }
 
 .spark-card__preview {
-  font-size: 12px;
+  font-size: 0.86em;
   color: var(--lumina-sidebar-text-muted);
   line-height: 1.4;
   display: -webkit-box;
@@ -7133,13 +7184,15 @@ button {
   right: 0;
   bottom: 0;
   z-index: 20000;
-  background: var(--lumina-ui-bg, #ffffff);
+  background: var(--lumina-sidebar-bg);
   display: flex;
   flex-direction: column;
+  padding: 8px 8px 8px 0px;
+  box-sizing: border-box;
 }
 
 [data-theme="dark"] .sparks-editor-overlay {
-  background: var(--lumina-ui-bg, #15181f);
+  background: var(--lumina-sidebar-bg);
 }
 
 .sparks-editor {
@@ -7147,18 +7200,25 @@ button {
   flex: 1;
   height: 100%;
   min-height: 0;
+  gap: 5px;
+  box-sizing: border-box;
 }
 
 .sparks-editor__form {
   flex: 1.2;
-  border-right: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  border: 1.5px solid var(--lumina-border-color, #e0e0e0);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   background: var(--lumina-ui-bg, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 [data-theme="dark"] .sparks-editor__form {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
   background: var(--lumina-ui-bg, #15181f);
 }
 
@@ -7166,14 +7226,14 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 56px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  height: 46px;
+  padding: 0 8px;
+  border-bottom: none;
   flex-shrink: 0;
 }
 
 [data-theme="dark"] .sparks-editor__topbar {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-bottom: none;
 }
 
 .sparks-editor__back {
@@ -7204,7 +7264,7 @@ button {
   align-items: center;
   gap: 8px;
   font-family: 'Outfit', 'Google Sans', sans-serif;
-  font-size: 16px;
+  font-size: 1.14em;
   font-weight: 600;
   color: var(--lumina-sidebar-text);
 }
@@ -7219,7 +7279,7 @@ button {
   border: none;
   border-radius: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 500;
   cursor: pointer;
 }
@@ -7244,7 +7304,7 @@ button {
 }
 
 .sparks-label {
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 600;
   color: var(--lumina-sidebar-text);
 }
@@ -7260,7 +7320,7 @@ button {
   border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1));
   border-radius: 8px;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: 0.93em;
   color: var(--lumina-sidebar-text);
   outline: none;
   transition: border-color 0.2s;
@@ -7314,7 +7374,7 @@ button {
   background: var(--lumina-sidebar-hover);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 0.86em;
   color: var(--lumina-sidebar-text);
 }
 
@@ -7322,7 +7382,7 @@ button {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 1em;
   padding: 0;
   color: var(--lumina-sidebar-text-muted);
 }
@@ -7337,7 +7397,7 @@ button {
   color: var(--lumina-primary-color, #007aff);
   border-radius: 6px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: 0.86em;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -7353,29 +7413,36 @@ button {
 
 .sparks-editor__preview {
   flex: 1;
+  border: 1.5px solid var(--lumina-border-color, #e0e0e0);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  background: var(--lumina-ui-bg-light, #f8f9fa);
+  background: var(--lumina-ui-bg, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 [data-theme="dark"] .sparks-editor__preview {
-  background: #1c1f26;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--lumina-ui-bg, #15181f);
 }
 
 .sparks-preview__header {
-  height: 56px;
+  height: 46px;
   display: flex;
   align-items: center;
   padding: 0 16px;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 600;
   color: var(--lumina-sidebar-text-muted);
-  border-bottom: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  border-bottom: none;
   flex-shrink: 0;
 }
 
 [data-theme="dark"] .sparks-preview__header {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-bottom: none;
 }
 
 .sparks-preview__chat {
@@ -7405,7 +7472,7 @@ button {
 }
 
 .sparks-preview__empty p {
-  font-size: 13px;
+  font-size: 0.93em;
   margin: 0;
 }
 
@@ -7419,7 +7486,7 @@ button {
   max-width: 80%;
   padding: 10px 14px;
   border-radius: 14px;
-  font-size: 13px;
+  font-size: 0.93em;
   line-height: 1.45;
   word-break: break-word;
 }
@@ -7476,53 +7543,16 @@ button {
 }
 
 .sparks-preview__input-area {
-  padding: 12px 16px;
-  border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
-  background: var(--lumina-ui-bg, #ffffff);
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  flex-shrink: 0;
+  background: transparent !important;
+  border-top: none !important;
+  padding: 0 10px 10px 10px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 [data-theme="dark"] .sparks-preview__input-area {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: var(--lumina-ui-bg, #15181f);
-}
-
-.sparks-preview__input {
-  flex: 1;
-  background: var(--lumina-ui-bg-light, #f8f9fa);
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1));
-  border-radius: 18px;
-  padding: 8px 14px;
-  font-size: 13px;
-  color: var(--lumina-sidebar-text);
-  outline: none;
-  resize: none;
-  font-family: inherit;
-  max-height: 100px;
-  line-height: 1.4;
-}
-
-[data-theme="dark"] .sparks-preview__input {
-  background: #1c1f26;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.sparks-preview__send {
-  background: var(--lumina-primary-color, #007aff);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  flex-shrink: 0;
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 .sparks-preview__send:disabled {
@@ -7530,12 +7560,51 @@ button {
   cursor: not-allowed;
 }
 
+.sparks-editor__resizer {
+  width: 8px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 100;
+  user-select: none;
+  background: transparent;
+  margin: 0 -4px;
+}
+
+.sparks-editor__resizer-handle {
+  width: 4px;
+  height: 24px;
+  background: var(--lumina-border-color, #d0d0d0);
+  border-radius: 2px;
+  transition: background 0.2s ease, height 0.2s ease, width 0.2s ease;
+}
+
+.sparks-editor__resizer:hover .sparks-editor__resizer-handle,
+.sparks-editor__resizer.dragging .sparks-editor__resizer-handle {
+  background: var(--lumina-accent-color, #1a73e8);
+  height: 36px;
+  width: 6px;
+}
+
+@media (max-width: 900px) {
+  .sparks-editor-overlay {
+    padding: 0 !important;
+  }
+
+  .sparks-editor__form,
+  .sparks-editor__preview {
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+
 .sidebar-spark-item {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
-  font-size: 13.5px;
   border-radius: 8px;
   color: var(--lumina-sidebar-text);
   cursor: pointer;
@@ -7556,6 +7625,12 @@ button {
   font-weight: 500;
 }
 
+.sidebar-spark-item.dragging {
+  opacity: 0.4;
+  background-color: var(--lumina-sidebar-hover);
+  border: 1px dashed var(--lumina-sidebar-text-muted);
+}
+
 .sidebar-spark-item svg {
   flex-shrink: 0;
   opacity: 0.7;
@@ -7569,7 +7644,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 0.86em;
   font-weight: 600;
   flex-shrink: 0;
   transition: width 0.25s ease, height 0.25s ease, font-size 0.25s ease;
@@ -7629,7 +7704,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 44px;
+  font-size: 3.14em;
   font-weight: 600;
   margin-bottom: 20px;
 }
@@ -7637,20 +7712,20 @@ button {
 .spark-avatar-editor {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin: 0;
 }
 
 .spark-avatar-preview {
   position: relative;
-  width: 70px;
-  height: 70px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background: var(--lumina-primary-color, #007aff);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 2.4em;
   font-weight: 600;
   cursor: pointer;
   overflow: hidden;
@@ -7682,7 +7757,7 @@ button {
 }
 
 .spark-welcome__title {
-  font-size: 24px;
+  font-size: 1.71em;
   font-weight: 600;
   margin-bottom: 30px;
   color: var(--lumina-sidebar-text, #1f1f1f);
@@ -7699,7 +7774,6 @@ button {
 }
 
 .spark-welcome__recent-title {
-  font-size: 12px;
   font-weight: 600;
   color: var(--lumina-sidebar-text-muted, #70757a);
   text-transform: uppercase;
@@ -7710,7 +7784,7 @@ button {
 .spark-welcome__recent-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .spark-welcome__recent-item {
@@ -7719,6 +7793,7 @@ button {
   gap: 8px;
   padding: 4px 8px;
   border-radius: 8px;
+  height: 32px;
   cursor: pointer;
   transition: background-color 0.2s;
   background: transparent;
@@ -7736,12 +7811,12 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 0.71em;
   font-weight: 600;
 }
 
 .spark-welcome__recent-item-title {
-  font-size: 13px;
+  font-size: 0.93em;
   color: var(--lumina-sidebar-text, #1f1f1f);
   overflow: hidden;
   white-space: nowrap;
@@ -7753,11 +7828,15 @@ button {
   color: var(--lumina-sidebar-text, #e3e3e3);
 }
 
+.spark-welcome__recent-item-title::first-letter {
+  text-transform: uppercase;
+}
+
 .topbar-spark-title {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 15px;
+  font-size: 1.07em;
   font-weight: 600;
   color: var(--lumina-sidebar-text);
   pointer-events: none;
@@ -7792,7 +7871,7 @@ button {
 }
 
 .spark-crop-title {
-  font-size: 16px;
+  font-size: 1.14em;
   font-weight: 600;
   margin-bottom: 16px;
   color: var(--lumina-sidebar-text);
@@ -7842,7 +7921,7 @@ button {
   flex: 1;
   padding: 8px 16px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 1em;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -7915,14 +7994,14 @@ button {
 }
 
 .lumina-custom-popup-title {
-  font-size: 16px;
+  font-size: 1.14em;
   font-weight: 600;
   color: var(--lumina-text-primary);
   margin: 0;
 }
 
 .lumina-custom-popup-body {
-  font-size: 14px;
+  font-size: 1em;
   color: var(--lumina-text-secondary);
   line-height: 1.5;
 }
@@ -7934,7 +8013,7 @@ button {
   border: 1px solid var(--lumina-ui-border, #ccc);
   background: var(--lumina-ui-bg, #fff);
   color: var(--lumina-text-primary);
-  font-size: 14px;
+  font-size: 1em;
   outline: none;
   box-sizing: border-box;
   transition: border-color 0.15s ease;
@@ -7958,7 +8037,7 @@ button {
 .lumina-custom-popup-btn {
   padding: 8px 16px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 1em;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -8137,13 +8216,14 @@ button {
 
 .layout.new-chat-homepage .welcome-title {
   font-family: 'Outfit', 'Google Sans', sans-serif !important;
-  font-size: 32px !important;
+  font-size: clamp(1.4em, 8vw, 2.29em) !important;
   font-weight: 300 !important;
   color: #1f1f1f !important;
   text-align: center !important;
   margin: 0 !important;
   letter-spacing: -0.5px !important;
   line-height: 1.25 !important;
+  white-space: nowrap !important;
 }
 
 [data-theme="dark"] .layout.new-chat-homepage .welcome-title {
@@ -8244,13 +8324,13 @@ button {
   transform-origin: center;
 }
 
-.lumina-sidebar.sidebar-collapsed ~ .lumina-main-content .collapse-chevron {
+.lumina-sidebar.sidebar-collapsed~.lumina-main-content .collapse-chevron {
   opacity: 0;
   transform: translateX(3px) scale(0.8);
 }
 
 @media (max-width: 900px) {
-  .lumina-sidebar:not(.active) ~ .lumina-main-content .collapse-chevron {
+  .lumina-sidebar:not(.active)~.lumina-main-content .collapse-chevron {
     opacity: 0;
     transform: translateX(3px) scale(0.8);
   }

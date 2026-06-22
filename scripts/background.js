@@ -767,7 +767,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         const isSecondPassSearch = (currentQ || '').includes('### Web Search Results for');
         const useUrlContext = hasUrl || isSecondPassSearch;
 
-        if (useUrlContext) {
+        if (useUrlContext && isGemini3) {
             geminiBody.tools = [{
                 url_context: {}
             }];
@@ -1857,6 +1857,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     switch (request.action) {
+        case 'generate_chat_title': {
+            const { modelObj, question } = request;
+            generateChatTitleFromModel(modelObj, question)
+                .then(title => sendResponse({ success: true, title }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true; // async response
+        }
         case 'fetch_image_base64': {
             fetch(request.url)
                 .then(res => {
@@ -4169,5 +4176,75 @@ function extractUrlsFromSearchResults(text) {
         urls.push(match[1]);
     }
     return urls;
+}
+
+async function generateChatTitleFromModel(modelObj, question) {
+    const chain = await getModelChain('text', modelObj);
+    if (!chain || chain.length === 0) {
+        throw new Error("No configured models found.");
+    }
+    const config = chain[0];
+    const { model, providerType: currentProvider, endpoint, apiKey } = config;
+    const keys = getKeysArray(apiKey);
+
+    const systemInstruction = `You are a helpful assistant. Create an extremely short, concise, and clear title (maximum 4 words, no punctuation, match the language of the prompt) summarizing the user's first prompt/question below. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
+
+    if (currentProvider === 'builtin') {
+        const ns = getPromptApiNamespace();
+        if (ns) {
+            const capabilities = await ns.capabilities();
+            if (capabilities.available !== 'no') {
+                const session = await ns.create({ systemPrompt: systemInstruction });
+                const res = await session.prompt(question);
+                try { session.destroy(); } catch (e) {}
+                let text = res.trim().replace(/^["']|["']$/g, '').trim();
+                if (text && text.length <= 50) return text;
+            }
+        }
+    }
+
+    const payloadParams = {
+        model, endpoint, providerType: currentProvider,
+        temperature: 0.3, topP: 1.0, maxTokens: 30, parsedCustomParams: {},
+        normalizedThinkingLevel: '', isGemini25Model: false, reasoningMode: false, imageData: null,
+        isStreaming: false, cachedContent: null
+    };
+
+    const response = await fetchWithRotation(keys, async (key) => {
+        const payload = await buildApiPayload([], question, systemInstruction, key, payloadParams);
+        const headers = { 'Content-Type': 'application/json' };
+        if (key) {
+            const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
+            if (isGemini) {
+                headers['x-goog-api-key'] = key;
+            } else {
+                headers['Authorization'] = `Bearer ${key}`;
+            }
+        }
+        return fetch(payload.url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload.body)
+        });
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+    }
+
+    const data = await response.json();
+    let text = '';
+    const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
+    if (isGemini) {
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+        text = data.choices?.[0]?.message?.content || '';
+    }
+
+    text = text.trim().replace(/^["']|["']$/g, '').trim();
+    if (!text || text.length > 50) {
+        return question.substring(0, 20);
+    }
+    return text;
 }
 

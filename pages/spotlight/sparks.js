@@ -10,11 +10,18 @@ const SPARKS_KEY = 'lumina_sparks';
 const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
         name: 'IELTS Writing Task 1 Tutor',
+        description: 'Friendly and expert tutor specializing in IELTS Writing Task 1 reports. Get interactive practice, vocabulary suggestions, and grammar corrections tailored to your essays.',
         instructions: 'You are a highly supportive and expert IELTS Writing Task 1 Tutor.\n\nYour role is to help the user learn and improve in a completely natural, conversational, and direct manner. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal grade/evaluation.\n\nSimply read the user\'s input, converse like a friendly teacher, point out errors naturally, and explain concepts or suggest better vocabulary/grammar options directly within your conversation.'
     },
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
+        description: 'Supportive guide helping you master IELTS Writing Task 2 essays. Learn to analyze prompts, brainstorm strong ideas, structure arguments, and refine academic vocabulary.',
         instructions: 'You are a highly supportive and expert IELTS Writing Task 2 Tutor.\n\nYour role is to help the user learn and improve in a completely natural, conversational, and direct manner. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal grade/evaluation.\n\nSimply read the user\'s input, converse like a friendly teacher, point out errors naturally, and explain concepts or suggest better vocabulary/grammar options directly within your conversation.'
+    },
+    'spark_samsung_qa_assistant': {
+        name: 'Samsung QA Assistant',
+        description: 'Samsung.com e-commerce integration QA helper. Specialized in AEM, SAP Commerce (Hybris), S/4HANA, OCC API, ELK stack, and JUnit testing.',
+        instructions: 'You are the Samsung QA Assistant, an expert QA engineer and technical assistant for the samsung.com e-commerce integration project.\n\nYour role is to support the user (a QA tester outsourced for Samsung) with all testing and project-related queries.\n\nKey project details:\n1. Frontend / Core Platform: Adobe Experience Manager (AEM) using JCR Repository (CRXDE Lite) for UI/content.\n2. Backend Transactional Engine: SAP Commerce Cloud (Hybris) handling prices, inventory, cart, and Order Management System (OMS).\n3. ERP: SAP S/4HANA receiving order data for logistics and accounting.\n4. Integration Layer: OCC REST API (Web Services), Day CQ Commerce Factory (AEM-Hybris OOB connector), OSGi Service & Apache Sling (HybrisServiceFactory, resource resolution, Sling AuthenticationInfoPostProcessor), SAP Commerce Data Hub (Raw items -> Canonical items -> IDoc -> S/4HANA), SAML & Azure Security Policies for SSO.\n5. Search / Delivery: Solr Faceted Search (facets, filters), AEM Dispatcher & Apache Web Server (static HTML caching), CDN (TTL cache).\n6. Business Logic: Drools Rule Engine for promotions (Rule Aware Objects in memory), Jalo Layer & Price Factory (legacy vouchers).\n7. Monitoring & Testing: ELK Stack (Kibana & Elasticsearch for Java logs, metrics, APM tracing), JUnit testing using separate \'junit\' tenant and ServicelayerTransactionalTest.java for automatic transactional rollbacks. DB uses SAP HANA / MySQL.\n\nGuidelines for answering:\n- Respond directly and concisely. Avoid introductory greetings or conversational fillers (e.g., "Chào bạn,", "Dưới đây là...", "Tóm lại:") at the start of your response, and go straight to answering the question. Match the user\'s language (e.g., Vietnamese or English).\n- When the user asks general theoretical questions or definitions (like "What is SMC?" or general QA concepts), answer them directly and naturally using your general knowledge first.\n- Do NOT force project architectural details, QA test scenarios, JUnit test code, or ELK log analysis into every single answer unless the user specifically asks for testing strategies, test scenarios, debugging steps, or project integration details for that concept.\n- If the user asks about QA, testing, debugging, or technical integration of a concept/feature, then connect it to the project context (AEM/Hybris/S4HANA/OCC API/JUnit/ELK).\n- Do NOT say "Not found in the scope of this project" or refuse to answer when terms are not explicitly listed in the project details. Use your general knowledge of Samsung.com and standard e-commerce implementations to explain what those features are.\n- Be highly professional, technical, and precise when answering technical queries.'
     }
 };
 
@@ -34,6 +41,7 @@ async function sparksLoad() {
             sparks[id] = {
                 id: id,
                 name: defSpark.name,
+                description: defSpark.description || '',
                 instructions: defSpark.instructions,
                 avatar: null,
                 knowledgeFiles: [],
@@ -41,16 +49,27 @@ async function sparksLoad() {
                 updatedAt: Date.now()
             };
             needsSave = true;
-        } else if (existing.instructions && (
-            existing.instructions.includes('[LANGUAGE REQUIREMENT]') ||
-            existing.instructions.includes('[YOUR ROLE]') ||
-            existing.instructions.includes('rigid evaluation template') ||
-            existing.instructions.includes('Scenario') ||
-            existing.instructions.includes('Inline Sentence')
-        )) {
-            existing.instructions = defSpark.instructions;
-            existing.updatedAt = Date.now();
-            needsSave = true;
+        } else {
+            if (existing.description === undefined || existing.description === '' || (id !== 'spark_samsung_qa_assistant' && existing.description.length < 115)) {
+                existing.description = defSpark.description || '';
+                needsSave = true;
+            }
+            if (id === 'spark_samsung_qa_assistant' && (!existing.instructions || !existing.instructions.includes('Avoid introductory greetings'))) {
+                existing.instructions = defSpark.instructions;
+                existing.updatedAt = Date.now();
+                needsSave = true;
+            }
+            if (existing.instructions && (
+                existing.instructions.includes('[LANGUAGE REQUIREMENT]') ||
+                existing.instructions.includes('[YOUR ROLE]') ||
+                existing.instructions.includes('rigid evaluation template') ||
+                existing.instructions.includes('Scenario') ||
+                existing.instructions.includes('Inline Sentence')
+            )) {
+                existing.instructions = defSpark.instructions;
+                existing.updatedAt = Date.now();
+                needsSave = true;
+            }
         }
     }
 
@@ -65,6 +84,17 @@ async function sparksSave(sparks) {
     if (typeof sidebarSparksRenderList === 'function') {
         sidebarSparksRenderList();
     }
+}
+
+async function sparksSaveOrder(orderedIds) {
+    const sparks = await sparksLoad();
+    orderedIds.forEach((id, index) => {
+        if (sparks[id]) {
+            sparks[id].order = index;
+            sparks[id].updatedAt = Date.now();
+        }
+    });
+    await chrome.storage.local.set({ [SPARKS_KEY]: sparks });
 }
 
 async function sparksDelete(id) {
@@ -186,6 +216,11 @@ async function sparksOpenEditor(sparkId = null) {
     overlay.className = 'sparks-editor-overlay';
 
     const knowledgeFiles = spark?.knowledgeFiles || [];
+    const color = getSparkColor(spark?.name || 'New Spark');
+    const welcomeAvatarHTML = spark?.avatar
+        ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+        : (spark?.name || '?')[0].toUpperCase();
+    const welcomeBgStyle = spark?.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
 
     overlay.innerHTML = `
         <div class="sparks-editor">
@@ -226,6 +261,11 @@ async function sparksOpenEditor(sparkId = null) {
                     </div>
 
                     <div class="sparks-field">
+                        <label class="sparks-label">Description</label>
+                        <input type="text" id="spark-description-input" class="sparks-input" placeholder="A short description of what this Spark does" value="${escapeHtml(spark?.description || '')}" maxlength="160">
+                    </div>
+
+                    <div class="sparks-field">
                         <label class="sparks-label">Instructions</label>
                         <textarea id="spark-instructions-input" class="sparks-textarea" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
                     </div>
@@ -255,26 +295,43 @@ async function sparksOpenEditor(sparkId = null) {
                 </div>
             </div>
 
+            <!-- Resizer -->
+            <div class="sparks-editor__resizer" id="sparks-editor-resizer">
+                <div class="sparks-editor__resizer-handle"></div>
+            </div>
+
             <!-- Right: Preview -->
             <div class="sparks-editor__preview">
                 <div class="sparks-preview__header">Preview</div>
                 <div class="sparks-preview__chat" id="sparks-preview-chat">
                     <div class="sparks-preview__empty" id="sparks-preview-empty">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="4" y="6" width="6" height="4" rx="2"/>
-                            <rect x="14" y="6" width="6" height="8" rx="3"/>
-                            <rect x="4" y="14" width="6" height="6" rx="3"/>
-                            <rect x="14" y="18" width="6" height="4" rx="2"/>
-                        </svg>
-                        <p>Enter a name to start testing your Spark</p>
+                        <div class="spark-welcome">
+                            <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
+                            <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || 'New Spark')}</h1>
+                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? 'block' : 'none'};">${escapeHtml(spark?.description || '')}</p>
+                        </div>
                     </div>
                     <div class="sparks-preview__messages" id="sparks-preview-messages"></div>
                 </div>
-                <div class="sparks-preview__input-area">
-                    <textarea class="sparks-preview__input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
-                    <button class="sparks-preview__send" id="sparks-preview-send" disabled>
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    </button>
+                <div class="lumina-chat-input-wrapper sparks-preview__input-area">
+                    <div class="lumina-input-container">
+                        <div class="lumina-input-bar">
+                            <div class="lumina-left-actions">
+                                 <button class="lumina-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                 </button>
+                            </div>
+                            <textarea class="lumina-chat-input sparks-preview__input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
+                            <div class="lumina-trailing-group">
+                                <button class="lumina-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                                </button>
+                                <button class="lumina-action-btn sparks-preview__send" id="sparks-preview-send" disabled title="Send Message" style="display: flex; align-items: center; justify-content: center;">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -285,6 +342,68 @@ async function sparksOpenEditor(sparkId = null) {
         mainContent.appendChild(overlay);
     } else {
         document.body.appendChild(overlay);
+    }
+
+    // Setup resizer dragging logic
+    const sparksResizer = overlay.querySelector('#sparks-editor-resizer');
+    const formPane = overlay.querySelector('.sparks-editor__form');
+    const previewPane = overlay.querySelector('.sparks-editor__preview');
+    const editorContainer = overlay.querySelector('.sparks-editor');
+
+    if (sparksResizer && formPane && previewPane && editorContainer) {
+        let isDragging = false;
+        let animationFrameId = null;
+
+        sparksResizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            sparksResizer.classList.add('dragging');
+            editorContainer.classList.add('dragging');
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            animationFrameId = requestAnimationFrame(() => {
+                const containerRect = editorContainer.getBoundingClientRect();
+                const paddingLeft = parseFloat(window.getComputedStyle(editorContainer).paddingLeft) || 0;
+                const paddingRight = parseFloat(window.getComputedStyle(editorContainer).paddingRight) || 0;
+
+                const relativeX = e.clientX - containerRect.left - paddingLeft;
+                const availableWidth = containerRect.width - paddingLeft - paddingRight - sparksResizer.offsetWidth;
+
+                if (availableWidth <= 0) return;
+
+                let percentage = (relativeX / availableWidth) * 100;
+                if (percentage < 25) percentage = 25;
+                if (percentage > 75) percentage = 75;
+
+                if (percentage >= 47.5 && percentage <= 52.5) {
+                    percentage = 50;
+                }
+
+                formPane.style.flex = `${percentage}`;
+                previewPane.style.flex = `${100 - percentage}`;
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                sparksResizer.classList.remove('dragging');
+                editorContainer.classList.remove('dragging');
+                document.body.style.cursor = '';
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+            }
+        });
     }
 
     let currentFiles = [...knowledgeFiles];
@@ -305,6 +424,12 @@ async function sparksOpenEditor(sparkId = null) {
                 openAvatarCropper(e.target.result, (croppedDataUrl) => {
                     currentAvatar = croppedDataUrl;
                     avatarPreview.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" /><div class="spark-avatar-overlay"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
+
+                    const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
+                    if (welcomeAvatar) {
+                        welcomeAvatar.style.backgroundColor = 'transparent';
+                        welcomeAvatar.innerHTML = `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
+                    }
                 });
             };
             reader.readAsDataURL(file);
@@ -327,17 +452,58 @@ async function sparksOpenEditor(sparkId = null) {
         const hasName = nameInput.value.trim().length > 0;
         previewInput.disabled = !hasName;
         previewSend.disabled = !hasName;
-        if (hasName) {
+
+        const uploadBtn = overlay.querySelector('#sparks-preview-upload');
+        const micBtn = overlay.querySelector('#sparks-preview-mic');
+        if (uploadBtn) {
+            uploadBtn.disabled = !hasName;
+            uploadBtn.style.opacity = hasName ? '1' : '0.5';
+            uploadBtn.style.cursor = hasName ? 'pointer' : 'not-allowed';
+        }
+        if (micBtn) {
+            micBtn.disabled = !hasName;
+            micBtn.style.opacity = hasName ? '0.6' : '0.5';
+            micBtn.style.cursor = hasName ? 'pointer' : 'not-allowed';
+        }
+
+        if (previewHistory.length > 0) {
             previewEmpty.style.display = 'none';
         } else {
             previewEmpty.style.display = 'flex';
         }
     };
 
+    const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
+    const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
+
+    function updateWelcomeAvatarLetter(nameVal) {
+        if (welcomeAvatar && !currentAvatar) {
+            const firstLetter = (nameVal || '?')[0].toUpperCase();
+            welcomeAvatar.textContent = firstLetter;
+            const dynamicColor = getSparkColor(nameVal || 'New Spark');
+            welcomeAvatar.style.backgroundColor = dynamicColor;
+        }
+    }
+
     nameInput.addEventListener('input', () => {
-        titleLabel.textContent = nameInput.value.trim() || 'New Spark';
+        const nameVal = nameInput.value.trim();
+        titleLabel.textContent = nameVal || 'New Spark';
+        if (welcomeTitle) {
+            welcomeTitle.textContent = nameVal || 'New Spark';
+        }
+        updateWelcomeAvatarLetter(nameVal);
         updatePreviewState();
     });
+
+    const descriptionInput = overlay.querySelector('#spark-description-input');
+    const welcomeDesc = overlay.querySelector('#sparks-preview-welcome-description');
+    if (descriptionInput && welcomeDesc) {
+        descriptionInput.addEventListener('input', () => {
+            const descVal = descriptionInput.value.trim();
+            welcomeDesc.textContent = descVal;
+            welcomeDesc.style.display = descVal ? 'block' : 'none';
+        });
+    }
     updatePreviewState();
 
     // ── File upload ──
@@ -403,6 +569,7 @@ async function sparksOpenEditor(sparkId = null) {
         sparks[id] = {
             id,
             name,
+            description: overlay.querySelector('#spark-description-input').value.trim(),
             instructions: overlay.querySelector('#spark-instructions-input').value.trim(),
             knowledgeFiles: currentFiles,
             avatar: currentAvatar,
@@ -457,6 +624,7 @@ async function sparksOpenEditor(sparkId = null) {
         const historyForAPI = previewHistory.map(h => ({ role: h.role, parts: [{ text: h.text }] }));
 
         previewHistory.push({ role: 'user', text });
+        updatePreviewState();
 
         // AI response placeholder
         const aiDiv = appendPreviewMessage('assistant', '');
@@ -553,7 +721,12 @@ async function sidebarSparksRenderList() {
     if (!container) return;
 
     const sparks = await sparksLoad();
-    const list = Object.values(sparks).sort((a, b) => b.updatedAt - a.updatedAt);
+    const list = Object.values(sparks).sort((a, b) => {
+        const orderA = a.order !== undefined ? a.order : 99999;
+        const orderB = b.order !== undefined ? b.order : 99999;
+        if (orderA !== orderB) return orderA - orderB;
+        return b.updatedAt - a.updatedAt;
+    });
 
     let html = '';
     const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
@@ -565,7 +738,7 @@ async function sidebarSparksRenderList() {
             : (spark.name || '?')[0].toUpperCase();
         const bgStyle = spark.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
         html += `
-            <div class="sidebar-spark-item" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
+            <div class="sidebar-spark-item" draggable="true" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
                 <div class="sidebar-spark-item__avatar" style="${bgStyle}">${avatarHTML}</div>
                 <span class="sidebar-spark-item__title">${escapeHtml(spark.name)}</span>
                 <button class="sidebar-spark-item__menu-btn" data-spark-id="${spark.id}" title="More options" tabindex="-1">
@@ -577,6 +750,8 @@ async function sidebarSparksRenderList() {
 
     container.innerHTML = html;
 
+    let draggedItem = null;
+
     container.querySelectorAll('.sidebar-spark-item').forEach(item => {
         item.addEventListener('click', (e) => {
             if (e.target.closest('.sidebar-spark-item__menu-btn')) return;
@@ -586,6 +761,40 @@ async function sidebarSparksRenderList() {
             if (sidebar) sidebar.classList.remove('active');
             if (backdrop) backdrop.classList.remove('active');
             document.body.classList.remove('sidebar-open');
+        });
+
+        // Drag and Drop
+        item.addEventListener('dragstart', (e) => {
+            draggedItem = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingEl = container.querySelector('.sidebar-spark-item.dragging');
+            if (!draggingEl || draggingEl === item) return;
+
+            const rect = item.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            if (e.clientY < midpoint) {
+                container.insertBefore(draggingEl, item);
+            } else {
+                container.insertBefore(draggingEl, item.nextSibling);
+            }
+        });
+
+        item.addEventListener('dragend', async () => {
+            item.classList.remove('dragging');
+            draggedItem = null;
+
+            // Save order
+            const orderedIds = Array.from(container.querySelectorAll('.sidebar-spark-item')).map(el => el.dataset.sparkId);
+            await sparksSaveOrder(orderedIds);
+
+            if (typeof sparksRenderList === 'function') {
+                sparksRenderList();
+            }
         });
     });
 
@@ -674,6 +883,7 @@ async function openSparkChat(sparkId) {
     const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
     if (activeTab) {
         activeTab.sparkId = sparkId;
+        if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
 
         const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
         const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
@@ -791,18 +1001,19 @@ async function renderSparkWelcomeScreen(activeTab) {
                 <div class="spark-welcome__recent-title">Recent</div>
                 <div class="spark-welcome__recent-list">
                     ${sparkChats.map(s => {
-                        let displayTitle = s.title;
-                        if (!s.isRenamed && s.questions && s.questions.length > 0) {
-                            displayTitle = s.questions[s.questions.length - 1].text || "Untitled Chat";
-                        }
-                        if (!displayTitle) displayTitle = "Untitled Chat";
-                        return `
+            let displayTitle = s.title;
+            if (!s.isRenamed && s.questions && s.questions.length > 0) {
+                displayTitle = s.questions[s.questions.length - 1].text || "Untitled Chat";
+            }
+            if (!displayTitle) displayTitle = "Untitled Chat";
+            displayTitle = displayTitle.charAt(0).toUpperCase() + displayTitle.slice(1);
+            return `
                             <div class="spark-welcome__recent-item" data-session-id="${s.id}">
                                 <div class="spark-welcome__recent-item-avatar" style="${bgStyle}">${avatarHTML}</div>
                                 <span class="spark-welcome__recent-item-title">${escapeHtml(displayTitle)}</span>
                             </div>
                         `;
-                    }).join('')}
+        }).join('')}
                 </div>
             </div>
         `;
@@ -812,6 +1023,7 @@ async function renderSparkWelcomeScreen(activeTab) {
         <div class="spark-welcome">
             <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
             <h1 class="spark-welcome__title">${escapeHtml(spark.name)}</h1>
+            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ''}
             ${recentHTML}
         </div>
     `;
@@ -886,7 +1098,7 @@ function openAvatarCropper(imageSrc, callback) {
             imgWidth = viewportSize;
             imgHeight = viewportSize / ratio;
         }
-        
+
         const minScale = Math.max(viewportSize / imgWidth, viewportSize / imgHeight);
         scale = minScale;
 
@@ -911,20 +1123,49 @@ function openAvatarCropper(imageSrc, callback) {
         img.style.top = `${posY}px`;
     }
 
-    zoomInput.addEventListener('input', () => {
+    function performZoom(factor, clientX, clientY) {
         const prevScale = scale;
-        scale = parseInt(zoomInput.value) / 100;
-        
-        const viewportSize = 250;
-        const centerX = viewportSize / 2;
-        const centerY = viewportSize / 2;
+        const minScale = parseFloat(zoomInput.min) / 100;
+        const maxScale = parseFloat(zoomInput.max) / 100;
+        let newScale = scale * factor;
+        if (newScale < minScale) newScale = minScale;
+        if (newScale > maxScale) newScale = maxScale;
 
-        posX = centerX - (centerX - posX) * (scale / prevScale);
-        posY = centerY - (centerY - posY) * (scale / prevScale);
+        if (newScale === prevScale) return;
+
+        scale = newScale;
+        zoomInput.value = Math.round(scale * 100);
+
+        const viewport = modal.querySelector('.spark-crop-viewport');
+        const rect = viewport.getBoundingClientRect();
+        const zoomX = (clientX !== undefined) ? (clientX - rect.left) : 125;
+        const zoomY = (clientY !== undefined) ? (clientY - rect.top) : 125;
+
+        posX = zoomX - (zoomX - posX) * (scale / prevScale);
+        posY = zoomY - (zoomY - posY) * (scale / prevScale);
 
         clampPosition();
         updateTransform();
+    }
+
+    zoomInput.addEventListener('input', () => {
+        const targetScale = parseInt(zoomInput.value) / 100;
+        const factor = targetScale / scale;
+        performZoom(factor);
     });
+
+    const viewport = modal.querySelector('.spark-crop-viewport');
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        let delta = e.deltaY;
+        let sensitivity = 0.0015;
+        if (e.ctrlKey) {
+            sensitivity = 0.003;
+        }
+        delta = Math.max(-100, Math.min(100, delta));
+        const factor = Math.exp(-delta * sensitivity);
+        performZoom(factor, e.clientX, e.clientY);
+    }, { passive: false });
 
     img.addEventListener('mousedown', (e) => {
         e.preventDefault();
