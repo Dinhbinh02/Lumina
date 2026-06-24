@@ -1858,9 +1858,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     switch (request.action) {
         case 'generate_chat_title': {
-            const { modelObj, question, images, files } = request;
-            console.log("[generate_chat_title] Received in background:", { question, images, files });
-            generateChatTitleFromModel(modelObj, question, images, files)
+            const { modelObj, question, images, files, history } = request;
+            console.log("[generate_chat_title] Received in background:", { question, images, files, history: history?.length });
+            generateChatTitleFromModel(modelObj, question, images, files, history)
                 .then(title => sendResponse({ success: true, title }))
                 .catch(err => sendResponse({ success: false, error: err.message }));
             return true; // async response
@@ -4179,7 +4179,7 @@ function extractUrlsFromSearchResults(text) {
     return urls;
 }
 
-async function generateChatTitleFromModel(modelObj, question, images, files) {
+async function generateChatTitleFromModel(modelObj, question, images, files, history) {
     const chain = await getModelChain('text', modelObj);
     if (!chain || chain.length === 0) {
         throw new Error("No configured models found.");
@@ -4188,7 +4188,7 @@ async function generateChatTitleFromModel(modelObj, question, images, files) {
     const { model, providerType: currentProvider, endpoint, apiKey } = config;
     const keys = getKeysArray(apiKey);
 
-    const systemInstruction = `You are a helpful assistant. Create an extremely short, concise, and clear title (maximum 4 words, no punctuation, match the language of the prompt) summarizing the user's first prompt/question below. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
+    const systemInstruction = `You are a helpful assistant. Create an extremely short, concise, and clear title (maximum 4 words, no punctuation, match the language of the prompt) summarizing the conversation below. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
 
     if (currentProvider === 'builtin') {
         const ns = getPromptApiNamespace();
@@ -4219,8 +4219,9 @@ async function generateChatTitleFromModel(modelObj, question, images, files) {
     console.log("[generateChatTitleFromModel] payloadParams:", payloadParams);
 
     const response = await fetchWithRotation(keys, async (key) => {
-        const payload = await buildApiPayload([], question, systemInstruction, key, payloadParams);
+        const payload = await buildApiPayload(history || [], question, systemInstruction, key, payloadParams);
         console.log("[generateChatTitleFromModel] buildApiPayload result:", payload);
+        console.log("[generateChatTitleFromModel] stringified body:", JSON.stringify(payload.body));
         const headers = { 'Content-Type': 'application/json' };
         if (key) {
             const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));

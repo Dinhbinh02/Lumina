@@ -5063,7 +5063,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 
     // Fire title generation CONCURRENTLY with the main chat request
-    // Only for the very first message in this session (conversationHistory was empty before submit)
     if (
         !extra.isRegenerate &&
         !extra.isRecheck &&
@@ -5071,12 +5070,18 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         extra.mode !== 'dictionary' &&
         extra.mode !== 'proofread' &&
         extra.mode !== 'websource' &&
-        conversationHistory.length === 0 &&
         currentTab?.sessionId
     ) {
         const nameText = apiText || text;
         if (nameText && nameText.trim()) {
-            startConcurrentAutoNaming(currentTab.sessionId, currentTab.selectedModel || tabModel, nameText.trim(), images);
+            chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY], (result) => {
+                const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+                const meta = sessions[currentTab.sessionId] || {};
+                console.log("[AutoNaming Check]", { sessionId: currentTab.sessionId, autoNamed: meta.autoNamed, isRenamed: meta.isRenamed, exists: !!sessions[currentTab.sessionId] });
+                if (!meta.autoNamed && !meta.isRenamed) {
+                    startConcurrentAutoNaming(currentTab.sessionId, currentTab.selectedModel || tabModel, nameText.trim(), images, conversationHistory);
+                }
+            });
         }
     }
 }
@@ -7399,7 +7404,7 @@ window.namingSessionIds = new Set();
  * Shows skeleton on the sidebar item immediately; writes title to storage
  * once the session record appears (retries up to ~3 s).
  */
-function startConcurrentAutoNaming(sessionId, modelObj, questionText, images) {
+function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, history) {
     if (!sessionId || !questionText) return;
     if (!window.namingSessionIds) window.namingSessionIds = new Set();
     if (window.namingSessionIds.has(sessionId)) return;
@@ -7412,7 +7417,8 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images) {
         action: 'generate_chat_title',
         modelObj: modelObj,
         question: questionText,
-        images: images
+        images: images,
+        history: history
     }, async (response) => {
         if (chrome.runtime.lastError) {
             console.warn('[AutoNaming] sendMessage error:', chrome.runtime.lastError.message);
