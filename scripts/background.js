@@ -4188,7 +4188,7 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     const { model, providerType: currentProvider, endpoint, apiKey } = config;
     const keys = getKeysArray(apiKey);
 
-    const systemInstruction = `You are a helpful assistant. Create an extremely short, concise, and clear title (maximum 4 words, no punctuation, match the language of the prompt) summarizing the conversation below. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
+    const systemInstruction = `Analyze the preceding conversation and generate a concise, descriptive chat title in 5 words or fewer. Capture the core topic, main intent, or action item directly without using filler words, matching the language of the prompt. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
 
     if (currentProvider === 'builtin') {
         const ns = getPromptApiNamespace();
@@ -4251,10 +4251,33 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
         text = data.choices?.[0]?.message?.content || '';
     }
 
-    text = text.trim().replace(/^["']|["']$/g, '').trim();
-    if (!text || text.length > 50) {
+    // Clean up response text, extracting the title if the model output a conversational wrapper or labels
+    let cleanedText = text.trim();
+    const lines = cleanedText.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1) {
+        // Look for lines starting with common title prefixes
+        const titleLine = lines.find(l => /^(corrected\s+)?title\s*:/i.test(l));
+        if (titleLine) {
+            cleanedText = titleLine;
+        } else {
+            // Otherwise, take the last line if the first lines repeated the prompt
+            cleanedText = lines[lines.length - 1];
+        }
+    }
+
+    // Remove common prefixes
+    cleanedText = cleanedText.replace(/^(corrected\s+)?title\s*:\s*/i, '');
+    cleanedText = cleanedText.replace(/^(suggested\s+)?title\s*:\s*/i, '');
+    cleanedText = cleanedText.replace(/^chat\s+title\s*:\s*/i, '');
+    cleanedText = cleanedText.trim().replace(/^["']|["']$/g, '').trim();
+
+    if (!cleanedText || cleanedText.length > 50) {
+        const firstLine = text.split('\n')[0].trim().replace(/^["']|["']$/g, '').trim();
+        if (firstLine && firstLine.length <= 50) {
+            return firstLine;
+        }
         return question.substring(0, 20);
     }
-    return text;
+    return cleanedText;
 }
 
