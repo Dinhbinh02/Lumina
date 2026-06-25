@@ -352,9 +352,10 @@ When triggered, embed directly in the middle of the response: \`![English captio
 
 [Diagram Syntax — Mermaid]
 For processes, flows, sequences, timelines, class relationships, state machines, mind maps, ER diagrams, or any diagram request: output a mermaid fenced code block. Choose the appropriate type (flowchart, sequenceDiagram, classDiagram, erDiagram, gantt, stateDiagram, mindmap, timeline, etc.). 
+Prioritize horizontal (LR - Left-to-Right) or square layouts over vertical (TD/TB) layouts where appropriate, to make diagrams wider and shorter, saving vertical height in the chat panel.
 Make diagrams visually engaging, colorful, and inspiring using custom style directives or standard colors. Keep text inside diagrams clean and readable.
 Example: \`\`\`mermaid
-flowchart TD
+flowchart LR
     A[Start] --> B[Process]
 \`\`\`
 
