@@ -4503,6 +4503,13 @@ button {
   will-change: transform;
 }
 
+/* Force light background for SVG/Mermaid diagrams inside the lightbox preview */
+.lumina-preview-img[src^="data:image/svg+xml"] {
+  background: #ffffff !important;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
 .lumina-preview-img.zoomed {
   cursor: default;
   border-radius: 4px;
@@ -6187,7 +6194,7 @@ button {
   flex-direction: column;
   align-items: center;
   width: fit-content;
-  max-width: min(100%, 380px);
+  max-width: min(100%, 280px);
   margin: 12px auto;
 }
 
@@ -6239,6 +6246,123 @@ button {
   100% {
     background-position: -200% 0;
   }
+}
+
+/* ── Mermaid Diagram Styles ──────────────────────────────────────── */
+.lumina-mermaid-wrapper {
+  position: relative;
+  width: fit-content;
+  width: -moz-fit-content;
+  width: -webkit-fit-content;
+  max-width: min(100%, 380px);
+  margin: 12px auto;
+}
+
+.lumina-mermaid-wrapper.is-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: min(100%, 380px);
+}
+
+.lumina-mermaid-wrapper.lumina-mermaid-rendered {
+  width: 100%;
+  max-width: 680px;
+  margin: 16px auto;
+  cursor: pointer;
+}
+
+.lumina-mermaid-wrapper.is-loading .lumina-mermaid-skeleton {
+  width: 380px;
+  max-width: 100%;
+  height: 200px;
+  margin: 12px auto;
+  border-radius: var(--lumina-radius-sm, 12px);
+  display: block;
+}
+
+.lumina-mermaid-svg-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 8px;
+  animation: lumina-mermaid-reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes lumina-mermaid-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lumina-mermaid-svg-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--lumina-radius-sm, 12px);
+  overflow: visible;
+  font-family: var(--lumina-font-family, 'Google Sans', system-ui, sans-serif) !important;
+}
+
+/* Override text styling inside mermaid diagrams for readability */
+.lumina-mermaid-svg-container svg text,
+.lumina-mermaid-svg-container svg .node text,
+.lumina-mermaid-svg-container svg .edgeLabel text,
+.lumina-mermaid-svg-container svg span {
+  font-family: var(--lumina-font-family, 'Google Sans', system-ui, sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  fill: #000000 !important;
+  color: #000000 !important;
+}
+
+/* Force white background for edge labels for clean readability */
+.lumina-mermaid-svg-container svg .edgeLabel rect,
+.lumina-mermaid-svg-container svg .edgeLabel span,
+.lumina-mermaid-svg-container svg .edgeLabel,
+.lumina-mermaid-svg-container svg .edgeLabel .label,
+.lumina-mermaid-svg-container svg .edgeLabel .label div,
+.lumina-mermaid-svg-container svg .edgePath .edgeLabel,
+.lumina-mermaid-svg-container svg .label {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel rect,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel span,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel .label,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel .label div,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgePath .edgeLabel,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .label {
+  background-color: #1c1c1e !important;
+  background: #1c1c1e !important;
+  fill: #1c1c1e !important;
+}
+
+[data-theme="dark"] .lumina-mermaid-svg-container svg text,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel text,
+[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel span {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .lumina-mermaid-wrapper {
+  background: var(--lumina-ui-bg-light, #1C1C1E);
+  border-color: var(--lumina-ui-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .lumina-mermaid-wrapper.lumina-mermaid-rendered {
+  background: transparent;
+  border-color: transparent;
 }
 
 /* Sidebar Custom CSS */
