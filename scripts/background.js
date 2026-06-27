@@ -330,6 +330,10 @@ function buildChatSystemInstruction(reasoningMode = false) {
 
     let instruction = `You are a warm, peer-like AI collaborator. Mirror user's vocabulary level. Note: current year is ${currentYear}.
 
+[Coding Guidelines]
+- Write clean, clear, modular, and extremely easy-to-understand code.
+- NEVER include comments inside the code block (no inline comments, no descriptive documentation comments, no commented-out code). Keep the code clean, self-explanatory, and completely comment-free.
+
 [LaTeX Rules]
 Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex variables) where plain text is insufficient. Enclose with $inline$ or $$display$$. NEVER render LaTeX in a code block unless the user explicitly requests it.
 Strictly Avoid LaTeX for: simple formatting (use Markdown instead), non-technical contexts and regular prose (resumes, letters, essays, cooking, weather, etc.), or simple units/numbers (render **180°C** or **10%** as plain text, not LaTeX).
@@ -350,13 +354,99 @@ Trigger image search ONLY when ALL three conditions are met:
 3. Primary Subject Focus: the visual must directly illustrate the CORE of the query with clear informational weight — NEVER trigger for generic, decorative "stock photos".
 When triggered, embed directly in the middle of the response: \`![English caption](image-search://query_keywords)\`.
 
-[Diagram Syntax — Mermaid]
-For processes, flows, sequences, timelines, class relationships, state machines, mind maps, ER diagrams, or any diagram request: output a mermaid fenced code block. Choose the appropriate type (flowchart, sequenceDiagram, classDiagram, erDiagram, gantt, stateDiagram, mindmap, timeline, etc.). 
-Prioritize horizontal (LR - Left-to-Right) or square layouts over vertical (TD/TB) layouts where appropriate, to make diagrams wider and shorter, saving vertical height in the chat panel.
-Make diagrams visually engaging, colorful, and inspiring using custom style directives or standard colors. Keep text inside diagrams clean and readable.
-Example: \`\`\`mermaid
-flowchart LR
-    A[Start] --> B[Process]
+[Diagram Syntax — D2 & Mermaid]
+- Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
+- Use Mermaid ONLY for:
+  1. Statistical charts: Pie charts (pie), XY charts (xychart-beta for bar/line charts).
+  2. Specific diagrams NOT supported by D2: Gantt charts (gantt), Git graphs (gitGraph), Mindmaps (mindmap), Timelines (timeline), Sankey diagrams (sankey), Venn diagrams (venn), User Journeys (journey), State diagrams (stateDiagram), and Quadrant charts (quadrantChart).
+- EVERY diagram or chart (both D2 and Mermaid) MUST ALWAYS have a clear, descriptive title to make it self-explanatory.
+
+CRITICAL D2 SYNTAX RULES:
+1. Valid shapes ONLY: rectangle, square, page, parallelogram, document, cylinder, queue, package, step, callout, stored_data, person, diamond, oval, circle, hexagon, cloud. Do NOT use "folder", "star", "triangle", "card", "rounded_square", "rounded-rectangle".
+2. Nested nodes MUST use full path from outside (e.g., 'Nucleus.mRNA -> Cytoplasm.Ribosome'). Plain 'mRNA -> Ribosome' is a syntax error.
+3. Text labels with spaces/special characters MUST be quoted in double quotes. E.g. A: "Label text"
+4. Color Styling & Padding: Set theme-id (3: Grape Soda, 4: Mixed Berry, 5: Sunset Glow, 6: Forest, 7: Cool Classics) and ALWAYS specify a border padding 'pad: 30' (value between 20 and 50) in vars.d2-config to leave comfortable empty space around all 4 sides of the diagram.
+5. Node identifiers (keys) MUST be ASCII-only, without spaces, special characters, or non-ASCII/accented letters (e.g. use 'Nen' or 'Compressor' instead of 'Nén'). Accents, spaces, and Unicode are ONLY allowed inside the double-quoted label string value (e.g. Nen: "Nén").
+
+PREMIUM DIAGRAM GUIDELINES (Make them beautiful!):
+- Use styling classes ('classes: { classname: { style.fill: "#hex"; style.stroke: "#hex" } }') to define reusable styles.
+- Enhance key boxes with 3D/Shadow: 'style.3d: true' or 'style.shadow: true'.
+- Make connections dynamic: use 'style.animated: true' for active/important data flows (in cycles, pipelines, or feedback loops, animate ALL connections in the path to show the flow clearly).
+- ALWAYS add titles or legends using positioning: e.g., 'title: "My Diagram" {near: top-center; style.font-size: 16; style.bold: true}'.
+- Leave clean margins by specifying border padding, e.g. 'pad: 30' inside vars.d2-config.
+
+D2 Example (Beautiful):
+\`\`\`d2
+vars: { d2-config: { theme-id: 5; pad: 30 } }
+classes: {
+  core: {
+    style.fill: "#ff79c6"
+    style.stroke: "#bd93f9"
+    style.3d: true
+  }
+}
+direction: right
+title: "Data Pipeline" {
+  near: top-left
+  style.bold: true
+  style.font-size: 16
+}
+Start: "Ingestion" {
+  class: core
+}
+Queue: "Kafka Queue" {
+  shape: queue
+  style.shadow: true
+}
+Processor: "Worker Node" {
+  shape: cylinder
+  style.3d: true
+}
+
+Start -> Queue: "stream" { style.animated: true }
+Queue -> Processor: "batch write" { style.animated: true }
+\`\`\`
+
+D2 Features Syntax:
+- Sequence Diagram: 'seq: { shape: sequence_diagram; alice -> bob: "hello" }'
+- SQL Table: 'users: { shape: sql_table; id: int {constraint: primary_key} }'
+- UML Class: 'parser: { shape: class; +read(): string; -buffer: string }'
+- Grid Layout: 'grid: { grid-rows: 2; grid-columns: 2; cell1; cell2 }'
+
+Mermaid Examples (Statistical Charts - Numbers MUST be raw decimals, NOT strings in quotes):
+- Bar Chart (XY Chart):
+\`\`\`mermaid
+---
+config:
+  theme: base
+  themeVariables:
+    xyChart:
+      plotColorPalette: "#ff79c6,#50fa7b,#bd93f9,#8be9fd,#ffb86c"
+---
+xychart-beta
+    title "Title"
+    x-axis [A, B]
+    y-axis "Value" 0 --> 50
+    bar [10, 20]
+\`\`\`
+- Pie Chart:
+\`\`\`mermaid
+---
+config:
+  theme: base
+  themeVariables:
+    pie1: "#ff79c6"
+    pie2: "#50fa7b"
+    pie3: "#bd93f9"
+    pie4: "#8be9fd"
+    pie5: "#ffb86c"
+    pieOpacity: "0.9"
+    pieStrokeColor: "#121214"
+    pieStrokeWidth: "1px"
+---
+pie title "Title"
+    "Label A" : 10
+    "Label B" : 20
 \`\`\`
 
 [YouTube]
@@ -4211,7 +4301,7 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     const { model, providerType: currentProvider, endpoint, apiKey } = config;
     const keys = getKeysArray(apiKey);
 
-    const systemInstruction = `Analyze the preceding conversation and generate a concise, descriptive chat title in 5 words or fewer. Capture the core topic, main intent, or action item directly without using filler words, matching the language of the prompt. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
+    const systemInstruction = `Analyze the preceding conversation and generate a concise, descriptive chat title in 8 words or fewer. Capture the core topic, main intent, or action item directly without using filler words, matching the language of the prompt. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
 
     if (currentProvider === 'builtin') {
         const ns = getPromptApiNamespace();
@@ -4220,7 +4310,7 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
             if (capabilities.available !== 'no') {
                 const session = await ns.create({ systemPrompt: systemInstruction });
                 const res = await session.prompt(question);
-                try { session.destroy(); } catch (e) {}
+                try { session.destroy(); } catch (e) { }
                 let text = res.trim().replace(/^["']|["']$/g, '').trim();
                 if (text && text.length <= 50) return text;
             }
@@ -4234,8 +4324,8 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
 
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
-        temperature: 0.3, topP: 1.0, maxTokens: 30, parsedCustomParams: {},
-        normalizedThinkingLevel: '', isGemini25Model: false, reasoningMode: false, 
+        temperature: 0.3, topP: 1.0, maxTokens: 100, parsedCustomParams: {},
+        normalizedThinkingLevel: '', isGemini25Model: false, reasoningMode: false,
         imageData: attachments.length > 0 ? attachments : null,
         isStreaming: false, cachedContent: null
     };

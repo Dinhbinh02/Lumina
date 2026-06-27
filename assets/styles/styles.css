@@ -6,7 +6,7 @@
 body,
 button {
   font-family: var(--lumina-font-family);
-  font-size: var(--lumina-fontSize, 13.5px);
+  font-size: var(--lumina-fontSize, 13px);
   font-weight: 400;
   margin: 0;
 }
@@ -952,7 +952,7 @@ button {
 .lumina-chat-question,
 .qa-question {
   align-self: flex-end !important;
-  background: #e9eef6 !important;
+  background: #f1f6fe !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
@@ -1452,11 +1452,11 @@ button {
 }
 
 .lumina-chat-answer pre {
-  background: #e9eef6 !important;
-  padding: 12px !important;
-  border-radius: 12px !important;
+  background: #121214 !important;
+  padding: 4px 10px 8px 10px !important;
+  border-radius: 0 0 12px 12px !important;
   overflow-x: auto !important;
-  margin: 12px 0 !important;
+  margin: 0 !important;
   border: none !important;
   box-shadow: none !important;
   position: relative !important;
@@ -1464,20 +1464,101 @@ button {
   font-weight: 400 !important;
 }
 
-[data-theme="dark"] .lumina-chat-answer pre,
-[data-theme="dark"] .lumina-code-block-wrap {
-  background: rgba(255, 255, 255, 0.05) !important;
+[data-theme="dark"] .lumina-chat-answer pre {
+  background: #121214 !important;
 }
 
 .lumina-chat-answer pre code {
   display: inline-block;
   background: transparent !important;
   padding: 0 !important;
-  color: #5f6368 !important;
-  font-size: 0.88em !important;
-  line-height: 1.5 !important;
+  color: #f8f8f2 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
   min-width: 100%;
   font-weight: 400 !important;
+  font-family: 'Google Sans Code', 'Source Code Pro', monospace !important;
+}
+
+/* Vibrant Syntax Highlighting on Black Background (Dracula-inspired) */
+.lumina-chat-answer pre code .hljs-comment,
+.lumina-chat-answer pre code .hljs-quote {
+  color: #6272a4 !important;
+  /* Premium Dracula comment color */
+  font-style: italic !important;
+}
+
+.lumina-chat-answer pre code .hljs-keyword,
+.lumina-chat-answer pre code .hljs-selector-tag,
+.lumina-chat-answer pre code .hljs-addition {
+  color: #ff79c6 !important;
+  /* Vibrant Hot Pink/Magenta */
+  font-weight: bold !important;
+}
+
+.lumina-chat-answer pre code .hljs-string,
+.lumina-chat-answer pre code .hljs-meta {
+  color: #50fa7b !important;
+  /* Vibrant Neon Green */
+}
+
+.lumina-chat-answer pre code .hljs-number,
+.lumina-chat-answer pre code .hljs-literal {
+  color: #bd93f9 !important;
+  /* Vibrant Purple/Lavender */
+}
+
+.lumina-chat-answer pre code .hljs-built_in,
+.lumina-chat-answer pre code .hljs-class,
+.lumina-chat-answer pre code .hljs-title {
+  color: #8be9fd !important;
+  /* Vibrant Cyan */
+}
+
+.lumina-chat-answer pre code .hljs-function .hljs-title {
+  color: #50fa7b !important;
+  /* Vibrant Green for function names */
+}
+
+.lumina-chat-answer pre code .hljs-params {
+  color: #ffb86c !important;
+  /* Vibrant Orange for parameters */
+}
+
+.lumina-chat-answer pre code .hljs-variable,
+.lumina-chat-answer pre code .hljs-template-variable,
+.lumina-chat-answer pre code .hljs-tag,
+.lumina-chat-answer pre code .hljs-name,
+.lumina-chat-answer pre code .hljs-selector-id,
+.lumina-chat-answer pre code .hljs-selector-class {
+  color: #ff79c6 !important;
+}
+
+.lumina-chat-answer pre code .hljs-attr,
+.lumina-chat-answer pre code .hljs-attribute,
+.lumina-chat-answer pre code .hljs-symbol,
+.lumina-chat-answer pre code .hljs-bullet {
+  color: #f1fa8c !important;
+  /* Vibrant Yellow */
+}
+
+.lumina-chat-answer pre code .hljs-section {
+  color: #8be9fd !important;
+}
+
+.lumina-chat-answer pre code .hljs-type {
+  color: #8be9fd !important;
+}
+
+.lumina-chat-answer pre code .hljs-deletion {
+  color: #ff5555 !important;
+}
+
+.lumina-chat-answer pre ::selection,
+.lumina-chat-answer pre code ::selection,
+.lumina-chat-answer pre span ::selection {
+  background: rgba(98, 114, 164, 0.4) !important;
+  color: inherit !important;
 }
 
 .lumina-chat-answer ol,
@@ -1673,7 +1754,7 @@ button {
   opacity: 0.65 !important;
   font-weight: 400 !important;
   font-family: var(--lumina-font-family) !important;
-  font-size: 1.07em !important;
+  font-size: 1em !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
@@ -4015,61 +4096,7 @@ button {
 
 
 
-.lumina-chat-answer pre code .hljs-keyword,
-.lumina-chat-answer pre code .hljs-operator,
-.lumina-chat-answer pre code .hljs-punctuation,
-.lumina-chat-answer pre code .hljs-selector-attr,
-.lumina-chat-answer pre code .hljs-selector-pseudo,
-.lumina-chat-answer pre code .hljs-tag .hljs-attr,
-.lumina-chat-answer pre code .hljs-attr {
-  color: #8430ce !important;
-}
 
-.lumina-chat-answer pre code .hljs-built_in,
-.lumina-chat-answer pre code .hljs-meta,
-.lumina-chat-answer pre code .hljs-meta .hljs-keyword,
-.lumina-chat-answer pre code .hljs-regexp,
-.lumina-chat-answer pre code .hljs-doctag {
-  color: #1967d2 !important;
-}
-
-.lumina-chat-answer pre code .hljs-string,
-.lumina-chat-answer pre code .hljs-symbol {
-  color: #188038 !important;
-}
-
-.lumina-chat-answer pre code .hljs-title,
-.lumina-chat-answer pre code .hljs-section,
-.lumina-chat-answer pre code .hljs-selector-class,
-.lumina-chat-answer pre code .hljs-selector-id,
-.lumina-chat-answer pre code .hljs-type,
-.lumina-chat-answer pre code .hljs-function,
-.lumina-chat-answer pre code .hljs-class .hljs-title,
-.lumina-chat-answer pre code .hljs-number,
-.lumina-chat-answer pre code .hljs-literal {
-  color: #996900 !important;
-}
-
-.lumina-chat-answer pre code .hljs-comment,
-.lumina-chat-answer pre code .hljs-quote,
-.lumina-chat-answer pre code .hljs-attribute,
-.lumina-chat-answer pre code .hljs-params,
-.lumina-chat-answer pre code .hljs-property {
-  color: #5f6368 !important;
-}
-
-.lumina-chat-answer pre code .hljs-comment,
-.lumina-chat-answer pre code .hljs-quote {
-  font-style: italic;
-}
-
-.lumina-chat-answer pre code .hljs-variable,
-.lumina-chat-answer pre code .hljs-template-variable,
-.lumina-chat-answer pre code .hljs-tag,
-.lumina-chat-answer pre code .hljs-selector-tag,
-.lumina-chat-answer pre code .hljs-name {
-  color: #d93025 !important;
-}
 
 .lumina-chat-answer .katex {
   font-size: 1em !important;
@@ -4223,45 +4250,70 @@ button {
 
 .lumina-code-block-wrap {
   position: relative;
-  background: #e9eef6 !important;
+  background: #121214 !important;
   border-radius: 12px !important;
+  overflow: hidden;
+  margin: 12px 0 !important;
+  display: flex;
+  flex-direction: column;
 }
 
-.lumina-code-copy-btn {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
+.lumina-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px 2px 10px;
+  background: #121214;
+  user-select: none;
+}
+
+.lumina-code-lang {
+  color: #c4c7c5;
+  font-family: var(--lumina-font-family), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lumina-code-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lumina-code-copy-btn,
+.lumina-code-download-btn {
+  background: transparent;
+  border: none;
   width: 28px;
   height: 28px;
-  border: none;
-  border-radius: 7px;
-  background: rgba(0, 0, 0, 0.07);
-  color: #5f6368;
+  border-radius: 6px;
+  color: #c4c7c5;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
-  z-index: 2;
 }
 
-.lumina-code-copy-btn::before {
-  content: '';
-  position: absolute;
-  top: -32px;
-  left: -32px;
-  right: -8px;
-  bottom: -8px;
-  z-index: -1;
-  background: transparent;
+.lumina-code-copy-btn:hover,
+.lumina-code-download-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
-.lumina-code-copy-btn:hover {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.13);
-  color: #3c4043;
+.lumina-code-copy-btn.copied {
+  color: #5af78e !important;
+}
+
+.lumina-code-copy-btn.disabled,
+.lumina-code-download-btn.disabled,
+.lumina-code-copy-btn[disabled],
+.lumina-code-download-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  background: transparent !important;
+  color: #6272a4 !important;
 }
 
 .lumina-stop-btn {
@@ -4506,7 +4558,6 @@ button {
 /* Force light background for SVG/Mermaid diagrams inside the lightbox preview */
 .lumina-preview-img[src^="data:image/svg+xml"] {
   background: #ffffff !important;
-  padding: 12px;
   box-sizing: border-box;
 }
 
@@ -6247,6 +6298,55 @@ button {
   }
 }
 
+/* ── D2 Diagram Styles ────────────────────────────────────────────── */
+.lumina-d2-wrapper {
+  position: relative;
+  width: fit-content;
+  width: -moz-fit-content;
+  width: -webkit-fit-content;
+  max-width: min(100%, 380px);
+  margin: 12px auto;
+}
+
+.lumina-d2-wrapper.is-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: min(100%, 380px);
+}
+
+.lumina-d2-wrapper.lumina-d2-rendered {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto 0.5em auto;
+  cursor: pointer;
+}
+
+.lumina-d2-wrapper.is-loading .lumina-d2-skeleton {
+  width: 380px;
+  max-width: 100%;
+  height: 200px;
+  margin: 0 0 12px 0 auto;
+  border-radius: var(--lumina-radius-sm, 12px);
+  display: block;
+}
+
+.lumina-d2-svg-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: lumina-mermaid-reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.lumina-d2-svg-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--lumina-radius-sm, 12px);
+  overflow: visible;
+}
+
 /* ── Mermaid Diagram Styles ──────────────────────────────────────── */
 .lumina-mermaid-wrapper {
   position: relative;
@@ -6309,6 +6409,20 @@ button {
   font-family: var(--lumina-font-family, 'Google Sans', system-ui, sans-serif) !important;
 }
 
+/* Limit size of pie charts and xy-charts to prevent overflow */
+.lumina-mermaid-wrapper.is-pie-chart .lumina-mermaid-svg-container svg {
+  max-width: 300px !important;
+  height: auto !important;
+  margin: 0 auto !important;
+}
+
+.lumina-mermaid-wrapper.is-xy-chart .lumina-mermaid-svg-container svg {
+  max-height: 280px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
 .lumina-mermaid-svg-container svg text,
 .lumina-mermaid-svg-container svg .node text,
 .lumina-mermaid-svg-container svg .edgeLabel text,
@@ -6358,7 +6472,7 @@ button {
 }
 
 :root {
-  --lumina-sidebar-bg: #f7f9fc;
+  --lumina-sidebar-bg: #f1f6fe;
   --lumina-sidebar-hover: rgba(0, 86, 210, 0.06);
   --lumina-sidebar-active-bg: rgba(0, 86, 210, 0.10);
   --lumina-sidebar-text: #202124;
@@ -6398,7 +6512,7 @@ button {
   color: var(--lumina-sidebar-text);
   display: flex;
   flex-direction: column;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
   padding: 0 6px 6px 6px;
   gap: 8px;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -6583,7 +6697,6 @@ button {
   flex-direction: column;
   gap: 12px;
   padding-right: 2px;
-  padding-bottom: 10px;
 }
 
 .sidebar-scrollable-content::-webkit-scrollbar {
@@ -6598,7 +6711,7 @@ button {
 .sidebar-sparks-section {
   display: flex;
   flex-direction: column;
-  font-size: 13.5px;
+  font-size: 13px;
   gap: 4px;
 }
 
@@ -6612,15 +6725,15 @@ button {
 .sidebar-recent-section {
   display: flex;
   flex-direction: column;
-  font-size: 13.5px;
+  font-size: 13px;
   gap: 4px;
 }
 
-.recent-title {
+.sidebar-section-title {
   letter-spacing: 0.8px;
   color: var(--lumina-sidebar-text-muted);
   padding: 4px 6px 0px 6px;
-  cursor: default;
+  cursor: pointer;
 }
 
 .recent-chats-list {
@@ -6969,7 +7082,7 @@ button {
 .brand-name,
 .action-text,
 .nav-text,
-.recent-title,
+.sidebar-section-title,
 .user-name,
 .sidebar-spark-item__title,
 .sidebar-spark-item__menu-btn {
@@ -6985,7 +7098,6 @@ button {
   opacity: 1;
   max-height: 1000px;
   transition: opacity 0.15s ease, max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-y: auto;
 }
 
 .sidebar-header-actions {
@@ -7000,14 +7112,14 @@ button {
 }
 
 .lumina-sidebar.sidebar-collapsed {
-  width: 60px;
+  width: 48px;
   cursor: pointer;
 }
 
 .lumina-sidebar.sidebar-collapsed .brand-name,
 .lumina-sidebar.sidebar-collapsed .action-text,
 .lumina-sidebar.sidebar-collapsed .nav-text,
-.lumina-sidebar.sidebar-collapsed .recent-title,
+.lumina-sidebar.sidebar-collapsed .sidebar-section-title,
 .lumina-sidebar.sidebar-collapsed .user-name,
 .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__title,
 .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__menu-btn {
@@ -7023,8 +7135,8 @@ button {
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-header {
-  justify-content: center;
-  padding: 0;
+  justify-content: flex-start;
+  padding: 0 6px;
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-header-actions {
@@ -7035,18 +7147,19 @@ button {
 
 .lumina-sidebar.sidebar-collapsed .sidebar-brand {
   display: flex !important;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
   gap: 0;
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-nav-item {
-  padding: 0;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin: 0 auto;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  justify-content: flex-start;
+  width: 100%;
+  height: 30px;
+  border-radius: 8px;
+  margin: 0;
   gap: 0;
 }
 
@@ -7064,18 +7177,19 @@ button {
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-spark-item {
-  padding: 4px;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin: 0 auto;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  justify-content: flex-start;
+  width: 100%;
+  height: 30px;
+  border-radius: 8px;
+  margin: 0;
   gap: 0;
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__avatar {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 
 .lumina-sidebar.sidebar-collapsed .sidebar-sparks-section {
@@ -7084,7 +7198,7 @@ button {
   gap: 4px;
 }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section .recent-title,
+.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section .sidebar-section-title,
 .lumina-sidebar.sidebar-collapsed #sidebar-new-spark-btn {
   display: none !important;
 }
@@ -8537,7 +8651,6 @@ button {
 
 .lumina-sidebar.sidebar-collapsed~.lumina-main-content .collapse-chevron {
   opacity: 0;
-  transform: translateX(3px) scale(0.8);
 }
 
 @media (max-width: 900px) {
@@ -8545,4 +8658,39 @@ button {
     opacity: 0;
     transform: translateX(3px) scale(0.8);
   }
+}
+
+/* Custom sidebar tooltip styles */
+.lumina-sidebar-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: var(--lumina-font-family), 'Google Sans', system-ui, sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  line-height: 1.4;
+}
+
+.lumina-sidebar-tooltip.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.lumina-sidebar-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  transform: translateY(-50%);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid #000000;
 }

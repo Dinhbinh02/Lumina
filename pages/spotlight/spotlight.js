@@ -3930,7 +3930,7 @@ function initSidebar() {
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
             if (window.innerWidth <= 900) return;
-            const clickedInteractive = e.target.closest('button, a, .recent-chat-item, .sidebar-spark-item, .sidebar-brand, .user-profile, .recent-title, input, select');
+            const clickedInteractive = e.target.closest('button, a, .recent-chat-item, .sidebar-spark-item, .sidebar-brand, .user-profile, input, select');
             if (!clickedInteractive) {
                 if (sidebar.classList.contains('sidebar-collapsed')) {
                     sidebar.classList.remove('sidebar-collapsed');
@@ -4213,7 +4213,7 @@ async function renderRecentChatsSidebar() {
             ` : '';
 
             html += `
-                <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" title="${escapeHtml(displayTitle)}">
+                <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
                     ${iconHTML}
                     <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
                     ${pinHTML}
@@ -7466,5 +7466,65 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     });
 }
+
+// Sidebar Tooltip Implementation
+(function() {
+    let sidebarTooltipEl = null;
+
+    function showSidebarTooltip(e) {
+        const item = e.target.closest('.recent-chat-item');
+        if (!item) return;
+        
+        const titleEl = item.querySelector('.recent-chat-item__title');
+        if (!titleEl) return;
+        
+        // Only show if the title text is actually truncated
+        const isTruncated = titleEl.scrollWidth > titleEl.clientWidth;
+        if (!isTruncated) return;
+        
+        const titleText = item.getAttribute('data-title') || titleEl.textContent;
+        if (!titleText) return;
+        
+        if (!sidebarTooltipEl) {
+            sidebarTooltipEl = document.createElement('div');
+            sidebarTooltipEl.className = 'lumina-sidebar-tooltip';
+            document.body.appendChild(sidebarTooltipEl);
+        }
+        
+        sidebarTooltipEl.textContent = titleText;
+        
+        const itemRect = item.getBoundingClientRect();
+        
+        // Position on the right side of the item
+        const left = itemRect.right + 10;
+        sidebarTooltipEl.style.left = `${left}px`;
+        
+        // Make it visible to calculate height
+        sidebarTooltipEl.classList.add('visible');
+        
+        const actualHeight = sidebarTooltipEl.offsetHeight;
+        const top = itemRect.top + (itemRect.height - actualHeight) / 2;
+        sidebarTooltipEl.style.top = `${top}px`;
+    }
+
+    function hideSidebarTooltip(e) {
+        if (sidebarTooltipEl) {
+            sidebarTooltipEl.classList.remove('visible');
+        }
+    }
+
+    // Use event delegation for dynamic elements
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('.recent-chat-item')) {
+            showSidebarTooltip(e);
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('.recent-chat-item')) {
+            hideSidebarTooltip(e);
+        }
+    });
+})();
 
 
