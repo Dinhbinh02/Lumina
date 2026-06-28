@@ -423,6 +423,17 @@
         }
     });
 
+    let lastUrl = window.location.href;
+    setInterval(() => {
+        if (window.location.href !== lastUrl) {
+            lastUrl = window.location.href;
+            if (window.LuminaAnnotation) {
+                LuminaAnnotation.clearAllHighlights();
+                LuminaAnnotation.loadHighlights();
+            }
+        }
+    }, 500);
+
     
     chrome.storage.onChanged.addListener((changes, area) => {
         if (!chrome.runtime || !chrome.runtime.id) return;
@@ -1126,40 +1137,24 @@
                             currentRange = selection.getRangeAt(0).cloneRange();
                         }
                         popupDirection = null; 
+                        const hasVariables = /\$(SelectedText|Sentence|Paragraph)|"SelectedText"/i.test(mapping.prompt);
 
-                        
-                        const promptLower = mapping.prompt.toLowerCase();
-                        const hasVariables = /\$(SelectedText|Sentence|Paragraph|Container)|"SelectedText"/i.test(mapping.prompt);
-
-                        const isTranslation =
-                            promptLower.includes('dịch') ||
-                            promptLower.includes('translate') ||
-                            promptLower.includes('vietnamese') ||
-                            promptLower.includes('tiếng việt') ||
-                            promptLower.includes('chuyển ngữ') ||
-                            (promptLower.includes('nghĩa') && (promptLower.includes('việt') || promptLower.includes('viet')));
-
-                        
                         const normalize = (s) => s.replace(/\s+/g, ' ').trim();
                         const cleanSelection = normalize(text);
 
-                        
                         let fullQuestion = mapping.prompt;
                         let displayQuestion = mapping.prompt;
 
                         if (hasVariables) {
-                            const containerContent = getSmartClimbedContext();
                             fullQuestion = fullQuestion
                                 .replace(/\$SelectedText|SelectedText/gi, text.trim())
                                 .replace(/\$Sentence/gi, () => getSentenceContext())
-                                .replace(/\$Paragraph/gi, () => getParagraphContext())
-                                .replace(/\$Container/gi, containerContent);
+                                .replace(/\$Paragraph/gi, () => getParagraphContext());
                             
                             displayQuestion = mapping.prompt
                                 .replace(/\$SelectedText|SelectedText/gi, text.trim())
                                 .replace(/\$Sentence/gi, () => getSentenceContext())
                                 .replace(/\$Paragraph/gi, () => getParagraphContext())
-                                .replace(/[("'\[]*\$Container[)"'\]]*\s*/gi, '')
                                 .trim();
                         } else {
                             
@@ -1168,7 +1163,7 @@
                         }
 
                         
-                        const shouldHighlight = (mapping.enableHighlight !== false) && !isTranslation;
+                        const shouldHighlight = (mapping.highlight !== false) && (mapping.enableHighlight !== false);
                         triggerSidePanelQuery(fullQuestion, displayQuestion, 'qa', currentRange, shouldHighlight);
                         if (window.LuminaSelection) LuminaSelection.hide();
                         return;
@@ -1353,14 +1348,15 @@
     function matchesAnnotationShortcut(event, shortcut) {
         if (!shortcut) return false;
 
-        
-        if (!!shortcut.ctrlKey !== event.ctrlKey) return false;
-        if (!!shortcut.altKey !== event.altKey) return false;
-        if (!!shortcut.shiftKey !== event.shiftKey) return false;
-        if (!!shortcut.metaKey !== event.metaKey) return false;
+        const ctrlMatch = !!shortcut.ctrlKey === event.ctrlKey;
+        const altMatch = !!shortcut.altKey === event.altKey;
+        const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
+        const metaMatch = !!shortcut.metaKey === event.metaKey;
 
-        if (shortcut.code) return event.code === shortcut.code;
-        return event.key.toLowerCase() === (shortcut.key || "").toLowerCase();
+        const keyMatch = (shortcut.code && event.code === shortcut.code) || 
+                         (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
+
+        return ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
     }
 
     function formatTextLikeOriginal(original, target) {

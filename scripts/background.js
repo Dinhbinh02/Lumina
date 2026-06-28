@@ -33,29 +33,7 @@ function getPromptApiNamespace() {
     return null;
 }
 
-// Auto-trigger Gemini Nano download if supported but not yet downloaded
-(async () => {
-    try {
-        const ns = getPromptApiNamespace();
-        if (ns) {
-            const capabilities = await ns.capabilities();
-            if (capabilities && capabilities.available === 'after-download') {
-                console.log("[Lumina BG] Gemini Nano is supported but not downloaded. Auto-triggering download...");
-                ns.create({
-                    monitor(m) {
-                        m.addEventListener('downloadprogress', (e) => {
-                            console.log(`[Lumina BG] Gemini Nano download progress: ${Math.round(e.loaded / e.total * 100)}%`);
-                        });
-                    }
-                }).catch(err => {
-                    console.warn("[Lumina BG] Auto-trigger download failed:", err);
-                });
-            }
-        }
-    } catch (e) {
-        console.warn("[Lumina BG] Failed to auto-trigger Prompt API download:", e);
-    }
-})();
+
 
 
 const sidePanelPorts = new Map();
@@ -328,7 +306,7 @@ function buildChatSystemInstruction(reasoningMode = false) {
     const currentTime = new Date().toLocaleString('en-US', { timeZone: userTimeZone });
     const currentYear = new Date().getFullYear();
 
-    let instruction = `You are a warm, peer-like AI collaborator. Mirror user's vocabulary level. Note: current year is ${currentYear}.
+    let instruction = `You are a helpful, neutral, and balanced AI assistant. Note: current year is ${currentYear}.
 
 [Coding Guidelines]
 - Write clean, clear, modular, and extremely easy-to-understand code.
@@ -352,9 +330,12 @@ Trigger image search ONLY when ALL three conditions are met:
 1. Informational & Visual Utility: topic is education (complex concepts, technical systems), identification (physical subjects, styles, design trends), comparison (characteristics side-by-side), history (past states of objects), or explanation (ratios, proportions, spatial relationships, character identification).
 2. Concrete Subject: must be a specific, physical object, style/trend, structure, or concrete diagram — NEVER trigger for abstract, non-physical concepts.
 3. Primary Subject Focus: the visual must directly illustrate the CORE of the query with clear informational weight — NEVER trigger for generic, decorative "stock photos".
-When triggered, embed directly in the middle of the response: \`![English caption](image-search://query_keywords)\`.
+When triggered, embed directly in the middle of the response using EXACTLY the custom protocol scheme: \`![English caption](image-search://query_keywords)\`. You MUST NOT output standard google search URLs (such as https://www.google.com/search...) - only use the custom \`image-search://\` protocol.
+*Note: A single response CAN contain multiple image searches to fully illustrate different parts of the answer.
+*Keyword Query Rule: Write search query keywords (\`query_keywords\`) specifically, descriptively, and in detail. Do NOT shorten, compress, or over-simplify the keywords. Be detailed and specific to get highly relevant image results.
 
 [Diagram Syntax — D2 & Mermaid]
+- A single response CAN contain multiple diagrams (D2 and/or Mermaid) if multiple aspects of the topic benefit from visual explanation.
 - Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
 - Use Mermaid ONLY for:
   1. Statistical charts: Pie charts (pie), XY charts (xychart-beta for bar/line charts).
@@ -451,6 +432,28 @@ pie title "Title"
 
 [YouTube]
 \`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.
+
+[Lumina Canvas (Document Workspace)]
+The Lumina Canvas is a side-by-side workspace next to the conversation. Use it ONLY for long documents or full code files (HTML, JS, React, etc.) that the user wants to write, iterate on, or preview.
+To interact with the Canvas, you MUST wrap your commands in the following XML tags:
+1. Create Canvas Document:
+<lumina-canvas-create name="Document Name" type="code/html">
+...content here...
+</lumina-canvas-create>
+(Use type: "document" for text, or "code/javascript", "code/html", "code/react", "code/css", etc. for code files. React and HTML types can be previewed live).
+
+2. Update Canvas Document:
+<lumina-canvas-update name="Document Name">
+<pattern>regex_pattern</pattern>
+<replacement>replacement_text</replacement>
+</lumina-canvas-update>
+(Always write code updates using a single update with ".*" for the pattern to replace the entire content).
+
+3. Comment Canvas Document:
+<lumina-canvas-comment name="Document Name">
+<pattern>regex_pattern</pattern>
+<comment>suggestion</comment>
+</lumina-canvas-comment>
 
 [Context & Privacy]
 Treat user data as factual and invisible. Do not reference system tags/sources. Never infer/include sensitive details (health, origin, religion, finance, etc.) unless requested.
@@ -984,16 +987,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
 }
 
 async function getModelChain(type = 'text', preferredModel = null) {
-    if (preferredModel && preferredModel.providerId === 'builtin') {
-        return [{
-            model: preferredModel.model,
-            providerId: 'builtin',
-            providerType: 'builtin',
-            apiKey: '',
-            endpoint: '',
-            defaultModel: preferredModel.model
-        }];
-    }
+
     const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
 
 
@@ -1123,8 +1117,10 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
                 return response;
             }
         } catch (err) {
+            if (err.name === 'AbortError' || err.message?.includes('aborted') || err.message === 'signal is aborted without reason') {
+                throw err;
+            }
             console.error(`[Lumina] Request failed with key ${currentIndex}:`, err);
-
         }
     }
 
@@ -1340,101 +1336,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         incrementModelUsage(model);
     }
 
-    if (currentProvider === 'builtin') {
-        try {
-            const ns = getPromptApiNamespace();
-            if (!ns) {
-                throw new Error("Prompt API is not available in the service worker context.");
-            }
 
-            const capabilities = await ns.capabilities();
-            if (capabilities.available === 'no') {
-                throw new Error("Gemini Nano is not available on this device.");
-            }
-
-            let localSysInstruction = systemOverride || buildChatSystemInstruction(!!globalSettings.reasoningMode, false);
-            let currentMessages = [...messages];
-            let augmentedQuestion = question;
-
-            if (action === 'proofread') {
-                localSysInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
-                if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
-                    currentMessages = [];
-                }
-                if (!systemOverride) {
-                    augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
-                }
-            }
-
-            try {
-                if (!systemOverride) {
-                    const userMemoryAddition = await UserMemory.getSystemPromptAddition();
-                    if (userMemoryAddition) {
-                        localSysInstruction += userMemoryAddition;
-                    }
-                }
-            } catch (e) {
-                console.error('[Lumina] Failed to load user memory:', e);
-            }
-
-            if (initialContext && initialContext.trim().length > 0) {
-                let processedContext = optimizeContextString(initialContext);
-                if (currentMessages.length > 0) {
-                    const contextInstruction = `\n\n### Webpage Source Content:\n${processedContext}\n\n(Note: This content is for background reference only. Prioritize the user's current goal in the history.)`;
-                    localSysInstruction += contextInstruction;
-                    localSysInstruction += "\nIMPORTANT: If context is provided, prioritize its information and avoid making unsupported claims.";
-                } else {
-                    augmentedQuestion = `### Webpage Source Content:\n${processedContext}\n\n---\n\n### User Instruction:\n${augmentedQuestion}`;
-                }
-            }
-
-            let promptText = "";
-            if (localSysInstruction) {
-                promptText += `System Instructions:\n${localSysInstruction}\n\n`;
-            }
-            for (const msg of currentMessages) {
-                const roleName = msg.role === 'user' ? 'User' : 'Model';
-                promptText += `${roleName}: ${msg.text || msg.content}\n`;
-            }
-            promptText += `User: ${augmentedQuestion}\nModel:`;
-
-            console.log("[Lumina BG] Prompting built-in Gemini Nano with prompt length:", promptText.length);
-
-            const sessionOptions = {};
-            if (localSysInstruction) {
-                sessionOptions.systemPrompt = localSysInstruction;
-            }
-
-            const session = await ns.create(sessionOptions);
-            const stream = session.promptStreaming(promptText);
-
-            let lastText = "";
-            for await (const chunk of stream) {
-                let delta = "";
-                if (chunk.startsWith(lastText)) {
-                    delta = chunk.substring(lastText.length);
-                    lastText = chunk;
-                } else {
-                    delta = chunk;
-                    lastText += chunk;
-                }
-                if (delta) {
-                    const chunkMsg = { action: 'chunk', chunk: delta, sessionId };
-                    if (sessionId) broadcastToSession(sessionId, chunkMsg);
-                    else port.postMessage(chunkMsg);
-                }
-            }
-
-            try {
-                session.destroy();
-            } catch (e) { }
-
-            return;
-        } catch (err) {
-            console.error("[Lumina BG] Built-in Prompt API execution failed:", err);
-            throw new Error("Built-in Gemini Nano error: " + err.message);
-        }
-    }
 
     if (!apiKey && !endpoint.includes('localhost') && !endpoint.includes('127.0.0.1')) {
         throw new Error(`No API Key for provider type: ${currentProvider}`);
@@ -2547,6 +2449,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     url: sender.tab.url
                 } : null;
 
+                const isCurrentlyOpen = sidePanelPorts.has(windowIdQuery);
+
                 const queryData = {
                     query: request.query,
                     displayQuery: request.displayQuery,
@@ -2554,6 +2458,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     mode: request.mode,
                     sourceTab: sourceTab,
                     isInternal: isInternal,
+                    createNewChat: !isCurrentlyOpen,
                     timestamp: Date.now()
                 };
 
@@ -2582,9 +2487,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 
         case 'open_options': {
-            let optionsUrl = chrome.runtime.getURL('pages/options/options.html');
-            if (request.section) optionsUrl += `?section=${request.section}`;
-            if (request.requestMic) optionsUrl += (optionsUrl.includes('?') ? '&' : '?') + 'requestMic=1';
+            let optionsUrl = chrome.runtime.getURL('pages/spotlight/spotlight.html?settings=1');
+            if (request.section) optionsUrl += `&section=${request.section}`;
+            if (request.requestMic) optionsUrl += '&requestMic=1';
 
             chrome.tabs.create({ url: optionsUrl });
             return true;
@@ -3821,6 +3726,10 @@ async function handleChatStream(messages, initialContext, question, port, imageD
 
                 return;
             } catch (e) {
+                if (e.name === 'AbortError' || e.message?.includes('aborted') || e.message === 'signal is aborted without reason') {
+                    console.log(`[Lumina] Request aborted by user at index ${i} (${config.model})`);
+                    return;
+                }
                 if (e.message === 'RATE_LIMIT_EXHAUSTED') {
                     console.warn(`[Lumina] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
 
@@ -4303,19 +4212,7 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
 
     const systemInstruction = `Analyze the preceding conversation and generate a concise, descriptive chat title in 8 words or fewer. Capture the core topic, main intent, or action item directly without using filler words, matching the language of the prompt. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
 
-    if (currentProvider === 'builtin') {
-        const ns = getPromptApiNamespace();
-        if (ns) {
-            const capabilities = await ns.capabilities();
-            if (capabilities.available !== 'no') {
-                const session = await ns.create({ systemPrompt: systemInstruction });
-                const res = await session.prompt(question);
-                try { session.destroy(); } catch (e) { }
-                let text = res.trim().replace(/^["']|["']$/g, '').trim();
-                if (text && text.length <= 50) return text;
-            }
-        }
-    }
+
 
     const attachments = [];
     if (Array.isArray(images)) attachments.push(...images);

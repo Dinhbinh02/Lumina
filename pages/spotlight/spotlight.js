@@ -174,6 +174,13 @@ let activeGroupIndex = -1;
 let activeTabIndex = -1;
 let tabCounter = 1;
 
+window.LuminaSelectionScope = {
+    getTabs: () => tabs,
+    getActiveTabIndex: () => activeTabIndex,
+    resetChat: (isSecondary) => { if (typeof resetChat === 'function') resetChat(isSecondary); },
+    renderRecentChatsSidebar: () => { if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar(); }
+};
+
 // Cache nội dung trang web theo tabId+url, tránh fetch lại mỗi lần gửi
 const pageContextCache = new Map(); // key: `${tabId}::${url}` => pageContext string
 
@@ -402,6 +409,7 @@ async function toggleSplitMode() {
 
 let port = null;
 let shortcuts = {};
+let annotationShortcuts = [];
 let questionMappings = [];
 let askSelectionPopupEnabled = false;
 let advancedParamsByModel = {};
@@ -419,6 +427,8 @@ let spotlightAskSourcePane = 'primary';
 let groupCounter = 1;
 let isInitializing = false;
 let handledQueryIds = new Set();
+let myWindowId = null;
+let shouldStartNewChat = false;
 
 
 let modifierKeyPressedAlone = false;
@@ -1255,6 +1265,9 @@ async function ensureTabHistoryLoaded(tab) {
                 }
 
                 scheduleScrollRestore(tab);
+                if (window.LuminaAnnotation) {
+                    LuminaAnnotation.loadHighlights(tab.id);
+                }
             }
         } catch (e) {
             console.error('Failed to load tab history from JSON:', e);
@@ -1367,7 +1380,7 @@ async function initTabs() {
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
 
-        let sessionId = urlSessionId || savedTab?.sessionId || null;
+        let sessionId = shouldStartNewChat ? null : (urlSessionId || savedTab?.sessionId || null);
         let tabTitle = 'Chat';
         let meta = {};
 
@@ -1767,6 +1780,14 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     saveTabsState();
     if (primaryTab && primaryTab.sessionId) {
         updateUrlSessionId(primaryTab.sessionId);
+    }
+
+    if (window.LuminaAnnotation) {
+        LuminaAnnotation.clearAllHighlights();
+        LuminaAnnotation.loadHighlights(primaryTab.id);
+        if (isSplitMode && secondaryTab) {
+            LuminaAnnotation.loadHighlights(secondaryTab.id);
+        }
     }
 }
 
@@ -2652,12 +2673,7 @@ function initSpotlightAskSelection() {
                         <span class="lumina-svg-icon lumina-icon-send" aria-hidden="true"></span>
                         <span>Send comment</span>
                     `;
-                    const separator = entry.querySelector('.lumina-dict-separator');
-                    if (separator) {
-                        entry.insertBefore(btn, separator);
-                    } else {
-                        entry.appendChild(btn);
-                    }
+                    entry.appendChild(btn);
 
                     btn.addEventListener('click', () => {
                         handleCommentSubmission(entry);
@@ -2682,19 +2698,31 @@ function initSpotlightAskSelection() {
 
             const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
             if (!range) {
-                if (window.LuminaSelection) LuminaSelection.hide();
+                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
 
 
             const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
             if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
-                if (window.LuminaSelection) LuminaSelection.hide();
+                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
 
 
             const commonNode = range.commonAncestorContainer;
+            const isInsideChat = commonNode && (
+                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
+                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-scroll-content'))
+            );
+            if (!isInsideChat) {
+                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+                return;
+            }
+
             const secondaryPane = document.getElementById('pane-secondary');
             spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
@@ -2705,6 +2733,20 @@ function initSpotlightAskSelection() {
             }
         }, 10);
     });
+
+    document.addEventListener('click', (e) => {
+        if (window.LuminaAnnotation) {
+            const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+            if (hData) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (window.LuminaSelection) {
+                    LuminaSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
+                }
+            }
+        }
+    }, true);
 }
 
 function handleCommentSubmission(entry) {
@@ -3396,6 +3438,7 @@ async function init() {
                 } else if (chrome.windows && chrome.windows.getCurrent) {
                     chrome.windows.getCurrent((win) => {
                         if (win && win.id) {
+                            myWindowId = win.id;
                             const storedWinId = sessionStorage.getItem('lumina_window_id');
                             if (storedWinId && storedWinId !== String(win.id)) {
                                 const newInstId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
@@ -3504,6 +3547,20 @@ async function init() {
 
     setupResizer();
 
+    shouldStartNewChat = false;
+    try {
+        const win = await new Promise((resolve) => chrome.windows.getCurrent(resolve));
+        if (win && win.id) {
+            myWindowId = win.id;
+            const key = `pending_sidepanel_query_${win.id}`;
+            const storageData = await chrome.storage.local.get([key]);
+            if (storageData[key] && storageData[key].createNewChat) {
+                shouldStartNewChat = true;
+            }
+        }
+    } catch (e) {
+        console.error('[Spotlight] Failed to check pending query before initTabs:', e);
+    }
 
     await initTabs();
 
@@ -3605,9 +3662,10 @@ async function init() {
     setupRegenerateButtons();
 
 
-    chrome.storage.local.get(['shortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle'], (items) => {
+    chrome.storage.local.get(['shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
+        annotationShortcuts = items.annotationShortcuts || [];
         questionMappings = items.questionMappings || [];
         askSelectionPopupEnabled = items.askSelectionPopupEnabled ?? false;
         advancedParamsByModel = items.advancedParamsByModel || {};
@@ -3638,15 +3696,14 @@ async function init() {
     chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'local') {
 
-            chrome.windows.getCurrent((win) => {
-                const pendingKey = win ? `pending_sidepanel_query_${win.id}` : null;
-                if (pendingKey && changes[pendingKey] && changes[pendingKey].newValue) {
-                    processPendingQuery(changes[pendingKey].newValue, pendingKey);
-                }
-            });
+            const pendingKey = myWindowId ? `pending_sidepanel_query_${myWindowId}` : null;
+            if (pendingKey && changes[pendingKey] && changes[pendingKey].newValue) {
+                processPendingQuery(changes[pendingKey].newValue, pendingKey);
+            }
 
 
             if (changes.shortcuts) shortcuts = changes.shortcuts.newValue || {};
+            if (changes.annotationShortcuts) annotationShortcuts = changes.annotationShortcuts.newValue || [];
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
             if (changes.askSelectionPopupEnabled) {
                 askSelectionPopupEnabled = changes.askSelectionPopupEnabled.newValue ?? false;
@@ -3688,19 +3745,22 @@ async function init() {
             return;
         }
 
-        const checkReady = () => {
+        const checkReady = async () => {
             const currentTab = tabs[activeTabIndex];
             if (currentTab && !isInitializing) {
                 if (queryId) handledQueryIds.add(queryId);
-
 
                 if (sourceTab) {
                     toggleWebSourcePin(sourceTab, true);
                 }
 
+                if (data.createNewChat) {
+                    resetChat(false);
+                }
+
+                await ensureTabHistoryLoaded(currentTab);
                 handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
             } else {
-
                 setTimeout(checkReady, 50);
             }
         };
@@ -3749,23 +3809,26 @@ async function init() {
         } else if (request.action === 'new_chat') {
             resetChat();
         } else if (request.action === 'ask_sidepanel') {
-            chrome.windows.getCurrent((win) => {
-                if (win.id === request.windowId) {
-                    const { query, displayQuery, queryId, mode, sourceTab } = request;
-                    if (queryId && handledQueryIds.has(queryId)) {
-                        console.log('[Spotlight] Ignoring duplicate query via message:', queryId);
-                        return;
-                    }
-                    if (queryId) handledQueryIds.add(queryId);
-
-
-                    if (sourceTab) {
-                        toggleWebSourcePin(sourceTab, true);
-                    }
-
-                    handleSubmit(query, [], { mode: mode || 'qa' }, tabs[activeTabIndex], displayQuery);
+            const targetWinId = request.windowId;
+            if (myWindowId === null || myWindowId === targetWinId) {
+                const { query, displayQuery, queryId, mode, sourceTab } = request;
+                if (queryId && handledQueryIds.has(queryId)) {
+                    console.log('[Spotlight] Ignoring duplicate query via message:', queryId);
+                    return;
                 }
-            });
+                if (queryId) handledQueryIds.add(queryId);
+
+                if (sourceTab) {
+                    toggleWebSourcePin(sourceTab, true);
+                }
+
+                const currentTab = tabs[activeTabIndex];
+                if (currentTab) {
+                    ensureTabHistoryLoaded(currentTab).then(() => {
+                        handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
+                    });
+                }
+            }
         } else if (request.action === 'pin_web_source') {
             chrome.windows.getCurrent((win) => {
                 if (win.id === request.windowId && request.source) {
@@ -3788,6 +3851,7 @@ async function init() {
     if (new URLSearchParams(window.location.search).has('sidepanel')) {
         chrome.windows.getCurrent((win) => {
             if (win && win.id) {
+                myWindowId = win.id;
                 const port = chrome.runtime.connect({ name: 'lumina-sidepanel' });
                 port.postMessage({ windowId: win.id });
                 port.onMessage.addListener((msg) => {
@@ -3883,6 +3947,20 @@ async function init() {
     }
 
     initSidebar();
+
+    // Auto-open settings if requested via URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('settings') === '1' || urlParams.get('section')) {
+        setTimeout(() => {
+            if (typeof LuminaSettingsModal !== 'undefined') {
+                LuminaSettingsModal.show();
+                const section = urlParams.get('section');
+                if (section) {
+                    LuminaSettingsModal.switchSection(section);
+                }
+            }
+        }, 300);
+    }
 }
 
 function initSidebar() {
@@ -3988,16 +4066,19 @@ function initSidebar() {
 
     if (settingsBtn) {
         settingsBtn.addEventListener('click', () => {
-            chrome.runtime.openOptionsPage();
+            if (typeof LuminaSettingsModal !== 'undefined') {
+                LuminaSettingsModal.show();
+            } else {
+                chrome.runtime.openOptionsPage();
+            }
             closeMobileSidebar();
         });
     }
 
     if (searchBtn) {
         searchBtn.addEventListener('click', () => {
-            const input = getHoveredInputEl();
-            if (input) {
-                input.focus();
+            if (typeof LuminaSearchModal !== 'undefined') {
+                LuminaSearchModal.show();
             }
             closeMobileSidebar();
         });
@@ -5093,6 +5174,34 @@ async function handleTranslation(text) {
 }
 
 
+function matchesAnnotationShortcut(event, shortcut) {
+    if (!shortcut) return false;
+    const ctrlMatch = !!shortcut.ctrlKey === event.ctrlKey;
+    const altMatch = !!shortcut.altKey === event.altKey;
+    const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
+    const metaMatch = !!shortcut.metaKey === event.metaKey;
+
+    const keyMatch = (shortcut.code && event.code === shortcut.code) || 
+                     (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
+
+    const isMatched = ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
+
+    console.log('[Lumina Shortcut Debug]', {
+        eventKey: event.key,
+        eventCode: event.code,
+        shortcutKey: shortcut.key,
+        shortcutCode: shortcut.code,
+        ctrlMatch,
+        altMatch,
+        shiftMatch,
+        metaMatch,
+        keyMatch,
+        isMatched
+    });
+
+    return isMatched;
+}
+
 function setupGlobalListeners() {
     hoveredPane = 'primary';
 
@@ -5123,6 +5232,42 @@ function setupGlobalListeners() {
     }
 
     document.addEventListener('keydown', (event) => {
+        if (document.querySelector('.recording')) return;
+        const searchOverlay = document.getElementById('lumina-search-overlay');
+        if (searchOverlay && searchOverlay.style.display === 'flex') {
+            const searchInput = document.getElementById('lumina-search-input');
+            if (searchInput && document.activeElement !== searchInput) {
+                const selection = window.getSelection().toString().trim();
+                const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+
+                if (selection && !isTypeable) {
+                    return;
+                }
+
+                if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
+
+                if (!isTypeable) {
+                    searchInput.focus();
+                    return;
+                }
+
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                event.preventDefault();
+
+                searchInput.focus();
+
+                if (searchInput.setSelectionRange) {
+                    const len = searchInput.value.length;
+                    searchInput.setSelectionRange(len, len);
+                }
+
+                const val = searchInput.value;
+                searchInput.value = val + event.key;
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            return;
+        }
         const pairs = { '(': ')', '{': '}', '[': ']' };
         if (pairs[event.key]) {
             const activeEl = document.activeElement;
@@ -5433,13 +5578,12 @@ function setupGlobalListeners() {
                         event.stopImmediatePropagation();
 
                         let fullQuestion;
-                        const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph|\$Container/i.test(mapping.prompt);
+                        const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph/i.test(mapping.prompt);
                         if (hasVariables) {
                             fullQuestion = mapping.prompt
                                 .replace(/\$SelectedText|SelectedText/gi, selection)
                                 .replace(/\$Sentence/gi, selection)
-                                .replace(/\$Paragraph/gi, selection)
-                                .replace(/\$Container/gi, selection);
+                                .replace(/\$Paragraph/gi, selection);
                         } else {
                             fullQuestion = `"${selection}" ${mapping.prompt}`;
                         }
@@ -5637,6 +5781,35 @@ function setupGlobalListeners() {
             return;
         }
 
+
+        // Check annotation shortcuts
+        for (const shortcut of annotationShortcuts) {
+            if (shortcut.enabled === false) continue;
+            if (matchesAnnotationShortcut(event, shortcut)) {
+                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+
+                const sel = window.getSelection();
+                const text = sel ? sel.toString().trim() : '';
+                if (text.length > 0 && sel.rangeCount > 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+
+                    const range = sel.getRangeAt(0);
+                    const highlightId = 'lh_' + Date.now();
+                    const color = shortcut.color || '#ffeb3b';
+
+                    if (window.LuminaAnnotation) {
+                        LuminaAnnotation.saveHighlight(range, color, highlightId);
+                        LuminaAnnotation.applyHighlight(range, color, highlightId);
+                    }
+
+                    window.getSelection().removeAllRanges();
+                    if (window.LuminaSelection) LuminaSelection.hide();
+                    return;
+                }
+            }
+        }
 
         if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
 
@@ -6130,7 +6303,88 @@ function dispatchConfiguredShortcutAction(action) {
         const inputArea = document.getElementById(`input-area-${targetPane}`);
         const micBtn = inputArea ? inputArea.querySelector('#mic-btn') : null;
         if (micBtn) micBtn.click();
+    } else if (action === 'cycleModels') {
+        cycleActiveModel();
     }
+}
+
+function cycleActiveModel() {
+    const targetPane = (hoveredPane === 'secondary' && isSplitMode) ? 'secondary' : 'primary';
+    const isSec = targetPane === 'secondary';
+    const currentActiveTab = isSec ? tabs[secondaryActiveTabIndex] : tabs[activeTabIndex];
+    if (!currentActiveTab) return;
+
+    chrome.storage.local.get(['providers', 'modelChains'], async (data) => {
+        let promptSupport;
+        if (typeof window.getPromptApiSupport === 'function') {
+            promptSupport = await window.getPromptApiSupport();
+        } else {
+            promptSupport = { supported: false, status: 'no', reason: 'Prompt API not loaded' };
+        }
+        const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
+        if (chain.length <= 1) return;
+
+        let currentModel = currentActiveTab.selectedModel?.model;
+        let currentProviderId = currentActiveTab.selectedModel?.providerId;
+        
+        let currentIndex = chain.findIndex(item => item.model === currentModel && item.providerId === currentProviderId);
+        
+        const nextIndex = (currentIndex + 1) % chain.length;
+        const nextItem = chain[nextIndex];
+
+        currentActiveTab.selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
+        setPaneActiveModel(targetPane, currentActiveTab.selectedModel);
+        
+        const targetSharedUI = isSec ? sharedInputUISecondary : sharedInputUI;
+        if (currentActiveTab.chatUIInstance) {
+            currentActiveTab.chatUIInstance.activeTabModel = { ...currentActiveTab.selectedModel };
+        }
+        if (targetSharedUI) {
+            targetSharedUI.activeTabModel = { ...currentActiveTab.selectedModel };
+        }
+
+        const labelId = isSec ? 'topbar-model-label-secondary' : 'topbar-model-label';
+        const label = document.getElementById(labelId);
+        if (label) {
+            label.textContent = nextItem.displayName || nextItem.model;
+        }
+
+        const dropdownId = isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu';
+        const dropdown = document.getElementById(dropdownId);
+        if (dropdown) {
+            dropdown.querySelectorAll('.lumina-model-item').forEach(b => {
+                const isMatch = b.querySelector('.model-name')?.textContent === (nextItem.displayName || nextItem.model);
+                b.classList.toggle('active', isMatch);
+            });
+        }
+
+        const sidKey = currentActiveTab.sessionId || 'null';
+        chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
+            const settings = res.lumina_session_settings || {};
+            if (!settings[sidKey]) settings[sidKey] = {};
+            settings[sidKey].selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
+
+            const advancedParamsByModel = res.advancedParamsByModel || {};
+            const compositeKey = nextItem.providerId ? `${nextItem.providerId}:${nextItem.model}` : nextItem.model;
+            const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[nextItem.model] || {};
+
+            const defaultThinking = window.LuminaModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
+            const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
+
+            currentActiveTab.thinkingLevel = newThinkingLevel;
+            settings[sidKey].thinkingLevel = newThinkingLevel;
+
+            chrome.storage.local.set({
+                lumina_session_settings: settings,
+                lastUsedModel: { model: nextItem.model, providerId: nextItem.providerId }
+            }, () => {
+                if (targetSharedUI && typeof targetSharedUI.refreshReasoningSelector === 'function') {
+                    targetSharedUI.thinkingLevel = newThinkingLevel;
+                    targetSharedUI.refreshReasoningSelector();
+                }
+            });
+        });
+    });
 }
 
 
@@ -6787,9 +7041,12 @@ async function renderDropdownMenu(pane = 'primary') {
         hide();
     });
 
-    // Settings
     dropdown.querySelector('#dropdown-settings-btn')?.addEventListener('click', () => {
-        chrome.runtime.openOptionsPage();
+        if (typeof LuminaSettingsModal !== 'undefined') {
+            LuminaSettingsModal.show();
+        } else {
+            chrome.runtime.openOptionsPage();
+        }
         hide();
     });
 }
@@ -6855,8 +7112,13 @@ function initTopbarModelSelector(pane = 'primary') {
             }
         }
 
-        if (currentModel && label) {
-            label.textContent = currentModel;
+        const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId);
+        if (label) {
+            if (activeChainItem) {
+                label.textContent = activeChainItem.displayName || activeChainItem.model;
+            } else {
+                label.textContent = currentModel;
+            }
         }
 
         dropdown.innerHTML = '';
@@ -6870,44 +7132,11 @@ function initTopbarModelSelector(pane = 'primary') {
             const isActive = item.model === currentModel && item.providerId === currentProviderId;
             el.className = `lumina-model-item${isActive ? ' active' : ''}`;
             
-            if (item.providerId === 'builtin') {
-                if (!item.supported) {
-                    el.disabled = true;
-                    el.classList.add('disabled');
-                    el.style.opacity = '0.5';
-                    el.style.cursor = 'not-allowed';
-                    el.title = item.reason || 'Hardware or browser does not support local Gemini Nano';
-                    el.innerHTML = `
-                        <div class="model-info" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px;">
-                            <span class="model-name">${item.model}</span>
-                            <span class="model-status" style="font-size:10px; color:var(--lumina-text-secondary); opacity:0.8;">(Unsupported)</span>
-                        </div>`;
-                    el.onclick = (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                    };
-                    dropdown.appendChild(el);
-                    return;
-                } else if (item.status === 'after-download') {
-                    el.innerHTML = `
-                        <div class="model-info" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px;">
-                            <span class="model-name">${item.model}</span>
-                            <span class="model-status" style="font-size:10px; color:var(--lumina-primary); opacity:0.9;">(Downloading...)</span>
-                        </div>`;
-                } else {
-                    el.innerHTML = `
-                        <div class="model-info" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px;">
-                            <span class="model-name">${item.model}</span>
-                            <span class="model-status" style="font-size:10px; color:var(--lumina-text-secondary); opacity:0.8;">(On-device)</span>
-                        </div>`;
-                }
-            } else {
-                el.innerHTML = `<span class="model-name">${item.model}</span>`;
-            }
+            el.innerHTML = `<span class="model-name">${item.displayName || item.model}</span>`;
 
             el.onclick = (e) => {
                 e.stopPropagation();
-                if (label) label.textContent = item.model;
+                if (label) label.textContent = item.displayName || item.model;
                 dropdown.classList.remove('active');
                 dropdown.querySelectorAll('.lumina-model-item').forEach(b => b.classList.remove('active'));
                 el.classList.add('active');
@@ -7523,6 +7752,421 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
     document.addEventListener('mouseout', (e) => {
         if (e.target.closest('.recent-chat-item')) {
             hideSidebarTooltip(e);
+        }
+    });
+
+    // ── Lumina Canvas Implementation ──────────────────────────────────
+    window.LuminaCanvas = {
+        currentDoc: {
+            name: '',
+            type: '',
+            content: '',
+            comments: []
+        },
+        
+        handleStream(text) {
+            // 1. Detect <lumina-canvas-create>
+            const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-create>|$)/i;
+            const createMatch = text.match(createRegex);
+            if (createMatch) {
+                const name = createMatch[1];
+                const type = createMatch[2];
+                const content = createMatch[3];
+                
+                this.showCanvas();
+                this.setDocument(name, type, content);
+                return;
+            }
+
+            // 2. Detect <lumina-canvas-update>
+            const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-update>|$)/i;
+            const updateMatch = text.match(updateRegex);
+            if (updateMatch) {
+                const name = updateMatch[1];
+                const body = updateMatch[2];
+                
+                const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
+                const replacementMatch = body.match(/<replacement>([\s\S]*?)(?:<\/replacement>|$)/i);
+                
+                if (patternMatch && replacementMatch) {
+                    const pattern = patternMatch[1];
+                    const replacement = replacementMatch[2];
+                    this.applyUpdate(name, pattern, replacement, false);
+                }
+            }
+        },
+        
+        handleDone(text) {
+            const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/lumina-canvas-update>/gi;
+            let match;
+            while ((match = updateRegex.exec(text)) !== null) {
+                const name = match[1];
+                const body = match[2];
+                const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
+                const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
+                if (patternMatch && replacementMatch) {
+                    this.applyUpdate(name, patternMatch[1], replacementMatch[2], true);
+                }
+            }
+        },
+        
+        showCanvas() {
+            if (!isSplitMode) {
+                toggleSplitMode();
+            }
+            const paneSecondary = document.getElementById('pane-secondary');
+            if (paneSecondary) {
+                paneSecondary.classList.add('canvas-active');
+            }
+        },
+        
+        hideCanvas() {
+            const paneSecondary = document.getElementById('pane-secondary');
+            if (paneSecondary) {
+                paneSecondary.classList.remove('canvas-active');
+            }
+            if (isSplitMode) {
+                toggleSplitMode();
+            }
+        },
+        
+        setDocument(name, type, content) {
+            this.currentDoc.name = name;
+            this.currentDoc.type = type;
+            this.currentDoc.content = content;
+            
+            const titleInput = document.getElementById('lumina-canvas-title');
+            const typeBadge = document.getElementById('lumina-canvas-type-badge');
+            const editorTextarea = document.getElementById('lumina-canvas-editor');
+            const documentView = document.getElementById('lumina-canvas-document');
+            const codeTabBtn = document.getElementById('lumina-canvas-tab-code');
+            const previewTabBtn = document.getElementById('lumina-canvas-tab-preview');
+            const container = document.querySelector('.lumina-canvas-container');
+            
+            if (titleInput) titleInput.value = name;
+            if (typeBadge) {
+                typeBadge.textContent = type.replace('code/', '').toUpperCase();
+            }
+            if (editorTextarea) {
+                editorTextarea.value = content;
+            }
+            this.syncHighlighting(content);
+            if (documentView) {
+                if (typeof marked !== 'undefined') {
+                    documentView.innerHTML = marked.parse(content);
+                } else {
+                    documentView.textContent = content;
+                }
+            }
+            
+            if (container) {
+                if (type === 'document') {
+                    container.classList.add('type-document');
+                } else {
+                    container.classList.remove('type-document');
+                }
+            }
+
+            if (codeTabBtn) {
+                if (type === 'document') {
+                    codeTabBtn.textContent = 'Edit';
+                } else {
+                    codeTabBtn.textContent = 'Code';
+                }
+                codeTabBtn.style.display = 'block';
+            }
+            
+            if (previewTabBtn) {
+                if (type === 'document') {
+                    previewTabBtn.textContent = 'Preview';
+                    previewTabBtn.style.display = 'block';
+                } else if (type === 'code/html' || type === 'code/react' || type.includes('html')) {
+                    previewTabBtn.textContent = 'Preview';
+                    previewTabBtn.style.display = 'block';
+                } else {
+                    previewTabBtn.style.display = 'none';
+                }
+            }
+            
+            this.switchTab('code');
+            this.updatePreview();
+        },
+        
+        applyUpdate(name, pattern, replacement, isFinal) {
+            let currentContent = this.currentDoc.content;
+            let newContent = currentContent;
+            
+            if (pattern === '.*') {
+                newContent = replacement;
+            } else {
+                try {
+                    const regex = new RegExp(pattern, 'g');
+                    newContent = currentContent.replace(regex, replacement);
+                } catch (e) {
+                    console.error('[Lumina Canvas] Regex error:', e);
+                }
+            }
+            
+            this.currentDoc.content = newContent;
+            
+            const editorTextarea = document.getElementById('lumina-canvas-editor');
+            if (editorTextarea) {
+                editorTextarea.value = newContent;
+            }
+            this.syncHighlighting(newContent);
+            
+            const documentView = document.getElementById('lumina-canvas-document');
+            if (documentView && this.currentDoc.type === 'document') {
+                if (typeof marked !== 'undefined') {
+                    documentView.innerHTML = marked.parse(newContent);
+                } else {
+                    documentView.textContent = newContent;
+                }
+            }
+            
+            if (isFinal) {
+                this.updatePreview();
+            }
+        },
+        
+        updatePreview() {
+            const previewFrame = document.getElementById('lumina-canvas-preview-frame');
+            if (!previewFrame) return;
+            
+            let content = this.currentDoc.content;
+            
+            if (this.currentDoc.type === 'code/react') {
+                content = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8" />
+                        <title>React Preview</title>
+                        <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+                        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+                        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+                        <script src="https://cdn.tailwindcss.com"></script>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                    </head>
+                    <body class="bg-gray-50 text-gray-900 p-4">
+                        <div id="root"></div>
+                        <script type="text/babel">
+                            ${content.replace(/export default/g, 'const App = ')}
+                            const root = ReactDOM.createRoot(document.getElementById('root'));
+                            root.render(<App />);
+                        </script>
+                    </body>
+                    </html>
+                `;
+            }
+            
+            try {
+                const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+                doc.open();
+                doc.write(content);
+                doc.close();
+            } catch (e) {
+                console.error('[Lumina Canvas] Preview injection error:', e);
+            }
+        },
+        
+        switchTab(tabId) {
+            const codeTabBtn = document.getElementById('lumina-canvas-tab-code');
+            const previewTabBtn = document.getElementById('lumina-canvas-tab-preview');
+            const codePanel = document.getElementById('lumina-canvas-code-panel');
+            const documentPanel = document.getElementById('lumina-canvas-document-panel');
+            const previewPanel = document.getElementById('lumina-canvas-preview-panel');
+            
+            if (codePanel) codePanel.classList.remove('active');
+            if (documentPanel) documentPanel.classList.remove('active');
+            if (previewPanel) previewPanel.classList.remove('active');
+            
+            if (codeTabBtn) codeTabBtn.classList.remove('active');
+            if (previewTabBtn) previewTabBtn.classList.remove('active');
+            
+            if (tabId === 'code') {
+                if (codeTabBtn) codeTabBtn.classList.add('active');
+                if (codePanel) codePanel.classList.add('active');
+            } else if (tabId === 'preview') {
+                if (previewTabBtn) previewTabBtn.classList.add('active');
+                if (this.currentDoc.type === 'document') {
+                    if (documentPanel) documentPanel.classList.add('active');
+                    const documentView = document.getElementById('lumina-canvas-document');
+                    if (documentView && typeof marked !== 'undefined') {
+                        documentView.innerHTML = marked.parse(this.currentDoc.content);
+                    }
+                } else {
+                    if (previewPanel) previewPanel.classList.add('active');
+                    this.updatePreview();
+                }
+            }
+        },
+        
+        syncHighlighting(code) {
+            const codeEl = document.getElementById('lumina-canvas-highlight-code');
+            if (codeEl) {
+                const escaped = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                codeEl.innerHTML = escaped.endsWith('\n') ? escaped + ' ' : escaped;
+                if (typeof hljs !== 'undefined') {
+                    let lang = (this.currentDoc.type || 'javascript').replace('code/', '');
+                    if (lang === 'react') lang = 'jsx';
+                    codeEl.className = lang;
+                    hljs.highlightElement(codeEl);
+                }
+            }
+        },
+        
+        init() {
+            const closeBtn = document.getElementById('lumina-canvas-btn-close');
+            if (closeBtn) {
+                closeBtn.onclick = () => this.hideCanvas();
+            }
+            
+            const codeTabBtn = document.getElementById('lumina-canvas-tab-code');
+            if (codeTabBtn) {
+                codeTabBtn.onclick = () => this.switchTab('code');
+            }
+            
+            const previewTabBtn = document.getElementById('lumina-canvas-tab-preview');
+            if (previewTabBtn) {
+                previewTabBtn.onclick = () => this.switchTab('preview');
+            }
+            
+            const saveLocalDoc = () => {
+                const activeTab = tabs[activeTabIndex];
+                const sessionId = activeTab ? activeTab.sessionId : 'global';
+                const key = `lumina-canvas-${sessionId}-${this.currentDoc.name}`;
+                localStorage.setItem(key, JSON.stringify({
+                    name: this.currentDoc.name,
+                    type: this.currentDoc.type,
+                    content: this.currentDoc.content
+                }));
+            };
+            
+            const titleInput = document.getElementById('lumina-canvas-title');
+            if (titleInput) {
+                titleInput.oninput = () => {
+                    const oldName = this.currentDoc.name;
+                    const newName = titleInput.value;
+                    this.currentDoc.name = newName;
+                    
+                    const activeTab = tabs[activeTabIndex];
+                    const sessionId = activeTab ? activeTab.sessionId : 'global';
+                    localStorage.removeItem(`lumina-canvas-${sessionId}-${oldName}`);
+                    saveLocalDoc();
+                };
+            }
+            
+            const textarea = document.getElementById('lumina-canvas-editor');
+            const pre = document.getElementById('lumina-canvas-highlight-block');
+            if (textarea && pre) {
+                textarea.onscroll = () => {
+                    pre.scrollTop = textarea.scrollTop;
+                    pre.scrollLeft = textarea.scrollLeft;
+                };
+                textarea.oninput = () => {
+                    const code = textarea.value;
+                    this.currentDoc.content = code;
+                    this.syncHighlighting(code);
+                    this.updatePreview();
+                    saveLocalDoc();
+                };
+            }
+        },
+
+        loadVersionFromCard(card) {
+            const cardTitle = card.querySelector('.lumina-canvas-card-title')?.textContent || '';
+            if (!cardTitle) return;
+            
+            const activeTab = tabs[activeTabIndex];
+            const sessionId = activeTab ? activeTab.sessionId : 'global';
+            
+            const localSaved = localStorage.getItem(`lumina-canvas-${sessionId}-${cardTitle}`);
+            if (localSaved) {
+                try {
+                    const parsed = JSON.parse(localSaved);
+                    this.showCanvas();
+                    this.setDocument(parsed.name, parsed.type, parsed.content);
+                    return;
+                } catch (e) {
+                    console.error('[Lumina Canvas] Error loading local saved doc:', e);
+                }
+            }
+            
+            const chatHistory = document.getElementById('chat-history') || document.getElementById('chat-history-secondary');
+            if (!chatHistory) return;
+            
+            const allAnswers = Array.from(chatHistory.querySelectorAll('.lumina-chat-answer'));
+            
+            let docName = '';
+            let docType = '';
+            let docContent = '';
+            
+            allAnswers.forEach(ans => {
+                const rawText = ans.getAttribute('data-raw-text') || '';
+                
+                const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/lumina-canvas-create>/gi;
+                let createMatch;
+                while ((createMatch = createRegex.exec(rawText)) !== null) {
+                    if (createMatch[1] === cardTitle) {
+                        docName = createMatch[1];
+                        docType = createMatch[2];
+                        docContent = createMatch[3];
+                    }
+                }
+                
+                const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/lumina-canvas-update>/gi;
+                let updateMatch;
+                while ((updateMatch = updateRegex.exec(rawText)) !== null) {
+                    if (updateMatch[1] === cardTitle) {
+                        const name = updateMatch[1];
+                        const body = updateMatch[2];
+                        const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
+                        const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
+                        if (patternMatch && replacementMatch) {
+                            const pattern = patternMatch[1];
+                            const replacement = replacementMatch[2];
+                            if (pattern === '.*') {
+                                docContent = replacement;
+                            } else {
+                                try {
+                                    const regex = new RegExp(pattern, 'g');
+                                    docContent = docContent.replace(regex, replacement);
+                                } catch (e) {
+                                    console.error('[Lumina Canvas] Regex history parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            if (docName) {
+                this.showCanvas();
+                this.setDocument(docName, docType, docContent);
+            }
+        }
+    };
+
+    window.LuminaCanvas.init();
+
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.lumina-canvas-card');
+        if (card) {
+            const paneSec = document.getElementById('pane-secondary');
+            const isActive = paneSec && paneSec.classList.contains('canvas-active') && isSplitMode;
+            if (isActive) {
+                const currentTitleInput = document.getElementById('lumina-canvas-title');
+                const cardTitle = card.querySelector('.lumina-canvas-card-title')?.textContent || '';
+                if (currentTitleInput && currentTitleInput.value === cardTitle) {
+                    window.LuminaCanvas.hideCanvas();
+                    return;
+                }
+            }
+            window.LuminaCanvas.loadVersionFromCard(card);
         }
     });
 })();

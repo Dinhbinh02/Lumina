@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chrome.runtime.openOptionsPage) {
             chrome.runtime.openOptionsPage();
         } else {
-            window.open(chrome.runtime.getURL('pages/options/options.html'));
+            window.open(chrome.runtime.getURL('pages/spotlight/spotlight.html?settings=1'));
         }
         window.close();
     });

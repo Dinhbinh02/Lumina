@@ -100,7 +100,7 @@
     }
   ],
   "options_ui": {
-    "page": "pages/options/options.html",
+    "page": "pages/spotlight/spotlight.html?settings=1",
     "open_in_tab": true
   },
   "content_scripts": [

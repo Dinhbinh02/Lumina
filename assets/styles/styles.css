@@ -91,7 +91,7 @@ button {
   backdrop-filter: blur(12px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   border-radius: 12px !important;
-  padding: 2px !important;
+  padding: 2px 4px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
   border: none !important;
   z-index: 2147483647 !important;
@@ -114,7 +114,7 @@ button {
   align-items: center !important;
   justify-content: center !important;
   height: 100% !important;
-  padding: 0 10px !important;
+  padding: 0 8px !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -126,6 +126,36 @@ button {
 .lumina-action-item:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   color: var(--lumina-text-primary) !important;
+}
+
+.lumina-action-highlight-btn {
+  padding: 0 !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.lumina-action-highlight-color-preview {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-sizing: border-box !important;
+}
+
+.lumina-action-expand-colors {
+  width: 24px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
 }
 
 [data-theme="dark"] .lumina-action-item:hover {
@@ -143,27 +173,7 @@ button {
   opacity: 1 !important;
 }
 
-.lumina-action-item.lumina-action-ask {
-  font-weight: 600 !important;
-  background: #111 !important;
-  color: #fff !important;
-  padding: 0 12px !important;
-}
 
-.lumina-action-item.lumina-action-ask:hover {
-  background: #333 !important;
-  color: #fff !important;
-}
-
-[data-theme="dark"] .lumina-action-item.lumina-action-ask {
-  background: #fff !important;
-  color: #000 !important;
-}
-
-[data-theme="dark"] .lumina-action-item.lumina-action-ask:hover {
-  background: #e0e0e0 !important;
-  color: #000 !important;
-}
 
 
 #lumina-action-bar.lumina-comment-mode .lumina-action-item:not(.lumina-action-comment) {
@@ -539,7 +549,7 @@ button {
 }
 
 .lumina-model-btn svg {
-  opacity: 1;
+  opacity: 0.6;
   flex-shrink: 0;
 }
 
@@ -612,10 +622,6 @@ button {
   z-index: 2147483647 !important;
 }
 
-
-
-
-
 #lumina-ask-input-popup {
   all: initial;
   position: absolute !important;
@@ -658,10 +664,10 @@ button {
   border: none !important;
   outline: none !important;
   padding: 5px 12px !important;
-  font-size: 1.07em !important;
+  font-size: 1em !important;
   font-weight: 400 !important;
   color: var(--lumina-text-primary) !important;
-  min-height: 28px !important;
+  min-height: 23px !important;
   max-height: 180px !important;
   overflow-y: auto !important;
   line-height: 1.5 !important;
@@ -679,29 +685,6 @@ button {
   text-shadow: none !important;
   resize: none !important;
   field-sizing: content !important;
-}
-
-.lumina-ask-input-field::placeholder {
-  color: var(--lumina-text-secondary, #5f6368) !important;
-  opacity: 0.65 !important;
-  pointer-events: none !important;
-  font-weight: 400 !important;
-  font-family: var(--lumina-font-family) !important;
-  font-size: 1.07em !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: optimizeLegibility !important;
-  letter-spacing: normal !important;
-  text-shadow: none !important;
-}
-
-[data-theme="dark"] .lumina-ask-input-field {
-  color: var(--lumina-text-primary, #e8eaed) !important;
-}
-
-[data-theme="dark"] .lumina-ask-input-field::placeholder {
-  color: var(--lumina-text-secondary, #9aa0a6) !important;
-  opacity: 0.65 !important;
 }
 
 .lumina-image-preview-item.is-file {
@@ -795,7 +778,7 @@ button {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   overflow-anchor: auto;
-  padding: 10px 14px 16px 12px !important;
+  padding: 10px 14px 0 12px !important;
   scrollbar-gutter: auto;
   width: 100%;
   position: relative;
@@ -1434,7 +1417,7 @@ button {
 }
 
 .lumina-chat-answer hr {
-  margin: 1.5em 0 !important;
+  margin: 0.5em 0 !important;
   border: none !important;
   height: 1px !important;
   background: rgba(0, 0, 0, 0.1) !important;
@@ -1746,7 +1729,8 @@ button {
 }
 
 
-.lumina-input-bar .lumina-chat-input::placeholder {
+.lumina-input-bar .lumina-chat-input::placeholder,
+.lumina-ask-input-field::placeholder {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -1762,7 +1746,8 @@ button {
   text-shadow: none !important;
 }
 
-[data-theme="dark"] .lumina-input-bar .lumina-chat-input::placeholder {
+[data-theme="dark"] .lumina-input-bar .lumina-chat-input::placeholder,
+[data-theme="dark"] .lumina-ask-input-field::placeholder {
   color: var(--lumina-text-secondary, #9aa0a6) !important;
   opacity: 0.65 !important;
 }
@@ -3257,12 +3242,6 @@ button {
   font-weight: 400 !important;
 }
 
-.lumina-dict-separator {
-  visibility: hidden;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
-  margin: 10px 0;
-}
 
 .lumina-translation-card .lumina-answer-nav {
   margin-left: 16px;
@@ -3278,7 +3257,7 @@ button {
   scroll-margin-top: 20px;
   width: 100%;
   max-width: 640px;
-  margin: 0 auto;
+  margin: 0 auto 20px auto;
 }
 
 .lumina-chat-question.proofread-question::after,
@@ -3918,10 +3897,7 @@ button {
   }
 }
 
-.lumina-fade-in {
-  animation: lumina-fade-in-anim 0s forwards;
-  opacity: 1;
-}
+
 
 @keyframes lumina-pop-in {
   from {
@@ -3992,12 +3968,7 @@ button {
 
 }
 
-@keyframes lumina-fade-in-anim {
-  to {
-    opacity: 1;
-  }
 
-}
 
 @keyframes lumina-scale-in {
   from {
@@ -4551,7 +4522,6 @@ button {
   user-select: none;
   -webkit-user-drag: none;
   transform-origin: center center;
-  transition: transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
   will-change: transform;
 }
 
@@ -5390,8 +5360,7 @@ button {
   height: 18px !important;
   border-radius: 50% !important;
   cursor: pointer !important;
-  margin: 0 4px !important;
-  border: 2px solid transparent !important;
+  margin: 0 2px !important;
   transition: transform 0.2s ease, border-color 0.2s ease !important;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
   flex-shrink: 0 !important;
@@ -5452,27 +5421,7 @@ button {
 
 
 
-.lumina-action-item.lumina-action-ask {
-  background-color: #0A84FF !important;
-  color: #ffffff !important;
-  padding: 0 16px !important;
-  font-weight: 700 !important;
-  border-radius: 12px !important;
-  height: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
 
-.lumina-action-item.lumina-action-ask span {
-  color: #ffffff !important;
-}
-
-.lumina-action-item.lumina-action-ask:hover {
-  background-color: #007AFF !important;
-  color: #ffffff !important;
-  filter: none !important;
-}
 
 
 .lumina-dict-translation-container {
@@ -5709,18 +5658,13 @@ button {
 }
 
 .is-sidepanel .lumina-chat-scroll-content {
-  padding: 10px 14px 10px 10px !important;
-  scrollbar-gutter: auto !important;
+  padding: 10px 4px 0 4px !important;
+  scrollbar-width: none !important;
   overflow-y: auto !important;
 }
 
-.is-sidepanel .lumina-chat-scroll-content.has-scrollbar {
-  padding-right: 4px !important;
-}
-
 .is-sidepanel .lumina-chat-scroll-content::-webkit-scrollbar {
-  width: 10px !important;
-  height: 10px !important;
+  display: none !important;
 }
 
 .is-sidepanel .spotlight-main-area {
@@ -5908,7 +5852,7 @@ button {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   width: 260px;
   z-index: 1000;
-  display: flex;
+  display: none;
   flex-direction: column;
   padding: 6px;
   box-sizing: border-box;
@@ -6190,7 +6134,7 @@ button {
 .lumina-media-skeleton {
   width: 380px;
   max-width: 100%;
-  margin: 12px auto;
+  margin: 0 auto 0.5em auto;
   height: 200px;
   background: linear-gradient(90deg, var(--lumina-ui-bg-light) 25%, var(--lumina-ui-border) 50%, var(--lumina-ui-bg-light) 75%);
   background-size: 200% 100%;
@@ -6222,9 +6166,9 @@ button {
 .lumina-clickable-image {
   cursor: pointer;
   width: auto;
-  max-width: min(100%, 380px);
+  max-width: 100% !important;
   height: auto;
-  max-height: 380px;
+  max-height: 220px !important;
   margin: 0;
   box-sizing: border-box;
   border-radius: var(--lumina-radius-sm, 12px);
@@ -6244,7 +6188,7 @@ button {
   flex-direction: column;
   align-items: center;
   width: fit-content;
-  max-width: min(100%, 240px);
+  max-width: min(100%, 380px);
   margin: 0 auto 0.5em auto;
 }
 
@@ -6409,17 +6353,21 @@ button {
   font-family: var(--lumina-font-family, 'Google Sans', system-ui, sans-serif) !important;
 }
 
-/* Limit size of pie charts and xy-charts to prevent overflow */
-.lumina-mermaid-wrapper.is-pie-chart .lumina-mermaid-svg-container svg {
-  max-width: 300px !important;
-  height: auto !important;
+/* Unified height limits for all rendered diagrams (D2 and Mermaid) to prevent oversized display */
+.lumina-d2-wrapper.lumina-d2-rendered .lumina-d2-svg-container svg,
+.lumina-mermaid-wrapper.lumina-mermaid-rendered .lumina-mermaid-svg-container svg {
+  max-height: 300px !important;
+  width: auto !important;
+  max-width: 100% !important;
   margin: 0 auto !important;
 }
 
-.lumina-mermaid-wrapper.is-xy-chart .lumina-mermaid-svg-container svg {
-  max-height: 280px !important;
+/* Specific size adjustment for Pie Charts */
+.lumina-mermaid-wrapper.is-pie-chart .lumina-mermaid-svg-container svg {
+  max-width: 220px !important;
+  max-height: 220px !important;
   width: auto !important;
-  max-width: 100% !important;
+  height: auto !important;
   margin: 0 auto !important;
 }
 
@@ -7011,6 +6959,7 @@ button {
   gap: 8px;
   overflow: visible;
   white-space: nowrap;
+  visibility: hidden;
 }
 
 .user-avatar-wrapper {
@@ -7289,7 +7238,7 @@ button {
 }
 
 .sparks-page {
-  display: flex;
+  display: none;
   flex-direction: column;
   flex: 1;
   width: 100%;
@@ -8419,6 +8368,14 @@ button {
   border: none;
 }
 
+#pane-secondary {
+  display: none;
+}
+
+#sidebar-toggle-btn-secondary {
+  display: none;
+}
+
 .spotlight-pane {
   display: flex;
   flex-direction: column;
@@ -8453,7 +8410,7 @@ button {
 .spotlight-resizer {
   width: 8px;
   cursor: col-resize;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -8684,6 +8641,433 @@ button {
   transform: translateX(0);
 }
 
+/* ── Lumina Canvas Styles ────────────────────────────────────────── */
+.spotlight-pane.canvas-active #chat-layout-secondary {
+  display: none !important;
+}
+
+.spotlight-pane.canvas-active #spotlight-topbar-secondary {
+  display: none !important;
+}
+
+.spotlight-pane.canvas-active #canvas-layout-secondary {
+  display: flex !important;
+}
+
+#canvas-layout-secondary {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--lumina-bg-primary, #ffffff);
+}
+
+[data-theme="dark"] #canvas-layout-secondary {
+  background: #18181c;
+}
+
+.lumina-canvas-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.lumina-canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: var(--lumina-bg-primary, #ffffff);
+  height: 52px;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .lumina-canvas-header {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+  background: #18181c;
+}
+
+.lumina-canvas-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+#lumina-canvas-title {
+  background: transparent;
+  border: none;
+  font-family: var(--lumina-font-family), 'Outfit', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lumina-text-primary, #1f1f1f);
+  width: 100%;
+  max-width: 320px;
+  outline: none;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+#lumina-canvas-title:hover,
+#lumina-canvas-title:focus {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] #lumina-canvas-title {
+  color: #f1f6fe;
+}
+
+[data-theme="dark"] #lumina-canvas-title:hover,
+[data-theme="dark"] #lumina-canvas-title:focus {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lumina-canvas-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.05);
+  color: #5f6368;
+}
+
+[data-theme="dark"] .lumina-canvas-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #a8aab0;
+}
+
+.lumina-canvas-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Premium Segmented Tab Control */
+.lumina-canvas-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 3px;
+  border-radius: 10px;
+  gap: 2px;
+}
+
+[data-theme="dark"] .lumina-canvas-tabs {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-canvas-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: var(--lumina-font-family), system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5f6368;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .lumina-canvas-tab-btn {
+  color: #a8aab0;
+}
+
+.lumina-canvas-tab-btn:hover {
+  color: var(--lumina-text-primary, #1f1f1f);
+}
+
+[data-theme="dark"] .lumina-canvas-tab-btn:hover {
+  color: #ffffff;
+}
+
+.lumina-canvas-tab-btn.active {
+  background: #ffffff;
+  color: #1a73e8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .lumina-canvas-tab-btn.active {
+  background: #2a2b2f;
+  color: #8ab4f8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.lumina-canvas-btn {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #5f6368;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .lumina-canvas-btn {
+  color: #a8aab0;
+}
+
+.lumina-canvas-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #ea4335;
+}
+
+[data-theme="dark"] .lumina-canvas-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ff6b6b;
+}
+
+.lumina-canvas-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #121214;
+}
+
+.lumina-canvas-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.lumina-canvas-panel.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Dual-Layer Syntax Highlighted Code Editor */
+.lumina-canvas-editor-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #121214;
+  overflow: hidden;
+}
+
+#lumina-canvas-editor,
+#lumina-canvas-highlight-block {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: 'Source Code Pro', 'Google Sans Code', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  border: none;
+  outline: none;
+}
+
+#lumina-canvas-editor {
+  background: transparent;
+  color: transparent;
+  caret-color: #f1f6fe;
+  z-index: 2;
+  resize: none;
+}
+
+#lumina-canvas-highlight-block {
+  background: #121214;
+  color: #f1f6fe;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#lumina-canvas-highlight-code {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Document Editor Override */
+.type-document .lumina-canvas-editor-container {
+  background: var(--lumina-bg-primary, #ffffff) !important;
+}
+
+[data-theme="dark"] .type-document .lumina-canvas-editor-container {
+  background: #18181c !important;
+}
+
+.type-document #lumina-canvas-editor {
+  background: var(--lumina-bg-primary, #ffffff) !important;
+  color: var(--lumina-text-primary, #1f1f1f) !important;
+  font-family: var(--lumina-font-family), system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  padding: 40px 50px !important;
+  max-width: 800px;
+  margin: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  caret-color: var(--lumina-text-primary, #1f1f1f) !important;
+}
+
+[data-theme="dark"] .type-document #lumina-canvas-editor {
+  background: #18181c !important;
+  color: #f1f6fe !important;
+  caret-color: #f1f6fe !important;
+}
+
+.type-document #lumina-canvas-highlight-block {
+  display: none !important;
+}
+
+#lumina-canvas-preview-panel {
+  background: #ffffff;
+}
+
+#lumina-canvas-preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+#lumina-canvas-document-panel {
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.lumina-document-view {
+  background: #ffffff;
+  color: #1f1f1f;
+  font-family: var(--lumina-font-family), 'Noto Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.8;
+  padding: 40px 50px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.lumina-document-view h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-bottom: 24px;
+  color: #111111;
+  font-family: 'Outfit', sans-serif;
+}
+
+.lumina-document-view h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 14px;
+  color: #222222;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Default (Full width when Canvas split-mode is closed) */
+.lumina-canvas-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f6fe;
+  border-radius: 20px;
+  padding: 12px 16px;
+  margin: 0 0 12px 0;
+  cursor: pointer;
+  border: 1px solid transparent;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="dark"] .lumina-canvas-card {
+  background: #2a2b2f;
+}
+
+.lumina-canvas-card-left {
+  display: flex;
+  align-items: center;
+}
+
+[data-theme="dark"] #lumina-canvas-document-panel {
+  background: #18181c;
+}
+
+[data-theme="dark"] .lumina-document-view {
+  background: #18181c;
+  color: #f1f6fe;
+}
+
+[data-theme="dark"] .lumina-document-view h1,
+[data-theme="dark"] .lumina-document-view h2,
+[data-theme="dark"] .lumina-document-view h3,
+[data-theme="dark"] .lumina-document-view h4 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .lumina-document-view p,
+[data-theme="dark"] .lumina-document-view li {
+  color: #c9ccd3;
+}
+
+.lumina-canvas-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lumina-canvas-card-title {
+  font-family: var(--lumina-font-family), 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f1f1f;
+  line-height: 1.3;
+}
+
+[data-theme="dark"] .lumina-canvas-card-title {
+  color: #f1f6fe;
+}
+
+.lumina-canvas-card-meta {
+  font-size: 11px;
+  color: #5f6368;
+}
+
+[data-theme="dark"] .lumina-canvas-card-meta {
+  color: #a8aab0;
+}
+
+/* ── Narrow Mode Override (when split screen is active) ────────────────── */
+.split-mode .lumina-canvas-card {
+  background: #f1f6fe;
+  border-radius: 20px;
+  padding: 12px 16px;
+}
+
+[data-theme="dark"] .split-mode .lumina-canvas-card {
+  background: rgba(66, 133, 244, 0.12);
+  border-color: rgba(66, 133, 244, 0.2);
+}
+
 .lumina-sidebar-tooltip::before {
   content: '';
   position: absolute;
@@ -8693,4 +9077,8 @@ button {
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
   border-right: 6px solid #000000;
+}
+
+#file-input {
+  display: none !important;
 }
