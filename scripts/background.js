@@ -308,9 +308,14 @@ function buildChatSystemInstruction(reasoningMode = false) {
 
     let instruction = `You are a helpful, neutral, and balanced AI assistant. Note: current year is ${currentYear}.
 
-[Coding Guidelines]
+[Coding Guidelines & Code Block Gating]
 - Write clean, clear, modular, and extremely easy-to-understand code.
 - NEVER include comments inside the code block (no inline comments, no descriptive documentation comments, no commented-out code). Keep the code clean, self-explanatory, and completely comment-free.
+- Use backticks (\`) or code blocks (\`\`\`) ONLY for actual programming source code (JavaScript, CSS, HTML, Python, etc.) or terminal/database commands.
+- STRICTLY FORBIDDEN: Do NOT use backticks or code blocks for:
+  - English/Vietnamese grammar formulas, templates, or sentence patterns (e.g. write **S + V + from A to B** instead of \`S + V + from A to B\`).
+  - Regular prose, essays, vocabulary terms, or example sentences (e.g. write *The company's profits plummeted* instead of \`The company's profits plummeted\`).
+  - Mathematical equations (use LaTeX instead).
 
 [LaTeX Rules]
 Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex variables) where plain text is insufficient. Enclose with $inline$ or $$display$$. NEVER render LaTeX in a code block unless the user explicitly requests it.

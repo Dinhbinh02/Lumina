@@ -533,6 +533,28 @@
   background: #ffffff;
 }
 
+.lumina-settings-control input[type="range"] {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  border-radius: 2px;
+}
+[data-theme="dark"] .lumina-settings-control input[type="range"] {
+  background: rgba(255, 255, 255, 0.08);
+}
+.lumina-settings-control input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lumina-accent-color, #000000);
+}
+[data-theme="dark"] .lumina-settings-control input[type="range"]::-webkit-slider-thumb {
+  background: var(--lumina-accent-color, #ffffff);
+}
+
 .lumina-settings-segmented {
   display: flex;
   background: rgba(0, 0, 0, 0.03);

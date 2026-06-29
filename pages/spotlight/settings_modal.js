@@ -126,6 +126,12 @@ class LuminaSettingsModal {
       document.getElementById('lumina-settings-voice-select').value = items.voice || 'sol';
       document.getElementById('lumina-settings-separate-voice').checked = items.separateVoiceEnabled === true;
 
+      const fsVal = items.fontSize || 14;
+      const fsInput = document.getElementById('lumina-settings-fontsize');
+      if (fsInput) fsInput.value = fsVal;
+      const fsSpan = document.getElementById('lumina-settings-fontsize-value');
+      if (fsSpan) fsSpan.textContent = fsVal + 'px';
+
       const toneInput = document.getElementById('lumina-settings-base-tone-input');
       if (toneInput) {
         const toneVal = items.baseTone || 'default';
@@ -194,6 +200,7 @@ class LuminaSettingsModal {
       theme: getVal('lumina-settings-theme', 'auto'),
       contrast: getVal('lumina-settings-contrast', 'auto'),
       accentColor: getVal('lumina-settings-accent', 'default'),
+      fontSize: getInt('lumina-settings-fontsize', 14),
       language: getVal('lumina-settings-language', 'auto'),
       dictationEnabled: document.getElementById('lumina-settings-dictation-toggle') ? getChecked('lumina-settings-dictation-toggle') : true,
       spokenLanguage: getVal('lumina-settings-spoken-lang', 'auto'),
@@ -223,6 +230,9 @@ class LuminaSettingsModal {
         document.body.setAttribute('data-theme', mode);
       }
       document.body.setAttribute('data-accent', settings.accentColor);
+      if (typeof applyFontSize === 'function') {
+        applyFontSize(settings.fontSize);
+      }
     });
   }
 
@@ -1054,6 +1064,15 @@ class LuminaSettingsModal {
     elements.forEach(id => {
       document.getElementById(id).addEventListener('change', () => this.saveOptions());
     });
+
+    const fsSlider = document.getElementById('lumina-settings-fontsize');
+    if (fsSlider) {
+      fsSlider.addEventListener('input', (e) => {
+        const valSpan = document.getElementById('lumina-settings-fontsize-value');
+        if (valSpan) valSpan.textContent = e.target.value + 'px';
+      });
+      fsSlider.addEventListener('change', () => this.saveOptions());
+    }
 
     document.getElementById('lumina-settings-dictation-toggle').addEventListener('change', () => this.saveOptions());
     document.getElementById('lumina-settings-separate-voice').addEventListener('change', () => this.saveOptions());
