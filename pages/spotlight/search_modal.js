@@ -6,6 +6,7 @@ class LuminaSearchModal {
     this.searchInput = document.getElementById('lumina-search-input');
     this.resultsList = document.getElementById('lumina-search-results-list');
     this.closeBtn = document.getElementById('lumina-search-close-btn');
+    this.overlayCloseBtn = document.getElementById('lumina-search-overlay-close-btn');
 
     if (!this.overlay) return;
 
@@ -18,6 +19,10 @@ class LuminaSearchModal {
 
     if (this.closeBtn) {
       this.closeBtn.addEventListener('click', () => this.hide());
+    }
+
+    if (this.overlayCloseBtn) {
+      this.overlayCloseBtn.addEventListener('click', () => this.hide());
     }
 
     // Close on Escape, search when typing
@@ -35,12 +40,24 @@ class LuminaSearchModal {
     });
 
     this.sessions = {};
+    this.isSelectingChat = false;
     this.initialized = true;
   }
 
-  static async show() {
+  static async show(inPane = false) {
     this.init();
     if (!this.overlay) return;
+
+    if (inPane) {
+      this.overlay.classList.add('in-pane');
+      const paneSec = document.getElementById('pane-secondary');
+      if (paneSec) {
+        paneSec.appendChild(this.overlay);
+      }
+    } else {
+      this.overlay.classList.remove('in-pane');
+      document.body.appendChild(this.overlay);
+    }
 
     this.overlay.style.display = 'flex';
     if (this.searchInput) {
@@ -61,7 +78,16 @@ class LuminaSearchModal {
 
   static hide() {
     if (this.overlay) {
+      const wasInPane = this.overlay.classList.contains('in-pane');
       this.overlay.style.display = 'none';
+      this.overlay.classList.remove('in-pane');
+      document.body.appendChild(this.overlay); // Restore to body
+
+      if (wasInPane && !this.isSelectingChat && typeof isSplitMode !== 'undefined' && isSplitMode) {
+        if (typeof toggleSplitMode === 'function') {
+          toggleSplitMode();
+        }
+      }
     }
   }
 
@@ -257,7 +283,9 @@ class LuminaSearchModal {
   }
 
   static async openSession(sessionId, messageIndex = null) {
+    this.isSelectingChat = true;
     this.hide();
+    this.isSelectingChat = false;
     const contentKey = `lumina_session_${sessionId}`;
     const contentData = await chrome.storage.local.get([contentKey]);
     const messages = contentData[contentKey] || [];

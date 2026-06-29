@@ -994,6 +994,7 @@ button {
   border: 1.5px solid #a8cdfc !important;
   border-radius: 20px !important;
   background: var(--lumina-bg-primary, #ffffff) !important;
+  width: 85% !important;
 }
 
 [data-theme="dark"] .lumina-chat-question.is-editing {
@@ -1014,6 +1015,7 @@ button {
   border: none !important;
   padding: 0 !important;
   box-shadow: none !important;
+  margin-top: 4px !important;
 }
 
 .lumina-question-edit-toolbar .lumina-edit-btn {
@@ -6168,13 +6170,10 @@ button {
   width: auto;
   max-width: 100% !important;
   height: auto;
-  max-height: 220px !important;
+  max-height: 50vh !important;
   margin: 0;
   box-sizing: border-box;
   border-radius: var(--lumina-radius-sm, 12px);
-  box-shadow: var(--lumina-shadow-tertiary, 0 4px 12px rgba(0, 0, 0, 0.08));
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease, filter 0.25s ease, opacity 0.4s ease-in-out;
   display: block;
 }
 
@@ -6291,133 +6290,8 @@ button {
   overflow: visible;
 }
 
-/* ── Mermaid Diagram Styles ──────────────────────────────────────── */
-.lumina-mermaid-wrapper {
-  position: relative;
-  width: fit-content;
-  width: -moz-fit-content;
-  width: -webkit-fit-content;
-  max-width: min(100%, 380px);
-  margin: 12px auto;
-}
 
-.lumina-mermaid-wrapper.is-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: min(100%, 380px);
-}
 
-.lumina-mermaid-wrapper.lumina-mermaid-rendered {
-  width: 100%;
-  max-width: 680px;
-  margin: 0 auto 0.5em auto;
-  cursor: pointer;
-}
-
-.lumina-mermaid-wrapper.is-loading .lumina-mermaid-skeleton {
-  width: 380px;
-  max-width: 100%;
-  height: 200px;
-  margin: 12px auto;
-  border-radius: var(--lumina-radius-sm, 12px);
-  display: block;
-}
-
-.lumina-mermaid-svg-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  animation: lumina-mermaid-reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-@keyframes lumina-mermaid-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.lumina-mermaid-svg-container svg {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  border-radius: var(--lumina-radius-sm, 12px);
-  overflow: visible;
-  font-family: var(--lumina-font-family, 'Google Sans', system-ui, sans-serif) !important;
-}
-
-/* Unified height limits for all rendered diagrams (D2 and Mermaid) to prevent oversized display */
-.lumina-d2-wrapper.lumina-d2-rendered .lumina-d2-svg-container svg,
-.lumina-mermaid-wrapper.lumina-mermaid-rendered .lumina-mermaid-svg-container svg {
-  max-height: 300px !important;
-  width: auto !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
-}
-
-/* Specific size adjustment for Pie Charts */
-.lumina-mermaid-wrapper.is-pie-chart .lumina-mermaid-svg-container svg {
-  max-width: 220px !important;
-  max-height: 220px !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 auto !important;
-}
-
-.lumina-mermaid-svg-container svg text,
-.lumina-mermaid-svg-container svg .node text,
-.lumina-mermaid-svg-container svg .edgeLabel text,
-.lumina-mermaid-svg-container svg span {
-  font-family: var(--lumina-font-family, 'Google Sans', system-ui, sans-serif) !important;
-  font-size: 14px !important;
-  font-weight: 400 !important;
-  fill: #000000 !important;
-  color: #000000 !important;
-}
-
-.lumina-mermaid-svg-container .edgeLabel p,
-.lumina-mermaid-svg-container svg .edgeLabel p,
-[id^="lumina-mermaid-"] .edgeLabel p {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
-  fill: #ffffff !important;
-}
-
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel rect,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel span,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel .label,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel .label div,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgePath .edgeLabel,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .label {
-  background-color: #1c1c1e !important;
-  background: #1c1c1e !important;
-  fill: #1c1c1e !important;
-}
-
-[data-theme="dark"] .lumina-mermaid-svg-container svg text,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel text,
-[data-theme="dark"] .lumina-mermaid-svg-container svg .edgeLabel span {
-  fill: #ffffff !important;
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] .lumina-mermaid-wrapper {
-  background: var(--lumina-ui-bg-light, #1C1C1E);
-  border-color: var(--lumina-ui-border, rgba(255, 255, 255, 0.1));
-}
-
-[data-theme="dark"] .lumina-mermaid-wrapper.lumina-mermaid-rendered {
-  background: transparent;
-  border-color: transparent;
-}
 
 :root {
   --lumina-sidebar-bg: #f1f6fe;
@@ -8370,6 +8244,10 @@ button {
 
 #pane-secondary {
   display: none;
+}
+
+#pane-secondary.is-blank>*:not(.lumina-settings-overlay) {
+  display: none !important;
 }
 
 #sidebar-toggle-btn-secondary {

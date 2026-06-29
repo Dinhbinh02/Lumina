@@ -3,6 +3,9 @@
   "name": "Lumina",
   "version": "1.0",
   "description": "Fast, private, and flexible AI assistant for your browser.",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -83,6 +86,7 @@
       "resources": [
         "lib/core/*",
         "lib/vendor/*",
+        "lib/vendor/pyodide/*",
         "lib/ui/*",
         "lib/parsers/*",
         "lib/helpers/*",
