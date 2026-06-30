@@ -101,7 +101,6 @@ button {
   font-family: var(--lumina-font-family) !important;
   font-size: var(--lumina-fontSize, 13px) !important;
   line-height: normal !important;
-  gap: 2px !important;
 }
 
 [data-theme="dark"] #lumina-action-bar {
@@ -8335,6 +8334,10 @@ button {
 }
 
 .split-container:not(.split-mode) .close-split-btn {
+  display: none !important;
+}
+
+#pane-secondary.is-blank .close-split-btn {
   display: none !important;
 }
 

@@ -1457,8 +1457,18 @@ async function initTabs() {
 
         // Check split mode
         let storedSplitMode = data[KEYS.isSplitMode] ?? false;
-        if (storedSplitMode && window.innerWidth < 900) {
+        let savedSecTab = null;
+        if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
+            savedSecTab = data[KEYS.tabs][1];
+        }
+        let secSessionId = urlSecSessionId || savedSecTab?.sessionId || null;
+
+        if (storedSplitMode && (!secSessionId || window.innerWidth < 900)) {
             storedSplitMode = false;
+            chrome.storage.local.set({
+                [KEYS.isSplitMode]: false,
+                [GLOBAL_KEYS.isSplitMode]: false
+            });
         }
 
         if (storedSplitMode) {
@@ -1477,13 +1487,6 @@ async function initTabs() {
                 panePrimary.style.flex = `${ratio}`;
                 paneSecondary.style.flex = `${100 - ratio}`;
             }
-
-            let savedSecTab = null;
-            if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
-                savedSecTab = data[KEYS.tabs][1];
-            }
-
-            let secSessionId = urlSecSessionId || savedSecTab?.sessionId || null;
             let secTabTitle = savedSecTab?.title || 'Chat 2';
             let secMeta = {};
 
@@ -1915,6 +1918,7 @@ function setupResizer() {
     if (!resizer || !panePrimary || !paneSecondary || !splitContainer) return;
 
     let isDragging = false;
+    let animationFrameId = null;
 
     resizer.addEventListener('mousedown', (e) => {
         e.preventDefault();
@@ -1922,31 +1926,40 @@ function setupResizer() {
         resizerDragging = true;
         resizer.classList.add('dragging');
         document.body.style.cursor = 'col-resize';
+        panePrimary.style.pointerEvents = 'none';
+        paneSecondary.style.pointerEvents = 'none';
     });
 
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
 
-        const containerRect = splitContainer.getBoundingClientRect();
-        const paddingLeft = parseFloat(window.getComputedStyle(splitContainer).paddingLeft) || 0;
-        const paddingRight = parseFloat(window.getComputedStyle(splitContainer).paddingRight) || 0;
+        if (animationFrameId) return;
 
-        const relativeX = e.clientX - containerRect.left - paddingLeft;
-        const availableWidth = containerRect.width - paddingLeft - paddingRight - resizer.offsetWidth;
+        animationFrameId = requestAnimationFrame(() => {
+            animationFrameId = null;
+            if (!isDragging) return;
 
-        if (availableWidth <= 0) return;
+            const containerRect = splitContainer.getBoundingClientRect();
+            const paddingLeft = parseFloat(window.getComputedStyle(splitContainer).paddingLeft) || 0;
+            const paddingRight = parseFloat(window.getComputedStyle(splitContainer).paddingRight) || 0;
 
-        let percentage = (relativeX / availableWidth) * 100;
-        if (percentage < 20) percentage = 20;
-        if (percentage > 80) percentage = 80;
+            const relativeX = e.clientX - containerRect.left - paddingLeft;
+            const availableWidth = containerRect.width - paddingLeft - paddingRight - resizer.offsetWidth;
 
-        // Auto-snap to center (50%) when close (between 47.5% and 52.5%)
-        if (percentage >= 47.5 && percentage <= 52.5) {
-            percentage = 50;
-        }
+            if (availableWidth <= 0) return;
 
-        panePrimary.style.flex = `${percentage}`;
-        paneSecondary.style.flex = `${100 - percentage}`;
+            let percentage = (relativeX / availableWidth) * 100;
+            if (percentage < 20) percentage = 20;
+            if (percentage > 80) percentage = 80;
+
+            // Auto-snap to center (50%) when close (between 47.5% and 52.5%)
+            if (percentage >= 47.5 && percentage <= 52.5) {
+                percentage = 50;
+            }
+
+            panePrimary.style.flex = `${percentage}`;
+            paneSecondary.style.flex = `${100 - percentage}`;
+        });
     });
 
     document.addEventListener('mouseup', () => {
@@ -1955,6 +1968,14 @@ function setupResizer() {
             resizerDragging = false;
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
+            panePrimary.style.pointerEvents = '';
+            paneSecondary.style.pointerEvents = '';
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
             const newRatio = parseFloat(panePrimary.style.flex) || 50;
             chrome.storage.local.set({
                 [KEYS.splitRatio]: newRatio,

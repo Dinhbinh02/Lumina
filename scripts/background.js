@@ -3,7 +3,6 @@ importScripts('../lib/core/constants.js');
 importScripts('../lib/core/memory.js');
 importScripts('../lib/core/attachment_db.js');
 importScripts('../lib/core/auth.js');
-importScripts('../lib/vendor/gpt-tokenizer.js');
 importScripts('../lib/core/token_utils.js');
 
 

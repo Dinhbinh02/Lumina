@@ -7,6 +7,7 @@ class LuminaSearchModal {
     this.resultsList = document.getElementById('lumina-search-results-list');
     this.closeBtn = document.getElementById('lumina-search-close-btn');
     this.overlayCloseBtn = document.getElementById('lumina-search-overlay-close-btn');
+    this.newChatBtn = document.getElementById('lumina-search-new-chat');
 
     if (!this.overlay) return;
 
@@ -23,6 +24,18 @@ class LuminaSearchModal {
 
     if (this.overlayCloseBtn) {
       this.overlayCloseBtn.addEventListener('click', () => this.hide());
+    }
+
+    if (this.newChatBtn) {
+      this.newChatBtn.addEventListener('click', () => {
+        this.hide();
+        if (typeof resetChat === 'function') {
+          resetChat(null);
+        } else {
+          const sidebarNewChatBtn = document.getElementById('sidebar-new-chat-btn');
+          if (sidebarNewChatBtn) sidebarNewChatBtn.click();
+        }
+      });
     }
 
     // Close on Escape, search when typing
@@ -198,13 +211,19 @@ class LuminaSearchModal {
           }
           if (!displayTitle) displayTitle = "Untitled Chat";
 
+          const activeSessionId = this.getActiveSessionId();
+          const isCurrent = activeSessionId === session.id;
+          const timeIndicatorHtml = isCurrent 
+            ? `<span class="lumina-search-item-current">current</span>`
+            : `<span class="lumina-search-item-date">${this.formatDate(session.updatedAt)}</span>`;
+
           const itemEl = document.createElement('div');
           itemEl.className = 'lumina-search-item';
           itemEl.innerHTML = `
             <div class="lumina-search-item-content">
               <div class="lumina-search-item-top">
                 <span class="lumina-search-item-title"></span>
-                <span class="lumina-search-item-date">${this.formatDate(session.updatedAt)}</span>
+                ${timeIndicatorHtml}
               </div>
             </div>
           `;
@@ -262,13 +281,19 @@ class LuminaSearchModal {
       }
 
       finalResults.forEach(item => {
+        const activeSessionId = this.getActiveSessionId();
+        const isCurrent = activeSessionId === item.sessionId;
+        const timeIndicatorHtml = isCurrent 
+          ? `<span class="lumina-search-item-current">current</span>`
+          : `<span class="lumina-search-item-date">${this.formatDate(item.timestamp)}</span>`;
+
         const itemEl = document.createElement('div');
         itemEl.className = 'lumina-search-item';
         itemEl.innerHTML = `
           <div class="lumina-search-item-content">
             <div class="lumina-search-item-top">
               <span class="lumina-search-item-title"></span>
-              <span class="lumina-search-item-date">${this.formatDate(item.timestamp)}</span>
+              ${timeIndicatorHtml}
             </div>
             <div class="lumina-search-item-snippet"></div>
           </div>
@@ -312,6 +337,26 @@ class LuminaSearchModal {
     if (sidebar) sidebar.classList.remove('active');
     if (backdrop) backdrop.classList.remove('active');
     document.body.classList.remove('sidebar-open');
+  }
+
+  static getActiveSessionId() {
+    // 1. Try DOM active item
+    const activeSidebarItem = document.querySelector('#sidebar-recent-chats .recent-chat-item.active');
+    if (activeSidebarItem) {
+      const sid = activeSidebarItem.getAttribute('data-session-id');
+      if (sid) return sid;
+    }
+    
+    // 2. Try LuminaSelectionScope API
+    if (typeof window.LuminaSelectionScope !== 'undefined') {
+      const tabs = window.LuminaSelectionScope.getTabs();
+      const activeIndex = window.LuminaSelectionScope.getActiveTabIndex();
+      if (tabs && activeIndex >= 0 && tabs[activeIndex]) {
+        return tabs[activeIndex].sessionId;
+      }
+    }
+    
+    return null;
   }
 
   static formatDate(timestamp) {

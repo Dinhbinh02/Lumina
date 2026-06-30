@@ -1902,7 +1902,7 @@
 
 .lumina-storage-session-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--lumina-text-primary, #e8eaed);
   white-space: nowrap;
   overflow: hidden;

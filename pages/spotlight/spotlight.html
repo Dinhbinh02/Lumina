@@ -289,7 +289,8 @@
     <!-- ==================== LUMINA SEARCH OVERLAY ==================== -->
     <div class="lumina-settings-overlay" id="lumina-search-overlay" style="display: none;">
         <button class="lumina-search-overlay-close-btn" id="lumina-search-overlay-close-btn" title="Close Search">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -299,22 +300,35 @@
                 <div class="lumina-search-header">
                     <div class="lumina-search-input-wrapper">
                         <span class="lumina-search-bar-icon">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8" />
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
                         </span>
-                        <input type="text" id="lumina-search-input" class="lumina-search-input" placeholder="Search chats..." autocomplete="off" autofocus>
+                        <input type="text" id="lumina-search-input" class="lumina-search-input"
+                            placeholder="Search chats..." autocomplete="off" autofocus>
                     </div>
                     <button class="lumina-search-close-btn" id="lumina-search-close-btn" title="Close Search">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
                     </button>
                 </div>
-                
+
                 <div class="lumina-search-results-section">
+                    <div class="lumina-search-new-chat" id="lumina-search-new-chat">
+                        <div class="lumina-search-icon-wrapper">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 4H9a5 5 0 0 0-5 5v6a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-4"></path>
+                                <path d="M10 12l8-8a1.414 1.414 0 0 1 2 2l-8 8a1.414 1.414 0 0 1-2-2z"></path>
+                            </svg>
+                        </div>
+                        <span class="nav-text">New chat</span>
+                    </div>
                     <div id="lumina-search-results-list" class="lumina-search-results-list">
                         <!-- Search results will be rendered here dynamically -->
                     </div>
@@ -542,8 +556,10 @@
                                 </div>
                                 <div class="lumina-settings-control">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <input type="range" id="lumina-settings-fontsize" min="11" max="17" step="1" style="width: 120px; cursor: pointer;">
-                                        <span id="lumina-settings-fontsize-value" style="font-size: 13px; font-weight: 500; min-width: 32px;">14px</span>
+                                        <input type="range" id="lumina-settings-fontsize" min="11" max="17" step="1"
+                                            style="width: 120px; cursor: pointer;">
+                                        <span id="lumina-settings-fontsize-value"
+                                            style="font-size: 13px; font-weight: 500; min-width: 32px;">14px</span>
                                     </div>
                                 </div>
                             </div>
@@ -666,7 +682,8 @@
                             <div class="lumina-settings-card-body">
                                 <div class="lumina-settings-field">
                                     <div class="lumina-settings-dropdown-wrapper auto-width">
-                                        <input type="text" id="lumina-settings-base-tone-input" readonly value="Default" data-value="default">
+                                        <input type="text" id="lumina-settings-base-tone-input" readonly value="Default"
+                                            data-value="default">
                                         <div id="lumina-settings-base-tone-menu" class="lumina-settings-dropdown-menu">
                                             <div data-val="default">Default</div>
                                             <div data-val="professional">Professional (Polished and precise)</div>
@@ -1189,7 +1206,8 @@
     <div class="lumina-settings-overlay" id="lumina-instruction-popup-overlay">
         <div class="lumina-provider-popup-dialog">
             <div class="lumina-provider-popup-header">
-                <span class="lumina-provider-popup-title" id="lumina-instruction-popup-title">Add Custom Instruction</span>
+                <span class="lumina-provider-popup-title" id="lumina-instruction-popup-title">Add Custom
+                    Instruction</span>
                 <button type="button" class="lumina-provider-popup-close-btn" id="lumina-instruction-popup-close-btn"
                     aria-label="Close Instruction Form">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -1464,7 +1482,6 @@
     <script src="../../lib/core/auth.js" defer></script>
     <script src="../../lib/core/chat_history.js" defer></script>
     <script src="../../lib/ui/history_panel.js" defer></script>
-    <script src="../../lib/vendor/gpt-tokenizer.js" defer></script>
     <script src="../../lib/core/token_utils.js" defer></script>
     <script src="../../lib/core/memory.js" defer></script>
     <script src="settings_modal.js" defer></script>

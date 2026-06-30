@@ -115,9 +115,7 @@
       ],
       "js": [
         "lib/vendor/turndown.js",
-        "lib/vendor/gpt-tokenizer.js",
         "lib/core/constants.js",
-        "lib/core/token_utils.js",
         "lib/parsers/cambridge_parser.js",
         "lib/parsers/oxford_parser.js",
         "lib/ui/dictionary_popup.js",
