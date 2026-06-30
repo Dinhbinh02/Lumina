@@ -7642,7 +7642,10 @@ function updatePaneBlankState() {
     if (!paneSecondary) return;
 
     const secTab = (isSplitMode && secondaryActiveTabIndex >= 0) ? tabs[secondaryActiveTabIndex] : null;
-    if (isSplitMode && secTab && !secTab.sessionId) {
+    const searchOverlay = document.getElementById('lumina-search-overlay');
+    const isSearchOpen = searchOverlay && searchOverlay.style.display !== 'none' && searchOverlay.classList.contains('in-pane');
+
+    if (isSplitMode && secTab && !secTab.sessionId && isSearchOpen) {
         paneSecondary.classList.add('is-blank');
     } else {
         paneSecondary.classList.remove('is-blank');
@@ -7661,7 +7664,10 @@ function updateWelcomeScreenState(pane = 'primary') {
     const historyEl = targetTab ? targetTab.historyEl : document.getElementById(isSec ? 'chat-history-secondary' : 'chat-history');
     if (!historyEl) return;
 
-    if (isSec && targetTab && !targetTab.sessionId) {
+    const searchOverlay = document.getElementById('lumina-search-overlay');
+    const isSearchOpen = searchOverlay && searchOverlay.style.display !== 'none' && searchOverlay.classList.contains('in-pane');
+
+    if (isSec && targetTab && !targetTab.sessionId && isSearchOpen) {
         layout.classList.remove('new-chat-homepage');
         const chatContainer = layout.querySelector('.lumina-chat-container');
         if (chatContainer) {
