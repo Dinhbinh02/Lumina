@@ -920,18 +920,19 @@ function showSparkContextMenu(btn, sparkId) {
     }, 10);
 }
 
-async function openSparkChat(sparkId) {
+async function openSparkChat(sparkId, isSecondaryOverride = null) {
     sparksClosePage();
 
     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
 
-    const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
+    const isSecondary = isSecondaryOverride !== null ? isSecondaryOverride : (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
+    const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
+    const activeTab = (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
     if (activeTab) {
         activeTab.sparkId = sparkId;
         if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
 
-        const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
         const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
         const targetSharedInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
 
@@ -1081,7 +1082,8 @@ async function renderSparkWelcomeScreen(activeTab) {
             const contentData = await chrome.storage.local.get([contentKey]);
             const messages = contentData[contentKey] || [];
             const meta = sessions[sid] || { id: sid };
-            window.loadHistoryIntoNewTab(messages, meta, sid);
+            const isSecondary = (historyEl.id === 'chat-history-secondary');
+            window.loadHistoryIntoNewTab(messages, meta, sid, null, isSecondary);
         });
     });
 }

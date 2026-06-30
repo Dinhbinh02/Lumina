@@ -1389,7 +1389,10 @@ async function executeChatRequest(config, messages, initialContext, question, po
     let controller = null;
     if (sessionId) {
         if (sessionControllers.has(sessionId)) {
-            try { sessionControllers.get(sessionId).abort(); } catch (e) { }
+            try { 
+                console.log(`[Lumina BG] Aborting session ${sessionId} due to duplicate/re-submission`);
+                sessionControllers.get(sessionId).abort(); 
+            } catch (e) { }
         }
         controller = new AbortController();
         sessionControllers.set(sessionId, controller);
@@ -3054,6 +3057,7 @@ chrome.runtime.onConnect.addListener((port) => {
                             if (!sessionPorts.has(sid)) {
                                 const controller = sessionControllers.get(sid);
                                 if (controller) {
+                                    console.log(`[Lumina BG] Aborting session ${sid} due to port disconnect timeout`);
                                     controller.abort();
                                     sessionControllers.delete(sid);
                                 }
@@ -3102,6 +3106,7 @@ chrome.runtime.onConnect.addListener((port) => {
 
                 const controller = sessionControllers.get(msg.sessionId);
                 if (controller) {
+                    console.log(`[Lumina BG] Aborting session ${msg.sessionId} due to stop_chat message`);
                     controller.abort();
                     sessionControllers.delete(msg.sessionId);
                 }
@@ -4209,7 +4214,6 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     const attachments = [];
     if (Array.isArray(images)) attachments.push(...images);
     if (Array.isArray(files)) attachments.push(...files);
-    console.log("[generateChatTitleFromModel] attachments built:", attachments);
 
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
@@ -4218,12 +4222,9 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
         imageData: attachments.length > 0 ? attachments : null,
         isStreaming: false, cachedContent: null
     };
-    console.log("[generateChatTitleFromModel] payloadParams:", payloadParams);
 
     const response = await fetchWithRotation(keys, async (key) => {
         const payload = await buildApiPayload(history || [], question, systemInstruction, key, payloadParams);
-        console.log("[generateChatTitleFromModel] buildApiPayload result:", payload);
-        console.log("[generateChatTitleFromModel] stringified body:", JSON.stringify(payload.body));
         const headers = { 'Content-Type': 'application/json' };
         if (key) {
             const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));

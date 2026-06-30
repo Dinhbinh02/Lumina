@@ -311,6 +311,7 @@ class LuminaSearchModal {
   }
 
   static async openSession(sessionId, messageIndex = null) {
+    const wasInPane = this.overlay ? this.overlay.classList.contains('in-pane') : false;
     this.isSelectingChat = true;
     this.hide();
     this.isSelectingChat = false;
@@ -331,7 +332,7 @@ class LuminaSearchModal {
     }
 
     if (typeof window.loadHistoryIntoNewTab === 'function') {
-      window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex);
+      window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
     }
 
     // Close mobile sidebar after selecting a chat

@@ -1176,8 +1176,14 @@ async function handleRemoteSync(changes, areaName) {
                     const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
                     const isActive = (index === activeTabIndex);
                     if (isActive || isSecondary) {
-                        resetChat(isSecondary);
-                        updated = true;
+                        const ui = isSecondary ? sharedInputUISecondary : sharedInputUI;
+                        if (ui && ui.isGenerating) {
+                            // Do not reset/abort if this tab is currently generating
+                            console.log('[Lumina] Suppressing resetChat on active generation for tab:', tab.sessionId);
+                        } else {
+                            resetChat(isSecondary);
+                            updated = true;
+                        }
                     } else {
                         tab.title = 'New Tab';
                         tab.sessionId = null;
@@ -1288,6 +1294,9 @@ async function ensureTabHistoryLoaded(tab) {
         }
     } else {
         tab.isHistoryLoaded = true;
+        if (tab.sparkId && typeof renderSparkWelcomeScreen === 'function') {
+            await renderSparkWelcomeScreen(tab);
+        }
     }
 }
 
@@ -6782,10 +6791,10 @@ async function handleYouTubeTrigger(triggerInfo) {
 }
 
 
-window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null) {
+window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null, isSecondaryOverride = null) {
     if (tabs.length === 0) return;
 
-    const isSecondary = isSplitMode && hoveredPane === 'secondary';
+    const isSecondary = isSecondaryOverride !== null ? isSecondaryOverride : (isSplitMode && hoveredPane === 'secondary');
     const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
     const activeTab = tabs[targetIdx];
     if (!activeTab) return;
