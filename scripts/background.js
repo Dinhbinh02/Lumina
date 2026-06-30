@@ -326,11 +326,11 @@ Prioritize scannability that achieves clarity at a glance. Use the formatting to
 - Tables: organize/compare data — ONLY when comparing >=3 items across >=2 attributes. Never duplicate table content as bullet points.
 - Vary layouts naturally — do NOT fall into a mechanical identical format every turn.
 
-[Diagram Syntax — D2 & Python Matplotlib]
-- A single response CAN contain multiple diagrams (D2 and/or Python Matplotlib charts) if multiple aspects of the topic benefit from visual explanation.
+[Diagram Syntax — D2 & Chart.js]
+- A single response CAN contain multiple diagrams (D2 and/or Chart.js charts) if multiple aspects of the topic benefit from visual explanation.
 - Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
-- Use Python Matplotlib (matplotlib.pyplot & numpy) for all statistical charts, plots, complex visual diagrams (e.g. bar charts, line plots, pie charts, scatter plots), mathematical visualizations (e.g. 2D/3D functions, vector fields, geometry shapes, curves, Fourier transforms), and physics/scientific simulations (e.g. wave mechanics, orbits, trajectories, heat maps).
-- EVERY diagram or chart (both D2 and Python) MUST ALWAYS have a clear, descriptive title to make it self-explanatory.
+- Use Chart.js JSON config (chartjs code blocks) for all statistical charts and data visualizations: bar charts, line charts, pie/doughnut charts, scatter plots, radar charts, etc.
+- EVERY diagram or chart (both D2 and Chart.js) MUST ALWAYS have a clear, descriptive title to make it self-explanatory.
 CRITICAL D2 SYNTAX RULES:
 1. Valid shapes ONLY: rectangle, square, page, parallelogram, document, cylinder, queue, package, step, callout, stored_data, person, diamond, oval, circle, hexagon, cloud. Do NOT use "folder", "star", "triangle", "card", "rounded_square", "rounded-rectangle".
 2. Nested nodes MUST use full path from outside (e.g., 'Nucleus.mRNA -> Cytoplasm.Ribosome'). Plain 'mRNA -> Ribosome' is a syntax error.
@@ -379,23 +379,63 @@ D2 Features Syntax:
 - SQL Table: 'users: { shape: sql_table; id: int {constraint: primary_key} }'
 - UML Class: 'parser: { shape: class; +read(): string; -buffer: string }'
 - Grid Layout: 'grid: { grid-rows: 2; grid-columns: 2; cell1; cell2 }'
-Python Matplotlib Chart Rule:
-- Format code blocks exactly with \`python\` and include \`# [chart]\` on the first line.
-- The script must save the output figure locally to \`'chart.png'\` and then call \`plt.close()\`.
-- Use Matplotlib and NumPy for all statistical charts, mathematical visualizations (2D/3D functions, surfaces), and physics simulations. Set clear titles, grids, axis labels, and colorbars where appropriate.
-- Example:
-\`\`\`python
-# [chart]
-import matplotlib.pyplot as plt
-import numpy as np
-x = np.linspace(-3, 3, 100)
-y = np.sin(x)
-fig, ax = plt.subplots(figsize=(6, 4))
-ax.plot(x, y, color='#2b5c8f')
-ax.set_title('Visual Simulation Title')
-ax.grid(True)
-plt.savefig('chart.png', dpi=300, bbox_inches='tight')
-plt.close()
+Chart.js Chart Rule:
+- Format code blocks EXACTLY with \`chartjs\` language identifier.
+- The content MUST be a valid JSON object following Chart.js v3 API structure.
+- ALWAYS include a descriptive title in options.plugins.title.
+- Use vibrant, beautiful color palettes for datasets. Suggested palette: ["#6366f1","#06b6d4","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899"].
+- Do NOT include any JavaScript functions (callbacks) — pure JSON only.
+- Example (Bar Chart):
+\`\`\`chartjs
+{
+  "type": "bar",
+  "data": {
+    "labels": ["Q1", "Q2", "Q3", "Q4"],
+    "datasets": [
+      {
+        "label": "Revenue ($M)",
+        "data": [12.5, 18.3, 15.7, 22.1],
+        "backgroundColor": ["#6366f1","#06b6d4","#10b981","#f59e0b"]
+      }
+    ]
+  },
+  "options": {
+    "plugins": {
+      "title": { "display": true, "text": "Quarterly Revenue 2024" },
+      "legend": { "display": true }
+    },
+    "scales": {
+      "y": { "beginAtZero": true }
+    }
+  }
+}
+\`\`\`
+- Example (Line Chart):
+\`\`\`chartjs
+{
+  "type": "line",
+  "data": {
+    "labels": ["Jan","Feb","Mar","Apr","May","Jun"],
+    "datasets": [
+      {
+        "label": "Users",
+        "data": [1200, 1900, 1700, 2400, 2200, 3100],
+        "borderColor": "#6366f1",
+        "backgroundColor": "rgba(99,102,241,0.15)",
+        "fill": true,
+        "tension": 0.4
+      }
+    ]
+  },
+  "options": {
+    "plugins": {
+      "title": { "display": true, "text": "Monthly Active Users" }
+    },
+    "scales": {
+      "y": { "beginAtZero": true }
+    }
+  }
+}
 \`\`\`
 [YouTube]
 \`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.
