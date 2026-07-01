@@ -1645,7 +1645,7 @@ button {
   max-height: 280px !important;
   min-height: 24px !important;
   height: auto;
-  padding: 4px 4px 6px 14px !important;
+  padding: 4px 4px 6px 12px !important;
   scrollbar-gutter: stable !important;
   transform: translateZ(0);
   flex-grow: 1;
@@ -4316,7 +4316,7 @@ button {
 }
 
 .lumina-image-preview-container {
-  padding: 8px 6px 0 6px;
+  padding: 8px 4px 0 4px;
 }
 
 .lumina-image-preview-container:empty {
@@ -6288,6 +6288,21 @@ button {
   border-radius: var(--lumina-radius-sm, 12px);
   overflow: visible;
 }
+
+/* ── Chart.js Rough Chart Container ── */
+.lumina-chartjs-container {
+  width: 100%;
+  padding: 8px 4px;
+  max-height: 400px;
+  animation: lumina-mermaid-reveal 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.lumina-chartjs-container canvas {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: var(--lumina-radius-sm, 12px);
+}
+
 
 
 

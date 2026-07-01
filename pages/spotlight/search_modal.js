@@ -28,9 +28,11 @@ class LuminaSearchModal {
 
     if (this.newChatBtn) {
       this.newChatBtn.addEventListener('click', () => {
+        const wasInPane = this.overlay ? this.overlay.classList.contains('in-pane') : false;
+        this.isSelectingChat = true;
         this.hide();
         if (typeof resetChat === 'function') {
-          resetChat(null);
+          resetChat(wasInPane);
         } else {
           const sidebarNewChatBtn = document.getElementById('sidebar-new-chat-btn');
           if (sidebarNewChatBtn) sidebarNewChatBtn.click();
@@ -60,6 +62,7 @@ class LuminaSearchModal {
   static async show(inPane = false) {
     this.init();
     if (!this.overlay) return;
+    this.isSelectingChat = false;
 
     if (inPane) {
       this.overlay.classList.add('in-pane');
@@ -308,6 +311,7 @@ class LuminaSearchModal {
   }
 
   static async openSession(sessionId, messageIndex = null) {
+    const wasInPane = this.overlay ? this.overlay.classList.contains('in-pane') : false;
     this.isSelectingChat = true;
     this.hide();
     this.isSelectingChat = false;
@@ -328,7 +332,7 @@ class LuminaSearchModal {
     }
 
     if (typeof window.loadHistoryIntoNewTab === 'function') {
-      window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex);
+      window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
     }
 
     // Close mobile sidebar after selecting a chat
