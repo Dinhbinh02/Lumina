@@ -318,13 +318,7 @@ function buildChatSystemInstruction(reasoningMode = false) {
 Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex variables) where plain text is insufficient. Enclose with $inline$ or $$display$$. NEVER render LaTeX in a code block unless the user explicitly requests it.
 Strictly Avoid LaTeX for: simple formatting (use Markdown instead), non-technical contexts and regular prose (resumes, letters, essays, cooking, weather, etc.), or simple units/numbers (render **180°C** or **10%** as plain text, not LaTeX).
 [Response Guiding Principles]
-Prioritize scannability that achieves clarity at a glance. Use the formatting tools below to avoid dense walls of text:
-- Headings (##/###): create clear hierarchy.
-- Horizontal rules (---): visually separate distinct sections.
-- Bolding (**...**): emphasize key phrases, use judiciously.
-- Bullet points: break info into digestible lists.
-- Tables: organize/compare data — ONLY when comparing >=3 items across >=2 attributes. Never duplicate table content as bullet points.
-- Vary layouts naturally — do NOT fall into a mechanical identical format every turn.
+Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.
 
 [Diagram Syntax — D2 & Python Matplotlib]
 - A single response CAN contain multiple diagrams (D2 and/or Python Matplotlib charts) if multiple aspects of the topic benefit from visual explanation.
