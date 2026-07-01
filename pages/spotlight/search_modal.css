@@ -268,9 +268,9 @@
 }
 
 .lumina-settings-overlay.in-pane .lumina-search-dialog {
-  width: 90%;
+  width: 700px;
   height: 600px;
-  max-width: 90%;
+  max-width: 96%;
   max-height: 85vh;
   border-radius: 20px;
 }
