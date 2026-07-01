@@ -6351,7 +6351,7 @@ button {
   font-size: 13px !important;
   padding: 0 6px 6px 6px;
   gap: 8px;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.18s cubic-bezier(0.25, 1, 0.5, 1), transform 0.18s cubic-bezier(0.25, 1, 0.5, 1);
   z-index: 1000;
   box-sizing: border-box;
   cursor: pointer;
@@ -6925,7 +6925,7 @@ button {
 .sidebar-spark-item__menu-btn {
   opacity: 1;
   max-width: 200px;
-  transition: opacity 0.15s ease, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.12s ease, max-width 0.18s cubic-bezier(0.25, 1, 0.5, 1);
   overflow: hidden;
   white-space: nowrap;
   display: inline-block;
@@ -6934,116 +6934,120 @@ button {
 .recent-chats-list {
   opacity: 1;
   max-height: 1000px;
-  transition: opacity 0.15s ease, max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.12s ease, max-height 0.18s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .sidebar-header-actions {
   opacity: 1;
   max-width: 100px;
-  transition: opacity 0.15s ease, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.12s ease, max-width 0.18s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .sidebar-nav-item,
 .sidebar-spark-item {
-  transition: background-color 0.2s, padding 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Only animate GPU-composited properties to avoid layout recalculation on every frame.
+     padding, margin, width, height force reflow on all items simultaneously during sidebar collapse. */
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
-.lumina-sidebar.sidebar-collapsed {
-  width: 48px;
-  cursor: pointer;
-}
+@media (min-width: 769px) {
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed {
+    width: 48px;
+    cursor: pointer;
+  }
 
-.lumina-sidebar.sidebar-collapsed .brand-name,
-.lumina-sidebar.sidebar-collapsed .action-text,
-.lumina-sidebar.sidebar-collapsed .nav-text,
-.lumina-sidebar.sidebar-collapsed .sidebar-section-title,
-.lumina-sidebar.sidebar-collapsed .user-name,
-.lumina-sidebar.sidebar-collapsed .sidebar-spark-item__title,
-.lumina-sidebar.sidebar-collapsed .sidebar-spark-item__menu-btn {
-  opacity: 0;
-  max-width: 0;
-  pointer-events: none;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .brand-name,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .action-text,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .nav-text,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-section-title,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .user-name,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__title,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__menu-btn {
+    opacity: 0;
+    max-width: 0;
+    pointer-events: none;
+  }
 
-.lumina-sidebar.sidebar-collapsed .recent-chats-list {
-  opacity: 0;
-  max-height: 0;
-  pointer-events: none;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .recent-chats-list {
+    opacity: 0;
+    max-height: 0;
+    pointer-events: none;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-header {
-  justify-content: flex-start;
-  padding: 0 6px;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-header {
+    justify-content: flex-start;
+    padding: 0 6px;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-header-actions {
-  opacity: 0;
-  max-width: 0;
-  pointer-events: none;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-header-actions {
+    opacity: 0;
+    max-width: 0;
+    pointer-events: none;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-brand {
-  display: flex !important;
-  justify-content: flex-start;
-  width: 100%;
-  gap: 0;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-brand {
+    display: flex !important;
+    justify-content: flex-start;
+    width: 100%;
+    gap: 0;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-nav-item {
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-  justify-content: flex-start;
-  width: 100%;
-  height: 30px;
-  border-radius: 8px;
-  margin: 0;
-  gap: 0;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-nav-item {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    justify-content: flex-start;
+    width: 100%;
+    height: 30px;
+    border-radius: 8px;
+    margin: 0;
+    gap: 0;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-footer {
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
-  height: 80px !important;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    height: 80px !important;
+  }
 
-.lumina-sidebar.sidebar-collapsed .user-profile {
-  justify-content: center;
-  gap: 0;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .user-profile {
+    justify-content: center;
+    gap: 0;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-spark-item {
-  padding-left: 6px !important;
-  padding-right: 6px !important;
-  justify-content: flex-start;
-  width: 100%;
-  height: 30px;
-  border-radius: 8px;
-  margin: 0;
-  gap: 0;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-spark-item {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    justify-content: flex-start;
+    width: 100%;
+    height: 30px;
+    border-radius: 8px;
+    margin: 0;
+    gap: 0;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-spark-item__avatar {
-  width: 24px;
-  height: 24px;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-spark-item__avatar {
+    width: 24px;
+    height: 24px;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-sparks-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-sparks-section .sidebar-section-title,
-.lumina-sidebar.sidebar-collapsed #sidebar-new-spark-btn {
-  display: none !important;
-}
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-sparks-section .sidebar-section-title,
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed #sidebar-new-spark-btn {
+    display: none !important;
+  }
 
-.lumina-sidebar.sidebar-collapsed .sidebar-sparks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  body:not(.is-sidepanel) .lumina-sidebar.sidebar-collapsed .sidebar-sparks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 }
 
 /* Responsive Behaviors */
@@ -7055,7 +7059,7 @@ button {
   display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   #sidebar-toggle-btn {
     display: flex;
   }
@@ -8282,6 +8286,9 @@ button {
   box-sizing: border-box;
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  /* Contain layout so flex resize of one pane doesn't cascade reflow outside split-container */
+  contain: layout style;
+  will-change: flex-basis;
 }
 
 [data-theme="dark"] .spotlight-pane {
@@ -8327,11 +8334,11 @@ button {
   width: 6px;
 }
 
-@media (max-width: 900px) {
-  .split-toggle-btn {
-    display: none !important;
-  }
+body.is-sidepanel .split-toggle-btn {
+  display: none !important;
+}
 
+@media (max-width: 768px) {
   .split-container {
     padding: 0 !important;
   }
@@ -8506,7 +8513,7 @@ button {
   opacity: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .lumina-sidebar:not(.active)~.lumina-main-content .collapse-chevron {
     opacity: 0;
     transform: translateX(3px) scale(0.8);

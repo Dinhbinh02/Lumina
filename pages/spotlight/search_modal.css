@@ -2,7 +2,7 @@
 
 .lumina-search-dialog {
   width: 700px;
-  max-width: 70vw;
+  max-width: 96vw;
   height: 600px;
   max-height: 85vh;
   background: var(--lumina-ui-bg);
@@ -237,7 +237,7 @@
   border: none;
   color: var(--lumina-text-secondary);
   cursor: pointer;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: 8px;
@@ -280,6 +280,7 @@
 }
 
 .lumina-settings-overlay.in-pane .lumina-search-overlay-close-btn {
+  display: flex;
   top: 12px;
   right: 12px;
 }

@@ -299,7 +299,7 @@ async function toggleSplitMode() {
         }
     } else {
         // Turn on split mode
-        if (window.innerWidth < 900) {
+        if (isSidePanel) {
             return;
         }
 
@@ -1472,7 +1472,7 @@ async function initTabs() {
         }
         let secSessionId = urlSecSessionId || savedSecTab?.sessionId || null;
 
-        if (storedSplitMode && (!secSessionId || window.innerWidth < 900)) {
+        if (storedSplitMode && (!secSessionId || isSidePanel)) {
             storedSplitMode = false;
             chrome.storage.local.set({
                 [KEYS.isSplitMode]: false,
@@ -1929,6 +1929,11 @@ function setupResizer() {
     let isDragging = false;
     let animationFrameId = null;
 
+    // Cached values — computed once on mousedown, never inside mousemove
+    let cachedAvailableWidth = 0;
+    let cachedOffsetLeft = 0;
+    let lastPercentage = 50;
+
     resizer.addEventListener('mousedown', (e) => {
         e.preventDefault();
         isDragging = true;
@@ -1937,37 +1942,43 @@ function setupResizer() {
         document.body.style.cursor = 'col-resize';
         panePrimary.style.pointerEvents = 'none';
         paneSecondary.style.pointerEvents = 'none';
+
+        // Read layout once here — zero reflow during drag
+        const containerRect = splitContainer.getBoundingClientRect();
+        const style = window.getComputedStyle(splitContainer);
+        const paddingLeft = parseFloat(style.paddingLeft) || 0;
+        const paddingRight = parseFloat(style.paddingRight) || 0;
+        cachedOffsetLeft = containerRect.left + paddingLeft;
+        cachedAvailableWidth = containerRect.width - paddingLeft - paddingRight - resizer.offsetWidth;
+        lastPercentage = parseFloat(panePrimary.style.width) || 50;
     });
 
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-
         if (animationFrameId) return;
+
+        // Capture clientX immediately to avoid stale event data inside rAF
+        const clientX = e.clientX;
 
         animationFrameId = requestAnimationFrame(() => {
             animationFrameId = null;
-            if (!isDragging) return;
+            if (!isDragging || cachedAvailableWidth <= 0) return;
 
-            const containerRect = splitContainer.getBoundingClientRect();
-            const paddingLeft = parseFloat(window.getComputedStyle(splitContainer).paddingLeft) || 0;
-            const paddingRight = parseFloat(window.getComputedStyle(splitContainer).paddingRight) || 0;
-
-            const relativeX = e.clientX - containerRect.left - paddingLeft;
-            const availableWidth = containerRect.width - paddingLeft - paddingRight - resizer.offsetWidth;
-
-            if (availableWidth <= 0) return;
-
-            let percentage = (relativeX / availableWidth) * 100;
+            let percentage = ((clientX - cachedOffsetLeft) / cachedAvailableWidth) * 100;
             if (percentage < 20) percentage = 20;
-            if (percentage > 80) percentage = 80;
+            else if (percentage > 80) percentage = 80;
 
             // Auto-snap to center (50%) when close (between 47.5% and 52.5%)
-            if (percentage >= 47.5 && percentage <= 52.5) {
-                percentage = 50;
-            }
+            if (percentage >= 47.5 && percentage <= 52.5) percentage = 50;
 
-            panePrimary.style.flex = `${percentage}`;
-            paneSecondary.style.flex = `${100 - percentage}`;
+            // Skip DOM write if value hasn't changed meaningfully (< 0.05% delta)
+            if (Math.abs(percentage - lastPercentage) < 0.05) return;
+            lastPercentage = percentage;
+
+            // Use width % instead of bare flex numbers.
+            // This avoids a full flex layout recalculation of the whole subtree.
+            panePrimary.style.flex = `0 0 ${percentage}%`;
+            paneSecondary.style.flex = `0 0 ${100 - percentage}%`;
         });
     });
 
@@ -1985,7 +1996,7 @@ function setupResizer() {
                 animationFrameId = null;
             }
 
-            const newRatio = parseFloat(panePrimary.style.flex) || 50;
+            const newRatio = lastPercentage;
             chrome.storage.local.set({
                 [KEYS.splitRatio]: newRatio,
                 [GLOBAL_KEYS.splitRatio]: newRatio
@@ -4040,9 +4051,9 @@ function initSidebar() {
         document.body.appendChild(backdrop);
     }
 
-    // Load collapsed state from localStorage
+    // Load collapsed state from localStorage (only for non-sidepanel mode)
     const isCollapsed = localStorage.getItem('lumina_sidebar_collapsed') === 'true';
-    if (isCollapsed && sidebar) {
+    if (isCollapsed && sidebar && !isSidePanel) {
         sidebar.classList.add('sidebar-collapsed');
     }
 
@@ -4050,7 +4061,7 @@ function initSidebar() {
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent trigger click on sidebar container
-            if (window.innerWidth <= 900) {
+            if (isSidePanel || window.innerWidth <= 768) {
                 if (sidebar.classList.contains('active')) {
                     closeMobileSidebar();
                 } else {
@@ -4068,7 +4079,7 @@ function initSidebar() {
     // Toggle sidebar collapse/expand when clicking on empty space
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
-            if (window.innerWidth <= 900) return;
+            if (isSidePanel || window.innerWidth <= 768) return;
             const clickedInteractive = e.target.closest('button, a, .recent-chat-item, .sidebar-spark-item, .sidebar-brand, .user-profile, input, select');
             if (!clickedInteractive) {
                 if (sidebar.classList.contains('sidebar-collapsed')) {
@@ -4092,7 +4103,7 @@ function initSidebar() {
     if (closeBtn) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (window.innerWidth <= 900) {
+            if (isSidePanel || window.innerWidth <= 768) {
                 closeMobileSidebar();
             } else {
                 sidebar.classList.add('sidebar-collapsed');
