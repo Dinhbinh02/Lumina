@@ -462,11 +462,19 @@
             }
 
             
-            if (changes.theme || (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.theme)) {
-                if (typeof cachedTheme !== 'undefined') {
-                    cachedTheme = null;
-                    if (typeof updateTheme === 'function') updateTheme();
-                }
+            const hasThemeChange = changes.theme || 
+                                   changes.contrast || 
+                                   changes.accentColor || 
+                                   (changes.globalDefaults && changes.globalDefaults.newValue && (
+                                       changes.globalDefaults.newValue.theme !== changes.globalDefaults.oldValue?.theme ||
+                                       changes.globalDefaults.newValue.contrast !== changes.globalDefaults.oldValue?.contrast ||
+                                       changes.globalDefaults.newValue.accentColor !== changes.globalDefaults.oldValue?.accentColor
+                                   ));
+            if (hasThemeChange) {
+                cachedTheme = null;
+                cachedContrast = null;
+                cachedAccent = null;
+                if (typeof updateTheme === 'function') updateTheme();
             }
         }
     });
@@ -1720,28 +1728,48 @@
 
 
     var cachedTheme = null;
+    var cachedAccent = null;
+    var cachedContrast = null;
     function updateTheme() {
         
-        const applyTheme = (theme) => {
+        const applyThemeSettings = (theme, accent, contrast) => {
             const preferredTheme = theme === 'auto'
                 ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
                 : theme;
 
             const isDark = preferredTheme === 'dark';
-            if (luminaHost) isDark ? luminaHost.setAttribute('data-theme', 'dark') : luminaHost.removeAttribute('data-theme');
+            if (luminaHost) {
+                if (isDark) {
+                    luminaHost.setAttribute('data-theme', 'dark');
+                } else {
+                    luminaHost.removeAttribute('data-theme');
+                }
+                luminaHost.setAttribute('data-accent', accent || 'default');
+                luminaHost.setAttribute('data-contrast', contrast || 'auto');
+            }
 
             const overlays = luminaShadowRoot ? luminaShadowRoot.querySelectorAll('.lumina-spotlight-overlay') : [];
-            overlays.forEach(el => isDark ? el.setAttribute('data-theme', 'dark') : el.removeAttribute('data-theme'));
+            overlays.forEach(el => {
+                if (isDark) {
+                    el.setAttribute('data-theme', 'dark');
+                } else {
+                    el.removeAttribute('data-theme');
+                }
+                el.setAttribute('data-accent', accent || 'default');
+                el.setAttribute('data-contrast', contrast || 'auto');
+            });
         };
 
-        if (cachedTheme !== null) {
-            applyTheme(cachedTheme);
+        if (cachedTheme !== null && cachedAccent !== null && cachedContrast !== null) {
+            applyThemeSettings(cachedTheme, cachedAccent, cachedContrast);
             return;
         }
 
-        chrome.storage.local.get(['theme', 'globalDefaults'], (data) => {
+        chrome.storage.local.get(['theme', 'contrast', 'accentColor', 'globalDefaults'], (data) => {
             cachedTheme = data.theme || (data.globalDefaults && data.globalDefaults.theme) || 'light';
-            applyTheme(cachedTheme);
+            cachedContrast = data.contrast || (data.globalDefaults && data.globalDefaults.contrast) || 'auto';
+            cachedAccent = data.accentColor || (data.globalDefaults && data.globalDefaults.accentColor) || 'default';
+            applyThemeSettings(cachedTheme, cachedAccent, cachedContrast);
         });
     }
 

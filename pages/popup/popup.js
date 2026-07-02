@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Load and apply theme/contrast/accent immediately
+    chrome.storage.local.get(['theme', 'contrast', 'accentColor', 'globalDefaults'], (items) => {
+        const themeVal = items.theme || (items.globalDefaults && items.globalDefaults.theme) || 'auto';
+        const contrastVal = items.contrast || (items.globalDefaults && items.globalDefaults.contrast) || 'auto';
+        const accentVal = items.accentColor || (items.globalDefaults && items.globalDefaults.accentColor) || 'default';
+        const mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
+        
+        document.body.setAttribute('data-theme', mode);
+        document.body.setAttribute('data-accent', accentVal);
+        document.body.setAttribute('data-contrast', contrastVal);
+    });
+
     const btnOptions = document.getElementById('btn-options');
     const btnTab = document.getElementById('btn-tab');
     const btnWindow = document.getElementById('btn-window');

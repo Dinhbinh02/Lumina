@@ -3733,13 +3733,29 @@ async function init() {
     setupRegenerateButtons();
 
 
-    chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle'], (items) => {
+    chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle', 'theme', 'contrast', 'accentColor'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
         annotationShortcuts = items.annotationShortcuts || [];
         questionMappings = items.questionMappings || [];
         askSelectionPopupEnabled = items.askSelectionPopupEnabled ?? false;
         advancedParamsByModel = items.advancedParamsByModel || {};
+
+        // Apply theme settings
+        const themeVal = items.theme || (items.globalDefaults && items.globalDefaults.theme) || 'auto';
+        const contrastVal = items.contrast || (items.globalDefaults && items.globalDefaults.contrast) || 'auto';
+        const accentVal = items.accentColor || (items.globalDefaults && items.globalDefaults.accentColor) || 'default';
+        let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
+        
+        // Auto-enable dark theme in incognito mode
+        if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
+            mode = 'dark';
+        }
+        
+        document.body.setAttribute('data-theme', mode);
+        document.body.setAttribute('data-accent', accentVal);
+        document.body.setAttribute('data-contrast', contrastVal);
+
         const size = items.fontSize || (items.globalDefaults && items.globalDefaults.fontSize);
         if (size) {
             applyFontSize(size);

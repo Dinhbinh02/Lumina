@@ -48,16 +48,16 @@
   max-width: 70vw;
   height: 600px;
   max-height: 85vh;
-  background: #ffffff !important;
+  background: var(--lumina-ui-bg) !important;
   border-radius: 12px;
   box-shadow: 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12), 0 11px 15px -7px rgba(0, 0, 0, 0.2);
   display: flex;
   position: relative;
   overflow: hidden;
+  border: 1px solid var(--lumina-ui-border);
 }
 
 [data-theme="dark"] .lumina-settings-dialog {
-  background: #171717 !important;
   box-shadow: 0 24px 38px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -178,11 +178,7 @@
   flex: 1;
   padding: 0 24px 24px 24px;
   overflow-y: auto;
-  background: #ffffff !important;
-}
-
-[data-theme="dark"] .lumina-settings-main {
-  background: #171717 !important;
+  background: var(--lumina-ui-bg) !important;
 }
 
 .lumina-settings-section {
@@ -199,17 +195,12 @@
   margin-top: 0;
   margin-bottom: 18px;
   color: var(--lumina-text-primary);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--lumina-ui-border);
   padding: 16px 0;
   position: sticky;
   top: 0;
-  background: #ffffff;
+  background: var(--lumina-ui-bg);
   z-index: 9;
-}
-
-[data-theme="dark"] .lumina-settings-section-title {
-  background: #171717;
-  border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .lumina-settings-card {
@@ -313,8 +304,8 @@
   font-size: 13px;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: #ffffff;
+  border: 1px solid var(--lumina-ui-border);
+  background: var(--lumina-input-bg);
   color: var(--lumina-text-primary);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -334,7 +325,6 @@
 [data-theme="dark"] .lumina-settings-field textarea,
 [data-theme="dark"] .lumina-settings-form input {
   border-color: rgba(255, 255, 255, 0.15);
-  background: #202020;
 }
 
 .lumina-settings-select:focus,
@@ -418,8 +408,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--lumina-input-bg);
+  border: 1px solid var(--lumina-ui-border);
   padding: 6px 12px;
   border-radius: 8px;
   color: var(--lumina-text-primary);
@@ -430,7 +420,6 @@
 }
 
 [data-theme="dark"] .lumina-settings-btn-play {
-  background: #202020;
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -589,14 +578,9 @@
 }
 
 .lumina-settings-segmented input:checked+span {
-  background: #ffffff;
-  color: #000000;
+  background: var(--lumina-input-bg);
+  color: var(--lumina-text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .lumina-settings-segmented input:checked+span {
-  background: #2d2d2d;
-  color: #ffffff;
 }
 
 .lumina-settings-btn {
@@ -610,40 +594,26 @@
 }
 
 .lumina-settings-btn.primary {
-  background: #000000;
+  background: var(--lumina-primary-color);
   color: #ffffff;
 }
 
 .lumina-settings-btn.primary:hover {
-  background: #222222;
-}
-
-[data-theme="dark"] .lumina-settings-btn.primary {
-  background: #ffffff;
-  color: #000000;
-}
-
-[data-theme="dark"] .lumina-settings-btn.primary:hover {
-  background: #e5e5e5;
+  filter: brightness(0.9);
 }
 
 .lumina-settings-btn.secondary {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.12);
+  background: var(--lumina-input-bg);
+  border-color: var(--lumina-ui-border);
   color: var(--lumina-text-primary);
 }
 
 [data-theme="dark"] .lumina-settings-btn.secondary {
-  background: #202020;
   border-color: rgba(255, 255, 255, 0.15);
 }
 
 .lumina-settings-btn.secondary:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="dark"] .lumina-settings-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--lumina-primary-rgb), 0.05);
 }
 
 .lumina-settings-btn.danger {
@@ -1545,7 +1515,7 @@
 /* AI Provider Popup Dialog */
 .lumina-provider-popup-dialog {
   width: 460px;
-  max-width: 90vw;
+  max-width: 96vw;
   background: #ffffff !important;
   border-radius: 12px;
   box-shadow: 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12), 0 11px 15px -7px rgba(0, 0, 0, 0.2);
@@ -1557,7 +1527,7 @@
 }
 
 #lumina-model-popup-overlay .lumina-provider-popup-dialog {
-  max-width: 480px;
+  max-width: 96vw;
 }
 
 [data-theme="dark"] .lumina-provider-popup-dialog {

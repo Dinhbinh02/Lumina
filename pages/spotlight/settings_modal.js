@@ -117,9 +117,22 @@ class LuminaSettingsModal {
         dictModelInput.value = items.dictModel;
       }
 
-      document.getElementById('lumina-settings-theme').value = items.theme || 'auto';
-      document.getElementById('lumina-settings-contrast').value = items.contrast || 'auto';
-      document.getElementById('lumina-settings-accent').value = items.accentColor || 'default';
+      const themeVal = items.theme || 'auto';
+      const contrastVal = items.contrast || 'auto';
+      const accentVal = items.accentColor || 'default';
+
+      document.getElementById('lumina-settings-theme').value = themeVal;
+      document.getElementById('lumina-settings-contrast').value = contrastVal;
+      document.getElementById('lumina-settings-accent').value = accentVal;
+
+      let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
+      if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
+        mode = 'dark';
+      }
+      document.body.setAttribute('data-theme', mode);
+      document.body.setAttribute('data-accent', accentVal);
+      document.body.setAttribute('data-contrast', contrastVal);
+
       document.getElementById('lumina-settings-language').value = items.language || 'auto';
       document.getElementById('lumina-settings-dictation-toggle').checked = items.dictationEnabled !== false;
       document.getElementById('lumina-settings-spoken-lang').value = items.spokenLanguage || 'auto';
@@ -226,10 +239,14 @@ class LuminaSettingsModal {
       if (typeof applyTheme === 'function') {
         applyTheme(settings.theme);
       } else {
-        const mode = settings.theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : settings.theme;
+        let mode = settings.theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : settings.theme;
+        if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
+          mode = 'dark';
+        }
         document.body.setAttribute('data-theme', mode);
       }
       document.body.setAttribute('data-accent', settings.accentColor);
+      document.body.setAttribute('data-contrast', settings.contrast);
       if (typeof applyFontSize === 'function') {
         applyFontSize(settings.fontSize);
       }

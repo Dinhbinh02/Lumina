@@ -11,13 +11,21 @@ button {
   margin: 0;
 }
 
+html,
+body {
+  background-color: var(--lumina-ui-bg) !important;
+  color: var(--lumina-text-primary);
+  margin: 0;
+  padding: 0;
+}
+
 .lumina-sidebar button,
 .topbar button {
   font-size: inherit;
 }
 
 ::selection {
-  background: #b1d4fc !important;
+  background: rgba(var(--lumina-primary-rgb), 0.3) !important;
   color: inherit !important;
   text-shadow: none !important;
 }
@@ -49,25 +57,91 @@ button {
   --lumina-input-bg: #FFFFFF;
   --lumina-border-color: rgba(0, 0, 0, 0.12);
   --lumina-font-family: 'Google Sans', 'Google Sans Text', system-ui, -apple-system, sans-serif;
+  --lumina-chat-bg: #FFFFFF;
+  --lumina-bg-primary: #ffffff;
+
+  /* Sidebar variables */
+  --lumina-sidebar-bg: #f1f6fe;
+  --lumina-sidebar-hover: rgba(var(--lumina-primary-rgb), 0.06);
+  --lumina-sidebar-active-bg: rgba(var(--lumina-primary-rgb), 0.10);
+  --lumina-sidebar-text: #202124;
+  --lumina-sidebar-text-muted: #5f6368;
 }
 
+/* Dark Theme overrides */
 [data-theme="dark"],
 :host([data-theme="dark"]) {
-  --lumina-ui-base-rgb: 0, 0, 0;
-  --lumina-text-primary: #e8eaed;
-  --lumina-text-secondary: #9aa0a6;
-  --lumina-text-tertiary: #5f6368;
+  --lumina-ui-base-rgb: 60, 60, 60;
+  --lumina-text-primary: #ffffff;
+  --lumina-text-secondary: #e0e0e0;
+  --lumina-text-tertiary: #80848c;
   --lumina-primary-color: #0A84FF;
   --lumina-primary-rgb: 10, 132, 255;
-  --lumina-ui-border: rgba(255, 255, 255, 0.12);
-  --lumina-ui-bg: #000000;
-  --lumina-ui-bg-light: #1C1C1E;
-  --lumina-input-bg: #1C1C1E;
-  --lumina-card-bg: #1C1C1E;
-  --lumina-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 1);
-  --lumina-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.8);
-  --lumina-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --lumina-border-color: rgba(255, 255, 255, 0.2);
+  --lumina-ui-border: rgba(255, 255, 255, 0.15);
+  --lumina-ui-bg: #3c3c3c;
+  --lumina-ui-bg-light: #2c2c2c;
+  --lumina-input-bg: #2c2c2c;
+  --lumina-card-bg: #2c2c2c;
+  --lumina-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --lumina-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --lumina-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --lumina-border-color: rgba(255, 255, 255, 0.15);
+  --lumina-chat-bg: #3c3c3c;
+  --lumina-bg-primary: #3c3c3c;
+
+  /* Sidebar variables - Dark */
+  --lumina-sidebar-bg: #2c2c2c;
+  --lumina-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --lumina-sidebar-active-bg: rgba(255, 255, 255, 0.10);
+  --lumina-sidebar-text: #e8eaed;
+  --lumina-sidebar-text-muted: #b0b3b8;
+}
+
+/* User Accent Color Config */
+[data-accent="amber"], :host([data-accent="amber"]) {
+  --lumina-primary-color: #d97706;
+  --lumina-primary-rgb: 217, 119, 6;
+}
+[data-accent="emerald"], :host([data-accent="emerald"]) {
+  --lumina-primary-color: #059669;
+  --lumina-primary-rgb: 5, 150, 105;
+}
+[data-accent="sky"], :host([data-accent="sky"]) {
+  --lumina-primary-color: #0284c7;
+  --lumina-primary-rgb: 2, 132, 199;
+}
+[data-accent="indigo"], :host([data-accent="indigo"]) {
+  --lumina-primary-color: #4f46e5;
+  --lumina-primary-rgb: 79, 70, 229;
+}
+[data-accent="rose"], :host([data-accent="rose"]) {
+  --lumina-primary-color: #e11d48;
+  --lumina-primary-rgb: 225, 29, 72;
+}
+
+/* Contrast settings */
+[data-contrast="high"] {
+  --lumina-ui-border: rgba(0, 0, 0, 0.4) !important;
+  --lumina-border-color: rgba(0, 0, 0, 0.4) !important;
+  --lumina-text-primary: #000000 !important;
+  --lumina-text-secondary: #202020 !important;
+  --lumina-text-tertiary: #404040 !important;
+  --lumina-shadow-focus: 0 0 0 3px #000000 !important;
+}
+
+[data-theme="dark"][data-contrast="high"],
+:host([data-theme="dark"][data-contrast="high"]) {
+  --lumina-ui-bg: #1a1a1a !important;
+  --lumina-ui-bg-light: #000000 !important;
+  --lumina-input-bg: #000000 !important;
+  --lumina-card-bg: #000000 !important;
+  --lumina-sidebar-bg: #000000 !important;
+  --lumina-ui-border: rgba(255, 255, 255, 0.5) !important;
+  --lumina-border-color: rgba(255, 255, 255, 0.5) !important;
+  --lumina-text-primary: #ffffff !important;
+  --lumina-text-secondary: #f0f0f0 !important;
+  --lumina-text-tertiary: #d0d0d0 !important;
+  --lumina-shadow-focus: 0 0 0 3px #ffffff !important;
 }
 
 
@@ -345,9 +419,9 @@ button {
 .lumina-chat-answer.is-editing {
   width: 100% !important;
   max-width: 100% !important;
-  border: 1.5px solid var(--lumina-brand-color, #007AFF) !important;
+  border: 1.5px solid var(--lumina-primary-color) !important;
   transition: border-color 0.2s ease !important;
-  background: var(--lumina-chat-bg, #ffffff) !important;
+  background: var(--lumina-input-bg) !important;
   padding: 10px !important;
   border-radius: 12px !important;
   z-index: 10;
@@ -644,7 +718,7 @@ button {
 }
 
 [data-theme="dark"] #lumina-ask-input-popup {
-  background: #1c1c1e !important;
+  background: var(--lumina-input-bg) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
@@ -990,14 +1064,11 @@ button {
 
 /* Edit Mode Styling */
 .lumina-chat-question.is-editing {
-  border: 1.5px solid #a8cdfc !important;
+  border: none !important;
+  box-shadow: 0 0 0 1.5px var(--lumina-primary-color) !important;
   border-radius: 20px !important;
-  background: var(--lumina-bg-primary, #ffffff) !important;
+  background: var(--lumina-input-bg) !important;
   width: 85% !important;
-}
-
-[data-theme="dark"] .lumina-chat-question.is-editing {
-  border-color: #388afc !important;
 }
 
 .lumina-question-row-editing .lumina-question-actions-row {
@@ -1027,25 +1098,25 @@ button {
 .lumina-question-edit-toolbar .lumina-edit-cancel {
   background: transparent !important;
   border: none !important;
-  color: var(--lumina-text-secondary, #666) !important;
+  color: var(--lumina-text-secondary) !important;
   padding: 6px 12px !important;
 }
 
 .lumina-question-edit-toolbar .lumina-edit-cancel:hover {
-  color: var(--lumina-text-primary, #111) !important;
+  color: var(--lumina-text-primary) !important;
 }
 
 .lumina-question-edit-toolbar .lumina-edit-save {
-  background: var(--lumina-bg-secondary, #e0e0e0) !important;
+  background: var(--lumina-primary-color) !important;
   border: none !important;
-  color: var(--lumina-text-primary, #111) !important;
+  color: #ffffff !important;
   padding: 6px 16px !important;
   border-radius: 20px !important;
   font-weight: 500 !important;
 }
 
 .lumina-question-edit-toolbar .lumina-edit-save:hover {
-  background: var(--lumina-border-color, #d0d0d0) !important;
+  filter: brightness(0.9) !important;
 }
 
 
@@ -2599,7 +2670,7 @@ button {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  color: #000000 !important;
+  color: var(--lumina-text-primary) !important;
   font-size: 1em !important;
   min-height: 24px !important;
   box-sizing: border-box !important;
@@ -2609,7 +2680,7 @@ button {
 .lumina-status-text {
   font-weight: 500;
   letter-spacing: 0.3px;
-  color: #000000;
+  color: var(--lumina-text-primary);
   line-height: 1.4 !important;
   white-space: nowrap;
   overflow: hidden;
@@ -2886,7 +2957,7 @@ button {
 }
 
 [data-theme="dark"] .lumina-thinking-submenu {
-  background: #1c1c1e;
+  background: var(--lumina-input-bg);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
@@ -3068,7 +3139,7 @@ button {
 }
 
 [data-theme="dark"] .lumina-chat-container {
-  background: #000000 !important;
+  background: var(--lumina-chat-bg) !important;
 }
 
 .is-editing .lumina-answer-content {
@@ -3579,17 +3650,17 @@ button {
 }
 
 [data-theme="dark"] .lumina-dict-tab-btn.active {
-  background: #1c1c1e !important;
+  background: var(--lumina-input-bg) !important;
 
   color: #fff !important;
 }
 
 [data-theme="dark"] .lumina-dict-tab-btn.active::before {
-  background: radial-gradient(circle at bottom left, transparent 12px, #1c1c1e 12.5px) !important;
+  background: radial-gradient(circle at bottom left, transparent 12px, var(--lumina-input-bg) 12.5px) !important;
 }
 
 [data-theme="dark"] .lumina-dict-tab-btn.active::after {
-  background: radial-gradient(circle at bottom right, transparent 12px, #1c1c1e 12.5px) !important;
+  background: radial-gradient(circle at bottom right, transparent 12px, var(--lumina-input-bg) 12.5px) !important;
 }
 
 .lumina-dict-tab-btn:not(.active):hover {
@@ -5033,21 +5104,22 @@ button {
 }
 
 .lumina-edit-cancel {
-  background: #f2f2f7 !important;
-  color: #3a3a3c !important;
+  background: var(--lumina-ui-bg-light) !important;
+  color: var(--lumina-text-secondary) !important;
 }
 
 .lumina-edit-cancel:hover {
-  background: #e5e5ea !important;
+  background: var(--lumina-sidebar-hover) !important;
+  color: var(--lumina-text-primary) !important;
 }
 
 .lumina-edit-save {
-  background: var(--lumina-brand-color, #007AFF) !important;
+  background: var(--lumina-primary-color) !important;
   color: white !important;
 }
 
 .lumina-edit-save:hover {
-  background: #0062cc !important;
+  filter: brightness(0.9) !important;
 }
 
 .lumina-web-chip {
@@ -5522,7 +5594,7 @@ button {
   position: relative;
   height: calc(100vh - 46px);
   box-sizing: border-box;
-  background: #fff;
+  background: var(--lumina-ui-bg);
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
 }
@@ -5543,7 +5615,7 @@ button {
 }
 
 [data-theme="dark"] .topbar {
-  background: var(--lumina-ui-bg-light, #1c1c1e);
+  background: var(--lumina-ui-bg) !important;
 }
 
 .topbar::after {
@@ -6046,7 +6118,7 @@ button {
 }
 
 [data-theme="dark"] .topbar .lumina-model-dropdown {
-  background: #1c1c1e !important;
+  background: var(--lumina-input-bg) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
@@ -6307,21 +6379,7 @@ button {
 
 
 
-:root {
-  --lumina-sidebar-bg: #f1f6fe;
-  --lumina-sidebar-hover: rgba(0, 86, 210, 0.06);
-  --lumina-sidebar-active-bg: rgba(0, 86, 210, 0.10);
-  --lumina-sidebar-text: #202124;
-  --lumina-sidebar-text-muted: #5f6368;
-}
 
-[data-theme="dark"] {
-  --lumina-sidebar-bg: #15181f;
-  --lumina-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --lumina-sidebar-active-bg: rgba(255, 255, 255, 0.14);
-  --lumina-sidebar-text: #e8eaed;
-  --lumina-sidebar-text-muted: #9aa0a6;
-}
 
 .lumina-app-container {
   display: flex;
