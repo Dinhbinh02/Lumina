@@ -6,39 +6,31 @@ class LuminaSettingsModal {
     this.mainContainer = document.querySelector('.lumina-settings-main');
     this.sections = document.querySelectorAll('.lumina-settings-section');
     this.navItems = document.querySelectorAll('.lumina-settings-nav-item');
-
     if (!this.overlay) return;
-
     this.closeBtn.addEventListener('click', () => this.hide());
     this.overlay.addEventListener('click', (e) => {
       if (e.target === this.overlay) this.hide();
     });
-
     this.navItems.forEach(item => {
       item.addEventListener('click', () => {
         const sectionId = item.getAttribute('data-section');
         this.switchSection(sectionId);
       });
     });
-
     this.providers = [];
     this.textChain = [];
     this.advancedParamsByModel = {};
     this.questionMappings = [];
     this.annotationShortcuts = [];
     this.userFacts = [];
-
     this.bindGeneralTab();
     this.bindAppearanceTab();
     this.bindPersonalizationTab();
     this.bindKeyboardTab();
     this.bindAccountTab();
-
-    
     this.overlay.querySelectorAll('textarea').forEach(textarea => {
       this.enableAutoExpandTextarea(textarea);
     });
-
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'local' && changes.user_memory && this.overlay && this.overlay.style.display !== 'none') {
         UserMemory.load().then(memory => {
@@ -47,10 +39,8 @@ class LuminaSettingsModal {
         });
       }
     });
-
     this.initialized = true;
   }
-
   static show() {
     if (!this.initialized) this.init();
     if (this.overlay) {
@@ -58,13 +48,11 @@ class LuminaSettingsModal {
       this.loadSettings();
     }
   }
-
   static hide() {
     if (this.overlay) {
       this.overlay.style.display = 'none';
     }
   }
-
   static switchSection(sectionId) {
     this.navItems.forEach(item => {
       item.classList.toggle('active', item.getAttribute('data-section') === sectionId);
@@ -74,7 +62,6 @@ class LuminaSettingsModal {
     });
     if (this.mainContainer) this.mainContainer.scrollTop = 0;
   }
-
   static async loadSettings() {
     const keys = [
       'providers', 'modelChains', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
@@ -89,25 +76,20 @@ class LuminaSettingsModal {
       this.providers = (items.providers || this.getDefaultProviders()).filter(p => p.id !== 'grok-default' && p.id !== 'grok');
       this.renderProviders();
       this.populateProviderDropdowns();
-
       if (items.modelChains) {
         this.textChain = items.modelChains.text || [];
       }
       this.advancedParamsByModel = items.advancedParamsByModel || {};
       this.renderChainList();
-
       const dictLang = items.dictLanguage || 'en';
       const dictRadio = document.querySelector(`input[name="lumina-dictLanguage"][value="${dictLang}"]`);
       if (dictRadio) dictRadio.checked = true;
-
       const translateInputEngine = items.translateInputEngine || 'google';
       const transInputRadio = document.querySelector(`input[name="lumina-translateInputEngine"][value="${translateInputEngine}"]`);
       if (transInputRadio) transInputRadio.checked = true;
-
       const translateEngine = items.translateEngine || 'google';
       const transRadio = document.querySelector(`input[name="lumina-translateEngine"][value="${translateEngine}"]`);
       if (transRadio) transRadio.checked = true;
-
       if (items.dictProvider) {
         const dictProvInput = document.getElementById('lumina-dict-provider');
         dictProvInput.value = items.dictProvider;
@@ -116,15 +98,12 @@ class LuminaSettingsModal {
         const dictModelInput = document.getElementById('lumina-dict-model');
         dictModelInput.value = items.dictModel;
       }
-
       const themeVal = items.theme || 'auto';
       const contrastVal = items.contrast || 'auto';
       const accentVal = items.accentColor || 'default';
-
       document.getElementById('lumina-settings-theme').value = themeVal;
       document.getElementById('lumina-settings-contrast').value = contrastVal;
       document.getElementById('lumina-settings-accent').value = accentVal;
-
       let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
       if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
         mode = 'dark';
@@ -132,19 +111,16 @@ class LuminaSettingsModal {
       document.body.setAttribute('data-theme', mode);
       document.body.setAttribute('data-accent', accentVal);
       document.body.setAttribute('data-contrast', contrastVal);
-
       document.getElementById('lumina-settings-language').value = items.language || 'auto';
       document.getElementById('lumina-settings-dictation-toggle').checked = items.dictationEnabled !== false;
       document.getElementById('lumina-settings-spoken-lang').value = items.spokenLanguage || 'auto';
       document.getElementById('lumina-settings-voice-select').value = items.voice || 'sol';
       document.getElementById('lumina-settings-separate-voice').checked = items.separateVoiceEnabled === true;
-
       const fsVal = items.fontSize || 14;
       const fsInput = document.getElementById('lumina-settings-fontsize');
       if (fsInput) fsInput.value = fsVal;
       const fsSpan = document.getElementById('lumina-settings-fontsize-value');
       if (fsSpan) fsSpan.textContent = fsVal + 'px';
-
       const toneInput = document.getElementById('lumina-settings-base-tone-input');
       if (toneInput) {
         const toneVal = items.baseTone || 'default';
@@ -158,7 +134,6 @@ class LuminaSettingsModal {
       document.getElementById('lumina-settings-char-enthusiastic').value = items.charEnthusiastic || 3;
       document.getElementById('lumina-settings-char-headers').value = items.charHeaders || 3;
       document.getElementById('lumina-settings-char-emoji').value = items.charEmoji || 3;
-
       document.getElementById('lumina-settings-about-nickname').value = items.aboutNickname || '';
       document.getElementById('lumina-settings-about-occupation').value = items.aboutOccupation || '';
       const interestsTextarea = document.getElementById('lumina-settings-about-interests');
@@ -166,20 +141,15 @@ class LuminaSettingsModal {
         interestsTextarea.value = items.aboutInterests || '';
         interestsTextarea.dispatchEvent(new Event('input'));
       }
-
       UserMemory.load().then(memory => {
         this.userFacts = memory.facts || [];
         this.renderUserFacts();
       });
-
       this.questionMappings = items.questionMappings || [];
       this.renderQuestionMappings();
-
       this.annotationShortcuts = items.annotationShortcuts || [];
       this.renderAnnotationShortcuts();
-
       this.loadShortcutsKeys(items);
-
       const retentionInput = document.getElementById('lumina-history-retention-input');
       const savedRet = items.historyRetentionMonths !== undefined ? items.historyRetentionMonths : 3;
       const matchingOpt = [
@@ -196,11 +166,9 @@ class LuminaSettingsModal {
         retentionInput.value = matchingOpt.label;
         retentionInput.dataset.value = matchingOpt.value;
       }
-
       this.updateStorageUsage();
     });
   }
-
   static saveOptions() {
     const getVal = (id, fallback = '') => document.getElementById(id)?.value || fallback;
     const getChecked = (id) => document.getElementById(id)?.checked || false;
@@ -208,7 +176,6 @@ class LuminaSettingsModal {
       const el = document.getElementById(id);
       return el ? parseInt(el.value, 10) : fallback;
     };
-
     const settings = {
       theme: getVal('lumina-settings-theme', 'auto'),
       contrast: getVal('lumina-settings-contrast', 'auto'),
@@ -234,7 +201,6 @@ class LuminaSettingsModal {
       dictModel: getVal('lumina-dict-model'),
       historyRetentionMonths: parseFloat(document.getElementById('lumina-history-retention-input')?.dataset.value || '3')
     };
-
     chrome.storage.local.set(settings, () => {
       if (typeof applyTheme === 'function') {
         applyTheme(settings.theme);
@@ -252,7 +218,6 @@ class LuminaSettingsModal {
       }
     });
   }
-
   static bindGeneralTab() {
     const cancelBtn = document.getElementById('lumina-cancel-provider-btn');
     const saveBtn = document.getElementById('lumina-save-provider-btn');
@@ -260,7 +225,6 @@ class LuminaSettingsModal {
     const resetBtn = document.getElementById('lumina-reset-provider-btn');
     const closePopupBtn = document.getElementById('lumina-provider-popup-close-btn');
     const popupOverlay = document.getElementById('lumina-provider-popup-overlay');
-
     if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideProviderForm());
     if (saveBtn) saveBtn.addEventListener('click', () => this.saveProvider());
     if (resetBtn) resetBtn.addEventListener('click', () => this.resetProvider());
@@ -271,13 +235,10 @@ class LuminaSettingsModal {
       });
     }
     if (checkKeysBtn) checkKeysBtn.addEventListener('click', () => this.checkApiKeys());
-
-    
     const cancelModelBtn = document.getElementById('lumina-cancel-model-btn');
     const saveModelBtn = document.getElementById('lumina-save-model-btn');
     const closeModelPopupBtn = document.getElementById('lumina-model-popup-close-btn');
     const modelPopupOverlay = document.getElementById('lumina-model-popup-overlay');
-
     if (cancelModelBtn) cancelModelBtn.addEventListener('click', () => this.hideModelForm());
     if (saveModelBtn) saveModelBtn.addEventListener('click', () => this.addModelToChain());
     if (closeModelPopupBtn) closeModelPopupBtn.addEventListener('click', () => this.hideModelForm());
@@ -286,17 +247,14 @@ class LuminaSettingsModal {
         if (e.target === modelPopupOverlay) this.hideModelForm();
       });
     }
-
     document.querySelectorAll('input[name="lumina-dictLanguage"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
     document.querySelectorAll('input[name="lumina-translateInputEngine"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
     document.querySelectorAll('input[name="lumina-translateEngine"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-
     this.setupDropdownInputs('lumina-dict-provider', 'lumina-dict-provider-list');
     this.setupDropdownInputs('lumina-dict-model', 'lumina-dict-model-list');
     this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
     this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
   }
-
   static getDefaultProviders() {
     return [
       { id: 'openai-default', name: 'OpenAI', type: 'openai', endpoint: 'https://api.openai.com/v1/chat/completions', apiKey: '' },
@@ -304,7 +262,6 @@ class LuminaSettingsModal {
       { id: 'deepseek-default', name: 'DeepSeek', type: 'openai', endpoint: 'https://api.deepseek.com/v1', apiKey: '' }
     ];
   }
-
   static getProviderLogoSvg(id) {
     const norm = (id || '').toLowerCase();
     if (norm.includes('openai')) {
@@ -345,34 +302,26 @@ class LuminaSettingsModal {
     }
     return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
   }
-
   static renderProviders() {
     const list = document.getElementById('lumina-provider-list');
     if (!list) return;
     list.innerHTML = '';
-
     const temp = document.getElementById('lumina-providerItemTemplate');
-
     this.providers.forEach(p => {
       const clone = temp.content.cloneNode(true);
       const card = clone.querySelector('.provider-item');
       card.querySelector('.provider-item-name').textContent = p.name;
-
       const logoContainer = card.querySelector('.provider-logo-container');
       if (logoContainer) {
         logoContainer.innerHTML = this.getProviderLogoSvg(p.id);
       }
-
       const badge = card.querySelector('.provider-badge');
       const hasKey = p.apiKey && p.apiKey.trim().length > 0;
       badge.textContent = hasKey ? 'Active' : 'Configure';
       badge.className = 'provider-badge ' + (hasKey ? 'active' : 'inactive');
-
       card.addEventListener('click', () => this.editProvider(p.id));
       list.appendChild(clone);
     });
-
-    
     const addCard = document.createElement('div');
     addCard.className = 'lumina-settings-provider-card provider-item add-provider-card';
     addCard.id = 'lumina-add-provider-btn';
@@ -390,7 +339,6 @@ class LuminaSettingsModal {
     addCard.addEventListener('click', () => this.showProviderForm());
     list.appendChild(addCard);
   }
-
   static populateProviderDropdowns() {
     const dictProvList = document.getElementById('lumina-dict-provider-list');
     const chainProvList = document.getElementById('lumina-text-chain-provider-list');
@@ -400,7 +348,6 @@ class LuminaSettingsModal {
     if (chainProvList) {
       chainProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
     }
-
     const retentionMenu = document.getElementById('lumina-history-retention-menu');
     if (retentionMenu) {
       const opts = [
@@ -416,32 +363,24 @@ class LuminaSettingsModal {
       retentionMenu.innerHTML = opts.map(o => `<div data-val="${o.value}">${o.label}</div>`).join('');
     }
   }
-
   static setupDropdownInputs(inputId, menuId) {
     const input = document.getElementById(inputId);
     const menu = document.getElementById(menuId);
     if (!input || !menu) return;
-
     input.addEventListener('click', (e) => {
       e.stopPropagation();
       const isCurrentlyOpen = menu.style.display === 'block';
-
-      
       document.querySelectorAll('.lumina-settings-dropdown-menu').forEach(m => {
         m.style.display = 'none';
       });
-
       menu.style.display = isCurrentlyOpen ? 'none' : 'block';
     });
-
     document.addEventListener('click', (e) => {
       const wrapper = input.closest('.lumina-settings-dropdown-wrapper');
       if (wrapper && !wrapper.contains(e.target)) {
         menu.style.display = 'none';
       }
     });
-
-    
     if (inputId === 'lumina-text-chain-model') {
       input.addEventListener('input', () => {
         const query = input.value.toLowerCase().trim();
@@ -456,25 +395,20 @@ class LuminaSettingsModal {
             item.style.display = 'none';
           }
         });
-        menu.style.display = 'block'; 
+        menu.style.display = 'block';
       });
     }
-
     menu.addEventListener('click', (e) => {
       if (e.target.tagName === 'DIV') {
         input.value = e.target.textContent;
         input.dataset.value = e.target.dataset.val || e.target.textContent;
         menu.style.display = 'none';
-
         if (inputId === 'lumina-settings-base-tone-input') {
           this.adjustInputWidthToContent(input);
         }
-
-        
         if (inputId.startsWith('lumina-dict-') || inputId === 'lumina-history-retention-input' || inputId === 'lumina-settings-base-tone-input') {
           this.saveOptions();
         }
-
         if (inputId === 'lumina-text-chain-provider') {
           const modelInput = document.getElementById('lumina-text-chain-model');
           if (modelInput) {
@@ -506,7 +440,6 @@ class LuminaSettingsModal {
     wrapper.style.width = exactWidth + 'px';
     input.style.width = '100%';
   }
-
   static enableAutoExpandTextarea(el) {
     if (!el) return;
     const adjust = () => {
@@ -519,20 +452,16 @@ class LuminaSettingsModal {
     const menu = document.getElementById('lumina-text-chain-model-list');
     if (!menu) return;
     menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">Loading models...</div>';
-
     const provider = this.providers.find(p => p.id === providerId);
     if (!provider) {
       menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">No provider selected</div>';
       return;
     }
-
     try {
       const firstKey = provider.apiKey ? provider.apiKey.split(',')[0].trim() : '';
       let models = [];
       let response;
-
       const isGemini = provider.type === 'gemini' || (typeof provider.endpoint === 'string' && provider.endpoint.includes('generativelanguage.googleapis.com'));
-
       if (isGemini) {
         let baseUrl = provider.endpoint || 'https://generativelanguage.googleapis.com/v1beta/models';
         baseUrl = baseUrl.replace(/\/+$/, '');
@@ -557,16 +486,13 @@ class LuminaSettingsModal {
         if (!matched) {
           modelsUrl = modelsUrl + '/models';
         }
-
         if (provider.id.includes('groq') || modelsUrl.includes('groq.com')) {
           modelsUrl = 'https://api.groq.com/openai/v1/models';
         }
-
         response = await fetch(modelsUrl, {
           headers: firstKey ? { 'Authorization': `Bearer ${firstKey}` } : {}
         });
       }
-
       if (response && response.ok) {
         const data = await response.json();
         if (isGemini) {
@@ -579,7 +505,6 @@ class LuminaSettingsModal {
           }
         }
       }
-
       if (models.length === 0) {
         const fallbackOptions = {
           'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
@@ -588,7 +513,6 @@ class LuminaSettingsModal {
         };
         models = fallbackOptions[providerId] || ['custom-model'];
       }
-
       menu.innerHTML = models.map(m => `<div data-val="${m}">${m}</div>`).join('');
     } catch (e) {
       console.error('Failed to fetch models in settings:', e);
@@ -601,7 +525,6 @@ class LuminaSettingsModal {
       menu.innerHTML = list.map(m => `<div data-val="${m}">${m}</div>`).join('');
     }
   }
-
   static showProviderForm() {
     const overlay = document.getElementById('lumina-provider-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
@@ -609,57 +532,46 @@ class LuminaSettingsModal {
     document.getElementById('lumina-provider-form-name').value = '';
     document.getElementById('lumina-provider-form-endpoint').value = '';
     document.getElementById('lumina-provider-form-apikey').value = '';
-
     const statusEl = document.getElementById('lumina-provider-popup-status');
     if (statusEl) {
       statusEl.innerHTML = '';
       statusEl.className = 'lumina-provider-popup-status hidden';
     }
   }
-
   static editProvider(id) {
     const p = this.providers.find(p => p.id === id);
     if (!p) return;
-
     const overlay = document.getElementById('lumina-provider-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
     document.getElementById('lumina-provider-form-id').value = p.id;
     document.getElementById('lumina-provider-form-name').value = p.name;
     document.getElementById('lumina-provider-form-endpoint').value = p.endpoint;
     document.getElementById('lumina-provider-form-apikey').value = p.apiKey || '';
-
     const statusEl = document.getElementById('lumina-provider-popup-status');
     if (statusEl) {
       statusEl.innerHTML = '';
       statusEl.className = 'lumina-provider-popup-status hidden';
     }
   }
-
   static hideProviderForm() {
     const overlay = document.getElementById('lumina-provider-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
-
   static showModelForm(index = null) {
     const overlay = document.getElementById('lumina-model-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-
     const indexInput = document.getElementById('lumina-model-form-index');
     const providerInput = document.getElementById('lumina-text-chain-provider');
     const modelInput = document.getElementById('lumina-text-chain-model');
     const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
-
     if (index !== null && index >= 0) {
       const item = this.textChain[index];
       indexInput.value = index;
-
       const prov = this.providers.find(p => p.id === item.providerId);
       providerInput.value = prov ? prov.name : item.providerId;
       providerInput.dataset.value = item.providerId;
-
       modelInput.value = item.modelName;
       customNameInput.value = item.displayName || '';
-
       this.loadModelsForProvider(item.providerId);
     } else {
       indexInput.value = '';
@@ -668,15 +580,12 @@ class LuminaSettingsModal {
       modelInput.value = '';
       customNameInput.value = '';
     }
-
     this.updateModelPopupFieldsState();
   }
-
   static updateModelPopupFieldsState() {
     const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
     const modelInput = document.getElementById('lumina-text-chain-model');
     const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
-
     const shouldDisable = !provider;
     if (modelInput) {
       modelInput.disabled = shouldDisable;
@@ -699,31 +608,24 @@ class LuminaSettingsModal {
       }
     }
   }
-
   static hideModelForm() {
     const overlay = document.getElementById('lumina-model-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
-
   static showMappingForm(index = null) {
     const overlay = document.getElementById('lumina-mapping-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-
     const indexInput = document.getElementById('lumina-mapping-form-index');
     const nameInput = document.getElementById('lumina-mapping-popup-name');
     const shortcutBox = document.getElementById('lumina-mapping-popup-shortcut');
     const promptInput = document.getElementById('lumina-mapping-popup-prompt');
     const highlightInput = document.getElementById('lumina-mapping-popup-highlight');
-
-
     if (index !== null && index >= 0) {
       const item = this.questionMappings[index];
       indexInput.value = index;
       nameInput.value = item.name || '';
-
       const keyData = item.keyData || (item.key ? { key: item.key, code: 'Key' + item.key.toUpperCase() } : null);
       this.renderShortcutDisplay(shortcutBox, keyData);
-
       this.deserializePrompt(item.prompt || '', promptInput);
       highlightInput.checked = (item.highlight !== false) && (item.enableHighlight !== false);
     } else {
@@ -734,26 +636,22 @@ class LuminaSettingsModal {
       highlightInput.checked = true;
     }
   }
-
   static hideMappingForm() {
     const overlay = document.getElementById('lumina-mapping-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
-
   static saveMapping() {
     const indexInput = document.getElementById('lumina-mapping-form-index');
     const nameInput = document.getElementById('lumina-mapping-popup-name');
     const shortcutBox = document.getElementById('lumina-mapping-popup-shortcut');
     const promptInput = document.getElementById('lumina-mapping-popup-prompt');
     const highlightInput = document.getElementById('lumina-mapping-popup-highlight');
-
     const name = nameInput.value.trim();
     const prompt = this.serializePrompt(promptInput).trim();
     if (!name || !prompt) {
       alert('Please fill in both Rule Name and Content fields.');
       return;
     }
-
     let keyData = null;
     if (shortcutBox.dataset.key) {
       try {
@@ -762,12 +660,10 @@ class LuminaSettingsModal {
         console.error(e);
       }
     }
-
     if (!keyData) {
       alert('Please record a shortcut.');
       return;
     }
-
     const mapping = {
       name: name,
       keyData: keyData,
@@ -776,7 +672,6 @@ class LuminaSettingsModal {
       highlight: highlightInput.checked,
       enableHighlight: highlightInput.checked
     };
-
     const indexVal = indexInput.value;
     if (indexVal !== '') {
       const idx = parseInt(indexVal, 10);
@@ -784,13 +679,11 @@ class LuminaSettingsModal {
     } else {
       this.questionMappings.push(mapping);
     }
-
     chrome.storage.local.set({ questionMappings: this.questionMappings }, () => {
       this.renderQuestionMappings();
       this.hideMappingForm();
     });
   }
-
   static serializePrompt(el) {
     let result = '';
     const childs = el.childNodes;
@@ -813,24 +706,19 @@ class LuminaSettingsModal {
     }
     return result;
   }
-
   static deserializePrompt(text, el) {
     el.innerHTML = '';
     if (!text) return;
-
     const escaped = text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-
     const html = escaped.replace(/(\$SelectedText|\$Sentence|\$Paragraph)/g, (match) => {
       return `<span class="lumina-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
     });
-
     const formattedHtml = html.replace(/\n/g, '<br>');
     el.innerHTML = formattedHtml;
   }
-
   static resetProvider() {
     const id = document.getElementById('lumina-provider-form-id').value;
     if (!id) {
@@ -839,7 +727,6 @@ class LuminaSettingsModal {
       document.getElementById('lumina-provider-form-apikey').value = '';
       return;
     }
-
     const defaults = this.getDefaultProviders();
     const defaultProv = defaults.find(d => d.id === id);
     if (defaultProv) {
@@ -852,59 +739,46 @@ class LuminaSettingsModal {
       document.getElementById('lumina-provider-form-apikey').value = '';
     }
   }
-
   static saveProvider() {
     const id = document.getElementById('lumina-provider-form-id').value || 'custom-' + Date.now();
     const name = document.getElementById('lumina-provider-form-name').value.trim();
     const endpoint = document.getElementById('lumina-provider-form-endpoint').value.trim();
     const apiKey = document.getElementById('lumina-provider-form-apikey').value.trim();
-
     if (!name || !endpoint) {
       alert('Name and Endpoint are required.');
       return;
     }
-
     const idx = this.providers.findIndex(p => p.id === id);
     const pData = { id, name, type: 'openai', endpoint, apiKey };
-
     if (idx >= 0) {
       this.providers[idx] = pData;
     } else {
       this.providers.push(pData);
     }
-
     chrome.storage.local.set({ providers: this.providers }, () => {
       this.renderProviders();
       this.populateProviderDropdowns();
       this.hideProviderForm();
     });
   }
-
   static checkApiKeys() {
     const name = document.getElementById('lumina-provider-form-name').value.trim();
     const endpoint = document.getElementById('lumina-provider-form-endpoint').value.trim();
     const apiKey = document.getElementById('lumina-provider-form-apikey').value.trim();
-
     if (!endpoint || !apiKey) {
       alert('Endpoint and API Key are required to check status.');
       return;
     }
-
     const statusEl = document.getElementById('lumina-provider-popup-status');
     if (!statusEl) return;
-
     statusEl.classList.remove('hidden');
     statusEl.className = 'lumina-provider-popup-status info';
     statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
-
     const checkBtn = document.getElementById('lumina-check-apikeys-btn');
     const originalText = checkBtn.textContent;
     checkBtn.textContent = 'Checking...';
     checkBtn.disabled = true;
-
-    
     const keysList = apiKey.split(',').map(k => k.trim()).filter(Boolean);
-
     if (keysList.length === 0) {
       statusEl.className = 'lumina-provider-popup-status error';
       statusEl.innerHTML = '<strong>Error:</strong> No keys entered.';
@@ -912,31 +786,24 @@ class LuminaSettingsModal {
       checkBtn.disabled = false;
       return;
     }
-
     let testUrlBase = endpoint.replace(/\/+$/, '');
     if (!testUrlBase.includes('/models') && !testUrlBase.includes('/chat/completions')) {
       testUrlBase = testUrlBase + '/models';
     } else if (testUrlBase.includes('/chat/completions')) {
       testUrlBase = testUrlBase.replace('/chat/completions', '/models');
     }
-
     const isGemini = testUrlBase.includes('generativelanguage.googleapis.com');
-
-    
     const checkPromises = keysList.map((key, index) => {
       let keyUrl = testUrlBase;
       const headers = { 'Content-Type': 'application/json' };
-
       if (isGemini) {
         keyUrl = keyUrl.includes('?') ? `${keyUrl}&key=${key}` : `${keyUrl}?key=${key}`;
       } else {
         headers['Authorization'] = `Bearer ${key}`;
       }
-
       const maskedKey = key.length > 12
         ? key.substring(0, 8) + '...' + key.substring(key.length - 4)
         : key.substring(0, Math.min(4, key.length)) + '...';
-
       return fetch(keyUrl, { method: 'GET', headers })
         .then(res => ({
           index,
@@ -951,14 +818,11 @@ class LuminaSettingsModal {
           error: err.message
         }));
     });
-
     Promise.all(checkPromises).then(results => {
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
-
       const allOk = results.every(r => r.ok);
       statusEl.className = 'lumina-provider-popup-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
-
       if (results.length === 1) {
         const res = results[0];
         if (res.ok) {
@@ -973,7 +837,7 @@ class LuminaSettingsModal {
         results.forEach(res => {
           html += `
             <li class="${res.ok ? 'key-ok' : 'key-fail'}" style="color: ${res.ok ? '#10b981' : '#ef4444'}; font-size: 12px; margin-top: 2px;">
-              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--lumina-text-primary); font-weight: 500;">${res.keyLabel}</span>: 
+              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--lumina-text-primary); font-weight: 500;">${res.keyLabel}</span>:
               <strong>${res.ok ? 'VALID' : res.status ? `FAILED (${res.status})` : `FAILED (${res.error})`}</strong>
             </li>
           `;
@@ -983,25 +847,21 @@ class LuminaSettingsModal {
       }
     });
   }
-
   static addModelToChain() {
     const indexStr = document.getElementById('lumina-model-form-index').value;
     const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
     const model = document.getElementById('lumina-text-chain-model').value.trim();
     const customName = document.getElementById('lumina-text-chain-model-name-custom').value.trim();
-
     if (!provider || !model) {
       alert('Provider and Model are required.');
       return;
     }
-
     const item = {
       providerId: provider,
       modelName: model,
       model: model,
       displayName: customName || model
     };
-
     if (indexStr !== '') {
       const idx = parseInt(indexStr);
       if (idx >= 0 && idx < this.textChain.length) {
@@ -1010,19 +870,15 @@ class LuminaSettingsModal {
     } else {
       this.textChain.unshift(item);
     }
-
     chrome.storage.local.set({ modelChains: { text: this.textChain } }, () => {
       this.renderChainList();
       this.hideModelForm();
     });
   }
-
   static renderChainList() {
     const list = document.getElementById('lumina-text-chain-list');
     if (!list) return;
     list.innerHTML = '';
-
-    
     const addCard = document.createElement('div');
     addCard.className = 'lumina-settings-chain-card chain-item add-model-card';
     addCard.id = 'lumina-open-add-model-btn';
@@ -1037,7 +893,6 @@ class LuminaSettingsModal {
     `;
     addCard.addEventListener('click', () => this.showModelForm());
     list.appendChild(addCard);
-
     if (this.textChain.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'lumina-settings-empty-state';
@@ -1048,31 +903,21 @@ class LuminaSettingsModal {
       this.textChain.forEach((item, index) => {
         const clone = temp.content.cloneNode(true);
         clone.querySelector('.chain-number').textContent = index + 1;
-
-        
         clone.querySelector('.chain-title').textContent = item.displayName || item.modelName;
-
-        
         const prov = this.providers.find(p => p.id === item.providerId);
         const providerName = prov ? prov.name : item.providerId;
         clone.querySelector('.chain-subtitle').textContent = providerName;
-
         clone.querySelector('.edit').addEventListener('click', () => {
           this.showModelForm(index);
         });
-
         clone.querySelector('.remove').addEventListener('click', () => {
           this.textChain.splice(index, 1);
           chrome.storage.local.set({ modelChains: { text: this.textChain } }, () => this.renderChainList());
         });
-
         list.appendChild(clone);
       });
     }
   }
-
-
-
   static bindAppearanceTab() {
     const elements = [
       'lumina-settings-theme', 'lumina-settings-contrast', 'lumina-settings-accent',
@@ -1081,7 +926,6 @@ class LuminaSettingsModal {
     elements.forEach(id => {
       document.getElementById(id).addEventListener('change', () => this.saveOptions());
     });
-
     const fsSlider = document.getElementById('lumina-settings-fontsize');
     if (fsSlider) {
       fsSlider.addEventListener('input', (e) => {
@@ -1090,10 +934,8 @@ class LuminaSettingsModal {
       });
       fsSlider.addEventListener('change', () => this.saveOptions());
     }
-
     document.getElementById('lumina-settings-dictation-toggle').addEventListener('change', () => this.saveOptions());
     document.getElementById('lumina-settings-separate-voice').addEventListener('change', () => this.saveOptions());
-
     document.getElementById('lumina-settings-voice-play-btn').addEventListener('click', () => {
       const voice = document.getElementById('lumina-settings-voice-select').value;
       const audio = new Audio();
@@ -1103,10 +945,8 @@ class LuminaSettingsModal {
       });
     });
   }
-
   static bindPersonalizationTab() {
     this.setupDropdownInputs('lumina-settings-base-tone-input', 'lumina-settings-base-tone-menu');
-
     const ranges = [
       'lumina-settings-char-warm', 'lumina-settings-char-enthusiastic',
       'lumina-settings-char-headers', 'lumina-settings-char-emoji'
@@ -1114,25 +954,20 @@ class LuminaSettingsModal {
     ranges.forEach(id => {
       document.getElementById(id).addEventListener('change', () => this.saveOptions());
     });
-
     const inputs = ['lumina-settings-about-nickname', 'lumina-settings-about-occupation', 'lumina-settings-about-interests'];
     inputs.forEach(id => {
       document.getElementById(id).addEventListener('blur', () => this.saveOptions());
     });
-
     const addInstructionBtn = document.getElementById('lumina-add-instruction-btn');
     if (addInstructionBtn) {
       addInstructionBtn.addEventListener('click', () => {
         this.showInstructionForm();
       });
     }
-
-    
     const cancelInstBtn = document.getElementById('lumina-cancel-instruction-popup-btn');
     const saveInstBtn = document.getElementById('lumina-save-instruction-popup-btn');
     const closeInstPopupBtn = document.getElementById('lumina-instruction-popup-close-btn');
     const instPopupOverlay = document.getElementById('lumina-instruction-popup-overlay');
-
     const contentInputEl = document.getElementById('lumina-instruction-popup-content');
     if (contentInputEl) {
       contentInputEl.addEventListener('input', () => {
@@ -1140,7 +975,6 @@ class LuminaSettingsModal {
         contentInputEl.style.height = Math.min(contentInputEl.scrollHeight, 250) + 'px';
       });
     }
-
     if (cancelInstBtn) cancelInstBtn.addEventListener('click', () => this.hideInstructionForm());
     if (saveInstBtn) saveInstBtn.addEventListener('click', () => this.saveInstructionPopup());
     if (closeInstPopupBtn) closeInstPopupBtn.addEventListener('click', () => this.hideInstructionForm());
@@ -1150,15 +984,12 @@ class LuminaSettingsModal {
       });
     }
   }
-
   static showInstructionForm(index = null) {
     const overlay = document.getElementById('lumina-instruction-popup-overlay');
     const titleEl = document.getElementById('lumina-instruction-popup-title');
     const indexInput = document.getElementById('lumina-instruction-popup-index');
     const contentInput = document.getElementById('lumina-instruction-popup-content');
-
     if (!overlay || !titleEl || !indexInput || !contentInput) return;
-
     if (index !== null && index >= 0 && index < this.userFacts.length) {
       titleEl.textContent = 'Edit Custom Instruction';
       indexInput.value = index;
@@ -1168,29 +999,24 @@ class LuminaSettingsModal {
       indexInput.value = '';
       contentInput.value = '';
     }
-
     overlay.style.display = 'flex';
     contentInput.style.height = 'auto';
     contentInput.style.height = Math.min(contentInput.scrollHeight, 250) + 'px';
     setTimeout(() => contentInput.focus(), 50);
   }
-
   static hideInstructionForm() {
     const overlay = document.getElementById('lumina-instruction-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
-
   static async saveInstructionPopup() {
     const indexInput = document.getElementById('lumina-instruction-popup-index');
     const contentInput = document.getElementById('lumina-instruction-popup-content');
     if (!indexInput || !contentInput) return;
-
     const val = contentInput.value.trim();
     if (!val) {
       alert('Instruction content is required.');
       return;
     }
-
     const indexVal = indexInput.value;
     if (indexVal !== '') {
       const idx = parseInt(indexVal, 10);
@@ -1200,31 +1026,25 @@ class LuminaSettingsModal {
       const updatedFacts = await UserMemory.addFact(val);
       this.userFacts = updatedFacts;
     }
-
     this.renderUserFacts();
     this.hideInstructionForm();
   }
-
   static renderUserFacts() {
     const list = document.getElementById('lumina-user-facts-list');
     if (!list) return;
     list.innerHTML = '';
-
     if (this.userFacts.length === 0) {
       list.innerHTML = '<div class="lumina-settings-empty-state">No instructions added yet. Add one above.</div>';
       return;
     }
-
     const temp = document.getElementById('lumina-userFactItemTemplate');
     this.userFacts.forEach((fact, idx) => {
       const clone = temp.content.cloneNode(true);
       clone.querySelector('.fact-index').textContent = idx + 1;
       clone.querySelector('.fact-text').textContent = fact;
-      
       clone.querySelector('.fact-edit-btn').addEventListener('click', () => {
         this.showInstructionForm(idx);
       });
-
       clone.querySelector('.fact-delete-btn').addEventListener('click', async () => {
         if (typeof window.showCustomPopup === 'function') {
           const confirmed = await window.showCustomPopup({
@@ -1249,7 +1069,6 @@ class LuminaSettingsModal {
       list.appendChild(clone);
     });
   }
-
   static bindKeyboardTab() {
     const configBtn = document.getElementById('lumina-config-shortcut-btn');
     if (configBtn) {
@@ -1257,19 +1076,16 @@ class LuminaSettingsModal {
         chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
       });
     }
-
     const addMappingBtn = document.getElementById('lumina-add-mapping-btn');
     if (addMappingBtn) {
       addMappingBtn.addEventListener('click', () => {
         this.showMappingForm();
       });
     }
-
     const cancelMappingBtn = document.getElementById('lumina-cancel-mapping-btn');
     const saveMappingBtn = document.getElementById('lumina-save-mapping-btn');
     const closeMappingPopupBtn = document.getElementById('lumina-mapping-popup-close-btn');
     const mappingPopupOverlay = document.getElementById('lumina-mapping-popup-overlay');
-
     if (cancelMappingBtn) cancelMappingBtn.addEventListener('click', () => this.hideMappingForm());
     if (saveMappingBtn) saveMappingBtn.addEventListener('click', () => this.saveMapping());
     if (closeMappingPopupBtn) closeMappingPopupBtn.addEventListener('click', () => this.hideMappingForm());
@@ -1278,7 +1094,6 @@ class LuminaSettingsModal {
         if (e.target === mappingPopupOverlay) this.hideMappingForm();
       });
     }
-
     const mappingPopupShortcut = document.getElementById('lumina-mapping-popup-shortcut');
     if (mappingPopupShortcut) {
       mappingPopupShortcut.addEventListener('click', (e) => {
@@ -1288,7 +1103,6 @@ class LuminaSettingsModal {
         this.recordShortcut(mappingPopupShortcut);
       });
     }
-
     const referenceChipsContainer = document.getElementById('lumina-mapping-popup-reference-chips');
     if (referenceChipsContainer) {
       referenceChipsContainer.querySelectorAll('.lumina-reference-chip').forEach(chip => {
@@ -1296,7 +1110,6 @@ class LuminaSettingsModal {
           e.preventDefault();
           const val = chip.getAttribute('data-val');
           if (!val) return;
-
           const promptInput = document.getElementById('lumina-mapping-popup-prompt');
           if (promptInput) {
             const selection = window.getSelection();
@@ -1308,10 +1121,8 @@ class LuminaSettingsModal {
                 span.contentEditable = 'false';
                 span.setAttribute('data-val', val);
                 span.textContent = val;
-
                 range.deleteContents();
                 range.insertNode(span);
-
                 range.setStartAfter(span);
                 range.setEndAfter(span);
                 selection.removeAllRanges();
@@ -1319,14 +1130,12 @@ class LuminaSettingsModal {
                 return;
               }
             }
-
             const span = document.createElement('span');
             span.className = 'lumina-variable-tag';
             span.contentEditable = 'false';
             span.setAttribute('data-val', val);
             span.textContent = val;
             promptInput.appendChild(span);
-
             promptInput.focus();
             const range = document.createRange();
             range.selectNode(span);
@@ -1338,19 +1147,16 @@ class LuminaSettingsModal {
         });
       });
     }
-
     const addAnnotationBtn = document.getElementById('lumina-add-annotation-shortcut-btn');
     if (addAnnotationBtn) {
       addAnnotationBtn.addEventListener('click', () => {
         this.showAnnotationForm();
       });
     }
-
     const cancelAnnotationBtn = document.getElementById('lumina-cancel-annotation-btn');
     const saveAnnotationBtn = document.getElementById('lumina-save-annotation-btn');
     const closeAnnotationPopupBtn = document.getElementById('lumina-annotation-popup-close-btn');
     const annotationPopupOverlay = document.getElementById('lumina-annotation-popup-overlay');
-
     if (cancelAnnotationBtn) cancelAnnotationBtn.addEventListener('click', () => this.hideAnnotationForm());
     if (saveAnnotationBtn) saveAnnotationBtn.addEventListener('click', () => this.saveAnnotation());
     if (closeAnnotationPopupBtn) closeAnnotationPopupBtn.addEventListener('click', () => this.hideAnnotationForm());
@@ -1359,7 +1165,6 @@ class LuminaSettingsModal {
         if (e.target === annotationPopupOverlay) this.hideAnnotationForm();
       });
     }
-
     const annotationPopupShortcut = document.getElementById('lumina-annotation-popup-shortcut');
     if (annotationPopupShortcut) {
       annotationPopupShortcut.addEventListener('click', (e) => {
@@ -1369,10 +1174,8 @@ class LuminaSettingsModal {
         this.recordShortcut(annotationPopupShortcut);
       });
     }
-
     this.bindShortcutRecorders();
   }
-
   static bindShortcutRecorders() {
     document.querySelectorAll('.lumina-settings-shortcut-box[data-action]').forEach(box => {
       box.addEventListener('click', (e) => {
@@ -1383,7 +1186,6 @@ class LuminaSettingsModal {
       });
     });
   }
-
   static renderShortcutDisplay(box, keyData) {
     box.innerHTML = '';
     if (!keyData) {
@@ -1391,22 +1193,18 @@ class LuminaSettingsModal {
       box.dataset.key = '';
       return;
     }
-
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const parts = [];
-
     const formatModifier = (key, code) => {
       let side = '';
       if (code && code.endsWith('Left')) side = 'L';
       else if (code && code.endsWith('Right')) side = 'R';
-
       if (key === 'Control') return isMac ? side + '⌃' : side + 'Ctrl';
       if (key === 'Alt') return isMac ? side + '⌥' : side + 'Alt';
       if (key === 'Shift') return isMac ? side + '⇧' : side + 'Shift';
       if (key === 'Meta') return isMac ? side + '⌘' : side + 'Win';
       return key;
     };
-
     if (keyData.modifierCodes && keyData.modifierCodes.length > 0) {
       if (keyData.ctrlKey && keyData.key !== 'Control') {
         const code = keyData.modifierCodes.find(c => c.startsWith('Control')) || 'ControlLeft';
@@ -1430,7 +1228,6 @@ class LuminaSettingsModal {
       if (keyData.shiftKey && keyData.key !== 'Shift') parts.push(isMac ? '⇧' : 'Shift');
       if (keyData.metaKey && keyData.key !== 'Meta') parts.push(isMac ? '⌘' : 'Win');
     }
-
     let display = keyData.display || keyData.key || 'Unknown';
     if (keyData.key === ' ' || keyData.code === 'Space') display = 'Space';
     if (keyData.code && keyData.code.startsWith('Mouse')) {
@@ -1440,36 +1237,28 @@ class LuminaSettingsModal {
       else if (btn === '2') display = 'Right';
       else display = 'Click' + btn;
     }
-
     const isModifierKey = ['Control', 'Alt', 'Shift', 'Meta'].includes(keyData.key);
     if (isModifierKey) {
       display = formatModifier(keyData.key, keyData.code);
     }
-
     if (display.length === 1 && !isModifierKey) display = display.toUpperCase();
     parts.push(display);
-
     box.innerHTML = parts.map(p => `<span class="shortcut-key">${p}</span>`).join('');
     box.dataset.key = JSON.stringify(keyData);
   }
-
   static recordShortcut(box) {
     if (this.currentRecordingInput) {
       this.stopRecording(this.currentRecordingInput, false);
     }
-
     this.currentRecordingInput = box;
     this.recordingHadInput = false;
     this.recordingPressedCodes = new Set();
     box.classList.add('recording');
     box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--lumina-text-secondary);">Recording...</span>';
-
     const keydownHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       this.recordingPressedCodes.add(e.code);
-
       const isModifier = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
       let code = e.code;
       if (isModifier) {
@@ -1484,7 +1273,6 @@ class LuminaSettingsModal {
           code = e.key;
         }
       }
-
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       let display = e.key;
       if (isModifier) {
@@ -1493,7 +1281,6 @@ class LuminaSettingsModal {
         else if (e.key === 'Shift') display = isMac ? '⇧' : 'Shift';
         else if (e.key === 'Meta') display = isMac ? '⌘' : 'Win';
       }
-
       const modifierCodes = [];
       if (e.ctrlKey) {
         if (this.recordingPressedCodes.has('ControlLeft')) modifierCodes.push('ControlLeft');
@@ -1515,7 +1302,6 @@ class LuminaSettingsModal {
         if (this.recordingPressedCodes.has('MetaRight')) modifierCodes.push('MetaRight');
         if (modifierCodes.length === 0) modifierCodes.push('MetaLeft');
       }
-
       const keyData = {
         code: code,
         key: e.key,
@@ -1526,7 +1312,6 @@ class LuminaSettingsModal {
         metaKey: e.metaKey,
         modifierCodes: modifierCodes
       };
-
       if (isModifier) {
         this.renderShortcutDisplay(box, keyData);
       } else {
@@ -1536,17 +1321,14 @@ class LuminaSettingsModal {
         this.saveCapturedShortcut(box.dataset.action, keyData);
       }
     };
-
     const keyupHandler = (e) => {
       if (this.currentRecordingInput !== box) {
         this.recordingPressedCodes.delete(e.code);
         return;
       }
-
       const isModifier = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
       if (isModifier) {
         this.recordingHadInput = true;
-
         const MODIFIER_PAIRS = {
           'Shift': ['ShiftLeft', 'ShiftRight'],
           'Control': ['ControlLeft', 'ControlRight'],
@@ -1558,23 +1340,19 @@ class LuminaSettingsModal {
         if (pair && this.recordingPressedCodes.has(pair[0]) && this.recordingPressedCodes.has(pair[1])) {
           code = e.key;
         }
-
         this.recordingPressedCodes.delete(e.code);
         this.stopRecording(box, false);
-
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         let display = e.key;
         if (e.key === 'Control') display = isMac ? '⌃' : 'Ctrl';
         else if (e.key === 'Alt') display = isMac ? '⌥' : 'Alt';
         else if (e.key === 'Shift') display = isMac ? '⇧' : 'Shift';
         else if (e.key === 'Meta') display = isMac ? '⌘' : 'Win';
-
         const modifierCodes = [];
         const wasControl = e.ctrlKey || e.code.startsWith('Control');
         const wasAlt = e.altKey || e.code.startsWith('Alt');
         const wasShift = e.shiftKey || e.code.startsWith('Shift');
         const wasMeta = e.metaKey || e.code.startsWith('Meta');
-
         const ctrlIndex = modifierCodes.length;
         if (wasControl) {
           if (e.code.startsWith('Control')) modifierCodes.push(e.code);
@@ -1603,7 +1381,6 @@ class LuminaSettingsModal {
           if (this.recordingPressedCodes.has('MetaRight') && e.code !== 'MetaRight') modifierCodes.push('MetaRight');
           if (modifierCodes.length === metaIndex) modifierCodes.push('MetaLeft');
         }
-
         const keyData = {
           code: code,
           key: e.key,
@@ -1620,11 +1397,9 @@ class LuminaSettingsModal {
         this.recordingPressedCodes.delete(e.code);
       }
     };
-
     const mousedownHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       const shortcutTarget = e.target.closest('.lumina-settings-shortcut-box');
       if (shortcutTarget !== box) {
         box.removeAttribute('data-key');
@@ -1634,14 +1409,11 @@ class LuminaSettingsModal {
         this.saveCapturedShortcut(box.dataset.action, null);
         return;
       }
-
-      
       const code = 'Mouse' + e.button;
       let display = 'Click';
       if (e.button === 0) display = 'LClick';
       else if (e.button === 1) display = 'MClick';
       else if (e.button === 2) display = 'RClick';
-
       const modifierCodes = [];
       if (e.ctrlKey) {
         if (this.recordingPressedCodes.has('ControlLeft')) modifierCodes.push('ControlLeft');
@@ -1663,7 +1435,6 @@ class LuminaSettingsModal {
         if (this.recordingPressedCodes.has('MetaRight')) modifierCodes.push('MetaRight');
         if (modifierCodes.length === 0) modifierCodes.push('MetaLeft');
       }
-
       const keyData = {
         code: code,
         key: code,
@@ -1674,7 +1445,6 @@ class LuminaSettingsModal {
         metaKey: e.metaKey,
         modifierCodes: modifierCodes
       };
-
       this.renderShortcutDisplay(box, keyData);
       this.recordingHadInput = true;
       this.justRecordedMouseClick = true;
@@ -1684,25 +1454,20 @@ class LuminaSettingsModal {
       this.stopRecording(box, false);
       this.saveCapturedShortcut(box.dataset.action, keyData);
     };
-
     const contextmenuHandler = (e) => {
       e.preventDefault();
     };
-
     this.keydownHandlerRef = keydownHandler;
     this.keyupHandlerRef = keyupHandler;
     this.mousedownHandlerRef = mousedownHandler;
     this.contextmenuHandlerRef = contextmenuHandler;
-
     document.addEventListener('keydown', keydownHandler, true);
     document.addEventListener('keyup', keyupHandler, true);
     document.addEventListener('mousedown', mousedownHandler, true);
     document.addEventListener('contextmenu', contextmenuHandler, true);
   }
-
   static stopRecording(box, restoreOriginal = true) {
     box.classList.remove('recording');
-
     if (restoreOriginal) {
       if (box.dataset.key) {
         try {
@@ -1715,7 +1480,6 @@ class LuminaSettingsModal {
         this.renderShortcutDisplay(box, null);
       }
     }
-
     if (this.keydownHandlerRef) {
       document.removeEventListener('keydown', this.keydownHandlerRef, true);
       this.keydownHandlerRef = null;
@@ -1732,12 +1496,10 @@ class LuminaSettingsModal {
       document.removeEventListener('contextmenu', this.contextmenuHandlerRef, true);
       this.contextmenuHandlerRef = null;
     }
-
     if (this.currentRecordingInput === box) {
       this.currentRecordingInput = null;
     }
   }
-
   static saveCapturedShortcut(action, keyData) {
     chrome.storage.local.get(['shortcuts'], (items) => {
       const list = items.shortcuts || {};
@@ -1745,7 +1507,6 @@ class LuminaSettingsModal {
       chrome.storage.local.set({ shortcuts: list });
     });
   }
-
   static loadShortcutsKeys(items) {
     const list = items.shortcuts || {};
     document.querySelectorAll('.lumina-settings-shortcut-box[data-action]').forEach(box => {
@@ -1760,12 +1521,10 @@ class LuminaSettingsModal {
       }
     });
   }
-
   static renderQuestionMappings() {
     const list = document.getElementById('lumina-question-mappings-list');
     if (!list) return;
     list.innerHTML = '';
-
     if (this.questionMappings.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'lumina-settings-empty-state';
@@ -1773,7 +1532,6 @@ class LuminaSettingsModal {
       list.appendChild(emptyState);
       return;
     }
-
     const temp = document.getElementById('lumina-mappingRowTemplate');
     this.questionMappings.forEach((mapping, idx) => {
       const clone = temp.content.cloneNode(true);
@@ -1785,34 +1543,25 @@ class LuminaSettingsModal {
         : (mapping.key ? mapping.key.toUpperCase() : 'None');
       clone.querySelector('.mapping-number').textContent = displayKey;
       clone.querySelector('.mapping-name').textContent = mapping.name || `Mapping ${idx + 1}`;
-
-
-
       clone.querySelector('.mapping-edit-btn').addEventListener('click', () => {
         this.showMappingForm(idx);
       });
-
       clone.querySelector('.mapping-delete-btn').addEventListener('click', () => {
         this.questionMappings.splice(idx, 1);
         chrome.storage.local.set({ questionMappings: this.questionMappings }, () => this.renderQuestionMappings());
       });
-
       list.appendChild(clone);
     });
   }
-
   static recordShortcutForMapping(box, idx, storageKey) {
     box.classList.add('recording');
     box.innerHTML = '<span class="recording">Press key...</span>';
-
     const keydownHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       const key = e.key.toUpperCase();
       box.classList.remove('recording');
       box.textContent = key;
-
       if (storageKey === 'questionMappings') {
         this.questionMappings[idx].key = key;
         chrome.storage.local.set({ questionMappings: this.questionMappings });
@@ -1820,42 +1569,36 @@ class LuminaSettingsModal {
         this.annotationShortcuts[idx].key = key;
         chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts });
       }
-
       document.removeEventListener('keydown', keydownHandler, true);
     };
     document.addEventListener('keydown', keydownHandler, true);
   }
-
   static showAnnotationForm(index = null) {
     const overlay = document.getElementById('lumina-annotation-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-
     const indexInput = document.getElementById('lumina-annotation-form-index');
     const shortcutBox = document.getElementById('lumina-annotation-popup-shortcut');
     const palette = document.getElementById('lumina-annotation-popup-color-palette');
-
     const colors = [
-      '#fff59d', 
-      '#ffcc80', 
-      '#ef9a9a', 
-      '#f48fb1', 
-      '#ce93d8', 
-      '#b39ddb', 
-      '#90caf9', 
-      '#80deea', 
-      '#80cbc4', 
-      '#a5d6a7', 
-      '#e6ee9c', 
-      '#ffab91'  
+      '#fff59d',
+      '#ffcc80',
+      '#ef9a9a',
+      '#f48fb1',
+      '#ce93d8',
+      '#b39ddb',
+      '#90caf9',
+      '#80deea',
+      '#80cbc4',
+      '#a5d6a7',
+      '#e6ee9c',
+      '#ffab91'
     ];
     let selectedColor = colors[0];
-
     const renderPalette = (activeColor) => {
       palette.innerHTML = colors.map(c => `
         <div class="swatch ${activeColor === c ? 'active' : ''}" style="background: ${c};" data-color="${c}"></div>
       `).join('');
     };
-
     palette.addEventListener('click', (e) => {
       const swatch = e.target.closest('.swatch');
       if (swatch) {
@@ -1864,14 +1607,12 @@ class LuminaSettingsModal {
         renderPalette(selectedColor);
       }
     });
-
     if (index !== null && index >= 0) {
       const item = this.annotationShortcuts[index];
       indexInput.value = index;
       selectedColor = item.color || colors[0];
       palette.dataset.color = selectedColor;
       renderPalette(selectedColor);
-
       const keyData = item.keyData || (item.key ? { key: item.key, code: 'Key' + item.key.toUpperCase() } : null);
       this.renderShortcutDisplay(shortcutBox, keyData);
     } else {
@@ -1879,21 +1620,17 @@ class LuminaSettingsModal {
       selectedColor = colors[0];
       palette.dataset.color = selectedColor;
       renderPalette(selectedColor);
-
       this.renderShortcutDisplay(shortcutBox, null);
     }
   }
-
   static hideAnnotationForm() {
     const overlay = document.getElementById('lumina-annotation-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
-
   static saveAnnotation() {
     const indexInput = document.getElementById('lumina-annotation-form-index');
     const shortcutBox = document.getElementById('lumina-annotation-popup-shortcut');
     const palette = document.getElementById('lumina-annotation-popup-color-palette');
-
     let keyData = null;
     if (shortcutBox.dataset.key) {
       try {
@@ -1902,21 +1639,17 @@ class LuminaSettingsModal {
         console.error(e);
       }
     }
-
     if (!keyData) {
       alert('Please record a shortcut.');
       return;
     }
-
     const color = palette.dataset.color || '#ffeb3b';
-
     const shortcutObj = {
       key: keyData.key,
       keyData: keyData,
       color: color,
       enabled: true
     };
-
     const indexVal = indexInput.value;
     if (indexVal !== '') {
       const idx = parseInt(indexVal, 10);
@@ -1924,18 +1657,15 @@ class LuminaSettingsModal {
     } else {
       this.annotationShortcuts.push(shortcutObj);
     }
-
     chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts }, () => {
       this.renderAnnotationShortcuts();
       this.hideAnnotationForm();
     });
   }
-
   static renderAnnotationShortcuts() {
     const list = document.getElementById('lumina-annotation-shortcuts-list');
     if (!list) return;
     list.innerHTML = '';
-
     if (this.annotationShortcuts.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'lumina-settings-empty-state';
@@ -1943,7 +1673,6 @@ class LuminaSettingsModal {
       list.appendChild(emptyState);
       return;
     }
-
     const temp = document.getElementById('lumina-annotationRowTemplate');
     this.annotationShortcuts.forEach((shortcut, idx) => {
       const clone = temp.content.cloneNode(true);
@@ -1953,29 +1682,21 @@ class LuminaSettingsModal {
         (shortcut.keyData.shiftKey ? 'Shift+' : '') +
         shortcut.keyData.key.toUpperCase()
         : (shortcut.key ? shortcut.key.toUpperCase() : 'None');
-
       clone.querySelector('.annotation-number').textContent = displayKey;
-
       const preview = clone.querySelector('.annotation-color-preview');
       if (preview) preview.style.backgroundColor = shortcut.color;
-
       clone.querySelector('.annotation-shortcut-text').textContent = 'Highlight';
-
       clone.querySelector('.annotation-edit-btn').addEventListener('click', () => {
         this.showAnnotationForm(idx);
       });
-
       clone.querySelector('.annotation-delete-btn').addEventListener('click', () => {
         this.annotationShortcuts.splice(idx, 1);
         chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts }, () => this.renderAnnotationShortcuts());
       });
-
       list.appendChild(clone);
     });
   }
-
   static bindAccountTab() {
-    
     const googleLoginBtn = document.getElementById('lumina-google-login-btn');
     if (googleLoginBtn) {
       googleLoginBtn.addEventListener('click', async () => {
@@ -1983,7 +1704,6 @@ class LuminaSettingsModal {
           googleLoginBtn.disabled = true;
           const originalHTML = googleLoginBtn.innerHTML;
           googleLoginBtn.innerHTML = 'Signing In...';
-          
           if (typeof LuminaAuth !== 'undefined') {
             await LuminaAuth.login();
             if (typeof LuminaSync !== 'undefined') {
@@ -2004,7 +1724,6 @@ class LuminaSettingsModal {
         }
       });
     }
-
     const googleLogoutBtn = document.getElementById('lumina-google-logout-btn');
     if (googleLogoutBtn) {
       googleLogoutBtn.addEventListener('click', async () => {
@@ -2013,7 +1732,6 @@ class LuminaSettingsModal {
         }
       });
     }
-
     const syncBtn = document.getElementById('lumina-sync-btn');
     if (syncBtn) {
       syncBtn.addEventListener('click', async () => {
@@ -2033,14 +1751,12 @@ class LuminaSettingsModal {
         }
       });
     }
-
     const authLoggedOut = document.getElementById('lumina-auth-logged-out');
     const authLoggedIn = document.getElementById('lumina-auth-logged-in');
     const userAvatar = document.getElementById('lumina-user-avatar');
     const userName = document.getElementById('lumina-user-name');
     const userEmail = document.getElementById('lumina-user-email');
     const syncStatus = document.getElementById('lumina-sync-status');
-
     function updateAuthUI(isAuthenticated, user) {
       if (isAuthenticated && user) {
         if (authLoggedOut) authLoggedOut.classList.add('hidden');
@@ -2053,14 +1769,12 @@ class LuminaSettingsModal {
         if (authLoggedIn) authLoggedIn.classList.add('hidden');
       }
     }
-
     if (typeof LuminaAuth !== 'undefined') {
       LuminaAuth.addListener(updateAuthUI);
       if (LuminaAuth.isAuthenticated) {
         updateAuthUI(true, LuminaAuth.user);
       }
     }
-
     if (typeof LuminaSync !== 'undefined') {
       LuminaSync.addListener((status, timestamp) => {
         if (syncStatus) {
@@ -2072,7 +1786,6 @@ class LuminaSettingsModal {
           }
         }
       });
-
       if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated) {
         LuminaSync.getLastSyncTime().then(time => {
           if (syncStatus && time !== 'Never') {
@@ -2081,7 +1794,6 @@ class LuminaSettingsModal {
         });
       }
     }
-
     document.getElementById('lumina-export-settings-btn').addEventListener('click', () => {
       chrome.storage.local.get(null, (data) => {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -2092,13 +1804,11 @@ class LuminaSettingsModal {
         a.click();
       });
     });
-
     const fileInput = document.getElementById('lumina-import-settings-file');
     document.getElementById('lumina-import-settings-btn').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = (evt) => {
         try {
@@ -2115,7 +1825,6 @@ class LuminaSettingsModal {
       };
       reader.readAsText(file);
     });
-
     document.getElementById('lumina-delete-all-btn').addEventListener('click', async () => {
       if (typeof window.showCustomPopup === 'function') {
         const confirmed = await window.showCustomPopup({
@@ -2128,7 +1837,6 @@ class LuminaSettingsModal {
           if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.clearAllHistory) {
             await ChatHistoryManager.clearAllHistory();
             LuminaSettingsModal.updateStorageUsage();
-
             const scope = window.LuminaSelectionScope;
             if (scope) {
               scope.renderRecentChatsSidebar();
@@ -2142,7 +1850,6 @@ class LuminaSettingsModal {
           if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.clearAllHistory) {
             await ChatHistoryManager.clearAllHistory();
             LuminaSettingsModal.updateStorageUsage();
-
             const scope = window.LuminaSelectionScope;
             if (scope) {
               scope.renderRecentChatsSidebar();
@@ -2153,31 +1860,23 @@ class LuminaSettingsModal {
         }
       }
     });
-
     this.setupDropdownInputs('lumina-history-retention-input', 'lumina-history-retention-menu');
   }
-
   static updateStorageUsage() {
     const textEl = document.getElementById('lumina-storage-usage-text');
     if (!textEl) return;
-
     chrome.storage.local.get(null, (items) => {
       let dbSize = 0;
       let configSize = 0;
-
       const chatKeys = new Set();
-
-      
       Object.keys(items).forEach(key => {
         const isAnkiKey = key.startsWith('rot_') || [
           'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
           'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent'
         ].includes(key);
         if (isAnkiKey) return;
-
         const valueStr = JSON.stringify(items[key]);
         const sizeBytes = valueStr ? valueStr.length : 0;
-
         if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('spotlight_history_')) {
           dbSize += sizeBytes;
           chatKeys.add(key);
@@ -2185,74 +1884,54 @@ class LuminaSettingsModal {
           configSize += sizeBytes;
         }
       });
-
       chrome.runtime.sendMessage({ action: 'get_stored_files' }, (response) => {
         let filesSize = 0;
         if (response && response.success && Array.isArray(response.files)) {
           filesSize = response.files.reduce((acc, f) => acc + (f.size || 0), 0);
         }
-
         const totalBytes = dbSize + filesSize + configSize;
-
-        
         const fmt = (bytes) => {
           if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
           if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
           return `${bytes} B`;
         };
-
-        
         textEl.textContent = fmt(totalBytes);
-
-        
         const dbSizeEl = document.getElementById('lumina-storage-db-size');
         const filesSizeEl = document.getElementById('lumina-storage-files-size');
         const configSizeEl = document.getElementById('lumina-storage-config-size');
         if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize);
         if (filesSizeEl) filesSizeEl.textContent = fmt(filesSize);
         if (configSizeEl) configSizeEl.textContent = fmt(configSize);
-
-        
         if (totalBytes > 0) {
           const dbPct = (dbSize / totalBytes * 100).toFixed(2);
           const filesPct = (filesSize / totalBytes * 100).toFixed(2);
           const configPct = (configSize / totalBytes * 100).toFixed(2);
-
           const barDb = document.getElementById('lumina-storage-bar-db');
           const barFiles = document.getElementById('lumina-storage-bar-files');
           const barConfig = document.getElementById('lumina-storage-bar-config');
-
-          
           requestAnimationFrame(() => {
             if (barDb) barDb.style.width = `${dbPct}%`;
             if (barFiles) barFiles.style.width = `${filesPct}%`;
             if (barConfig) barConfig.style.width = `${configPct}%`;
           });
         }
-
-        
         const sessionsListEl = document.getElementById('lumina-storage-sessions-list');
         if (sessionsListEl) {
           const sessionsMetadata = items['lumina_chat_sessions'] || {};
           const sessionList = [];
-
           Object.keys(sessionsMetadata).forEach(sessionId => {
             const meta = sessionsMetadata[sessionId];
             if (!meta) return;
-
             const sessionMessages = items[`lumina_session_${sessionId}`];
             const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : '';
             const metaStr = JSON.stringify(meta);
-
             let sessionFilesSize = 0;
             if (response && response.success && Array.isArray(response.files)) {
               sessionFilesSize = response.files
                 .filter(f => f.sessionId === sessionId)
                 .reduce((acc, f) => acc + (f.size || 0), 0);
             }
-
             const totalSessionBytes = messagesStr.length + metaStr.length + sessionFilesSize;
-
             sessionList.push({
               id: sessionId,
               title: meta.title || 'Untitled Chat',
@@ -2260,11 +1939,8 @@ class LuminaSettingsModal {
               size: totalSessionBytes
             });
           });
-
-          
           sessionList.sort((a, b) => b.size - a.size);
           const top10 = sessionList.slice(0, 10);
-
           if (top10.length === 0) {
             sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--lumina-text-muted);">No chat sessions found.</p>';
           } else {
@@ -2273,16 +1949,13 @@ class LuminaSettingsModal {
               const itemEl = document.createElement('div');
               itemEl.className = 'lumina-storage-session-item';
               itemEl.dataset.sessionId = session.id;
-
               const formattedDate = new Date(session.timestamp).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
               });
-
               const formattedSize = fmt(session.size);
-
               itemEl.innerHTML = `
                 <div class="lumina-storage-session-info">
                   <span class="lumina-storage-session-title" title="${session.title}">${session.title}</span>
@@ -2300,7 +1973,6 @@ class LuminaSettingsModal {
                   </button>
                 </div>
               `;
-
               const deleteBtn = itemEl.querySelector('.lumina-storage-session-delete');
               deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -2315,7 +1987,6 @@ class LuminaSettingsModal {
                     if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
                       await ChatHistoryManager.deleteChat(session.id);
                       LuminaSettingsModal.updateStorageUsage();
-
                       const scope = window.LuminaSelectionScope;
                       if (scope) {
                         scope.renderRecentChatsSidebar();
@@ -2333,7 +2004,6 @@ class LuminaSettingsModal {
                     if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
                       await ChatHistoryManager.deleteChat(session.id);
                       LuminaSettingsModal.updateStorageUsage();
-
                       const scope = window.LuminaSelectionScope;
                       if (scope) {
                         scope.renderRecentChatsSidebar();
@@ -2348,7 +2018,6 @@ class LuminaSettingsModal {
                   }
                 }
               });
-
               sessionsListEl.appendChild(itemEl);
             });
           }

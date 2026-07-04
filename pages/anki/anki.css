@@ -2,18 +2,13 @@
 
 :root {
     --bg-app: #F5F5F7;
-    
     --bg-surface: #FFFFFF;
-    
     --text-primary: #000000;
     --text-secondary: #6B6B6B;
     --accent: #000000;
-    
     --border: #E5E5E5;
-
     --radius: 12px;
     --radius-l: 18px;
-
     --anim: 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -26,7 +21,6 @@ body {
     margin: 0;
     font-family: 'Montserrat', sans-serif !important;
     font-size: 0.8125em;
-    
     color: var(--text-primary);
     background: var(--bg-app);
     height: 100vh;
@@ -34,7 +28,6 @@ body {
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
 }
-
 
 .anki-container {
     display: flex;
@@ -48,10 +41,8 @@ body {
     overflow: hidden;
 }
 
-
 .anki-header {
     display: none;
-    
 }
 
 .logo-area h1 {
@@ -69,8 +60,6 @@ body {
     color: var(--text-secondary);
 }
 
-
-
 .icon-btn {
     border: none;
     background: transparent;
@@ -85,7 +74,6 @@ body {
     opacity: 1;
     background: rgba(0, 0, 0, 0.05);
 }
-
 
 .icon-btn-small {
     display: inline-flex;
@@ -104,7 +92,6 @@ body {
     transition: background var(--anim), color var(--anim), transform 0.08s ease;
 }
 
-
 .icon-btn-small.danger,
 .delete-edit-field-btn.icon-btn-small {
     background: rgba(255, 59, 48, 0.06);
@@ -122,7 +109,6 @@ body {
 .icon-btn-small:focus {
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
 }
-
 
 .icon-btn-text {
     background: transparent;
@@ -148,7 +134,6 @@ body {
     color: #fff;
 }
 
-
 .icon-btn-small.danger.delete-edit-field-btn {
     background: #ff3b300f;
     border: none;
@@ -171,7 +156,6 @@ body {
     transform: scale(1.04);
 }
 
-
 .anki-sidebar {
     width: 220px;
     flex-shrink: 0;
@@ -191,7 +175,6 @@ body {
     border: none;
     background: transparent;
     border-radius: 8px;
-    
     font-size: 0.8125em;
     color: var(--text-secondary);
     cursor: pointer;
@@ -221,9 +204,7 @@ body {
 
 .back-btn {
     margin-top: auto;
-    
 }
-
 
 .anki-content-area {
     flex: 1;
@@ -249,7 +230,6 @@ textarea {
     display: flex;
     flex-direction: column;
 }
-
 
 .browser-layout {
     display: flex;
@@ -446,7 +426,6 @@ textarea {
     color: #000;
 }
 
-
 .checkbox-cell {
     width: 40px !important;
     padding: 0 !important;
@@ -544,7 +523,6 @@ th {
     background: var(--bg-surface);
     z-index: 10;
     cursor: pointer;
-    
     user-select: none;
 }
 
@@ -555,7 +533,6 @@ th:hover {
 
 tbody tr {
     cursor: pointer;
-    
 }
 
 td {
@@ -577,7 +554,6 @@ tbody tr.selected {
     background: #F0F0F0;
 }
 
-
 .side-editor {
     position: absolute;
     top: 0;
@@ -587,10 +563,8 @@ tbody tr.selected {
     background: var(--bg-surface);
     border-left: 1px solid var(--border);
     z-index: 50;
-
     display: flex;
     flex-direction: column;
-
     transform: translateX(100%);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.03);
@@ -634,7 +608,6 @@ tbody tr.selected {
     overflow-y: auto;
 }
 
-
 .field-edit-group {
     margin-bottom: 12px;
 }
@@ -647,8 +620,6 @@ tbody tr.selected {
     margin-bottom: 8px;
     letter-spacing: 0.5px;
 }
-
-
 
 .side-editor-footer {
     padding: 10px 20px;
@@ -731,13 +702,11 @@ tbody tr.selected {
     background: #D32F2F;
 }
 
-
 .truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
 
 ::-webkit-scrollbar {
     width: 6px;
@@ -748,10 +717,8 @@ tbody tr.selected {
     border-radius: 3px;
 }
 
-
 .creator-layout {
     display: flex;
-    
     height: 100%;
 }
 
@@ -768,7 +735,6 @@ tbody tr.selected {
     padding: 24px;
     overflow-y: auto;
 }
-
 
 .form-group label {
     color: #666;
@@ -789,7 +755,6 @@ tbody tr.selected {
     border-color: #000;
 }
 
-
 .sidebar-header {
     padding: 0 12px 16px 12px;
     margin-bottom: 8px;
@@ -802,7 +767,6 @@ tbody tr.selected {
     letter-spacing: -0.5px;
     color: var(--text-primary);
 }
-
 
 .connection-status {
     display: flex;
@@ -830,10 +794,8 @@ tbody tr.selected {
     background: #999;
 }
 
-
 .connection-status.connected {
     background: #28C840;
-    
 }
 
 .connection-status.connected .status-text {
@@ -875,11 +837,9 @@ tbody tr.selected {
     width: 100%;
 }
 
-
 th {
     position: static;
 }
-
 
 *::-webkit-scrollbar {
     display: none;
@@ -887,18 +847,14 @@ th {
 
 * {
     -ms-overflow-style: none;
-    
     scrollbar-width: none;
-    
 }
-
 
 .card-count-badge {
     position: absolute;
     bottom: 16px;
     left: 16px;
     z-index: 100;
-
     background: #000000;
     color: #FFFFFF;
     padding: 6px 14px;
@@ -916,7 +872,6 @@ th {
     opacity: 1;
 }
 
-
 .flatpickr-calendar {
     background: #fff;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
@@ -931,7 +886,6 @@ th {
 .flatpickr-calendar:before,
 .flatpickr-calendar:after {
     display: none !important;
-    
 }
 
 .flatpickr-months {
@@ -995,13 +949,11 @@ th {
     color: #d1d1d6;
 }
 
-
 @keyframes fpFadeIn {
     from {
         opacity: 0;
         transform: translateY(10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1011,7 +963,6 @@ th {
 .flatpickr-calendar.open {
     animation: fpFadeIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-
 
 .heatmap-section {
     margin: 0 16px 16px 16px;
@@ -1024,7 +975,7 @@ th {
     height: 160px;
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-    overflow: visible; 
+    overflow: visible;
 }
 
 .heatmap-container {
@@ -1067,7 +1018,6 @@ th {
     color: var(--text-primary);
 }
 
-
 .modal-overlay.heatmap-details .modal-content {
     max-width: 800px;
     width: 90%;
@@ -1100,15 +1050,14 @@ th {
     font-weight: 500 !important;
     line-height: 1.3 !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    z-index: 99999 !important; 
+    z-index: 99999 !important;
     pointer-events: none;
     position: absolute;
     white-space: normal !important;
-    max-width: 140px !important; 
+    max-width: 140px !important;
     width: max-content !important;
     text-align: center;
 }
-
 
 .graph-label {
     fill: #000000 !important;

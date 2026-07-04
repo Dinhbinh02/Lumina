@@ -1,14 +1,9 @@
 
-
 document.addEventListener('DOMContentLoaded', async () => {
-    
     const anki = window.anki || new AnkiClient();
-
-    
     const templateTableBody = document.getElementById('templateTableBody');
     const templateSearch = document.getElementById('templateSearch');
     const createNewTemplateBtn = document.getElementById('createNewTemplateBtn');
-
     const templateEditor = document.getElementById('templateEditor');
     const templateEditorTitle = document.getElementById('templateEditorTitle');
     const cancelTemplateBtn = document.getElementById('cancelTemplateBtn');
@@ -20,68 +15,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     const examplePreviewsContainer = document.getElementById('examplePreviewsContainer');
     const saveTemplateBtn = document.getElementById('saveTemplateBtn');
     const deleteTemplateBtn = document.getElementById('deleteTemplateBtn');
-
     const noteTypeBtn = document.getElementById('note-type-btn');
     const noteTypeLabel = document.getElementById('note-type-label');
     const noteTypeDropdown = document.getElementById('note-type-dropdown');
-
-    
     const deckSelect = document.getElementById('deckSelect');
     const templateSelect = document.getElementById('templateSelect');
     const batchInput = document.getElementById('batchInput');
     const batchWordCount = document.getElementById('batchWordCount');
     const generateBatchBtn = document.getElementById('generateBatchBtn');
     const batchSizeInput = document.getElementById('batchSizeInput');
-
     const genModelBtn = document.getElementById('gen-model-btn');
     const genModelLabel = document.getElementById('gen-model-label');
     const genModelDropdown = document.getElementById('gen-model-dropdown');
-
     const previewContainer = document.getElementById('previewContainer');
     const genCardCountBadge = document.getElementById('genCardCountBadge');
     const historyTableBody = document.getElementById('historyTableBody');
-
-    
     const exampleModal = document.getElementById('exampleModal');
     const exampleFieldsContainer = document.getElementById('exampleFieldsContainer');
     const saveExampleBtn = document.getElementById('saveExampleBtn');
     const regenerateExBtn = document.getElementById('regenerateExBtn');
-
-    
     const statusModal = document.getElementById('statusModal');
     const statusIcon = document.getElementById('statusIcon');
     const statusTitle = document.getElementById('statusTitle');
     const statusMessage = document.getElementById('statusMessage');
     const statusCloseBtn = document.getElementById('statusCloseBtn');
     const statusCopyBtn = document.getElementById('statusCopyBtn');
-
-    
     const STATE = {
         templates: [],
-        currentEditTemplate: null, 
-        batchHistory: [], 
-        activeBatchId: null, 
-        genAIModel: 'Standard', 
+        currentEditTemplate: null,
+        batchHistory: [],
+        activeBatchId: null,
+        genAIModel: 'Standard',
         genAIProviderId: '',
         decks: [],
         models: [],
         aiModelChains: [],
         isGenerating: false,
-        existingWordsCache: new Map(), 
+        existingWordsCache: new Map(),
         isCacheLoading: false
     };
-
-    
     async function init() {
         await initData();
         setupEventListeners();
         setupAIModelSelector();
         checkPendingRegenerate();
-
-        
         chrome.runtime.sendMessage({ action: 'reset_exhausted_keys' });
     }
-
     function checkPendingRegenerate() {
         const pending = localStorage.getItem('regenerate_words');
         if (pending && batchInput) {
@@ -90,7 +69,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem('regenerate_words');
         }
     }
-
     window.addEventListener('triggerRegenerate', (e) => {
         if (batchInput && e.detail?.words) {
             batchInput.value = e.detail.words;
@@ -98,7 +76,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem('regenerate_words');
         }
     });
-
     async function initData() {
         await loadTemplates();
         await loadDecks();
@@ -106,29 +83,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadAIModelChains();
         await loadBatchHistory();
     }
-
     async function loadProviders() {
         const data = await chrome.storage.local.get(['providers']);
         STATE.providers = data.providers || [];
     }
-
     async function loadBatchHistory() {
         const data = await chrome.storage.local.get(['luminaBatchHistoryV3']);
         STATE.batchHistory = data.luminaBatchHistoryV3 || [];
         renderHistoryTable();
     }
-
     async function loadAIModelChains() {
         const data = await chrome.storage.local.get(['modelChains']);
         STATE.aiModelChains = data.modelChains?.text || [];
     }
-
     const ankiModelBtn = document.getElementById('anki-model-btn');
     const ankiModelLabel = document.getElementById('anki-model-label');
     const ankiModelDropdown = document.getElementById('anki-model-dropdown');
-
     function setupAIModelSelector() {
-        
         if (noteTypeBtn && noteTypeDropdown) {
             noteTypeBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -137,8 +108,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             renderNoteTypeDropdown();
         }
-
-        
         if (ankiModelBtn && ankiModelDropdown) {
             ankiModelBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -147,16 +116,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             renderModelDropdown(ankiModelDropdown, ankiModelLabel, 'template');
         }
-
-        
         if (genModelBtn && genModelDropdown) {
             genModelBtn.onclick = (e) => {
                 e.stopPropagation();
                 closeAllDropdowns();
                 genModelDropdown.classList.toggle('active');
             };
-
-            
             chrome.storage.local.get(['lastUsedGenAIModel'], (res) => {
                 const savedModel = res.lastUsedGenAIModel;
                 if (savedModel && STATE.aiModelChains.some(item => item.model === savedModel.model && item.providerId === savedModel.providerId)) {
@@ -171,24 +136,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderModelDropdown(genModelDropdown, genModelLabel, 'generator');
             });
         }
-
-        
         chrome.storage.local.get(['lastUsedBatchSize'], (res) => {
             if (res.lastUsedBatchSize && batchSizeInput) {
                 batchSizeInput.value = res.lastUsedBatchSize;
             }
         });
-
         window.addEventListener('click', closeAllDropdowns);
     }
-
-    
     function showStatus(type, title, message, missingWords = null) {
         if (!statusModal) return;
         statusIcon.textContent = type === 'success' ? '✅' : (type === 'error' ? '❌' : '⚠️');
         statusTitle.textContent = title;
         statusMessage.textContent = message;
-
         if (missingWords && missingWords.length > 0) {
             statusCopyBtn.classList.remove('hidden');
             statusCopyBtn.onclick = () => {
@@ -202,47 +161,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             statusCopyBtn.classList.add('hidden');
         }
-
         statusModal.classList.remove('hidden');
-
-        
         if (document.hidden && (type === 'success' || type === 'warning')) {
             if (!document.title.startsWith('● ')) {
                 document.title = '● ' + document.title;
             }
         }
     }
-
-    
     window.addEventListener('focus', () => {
         if (document.title.startsWith('● ')) {
             document.title = document.title.replace('● ', '');
         }
     });
-
     if (statusCloseBtn) statusCloseBtn.onclick = () => statusModal.classList.add('hidden');
     if (statusModal) {
         statusModal.onclick = (e) => {
             if (e.target === statusModal) statusModal.classList.add('hidden');
         };
     }
-
     function closeAllDropdowns() {
         document.querySelectorAll('.lumina-model-dropdown').forEach(d => d.classList.remove('active'));
     }
-
     function sanitizeRichTextHTML(content = '') {
         if (!content) return '';
-
         const withoutComments = content
             .replace(/<!--[\s\S]*?-->/g, '')
             .replace(/&lt;!--[\s\S]*?--&gt;/g, '');
-
         const parser = new DOMParser();
         const doc = parser.parseFromString(`<div>${withoutComments}</div>`, 'text/html');
         const root = doc.body.firstElementChild;
         if (!root) return withoutComments;
-
         const isEmptyElement = (node) => {
             const hasMedia = node.querySelector('img, video, audio, iframe, canvas, svg, table, hr');
             if (hasMedia) return false;
@@ -253,7 +201,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .trim();
             return !html;
         };
-
         let changed = true;
         while (changed) {
             changed = false;
@@ -264,60 +211,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
-
         while (root.lastElementChild && ['P', 'DIV'].includes(root.lastElementChild.tagName) && isEmptyElement(root.lastElementChild)) {
             root.lastElementChild.remove();
         }
-
         return root.innerHTML;
     }
-
     function renderNoteTypeDropdown() {
         if (!noteTypeDropdown) return;
         noteTypeDropdown.innerHTML = '';
-
         if (STATE.models.length === 0) {
             noteTypeDropdown.innerHTML = '<div style="padding:8px;font-size:0.6875em;color:#999;">No Anki Models found</div>';
             return;
         }
-
         STATE.models.forEach(modelName => {
             const btn = document.createElement('button');
             btn.className = 'lumina-model-item';
             if (STATE.currentEditTemplate?.model === modelName) btn.classList.add('active');
-
             btn.innerHTML = `<span class="model-name">${modelName}</span>`;
             btn.onclick = async (e) => {
                 e.stopPropagation();
                 if (STATE.currentEditTemplate) {
                     STATE.currentEditTemplate.model = modelName;
                     noteTypeLabel.textContent = modelName;
-
-                    
                     try {
                         const fieldNames = await anki.invoke('modelFieldNames', { modelName: modelName });
                         if (fieldNames && fieldNames.length > 0) {
-                            
                             const oldFields = [...STATE.currentEditTemplate.fields];
-                            
-                            
                             let newFields = fieldNames.map(name => {
                                 const existing = oldFields.find(f => f.name === name);
                                 return existing || { name: name, prompt: '', example: '' };
                             });
-
-                            
                             const inputField = oldFields.find(f => f.name.toLowerCase() === 'input') || { name: 'Input', prompt: '', example: '' };
                             newFields = newFields.filter(f => f.name.toLowerCase() !== 'input');
                             newFields.push(inputField);
-
                             STATE.currentEditTemplate.fields = newFields;
                             renderEditFields();
                         }
                     } catch (err) {
                         console.error("Failed to fetch field names", err);
                     }
-
                     renderNoteTypeDropdown();
                 }
                 closeAllDropdowns();
@@ -325,27 +257,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             noteTypeDropdown.appendChild(btn);
         });
     }
-
     function renderModelDropdown(dropdown, labelEl, type) {
         dropdown.innerHTML = '';
         if (STATE.aiModelChains.length === 0) {
             dropdown.innerHTML = '<div style="padding:8px;font-size:0.6875em;color:#999;">No AI models configured</div>';
             return;
         }
-
         STATE.aiModelChains.forEach(item => {
             const btn = document.createElement('button');
             btn.className = 'lumina-model-item';
-
             let isActive = false;
             if (type === 'template' && STATE.currentEditTemplate) {
                 isActive = (STATE.currentEditTemplate.aiModel === item.model && STATE.currentEditTemplate.aiProviderId === item.providerId);
             } else if (type === 'generator') {
                 isActive = (STATE.genAIModel === item.model && STATE.genAIProviderId === item.providerId);
             }
-
             if (isActive) btn.classList.add('active');
-
             btn.innerHTML = `<span class="model-name">${item.model}</span>`;
             btn.onclick = (e) => {
                 e.stopPropagation();
@@ -364,38 +291,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             dropdown.appendChild(btn);
         });
     }
-
     async function processBatch(words, tmpl, options = {}) {
-                
                 function tryRepairJSONArray(str) {
                     if (!str) return [];
-                    
-                    
                     let cleaned = str.trim()
-                        .replace(/^[^{[]+/, '') 
-                        .replace(/[^}\]]+$/, ''); 
-
-                    
+                        .replace(/^[^{[]+/, '')
+                        .replace(/[^}\]]+$/, '');
                     const fixControlCharacters = (s) => {
-                        
-                        
-                        
                         return s.replace(/[\x00-\x1F\x7F-\x9F]/g, (match) => {
                             if (match === '\n') return '\\n';
                             if (match === '\r') return '\\r';
                             if (match === '\t') return '\\t';
-                            return ''; 
+                            return '';
                         });
                     };
-
-                    
                     const fixUnescapedQuotes = (s) => {
                         return s.replace(/([^\\])"(?![ \t]*[:,\}\]])/g, '$1\\"');
                     };
-
-                    
                     cleaned = cleaned.replace(/,[ \t\r\n]*([}\]])/g, '$1');
-
                     const tryParse = (s) => {
                         try { return JSON.parse(s); } catch (e) {
                             try { return JSON.parse(fixControlCharacters(s)); } catch (e2) {
@@ -407,11 +320,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             }
                         }
                     };
-
                     const result = tryParse(cleaned);
                     if (result) return result;
-
-                    
                     const matches = cleaned.match(/\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/g);
                     if (matches && matches.length > 0) {
                         const repaired = [];
@@ -423,38 +333,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     return [];
                 }
-        
         const toPromptText = (html) => {
             if (!html) return '';
             const d = document.createElement('div');
-            
             d.innerHTML = html.replace(/<!--[\s\S]*?-->/g, '');
-            
-            
             d.querySelectorAll('b, strong').forEach(el => { el.prepend('__BS__'); el.append('__BE__'); });
             d.querySelectorAll('i, em').forEach(el => { el.prepend('__IS__'); el.append('__IE__'); });
             d.querySelectorAll('u').forEach(el => { el.prepend('__US__'); el.append('__UE__'); });
-            
             d.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-            d.querySelectorAll('p, div').forEach(p => { 
+            d.querySelectorAll('p, div').forEach(p => {
                 if (p.textContent.trim()) { p.prepend('\n'); p.append('\n'); }
             });
-
             let text = d.textContent;
-
-            
             const wrapLines = (content, symbolS, symbolE) => {
                 return content.split('\n').map(line => {
                     const trimmed = line.trim();
                     if (!trimmed) return line;
-                    
                     const lead = line.match(/^\s*/)[0];
                     const trail = line.match(/\s*$/)[0];
                     return `${lead}${symbolS}${trimmed}${symbolE}${trail}`;
                 }).join('\n');
             };
-
-            
             const regex = /__([BIU])S__([\s\S]*?)__\1E__/g;
             while (text.match(regex)) {
                 text = text.replace(regex, (match, type, content) => {
@@ -464,42 +363,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return content;
                 });
             }
-
             return text.trim().replace(/\n{3,}/g, '\n\n');
         };
-
         const fieldsForAI = tmpl.fields.filter(f => f.name.toLowerCase() !== 'input');
-
         const fieldDefinitions = fieldsForAI.map(f => `### FIELD: ${f.name}\nPROMPT:\n${f.prompt}`).join('\n\n');
-
         const examplesText = (tmpl.examples || []).map((ex, i) => {
             const fieldVals = fieldsForAI.map(f => `${f.name}: ${toPromptText(ex.fieldData[f.name])}`).join('\n');
             return `EXAMPLE ${i + 1} (Word: ${ex.word}):\n${fieldVals}`;
         }).join('\n\n---\n\n');
-
         const prompt = `
             Task: Generate Anki flashcard content for a batch of words.
             Context: ${tmpl.globalPrompt || 'General learning'}
             Template Name: ${tmpl.name}
-            
             STRUCTURE & FORMATTING RULES:
             - You MUST mirror the exact structure and visual style observed in the FEW-SHOT EXAMPLES.
-            - RICH TEXT: Replicate the precise formatting patterns (bold, italics, underline) seen in the examples. 
+            - RICH TEXT: Replicate the precise formatting patterns (bold, italics, underline) seen in the examples.
             - MIRROR DISTRIBUTION: If a part of a block is plain text in the examples (like the second line in a header), it MUST be plain text in your output. Do NOT bold whole lines unless the corresponding lines in the example are bolded.
             - PRESERVE STRICT LINE BREAKS: Use double newlines (\n\n) between paragraphs exactly as the examples do.
             - LISTS: Each item starting with a letter (a., b., c.) must be on a NEW LINE as shown.
             - CONTENT ONLY: Do NOT include field names (like "Front:") inside field content.
             - Maintain exactly the same spacing, punctuation, and capitalization style as the examples.
             - IMPORTANT: Every object in the output MUST contain every field listed below.
-            
             FIELD DEFINITIONS:
             ${fieldDefinitions}
-
             ${examplesText ? `FEW-SHOT EXAMPLES (Follow this EXACT format):\n${examplesText}\n\n` : ''}
-
             Input Words: ${words.join(', ')}
-
-            JSON OUTPUT REQUIREMENT: 
+            JSON OUTPUT REQUIREMENT:
             - Return ONLY a valid JSON array of objects, no extra text, no explanation, no markdown, no comments, no code fences. Strictly output a JSON array.
             - Do not include any explanations, comments, or markdown. Only output a JSON array.
             - Do not use any quotation marks inside field values except for valid JSON string delimiters.
@@ -508,11 +397,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             - Each object must have a "word" property and properties for EXACTLY these field names: ${fieldsForAI.map(f => f.name).join(', ')}.
             - CRITICAL: Do NOT skip any fields. Every field listed above MUST be included in the JSON.
         `;
-
         try {
             const currentModel = options.isPreview ? tmpl.aiModel : STATE.genAIModel;
             const currentProvider = options.isPreview ? tmpl.aiProviderId : STATE.genAIProviderId;
-
             const response = await chrome.runtime.sendMessage({
                 action: 'ai_completion',
                 prompt: prompt,
@@ -525,11 +412,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (response.error) {
                 throw new Error(response.error);
             }
-
             let raw = (response.text || "").trim();
-            
             raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-            
             const arrayMatch = raw.match(/\[([\s\S]*?)\]/);
             let jsonToParse = raw;
             if (arrayMatch) {
@@ -539,19 +423,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 results = JSON.parse(jsonToParse);
             } catch (e) {
-                
                 results = tryRepairJSONArray(jsonToParse);
                 if (!results || !Array.isArray(results) || results.length === 0) {
                     throw e;
                 }
             }
-
             if (results && Array.isArray(results)) {
-                
                 return words.map((targetWord, i) => {
                     const normalizedTarget = (targetWord || '').toLowerCase().trim();
-                    
-                    
                     const getValInsensitive = (obj, key) => {
                         if (!obj || typeof obj !== 'object') return null;
                         if (obj[key] !== undefined) return obj[key];
@@ -559,10 +438,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const foundKey = Object.keys(obj).find(k => k.toLowerCase() === lowerKey);
                         return foundKey ? obj[foundKey] : null;
                     };
-
-                    
                     let res = results[i];
-                    
                     const resWord = getValInsensitive(res, 'word');
                     if (!res || (resWord && resWord.toLowerCase().trim() !== normalizedTarget)) {
                         const found = results.find(r => {
@@ -570,10 +446,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             return w && w.toLowerCase().trim() === normalizedTarget;
                         });
                         if (found) res = found;
-                        else res = res || {}; 
+                        else res = res || {};
                     }
-
-                    
                     const fieldData = {};
                     tmpl.fields.forEach(f => {
                         let val = getValInsensitive(res, f.name) || '';
@@ -584,7 +458,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                         fieldData[f.name] = val;
                     });
-
                     return {
                         id: Math.random().toString(36).substr(2, 9),
                         word: normalizedTarget,
@@ -594,7 +467,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
         } catch (e) {
-            throw e; 
+            throw e;
         }
     }
 
@@ -602,15 +475,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             STATE.decks = await anki.invoke('deckNames');
             deckSelect.innerHTML = STATE.decks.map(d => `<option value="${d}">${d}</option>`).join('');
-
-            
             chrome.storage.local.get(['lastUsedDeck'], (res) => {
                 if (res.lastUsedDeck && STATE.decks.includes(res.lastUsedDeck)) {
                     deckSelect.value = res.lastUsedDeck;
                 }
             });
-
-            
             STATE.models = await anki.invoke('modelNames');
         } catch (e) {
             console.error("Failed to load decks/models", e);
@@ -623,8 +492,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         STATE.templates = res.luminaTemplatesV3 || [getDefaultTemplate()];
         renderTemplatesTable();
         renderTemplateSelect();
-        
-        
         if (res.lastUsedTemplateId && STATE.templates.some(t => t.id === res.lastUsedTemplateId)) {
             templateSelect.value = res.lastUsedTemplateId;
         }
@@ -648,19 +515,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    
     function renderTemplatesTable() {
         const query = (templateSearch.value || '').toLowerCase();
         const filtered = STATE.templates.filter(t =>
             t.name.toLowerCase().includes(query) ||
             (t.description || '').toLowerCase().includes(query)
         );
-
         if (filtered.length === 0) {
             templateTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center">No templates found</td></tr>';
             return;
         }
-
         templateTableBody.innerHTML = filtered.map(t => `
             <tr data-tmpl-id="${t.id}">
                 <td style="width: 15%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.name}</td>
@@ -674,7 +538,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function openTemplateEditor(id = null) {
         if (!id) {
-            
             STATE.currentEditTemplate = {
                 id: 'tmpl-' + Date.now(),
                 name: '',
@@ -694,26 +557,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             templateEditorTitle.textContent = 'Create Template';
             deleteTemplateBtn.classList.add('hidden');
         } else {
-            
             const found = STATE.templates.find(t => t.id === id);
             STATE.currentEditTemplate = JSON.parse(JSON.stringify(found));
             templateEditorTitle.textContent = 'Edit Template';
             deleteTemplateBtn.classList.remove('hidden');
         }
-
         editTemplateName.value = STATE.currentEditTemplate.name;
         editTemplateGlobalPrompt.value = STATE.currentEditTemplate.globalPrompt || '';
-
-        
         noteTypeLabel.textContent = STATE.currentEditTemplate.model || 'Basic';
         renderNoteTypeDropdown();
-
-        
         const selectedAiModel = STATE.aiModelChains.find(m =>
             m.model === STATE.currentEditTemplate.aiModel &&
             m.providerId === STATE.currentEditTemplate.aiProviderId
         ) || STATE.aiModelChains[0];
-
         if (selectedAiModel) {
             STATE.currentEditTemplate.aiModel = selectedAiModel.model;
             STATE.currentEditTemplate.aiProviderId = selectedAiModel.providerId;
@@ -721,7 +577,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             ankiModelLabel.textContent = 'Select AI Model';
         }
-
         renderModelDropdown(ankiModelDropdown, ankiModelLabel, 'template');
         renderEditFields();
         renderExamplePreviews();
@@ -731,9 +586,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderEditFields() {
         editFieldsContainer.innerHTML = '';
         STATE.currentEditTemplate.fields.forEach((field, index) => {
-            const isProtected = index < 2; 
+            const isProtected = index < 2;
             const isInput = field.name.toLowerCase() === 'input';
-
             const header = document.createElement('div');
             header.className = 'field-row-header';
             header.style.marginBottom = '8px';
@@ -746,7 +600,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${!isProtected && !isInput ? `<button class="icon-btn-text danger delete-edit-field-btn" data-index="${index}">Delete</button>` : ''}
                 </div>
             `;
-
             const setup = document.createElement('div');
             setup.className = 'setup-group';
             setup.style.marginBottom = '20px';
@@ -760,12 +613,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <textarea class="field-prompt-input" placeholder="Rules for this field..." data-index="${index}">${field.prompt}</textarea>
                 `;
             }
-
             editFieldsContainer.appendChild(header);
             editFieldsContainer.appendChild(setup);
         });
-
-        
         editFieldsContainer.querySelectorAll('.field-name-input').forEach(el => {
             el.addEventListener('input', (e) => STATE.currentEditTemplate.fields[e.target.dataset.index].name = e.target.value);
         });
@@ -779,27 +629,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderEditFields();
             });
         });
-
-
     }
 
     function setupRichText(el, onChange) {
         if (!el) return;
-
         el.addEventListener('input', () => {
             if (onChange) onChange(el.innerHTML);
         });
-
-        
         el.addEventListener('keydown', (e) => {
-            
             if (e.metaKey || e.ctrlKey) {
                 if (e.key === 'b') { e.preventDefault(); document.execCommand('bold', false, null); }
                 if (e.key === 'i') { e.preventDefault(); document.execCommand('italic', false, null); }
                 if (e.key === 'u') { e.preventDefault(); document.execCommand('underline', false, null); }
             }
-
-            
             if (e.key === ' ') {
                 try {
                     const selection = window.getSelection();
@@ -807,7 +649,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const range = selection.getRangeAt(0);
                         const text = range.startContainer.textContent || '';
                         const offset = range.startOffset;
-
                         if (offset > 0 && text[offset - 1] === '-') {
                             const beforeDash = text.substring(0, offset - 1).trim();
                             if (beforeDash === '' || beforeDash.endsWith('\n')) {
@@ -818,30 +659,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
                 } catch (err) {
-                    
                 }
             }
         });
-
-        
         el.addEventListener('paste', (e) => {
             e.preventDefault();
             const text = e.clipboardData.getData('text/plain');
             const html = e.clipboardData.getData('text/html');
-
             if (html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-
                 const sanitize = (body) => {
-                    
                     const comments = [];
                     const iterator = doc.createNodeIterator(body, NodeFilter.SHOW_COMMENT, null, false);
                     let n;
                     while (n = iterator.nextNode()) comments.push(n);
                     comments.forEach(c => c.remove());
-
-                    
                     body.querySelectorAll('*').forEach(el => {
                         const style = el.getAttribute('style') || '';
                         if (style.includes('font-weight:700') || style.includes('font-weight:bold') || style.includes('700')) {
@@ -855,12 +688,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             el.appendChild(i);
                         }
                     });
-
-                    
                     body.querySelectorAll('*').forEach(el => {
                         while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
                     });
-
                     const flatten = (node) => {
                         const children = Array.from(node.childNodes);
                         for (const child of children) {
@@ -893,7 +723,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     };
                     flatten(body);
-
                     const finalChildren = Array.from(body.childNodes);
                     let currentPara = null;
                     finalChildren.forEach(node => {
@@ -913,7 +742,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             currentPara.appendChild(node);
                         }
                     });
-
                     let changed = true;
                     while (changed) {
                         changed = false;
@@ -926,7 +754,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                     }
                 };
-
                 sanitize(doc.body);
                 document.execCommand('insertHTML', false, sanitizeRichTextHTML(doc.body.innerHTML));
             } else {
@@ -938,7 +765,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderExamplePreviews() {
         examplePreviewsContainer.innerHTML = '';
         const examples = STATE.currentEditTemplate.examples || [];
-
         examples.forEach((ex, idx) => {
             const card = document.createElement('div');
             card.className = 'example-preview-card';
@@ -960,8 +786,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `).join('')}
                 </div>
             `;
-
-            
             card.querySelector('.example-header').onclick = (e) => {
                 if (e.target.closest('button')) return;
                 card.classList.toggle('expanded');
@@ -972,51 +796,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                     chevron.style.transform = 'rotate(0deg)';
                 }
             };
-
-            
             card.querySelector('.edit-example-btn').onclick = (e) => {
                 e.stopPropagation();
                 openExampleModal(idx);
             };
-
-            
             card.querySelector('.delete-example-btn').onclick = (e) => {
                 e.stopPropagation();
                 if (!confirm('Delete this example?')) return;
                 STATE.currentEditTemplate.examples.splice(idx, 1);
                 renderExamplePreviews();
             };
-
             examplePreviewsContainer.appendChild(card);
         });
     }
-
     async function openExampleModal(index = -1) {
         let draftExample;
         let isNew = index === -1;
-
-        
         const renderFields = (example) => {
             exampleFieldsContainer.innerHTML = '';
-
-            
             STATE.currentEditTemplate.fields.forEach(field => {
                 const group = document.createElement('div');
                 group.className = 'modal-group';
-
                 const isInput = field.name.toLowerCase() === 'input';
                 const isPlain = !!field.plainText || isInput;
-
                 let displayValue = example.fieldData[field.name] || '';
                 if (isInput) {
                     displayValue = (example.word || '').toLowerCase().trim();
                 } else if (isPlain) {
                     displayValue = displayValue.replace(/<[^>]*>/g, '').trim();
                 } else {
-                    
                     displayValue = sanitizeRichTextHTML(displayValue);
                 }
-
                 group.innerHTML = `
                     <div class="modal-group-header">
                         <label>${field.name}</label>
@@ -1038,20 +848,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 `;
                 exampleFieldsContainer.appendChild(group);
-
-                if (isInput) return; 
-
-                
+                if (isInput) return;
                 const toggle = group.querySelector('.modal-richtext-toggle');
                 toggle.onchange = (e) => {
                     const rich = e.target.checked;
                     const fieldConfig = STATE.currentEditTemplate.fields.find(f => f.name === field.name);
                     if (fieldConfig) fieldConfig.plainText = !rich;
-
                     const wrap = group.querySelector('.field-editor-wrap');
                     const oldInput = wrap.querySelector('.edit-ex-field');
                     const currentVal = oldInput.tagName === 'TEXTAREA' ? oldInput.value : oldInput.innerHTML;
-
                     if (rich) {
                         wrap.innerHTML = `<div class="rich-text edit-ex-field" contenteditable="true" data-field="${field.name}">${renderMarkdown(currentVal)}</div>`;
                         setupRichText(wrap.querySelector('.rich-text'), (val) => {
@@ -1065,8 +870,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         };
                     }
                 };
-
-                
                 const fieldInput = group.querySelector('.edit-ex-field');
                 if (!isPlain) {
                     setupRichText(fieldInput, (newContent) => {
@@ -1080,28 +883,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.execCommand('defaultParagraphSeparator', false, 'p');
             });
         };
-
         if (isNew) {
             if ((STATE.currentEditTemplate.examples || []).length >= 3) return alert('Max 3 examples allowed.');
-
-            
             STATE.currentEditTemplate.globalPrompt = editTemplateGlobalPrompt.value;
-
             const sampleWord = prompt("Enter a word to generate an example:", "Knowledge");
             if (!sampleWord) return;
-
-            
             const loadingBar = document.createElement('div');
             loadingBar.className = 'example-preview-card loading';
             loadingBar.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; font-size: 0.8125em; font-weight: 620;"><div class="spinner-small"></div> Generating example...</div>`;
             examplePreviewsContainer.appendChild(loadingBar);
-
             try {
                 const res = await processBatch([sampleWord], STATE.currentEditTemplate, { isPreview: true });
                 loadingBar.remove();
                 if (res && res[0]) {
                     draftExample = res[0];
-                    
                     if (isNew) {
                         if (!STATE.currentEditTemplate.examples) STATE.currentEditTemplate.examples = [];
                         STATE.currentEditTemplate.examples.push(draftExample);
@@ -1118,22 +913,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return alert('Generate example failed.');
             }
         } else {
-            
             const original = STATE.currentEditTemplate.examples[index];
             draftExample = JSON.parse(JSON.stringify(original));
         }
-
         renderFields(draftExample);
-
-        
         regenerateExBtn.onclick = async () => {
             const inputEl = exampleFieldsContainer.querySelector('textarea[data-field="Input"], textarea[data-field="input"]');
             const word = inputEl ? inputEl.value.trim() : draftExample.word;
             if (!word) return alert('Enter a word first.');
-
             regenerateExBtn.disabled = true;
             regenerateExBtn.innerText = 'Regenerating...';
-
             try {
                 const res = await processBatch([word], STATE.currentEditTemplate, { isPreview: true });
                 if (res && res[0]) {
@@ -1155,11 +944,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 regenerateExBtn.innerText = 'Regenerate';
             }
         };
-
         saveExampleBtn.onclick = () => {
             const inputEl = exampleFieldsContainer.querySelector('textarea[data-field="Input"], textarea[data-field="input"]');
             if (inputEl) draftExample.word = inputEl.value.toLowerCase().trim();
-            
             exampleFieldsContainer.querySelectorAll('.edit-ex-field').forEach(el => {
                 const fieldName = el.dataset.field;
                 if (el.tagName === 'TEXTAREA') {
@@ -1168,78 +955,56 @@ document.addEventListener('DOMContentLoaded', async () => {
                     draftExample.fieldData[fieldName] = sanitizeRichTextHTML(el.innerHTML);
                 }
             });
-
             if (!STATE.currentEditTemplate.examples) STATE.currentEditTemplate.examples = [];
-
             if (isNew) {
                 STATE.currentEditTemplate.examples.push(draftExample);
             } else {
                 STATE.currentEditTemplate.examples[index] = draftExample;
             }
-
             exampleModal.classList.add('hidden');
             renderExamplePreviews();
-            
             chrome.storage.local.set({ luminaTemplatesV3: STATE.templates });
         };
-
         exampleModal.classList.remove('hidden');
     }
-
     async function saveTemplate() {
         const name = editTemplateName.value.trim();
         if (!name) return alert('Please enter a template name.');
-
-        templateEditor.classList.remove('open'); 
-
+        templateEditor.classList.remove('open');
         STATE.currentEditTemplate.name = name;
         STATE.currentEditTemplate.globalPrompt = editTemplateGlobalPrompt.value;
-        
         STATE.currentEditTemplate.modified = Date.now();
-
         const index = STATE.templates.findIndex(t => t.id === STATE.currentEditTemplate.id);
         if (index > -1) {
             STATE.templates[index] = STATE.currentEditTemplate;
         } else {
             STATE.templates.push(STATE.currentEditTemplate);
         }
-
         await chrome.storage.local.set({ luminaTemplatesV3: STATE.templates });
-        initData(); 
+        initData();
     }
-
     async function deleteTemplate() {
         if (!STATE.currentEditTemplate) return;
         if (!confirm(`Delete template "${STATE.currentEditTemplate.name}"?`)) return;
-
         STATE.templates = STATE.templates.filter(t => t.id !== STATE.currentEditTemplate.id);
         await chrome.storage.local.set({ luminaTemplatesV3: STATE.templates });
         templateEditor.classList.remove('open');
         init();
     }
-
-    
     function renderTemplateSelect() {
         templateSelect.innerHTML = STATE.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     }
-
     async function handleGenerate() {
         if (STATE.isGenerating) {
             STATE.isGenerating = false;
             return;
         }
-
         const userInput = batchInput.value.trim();
         if (!userInput) return alert('Please enter some words.');
-
         const currentTmpl = STATE.templates.find(t => t.id === templateSelect.value);
         if (!currentTmpl) return alert('Please select a template.');
-
-        
         const rawWords = userInput.split(/[,\n]/).map(s => s.trim()).filter(s => s);
         if (rawWords.length === 0) return;
-
-        
         const uniqueWordsMap = new Map();
         rawWords.forEach(w => {
             const normalized = w.toLowerCase();
@@ -1247,32 +1012,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         const wordsToGenerate = Array.from(uniqueWordsMap.keys());
         const wordsToGenerateSet = new Set(wordsToGenerate);
-
-        
         const originalBtnText = generateBatchBtn.innerHTML;
         STATE.isGenerating = true;
-        generateBatchBtn.disabled = false; 
-        
+        generateBatchBtn.disabled = false;
         const modelName = currentTmpl?.model || 'Basic';
-        const cacheKey = `${modelName}`; 
-
-        const existingNoteIds = {}; 
-
+        const cacheKey = `${modelName}`;
+        const existingNoteIds = {};
         try {
-            
             if (!STATE.existingWordsCache.has(cacheKey)) {
                 generateBatchBtn.innerHTML = `<span class="spinner-small"></span> Initializing check...`;
                 const startTime = Date.now();
-                
-                
                 const query = `note:"${modelName}"`;
                 const allIds = await anki.findNoteIds(query);
-                
                 const wordMap = new Map();
                 if (allIds.length > 0) {
                     generateBatchBtn.innerHTML = `<span class="spinner-small"></span> Checking ${allIds.length} existing cards...`;
-                    
-                    
                     const INFO_CHUNK = 1000;
                     for (let i = 0; i < allIds.length; i += INFO_CHUNK) {
                         const chunk = allIds.slice(i, i + INFO_CHUNK);
@@ -1287,15 +1041,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 STATE.existingWordsCache.set(cacheKey, wordMap);
                 console.log(`Duplicate cache built in ${Date.now() - startTime}ms for ${allIds.length} notes.`);
             }
-
-            
             const wordMap = STATE.existingWordsCache.get(cacheKey);
             wordsToGenerate.forEach(word => {
                 if (wordMap.has(word)) {
                     existingNoteIds[word] = wordMap.get(word);
                 }
             });
-
             const duplicateCount = Object.keys(existingNoteIds).length;
             if (duplicateCount > 0) {
                 const msg = `Found ${duplicateCount} word(s) already in Anki. These cards will be UPDATED instead of created as new. Proceed?`;
@@ -1306,7 +1057,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
             }
-
         } catch (e) {
             console.error("Duplicate check failed:", e);
             if (!confirm("Could not check for duplicates (Anki issue). Proceed with new cards only?")) {
@@ -1316,32 +1066,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
         }
-
         generateBatchBtn.innerHTML = `<span class="spinner-small"></span> Generating...`;
-
         const words = wordsToGenerate;
-
         const batchId = Math.random().toString(36).substr(2, 6);
         const newBatch = {
             id: batchId,
             words: words,
-            existingNoteIds: existingNoteIds, 
+            existingNoteIds: existingNoteIds,
             cards: [],
             timestamp: Date.now(),
             deckName: deckSelect.value,
             templateId: currentTmpl.id
         };
-
         STATE.batchHistory.unshift(newBatch);
         if (STATE.batchHistory.length > 50) STATE.batchHistory.pop();
         STATE.activeBatchId = batchId;
-
         renderHistoryTable();
         renderPreview();
-
         try {
-            const generationErrors = []; 
-            
+            const generationErrors = [];
             const batchSize = parseInt(batchSizeInput?.value) || 10;
             const tasks = [];
             for (let i = 0; i < words.length; i += batchSize) {
@@ -1351,33 +1094,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     retries: 0
                 });
             }
-
-            
             const selectedProvider = STATE.providers.find(p => p.id === STATE.genAIProviderId);
             const keys = (selectedProvider?.apiKey || '').split(',').map(k => k.trim()).filter(k => k);
-
-            
             const groupKey = 'rot_' + keys.join(',').substring(0, 32).replace(/[^a-zA-Z0-9]/g, '');
             const today = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`;
-            
             const indexData = await chrome.storage.local.get([groupKey]);
-            let currentKeyIndex = (indexData[groupKey] && indexData[groupKey].date === today) 
-                ? indexData[groupKey].index 
+            let currentKeyIndex = (indexData[groupKey] && indexData[groupKey].date === today)
+                ? indexData[groupKey].index
                 : 0;
-
             const jobResults = tasks.map(() => []);
             let activeTasksCount = 0;
             const taskQueue = [...tasks];
-            
             let cycleStartTime = Date.now();
             let lastBatchStartTime = 0;
             let keysUsedInCycle = 0;
             const pendingTasks = [];
-
             while (taskQueue.length > 0) {
                 if (!STATE.isGenerating) break;
-
-                
                 if (keysUsedInCycle >= keys.length) {
                     const elapsed = Date.now() - cycleStartTime;
                     const waitTime = Math.max(0, 15000 - elapsed);
@@ -1396,32 +1129,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     cycleStartTime = Date.now();
                     keysUsedInCycle = 0;
                 }
-
-                
-                
-                
                 const task = taskQueue.shift();
                 const keyIndex = currentKeyIndex;
-                
-                
                 currentKeyIndex = (currentKeyIndex + 1) % keys.length;
                 keysUsedInCycle++;
-
                 let resolveTrigger;
                 const nextBatchTrigger = new Promise(r => resolveTrigger = r);
                 const fuse = setTimeout(() => resolveTrigger(), 500);
-
                 const taskPromise = (async () => {
                     if (!STATE.isGenerating) return;
                     try {
                         generateBatchBtn.innerHTML = `<span class="spinner-small"></span> Processing... (Key ${keyIndex + 1}) - Click to Stop`;
-                        
                         const results = await processBatch(task.words, currentTmpl, { keyIndex: keyIndex });
-                        
-                        
                         clearTimeout(fuse);
                         resolveTrigger();
-
                         if (results) {
                             jobResults[task.index] = results;
                             newBatch.cards = jobResults.flat().filter(c => c);
@@ -1433,38 +1154,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const errorMsg = `Batch ${task.index} (Words: ${task.words.join(', ')}) failed on key ${keyIndex}: ${err.message}`;
                         console.error(errorMsg, err);
                         generationErrors.push(errorMsg);
-                        
-                        
                         clearTimeout(fuse);
                         resolveTrigger();
-
-                        
-                        
-                        taskQueue.unshift(task); 
+                        taskQueue.unshift(task);
                     }
                 })();
-
                 pendingTasks.push(taskPromise);
-
-                
                 await nextBatchTrigger;
                 lastBatchStartTime = Date.now();
             }
-
-            
             await Promise.all(pendingTasks);
-
-            
             await saveBatchHistory();
-            
-            
             const generatedWords = new Set(newBatch.cards.map(c => (c.word || '').toLowerCase().trim()));
             const missingWords = words.filter(w => !generatedWords.has(w.toLowerCase().trim()));
-
             if (missingWords.length > 0) {
                 const missingText = missingWords.join(', ');
-                
-                
                 const performCopy = async (text) => {
                     console.log("Attempting to copy missing words to clipboard:", text);
                     try {
@@ -1489,10 +1193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         document.body.removeChild(textArea);
                     }
                 };
-
                 await performCopy(missingText);
-                
-                
                 console.group("⚠️ Generation Diagnostics");
                 console.warn(`Summary: Created ${newBatch.cards.length} out of ${words.length} cards.`);
                 console.warn(`Missing Words (${missingWords.length}):`, missingWords);
@@ -1503,7 +1204,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.warn(`Note: No technical API errors were recorded. This likely means the AI simplified the response or missed some words during successful requests.`);
                 }
                 console.groupEnd();
-
                 showStatus('warning', 'Generation partially complete', `${newBatch.cards.length} / ${words.length} cards created. Missing words have been copied to your clipboard.`, missingWords);
             } else {
                 showStatus('success', 'Success!', `All ${words.length} cards have been generated.`);
@@ -1518,23 +1218,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderHistoryTable();
         }
     }
-
     async function saveBatchHistory() {
         await chrome.storage.local.set({ luminaBatchHistoryV3: STATE.batchHistory });
     }
-
     function renderHistoryTable() {
         historyTableBody.innerHTML = '';
         if (STATE.batchHistory.length === 0) {
             historyTableBody.innerHTML = '<tr><td colspan="4"><div class="empty-state">No generation history</div></td></tr>';
             return;
         }
-
         STATE.batchHistory.forEach(batch => {
             const tr = document.createElement('tr');
             tr.style.cursor = 'pointer';
             if (STATE.activeBatchId === batch.id) tr.style.background = '#f0f7ff';
-
             const dateStr = new Date(batch.timestamp).toLocaleString();
             tr.innerHTML = `
                 <td>#${batch.id}</td>
@@ -1545,14 +1241,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="icon-btn-text danger delete-batch-btn" data-id="${batch.id}">Delete</button>
                 </td>
             `;
-
             tr.onclick = (e) => {
                 if (e.target.closest('button')) return;
                 STATE.activeBatchId = batch.id;
                 renderHistoryTable();
                 renderPreview();
             };
-
             const delBtn = tr.querySelector('.delete-batch-btn');
             delBtn.onclick = async (e) => {
                 e.stopPropagation();
@@ -1562,39 +1256,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 renderHistoryTable();
                 renderPreview();
             };
-
             const syncBtn = tr.querySelector('.sync-batch-btn');
             syncBtn.onclick = (e) => {
                 e.stopPropagation();
                 syncBatchToAnki(batch.id);
             };
-
             historyTableBody.appendChild(tr);
         });
     }
-
     async function syncBatchToAnki(batchId) {
         const batch = STATE.batchHistory.find(b => b.id === batchId);
         if (!batch || batch.cards.length === 0) return alert('No cards to sync.');
-
         const currentTmpl = STATE.templates.find(t => t.id === batch.templateId);
         const modelName = currentTmpl ? currentTmpl.model : 'Basic';
-
         const btn = document.querySelector(`.sync-batch-btn[data-id="${batchId}"]`);
         const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Syncing...';
-
         let successCount = 0;
         const liveExistingNoteIds = {};
-
         try {
-            
             const currentTmpl = STATE.templates.find(t => t.id === batch.templateId);
             const modelName = currentTmpl?.model || 'Basic';
             const cacheKey = `${modelName}`;
-            
-            
             if (!STATE.existingWordsCache.has(cacheKey)) {
                 const query = `note:"${modelName}"`;
                 const allIds = await anki.findNoteIds(query);
@@ -1609,7 +1293,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 STATE.existingWordsCache.set(cacheKey, wordMap);
             }
-
             const wordMap = STATE.existingWordsCache.get(cacheKey);
             batch.cards.forEach(card => {
                 const val = card.word.toLowerCase().trim();
@@ -1617,27 +1300,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                     liveExistingNoteIds[val] = wordMap.get(val);
                 }
             });
-
-            
             const notesToAdd = [];
             const updateActions = [];
-
             for (const card of batch.cards) {
                 const processedFields = {};
                 for (const [key, value] of Object.entries(card.fieldData)) {
                     const fieldDef = currentTmpl.fields.find(f => f.name === key);
                     const isPlainText = fieldDef?.plainText || key.toLowerCase() === 'input';
-                    
                     if (isPlainText) {
                         processedFields[key] = (value || '').replace(/<[^>]*>/g, '').trim();
                     } else {
                         processedFields[key] = renderMarkdown(value || '');
                     }
                 }
-
                 const wordKey = card.word.toLowerCase().trim();
                 const existingId = liveExistingNoteIds[wordKey];
-
                 if (existingId) {
                     updateActions.push({
                         action: "updateNoteFields",
@@ -1655,8 +1332,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                 }
             }
-
-            
             if (notesToAdd.length > 0) {
                 const ADD_CHUNK = 500;
                 for (let i = 0; i < notesToAdd.length; i += ADD_CHUNK) {
@@ -1666,8 +1341,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     successCount += results.filter(r => r !== null).length;
                 }
             }
-
-            
             if (updateActions.length > 0) {
                 const UPDATE_CHUNK = 100;
                 for (let i = 0; i < updateActions.length; i += UPDATE_CHUNK) {
@@ -1677,46 +1350,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                     successCount += chunk.length;
                 }
             }
-
-            
             try {
                 btn.textContent = 'Syncing to Web...';
                 await anki.sync();
             } catch (syncErr) {
                 console.warn("AnkiWeb sync failed (but notes were added local):", syncErr);
             }
-
         } catch (e) {
             console.error("Sync error:", e);
         }
-
-        
         btn.disabled = false;
         btn.textContent = originalText;
     }
-
-
     function renderPreview() {
         previewContainer.innerHTML = '';
         const batch = STATE.batchHistory.find(b => b.id === STATE.activeBatchId);
-
         if (!batch) {
             previewContainer.innerHTML = '<div class="empty-state">Select a batch to preview cards</div>';
             genCardCountBadge.classList.add('hidden');
             return;
         }
-
         const count = batch.cards.length;
         if (count === 0) {
             previewContainer.innerHTML = '<div class="empty-state">No cards in this batch</div>';
             genCardCountBadge.classList.add('hidden');
             return;
         }
-
-        
         genCardCountBadge.textContent = `${count} ${count === 1 ? 'card' : 'cards'}`;
         genCardCountBadge.classList.remove('hidden');
-
         batch.cards.forEach((card, index) => {
             const btn = document.createElement('div');
             btn.className = 'card-label-btn';
@@ -1725,27 +1386,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             previewContainer.appendChild(btn);
         });
     }
-
     function openGeneratedCardModal(batchId, cardIndex) {
         const batch = STATE.batchHistory.find(b => b.id === batchId);
         const card = batch.cards[cardIndex];
         const tmpl = STATE.templates.find(t => t.id === batch.templateId);
-
-        
         const draftCard = JSON.parse(JSON.stringify(card));
-
         exampleFieldsContainer.innerHTML = '';
         tmpl.fields.forEach(field => {
             const group = document.createElement('div');
             group.className = 'modal-group';
-
             const isInput = field.name.toLowerCase() === 'input';
             const isPlainText = field.plainText || isInput;
-            
             let value = draftCard.fieldData[field.name] || '';
-            
             if (isInput && !value) value = draftCard.word;
-
             group.innerHTML = `
                 <label>${field.name}</label>
                 ${isPlainText
@@ -1754,33 +1407,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             `;
             exampleFieldsContainer.appendChild(group);
-
             if (isPlainText) return;
-
             const richEl = group.querySelector('.rich-text');
             setupRichText(richEl, (newContent) => {
                 draftCard.fieldData[field.name] = newContent;
             });
             document.execCommand('defaultParagraphSeparator', false, 'p');
         });
-
         saveExampleBtn.onclick = async () => {
-
             exampleFieldsContainer.querySelectorAll('.edit-ex-field').forEach(el => {
                 const fieldName = el.dataset.field;
                 if (el.tagName === 'TEXTAREA') {
                     draftCard.fieldData[fieldName] = el.value.trim();
                     if (fieldName.toLowerCase() === 'input') draftCard.word = el.value.toLowerCase().trim();
                 } else {
-                    
                     draftCard.fieldData[fieldName] = sanitizeRichTextHTML(el.innerHTML);
                 }
             });
-
-            
             Object.keys(draftCard.fieldData).forEach(fieldName => {
                 const val = draftCard.fieldData[fieldName];
-                
                 if (typeof val === 'string' && /<\/?(p|div|br|b|i|strong|em|span)[ >]/i.test(val)) {
                     draftCard.fieldData[fieldName] = sanitizeRichTextHTML(val);
                 }
@@ -1790,11 +1435,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             exampleModal.classList.add('hidden');
             renderPreview();
         };
-
         exampleModal.classList.remove('hidden');
     }
-
-    
     function formatDate(ts) {
         if (!ts) return '-';
         return new Date(ts).toLocaleString('en-GB', {
@@ -1802,21 +1444,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
     }
-
     function renderMarkdown(text) {
         if (!text) return '';
-        
-        
         if (typeof text === 'string' && (text.includes('<p>') || text.includes('<div>') || text.includes('<br>'))) {
             return sanitizeRichTextHTML(text);
         }
-
-        
         let cleanText = text.toString().trim();
-        
-        
         const paragraphs = cleanText.split(/\n\n+/).filter(p => p.trim());
-        
         const rendered = paragraphs.map(p => {
             let pContent = p
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -1827,34 +1461,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .replace(/\n/g, '<br>');
             return `<p>${pContent}</p>`;
         }).join('');
-
         return rendered;
     }
-
-    
     function setupEventListeners() {
-        
         templateSearch.addEventListener('input', renderTemplatesTable);
         createNewTemplateBtn.addEventListener('click', () => openTemplateEditor(null));
         cancelTemplateBtn.addEventListener('click', () => templateEditor.classList.remove('open'));
         tableRowClick();
-
         addTemplateFieldBtn.addEventListener('click', () => {
             if (!STATE.currentEditTemplate) return;
-            
-            
             const inputIndex = STATE.currentEditTemplate.fields.findIndex(f => f.name.toLowerCase() === 'input');
             const newField = { name: 'New Field', prompt: '', example: '' };
-            
             if (inputIndex !== -1) {
                 STATE.currentEditTemplate.fields.splice(inputIndex, 0, newField);
             } else {
                 STATE.currentEditTemplate.fields.push(newField);
             }
-            
             renderEditFields();
         });
-
         addExamplePreviewBtn.addEventListener('click', () => {
             if (!STATE.currentEditTemplate.aiModel) {
                 highlightAIModelSelector();
@@ -1862,7 +1486,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             openExampleModal(-1);
         });
-
         function highlightAIModelSelector() {
             const selector = document.getElementById('anki-model-btn');
             if (selector) {
@@ -1870,8 +1493,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 selector.style.transition = 'all 0.3s ease';
                 selector.style.borderColor = '#ff3b30';
                 selector.style.boxShadow = '0 0 0 3px rgba(255, 59, 48, 0.2)';
-                
-                
                 selector.animate([
                     { transform: 'translateX(0)' },
                     { transform: 'translateX(-5px)' },
@@ -1879,32 +1500,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { transform: 'translateX(-5px)' },
                     { transform: 'translateX(0)' }
                 ], { duration: 300 });
-
                 setTimeout(() => {
                     selector.style.borderColor = '';
                     selector.style.boxShadow = '';
                 }, 2000);
             }
         }
-
-        
         exampleModal.addEventListener('click', (e) => {
             if (e.target === exampleModal) {
                 exampleModal.classList.add('hidden');
             }
         });
-
         saveTemplateBtn.addEventListener('click', saveTemplate);
         deleteTemplateBtn.addEventListener('click', deleteTemplate);
-
         editTemplateGlobalPrompt.addEventListener('input', () => {
             if (STATE.currentEditTemplate) STATE.currentEditTemplate.globalPrompt = editTemplateGlobalPrompt.value;
         });
-
-        
         generateBatchBtn.onclick = handleGenerate;
-        
-        
         const invalidateCache = () => STATE.existingWordsCache.clear();
         deckSelect.addEventListener('change', () => {
             invalidateCache();
@@ -1919,7 +1531,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 chrome.storage.local.set({ lastUsedBatchSize: batchSizeInput.value });
             });
         }
-
         if (batchInput && batchWordCount) {
             let updateTimeout;
             const updateCount = () => {
@@ -1933,18 +1544,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const words = text.split(/[,\n]/).map(s => s.trim()).filter(s => s);
                     const unique = new Set(words.map(w => w.toLowerCase()));
                     batchWordCount.textContent = `(${unique.size})`;
-                }, 300); 
+                }, 300);
             };
-
             const checkDuplicates = () => {
                 const text = batchInput.value.trim();
                 if (!text) return;
-
                 const words = text.split(/[,\n]/).map(s => s.trim()).filter(s => s);
                 const seen = new Set();
                 const duplicates = new Set();
                 const uniqueWords = [];
-
                 words.forEach(w => {
                     const normalized = w.toLowerCase();
                     if (seen.has(normalized)) {
@@ -1954,7 +1562,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         uniqueWords.push(w);
                     }
                 });
-
                 if (duplicates.size > 0) {
                     const dupList = Array.from(duplicates).slice(0, 10).join(', ') + (duplicates.size > 10 ? '...' : '');
                     if (confirm(`Found ${duplicates.size} duplicate word(s):\n${dupList}\n\nDo you want to remove them?`)) {
@@ -1964,17 +1571,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             };
-
             batchInput.addEventListener('input', updateCount);
             batchInput.addEventListener('blur', checkDuplicates);
-            
             batchInput.addEventListener('paste', () => {
                 setTimeout(checkDuplicates, 100);
             });
-            updateCount(); 
+            updateCount();
         }
     }
-
     function tableRowClick() {
         templateTableBody.addEventListener('click', (e) => {
             const row = e.target.closest('tr');
@@ -1983,6 +1587,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
-
     init();
 });

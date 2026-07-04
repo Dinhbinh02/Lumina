@@ -3,7 +3,6 @@
     opacity: 0;
     transform: scale(0.98) translateY(8px);
   }
-
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -14,7 +13,6 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
@@ -1056,7 +1054,6 @@
   align-items: center;
 }
 
-
 .lumina-settings-chain-card.add-model-card {
   border: 1.5px dashed rgba(0, 0, 0, 0.15) !important;
   background: transparent !important;
@@ -1420,25 +1417,21 @@
     flex-direction: column;
     border-radius: 12px;
   }
-
   .lumina-settings-close-btn {
     position: static !important;
     margin: 0;
   }
-
   .lumina-settings-body {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
   }
-
   .lumina-settings-sidebar {
     width: 100%;
     padding: 0;
     border-right: none;
     background: var(--lumina-ui-bg, #ffffff) !important;
   }
-
   .lumina-settings-sidebar-header {
     display: flex !important;
     justify-content: space-between;
@@ -1446,13 +1439,11 @@
     padding: 8px 8px 0 8px;
     margin-bottom: 0;
   }
-
   .lumina-settings-title {
     font-size: 18px;
     font-weight: 600;
     color: var(--lumina-text-primary);
   }
-
   .lumina-settings-nav {
     flex-direction: row;
     overflow-x: auto;
@@ -1460,11 +1451,9 @@
     gap: 4px;
     scrollbar-width: none;
   }
-
   .lumina-settings-nav::-webkit-scrollbar {
     display: none;
   }
-
   .lumina-settings-nav-item {
     padding: 8px 14px;
     white-space: nowrap;
@@ -1478,36 +1467,30 @@
     gap: 6px;
     font-size: 13px;
   }
-
   .lumina-settings-nav-item.active {
     background: rgba(0, 0, 0, 0.05) !important;
     color: var(--lumina-text-primary) !important;
     border: none !important;
   }
-
   [data-theme="dark"] .lumina-settings-nav-item.active {
     background: rgba(255, 255, 255, 0.08) !important;
     color: #ffffff !important;
   }
-
   .lumina-settings-main {
     padding: 8px;
     flex: 1;
     overflow-y: auto;
   }
-
   .lumina-settings-section-title {
     position: static;
     padding-top: 0;
     background: transparent;
   }
-
   .lumina-settings-row-split {
     flex-direction: column;
     gap: 0;
   }
 }
-
 
 .lumina-provider-popup-dialog {
   width: 460px;
@@ -1600,7 +1583,6 @@
   width: 100%;
   justify-content: flex-end;
 }
-
 
 .lumina-provider-popup-status {
   padding: 10px 12px;
@@ -1768,7 +1750,6 @@
   box-sizing: border-box;
 }
 
-
 .annotation-color-preview {
   width: 16px;
   height: 16px;
@@ -1800,7 +1781,6 @@
 .swatch.active {
   border-color: var(--lumina-ui-primary, #1a73e8) !important;
 }
-
 
 .lumina-storage-details {
   margin-top: 12px;
@@ -1916,7 +1896,6 @@
   height: 14px;
 }
 
-
 .lumina-gdrive-breakdown-divider {
   margin: 16px 0 12px 0;
   border-top: 1px dashed var(--lumina-border, rgba(255, 255, 255, 0.08));
@@ -1957,7 +1936,6 @@
   color: var(--lumina-text-muted, #757575);
   margin-top: 2px;
 }
-
 
 .lumina-cloud-signin-row {
   display: flex;
@@ -2004,7 +1982,6 @@
   color: var(--lumina-text-secondary, #9aa0a6);
   line-height: 1.4;
 }
-
 
 .lumina-storage-dashboard {
   margin-bottom: 16px;
@@ -2096,7 +2073,6 @@
   background: #ffcc00;
 }
 
-
 .lumina-storage-category-list {
   border: 1px solid var(--lumina-border, rgba(255, 255, 255, 0.08));
   border-radius: 10px;
@@ -2149,7 +2125,6 @@
   color: var(--lumina-text-secondary, #9aa0a6);
   white-space: nowrap;
 }
-
 
 .lumina-storage-sessions-header {
   display: flex;

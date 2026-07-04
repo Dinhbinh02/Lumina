@@ -1,5 +1,4 @@
 
-
 .creator-container {
     height: 100%;
     display: flex;
@@ -14,7 +13,6 @@
     padding: 24px !important;
     border-radius: 16px !important;
 }
-
 
 .generator-layout {
     display: flex;
@@ -53,8 +51,6 @@
 .setup-container {
     padding: 20px;
 }
-
-
 
 .setup-body {
     display: flex;
@@ -116,7 +112,6 @@
     -moz-osx-font-smoothing: grayscale !important;
 }
 
-
 table,
 th,
 td,
@@ -129,7 +124,6 @@ tr {
 th {
     font-weight: 620 !important;
 }
-
 
 .rich-text {
     line-height: 1.65 !important;
@@ -262,7 +256,6 @@ th {
     white-space: pre !important;
 }
 
-
 .rich-text[contenteditable="true"] {
     border: 1px solid #e1e4e8;
     border-radius: 8px;
@@ -287,9 +280,6 @@ th {
     padding-top: 16px;
     border-top: 1px solid #f0f0f0;
 }
-
-
-
 
 .field-row-header {
     display: flex;
@@ -330,7 +320,6 @@ th {
     border-color: #eee;
 }
 
-
 .review-wrapper {
     flex: 1;
     display: flex;
@@ -356,7 +345,6 @@ th {
     overflow-y: auto;
     background: #f5f7f9;
 }
-
 
 .preview-card {
     background: #ffffff;
@@ -411,9 +399,6 @@ th {
     word-break: break-word;
 }
 
-
-
-
 .spinner,
 .spinner-small {
     border: 4px solid #f3f3f3;
@@ -436,7 +421,6 @@ th {
     vertical-align: middle;
     margin-right: 8px;
 }
-
 
 .example-preview-card {
     background: #ffffff;
@@ -522,7 +506,6 @@ th {
     0% {
         transform: rotate(0deg);
     }
-
     100% {
         transform: rotate(360deg);
     }
@@ -536,7 +519,6 @@ th {
     width: 100%;
     box-sizing: border-box;
 }
-
 
 .btn-text-small {
     background: none;
@@ -583,11 +565,9 @@ th {
     color: #ffffff;
 }
 
-
 .preview-container {
     padding: 20px;
 }
-
 
 .generator-container.preview-container {
     height: 100%;
@@ -601,7 +581,6 @@ th {
     gap: 8px;
     overflow-y: auto;
     padding: 4px;
-    
     min-height: var(--card-label-btn-h, 32px);
 }
 
@@ -628,7 +607,6 @@ th {
     color: #007aff;
     transform: translateY(-1px);
 }
-
 
 .history-container {
     flex: 1;
@@ -714,7 +692,6 @@ th {
     background: #fff5f5;
 }
 
-
 .plain-text-field.edit-ex-field[readonly] {
     min-height: 40px;
     background: #f8f9fa;
@@ -727,7 +704,6 @@ th {
     font-family: inherit;
     font-size: 0.8125em;
 }
-
 
 .lumina-model-selector {
     position: relative;
@@ -812,7 +788,6 @@ th {
     text-overflow: ellipsis;
 }
 
-
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -892,7 +867,6 @@ th {
     min-height: 100px;
     resize: vertical;
 }
-
 
 .switch-group {
     display: flex;

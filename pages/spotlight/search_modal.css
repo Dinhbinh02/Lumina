@@ -1,5 +1,4 @@
 
-
 .lumina-search-dialog {
   width: 700px;
   max-width: 96vw;
@@ -22,7 +21,6 @@
   height: 100%;
   width: 100%;
 }
-
 
 .lumina-search-header {
   display: flex;
@@ -95,7 +93,6 @@
   flex: 1;
 }
 
-
 .lumina-search-results-section::-webkit-scrollbar {
   width: 6px;
 }
@@ -108,7 +105,6 @@
   background: var(--lumina-ui-border);
   border-radius: 10px;
 }
-
 
 .lumina-search-new-chat {
   display: flex;
@@ -136,7 +132,6 @@
   flex-shrink: 0;
 }
 
-
 .lumina-search-group-header {
   font-size: 13px;
   font-weight: 500;
@@ -145,7 +140,6 @@
   text-transform: capitalize;
   letter-spacing: 0.3px;
 }
-
 
 .lumina-search-item {
   display: flex;
@@ -228,7 +222,6 @@
   font-size: 14px;
 }
 
-
 .lumina-search-overlay-close-btn {
   position: absolute;
   top: 16px;
@@ -254,7 +247,6 @@
 [data-theme="dark"] .lumina-search-overlay-close-btn:hover {
   background-color: rgba(255, 255, 255, 0.08);
 }
-
 
 .lumina-settings-overlay.in-pane {
   position: absolute !important;

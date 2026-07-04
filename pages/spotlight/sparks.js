@@ -1,8 +1,5 @@
 
-
 const SPARKS_KEY = 'lumina_sparks';
-
-
 
 const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
@@ -26,12 +23,10 @@ async function sparksLoad() {
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];
     let needsSave = false;
-
     if (!sparks) {
         sparks = {};
         needsSave = true;
     }
-
     for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
         const existing = sparks[id];
         if (!existing) {
@@ -47,13 +42,11 @@ async function sparksLoad() {
             };
             needsSave = true;
         } else {
-            
             const oldT1Desc = 'Friendly and expert tutor specializing in IELTS Writing Task 1 reports. Get interactive practice, vocabulary suggestions, and grammar corrections tailored to your essays.';
             const oldT2Desc = 'Supportive guide helping you master IELTS Writing Task 2 essays. Learn to analyze prompts, brainstorm strong ideas, structure arguments, and refine academic vocabulary.';
-            
-            if (existing.description === undefined || 
-                existing.description === '' || 
-                existing.description === oldT1Desc || 
+            if (existing.description === undefined ||
+                existing.description === '' ||
+                existing.description === oldT1Desc ||
                 existing.description === oldT2Desc) {
                 existing.description = defSpark.description || '';
                 needsSave = true;
@@ -87,7 +80,6 @@ async function sparksLoad() {
             }
         }
     }
-
     if (needsSave) {
         await sparksSave(sparks);
     }
@@ -152,10 +144,8 @@ function sparksClosePage() {
 async function sparksRenderList() {
     const body = document.getElementById('sparks-page-body');
     if (!body) return;
-
     const sparks = await sparksLoad();
     const list = Object.values(sparks).sort((a, b) => b.updatedAt - a.updatedAt);
-
     if (list.length === 0) {
         body.innerHTML = `
             <div class="sparks-empty">
@@ -170,7 +160,6 @@ async function sparksRenderList() {
             </div>`;
         return;
     }
-
     body.innerHTML = list.map(spark => {
         const avatarHTML = spark.avatar
             ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
@@ -194,7 +183,6 @@ async function sparksRenderList() {
             </div>
         `;
     }).join('');
-
     body.querySelectorAll('.spark-edit-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -217,26 +205,19 @@ async function sparksRenderList() {
     });
 }
 
-
-
 async function sparksOpenEditor(sparkId = null) {
     const sparks = await sparksLoad();
     const spark = sparkId ? (sparks[sparkId] || null) : null;
-
-    
     document.getElementById('sparks-editor-overlay')?.remove();
-
     const overlay = document.createElement('div');
     overlay.id = 'sparks-editor-overlay';
     overlay.className = 'sparks-editor-overlay';
-
     const knowledgeFiles = spark?.knowledgeFiles || [];
     const color = getSparkColor(spark?.name || 'New Spark');
     const welcomeAvatarHTML = spark?.avatar
         ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
         : (spark?.name || '?')[0].toUpperCase();
     const welcomeBgStyle = spark?.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
-
     overlay.innerHTML = `
         <div class="sparks-editor">
             <!-- Left: Form -->
@@ -258,7 +239,6 @@ async function sparksOpenEditor(sparkId = null) {
                     </div>
                     <button class="sparks-editor__save" id="sparks-editor-save">Save</button>
                 </div>
-
                 <div class="sparks-editor__fields">
                     <div class="spark-avatar-editor">
                         <div class="spark-avatar-preview" id="spark-avatar-preview">
@@ -269,22 +249,18 @@ async function sparksOpenEditor(sparkId = null) {
                         </div>
                         <input type="file" id="spark-avatar-file" accept="image/*" style="display: none;">
                     </div>
-
                     <div class="sparks-field">
                         <label class="sparks-label">Name</label>
                         <input type="text" id="spark-name-input" class="sparks-input" placeholder="Give your Spark a name" value="${escapeHtml(spark?.name || '')}" maxlength="60">
                     </div>
-
                     <div class="sparks-field">
                         <label class="sparks-label">Description</label>
                         <input type="text" id="spark-description-input" class="sparks-input" placeholder="A short description of what this Spark does" value="${escapeHtml(spark?.description || '')}" maxlength="160">
                     </div>
-
                     <div class="sparks-field">
                         <label class="sparks-label">Instructions</label>
                         <textarea id="spark-instructions-input" class="sparks-textarea" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
                     </div>
-
                     <div class="sparks-field">
                         <label class="sparks-label">
                             Knowledge
@@ -309,12 +285,10 @@ async function sparksOpenEditor(sparkId = null) {
                     </div>
                 </div>
             </div>
-
             <!-- Resizer -->
             <div class="sparks-editor__resizer" id="sparks-editor-resizer">
                 <div class="sparks-editor__resizer-handle"></div>
             </div>
-
             <!-- Right: Preview -->
             <div class="sparks-editor__preview">
                 <div class="sparks-preview__header">Preview</div>
@@ -351,24 +325,19 @@ async function sparksOpenEditor(sparkId = null) {
             </div>
         </div>
     `;
-
     const mainContent = document.querySelector('.lumina-main-content');
     if (mainContent) {
         mainContent.appendChild(overlay);
     } else {
         document.body.appendChild(overlay);
     }
-
-    
     const sparksResizer = overlay.querySelector('#sparks-editor-resizer');
     const formPane = overlay.querySelector('.sparks-editor__form');
     const previewPane = overlay.querySelector('.sparks-editor__preview');
     const editorContainer = overlay.querySelector('.sparks-editor');
-
     if (sparksResizer && formPane && previewPane && editorContainer) {
         let isDragging = false;
         let animationFrameId = null;
-
         sparksResizer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             isDragging = true;
@@ -376,37 +345,28 @@ async function sparksOpenEditor(sparkId = null) {
             editorContainer.classList.add('dragging');
             document.body.style.cursor = 'col-resize';
         });
-
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
-
             animationFrameId = requestAnimationFrame(() => {
                 const containerRect = editorContainer.getBoundingClientRect();
                 const paddingLeft = parseFloat(window.getComputedStyle(editorContainer).paddingLeft) || 0;
                 const paddingRight = parseFloat(window.getComputedStyle(editorContainer).paddingRight) || 0;
-
                 const relativeX = e.clientX - containerRect.left - paddingLeft;
                 const availableWidth = containerRect.width - paddingLeft - paddingRight - sparksResizer.offsetWidth;
-
                 if (availableWidth <= 0) return;
-
                 let percentage = (relativeX / availableWidth) * 100;
                 if (percentage < 25) percentage = 25;
                 if (percentage > 75) percentage = 75;
-
                 if (percentage >= 47.5 && percentage <= 52.5) {
                     percentage = 50;
                 }
-
                 formPane.style.flex = `${percentage}`;
                 previewPane.style.flex = `${100 - percentage}`;
             });
         });
-
         document.addEventListener('mouseup', () => {
             if (isDragging) {
                 isDragging = false;
@@ -420,17 +380,13 @@ async function sparksOpenEditor(sparkId = null) {
             }
         });
     }
-
     let currentFiles = [...knowledgeFiles];
     let currentAvatar = spark?.avatar || null;
     let previewHistory = [];
     let previewStreaming = false;
-
     const avatarPreview = overlay.querySelector('#spark-avatar-preview');
     const avatarInput = overlay.querySelector('#spark-avatar-file');
-
     avatarPreview.addEventListener('click', () => avatarInput.click());
-
     avatarInput.addEventListener('change', () => {
         const file = avatarInput.files[0];
         if (file) {
@@ -439,7 +395,6 @@ async function sparksOpenEditor(sparkId = null) {
                 openAvatarCropper(e.target.result, (croppedDataUrl) => {
                     currentAvatar = croppedDataUrl;
                     avatarPreview.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" /><div class="spark-avatar-overlay"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
-
                     const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
                     if (welcomeAvatar) {
                         welcomeAvatar.style.backgroundColor = 'transparent';
@@ -450,24 +405,18 @@ async function sparksOpenEditor(sparkId = null) {
             reader.readAsDataURL(file);
         }
     });
-
-    
     overlay.querySelector('#sparks-editor-back').addEventListener('click', () => {
         overlay.remove();
     });
-
-    
     const nameInput = overlay.querySelector('#spark-name-input');
     const titleLabel = overlay.querySelector('.sparks-editor__title-row span');
     const previewEmpty = overlay.querySelector('#sparks-preview-empty');
     const previewInput = overlay.querySelector('#sparks-preview-input');
     const previewSend = overlay.querySelector('#sparks-preview-send');
-
     const updatePreviewState = () => {
         const hasName = nameInput.value.trim().length > 0;
         previewInput.disabled = !hasName;
         previewSend.disabled = !hasName;
-
         const uploadBtn = overlay.querySelector('#sparks-preview-upload');
         const micBtn = overlay.querySelector('#sparks-preview-mic');
         if (uploadBtn) {
@@ -480,17 +429,14 @@ async function sparksOpenEditor(sparkId = null) {
             micBtn.style.opacity = hasName ? '0.6' : '0.5';
             micBtn.style.cursor = hasName ? 'pointer' : 'not-allowed';
         }
-
         if (previewHistory.length > 0) {
             previewEmpty.style.display = 'none';
         } else {
             previewEmpty.style.display = 'flex';
         }
     };
-
     const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
     const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
-
     function updateWelcomeAvatarLetter(nameVal) {
         if (welcomeAvatar && !currentAvatar) {
             const firstLetter = (nameVal || '?')[0].toUpperCase();
@@ -499,7 +445,6 @@ async function sparksOpenEditor(sparkId = null) {
             welcomeAvatar.style.backgroundColor = dynamicColor;
         }
     }
-
     nameInput.addEventListener('input', () => {
         const nameVal = nameInput.value.trim();
         titleLabel.textContent = nameVal || 'New Spark';
@@ -509,7 +454,6 @@ async function sparksOpenEditor(sparkId = null) {
         updateWelcomeAvatarLetter(nameVal);
         updatePreviewState();
     });
-
     const descriptionInput = overlay.querySelector('#spark-description-input');
     const welcomeDesc = overlay.querySelector('#sparks-preview-welcome-description');
     if (descriptionInput && welcomeDesc) {
@@ -520,11 +464,8 @@ async function sparksOpenEditor(sparkId = null) {
         });
     }
     updatePreviewState();
-
-    
     const fileInput = overlay.querySelector('#sparks-file-input');
     overlay.querySelector('#sparks-add-file-btn').addEventListener('click', () => fileInput.click());
-
     fileInput.addEventListener('change', async () => {
         for (const file of fileInput.files) {
             const reader = new FileReader();
@@ -534,11 +475,10 @@ async function sparksOpenEditor(sparkId = null) {
                         name: file.name,
                         type: file.type,
                         size: file.size,
-                        content: e.target.result  
+                        content: e.target.result
                     });
                     resolve();
                 };
-                
                 if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|csv|json|js|ts|py|html|css|xml|yaml|yml)$/i)) {
                     reader.readAsText(file);
                 } else {
@@ -549,7 +489,6 @@ async function sparksOpenEditor(sparkId = null) {
         fileInput.value = '';
         renderFileChips();
     });
-
     function renderFileChips() {
         const filesContainer = overlay.querySelector('#sparks-knowledge-files');
         filesContainer.innerHTML = currentFiles.map((f, i) => `
@@ -559,7 +498,6 @@ async function sparksOpenEditor(sparkId = null) {
                 <button class="sparks-file-remove" data-file-index="${i}">×</button>
             </div>
         `).join('');
-
         filesContainer.querySelectorAll('.sparks-file-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -569,8 +507,6 @@ async function sparksOpenEditor(sparkId = null) {
             });
         });
     }
-
-    
     overlay.querySelector('#sparks-editor-save').addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) {
@@ -595,10 +531,7 @@ async function sparksOpenEditor(sparkId = null) {
         overlay.remove();
         sparksRenderList();
     });
-
-    
     const messagesEl = overlay.querySelector('#sparks-preview-messages');
-
     function buildSystemPrompt() {
         let sys = overlay.querySelector('#spark-instructions-input').value.trim();
         if (currentFiles.length > 0) {
@@ -612,7 +545,6 @@ async function sparksOpenEditor(sparkId = null) {
         }
         return sys;
     }
-
     function appendPreviewMessage(role, text) {
         const div = document.createElement('div');
         div.className = `sparks-msg sparks-msg--${role}`;
@@ -621,33 +553,22 @@ async function sparksOpenEditor(sparkId = null) {
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return div;
     }
-
     async function sendPreviewMessage() {
         if (previewStreaming) return;
         const input = overlay.querySelector('#sparks-preview-input');
         const text = input.value.trim();
         if (!text) return;
-
         input.value = '';
         input.style.height = 'auto';
-
-        
         appendPreviewMessage('user', text);
-
-        
         const systemPrompt = buildSystemPrompt();
         const historyForAPI = previewHistory.map(h => ({ role: h.role, parts: [{ text: h.text }] }));
-
         previewHistory.push({ role: 'user', text });
         updatePreviewState();
-
-        
         const aiDiv = appendPreviewMessage('assistant', '');
         aiDiv.innerHTML = '<span class="sparks-typing-dot"></span><span class="sparks-typing-dot"></span><span class="sparks-typing-dot"></span>';
-
         previewStreaming = true;
         previewSend.disabled = true;
-
         try {
             let model = 'gemini-2.0-flash';
             let providerId = 'google';
@@ -661,21 +582,17 @@ async function sparksOpenEditor(sparkId = null) {
                     providerId = storageData.lastUsedModel.providerId || providerId;
                 }
             }
-
             const messages = [
                 ...(systemPrompt ? [{ role: 'user', parts: [{ text: `[System Instructions]\n${systemPrompt}` }] }, { role: 'model', parts: [{ text: 'Understood. I will follow these instructions.' }] }] : []),
                 ...historyForAPI,
                 { role: 'user', parts: [{ text }] }
             ];
-
-
             const response = await chrome.runtime.sendMessage({
                 action: 'preview_spark',
                 messages,
                 model,
                 providerId
             });
-
             let replyText = '';
             if (response?.text) {
                 replyText = response.text;
@@ -684,7 +601,6 @@ async function sparksOpenEditor(sparkId = null) {
             } else {
                 replyText = '(No response)';
             }
-
             aiDiv.textContent = replyText;
             previewHistory.push({ role: 'assistant', text: replyText });
         } catch (err) {
@@ -694,10 +610,8 @@ async function sparksOpenEditor(sparkId = null) {
             previewStreaming = false;
             if (nameInput.value.trim()) previewSend.disabled = false;
         }
-
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
-
     previewSend.addEventListener('click', sendPreviewMessage);
     previewInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -705,14 +619,11 @@ async function sparksOpenEditor(sparkId = null) {
             sendPreviewMessage();
         }
     });
-
-    
     previewInput.addEventListener('input', () => {
         previewInput.style.height = 'auto';
         previewInput.style.height = Math.min(previewInput.scrollHeight, 100) + 'px';
     });
 }
-
 function getSparkColor(name) {
     const colors = [
         '#4db6ac',
@@ -730,11 +641,9 @@ function getSparkColor(name) {
     }
     return colors[Math.abs(hash) % colors.length];
 }
-
 async function sidebarSparksRenderList() {
     const container = document.getElementById('sidebar-sparks-list');
     if (!container) return;
-
     const sparks = await sparksLoad();
     const list = Object.values(sparks).sort((a, b) => {
         const orderA = a.order !== undefined ? a.order : 99999;
@@ -742,14 +651,11 @@ async function sidebarSparksRenderList() {
         if (orderA !== orderB) return orderA - orderB;
         return b.updatedAt - a.updatedAt;
     });
-
     let html = '';
     const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
-
     const maxSparksToShow = 4;
     const hasMoreSparks = list.length > maxSparksToShow;
     const visibleSparks = hasMoreSparks ? list.slice(0, maxSparksToShow) : list;
-
     visibleSparks.forEach(spark => {
         const color = getSparkColor(spark.name);
         const avatarHTML = spark.avatar
@@ -766,7 +672,6 @@ async function sidebarSparksRenderList() {
             </div>
         `;
     });
-
     if (hasMoreSparks) {
         html += `
             <div class="sidebar-spark-item sidebar-spark-all-btn" style="cursor: pointer;">
@@ -781,11 +686,8 @@ async function sidebarSparksRenderList() {
             </div>
         `;
     }
-
     container.innerHTML = html;
-
     let draggedItem = null;
-
     container.querySelectorAll('.sidebar-spark-item').forEach(item => {
         item.addEventListener('click', (e) => {
             if (item.classList.contains('sidebar-spark-all-btn')) {
@@ -805,19 +707,15 @@ async function sidebarSparksRenderList() {
             if (backdrop) backdrop.classList.remove('active');
             document.body.classList.remove('sidebar-open');
         });
-
-        
         item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             item.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
         });
-
         item.addEventListener('dragover', (e) => {
             e.preventDefault();
             const draggingEl = container.querySelector('.sidebar-spark-item.dragging');
             if (!draggingEl || draggingEl === item) return;
-
             const rect = item.getBoundingClientRect();
             const midpoint = rect.top + rect.height / 2;
             if (e.clientY < midpoint) {
@@ -826,21 +724,16 @@ async function sidebarSparksRenderList() {
                 container.insertBefore(draggingEl, item.nextSibling);
             }
         });
-
         item.addEventListener('dragend', async () => {
             item.classList.remove('dragging');
             draggedItem = null;
-
-            
             const orderedIds = Array.from(container.querySelectorAll('.sidebar-spark-item')).map(el => el.dataset.sparkId);
             await sparksSaveOrder(orderedIds);
-
             if (typeof sparksRenderList === 'function') {
                 sparksRenderList();
             }
         });
     });
-
     container.querySelectorAll('.sidebar-spark-item__menu-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -848,7 +741,6 @@ async function sidebarSparksRenderList() {
         });
     });
 }
-
 function showSparkContextMenu(btn, sparkId) {
     let ctxMenu = document.getElementById('sidebar-spark-context-menu');
     if (!ctxMenu) {
@@ -868,7 +760,6 @@ function showSparkContextMenu(btn, sparkId) {
         `;
         document.body.appendChild(ctxMenu);
     }
-
     const rect = btn.getBoundingClientRect();
     ctxMenu.style.display = 'block';
     let top = rect.bottom + 4;
@@ -876,7 +767,6 @@ function showSparkContextMenu(btn, sparkId) {
     if (left < 4) left = 4;
     ctxMenu.style.top = top + 'px';
     ctxMenu.style.left = left + 'px';
-
     const clickHandler = async (e) => {
         const item = e.target.closest('.sidebar-ctx-item');
         if (!item) return;
@@ -898,41 +788,33 @@ function showSparkContextMenu(btn, sparkId) {
         }
         hideMenu();
     };
-
     const hideMenu = () => {
         ctxMenu.style.display = 'none';
         document.removeEventListener('click', outsideClick);
         ctxMenu.removeEventListener('click', clickHandler);
     };
-
     const outsideClick = (e) => {
         if (!ctxMenu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
             hideMenu();
         }
     };
-
     ctxMenu.addEventListener('click', clickHandler);
     setTimeout(() => {
         document.addEventListener('click', outsideClick);
     }, 10);
 }
-
 async function openSparkChat(sparkId, isSecondaryOverride = null) {
     sparksClosePage();
-
     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
-
     const isSecondary = isSecondaryOverride !== null ? isSecondaryOverride : (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
     const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
     const activeTab = (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
     if (activeTab) {
         activeTab.sparkId = sparkId;
         if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
-
         const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
         const targetSharedInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
-
         const settingsRes = await chrome.storage.local.get(['lumina_spark_last_settings']);
         const sparkSettings = (settingsRes.lumina_spark_last_settings || {})[sparkId];
         if (activeTab.selectedModel) {
@@ -973,7 +855,6 @@ async function openSparkChat(sparkId, isSecondaryOverride = null) {
                 if (typeof targetSharedInputUI.refreshReasoningSelector === 'function') targetSharedInputUI.refreshReasoningSelector();
             }
         }
-
         activeTab.title = 'New Tab';
         activeTab.sessionId = null;
         activeTab.rawHistoryHtml = null;
@@ -984,7 +865,6 @@ async function openSparkChat(sparkId, isSecondaryOverride = null) {
         if (typeof updateUrlSessionId === 'function') {
             updateUrlSessionId(null);
         }
-
         if (targetChatUI) {
             targetChatUI.clearHistory();
             if (targetChatUI.inputEl) {
@@ -993,13 +873,10 @@ async function openSparkChat(sparkId, isSecondaryOverride = null) {
                 targetChatUI.inputEl.focus();
             }
         }
-
         await renderSparkWelcomeScreen(activeTab);
-
         if (typeof updateWelcomeScreenState === 'function') {
             updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
         }
-
         if (typeof renderTabs === 'function') renderTabs();
         if (typeof saveTabsState === 'function') saveTabsState();
         if (isSecondary) {
@@ -1016,28 +893,23 @@ async function openSparkChat(sparkId, isSecondaryOverride = null) {
         }
     }
 }
-
 async function renderSparkWelcomeScreen(activeTab) {
     const historyEl = activeTab.historyEl;
     if (!historyEl) return;
-
     const sparks = await sparksLoad();
     const spark = sparks[activeTab.sparkId];
     if (!spark) return;
-
     const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
     const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
     const sparkChats = Object.values(sessions)
         .filter(s => s.sparkId === spark.id)
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, 5);
-
     const color = getSparkColor(spark.name);
     const avatarHTML = spark.avatar
         ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
         : (spark.name || '?')[0].toUpperCase();
     const bgStyle = spark.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
-
     let recentHTML = '';
     if (sparkChats.length > 0) {
         recentHTML = `
@@ -1062,7 +934,6 @@ async function renderSparkWelcomeScreen(activeTab) {
             </div>
         `;
     }
-
     historyEl.innerHTML = `
         <div class="spark-welcome">
             <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
@@ -1071,7 +942,6 @@ async function renderSparkWelcomeScreen(activeTab) {
             ${recentHTML}
         </div>
     `;
-
     historyEl.querySelectorAll('.spark-welcome__recent-item').forEach(item => {
         item.addEventListener('click', async () => {
             const sid = item.dataset.sessionId;
@@ -1084,7 +954,6 @@ async function renderSparkWelcomeScreen(activeTab) {
         });
     });
 }
-
 function openAvatarCropper(imageSrc, callback) {
     const modal = document.createElement('div');
     modal.className = 'spark-crop-modal';
@@ -1104,14 +973,11 @@ function openAvatarCropper(imageSrc, callback) {
             </div>
         </div>
     `;
-
     document.body.appendChild(modal);
-
     const img = modal.querySelector('#spark-crop-image');
     const zoomInput = modal.querySelector('#spark-crop-zoom');
     const doneBtn = modal.querySelector('#spark-crop-done');
     const cancelBtn = modal.querySelector('#spark-crop-cancel');
-
     let scale = 1.0;
     let imgWidth = 0;
     let imgHeight = 0;
@@ -1120,19 +986,15 @@ function openAvatarCropper(imageSrc, callback) {
     let startX = 0;
     let startY = 0;
     let isDragging = false;
-
     function clampPosition() {
         const viewportSize = 250;
         const currentWidth = imgWidth * scale;
         const currentHeight = imgHeight * scale;
-
         if (posX > 0) posX = 0;
         if (posX < viewportSize - currentWidth) posX = viewportSize - currentWidth;
-
         if (posY > 0) posY = 0;
         if (posY < viewportSize - currentHeight) posY = viewportSize - currentHeight;
     }
-
     img.onload = () => {
         const viewportSize = 250;
         const ratio = img.naturalWidth / img.naturalHeight;
@@ -1143,31 +1005,25 @@ function openAvatarCropper(imageSrc, callback) {
             imgWidth = viewportSize;
             imgHeight = viewportSize / ratio;
         }
-
         const minScale = Math.max(viewportSize / imgWidth, viewportSize / imgHeight);
         scale = minScale;
-
         zoomInput.min = Math.round(minScale * 100);
         zoomInput.max = Math.round(minScale * 300);
         zoomInput.value = Math.round(minScale * 100);
-
         posX = (viewportSize - imgWidth * scale) / 2;
         posY = (viewportSize - imgHeight * scale) / 2;
         clampPosition();
         updateTransform();
     };
-
     if (img.complete) {
         img.onload();
     }
-
     function updateTransform() {
         img.style.width = `${imgWidth * scale}px`;
         img.style.height = `${imgHeight * scale}px`;
         img.style.left = `${posX}px`;
         img.style.top = `${posY}px`;
     }
-
     function performZoom(factor, clientX, clientY) {
         const prevScale = scale;
         const minScale = parseFloat(zoomInput.min) / 100;
@@ -1175,30 +1031,23 @@ function openAvatarCropper(imageSrc, callback) {
         let newScale = scale * factor;
         if (newScale < minScale) newScale = minScale;
         if (newScale > maxScale) newScale = maxScale;
-
         if (newScale === prevScale) return;
-
         scale = newScale;
         zoomInput.value = Math.round(scale * 100);
-
         const viewport = modal.querySelector('.spark-crop-viewport');
         const rect = viewport.getBoundingClientRect();
         const zoomX = (clientX !== undefined) ? (clientX - rect.left) : 125;
         const zoomY = (clientY !== undefined) ? (clientY - rect.top) : 125;
-
         posX = zoomX - (zoomX - posX) * (scale / prevScale);
         posY = zoomY - (zoomY - posY) * (scale / prevScale);
-
         clampPosition();
         updateTransform();
     }
-
     zoomInput.addEventListener('input', () => {
         const targetScale = parseInt(zoomInput.value) / 100;
         const factor = targetScale / scale;
         performZoom(factor);
     });
-
     const viewport = modal.querySelector('.spark-crop-viewport');
     viewport.addEventListener('wheel', (e) => {
         e.preventDefault();
@@ -1211,14 +1060,12 @@ function openAvatarCropper(imageSrc, callback) {
         const factor = Math.exp(-delta * sensitivity);
         performZoom(factor, e.clientX, e.clientY);
     }, { passive: false });
-
     img.addEventListener('mousedown', (e) => {
         e.preventDefault();
         startX = e.clientX - posX;
         startY = e.clientY - posY;
         isDragging = true;
     });
-
     const moveHandler = (e) => {
         if (!isDragging) return;
         posX = e.clientX - startX;
@@ -1226,49 +1073,39 @@ function openAvatarCropper(imageSrc, callback) {
         clampPosition();
         updateTransform();
     };
-
     const upHandler = () => {
         isDragging = false;
     };
-
     window.addEventListener('mousemove', moveHandler);
     window.addEventListener('mouseup', upHandler);
-
     cancelBtn.addEventListener('click', () => {
         window.removeEventListener('mousemove', moveHandler);
         window.removeEventListener('mouseup', upHandler);
         modal.remove();
     });
-
     doneBtn.addEventListener('click', () => {
         const canvas = document.createElement('canvas');
         canvas.width = 150;
         canvas.height = 150;
         const ctx = canvas.getContext('2d');
-
         ctx.beginPath();
         ctx.arc(75, 75, 75, 0, Math.PI * 2);
         ctx.clip();
-
         const drawScale = 150 / 250;
         ctx.drawImage(img, posX * drawScale, posY * drawScale, imgWidth * scale * drawScale, imgHeight * scale * drawScale);
-
         const dataUrl = canvas.toDataURL('image/png');
         callback(dataUrl);
-
         window.removeEventListener('mousemove', moveHandler);
         window.removeEventListener('mouseup', upHandler);
         modal.remove();
     });
 }
-
 function initSparks() {
     const sparksBtn = document.getElementById('sidebar-sparks-btn');
     if (sparksBtn) {
         sparksBtn.removeAttribute('disabled');
         sparksBtn.classList.remove('disabled');
         sparksBtn.title = 'My Sparks';
-
         sparksBtn.addEventListener('click', () => {
             const page = document.getElementById('sparks-page');
             if (page && page.style.display !== 'none') {
@@ -1278,12 +1115,10 @@ function initSparks() {
             }
         });
     }
-
     const newSparkBtn = document.getElementById('sparks-new-btn');
     if (newSparkBtn) {
         newSparkBtn.addEventListener('click', () => sparksOpenEditor(null));
     }
-
     const sidebarNewSparkBtn = document.getElementById('sidebar-new-spark-btn');
     if (sidebarNewSparkBtn) {
         sidebarNewSparkBtn.addEventListener('click', () => sparksOpenEditor(null));
@@ -1308,7 +1143,6 @@ function initSparks() {
         sparksClosePage();
         sidebarSparksRenderList();
     });
-
     document.addEventListener('click', (e) => {
         const chatItem = e.target.closest('.recent-chat-item');
         if (chatItem && !e.target.closest('.recent-chat-item__menu-btn')) {
@@ -1317,7 +1151,6 @@ function initSparks() {
         }
     });
     sidebarSparksRenderList();
-
     if (typeof tabs !== 'undefined') {
         tabs.forEach(tab => {
             if (tab && tab.sparkId && !tab.sessionId) {
@@ -1330,7 +1163,6 @@ function initSparks() {
         });
     }
 }
-
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSparks);
 } else {

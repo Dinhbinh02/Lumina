@@ -5,11 +5,7 @@ importScripts('../lib/core/attachment_db.js');
 importScripts('../lib/core/auth.js');
 importScripts('../lib/core/token_utils.js');
 
-
-
-
 const DEFAULTS = LUMINA_DEFAULTS;
-
 
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
 
@@ -32,9 +28,6 @@ function getPromptApiNamespace() {
     return null;
 }
 
-
-
-
 const sidePanelPorts = new Map();
 let sessionOpenWindows = new Set();
 
@@ -56,11 +49,9 @@ function broadcastToSession(sessionId, message) {
     }
 }
 
-
 chrome.storage.session.get(['open_sidepanel_windows'], (result) => {
     if (result.open_sidepanel_windows) {
         sessionOpenWindows = new Set(result.open_sidepanel_windows);
-
         sessionOpenWindows.forEach(wid => {
             if (!sidePanelPorts.has(wid)) sidePanelPorts.set(wid, null);
         });
@@ -74,7 +65,6 @@ function updateOpenSidePanelsSession() {
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-sidepanel') {
         let connectedWindowId = null;
-
         port.onMessage.addListener((msg) => {
             if (msg.action === 'closing' && msg.windowId) {
                 sessionOpenWindows.delete(msg.windowId);
@@ -87,17 +77,13 @@ chrome.runtime.onConnect.addListener((port) => {
                 updateOpenSidePanelsSession();
             }
         });
-
         port.onDisconnect.addListener(() => {
             if (connectedWindowId) {
-
-
                 sidePanelPorts.delete(connectedWindowId);
             }
         });
     }
 });
-
 
 chrome.windows.onRemoved.addListener((windowId) => {
     if (sessionOpenWindows.has(windowId)) {
@@ -117,7 +103,6 @@ if (chrome.sidePanel && chrome.sidePanel.onClosed) {
     });
 }
 
-
 chrome.tabs.onRemoved.addListener((tabId) => {
     chrome.storage.local.get(['lumina_tab_sessions'], result => {
         const tabSessions = result.lumina_tab_sessions || {};
@@ -128,25 +113,13 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     });
 });
 
-
-
-
-
-
-
-
 function toggleSidePanel(windowId) {
     if (!windowId) return;
-
-
     const isCurrentlyOpen = sidePanelPorts.has(windowId) || sessionOpenWindows.has(windowId);
-
     if (isCurrentlyOpen) {
-
         sessionOpenWindows.delete(windowId);
         sidePanelPorts.delete(windowId);
         updateOpenSidePanelsSession();
-
         if (chrome.sidePanel.close) {
             chrome.sidePanel.close({ windowId }).catch(() => { });
         } else {
@@ -159,7 +132,6 @@ function toggleSidePanel(windowId) {
             });
         }
     } else {
-
         sessionOpenWindows.add(windowId);
         sidePanelPorts.set(windowId, null);
         updateOpenSidePanelsSession();
@@ -186,37 +158,22 @@ async function ensureSidePanelOpen(windowId) {
     }
 }
 
-
-
-
 async function checkAndRegisterScripts() {
-
 }
-
-
-
-
 
 function updateDisplayMode(mode) {
     if (!chrome.sidePanel) return;
-
-
     chrome.sidePanel.setOptions({
         path: 'pages/spotlight/spotlight.html?sidepanel=1',
         enabled: true
     });
-
-
-
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
     chrome.action.setPopup({ popup: 'pages/popup/popup.html' });
 }
 
-
 chrome.storage.local.get(['displayMode'], (result) => {
     updateDisplayMode(result.displayMode || 'popup');
 });
-
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.displayMode) {
@@ -224,27 +181,20 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     }
 });
 
-
 async function incrementModelUsage(modelId) {
     if (!modelId) return;
-
     try {
         const today = new Date().toISOString().split('T')[0];
         const data = await chrome.storage.local.get(['dailyModelStats']);
-
         let stats = data.dailyModelStats || { date: today, counts: {} };
-
         if (stats.date !== today) {
             stats.date = today;
             stats.counts = {};
         }
-
         if (!stats.counts[modelId]) {
             stats.counts[modelId] = 0;
         }
-
         stats.counts[modelId]++;
-
         await chrome.storage.local.set({
             dailyModelStats: stats,
             lastUsedModelId: modelId
@@ -254,31 +204,24 @@ async function incrementModelUsage(modelId) {
     }
 }
 
-
 function normalizeOpenAICompatibleEndpoint(endpoint, targetPath) {
     if (typeof endpoint !== 'string') return endpoint;
-
     let trimmed = endpoint.trim().replace(/\/+$/, '');
     if (!trimmed) return trimmed;
-
     if (trimmed.includes('api.groq.com') && !trimmed.includes('/openai')) {
         trimmed = trimmed.replace('/v1', '/openai/v1');
     }
-
     const knownSuffixes = ['/chat/completions', '/models', '/audio/transcriptions'];
     for (const suffix of knownSuffixes) {
         if (trimmed.endsWith(suffix)) {
             return trimmed.slice(0, -suffix.length) + targetPath;
         }
     }
-
     if (trimmed.endsWith('/v1') || trimmed.endsWith('/v1beta/openai') || trimmed.endsWith('/openai/v1')) {
         return `${trimmed}${targetPath}`;
     }
-
     return `${trimmed}${targetPath}`;
 }
-
 
 function optimizeContextString(text) {
     if (!text || typeof text !== 'string') return '';
@@ -304,7 +247,6 @@ function buildChatSystemInstruction(reasoningMode = false) {
     } catch (e) { }
     const currentTime = new Date().toLocaleString('en-US', { timeZone: userTimeZone });
     const currentYear = new Date().getFullYear();
-
     let instruction = `You are a helpful, neutral, and balanced AI assistant. Note: current year is ${currentYear}.
 [Coding Guidelines & Code Block Gating]
 - Write clean, clear, modular, and extremely easy-to-understand code.
@@ -319,7 +261,6 @@ Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex 
 Strictly Avoid LaTeX for: simple formatting (use Markdown instead), non-technical contexts and regular prose (resumes, letters, essays, cooking, weather, etc.), or simple units/numbers (render **180°C** or **10%** as plain text, not LaTeX).
 [Response Guiding Principles]
 Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.
-
 [Diagram Syntax — D2 & Chart.js]
 - A single response CAN contain multiple diagrams (D2 and/or Chart.js charts) if multiple aspects of the topic benefit from visual explanation.
 - Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
@@ -454,13 +395,11 @@ To interact with the Canvas, you MUST wrap your commands in the following XML ta
 </lumina-canvas-comment>
 [Context & Privacy]
 Treat user data as factual and invisible. Do not reference system tags/sources. Never infer/include sensitive details (health, origin, religion, finance, etc.) unless requested.`;
-
     return instruction;
 }
 
 function buildProofreadSystemPrompt(responseLanguage = 'auto') {
     let languageInstruction = "Refine/translate ALL input into polished, native-level English fluency.";
-
     return `[Role]: Elite professional editor.
 [Task]: Refine text inside <text> into sophisticated English.
 [Rules]:
@@ -470,9 +409,6 @@ function buildProofreadSystemPrompt(responseLanguage = 'auto') {
 4. No hedging or offering options. Provide the best single version.
 5. If extra context/instructions are provided, follow them implicitly but still output ONLY the final text.`;
 }
-
-
-
 
 async function getGeminiApiKey(providerId = null) {
     const data = await chrome.storage.local.get(['providers']);
@@ -501,7 +437,6 @@ async function getGeminiApiKey(providerId = null) {
     }
     return null;
 }
-
 
 function detectMediaType(item) {
     if (!item) return null;
@@ -536,7 +471,6 @@ function inferGeminiMediaResolution(msgs, currentImageData, currentQuestion) {
     }
     if (Array.isArray(currentImageData)) allAttachments.push(...currentImageData);
     else if (currentImageData) allAttachments.push(currentImageData);
-
     let hasImage = false, hasPdf = false, hasVideo = false;
     for (const item of allAttachments) {
         const mediaType = detectMediaType(item);
@@ -767,7 +701,6 @@ async function processAttachmentsForGemini(attachments) {
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true, cachedContent = null } = params;
     const enableWebSearch = true;
-
     const isGemini = providerType === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
     if (isGemini) {
         const geminiContents = [];
@@ -776,7 +709,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             const role = (msg.role === 'model' || msg.role === 'assistant') ? 'model' : 'user';
             if (attachments && attachments.length > 0) {
                 const parts = [];
-                
                 if (!cachedContent) {
                     const processed = await processAttachmentsForGemini(attachments);
                     parts.push(...processed.parts);
@@ -791,7 +723,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                 geminiContents.push({ role, parts: [{ text: msg.text || '' }] });
             }
         }
-
         if (imageData && imageData.length > 0) {
             const parts = [];
             if (!cachedContent) {
@@ -808,22 +739,18 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         } else {
             geminiContents.push({ role: 'user', parts: [{ text: currentQ || '' }] });
         }
-
         const generationConfig = {
             ...parsedCustomParams
         };
-
         const isGemini3 = /gemini-[3-9]/i.test(model);
         if (!isGemini3) {
             generationConfig.temperature = temperature;
             generationConfig.topP = topP;
         }
-
         let level = normalizedThinkingLevel || 'minimal';
         if (level === 'none') {
             level = 'minimal';
         }
-
         if (isGemini3) {
             generationConfig.thinkingConfig = {
                 includeThoughts: true,
@@ -845,7 +772,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                 thinkingBudget: budget
             };
         }
-
         const geminiBody = {
             contents: geminiContents,
             generationConfig,
@@ -863,12 +789,10 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             } : {}),
             ...(cachedContent ? { cachedContent } : {})
         };
-
         const hasUrlInHistory = msgs && msgs.some(m => /https?:\/\/[^\s]+/.test(m.text || ''));
         const hasUrl = hasUrlInHistory || /https?:\/\/[^\s]+/.test(currentQ || '');
         const isSecondPassSearch = (currentQ || '').includes('### Web Search Results for');
         const useUrlContext = hasUrl || isSecondPassSearch;
-
         if (useUrlContext && isGemini3) {
             geminiBody.tools = [{
                 url_context: {}
@@ -879,7 +803,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                 };
             }
         }
-
         const method = isStreaming ? 'streamGenerateContent' : 'generateContent';
         let baseEndpoint = endpoint.replace(/\/$/, '')
             .replace(/\/openai\/chat\/completions$/, '')
@@ -893,20 +816,14 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         const url = `${baseEndpoint}/${urlModel}:${method}${isStreaming ? '?alt=sse' : ''}`;
         return { url, body: geminiBody };
     }
-
     const openaiMessages = [{ role: 'system', content: sysPrompt }];
-
-
     if (typeof LuminaToken !== 'undefined') {
         const sysTokens = LuminaToken.count(sysPrompt || '');
         const historyTokens = msgs.reduce((acc, m) => acc + LuminaToken.count(m.text || ''), 0);
         const inputTokens = LuminaToken.count(currentQ || '');
         let attachmentTokens = 0;
-
-
         const allAttachments = [...(imageData || [])];
         msgs.forEach(m => { if (m.files || m.images) allAttachments.push(...(m.files || m.images)); });
-
         allAttachments.forEach(att => {
             const mime = normalizeMimeType(att.mimeType || '');
             if (isTextAttachmentMime(mime)) {
@@ -915,9 +832,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                 attachmentTokens += 765;
             }
         });
-
     }
-
     for (const msg of msgs) {
         const attachments = msg.files || msg.images;
         if (attachments && attachments.length > 0) {
@@ -933,7 +848,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             openaiMessages.push({ role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user', content: msg.text });
         }
     }
-
     if (imageData && imageData.length > 0) {
         const parts = [{ type: "text", text: currentQ }];
         const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
@@ -943,17 +857,12 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     } else {
         openaiMessages.push({ role: 'user', content: currentQ });
     }
-
     const openaiBody = {
         model, messages: openaiMessages, temperature, top_p: topP,
         stream: isStreaming,
         ...(isStreaming ? { stream_options: { include_usage: true } } : {}),
         ...parsedCustomParams
     };
-
-
-
-
     const hasCustomTokenLimit = Object.prototype.hasOwnProperty.call(openaiBody, 'max_tokens')
         || Object.prototype.hasOwnProperty.call(openaiBody, 'max_completion_tokens')
         || Object.prototype.hasOwnProperty.call(openaiBody, 'max_output_tokens');
@@ -964,19 +873,14 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             openaiBody.max_tokens = 4096;
         }
     }
-
     if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
         openaiBody.reasoning_effort = normalizedThinkingLevel;
     }
-
     return { url: normalizeOpenAICompatibleEndpoint(endpoint, '/chat/completions'), body: openaiBody };
 }
 
 async function getModelChain(type = 'text', preferredModel = null) {
-
     const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
-
-
     let chain = [];
     if (data.modelChains && data.modelChains[type] && data.modelChains[type].length > 0) {
         chain = [...data.modelChains[type]];
@@ -989,14 +893,10 @@ async function getModelChain(type = 'text', preferredModel = null) {
             chain = [{ providerId: data.provider, model: data.model }];
         }
     }
-
     const activeModel = preferredModel || (type === 'text' ? data.lastUsedModel : null);
-
     if (activeModel && activeModel.model) {
         let actPId = activeModel.providerId;
         const actModel = activeModel.model;
-
-        
         if (!actPId || !data.providers?.some(p => p.id === actPId)) {
             const matchingChainItem = data.modelChains?.text?.find(item => item.model === actModel);
             if (matchingChainItem) {
@@ -1008,7 +908,6 @@ async function getModelChain(type = 'text', preferredModel = null) {
                 }
             }
         }
-
         const idx = chain.findIndex(item => item.providerId === actPId && item.model === actModel);
         if (idx > 0) {
             const preferred = chain.splice(idx, 1)[0];
@@ -1017,8 +916,6 @@ async function getModelChain(type = 'text', preferredModel = null) {
             chain.unshift({ providerId: actPId || '', model: actModel });
         }
     }
-
-
     const hydratedChain = chain.map(config => {
         const provider = data.providers?.find(p => p.id === config.providerId);
         if (!provider) return null;
@@ -1030,46 +927,34 @@ async function getModelChain(type = 'text', preferredModel = null) {
             defaultModel: provider.defaultModel
         };
     }).filter(item => item !== null);
-
     return hydratedChain;
 }
-
 
 function getKeysArray(keyStr) {
     if (!keyStr) return [];
     return keyStr.split(',').map(k => k.trim()).filter(k => k.length > 0);
 }
 
-
 function getTodayString() {
     const now = new Date();
     return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 }
 
-
 async function fetchWithRotation(keys, requestFn, options = {}) {
     if (!keys || keys.length === 0) {
         return requestFn('');
     }
-
-
     const groupKey = 'rot_' + keys.join(',').substring(0, 32).replace(/[^a-zA-Z0-9]/g, '');
     const today = getTodayString();
-
-
     if (typeof options.keyIndex === 'number' && options.keyIndex >= 0 && options.keyIndex < keys.length) {
         return await requestFn(keys[options.keyIndex]);
     }
-
-
     let activeIndex = 0;
     try {
         const data = await chrome.storage.local.get([groupKey]);
         const state = data[groupKey];
         if (state && state.date === today) activeIndex = state.index;
     } catch (e) { }
-
-
     const isRateLimitOrTooLarge = async (response) => {
         if (response.status === 429 || response.status === 503) return true;
         if (response.status === 400 || response.status === 413) {
@@ -1083,20 +968,14 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
         }
         return false;
     };
-
-
     for (let attempts = 0; attempts < keys.length; attempts++) {
         const currentIndex = (activeIndex + attempts) % keys.length;
         const currentKey = keys[currentIndex];
-
         try {
             const response = await requestFn(currentKey);
-
             if (await isRateLimitOrTooLarge(response)) {
                 console.warn(`[Lumina] Key ${currentIndex} hit rate limit or request-too-large. Rotating to next key.`);
-
             } else {
-
                 chrome.storage.local.set({
                     [groupKey]: { index: currentIndex, date: today }
                 });
@@ -1109,11 +988,8 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
             console.error(`[Lumina] Request failed with key ${currentIndex}:`, err);
         }
     }
-
     throw new Error("All API keys failed or were rate limited in this cycle.");
 }
-
-
 
 function getApiKeyForProvider(provider, keys) {
     switch (provider) {
@@ -1159,10 +1035,8 @@ async function setStatus(tabId, text, type = 'loading') {
             type: type
         });
     } catch (e) {
-
     }
 }
-
 
 const CACHE_EXPIRATION_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -1170,11 +1044,9 @@ async function getLuminaCache(cacheKey) {
     try {
         const data = await chrome.storage.local.get([cacheKey]);
         const cache = data[cacheKey] || { entries: {} };
-
         const now = Date.now();
         let changed = false;
         const entryKeys = Object.keys(cache.entries);
-
         for (const key of entryKeys) {
             const entry = cache.entries[key];
             const entryTimestamp = entry.timestamp || 0;
@@ -1183,11 +1055,9 @@ async function getLuminaCache(cacheKey) {
                 changed = true;
             }
         }
-
         if (changed) {
             await chrome.storage.local.set({ [cacheKey]: cache });
         }
-
         return cache;
     } catch (e) {
         console.error(`[Lumina] Error reading cache ${cacheKey}:`, e);
@@ -1204,7 +1074,6 @@ async function setLuminaCache(cacheKey, entries, maxEntries = 500) {
                 .slice(0, maxEntries);
             entries = Object.fromEntries(sorted);
         }
-
         await chrome.storage.local.set({
             [cacheKey]: { entries, lastUpdate: Date.now() }
         });
@@ -1212,7 +1081,6 @@ async function setLuminaCache(cacheKey, entries, maxEntries = 500) {
         console.error(`[Lumina] Error writing cache ${cacheKey}:`, e);
     }
 }
-
 
 const AUDIO_CACHE_KEY = 'audio_cache';
 const AUDIO_CACHE_MAX_ENTRIES = 200;
@@ -1222,7 +1090,6 @@ async function getAudioFromCache(text) {
         const cache = await getLuminaCache(AUDIO_CACHE_KEY);
         const key = text.trim().toLowerCase();
         const entry = cache.entries[key];
-
         if (entry && entry.data) {
             return entry;
         }
@@ -1237,47 +1104,35 @@ async function setAudioCache(text, type, data) {
     try {
         const cache = await getLuminaCache(AUDIO_CACHE_KEY);
         const key = text.trim().toLowerCase();
-
         cache.entries[key] = {
             type,
             data,
             timestamp: Date.now()
         };
-
         await setLuminaCache(AUDIO_CACHE_KEY, cache.entries, AUDIO_CACHE_MAX_ENTRIES);
     } catch (e) {
         console.error('[Lumina Audio] Cache write error:', e);
     }
 }
 
-
 async function fetchPageContent(url) {
     try {
-
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
-
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
         const html = await response.text();
-
-
         let text = html
             .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gmi, "")
             .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gmi, "")
             .replace(/<[^>]+>/g, " ")
             .replace(/\s+/g, " ")
             .trim();
-
-
         const maxLength = 3000;
         if (text.length > maxLength) {
             text = text.substring(0, maxLength) + "... (truncated)";
         }
-
         return text;
     } catch (error) {
         console.error(`[Lumina] Error fetching page content: ${error.message}`);
@@ -1288,14 +1143,10 @@ async function fetchPageContent(url) {
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Lumina BG][${action}]`;
-
     const enableWebSearch = true;
-
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
-
     const providerId = config.providerId;
     const compositeKey = providerId ? `${providerId}:${model}` : model;
-
     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[model] || {};
     const temperature = requestOptions.temperature ?? modelParams.temperature ?? 1.0;
     const topP = modelParams.topP ?? 1.0;
@@ -1303,7 +1154,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const thinkingLevel = requestOptions.thinkingLevel ?? modelParams.thinkingLevel ?? null;
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
-
     let parsedCustomParams = {};
     if (customParams) {
         if (typeof customParams === 'object') {
@@ -1312,31 +1162,22 @@ async function executeChatRequest(config, messages, initialContext, question, po
             try { parsedCustomParams = JSON.parse(customParams); } catch (e) { }
         }
     }
-
     const hasFiles = imageData && (Array.isArray(imageData) && imageData.length > 0);
     const normalizedModelName = (model || '').toLowerCase();
     const isGemini25Model = /gemini-2\.5/i.test(normalizedModelName);
     const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
-
     if (model) {
         incrementModelUsage(model);
     }
-
-
-
     if (!apiKey && !endpoint.includes('localhost') && !endpoint.includes('127.0.0.1')) {
         throw new Error(`No API Key for provider type: ${currentProvider}`);
     }
-
     const keys = getKeysArray(apiKey);
-
     const reasoningMode = !!globalSettings.reasoningMode;
     let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode, enableWebSearch);
-
     if (action === 'proofread') {
         systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
     }
-
     try {
         if (!systemOverride) {
             const userMemoryAddition = await UserMemory.getSystemPromptAddition();
@@ -1347,10 +1188,8 @@ async function executeChatRequest(config, messages, initialContext, question, po
     } catch (e) {
         console.error('[Lumina] Failed to load user memory:', e);
     }
-
     let currentMessages = [...messages];
     let augmentedQuestion = question;
-
     if (action === 'proofread') {
         if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
             currentMessages = [];
@@ -1359,11 +1198,9 @@ async function executeChatRequest(config, messages, initialContext, question, po
             augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
         }
     }
-
     if (initialContext && initialContext.trim().length > 0) {
         let processedContext = optimizeContextString(initialContext);
         console.log("%c[Lumina Context Debug] Web Source Content:", "color: #34c759; font-weight: bold;", processedContext);
-
         if (currentMessages.length > 0) {
             const contextInstruction = `\n\n### Webpage Source Content:\n${processedContext}\n\n(Note: This content is for background reference only. Prioritize the user's current goal in the history.)`;
             systemInstruction += contextInstruction;
@@ -1372,29 +1209,25 @@ async function executeChatRequest(config, messages, initialContext, question, po
             augmentedQuestion = `### Webpage Source Content:\n${processedContext}\n\n---\n\n### User Instruction:\n${augmentedQuestion}`;
         }
     }
-
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
         temperature, topP, maxTokens, parsedCustomParams,
         normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData,
         cachedContent: null
     };
-
     let controller = null;
     if (sessionId) {
         if (sessionControllers.has(sessionId)) {
-            try { 
+            try {
                 console.log(`[Lumina BG] Aborting session ${sessionId} due to duplicate/re-submission`);
-                sessionControllers.get(sessionId).abort(); 
+                sessionControllers.get(sessionId).abort();
             } catch (e) { }
         }
         controller = new AbortController();
         sessionControllers.set(sessionId, controller);
     }
-
     let requestedUrl = endpoint;
     let response;
-
     for (let retry = 0; retry < 4; retry++) {
         try {
             response = await fetchWithRotation(keys, async (key) => {
@@ -1424,7 +1257,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     signal: controller ? controller.signal : null
                 });
             }, requestOptions);
-
             if (!response.ok) {
                 const errorText = await response.text();
                 let errorData;
@@ -1439,13 +1271,11 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     statusText: response.statusText,
                     errorData
                 });
-
                 const errMsg =
                     (typeof errorData?.error?.message === 'string' && errorData.error.message.trim()) ||
                     (typeof errorData?.message === 'string' && errorData.message.trim()) ||
                     (typeof errorText === 'string' && errorText.trim()) || '';
                 const fallbackMsg = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''} from ${requestedUrl}${errorText ? `: ${errorText.slice(0, 300)}` : ''}`;
-
                 const isTpmRateLimit = response.status === 429 || /Request too large|tokens per minute|TPM|rate_limit_exceeded|context_length_exceeded/i.test(errMsg);
                 if (isTpmRateLimit && retry < 3) {
                     const limitMatch = errMsg.match(/Limit\s+(\d+)/i);
@@ -1458,10 +1288,8 @@ async function executeChatRequest(config, messages, initialContext, question, po
                             diff = requested - limit + 150;
                         }
                     }
-
                     const currentMaxTokens = payloadParams.maxTokens || 4096;
                     let newMaxTokens = currentMaxTokens;
-
                     if (diff > 0) {
                         const maxReducible = currentMaxTokens - 1024;
                         if (maxReducible > 0) {
@@ -1472,7 +1300,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                             console.warn(`[Lumina] Dynamic token reduction: Changing max_tokens from ${currentMaxTokens} to ${newMaxTokens}. Remaining diff: ${diff}`);
                         }
                     }
-
                     if (diff > 0 && currentMessages.length > 2) {
                         let tokensRemoved = 0;
                         let pairsRemoved = 0;
@@ -1489,13 +1316,11 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     }
                     continue;
                 }
-
                 if (response.status === 429 || /Request too large|tokens per minute|TPM|context_length_exceeded/i.test(errMsg)) {
                     throw new Error('RATE_LIMIT_EXHAUSTED');
                 }
                 throw new Error(errMsg || fallbackMsg || 'Failed to fetch from AI provider');
             }
-
             break;
         } catch (e) {
             if (retry < 3 && (e.message === 'RATE_LIMIT_EXHAUSTED' || e.message === 'Failed to fetch')) {
@@ -1508,31 +1333,24 @@ async function executeChatRequest(config, messages, initialContext, question, po
             throw e;
         }
     }
-
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
-
     let buffer = '';
     let emittedChunks = 0;
     let isInReasoning = false;
-
     const collectDeltasFromPayload = (payloadStr, textDeltas) => {
         if (!payloadStr) return false;
         const trimmedPayload = payloadStr.trim();
         if (!trimmedPayload) return false;
-
         if (trimmedPayload === '[DONE]' || trimmedPayload.includes('[DONE]')) {
             return true;
         }
-
         try {
             const parsed = JSON.parse(trimmedPayload);
             const choice = parsed.choices?.[0] || parsed.candidates?.[0] || {};
             const delta = choice.delta || {};
-
             let content = '';
             let reasoning = '';
-
             if (choice.content?.parts) {
                 for (const part of choice.content.parts) {
                     if (part.thought === true) {
@@ -1554,7 +1372,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 if (!content && typeof choice.message?.content === 'string') {
                     content = choice.message.content;
                 }
-
                 reasoning = delta.reasoning || delta.reasoning_content || delta.reasoningContent || '';
                 if (Array.isArray(reasoning)) {
                     reasoning = reasoning.map((part) => {
@@ -1565,7 +1382,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     }).join('');
                 }
             }
-
             if (typeof reasoning === 'string' && reasoning.length > 0) {
                 if (!isInReasoning) {
                     textDeltas.push('<think>');
@@ -1573,7 +1389,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 }
                 textDeltas.push(reasoning);
             }
-
             if (typeof content === 'string' && content.length > 0) {
                 if (isInReasoning) {
                     textDeltas.push('</think>');
@@ -1581,27 +1396,22 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 }
                 textDeltas.push(content);
             }
-
             return true;
         } catch (e) {
             return false;
         }
     };
-
     const processSSEEvent = (rawEvent, textDeltas) => {
         if (!rawEvent) return;
         const lines = rawEvent.split(/\r?\n/);
         const dataLines = [];
-
         for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
             if (!trimmed.startsWith('data:')) continue;
             dataLines.push(trimmed.slice(5).trimStart());
         }
-
         if (dataLines.length === 0) return;
-
         const combinedPayload = dataLines.join('\n').trim();
         const parsedCombined = collectDeltasFromPayload(combinedPayload, textDeltas);
         if (!parsedCombined && dataLines.length > 1) {
@@ -1610,7 +1420,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
             });
         }
     };
-
     const emitChunk = (text) => {
         if (text.length > 0) {
             emittedChunks += 1;
@@ -1619,13 +1428,11 @@ async function executeChatRequest(config, messages, initialContext, question, po
             else port.postMessage(chunkMsg);
         }
     };
-
     let nonSseBuffer = '';
     const detectAndExtractJsonError = (str) => {
         if (!str || typeof str !== 'string') return null;
         const trimmed = str.trim();
         if (!trimmed) return null;
-
         if (trimmed.includes('"error"') && (trimmed.includes('{') || trimmed.startsWith('{'))) {
             const firstBrace = trimmed.indexOf('{');
             const lastBrace = trimmed.lastIndexOf('}');
@@ -1646,7 +1453,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
         }
         return null;
     };
-
     let keepAliveInterval = setInterval(() => {
         try {
             chrome.runtime.getPlatformInfo(() => { });
@@ -1654,7 +1460,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
             console.error('[Lumina] Keep-alive error:', e);
         }
     }, 5000);
-
     try {
         while (true) {
             const { done, value } = await reader.read();
@@ -1663,7 +1468,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 if (flushChunk) {
                     buffer += flushChunk;
                 }
-
                 const tailDeltas = [];
                 if (buffer && buffer.length > 0) {
                     const lines = buffer.split('\n');
@@ -1677,25 +1481,20 @@ async function executeChatRequest(config, messages, initialContext, question, po
                         }
                     }
                 }
-
                 const errorMsg = detectAndExtractJsonError(nonSseBuffer) || detectAndExtractJsonError(buffer);
                 if (errorMsg) {
                     throw new Error(errorMsg);
                 }
-
                 for (const text of tailDeltas) {
                     emitChunk(text);
                 }
                 break;
             }
             const chunk = decoder.decode(value, { stream: true });
-
             const textDeltas = [];
             buffer += chunk;
-
             const lines = buffer.split('\n');
             buffer = lines.pop();
-
             for (const line of lines) {
                 const trimmed = line.trim();
                 if (!trimmed || trimmed.startsWith(':') || trimmed.startsWith('event:')) continue;
@@ -1709,7 +1508,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
                     }
                 }
             }
-
             for (const text of textDeltas) {
                 emitChunk(text);
             }
@@ -1717,7 +1515,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     } finally {
         clearInterval(keepAliveInterval);
     }
-
     if (isInReasoning) {
         const thinkEndMsg = { action: 'chunk', chunk: '</think>', sessionId };
         if (sessionId) broadcastToSession(sessionId, thinkEndMsg);
@@ -1728,13 +1525,10 @@ async function executeChatRequest(config, messages, initialContext, question, po
 
 async function generateOneOffCompletion(prompt, systemInstruction = "You are a helpful assistant.", modelConfig = null, requestOptions = {}) {
     let provider;
-
     if (modelConfig && modelConfig.providerId) {
-
         const data = await chrome.storage.local.get(['providers']);
         const found = data.providers?.find(p => p.id === modelConfig.providerId);
         if (!found) throw new Error("Provider not found: " + modelConfig.providerId);
-
         provider = {
             ...modelConfig,
             providerType: found.type,
@@ -1742,16 +1536,12 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
             endpoint: found.endpoint
         };
     } else {
-
         const chain = await getModelChain();
         provider = chain.length > 0 ? chain[0] : null;
     }
-
     if (!provider) throw new Error("No active AI provider configured.");
-
     const keys = getKeysArray(provider.apiKey);
     const modelToUse = provider.model;
-
     const response = await fetchWithRotation(keys, async (key) => {
         const endpoint = (provider.endpoint || 'https://api.groq.com/openai/v1/chat/completions').replace(/\/$/, "");
         if (provider.providerType === 'gemini') {
@@ -1793,7 +1583,6 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
             });
         }
     }, requestOptions);
-
     if (!response.ok) {
         const errText = await response.text();
         throw new Error(`${provider.providerType} error (${response.status}): ${errText.substring(0, 100)}`);
@@ -1804,10 +1593,6 @@ async function generateOneOffCompletion(prompt, systemInstruction = "You are a h
     }
     return result.choices?.[0]?.message?.content || '';
 }
-
-
-
-
 
 async function bridgeLog(...args) {
     const msg = `[BG Bridge] ${args.join(' ')}`;
@@ -1820,7 +1605,6 @@ async function bridgeLog(...args) {
     } catch (e) { }
 }
 
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'keep_alive_start') {
         const sid = request.sessionId;
@@ -1832,7 +1616,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         return true;
     }
-
     if (request.action === 'keep_alive_stop') {
         const sid = request.sessionId;
         if (sid && globalThis.keepAliveResponses && globalThis.keepAliveResponses.has(sid)) {
@@ -1845,21 +1628,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
         return false;
     }
-
     if (request.type === 'LUMINA_CONTENT_UPDATED' && sender.tab) {
-
         for (const [windowId, port] of sidePanelPorts) {
             if (port) {
                 try {
                     port.postMessage({ action: 'content_updated', tabId: sender.tab.id });
                 } catch (e) {
-
                 }
             }
         }
         return false;
     }
-
     switch (request.action) {
         case 'generate_chat_title': {
             const { modelObj, question, images, files, history } = request;
@@ -1867,7 +1646,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             generateChatTitleFromModel(modelObj, question, images, files, history)
                 .then(title => sendResponse({ success: true, title }))
                 .catch(err => sendResponse({ success: false, error: err.message }));
-            return true; 
+            return true;
         }
         case 'fetch_image_base64': {
             fetch(request.url)
@@ -1888,7 +1667,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(err => {
                     sendResponse({ success: false, error: err.message });
                 });
-            return true; 
+            return true;
         }
         case 'fetch_cambridge':
         case 'fetch_oxford': {
@@ -1897,20 +1676,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: false, error: 'No word provided' });
                 return false;
             }
-
             const isCambridge = request.action === 'fetch_cambridge';
             const wordPath = encodeURIComponent(word.replace(/\s+/g, '-'));
-
-
-
             const url = isCambridge
                 ? `https://dictionary.cambridge.org/dictionary/english/${wordPath}`
                 : `https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`;
-
             const fetchWithFallback = async (targetUrl, isRetry = false) => {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
-
                 try {
                     const res = await fetch(targetUrl, {
                         signal: controller.signal,
@@ -1923,18 +1696,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         redirect: 'follow'
                     });
                     clearTimeout(timeoutId);
-
-
                     if (res.status === 404 && !isRetry) {
                         if (isCambridge) {
-
                         } else {
-
                             const fallbackUrl = `https://www.oxfordlearnersdictionaries.com/definition/english/${wordPath}`;
                             return fetchWithFallback(fallbackUrl, true);
                         }
                     }
-
                     if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
                     return res.text();
                 } catch (e) {
@@ -1942,7 +1710,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     throw e;
                 }
             };
-
             fetchWithFallback(url)
                 .then(html => {
                     sendResponse({ success: true, html });
@@ -1953,12 +1720,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
             return true;
         }
-
         case 'fetch_images': {
             const keyword = request.keyword;
             const cleanKeyword = `${keyword} -watermark -stock -site:shutterstock.com -site:alamy.com -site:123rf.com -site:depositphotos.com -site:dreamstime.com -site:gettyimages.com`;
             const url = `https://www.google.com/search?q=${encodeURIComponent(cleanKeyword)}&udm=2&tbs=isz:l,iar:w`;
-
             fetch(url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -1983,7 +1748,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
             return true;
         }
-
         case 'fetch_oxford_url': {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -2004,13 +1768,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(error => sendResponse({ success: false, error: String(error) }));
             return true;
         }
-
         case 'check_sidepanel_open': {
             const windowIdSync = sender.tab ? sender.tab.windowId : null;
             sendResponse({ isOpen: !!(windowIdSync && sidePanelPorts.has(windowIdSync)) });
             return;
         }
-
         case 'get_stored_files': {
             (async () => {
                 try {
@@ -2044,7 +1806,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
         }
-
         case 'delete_stored_file': {
             (async () => {
                 try {
@@ -2057,7 +1818,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
         }
-
         case 'cleanup_opfs_files': {
             (async () => {
                 try {
@@ -2065,7 +1825,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     const sessionsResult = await chrome.storage.local.get(['lumina_chat_sessions']);
                     const sessions = sessionsResult.lumina_chat_sessions || {};
                     const activeSessionIds = new Set(Object.keys(sessions));
-
                     for (const item of metadata) {
                         const parts = item.key.split('_');
                         if (parts.length >= 2) {
@@ -2084,7 +1843,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
         }
-
         case 'upload_gemini_file': {
             (async () => {
                 const attachmentId = request.attachmentId || `att_${Date.now()}`;
@@ -2093,7 +1851,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (attachmentId) {
                     activeUploads.set(attachmentId, controller);
                 }
-
                 try {
                     const binaryString = atob(request.fileData);
                     const len = binaryString.length;
@@ -2101,8 +1858,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     for (let i = 0; i < len; i++) {
                         bytes[i] = binaryString.charCodeAt(i);
                     }
-
-                    
                     try {
                         const dbKey = `${sessionId}_${attachmentId}_${request.fileName}`;
                         const blob = new Blob([bytes], { type: request.mimeType || 'application/octet-stream' });
@@ -2111,11 +1866,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     } catch (storeErr) {
                         console.error('[DB Storage] Failed to write file locally:', storeErr);
                     }
-
-                    
-                    
                     const fileUrl = `local-db://${sessionId}/${attachmentId}/${request.fileName}`;
-
                     sendResponse({
                         success: true,
                         file: {
@@ -2134,7 +1885,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
         }
-
         case 'abort_gemini_upload': {
             const attachmentId = request.attachmentId;
             if (attachmentId && activeUploads.has(attachmentId)) {
@@ -2148,7 +1898,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
             return;
         }
-
         case 'preview_spark': {
             (async () => {
                 try {
@@ -2159,21 +1908,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         sendResponse({ error: 'Provider not found' });
                         return;
                     }
-
                     const keys = getKeysArray(found.apiKey);
                     const endpoint = (found.endpoint || '').replace(/\/$/, '');
                     const modelToUse = model || found.model || 'gemini-2.0-flash';
-
                     const advancedParamsByModel = data.advancedParamsByModel || {};
                     const compositeKey = providerId ? `${providerId}:${modelToUse}` : modelToUse;
                     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelToUse] || {};
-
                     const temperature = modelParams.temperature ?? 0.7;
                     const topP = modelParams.topP ?? 1.0;
                     const maxTokens = modelParams.maxTokens ?? null;
                     const thinkingLevel = modelParams.thinkingLevel || null;
                     const customParams = modelParams.customParams || {};
-
                     let parsedCustomParams = {};
                     if (customParams) {
                         if (typeof customParams === 'object') {
@@ -2182,15 +1927,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             try { parsedCustomParams = JSON.parse(customParams); } catch (e) { }
                         }
                     }
-
                     const normalizedModelName = modelToUse.toLowerCase();
                     const isGemini3 = /gemini-[3-9]/i.test(modelToUse);
                     const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
-
                     const response = await fetchWithRotation(keys, async (key) => {
                         if (found.type === 'gemini') {
                             const url = `${endpoint}/${modelToUse}:generateContent`;
-
                             const generationConfig = {
                                 ...parsedCustomParams
                             };
@@ -2198,7 +1940,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                 generationConfig.temperature = temperature;
                                 generationConfig.topP = topP;
                             }
-
                             let level = normalizedThinkingLevel || 'minimal';
                             if (level === 'none') {
                                 level = 'minimal';
@@ -2224,7 +1965,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                     thinkingBudget: budget
                                 };
                             }
-
                             return fetch(url, {
                                 method: 'POST',
                                 headers: {
@@ -2241,7 +1981,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                 role: m.role === 'model' ? 'assistant' : m.role,
                                 content: m.parts?.[0]?.text || ''
                             }));
-
                             const body = {
                                 model: modelToUse,
                                 messages: openAiMessages,
@@ -2255,7 +1994,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
                                 body.reasoning_effort = normalizedThinkingLevel;
                             }
-
                             return fetch(endpoint || 'https://api.openai.com/v1/chat/completions', {
                                 method: 'POST',
                                 headers: {
@@ -2266,13 +2004,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             });
                         }
                     }, {});
-
                     if (!response.ok) {
                         const errText = await response.text();
                         sendResponse({ error: `API error (${response.status}): ${errText.slice(0, 200)}` });
                         return;
                     }
-
                     const result = await response.json();
                     let text = '';
                     if (found.type === 'gemini') {
@@ -2288,10 +2024,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
         }
-
-
         case 'get_system_tokens': {
-
             const reasoningMode = request.reasoningMode || false;
             const isProofread = request.isProofread || false;
             let prompt = "";
@@ -2300,19 +2033,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } else {
                 prompt = buildChatSystemInstruction(reasoningMode);
             }
-
             const tokens = (typeof countTokens !== 'undefined') ? countTokens(prompt) : Math.ceil(prompt.length / 2);
             sendResponse({ tokens });
             return true;
         }
-
         case 'pasteDictationText':
             pasteDictationText(request.text);
             return;
-
         case 'translate_input_text': {
             const textToTranslate = request.text || '';
-
             const runGoogleTranslate = (text, callback) => {
                 const firstUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
                 fetch(firstUrl)
@@ -2323,7 +2052,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     .then(data => {
                         const detectedLang = data[2];
                         const translatedToVi = data[0].map(item => item[0]).join('');
-
                         if (detectedLang === 'en') {
                             const secondUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=en&dt=t&q=${encodeURIComponent(translatedToVi)}`;
                             return fetch(secondUrl)
@@ -2360,7 +2088,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             });
                     });
             };
-
             chrome.storage.local.get(['translateInputEngine', 'dictProvider', 'dictModel'], async (items) => {
                 const engine = items.translateInputEngine || 'google';
                 if (engine === 'ai' && items.dictProvider && items.dictModel) {
@@ -2382,7 +2109,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
             return true;
         }
-
         case 'open_sidepanel':
         case 'ensure_sidepanel_open': {
             const windowIdManual = sender.tab ? sender.tab.windowId : null;
@@ -2392,8 +2118,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } else {
                     ensureSidePanelOpen(windowIdManual);
                 }
-
-
                 if (request.youtubeTrigger && sender.tab) {
                     const enrichedTrigger = {
                         ...request.youtubeTrigger,
@@ -2403,17 +2127,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     };
                     chrome.storage.local.set({ 'lumina_youtube_trigger': enrichedTrigger });
                 }
-
-
                 const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
-
-
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,
                     url: sender.tab.url
                 } : null;
-
                 if (sourceTab && sidePanelPorts.has(windowIdManual)) {
                     chrome.storage.local.get(['readWebpage'], (res) => {
                         const isReadWebpageEnabled = res.readWebpage !== false;
@@ -2426,7 +2145,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
             return true;
         }
-
         case 'open_sidepanel_with_query': {
             const windowIdQuery = sender.tab ? sender.tab.windowId : null;
             if (windowIdQuery) {
@@ -2437,9 +2155,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     title: sender.tab.title,
                     url: sender.tab.url
                 } : null;
-
                 const isCurrentlyOpen = sidePanelPorts.has(windowIdQuery);
-
                 const queryData = {
                     query: request.query,
                     displayQuery: request.displayQuery,
@@ -2450,7 +2166,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     createNewChat: !isCurrentlyOpen,
                     timestamp: Date.now()
                 };
-
                 chrome.storage.local.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData }, () => {
                     chrome.sidePanel.open({ windowId: windowIdQuery }).catch(() => { });
                     if (sidePanelPorts.has(windowIdQuery)) {
@@ -2461,8 +2176,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: true });
             return true;
         }
-
-
         case 'setAudioCache':
             (async () => {
                 try {
@@ -2473,27 +2186,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
             })();
             return true;
-
-
         case 'open_options': {
             let optionsUrl = chrome.runtime.getURL('pages/spotlight/spotlight.html?settings=1');
             if (request.section) optionsUrl += `&section=${request.section}`;
             if (request.requestMic) optionsUrl += '&requestMic=1';
-
             chrome.tabs.create({ url: optionsUrl });
             return true;
         }
-
         case 'translate':
             translateText(request.text, request.targetLang).then(sendResponse).catch(err => sendResponse({ error: err.message }));
             return true;
-
         case 'proofread':
             proofreadText(request.text).then(sendResponse).catch(err => sendResponse({ error: err.message }));
             return true;
-
-
-
         case 'playAudio':
             if (request.text) {
                 playNativeTTS(request.text, request.speed).then(sendResponse).catch(() => {
@@ -2503,7 +2208,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 playAudioOffscreen(request.url, request.speed).then(sendResponse).catch(err => sendResponse({ error: err.message }));
             }
             return true;
-
         case 'fetchAudioBase64':
             (async () => {
                 try {
@@ -2518,7 +2222,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
             })();
             return true;
-
         case 'getAudioCache':
             (async () => {
                 try {
@@ -2530,10 +2233,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
             })();
             return true;
-
-
-
-
         case 'forceMemoryConsolidate':
             (async () => {
                 try {
@@ -2619,8 +2318,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } catch (e) { sendResponse({ success: false, error: e.message }); }
             })();
             return true;
-
-
         case 'play_audio':
             (async () => {
                 try {
@@ -2649,9 +2346,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } catch (e) { sendResponse({ error: e.message }); }
             })();
             return true;
-
-
-
         case 'ai_completion':
             (async () => {
                 try {
@@ -2660,7 +2354,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } catch (e) { sendResponse({ error: e.message }); }
             })();
             return true;
-
         case 'reset_exhausted_keys':
             (async () => {
                 const data = await chrome.storage.local.get();
@@ -2669,13 +2362,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, count: keysToRemove.length });
             })();
             return true;
-
         case 'open_spotlight_from_popup':
             createSpotlightWindow();
             sendResponse({ success: true });
             return true;
-
-
         case 'updateModelChain':
             (async () => {
                 try {
@@ -2684,42 +2374,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 } catch (e) { sendResponse({ success: false, error: e.message }); }
             })();
             return true;
-
         case 'chatWithModel':
             sendResponse({ success: true });
             return true;
-
         case 'playBase64Audio':
             playBase64AudioOffscreen(request.base64, request.speed).then(res => sendResponse(res)).catch(err => sendResponse({ error: err.message }));
             return true;
-
         case 'stopGoogleOffscreenAudio':
             stopGoogleAudioOffscreen().then(res => sendResponse(res || { success: true })).catch(() => sendResponse({ success: true }));
             return true;
-
         case 'stopOffscreenAudio':
             stopAudioOffscreen();
             sendResponse({ success: true });
             return true;
-
         case 'fetchAudio':
             fetchAudio(request.text, request.speed || 1.0, request.lang).then(result => sendResponse(result)).catch(() => sendResponse({ type: null, chunks: [] }));
             return true;
-
         default:
             return false;
     }
 });
 
-
 let spotlightWindowId = null;
 let spotlightInitialPosition = null;
 let spotlightHasMoved = false;
 
-
 async function getSpotlightWindowId() {
     if (spotlightWindowId) {
-
         try {
             const win = await chrome.windows.get(spotlightWindowId);
             if (win) return spotlightWindowId;
@@ -2727,8 +2408,6 @@ async function getSpotlightWindowId() {
             spotlightWindowId = null;
         }
     }
-
-
     const data = await chrome.storage.local.get(['spotlightWindowId']);
     if (data.spotlightWindowId) {
         try {
@@ -2743,7 +2422,6 @@ async function getSpotlightWindowId() {
     }
     return null;
 }
-
 
 chrome.commands.onCommand.addListener(async (command, tab) => {
     if (command === 'open-lumina-chat') {
@@ -2760,13 +2438,9 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
             });
         }
     } else if (command === 'toggle-side-panel') {
-
-
-
         if (tab && tab.windowId) {
             toggleSidePanel(tab.windowId);
         } else {
-
             chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
                 if (currentWindow && currentWindow.id) {
                     toggleSidePanel(currentWindow.id);
@@ -2779,7 +2453,6 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 let isCreatingSpotlight = false;
 
 async function createSpotlightWindow() {
-
     const currentId = await getSpotlightWindowId();
     if (currentId) {
         try {
@@ -2787,7 +2460,6 @@ async function createSpotlightWindow() {
             if (win) {
                 if (win.focused) {
                     await chrome.windows.remove(currentId);
-
                     isCreatingSpotlight = false;
                     return;
                 } else {
@@ -2797,82 +2469,58 @@ async function createSpotlightWindow() {
                 }
             }
         } catch (e) {
-
             spotlightWindowId = null;
             chrome.storage.local.remove('spotlightWindowId');
         }
     }
-
-
     if (isCreatingSpotlight) {
         return;
     }
     isCreatingSpotlight = true;
-
     try {
-
         const saved = await new Promise(resolve => {
             chrome.storage.local.get(['spotlightWidth', 'spotlightHeight', 'spotlightLeft', 'spotlightTop'], resolve);
         });
-
         const windowWidth = saved.spotlightWidth || 400;
         const windowHeight = saved.spotlightHeight || 400;
-
         try {
-
             const displays = await chrome.system.display.getInfo();
-
-
             const lastFocused = await new Promise(resolve => {
                 chrome.windows.getLastFocused({ populate: false }, (win) => {
                     resolve(chrome.runtime.lastError ? null : win);
                 });
             });
-
             let left, top;
-
-
             const isPositionValid = (x, y, w, h) => {
                 for (const display of displays) {
                     const bounds = display.workArea;
-
                     const overlapLeft = Math.max(x, bounds.left);
                     const overlapTop = Math.max(y, bounds.top);
                     const overlapRight = Math.min(x + w, bounds.left + bounds.width);
                     const overlapBottom = Math.min(y + h, bounds.top + bounds.height);
-
                     const overlapWidth = Math.max(0, overlapRight - overlapLeft);
                     const overlapHeight = Math.max(0, overlapBottom - overlapTop);
                     const overlapArea = overlapWidth * overlapHeight;
                     const windowArea = w * h;
-
                     if (overlapArea >= windowArea * 0.5) {
                         return true;
                     }
                 }
                 return false;
             };
-
-
             if (saved.spotlightLeft !== undefined && saved.spotlightTop !== undefined) {
                 if (isPositionValid(saved.spotlightLeft, saved.spotlightTop, windowWidth, windowHeight)) {
                     left = saved.spotlightLeft;
                     top = saved.spotlightTop;
                 } else {
-
                     await chrome.storage.local.remove(['spotlightLeft', 'spotlightTop']);
                 }
             }
-
-
             if (left === undefined || top === undefined) {
                 let targetDisplay = null;
-
                 if (lastFocused && lastFocused.left !== undefined && lastFocused.top !== undefined) {
-
                     const windowCenterX = lastFocused.left + (lastFocused.width || 0) / 2;
                     const windowCenterY = lastFocused.top + (lastFocused.height || 0) / 2;
-
                     for (const display of displays) {
                         const bounds = display.workArea;
                         if (windowCenterX >= bounds.left &&
@@ -2884,23 +2532,18 @@ async function createSpotlightWindow() {
                         }
                     }
                 }
-
-
                 if (!targetDisplay) {
                     targetDisplay = displays.find(d => d.isPrimary) || displays[0];
                 }
-
                 if (targetDisplay) {
                     const screenWidth = targetDisplay.workArea.width;
                     const screenHeight = targetDisplay.workArea.height;
                     const screenLeft = targetDisplay.workArea.left;
                     const screenTop = targetDisplay.workArea.top;
-
                     left = screenLeft + Math.round((screenWidth - windowWidth) / 2);
                     top = screenTop + Math.round((screenHeight - windowHeight) / 2);
                 }
             }
-
             const windowConfig = {
                 url: 'pages/spotlight/spotlight.html',
                 type: 'popup',
@@ -2908,17 +2551,13 @@ async function createSpotlightWindow() {
                 height: windowHeight,
                 focused: true
             };
-
             if (left !== undefined && top !== undefined) {
                 windowConfig.left = left;
                 windowConfig.top = top;
             }
-
             chrome.windows.create(windowConfig, (win) => {
-
                 if (chrome.runtime.lastError || !win) {
                     console.error('[Lumina] Failed to create spotlight window:', chrome.runtime.lastError?.message);
-
                     chrome.windows.create({
                         url: 'pages/spotlight/spotlight.html',
                         type: 'popup',
@@ -2937,16 +2576,13 @@ async function createSpotlightWindow() {
                     });
                     return;
                 }
-
                 spotlightWindowId = win.id;
                 spotlightInitialPosition = { left: win.left, top: win.top };
                 spotlightHasMoved = false;
-
                 chrome.storage.local.set({ spotlightWindowId: win.id });
             });
         } catch (error) {
             console.error('Error creating spotlight window:', error);
-
             chrome.windows.create({
                 url: 'pages/spotlight/spotlight.html',
                 type: 'popup',
@@ -2973,9 +2609,7 @@ async function createSpotlightWindow() {
     }
 }
 
-
 chrome.windows.onBoundsChanged.addListener(async (window) => {
-
     let isSpotlight = (window.id === spotlightWindowId);
     if (!isSpotlight && !spotlightWindowId) {
         const data = await chrome.storage.local.get(['spotlightWindowId']);
@@ -2984,26 +2618,17 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
             isSpotlight = true;
         }
     }
-
     if (isSpotlight) {
-
         if (spotlightInitialPosition) {
             const movedX = Math.abs(window.left - spotlightInitialPosition.left) > 5;
             const movedY = Math.abs(window.top - spotlightInitialPosition.top) > 5;
-
-
             if (movedX || movedY) {
                 if (!spotlightHasMoved) {
                     spotlightHasMoved = true;
-
                 }
-
                 spotlightInitialPosition = { left: window.left, top: window.top };
             }
         }
-
-
-
         chrome.storage.local.set({
             spotlightWidth: window.width,
             spotlightHeight: window.height,
@@ -3013,40 +2638,31 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
     }
 });
 
-
 chrome.windows.onRemoved.addListener(async (removedId) => {
-
     let isSpotlight = (removedId === spotlightWindowId);
-
-
     if (!isSpotlight && !spotlightWindowId) {
         const data = await chrome.storage.local.get(['spotlightWindowId']);
         if (data.spotlightWindowId === removedId) {
             isSpotlight = true;
         }
     }
-
     if (isSpotlight) {
         spotlightWindowId = null;
         spotlightInitialPosition = null;
         spotlightHasMoved = false;
-
         chrome.storage.local.remove('spotlightWindowId');
     }
 });
 
-
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-chat-stream') {
         const registeredSessions = new Set();
-
         port.onDisconnect.addListener(() => {
             for (const sid of registeredSessions) {
                 if (sessionPorts.has(sid)) {
                     sessionPorts.get(sid).delete(port);
                     if (sessionPorts.get(sid).size === 0) {
                         sessionPorts.delete(sid);
-
                         const timeoutId = setTimeout(() => {
                             if (!sessionPorts.has(sid)) {
                                 const controller = sessionControllers.get(sid);
@@ -3064,7 +2680,6 @@ chrome.runtime.onConnect.addListener((port) => {
                                 }
                             }
                         }, 5000);
-
                         if (!globalThis.sessionAbortTimeouts) {
                             globalThis.sessionAbortTimeouts = new Map();
                         }
@@ -3073,7 +2688,6 @@ chrome.runtime.onConnect.addListener((port) => {
                 }
             }
         });
-
         port.onMessage.addListener(async (msg) => {
             if (msg.action === 'ping') {
                 try {
@@ -3081,13 +2695,11 @@ chrome.runtime.onConnect.addListener((port) => {
                 } catch (e) { }
                 return;
             }
-
             if (msg.action === 'register_sessions' && Array.isArray(msg.sessionIds)) {
                 msg.sessionIds.forEach(sid => {
                     registeredSessions.add(sid);
                     if (!sessionPorts.has(sid)) sessionPorts.set(sid, new Set());
                     sessionPorts.get(sid).add(port);
-
                     if (globalThis.sessionAbortTimeouts && globalThis.sessionAbortTimeouts.has(sid)) {
                         clearTimeout(globalThis.sessionAbortTimeouts.get(sid));
                         globalThis.sessionAbortTimeouts.delete(sid);
@@ -3095,38 +2707,30 @@ chrome.runtime.onConnect.addListener((port) => {
                 });
                 return;
             }
-
             if (msg.action === 'stop_chat' && msg.sessionId) {
-
                 const controller = sessionControllers.get(msg.sessionId);
                 if (controller) {
                     console.log(`[Lumina BG] Aborting session ${msg.sessionId} due to stop_chat message`);
                     controller.abort();
                     sessionControllers.delete(msg.sessionId);
                 }
-
                 broadcastToSession(msg.sessionId, { action: 'done', sessionId: msg.sessionId });
                 return;
             }
-
             if (msg.sessionId && !registeredSessions.has(msg.sessionId)) {
                 registeredSessions.add(msg.sessionId);
                 if (!sessionPorts.has(msg.sessionId)) sessionPorts.set(msg.sessionId, new Set());
                 sessionPorts.get(msg.sessionId).add(port);
-
                 if (globalThis.sessionAbortTimeouts && globalThis.sessionAbortTimeouts.has(msg.sessionId)) {
                     clearTimeout(globalThis.sessionAbortTimeouts.get(msg.sessionId));
                     globalThis.sessionAbortTimeouts.delete(msg.sessionId);
                 }
             }
-
-
             if (msg.action === 'chat_stream' || msg.action === 'proofread' || msg.action === 'dict_stream') {
                 try {
                     let question = msg.question;
                     let initialContext = msg.initialContext;
                     let systemMsg = null;
-
                     if (msg.action === 'dict_stream' && msg.word) {
                         question = `Dictionary entry for: ${msg.word}`;
                         systemMsg = `You are a professional lexicographer. Provide a concise dictionary entry for the word: "${msg.word}".
@@ -3140,10 +2744,7 @@ chrome.runtime.onConnect.addListener((port) => {
                             - 1-2 example sentences in italics.
                             Avoid long technical explanations. Be very concise.`;
                     }
-
-
                     const finalSystemOverride = (msg.options && msg.options.systemOverride) || msg.systemOverride || systemMsg;
-
                     await handleChatStream(
                         msg.messages,
                         initialContext,
@@ -3157,7 +2758,6 @@ chrome.runtime.onConnect.addListener((port) => {
                         finalSystemOverride,
                         msg.sessionId
                     );
-
                 } catch (e) {
                     console.error('[Lumina BG][stream] request error', {
                         action: msg.action,
@@ -3165,7 +2765,6 @@ chrome.runtime.onConnect.addListener((port) => {
                     });
                     port.postMessage({ action: 'chunk', chunk: `*Error: ${e.message}*` });
                 } finally {
-
                     const doneMsg = { action: 'done', sessionId: msg.sessionId };
                     if (msg.sessionId) broadcastToSession(msg.sessionId, doneMsg);
                     else port.postMessage(doneMsg);
@@ -3173,16 +2772,12 @@ chrome.runtime.onConnect.addListener((port) => {
             }
         });
     }
-
     if (port.name === 'lumina-audio-stream') {
         port.onMessage.addListener(async (msg) => {
             if (msg.action === 'play_stream') {
                 const text = msg.text;
                 if (!text) return;
-
-
                 const detectLanguage = (text) => {
-
                     let counts = {
                         vietnamese: 0,
                         chinese: 0,
@@ -3191,52 +2786,35 @@ chrome.runtime.onConnect.addListener((port) => {
                         cyrillic: 0,
                         latin: 0
                     };
-
-
                     const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;
-
                     for (const char of text) {
                         const code = char.charCodeAt(0);
-
-
                         if (code >= 0x4E00 && code <= 0x9FFF) {
                             counts.chinese++;
                         }
-
                         else if (code >= 0x3040 && code <= 0x309F) {
                             counts.japanese++;
                         }
-
                         else if (code >= 0x30A0 && code <= 0x30FF) {
                             counts.japanese++;
                         }
-
                         else if (code >= 0xAC00 && code <= 0xD7AF) {
                             counts.korean++;
                         }
-
                         else if (code >= 0x0400 && code <= 0x04FF) {
                             counts.cyrillic++;
                         }
-
                         else if ((code >= 0x0041 && code <= 0x007A) || (code >= 0x00C0 && code <= 0x00FF)) {
                             counts.latin++;
                         }
                     }
-
-
                     const vietnameseMatches = text.match(vietnameseRegex);
                     if (vietnameseMatches) {
                         counts.vietnamese = vietnameseMatches.length;
                     }
-
-
                     const total = Object.values(counts).reduce((a, b) => a + b, 0);
                     if (total === 0) return 'en-GB';
-
-
                     const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-
                     const langMap = {
                         chinese: 'zh-CN',
                         japanese: 'ja',
@@ -3245,33 +2823,21 @@ chrome.runtime.onConnect.addListener((port) => {
                         latin: 'en-GB',
                         vietnamese: 'vi'
                     };
-
-
                     if (dominant[0] === 'latin' && counts.vietnamese > 0 && counts.vietnamese / counts.latin > 0.15) {
                         return 'vi';
                     }
-
                     return langMap[dominant[0]] || 'en-GB';
                 };
-
-
                 const detectedLang = detectLanguage(text);
-
-
-
                 const googleChunks = [];
-
                 const sentences = text.match(/[^.?!]+[.?!]+/g) || [text];
-
                 const cleanSentences = sentences
                     .map(s => s.trim())
                     .filter(s => {
                         const textOnly = s.replace(/[.?!,;:]/g, '').trim();
                         return textOnly.length >= 2;
                     });
-
                 if (cleanSentences.length <= 1) {
-
                     const fullTextOnly = text.replace(/[.?!,;:]/g, '').trim();
                     if (fullTextOnly.length >= 2) {
                         googleChunks.push(text);
@@ -3286,38 +2852,21 @@ chrome.runtime.onConnect.addListener((port) => {
                         }
                     }
                 }
-
-
                 const executeGoogleFallback = async () => {
-
                     port.postMessage({ type: 'meta', total: googleChunks.length, lang: detectedLang });
-
                     const fetchChunk = async (chunk, index) => {
                         try {
                             const encodedText = encodeURIComponent(chunk);
-
                             const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${detectedLang}&client=tw-ob&q=${encodedText}&total=1&idx=0`;
-
                             const response = await fetch(url, { referrerPolicy: 'no-referrer' });
                             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
                             const contentType = response.headers.get('Content-Type');
-
-
-
                             if (contentType && !contentType.includes('audio') && !contentType.includes('mpeg')) {
                                 const text = await response.text();
-
                                 throw new Error('Invalid content type: ' + contentType);
                             }
-
-
                             const rawBlob = await response.blob();
-
-
                             const blob = new Blob([rawBlob], { type: 'audio/mpeg' });
-
-
                             return new Promise((resolve) => {
                                 const reader = new FileReader();
                                 reader.onloadend = () => {
@@ -3337,32 +2886,20 @@ chrome.runtime.onConnect.addListener((port) => {
                                 };
                                 reader.readAsDataURL(blob);
                             });
-
                         } catch (e) {
                             try { port.postMessage({ type: 'error', index: index, error: e.message }); } catch (err) { }
                         }
                     };
-
-
-
                     await Promise.all(googleChunks.map((chunk, index) => fetchChunk(chunk, index)));
                     try { port.postMessage({ type: 'done' }); } catch (e) { }
                 };
-
-
-
-
-
                 await executeGoogleFallback();
             }
         });
     }
 });
 
-
-
 async function translateTextGoogle(text, targetLang = 'vi') {
-
     let fromLang = 'auto';
     if (targetLang === 'en') {
         fromLang = 'vi';
@@ -3370,20 +2907,15 @@ async function translateTextGoogle(text, targetLang = 'vi') {
         fromLang = 'en';
     }
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         let translatedText = data[0].map(item => item[0]).join('');
-
-
         const letterPrefix = text.match(/^([a-z])\.\s*/i);
         if (letterPrefix) {
             translatedText = translatedText.replace(/^(Một|Hai|Ba|Bốn|Năm|Sáu|Bảy|Tám|Chín|Mười|[A-Z])\.\s*/, letterPrefix[0]);
         }
-
-
         const result = {
             type: 'sentence',
             original: text,
@@ -3421,7 +2953,6 @@ async function getActiveModelForTranslation() {
         'providers',
         'advancedParamsByModel'
     ]);
-
     let config = null;
     if (data.lastUsedModel && data.lastUsedModel.model) {
         const provider = data.providers?.find(p => p.id === data.lastUsedModel.providerId);
@@ -3436,25 +2967,20 @@ async function getActiveModelForTranslation() {
             };
         }
     }
-
     if (!config) {
         const chain = await getModelChain('text');
         if (chain && chain.length > 0) {
             config = chain[0];
         }
     }
-
     if (!config) return null;
-
     const advancedParamsByModel = data.advancedParamsByModel || {};
     const compositeKey = config.providerId ? `${config.providerId}:${config.model}` : config.model;
     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[config.model] || {};
-
     const currentModel = config.model;
     const isGemini = config.providerType === 'gemini' ||
         (currentModel && currentModel.toLowerCase().includes('gemini'));
     const isGemma4 = /gemma-4/i.test(currentModel);
-
     let thinkingLevel = modelParams.thinkingLevel || (isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none'));
     if (isGemma4) {
         if (thinkingLevel !== 'high') {
@@ -3463,40 +2989,31 @@ async function getActiveModelForTranslation() {
     } else if (isGemini && thinkingLevel === 'none') {
         thinkingLevel = 'minimal';
     }
-
     return { config, thinkingLevel };
 }
 
 async function translateTextWithAI(text, config, thinkingLevel, targetLang = 'vi') {
     const targetLanguageName = targetLang === 'en' ? 'English' : 'Vietnamese';
-
     const systemPrompt = `You are a professional, context-aware translator.
 Translate the user's text into the target language: ${targetLanguageName}.
 You MUST respond with a valid JSON array of objects representing sentence-by-sentence translation.
 Do not include any conversational filler, markdown formatting blocks (like \`\`\`json), or text outside the JSON array.
-
 Each object in the JSON array MUST have:
 1. "src": The exact original sentence from the input.
 2. "tgt": The translated sentence.
-
 Example Input:
 Hello. How are you today?
-
 Example Output:
 [
   {"src": "Hello.", "tgt": "Xin chào."},
   {"src": "How are you today?", "tgt": "Hôm nay bạn thế nào?"}
 ]`;
-
     const keys = getKeysArray(config.apiKey);
     const modelToUse = config.model;
-
     const normalizedThinkingLevel = (typeof thinkingLevel === 'string' ? thinkingLevel.trim().toLowerCase() : '');
-
     const response = await fetchWithRotation(keys, async (key) => {
         let payloadUrl = '';
         let payloadBody = {};
-
         if (config.providerType === 'gemini') {
             let baseEndpoint = config.endpoint.replace(/\/$/, '')
                 .replace(/\/openai\/chat\/completions$/, '')
@@ -3508,16 +3025,13 @@ Example Output:
                 urlModel = 'models/' + urlModel;
             }
             payloadUrl = `${baseEndpoint}/${urlModel}:generateContent`;
-
             const contents = [
                 { role: 'user', parts: [{ text: text }] }
             ];
-
             const geminiConfig = {
                 temperature: 0.3,
                 responseMimeType: 'application/json'
             };
-
             const isGemini3 = /gemini-[3-9]/i.test(modelToUse);
             if (isGemini3) {
                 geminiConfig.thinkingConfig = {
@@ -3530,7 +3044,6 @@ Example Output:
                     thinkingBudget: 0
                 };
             }
-
             payloadBody = {
                 contents,
                 system_instruction: {
@@ -3540,7 +3053,6 @@ Example Output:
             };
         } else {
             payloadUrl = normalizeOpenAICompatibleEndpoint(config.endpoint || 'https://api.groq.com/openai/v1/chat/completions', '/chat/completions');
-
             const openaiBody = {
                 model: modelToUse,
                 messages: [
@@ -3550,14 +3062,11 @@ Example Output:
                 temperature: 0.3,
                 response_format: { type: 'json_object' }
             };
-
             if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
                 openaiBody.reasoning_effort = normalizedThinkingLevel;
             }
-
             payloadBody = openaiBody;
         }
-
         const headers = { 'Content-Type': 'application/json' };
         if (key) {
             if (config.providerType === 'gemini') {
@@ -3566,19 +3075,16 @@ Example Output:
                 headers['Authorization'] = `Bearer ${key}`;
             }
         }
-
         return fetch(payloadUrl, {
             method: 'POST',
             headers,
             body: JSON.stringify(payloadBody)
         });
     });
-
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`AI Translation request failed: HTTP ${response.status} - ${errorText}`);
     }
-
     const resData = await response.json();
     let responseText = '';
     if (config.providerType === 'gemini') {
@@ -3586,7 +3092,6 @@ Example Output:
     } else {
         responseText = resData.choices?.[0]?.message?.content || '';
     }
-
     let sentences = [];
     try {
         sentences = extractJsonArray(responseText);
@@ -3594,13 +3099,10 @@ Example Output:
         console.error('[Lumina] Failed to parse JSON translation response:', responseText, e);
         throw new Error('Invalid JSON format from AI Translation');
     }
-
     if (!Array.isArray(sentences) || sentences.length === 0) {
         throw new Error('AI Translation returned empty or invalid structure');
     }
-
     const translatedText = sentences.map(s => s.tgt || '').join(' ');
-
     return {
         type: 'ai_translation',
         original: text,
@@ -3615,7 +3117,6 @@ Example Output:
 async function translateText(text, targetLang = 'vi') {
     const settings = await chrome.storage.local.get(['translateEngine']);
     const engine = settings.translateEngine || 'google';
-
     if (engine === 'ai') {
         try {
             const active = await getActiveModelForTranslation();
@@ -3637,13 +3138,11 @@ async function proofreadText(text) {
     const fromLang = 'auto';
     const targetLang = 'en';
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         let translatedText = data[0].map(item => item[0]).join('');
-
         return { corrected: translatedText };
     } catch (e) {
         console.error('[Lumina] Google Translate fallback for proofread failed:', e);
@@ -3651,25 +3150,17 @@ async function proofreadText(text) {
     }
 }
 
-
 async function handleChatStream(messages, initialContext, question, port, imageData = null, isSpotlight = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null, sessionId = null) {
     try {
         try {
             let activeUrl = port?.sender?.tab?.url;
             let activeTabId = port?.sender?.tab?.id;
-
             if (!activeUrl) {
-
-
                 const queryOptions = isSpotlight ? { active: true } : { active: true, currentWindow: true };
-
-
-
                 const tabs = await chrome.tabs.query(queryOptions);
                 if (tabs && tabs.length > 0) {
                     activeUrl = tabs[0].url;
                     activeTabId = tabs[0].id;
-
                     if (isSpotlight && activeUrl && activeUrl.includes(chrome.runtime.id)) {
                         const allActive = await chrome.tabs.query({ active: true });
                         const realTab = allActive.find(t => t.url && !t.url.includes(chrome.runtime.id));
@@ -3683,14 +3174,8 @@ async function handleChatStream(messages, initialContext, question, port, imageD
         } catch (e) {
             console.warn("[Lumina] Optional context extraction failed:", e);
         }
-
-
         const globalSettings = await chrome.storage.local.get(['responseLanguage', 'advancedParamsByModel']);
-
-
         let chain = await getModelChain('text', requestOptions.tabModel);
-
-
         const cleanMessages = (messages || []).map(m => {
             if (typeof m.content === 'string') {
                 let cleaned = m.content.replace(/(image-search:\/\/[^)#\s]+)#[^)\s]+/g, '$1');
@@ -3698,23 +3183,17 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             }
             return m;
         });
-
         if (!chain || chain.length === 0) {
             const errorMsg = { error: 'No valid AI models configured. Please check Options.' };
             if (sessionId) broadcastToSession(sessionId, errorMsg);
             else port.postMessage(errorMsg);
             return;
         }
-
-
         for (let i = 0; i < chain.length; i++) {
             const config = chain[i];
             try {
-
                 const isLast = i === chain.length - 1;
-
                 await executeChatRequest(config, cleanMessages, initialContext, question, port, imageData, isSpotlight, globalSettings, requestOptions, action, systemOverride, sessionId);
-
                 return;
             } catch (e) {
                 if (e.name === 'AbortError' || e.message?.includes('aborted') || e.message === 'signal is aborted without reason') {
@@ -3723,9 +3202,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                 }
                 if (e.message === 'RATE_LIMIT_EXHAUSTED') {
                     console.warn(`[Lumina] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
-
                     if (i < chain.length - 1) {
-
                         try {
                             const statusMsg = {
                                 action: 'status_update',
@@ -3738,11 +3215,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                         continue;
                     }
                 }
-
-
                 console.error(`[Lumina] Chat Chain failed at index ${i} (${config.model}):`, e);
-
-
                 const errorMsg = { error: e.message || "AI Request Failed" };
                 if (sessionId) broadcastToSession(sessionId, errorMsg);
                 else port.postMessage(errorMsg);
@@ -3757,30 +3230,20 @@ async function handleChatStream(messages, initialContext, question, port, imageD
     }
 }
 
-
-
-
-
-
-
-
 let creatingOffscreenParams = null;
 async function setupOffscreenDocument(path) {
     if (await chrome.offscreen.hasDocument()) {
         return;
     }
-
     if (creatingOffscreenParams) {
         await creatingOffscreenParams;
         return;
     }
-
     creatingOffscreenParams = chrome.offscreen.createDocument({
         url: path,
         reasons: [chrome.offscreen.Reason.AUDIO_PLAYBACK, chrome.offscreen.Reason.USER_MEDIA],
         justification: 'Play audio and record voice',
     });
-
     await creatingOffscreenParams;
     creatingOffscreenParams = null;
 }
@@ -3789,9 +3252,7 @@ async function playNativeTTS(text, speed = 1.0) {
     return new Promise((resolve, reject) => {
         chrome.tts.getVoices((voices) => {
             let voiceName = null;
-
             const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
-
             if (isVietnamese) {
                 const vnVoice = voices.find(v => v.voiceName.includes('Vietnamese') && (v.voiceName.includes('Natural') || v.voiceName.includes('Online')));
                 if (vnVoice) voiceName = vnVoice.voiceName;
@@ -3800,27 +3261,16 @@ async function playNativeTTS(text, speed = 1.0) {
                     if (vnAny) voiceName = vnAny.voiceName;
                 }
             } else {
-
                 let enVoice = voices.find(v => v.voiceName.includes('English') && v.voiceName.includes('Natural') && (v.voiceName.includes('United Kingdom') || v.voiceName.includes('Great Britain')));
-
-
                 if (!enVoice) enVoice = voices.find(v => v.voiceName.includes('English') && v.voiceName.includes('Natural') && v.voiceName.includes('United States'));
-
-
                 if (!enVoice) enVoice = voices.find(v => v.voiceName.includes('English') && (v.voiceName.includes('Natural') || v.voiceName.includes('Online')));
-
-
                 if (!enVoice) enVoice = voices.find(v => v.voiceName.includes('Microsoft') && v.voiceName.includes('English'));
-
                 if (enVoice) voiceName = enVoice.voiceName;
             }
-
             if (!voiceName) {
                 reject(new Error('No native natural voice'));
                 return;
             }
-
-
             chrome.tts.speak(text, {
                 voiceName: voiceName,
                 rate: speed,
@@ -3851,12 +3301,10 @@ async function playAudioOffscreen(url, speed = 1.0) {
 
 async function playEdgeTTSOffscreen(text, speed = 1.0) {
     let voice = 'en-GB-SoniaNeural';
-
     const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
     if (vietnameseRegex.test(text)) {
         voice = 'vi-VN-HoaiMyNeural';
     }
-
     if (!(await chrome.offscreen.hasDocument())) {
         await chrome.offscreen.createDocument({
             url: 'pages/offscreen/offscreen.html',
@@ -3864,7 +3312,6 @@ async function playEdgeTTSOffscreen(text, speed = 1.0) {
             justification: 'Play Edge TTS audio'
         });
     }
-
     return await chrome.runtime.sendMessage({
         action: 'offscreen_playEdgeTTS',
         text: text,
@@ -3873,9 +3320,7 @@ async function playEdgeTTSOffscreen(text, speed = 1.0) {
     });
 }
 
-
 async function playBase64AudioOffscreen(base64Data, speed = 1.0) {
-
     if (!(await chrome.offscreen.hasDocument())) {
         await chrome.offscreen.createDocument({
             url: 'pages/offscreen/offscreen.html',
@@ -3883,8 +3328,6 @@ async function playBase64AudioOffscreen(base64Data, speed = 1.0) {
             justification: 'Play audio chunks from Google TTS'
         });
     }
-
-
     return await chrome.runtime.sendMessage({
         action: 'offscreen_playBase64',
         data: base64Data,
@@ -3908,31 +3351,16 @@ async function stopGoogleAudioOffscreen() {
     }
 }
 
-
-
-
-
-
-
 async function fetchAudio(text, speed = 1.0, forcedLang = null) {
     if (!text) return { type: null, chunks: [] };
-
     let normalizedText = text.trim();
-
-
-
     normalizedText = normalizedText.replace(/_/g, ' ');
-
     const acronymsToSpellOut = ['id', 'url', 'ip', 'io', 'os', 'ui', 'db', 'api', 'ssl', 'tls', 'dto', 'dao'];
     acronymsToSpellOut.forEach(acronym => {
-
         const regex = new RegExp(`\\b${acronym}\\b`, 'gi');
         normalizedText = normalizedText.replace(regex, acronym.toUpperCase().split('').join(' '));
     });
-
     const wordCount = normalizedText.split(/\s+/).length;
-
-
     const detectLanguage = (t) => {
         let counts = { vietnamese: 0, chinese: 0, japanese: 0, korean: 0, cyrillic: 0, latin: 0 };
         const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;
@@ -3953,10 +3381,7 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         if (dominant[0] === 'latin' && counts.vietnamese > 0 && counts.vietnamese / counts.latin > 0.15) return 'vi';
         return langMap[dominant[0]] || 'en-GB';
     };
-
     const lang = forcedLang || detectLanguage(normalizedText);
-
-
     const fetchToBase64 = async (url, opts = {}) => {
         const response = await fetch(url, opts);
         if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status });
@@ -3967,39 +3392,24 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         const base64 = btoa(new Uint8Array(arrayBuffer).reduce((d, byte) => d + String.fromCharCode(byte), ''));
         return `data:audio/mpeg;base64,${base64}`;
     };
-
-
-
     const stripListPrefix = (q) =>
         q.replace(/^\s*(?:[a-zA-Z\d]{1,2}\)|[a-zA-Z\d]{1,2}\.|[•\-–—])\s+/, '').trim();
-
-
     const googleUrl = (q) => {
         const cleaned = stripListPrefix(q);
         return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleaned)}&tl=${lang}&total=1&idx=0&textlen=${cleaned.length}&client=gtx&prev=input&ttsspeed=${speed}`;
     };
-
-
-
-
-
     const MAX_CHUNK_CHARS = 200;
     const splitIntoChunks = (text) => {
-
         const sentences = text.match(/[^.?!]+[.?!]+/g) || [];
-
         const lastSentenceEnd = sentences.reduce((acc, s) => acc + s.length, 0);
         if (lastSentenceEnd < text.length) sentences.push(text.slice(lastSentenceEnd).trim());
         const level1 = sentences.map(s => s.trim()).filter(s => s.replace(/[.?!,;:]/g, '').trim().length >= 2);
         const base = level1.length >= 2 ? level1 : [text];
-
-
         const level2 = [];
         for (const chunk of base) {
             if (chunk.length <= MAX_CHUNK_CHARS) { level2.push(chunk); continue; }
             const clauses = chunk.split(/(?<=[,;–—])\s+/);
             if (clauses.length >= 2) {
-
                 let current = '';
                 for (const clause of clauses) {
                     if (current && (current + ' ' + clause).length > MAX_CHUNK_CHARS) {
@@ -4014,8 +3424,6 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
                 level2.push(chunk);
             }
         }
-
-
         const WORDS_PER_CHUNK = 25;
         const final = [];
         for (const chunk of level2) {
@@ -4027,8 +3435,6 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         }
         return final.filter(Boolean);
     };
-
-
     const fetchGoogle = async () => {
         try {
             const data = await fetchToBase64(googleUrl(normalizedText), { referrerPolicy: 'no-referrer' });
@@ -4036,7 +3442,6 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         } catch (e) {
             if (e.status !== 400) return [];
         }
-
         const chunks = splitIntoChunks(normalizedText);
         const results = new Array(chunks.length).fill(null);
         await Promise.all(chunks.map(async (chunk, i) => {
@@ -4045,33 +3450,20 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         }));
         return results.filter(Boolean);
     };
-
     if (wordCount <= 2) {
-
         const oxfordUrl = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${normalizedText.toLowerCase()}--_gb_1.mp3`;
         const oxfordPromise = fetchToBase64(oxfordUrl).catch(() => null);
         const googlePromise = fetchGoogle();
-
         const oxfordData = await oxfordPromise;
         if (oxfordData) {
             return { type: 'oxford', chunks: [oxfordData] };
         }
-
         const googleChunks = await googlePromise;
         return { type: 'google', chunks: googleChunks };
     }
-
-
     const googleChunks = await fetchGoogle();
     return { type: 'google', chunks: googleChunks };
 }
-
-
-
-
-
-
-
 
 const SEARXNG_INSTANCES = [
     'https://searx.be',
@@ -4129,12 +3521,10 @@ async function performWebSearch(query) {
             throw new Error(`DDG responded with status ${response.status}`);
         }
         const html = await response.text();
-
         if (html.includes('anomaly') || html.includes('captcha') || !html.includes('result__url')) {
             console.warn('[Lumina] DuckDuckGo blocked or returned no results. Trying SearXNG fallback...');
             return await performSearXNGSearch(query);
         }
-
         const results = [];
         const blocks = html.split('<div class="result results_links results_links_deep web-result ">');
         for (let i = 1; i < blocks.length && results.length < 5; i++) {
@@ -4145,7 +3535,6 @@ async function performWebSearch(query) {
                 let rawUrl = urlMatch[1];
                 let title = urlMatch[2].replace(/<[^>]*>/g, '').trim();
                 let snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, '').trim() : '';
-
                 let actualUrl = rawUrl;
                 if (rawUrl.includes('uddg=')) {
                     try {
@@ -4159,21 +3548,17 @@ async function performWebSearch(query) {
                         } catch (err) { }
                     }
                 }
-
                 title = title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
                 snippet = snippet.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-
                 results.push({ title, url: actualUrl, content: snippet });
             }
         }
-
         if (results.length > 0) {
             return results.map((r, idx) => `[Result ${idx + 1}]
 Title: ${r.title}
 URL: ${r.url}
 Snippet: ${r.content}`).join('\n\n');
         }
-
         return await performSearXNGSearch(query);
     } catch (e) {
         console.error('[Lumina] DDG search error, falling back to SearXNG...', e);
@@ -4200,15 +3585,10 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     const config = chain[0];
     const { model, providerType: currentProvider, endpoint, apiKey } = config;
     const keys = getKeysArray(apiKey);
-
     const systemInstruction = `Analyze the preceding conversation and generate a concise, descriptive chat title in 8 words or fewer. Capture the core topic, main intent, or action item directly without using filler words, matching the language of the prompt. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
-
-
-
     const attachments = [];
     if (Array.isArray(images)) attachments.push(...images);
     if (Array.isArray(files)) attachments.push(...files);
-
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
         temperature: 0.3, topP: 1.0, maxTokens: 100, parsedCustomParams: {},
@@ -4216,7 +3596,6 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
         imageData: attachments.length > 0 ? attachments : null,
         isStreaming: false, cachedContent: null
     };
-
     const response = await fetchWithRotation(keys, async (key) => {
         const payload = await buildApiPayload(history || [], question, systemInstruction, key, payloadParams);
         const headers = { 'Content-Type': 'application/json' };
@@ -4234,11 +3613,9 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
             body: JSON.stringify(payload.body)
         });
     });
-
     if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
     }
-
     const data = await response.json();
     let text = '';
     const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
@@ -4247,12 +3624,9 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     } else {
         text = data.choices?.[0]?.message?.content || '';
     }
-
-    
     let cleanedText = text.trim();
     const lines = cleanedText.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length > 1) {
-        
         const titleLine = lines.find(l => /^(corrected\s+)?title\s*:/i.test(l));
         if (titleLine) {
             cleanedText = titleLine;
@@ -4261,13 +3635,11 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
             cleanedText = lines[lines.length - 1];
         }
     }
-
     // Remove common prefixes
     cleanedText = cleanedText.replace(/^(corrected\s+)?title\s*:\s*/i, '');
     cleanedText = cleanedText.replace(/^(suggested\s+)?title\s*:\s*/i, '');
     cleanedText = cleanedText.replace(/^chat\s+title\s*:\s*/i, '');
     cleanedText = cleanedText.trim().replace(/^["']|["']$/g, '').trim();
-
     if (!cleanedText || cleanedText.length > 50) {
         const firstLine = text.split('\n')[0].trim().replace(/^["']|["']$/g, '').trim();
         if (firstLine && firstLine.length <= 50) {
@@ -4277,4 +3649,3 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     }
     return cleanedText;
 }
-

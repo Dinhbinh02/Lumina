@@ -8,7 +8,6 @@
     --shadow-color: rgba(0, 0, 0, 0.08);
 }
 
-
 @media (prefers-color-scheme: dark) {
     :root {
         --bg-color: #3c3c3c;
@@ -20,7 +19,6 @@
         --shadow-color: rgba(0, 0, 0, 0.3);
     }
 }
-
 
 [data-theme="light"] {
     --bg-color: #ffffff;
@@ -39,7 +37,6 @@
     --btn-hover-bg: #2d2d30;
     --shadow-color: rgba(0, 0, 0, 0.3);
 }
-
 
 [data-accent="default"] {
     --accent-color: #0056D2;
@@ -62,7 +59,6 @@
 [data-accent="rose"] {
     --accent-color: #e11d48;
 }
-
 
 [data-contrast="high"] {
     --border-color: rgba(0, 0, 0, 0.5) !important;

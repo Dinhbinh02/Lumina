@@ -37,42 +37,30 @@ function setPaneActiveThinking(pane = 'primary', level) {
 const container = document.querySelector('.lumina-chat-container');
 const fileInput = document.getElementById('file-input');
 
-
 function bindContainerWheelForward(containerEl) {
     if (!containerEl || containerEl.__luminaWheelBound) return;
     containerEl.__luminaWheelBound = true;
     let cachedScrollable = null;
-
-
-
-
     function attachScrollContentBlocker(scrollable) {
         if (!scrollable || scrollable.__luminaWheelStop) return;
         scrollable.__luminaWheelStop = true;
         scrollable.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
     }
-
-
     containerEl.addEventListener('wheel', (e) => {
-
         if (!cachedScrollable || cachedScrollable.style.display === 'none') {
             cachedScrollable = containerEl.querySelector('.lumina-chat-scroll-content:not([style*="display: none"])');
             if (cachedScrollable) attachScrollContentBlocker(cachedScrollable);
         }
         if (!cachedScrollable) return;
         e.preventDefault();
-
         let delta = e.deltaY;
         if (e.deltaMode === 1) delta *= 16;
         else if (e.deltaMode === 2) delta *= cachedScrollable.clientHeight;
         cachedScrollable.scrollBy({ top: delta, behavior: 'instant' });
     }, { passive: false });
-
-
     const existing = containerEl.querySelector('.lumina-chat-scroll-content');
     if (existing) attachScrollContentBlocker(existing);
 }
-
 
 let isWebApp = new URLSearchParams(window.location.search).get('webapp') === '1';
 const isSidePanel = new URLSearchParams(window.location.search).get('sidepanel') === '1';
@@ -82,8 +70,6 @@ if (isSidePanel) {
 
 function updateUrlSessionId(ignoredSessionId) {
     const urlParams = new URLSearchParams(window.location.search);
-
-    
     let sids = [];
     if (typeof isSplitMode !== 'undefined' && isSplitMode) {
         const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
@@ -104,15 +90,12 @@ function updateUrlSessionId(ignoredSessionId) {
             sids.push(primaryTab.sessionId);
         }
     }
-
     if (sids.length === 2 && sids[0] === '' && sids[1] === '') {
         sids = [];
     }
-
     if (urlParams.has('session_id')) {
         urlParams.delete('session_id');
     }
-
     const sidVal = sids.join(',');
     if (!sidVal) {
         if (urlParams.has('sid')) {
@@ -122,7 +105,6 @@ function updateUrlSessionId(ignoredSessionId) {
         }
         return;
     }
-
     if (urlParams.get('sid') !== sidVal) {
         urlParams.set('sid', sidVal);
         const newUrl = window.location.pathname + '?' + urlParams.toString();
@@ -165,7 +147,6 @@ const KEYS = {
     splitRatio: `${STORAGE_PREFIX}_split_ratio_${instanceId}`
 };
 
-
 let tabs = [];
 let sessionSettings = {};
 let sparksCache = {};
@@ -181,16 +162,13 @@ window.LuminaSelectionScope = {
     renderRecentChatsSidebar: () => { if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar(); }
 };
 
-
-const pageContextCache = new Map(); 
-
+const pageContextCache = new Map();
 
 let chatUI = null;
 let sharedInputUI = null;
 let sharedInputUISecondary = null;
 let chatUISecondary = null;
 let hoveredPane = 'primary';
-
 
 function getHoveredInputEl() {
     if (isSplitMode && hoveredPane === 'secondary' && sharedInputUISecondary?.inputEl) {
@@ -205,8 +183,6 @@ function getShortcutTargetTab() {
     }
     return tabs[activeTabIndex] || null;
 }
-
-
 
 let isSplitMode = false;
 let secondaryActiveTabIndex = -1;
@@ -226,7 +202,6 @@ function updatePaneHighlight() {
     const panePrimary = document.getElementById('pane-primary');
     const paneSecondary = document.getElementById('pane-secondary');
     if (!panePrimary) return;
-
     if (isSplitMode) {
         if (hoveredPane === 'secondary') {
             panePrimary.classList.remove('active');
@@ -253,20 +228,15 @@ async function toggleSplitMode() {
     const resizer = document.getElementById('spotlight-resizer');
     const panePrimary = document.getElementById('pane-primary');
     if (!splitContainer) return;
-
     if (isSplitMode) {
-        
         isSplitMode = false;
         secondaryActiveTabIndex = -1;
         chatUISecondary = null;
-
         splitContainer.classList.remove('split-mode');
         if (paneSecondary) paneSecondary.style.display = 'none';
         if (resizer) resizer.style.display = 'none';
-
         if (panePrimary) panePrimary.style.flex = '';
         if (paneSecondary) paneSecondary.style.flex = '';
-
         if (tabs.length > 1) {
             const secTab = tabs[1];
             if (secTab) {
@@ -276,59 +246,47 @@ async function toggleSplitMode() {
             }
             tabs = tabs.slice(0, 1);
         }
-
         const currentGroup = tabGroups[activeGroupIndex];
         if (currentGroup) {
             currentGroup.tabIds = currentGroup.tabIds.slice(0, 1);
             currentGroup.ratio = 100;
         }
-
         hoveredPane = 'primary';
         updatePaneHighlight();
-
         await chrome.storage.local.set({
             [KEYS.isSplitMode]: false,
             [GLOBAL_KEYS.isSplitMode]: false
         });
         saveTabsState();
-
         updateUrlSessionId(tabs[0]?.sessionId || null);
         updateRecentChatsActiveState();
         if (typeof sidebarSparksRenderList === 'function') {
             sidebarSparksRenderList();
         }
     } else {
-        
         if (isSidePanel) {
             return;
         }
-
         isSplitMode = true;
         secondaryActiveTabIndex = 1;
-
         splitContainer.classList.add('split-mode');
         if (paneSecondary) paneSecondary.style.display = 'flex';
         if (resizer) resizer.style.display = 'flex';
-
-        
         const storageData = await chrome.storage.local.get([KEYS.splitRatio]);
         const ratio = storageData[KEYS.splitRatio] || 50;
         if (panePrimary && paneSecondary) {
             panePrimary.style.flex = `${ratio}`;
             paneSecondary.style.flex = `${100 - ratio}`;
         }
-
         const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
         if (secondaryContainer) {
             secondaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
         }
-
         const initialHistorySecondary = document.createElement('div');
         initialHistorySecondary.id = 'chat-history-secondary';
         initialHistorySecondary.className = 'lumina-chat-scroll-content';
         initialHistorySecondary.style.display = 'block';
         if (secondaryContainer) secondaryContainer.appendChild(initialHistorySecondary);
-
         let modelObj = null;
         try {
             const modelData = await chrome.storage.local.get(['lastUsedModel']);
@@ -336,7 +294,6 @@ async function toggleSplitMode() {
                 modelObj = { ...modelData.lastUsedModel };
             }
         } catch (e) { }
-
         const secondaryTab = {
             id: 'tab-secondary',
             title: 'Chat 2',
@@ -358,13 +315,11 @@ async function toggleSplitMode() {
         secondaryTab.chatUIInstance.historyEl = initialHistorySecondary;
         secondaryTab.chatUIInstance.initListeners(initialHistorySecondary);
         bindHistoryScroll(secondaryTab);
-
         if (tabs.length > 1) {
             tabs[1] = secondaryTab;
         } else {
             tabs.push(secondaryTab);
         }
-
         const currentGroup = tabGroups[activeGroupIndex];
         if (currentGroup) {
             if (!currentGroup.tabIds.includes(secondaryTab.id)) {
@@ -372,7 +327,6 @@ async function toggleSplitMode() {
             }
             currentGroup.ratio = ratio;
         }
-
         chatUISecondary = secondaryTab.chatUIInstance;
         if (sharedInputUISecondary) {
             sharedInputUISecondary.historyEl = initialHistorySecondary;
@@ -383,18 +337,14 @@ async function toggleSplitMode() {
             if (typeof sharedInputUISecondary.refreshReasoningSelector === 'function') sharedInputUISecondary.refreshReasoningSelector();
             sharedInputUISecondary._updateActionBtnState();
         }
-
         initTopbarModelSelector('secondary');
-
         hoveredPane = 'secondary';
         updatePaneHighlight();
-
         await chrome.storage.local.set({
             [KEYS.isSplitMode]: true,
             [GLOBAL_KEYS.isSplitMode]: true
         });
         saveTabsState();
-
         updateUrlSessionId(null);
         updateRecentChatsActiveState();
         if (typeof sidebarSparksRenderList === 'function') {
@@ -426,14 +376,12 @@ let webTabPickerOutsideHandler = null;
 let webTabPickerKeyHandler = null;
 let minHeightReflowRaf = null;
 
-
 let spotlightAskSourcePane = 'primary';
 let groupCounter = 1;
 let isInitializing = false;
 let handledQueryIds = new Set();
 let myWindowId = null;
 let shouldStartNewChat = false;
-
 
 let modifierKeyPressedAlone = false;
 let lastSubmitTime = 0;
@@ -450,7 +398,6 @@ const GROUP_COLORS = [
     '#ff6d01',
     '#ff33b5'
 ];
-
 
 function applyFontSize(size) {
     if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.applyFontSize === 'function') {
@@ -473,7 +420,6 @@ function getWebSelectionScopeKey(spotlightTabId) {
     if (spotlightTabId == null || !currentBrowserTab) return null;
     return `${String(spotlightTabId)}_${String(currentBrowserTab.tabId)}`;
 }
-
 
 function getCurrentSpotlightTabId() {
     const tab = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex] : null;
@@ -506,7 +452,6 @@ function readWebSelectionFromStorage(scopeKey) {
 function writeWebSelectionToStorage(scopeKey, selection) {
     const key = getWebSelectionStorageKey(scopeKey);
     const validSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url));
-
     if (validSelection.length > 0) {
         localStorage.setItem(key, JSON.stringify(validSelection.map((source) => ({
             tabId: source.tabId,
@@ -527,8 +472,6 @@ function deleteWebSelectionFromStorage(scopeKey) {
 function getWebSelectionForScope(spotlightTabId) {
     const scopeKey = getWebSelectionScopeKey(spotlightTabId);
     if (!scopeKey) return [];
-
-
     webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(scopeKey);
     return webSourceSelectionsByPageTabId[scopeKey] || [];
 }
@@ -536,24 +479,18 @@ function getWebSelectionForScope(spotlightTabId) {
 function saveWebSelectionForScope(spotlightTabId, selection) {
     const scopeKey = getWebSelectionScopeKey(spotlightTabId);
     if (!scopeKey) return;
-
     const normalizedSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url)).map((source) => ({
         tabId: source.tabId,
         title: source.title,
         url: source.url,
         tokens: source.tokens || 0
     }));
-
     webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
     writeWebSelectionToStorage(scopeKey, normalizedSelection);
-
-
     if (normalizedSelection.length > 0) {
         refreshWebSourceTokens(spotlightTabId, normalizedSelection);
     }
 }
-
-
 
 async function ensureContentScriptsInjected(tabId) {
     try {
@@ -561,7 +498,6 @@ async function ensureContentScriptsInjected(tabId) {
             target: { tabId: tabId },
             func: () => typeof window.luminaExtractMainContent === 'function'
         }).catch(() => null);
-
         const isAlreadyInjected = checkResults && checkResults[0] && checkResults[0].result === true;
         if (!isAlreadyInjected) {
             console.log(`[Lumina] Re-injecting content scripts into tab ${tabId}...`);
@@ -582,19 +518,14 @@ async function ensureContentScriptsInjected(tabId) {
 async function fetchFreshWebContent(tabId) {
     const tabInfo = await chrome.tabs.get(parseInt(tabId)).catch(() => null);
     if (!tabInfo || tabInfo.status !== 'complete') return null;
-
     await ensureContentScriptsInjected(parseInt(tabId));
-
     try {
         const results = await chrome.scripting.executeScript({
             target: { tabId: parseInt(tabId), allFrames: true },
             func: () => typeof window.luminaExtractMainContent === 'function'
                 ? window.luminaExtractMainContent(document, true) : null
         });
-
         if (!results) return null;
-
-
         const texts = [];
         const cleanTextForCompare = (str) => {
             return str.replace(/\[Context Source:[^\]]+\]/g, '')
@@ -603,16 +534,13 @@ async function fetchFreshWebContent(tabId) {
                 .replace(/[^a-zA-Z0-9]/g, '')
                 .toLowerCase();
         };
-
         for (const r of results) {
             const ctx = r.result;
             if (!ctx || !ctx.content) continue;
             const text = ctx.content.trim();
             if (text.length < 100) continue;
-
             const cleanedNew = cleanTextForCompare(text);
             if (cleanedNew.length < 50) continue;
-
             const prefix = cleanedNew.substring(0, 200);
             let isDuplicate = false;
             for (const existing of texts) {
@@ -622,7 +550,6 @@ async function fetchFreshWebContent(tabId) {
                 }
             }
             if (isDuplicate) continue;
-
             texts.push(text);
         }
         return texts.length > 0 ? texts.join('\n\n') : null;
@@ -632,19 +559,15 @@ async function fetchFreshWebContent(tabId) {
     }
 }
 
-
 async function refreshWebSourceTokens(spotlightTabId, selection) {
     if (!selection || selection.length === 0) return;
     let updated = false;
-
     for (const source of selection) {
         try {
             const text = await fetchFreshWebContent(source.tabId);
             if (!text || text.length < 200) continue;
-
             const count = (typeof LuminaToken !== 'undefined') ? LuminaToken.count(text) : Math.ceil(text.length / 4);
             if (count < 10) continue;
-
             if (source.tokens !== count) {
                 source.tokens = count;
                 updated = true;
@@ -654,7 +577,6 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
             if (!source.tokens) source.tokens = 0;
         }
     }
-
     if (updated) {
         if (spotlightTabId) {
             const scopeKey = getWebSelectionScopeKey(spotlightTabId);
@@ -670,7 +592,6 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
 function saveCurrentWebSelection(spotlightTabId = null) {
     const targetTabId = spotlightTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
     if (!targetTabId) return;
-
     const scopedSelection = getWebSelectionForScope(targetTabId);
     saveWebSelectionForScope(targetTabId, scopedSelection);
 }
@@ -681,7 +602,6 @@ function loadCurrentWebSelection(spotlightTabId = null) {
         pinnedWebSources = [];
         return;
     }
-
     const selection = getWebSelectionForScope(targetTabId);
     pinnedWebSources = selection.map((source) => ({
         tabId: source.tabId,
@@ -692,19 +612,12 @@ function loadCurrentWebSelection(spotlightTabId = null) {
 
 function updateWebSelectionForTab(tabId, updater) {
     const stringTabId = String(tabId);
-
-
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
-
     storageKeys.forEach((storageKey) => {
         const scopeKey = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
-
-
         const selection = readWebSelectionFromStorage(scopeKey);
-
-
         let changed = false;
         const updatedSelection = selection.map((source) => {
             if (String(source.tabId) === stringTabId) {
@@ -716,20 +629,16 @@ function updateWebSelectionForTab(tabId, updater) {
             }
             return source;
         }).filter(Boolean);
-
         if (changed) {
             webSourceSelectionsByPageTabId[scopeKey] = updatedSelection;
             writeWebSelectionToStorage(scopeKey, updatedSelection);
         }
     });
-
     updateWebChips();
 }
 
 function refreshWebSourceTokensForTab(tabId) {
     const stringTabId = String(tabId);
-
-
     const pinnedMatch = pinnedWebSources.find(s => String(s.tabId) === stringTabId);
     if (pinnedMatch) {
         const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
@@ -737,24 +646,17 @@ function refreshWebSourceTokensForTab(tabId) {
             refreshWebSourceTokens(activeTabId, pinnedWebSources.filter(s => String(s.tabId) === stringTabId));
         }
     }
-
-
-
     const storageKeys = Object.keys(localStorage).filter((key) =>
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
-
     storageKeys.forEach((storageKey) => {
         const spotlightTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
         const selection = readWebSelectionFromStorage(spotlightTabId);
         const matches = selection.filter(s => String(s.tabId) === stringTabId);
-
         if (matches.length > 0) {
             refreshWebSourceTokens(spotlightTabId, matches);
         }
     });
-
-
     if (currentBrowserTab && String(currentBrowserTab.tabId) === stringTabId) {
         (async () => {
             const text = await fetchFreshWebContent(stringTabId);
@@ -772,7 +674,6 @@ function refreshWebSourceTokensForTab(tabId) {
 
 function isSelectionInsideEditable() {
     const sel = window.getSelection();
-
     if (sel && sel.rangeCount > 0 && sel.toString().trim().length > 0) {
         let node = sel.anchorNode;
         while (node && node !== document.documentElement) {
@@ -788,8 +689,6 @@ function isSelectionInsideEditable() {
             node = node.parentNode || (node.host && node.host.nodeType === 1 ? node.host : null);
         }
     }
-
-
     const active = document.activeElement;
     if (active && (
         ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(active.tagName) ||
@@ -799,7 +698,6 @@ function isSelectionInsideEditable() {
     )) {
         return true;
     }
-
     return false;
 }
 
@@ -807,37 +705,31 @@ function bindHistoryScroll(tab) {
     if (!tab || !tab.historyEl || tab.historyEl.__luminaScrollBound) return;
     tab.historyEl.__luminaScrollBound = true;
     let saveTimer = null;
-
     tab.historyEl.addEventListener('lumina:history-changed', (e) => {
         const force = e.detail && e.detail.force;
         saveTabsState(force);
     });
-
     tab.historyEl.addEventListener('scroll', () => {
         const scrollTop = tab.historyEl.scrollTop;
         const viewHeight = tab.historyEl.clientHeight || tab.historyEl.offsetHeight || 0;
         const scrollHeight = tab.historyEl.scrollHeight || 0;
         const nearBottom = scrollHeight - (scrollTop + viewHeight) <= 20;
-
         if (nearBottom) {
             tab.scrollTop = scrollTop;
             tab.isAtBottom = true;
             tab.scrollAnchorIndex = null;
             tab.scrollAnchorOffset = null;
-
             tab.userScrolledUp = false;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = false;
         } else {
             tab.scrollTop = scrollTop;
             tab.isAtBottom = false;
-
             tab.userScrolledUp = true;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = true;
         }
         const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
         if (entries.length > 0) {
             if (nearBottom) {
-
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => {
                     saveTabsState();
@@ -869,7 +761,6 @@ function showTopbarLoading(pane) {
         bar.style.transition = 'none';
         bar.style.transform = 'scaleX(0)';
         bar.classList.add('active');
-        
         bar.offsetHeight;
         bar.style.transition = 'transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.2s ease';
         bar.style.transform = 'scaleX(0.85)';
@@ -895,20 +786,16 @@ function restoreScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
     const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
     if (entries.length === 0) return;
-
     if (tab.scrollTop != null && tab.scrollTop !== -1) {
         tab.historyEl.scrollTop = tab.scrollTop;
         return;
     }
-
     if (tab.isAtBottom) {
         tab.historyEl.scrollTop = tab.historyEl.scrollHeight;
         return;
     }
-
     if (tab.scrollAnchorIndex != null && tab.scrollAnchorIndex < entries.length) {
         const anchor = entries[tab.scrollAnchorIndex];
-
         const baseTarget = LuminaChatUI.calculateInitialScrollTarget(anchor, tab.historyEl);
         tab.historyEl.scrollTop = baseTarget + (tab.scrollAnchorOffset || 0);
     }
@@ -918,10 +805,8 @@ function restoreLatestScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
     const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
     if (entries.length === 0) return;
-
     const latestEntry = entries[entries.length - 1];
     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
-
     tab.historyEl.scrollTop = targetScrollTop;
     tab.scrollTop = targetScrollTop;
 }
@@ -955,44 +840,31 @@ function scheduleScrollRestore(tab) {
     setTimeout(performRestore, 40);
 }
 
-
 async function handleRemoteSync(changes, areaName) {
     if (areaName !== 'local') return;
-
-
     if (changes[KEYS.tabs] || changes[KEYS.tabGroups]) {
         const newTabsMeta = changes[KEYS.tabs] ? changes[KEYS.tabs].newValue : null;
         const newGroupsMeta = changes[KEYS.tabGroups] ? changes[KEYS.tabGroups].newValue : null;
-
         if (newTabsMeta) {
             const currentActiveTab = tabs[activeTabIndex];
             const currentActiveSessionId = currentActiveTab ? currentActiveTab.sessionId : null;
-
-
             const currentTabIds = tabs.map(t => t.id).join(',');
             const nextTabIds = newTabsMeta.map(t => t.id).join(',');
-
             const metadataChanged = newTabsMeta.some((meta, i) => {
                 const t = tabs[i];
                 if (!t) return true;
                 return t.title !== meta.title || t.sessionId !== meta.sessionId || (t.sparkId || null) !== (meta.sparkId || null);
             });
-
             if (currentTabIds !== nextTabIds || metadataChanged || (newGroupsMeta && JSON.stringify(newGroupsMeta) !== JSON.stringify(tabGroups))) {
-
-
                 const nextIds = new Set(newTabsMeta.map(m => m.id));
                 tabs = tabs.filter(t => {
                     if (nextIds.has(t.id)) return true;
                     if (t.historyEl) t.historyEl.remove();
                     return false;
                 });
-
-
                 for (let i = 0; i < newTabsMeta.length; i++) {
                     const meta = newTabsMeta[i];
                     let existing = tabs.find(t => t.id === meta.id);
-
                     if (existing) {
                         const isCurrentActive = (activeTabIndex !== -1 && tabs[activeTabIndex] && tabs[activeTabIndex].id === existing.id);
                         const sessionChanged = !isCurrentActive && existing.sessionId !== meta.sessionId;
@@ -1005,7 +877,6 @@ async function handleRemoteSync(changes, areaName) {
                         if (!isCurrentActive) {
                             existing.sessionId = meta.sessionId;
                         }
-
                         if (isCurrentActive && oldSparkId !== existing.sparkId) {
                             if (existing.sparkId) {
                                 if (typeof openSparkChat === 'function') {
@@ -1017,7 +888,6 @@ async function handleRemoteSync(changes, areaName) {
                                 }
                             }
                         }
-
                         if (sessionChanged) {
                             existing.isHistoryLoaded = false;
                             const isActive = (activeTabIndex !== -1 && tabs[activeTabIndex] && tabs[activeTabIndex].id === existing.id);
@@ -1031,7 +901,6 @@ async function handleRemoteSync(changes, areaName) {
                         historyEl.style.display = 'none';
                         const primaryContainer = document.querySelector('.lumina-chat-container') || container;
                         primaryContainer.appendChild(historyEl);
-
                         const newTab = {
                             id: meta.id,
                             title: meta.title || 'New Tab',
@@ -1053,21 +922,14 @@ async function handleRemoteSync(changes, areaName) {
                         tabs.push(newTab);
                     }
                 }
-
-
                 tabs.sort((a, b) => {
                     const idxA = newTabsMeta.findIndex(m => m.id === a.id);
                     const idxB = newTabsMeta.findIndex(m => m.id === b.id);
                     return idxA - idxB;
                 });
-
                 if (newGroupsMeta) tabGroups = newGroupsMeta;
-
-
                 const counterData = await chrome.storage.local.get([KEYS.tabCounter]);
                 if (counterData[KEYS.tabCounter]) tabCounter = counterData[KEYS.tabCounter];
-
-                
                 let resolvedActiveGroupIndex = activeGroupIndex;
                 if (currentActiveSessionId) {
                     const targetTab = tabs.find(t => t.sessionId === currentActiveSessionId);
@@ -1081,10 +943,8 @@ async function handleRemoteSync(changes, areaName) {
                 if (resolvedActiveGroupIndex === -1 || resolvedActiveGroupIndex >= tabGroups.length) {
                     resolvedActiveGroupIndex = 0;
                 }
-
                 renderTabs();
                 if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
-
                 if (activeGroupIndex !== resolvedActiveGroupIndex) {
                     switchGroup(resolvedActiveGroupIndex, true);
                 } else {
@@ -1103,8 +963,6 @@ async function handleRemoteSync(changes, areaName) {
             }
         }
     }
-
-
     for (const key in changes) {
         if (key.startsWith('lumina_session_')) {
             const sid = key.replace('lumina_session_', '');
@@ -1113,14 +971,12 @@ async function handleRemoteSync(changes, areaName) {
             if (isRecentLocalSave) {
                 continue;
             }
-
             const affected = tabs.filter(t => t.sessionId === sid);
             if (affected.length > 0) {
                 const isGeneratingLocally = (
                     (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid) ||
                     (sharedInputUISecondary && sharedInputUISecondary.isGenerating && streamingTab && streamingTab.sessionId === sid)
                 );
-
                 if (!isGeneratingLocally) {
                     const messages = changes[key].newValue;
                     if (messages && Array.isArray(messages)) {
@@ -1133,7 +989,6 @@ async function handleRemoteSync(changes, areaName) {
                                 sessionId: sid,
                                 timestamp: meta.createdAt || meta.updatedAt
                             };
-
                             affected.forEach(async (tab) => {
                                 if (isRecentLocalSave && window._lastSavingHistoryEl === tab.historyEl) {
                                     return;
@@ -1143,14 +998,12 @@ async function handleRemoteSync(changes, areaName) {
                                     await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                                     normalizeRestoredHistory(tab.historyEl);
                                     if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
-
                                     const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
                                     const lastEntry = entries[entries.length - 1];
                                     if (lastEntry && tab.chatUIInstance) {
                                         tab.chatUIInstance.clearEntryMargins(lastEntry);
                                         tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
                                     }
-
                                     tab.historyEl.scrollTop = savedScrollTop;
                                 }
                             });
@@ -1160,15 +1013,10 @@ async function handleRemoteSync(changes, areaName) {
             }
         }
     }
-
-
     if (changes['lumina_chat_sessions']) {
         const oldSessions = changes['lumina_chat_sessions'].oldValue || {};
         const newSessions = changes['lumina_chat_sessions'].newValue || {};
-
-
         const deletedIds = Object.keys(oldSessions).filter(id => !newSessions[id]);
-
         if (deletedIds.length > 0) {
             let updated = false;
             tabs.forEach((tab, index) => {
@@ -1178,7 +1026,6 @@ async function handleRemoteSync(changes, areaName) {
                     if (isActive || isSecondary) {
                         const ui = isSecondary ? sharedInputUISecondary : sharedInputUI;
                         if (ui && ui.isGenerating) {
-                            
                             console.log('[Lumina] Suppressing resetChat on active generation for tab:', tab.sessionId);
                         } else {
                             resetChat(isSecondary);
@@ -1208,31 +1055,23 @@ async function handleRemoteSync(changes, areaName) {
 }
 
 function normalizeTabs() {
-
     const idMap = {};
     tabs.forEach((tab, index) => {
         const newNum = index + 1;
         const newId = `tab-${newNum}`;
         const oldId = tab.id;
-
         idMap[oldId] = newId;
         tab.id = newId;
-
         if (tab.historyEl) {
             tab.historyEl.id = `chat-history-tab-${newNum}`;
         }
     });
-
-
     tabGroups.forEach(group => {
         if (group.tabIds) {
             group.tabIds = group.tabIds.map(oldId => idMap[oldId] || oldId);
         }
     });
-
-
     tabCounter = tabs.length;
-
     renderTabs();
     saveTabsState();
 }
@@ -1243,20 +1082,16 @@ async function ensureTabHistoryLoaded(tab) {
     if (tab.isLoadingHistory) {
         return tab.loadingPromise;
     }
-
     tab.isLoadingHistory = true;
     tab.loadingPromise = (async () => {
         if (tab.sessionId) {
             const isSecondary = (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex !== -1 && tabs[secondaryActiveTabIndex] && tabs[secondaryActiveTabIndex].id === tab.id) || tab.id === 'tab-secondary';
             const pane = isSecondary ? 'secondary' : 'primary';
-
             showTopbarLoading(pane);
-
             if (tab.historyEl) {
                 tab.historyEl.style.opacity = '0';
                 tab.historyEl.style.transition = 'none';
             }
-
             try {
                 const contentKey = `lumina_session_${tab.sessionId}`;
                 const contentData = await chrome.storage.local.get([contentKey]);
@@ -1271,17 +1106,14 @@ async function ensureTabHistoryLoaded(tab) {
                         sessionId: tab.sessionId,
                         timestamp: meta.createdAt || meta.updatedAt
                     };
-
                     await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                     normalizeRestoredHistory(tab.historyEl);
-
                     const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
                     if (allEntries.length > 0 && tab.chatUIInstance) {
                         const lastEntry = allEntries[allEntries.length - 1];
                         tab.chatUIInstance.clearEntryMargins(lastEntry);
                         tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
                     }
-
                     scheduleScrollRestore(tab);
                     if (window.LuminaAnnotation) {
                         LuminaAnnotation.loadHighlights(tab.id);
@@ -1307,7 +1139,6 @@ async function ensureTabHistoryLoaded(tab) {
             }
         }
     })();
-
     return tab.loadingPromise;
 }
 
@@ -1316,31 +1147,25 @@ async function initTabs() {
     if (topBar) {
         topBar.style.display = 'flex';
     }
-
     const primaryContainer = document.querySelector('#pane-primary .lumina-chat-container');
     const secondaryContainer = document.querySelector('#pane-secondary .lumina-chat-container');
-
     if (primaryContainer) {
         primaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
     }
     if (secondaryContainer) {
         secondaryContainer.querySelectorAll('.lumina-chat-scroll-content').forEach(el => el.remove());
     }
-
     tabs = [];
-
     const initialHistory = document.createElement('div');
     initialHistory.id = 'chat-history';
     initialHistory.className = 'lumina-chat-scroll-content';
     initialHistory.style.display = 'none';
     if (primaryContainer) primaryContainer.appendChild(initialHistory);
-
     const initialHistorySecondary = document.createElement('div');
     initialHistorySecondary.id = 'chat-history-secondary';
     initialHistorySecondary.className = 'lumina-chat-scroll-content';
     initialHistorySecondary.style.display = 'none';
     if (secondaryContainer) secondaryContainer.appendChild(initialHistorySecondary);
-
     try {
         let namespacedExists = false;
         try {
@@ -1349,7 +1174,6 @@ async function initTabs() {
                 namespacedExists = true;
             }
         } catch (e) { }
-
         if (!namespacedExists) {
             try {
                 const globalData = await chrome.storage.local.get([
@@ -1381,7 +1205,6 @@ async function initTabs() {
                 console.warn('[Spotlight] Failed to copy global keys to namespace keys:', e);
             }
         }
-
         const data = await chrome.storage.local.get([
             KEYS.tabs,
             KEYS.activeTabIndex,
@@ -1394,33 +1217,27 @@ async function initTabs() {
         ]);
         sessionSettings = data.lumina_session_settings || {};
         sparksCache = data.lumina_sparks || {};
-
         const urlParams = new URLSearchParams(window.location.search);
         const sidParam = urlParams.get('sid') || urlParams.get('session_id');
         const urlSessionIds = sidParam ? sidParam.split(',') : [];
         const urlSessionId = urlSessionIds[0] || null;
         const urlSecSessionId = urlSessionIds[1] || null;
-
         let savedTab = null;
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 0) {
             const activeIdx = data[KEYS.activeTabIndex] || 0;
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
-
         let sessionId = (shouldStartNewChat || isWebApp) ? null : (urlSessionId || savedTab?.sessionId || null);
         let tabTitle = 'Chat';
         let meta = {};
-
         if (sessionId) {
             const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
             const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
             meta = sessions[sessionId] || {};
             tabTitle = meta.title || 'Chat';
         }
-
         let activeModel = getPaneActiveModel('primary');
         let activeThinking = getPaneActiveThinking('primary');
-
         if (!activeModel) {
             activeModel = savedTab?.selectedModel || (sessionId ? (sessionSettings[sessionId]?.selectedModel || meta.selectedModel) : sessionSettings['null']?.selectedModel) || null;
             if (activeModel) {
@@ -1433,7 +1250,6 @@ async function initTabs() {
                 setPaneActiveThinking('primary', activeThinking);
             }
         }
-
         const singleTab = {
             id: 'tab-1',
             title: tabTitle,
@@ -1465,24 +1281,19 @@ async function initTabs() {
         singleTab.chatUIInstance.initListeners(initialHistory);
         bindHistoryScroll(singleTab);
         tabs.push(singleTab);
-
         initialHistory.style.display = 'block';
         setTimeout(() => {
             ensureTabHistoryLoaded(singleTab);
         }, 0);
-
         activeTabIndex = 0;
         activeGroupIndex = 0;
         tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
-
-        
         let storedSplitMode = isWebApp ? false : (data[KEYS.isSplitMode] ?? false);
         let savedSecTab = null;
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
             savedSecTab = data[KEYS.tabs][1];
         }
         let secSessionId = urlSecSessionId || savedSecTab?.sessionId || null;
-
         if (storedSplitMode && (!secSessionId || isSidePanel)) {
             storedSplitMode = false;
             chrome.storage.local.set({
@@ -1490,7 +1301,6 @@ async function initTabs() {
                 [GLOBAL_KEYS.isSplitMode]: false
             });
         }
-
         if (storedSplitMode) {
             isSplitMode = true;
             secondaryActiveTabIndex = 1;
@@ -1501,7 +1311,6 @@ async function initTabs() {
             const panePrimary = document.getElementById('pane-primary');
             if (paneSecondary) paneSecondary.style.display = 'flex';
             if (resizer) resizer.style.display = 'flex';
-
             let ratio = data[KEYS.splitRatio] || 50;
             if (panePrimary && paneSecondary) {
                 panePrimary.style.flex = `${ratio}`;
@@ -1509,17 +1318,14 @@ async function initTabs() {
             }
             let secTabTitle = savedSecTab?.title || 'Chat 2';
             let secMeta = {};
-
             if (secSessionId) {
                 const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
                 const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
                 secMeta = sessions[secSessionId] || {};
                 secTabTitle = secMeta.title || 'Chat 2';
             }
-
             let secActiveModel = getPaneActiveModel('secondary');
             let secActiveThinking = getPaneActiveThinking('secondary');
-
             if (!secActiveModel) {
                 secActiveModel = savedSecTab?.selectedModel || (secSessionId ? (sessionSettings[secSessionId]?.selectedModel || secMeta.selectedModel) : sessionSettings['null']?.selectedModel) || null;
                 if (secActiveModel) {
@@ -1532,7 +1338,6 @@ async function initTabs() {
                     setPaneActiveThinking('secondary', secActiveThinking);
                 }
             }
-
             const secondaryTab = {
                 id: 'tab-secondary',
                 title: secTabTitle,
@@ -1565,57 +1370,45 @@ async function initTabs() {
             bindHistoryScroll(secondaryTab);
             tabs.push(secondaryTab);
             chatUISecondary = secondaryTab.chatUIInstance;
-
             setTimeout(() => {
                 initTopbarModelSelector('secondary');
             }, 0);
-
             initialHistorySecondary.style.display = 'block';
             setTimeout(() => {
                 ensureTabHistoryLoaded(secondaryTab);
             }, 0);
         }
-
         const modelData = await chrome.storage.local.get(['lastUsedModel']);
         if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
             if (!singleTab.selectedModel) singleTab.selectedModel = { ...modelData.lastUsedModel };
             singleTab.chatUIInstance.activeTabModel = { ...singleTab.selectedModel };
-
             if (storedSplitMode && tabs[1]) {
                 if (!tabs[1].selectedModel) tabs[1].selectedModel = { ...modelData.lastUsedModel };
                 tabs[1].chatUIInstance.activeTabModel = { ...tabs[1].selectedModel };
             }
         }
-
         if (data.lumina_youtube_trigger) {
             setTimeout(() => handleYouTubeTrigger(data.lumina_youtube_trigger), 100);
         }
     } catch (e) {
         console.error('[Spotlight] initTabs failed:', e);
     }
-
-
     const primaryC = document.querySelector('.lumina-chat-container') || container;
     bindContainerWheelForward(primaryC);
-
-
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) {
         const newBtn = newTabBtn.cloneNode(true);
         newTabBtn.parentNode.replaceChild(newBtn, newTabBtn);
         newBtn.addEventListener('click', () => createTab());
     }
-
     const topbarNewChatBtn = document.getElementById('topbar-new-chat-btn');
     if (topbarNewChatBtn) {
         topbarNewChatBtn.addEventListener('click', () => resetChat(false));
     }
-
     const topbarNewChatBtnSec = document.getElementById('topbar-new-chat-btn-secondary');
     if (topbarNewChatBtnSec) {
         topbarNewChatBtnSec.addEventListener('click', () => resetChat(true));
     }
-
     const topbarMoreBtn = document.getElementById('topbar-more-btn');
     const topbarDropdown = document.getElementById('topbar-dropdown-menu');
     if (topbarMoreBtn && topbarDropdown) {
@@ -1631,20 +1424,17 @@ async function initTabs() {
                 if (secModelDropdown) secModelDropdown.classList.remove('active');
                 if (mainModelDropdown) mainModelDropdown.classList.remove('active');
                 if (secMoreDropdown) secMoreDropdown.style.display = 'none';
-
                 topbarDropdown.style.display = 'flex';
                 topbarDropdown.classList.remove('expanded');
                 renderDropdownMenu('primary');
             }
         });
-
         document.addEventListener('click', (e) => {
             if (!topbarDropdown.contains(e.target) && e.target !== topbarMoreBtn) {
                 topbarDropdown.style.display = 'none';
             }
         });
     }
-
     const topbarMoreBtnSec = document.getElementById('topbar-more-btn-secondary');
     const topbarDropdownSec = document.getElementById('topbar-dropdown-menu-secondary');
     if (topbarMoreBtnSec && topbarDropdownSec) {
@@ -1660,21 +1450,17 @@ async function initTabs() {
                 if (mainModelDropdown) mainModelDropdown.classList.remove('active');
                 if (secModelDropdown) secModelDropdown.classList.remove('active');
                 if (mainMoreDropdown) mainMoreDropdown.style.display = 'none';
-
                 topbarDropdownSec.style.display = 'flex';
                 topbarDropdownSec.classList.remove('expanded');
                 renderDropdownMenu('secondary');
             }
         });
-
         document.addEventListener('click', (e) => {
             if (!topbarDropdownSec.contains(e.target) && e.target !== topbarMoreBtnSec) {
                 topbarDropdownSec.style.display = 'none';
             }
         });
     }
-
-
     window.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 't') {
             e.preventDefault();
@@ -1690,7 +1476,6 @@ async function initTabs() {
             e.preventDefault();
             let targetIdx = activeTabIndex;
             try {
-
                 const hoverEls = document.querySelectorAll(':hover');
                 if (hoverEls.length > 0) {
                     const deepestHover = hoverEls[hoverEls.length - 1];
@@ -1722,24 +1507,19 @@ function createTab(switchToIt = true) {
 }
 
 function duplicateTab(index) {
-    
 }
 
 function switchGroup(groupIndex, skipScrollRestore = false) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
-
     const previousGroup = (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) ? tabGroups[activeGroupIndex] : null;
     const previousPrimaryTab = previousGroup ? tabs.find(t => t.id === previousGroup.tabIds[0]) : null;
     const previousSecondaryTab = previousGroup && previousGroup.tabIds.length > 1
         ? tabs.find(t => t.id === previousGroup.tabIds[1])
         : null;
-
-
     if (activeGroupIndex >= 0 && activeGroupIndex < tabGroups.length) {
         const oldGroup = tabGroups[activeGroupIndex];
         const oldPrimary = tabs.find(t => t.id === oldGroup.tabIds[0]);
         const oldSecondary = oldGroup.tabIds.length > 1 ? tabs.find(t => t.id === oldGroup.tabIds[1]) : null;
-
         if (oldPrimary) {
             if (sharedInputUI?.getInputState) oldPrimary.inputState = sharedInputUI.getInputState();
             oldPrimary.selectedModel = sharedInputUI?.activeTabModel || oldPrimary.selectedModel || null;
@@ -1751,33 +1531,23 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
             oldSecondary.thinkingLevel = sharedInputUISecondary?.thinkingLevel || oldSecondary.thinkingLevel || null;
         }
     }
-
-
     tabs.forEach(t => {
         if (t.historyEl) t.historyEl.style.display = 'none';
     });
-
     activeGroupIndex = groupIndex;
     const group = tabGroups[groupIndex];
-
     const primaryTab = tabs.find(t => t.id === group.tabIds[0]);
     const secondaryTab = group.tabIds.length > 1 ? tabs.find(t => t.id === group.tabIds[1]) : null;
-
     ensureTabHistoryLoaded(primaryTab);
     if (secondaryTab) {
         ensureTabHistoryLoaded(secondaryTab);
     }
-
     activeTabIndex = tabs.indexOf(primaryTab);
-
     isSplitMode = false;
-
     secondaryActiveTabIndex = -1;
-
     const primaryContainer = document.querySelector('.lumina-chat-container');
     primaryContainer.appendChild(primaryTab.historyEl);
     primaryTab.historyEl.style.display = 'block';
-
     chatUI = primaryTab.chatUIInstance;
     chatUI.inputPaneEl = document.getElementById('input-area');
     const sidKey = primaryTab.sessionId || 'null';
@@ -1798,21 +1568,16 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     }
     updateInputPlaceholder();
     syncTabUI(primaryTab, false, skipScrollRestore);
-
-
     loadCurrentWebSelection(primaryTab?.id || null);
     updateWebChips();
-
     if (typeof window.updateTopbarModelSelector === 'function') {
         window.updateTopbarModelSelector();
     }
-
     renderTabs();
     saveTabsState();
     if (primaryTab && primaryTab.sessionId) {
         updateUrlSessionId(primaryTab.sessionId);
     }
-
     if (window.LuminaAnnotation) {
         LuminaAnnotation.clearAllHighlights();
         LuminaAnnotation.loadHighlights(primaryTab.id);
@@ -1824,31 +1589,25 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
 
 function activateSubTab(groupIndex, targetTabId) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
-
     const group = tabGroups[groupIndex];
     if (!group || !Array.isArray(group.tabIds) || group.tabIds.length === 0) return;
-
     const targetIndex = group.tabIds.indexOf(targetTabId);
     if (targetIndex === -1) {
         switchGroup(groupIndex);
         return;
     }
-
     if (targetIndex > 0) {
         const [movedTabId] = group.tabIds.splice(targetIndex, 1);
         group.tabIds.unshift(movedTabId);
     }
-
     switchGroup(groupIndex);
 }
 
 function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
     if (!tab || !tab.historyEl) return;
-
     if (tab.scrollTop !== -1) {
         tab.historyEl.scrollTop = tab.scrollTop;
     }
-
     const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
     if (allEntries.length > 0) {
         const lastEntry = allEntries[allEntries.length - 1];
@@ -1856,13 +1615,11 @@ function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
             tab.chatUIInstance.adjustEntryMargin(lastEntry, 'none');
         });
     }
-
     const regenBtn = document.getElementById('lumina-regenerate-btn');
     if (regenBtn) {
         const hasEntry = tab.historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card');
         regenBtn.style.display = hasEntry ? 'flex' : 'none';
     }
-
     if (!skipScrollRestore) {
         scheduleScrollRestore(tab);
     }
@@ -1870,16 +1627,10 @@ function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
 
 function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
     isApplyingSplit = true;
-
-
     const group1Idx = tabGroups.findIndex(g => g.tabIds.includes(primaryTabId));
     let group2Idx = tabGroups.findIndex(g => g.tabIds.includes(secondaryTabId));
-
     if (group1Idx === -1 || group2Idx === -1) return;
-
-
     if (group1Idx === group2Idx) {
-
         const g = tabGroups[group1Idx];
         if (g.tabIds[0] !== primaryTabId) {
             g.tabIds.reverse();
@@ -1888,19 +1639,12 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
         isApplyingSplit = false;
         return;
     }
-
-
     const g1 = tabGroups[group1Idx];
     const g2 = tabGroups[group2Idx];
-
     g2.tabIds = g2.tabIds.filter(id => id !== secondaryTabId);
-
-
     if (g1.tabIds.length >= 2) {
         const expelledTabId = g1.tabIds[1];
         g1.tabIds = [g1.tabIds[0]];
-
-
         const tabIndex = tabs.findIndex(t => t.id === expelledTabId);
         if (tabIndex !== -1) {
             const tabToRemove = tabs[tabIndex];
@@ -1908,20 +1652,13 @@ function applySplit(primaryTabId, secondaryTabId, ratio = 50) {
             if (tabToRemove.historyEl) tabToRemove.historyEl.remove();
         }
     }
-
-
     g1.tabIds.push(secondaryTabId);
     g1.ratio = ratio;
-
-
     if (g2.tabIds.length === 0) {
         const idxToRemove = tabGroups.findIndex(g => g.id === g2.id);
         if (idxToRemove !== -1) tabGroups.splice(idxToRemove, 1);
     }
-
-
     const newG1Idx = tabGroups.findIndex(g => g.id === g1.id);
-
     switchGroup(newG1Idx);
     isApplyingSplit = false;
     saveTabsState();
@@ -1936,15 +1673,11 @@ function setupResizer() {
     const paneSecondary = document.getElementById('pane-secondary');
     const splitContainer = document.getElementById('split-container');
     if (!resizer || !panePrimary || !paneSecondary || !splitContainer) return;
-
     let isDragging = false;
     let animationFrameId = null;
-
-    
     let cachedAvailableWidth = 0;
     let cachedOffsetLeft = 0;
     let lastPercentage = 50;
-
     resizer.addEventListener('mousedown', (e) => {
         e.preventDefault();
         isDragging = true;
@@ -1953,8 +1686,6 @@ function setupResizer() {
         document.body.style.cursor = 'col-resize';
         panePrimary.style.pointerEvents = 'none';
         paneSecondary.style.pointerEvents = 'none';
-
-        
         const containerRect = splitContainer.getBoundingClientRect();
         const style = window.getComputedStyle(splitContainer);
         const paddingLeft = parseFloat(style.paddingLeft) || 0;
@@ -1963,36 +1694,23 @@ function setupResizer() {
         cachedAvailableWidth = containerRect.width - paddingLeft - paddingRight - resizer.offsetWidth;
         lastPercentage = parseFloat(panePrimary.style.width) || 50;
     });
-
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         if (animationFrameId) return;
-
-        
         const clientX = e.clientX;
-
         animationFrameId = requestAnimationFrame(() => {
             animationFrameId = null;
             if (!isDragging || cachedAvailableWidth <= 0) return;
-
             let percentage = ((clientX - cachedOffsetLeft) / cachedAvailableWidth) * 100;
             if (percentage < 20) percentage = 20;
             else if (percentage > 80) percentage = 80;
-
-            
             if (percentage >= 47.5 && percentage <= 52.5) percentage = 50;
-
-            
             if (Math.abs(percentage - lastPercentage) < 0.05) return;
             lastPercentage = percentage;
-
-            
-            
             panePrimary.style.flex = `0 0 ${percentage}%`;
             paneSecondary.style.flex = `0 0 ${100 - percentage}%`;
         });
     });
-
     document.addEventListener('mouseup', () => {
         if (isDragging) {
             isDragging = false;
@@ -2001,12 +1719,10 @@ function setupResizer() {
             document.body.style.cursor = '';
             panePrimary.style.pointerEvents = '';
             paneSecondary.style.pointerEvents = '';
-
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
             }
-
             const newRatio = lastPercentage;
             chrome.storage.local.set({
                 [KEYS.splitRatio]: newRatio,
@@ -2019,17 +1735,12 @@ function setupResizer() {
 function closeTab(tabId) {
     const tabIndex = tabs.findIndex(t => t.id === tabId);
     if (tabIndex === -1) return;
-
     const tabToRemove = tabs[tabIndex];
-
-
     const groupIdx = tabGroups.findIndex(g => g.tabIds.includes(tabId));
     if (groupIdx !== -1) {
         const group = tabGroups[groupIdx];
         group.tabIds = group.tabIds.filter(id => id !== tabId);
-
         if (group.tabIds.length === 0) {
-
             tabGroups.splice(groupIdx, 1);
             if (activeGroupIndex >= tabGroups.length) {
                 activeGroupIndex = Math.max(0, tabGroups.length - 1);
@@ -2037,27 +1748,17 @@ function closeTab(tabId) {
                 activeGroupIndex--;
             }
         } else if (activeGroupIndex === groupIdx) {
-
-
         }
     }
-
-
     tabs.splice(tabIndex, 1);
     if (tabToRemove.historyEl) tabToRemove.historyEl.remove();
-
-
     if (tabToRemove.sessionId) {
         chrome.storage.local.remove([`spotlight_history_${tabToRemove.sessionId}`]);
     }
-
-
     const storageKeys = Object.keys(localStorage).filter(key =>
         key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${tabId}_`)
     );
     storageKeys.forEach(key => localStorage.removeItem(key));
-
-
     const idMap = {};
     tabs.forEach((t, i) => {
         const newId = `tab-${i + 1}`;
@@ -2069,7 +1770,6 @@ function closeTab(tabId) {
         if (g.tabIds) g.tabIds = g.tabIds.map(id => idMap[id] || id);
     });
     tabCounter = tabs.length;
-
     if (tabGroups.length === 0) {
         createTab();
     } else {
@@ -2081,14 +1781,11 @@ function closeTab(tabId) {
 function closeGroup(groupIndex) {
     if (groupIndex < 0 || groupIndex >= tabGroups.length) return;
     const group = tabGroups[groupIndex];
-
     const idsToClose = [...group.tabIds];
-
     idsToClose.forEach(id => closeTab(id));
 }
 
 function updateTabTitle(chatUIInstance, title) {
-
     const tab = tabs.find(t => t.chatUIInstance === chatUIInstance);
     if (tab) {
         tab.title = title;
@@ -2116,7 +1813,6 @@ function saveTabsState(forceSaveChat = false) {
             thinkingLevel: tab.thinkingLevel || null
         };
     });
-
     chrome.storage.local.set({
         [KEYS.tabs]: tabsMetadata,
         [KEYS.tabCounter]: tabCounter,
@@ -2124,8 +1820,6 @@ function saveTabsState(forceSaveChat = false) {
         [KEYS.tabGroups]: tabGroups,
         [KEYS.activeGroupIndex]: activeGroupIndex,
         [KEYS.groupCounter]: groupCounter,
-
-        
         [GLOBAL_KEYS.tabs]: tabsMetadata,
         [GLOBAL_KEYS.tabCounter]: tabCounter,
         [GLOBAL_KEYS.activeTabIndex]: activeTabIndex,
@@ -2133,15 +1827,11 @@ function saveTabsState(forceSaveChat = false) {
         [GLOBAL_KEYS.activeGroupIndex]: activeGroupIndex,
         [GLOBAL_KEYS.groupCounter]: groupCounter
     });
-
-
     window._localSavedSessions = window._localSavedSessions || {};
     const activeTab = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary')
         ? (secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null)
         : (activeTabIndex >= 0 ? tabs[activeTabIndex] : null);
-
     const savedSessionIds = new Set();
-
     if (activeTab && activeTab.sessionId && activeTab.historyEl) {
         savedSessionIds.add(activeTab.sessionId);
         window._localSavedSessions[activeTab.sessionId] = Date.now();
@@ -2153,7 +1843,6 @@ function saveTabsState(forceSaveChat = false) {
             });
         }
     }
-
     tabs.forEach(tab => {
         if (tab !== activeTab && tab.sessionId && tab.historyEl) {
             if (savedSessionIds.has(tab.sessionId)) {
@@ -2173,25 +1862,19 @@ function saveTabsState(forceSaveChat = false) {
 
 function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
-
     historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
         if (entry.__normalized) return;
         entry.__normalized = true;
-
         entry.style.removeProperty('min-height');
-
         let questionEl = entry.querySelector('.lumina-chat-question') || entry.querySelector('[data-entry-type]');
         if (!questionEl) return;
-
         const row = questionEl.closest('.lumina-question-row');
         const entryType = entry.dataset.entryType || 'qa';
-
         const pinBtn = row ? row.querySelector('.lumina-question-pin-btn') : null;
         const wasPinned = questionEl.classList.contains('is-pinned-question') ||
             (pinBtn && (pinBtn.classList.contains('is-active') || pinBtn.getAttribute('aria-pressed') === 'true'));
         if (pinBtn) pinBtn.remove();
         const rawText = questionEl.dataset.rawText || questionEl.textContent.trim();
-
         questionEl.className = `lumina-chat-question ${entryType}-question`;
         questionEl.dataset.entryType = entryType;
         questionEl.removeAttribute('contenteditable');
@@ -2199,10 +1882,8 @@ function normalizeRestoredHistory(historyEl) {
         if (wasPinned) {
             questionEl.classList.add('is-pinned-question');
         }
-
         const existingToolbar = questionEl.querySelector('.lumina-question-edit-toolbar, .lumina-answer-edit-toolbar');
         if (existingToolbar) existingToolbar.remove();
-
         const contentDiv = document.createElement('div');
         contentDiv.className = 'lumina-question-content';
         contentDiv.innerHTML = rawText
@@ -2210,23 +1891,17 @@ function normalizeRestoredHistory(historyEl) {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/\n/g, '<br>');
-
         questionEl.innerHTML = '';
         questionEl.appendChild(contentDiv);
-
         if (row) row.classList.remove('lumina-question-row-editing');
         if (pinBtn) {
             pinBtn.classList.toggle('is-active', !!wasPinned);
             pinBtn.setAttribute('aria-pressed', wasPinned ? 'true' : 'false');
             pinBtn.style.display = '';
         }
-
-        
         if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.injectQuestionActions === 'function') {
             LuminaChatUI.injectQuestionActions(questionEl);
         }
-
-        
         const nav = entry.querySelector('.lumina-answer-nav');
         if (nav) {
             const prevBtn = nav.querySelector('.nav-prev');
@@ -2246,7 +1921,6 @@ function normalizeRestoredHistory(historyEl) {
                 });
             }
         }
-
         if (questionEl) {
             const imgs = entry.querySelectorAll('img[data-attachment-id]');
             let parsedImages = null;
@@ -2257,10 +1931,8 @@ function normalizeRestoredHistory(historyEl) {
                     console.error('Failed to parse dataset.images', e);
                 }
             }
-
             const hydratedFiles = [];
             const promises = [];
-
             imgs.forEach(img => {
                 const attachmentId = img.dataset.attachmentId;
                 if (attachmentId) {
@@ -2275,7 +1947,6 @@ function normalizeRestoredHistory(historyEl) {
                                     tab.chatUIInstance.showImagePreview(objectUrl, img.alt);
                                 }
                             };
-
                             const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
                             if (dataUrl) {
                                 let fileObj = null;
@@ -2302,7 +1973,6 @@ function normalizeRestoredHistory(historyEl) {
                     promises.push(p);
                 }
             });
-
             if (promises.length > 0) {
                 Promise.all(promises).then(() => {
                     if (hydratedFiles.length > 0) {
@@ -2328,27 +1998,21 @@ let totalDeltaX = 0;
 let groupPreviewTargetIndex = -1;
 
 function getGroupColor(sessionId, tabIndex) {
-
     if (isSplitMode) {
         if (tabIndex === activeTabIndex || tabIndex === secondaryActiveTabIndex) {
             return '#0056D2';
         }
     }
-
-
     const sessionCount = {};
     tabs.forEach(t => {
         sessionCount[t.sessionId] = (sessionCount[t.sessionId] || 0) + 1;
     });
-
     if (sessionCount[sessionId] <= 1) return null;
-
     const groupSessionIds = Object.keys(sessionCount)
         .filter(id => sessionCount[id] > 1)
         .sort((a, b) => {
             return tabs.findIndex(t => t.sessionId === a) - tabs.findIndex(t => t.sessionId === b);
         });
-
     const index = groupSessionIds.indexOf(sessionId);
     return GROUP_COLORS[index % GROUP_COLORS.length];
 }
@@ -2356,31 +2020,23 @@ function getGroupColor(sessionId, tabIndex) {
 function renderTabs() {
     const list = document.getElementById('tabs-list');
     if (!list) return;
-
     const newTabBtn = document.getElementById('new-tab-btn');
     list.innerHTML = '';
-
     tabGroups.forEach((group, groupIndex) => {
         const groupEl = document.createElement('div');
         const isActive = groupIndex === activeGroupIndex;
         const isSplitGroup = group.tabIds.length > 1;
-
         groupEl.className = `spotlight-tab ${isActive ? 'active' : ''} ${isSplitGroup ? 'is-split' : ''}`;
         groupEl.dataset.groupIndex = groupIndex;
-
-
         group.tabIds.forEach((tabId, subIdx) => {
             const tab = tabs.find(t => t.id === tabId);
             if (!tab) return;
-
             const subTabEl = document.createElement('div');
             subTabEl.className = 'spotlight-tab-sub';
             subTabEl.dataset.tabId = tabId;
-
             const titleSpan = document.createElement('span');
             titleSpan.className = 'spotlight-tab-title';
             titleSpan.textContent = tab.title;
-
             const closeBtn = document.createElement('button');
             closeBtn.className = 'spotlight-tab-close';
             closeBtn.title = isSplitGroup && !isActive && subIdx === group.tabIds.length - 1
@@ -2389,27 +2045,20 @@ function renderTabs() {
             closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" /></svg>';
             closeBtn.onclick = (e) => {
                 e.stopPropagation();
-
                 if (isSplitGroup && !isActive && subIdx === group.tabIds.length - 1) {
                     closeGroup(groupIndex);
                 } else {
                     closeTab(tabId);
                 }
             };
-
             subTabEl.appendChild(titleSpan);
             subTabEl.appendChild(closeBtn);
-
-
             let subTabClickTimer = null;
             subTabEl.onmousedown = (e) => {
                 if (e.target.closest('.spotlight-tab-close')) return;
                 if (e.button !== 0) return;
-
                 let isInactiveTab = false;
-
                 if (groupIndex === activeGroupIndex) {
-
                     if (subTabClickTimer) {
                         clearTimeout(subTabClickTimer);
                         subTabClickTimer = null;
@@ -2422,68 +2071,51 @@ function renderTabs() {
                         }, 300);
                     }
                 } else {
-
                     isInactiveTab = true;
                 }
-
-
                 isDragging = false;
                 initialDraggedIndex = groupIndex;
                 startX = e.pageX;
                 draggedElement = groupEl;
-
                 const onMouseMove = (moveEvent) => {
                     if (Math.abs(moveEvent.pageX - startX) > 5) {
                         if (!isDragging) {
-
                             if (isInactiveTab) {
                                 switchGroup(groupIndex);
-
                                 const list = document.getElementById('tabs-list');
                                 draggedElement = list.querySelector(`[data-group-index="${groupIndex}"]`);
                             }
-
                             isDragging = true;
                             draggedElement.classList.add('dragging-smooth');
                             draggedElement.style.zIndex = '1000';
-
                             const allGroups = Array.from(list.querySelectorAll('.spotlight-tab'));
                             const newTabBtn = document.getElementById('new-tab-btn');
                             if (newTabBtn) allGroups.push(newTabBtn);
-
                             initialRects = allGroups.map(el => el.getBoundingClientRect());
-
                             window.addEventListener('mousemove', handleMouseMove);
                             window.addEventListener('mouseup', onMouseUp);
                         }
                         handleMouseMove(moveEvent);
                     }
                 };
-
                 const onMouseUp = () => {
                     window.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
                     if (isDragging) {
                         handleMouseUp();
                     } else if (isInactiveTab) {
-
                         activateSubTab(groupIndex, tabId);
                     } else if (isSplitGroup) {
-
                         activateSubTab(groupIndex, tabId);
                     }
                 };
-
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             };
-
             groupEl.appendChild(subTabEl);
         });
-
         list.appendChild(groupEl);
     });
-
     if (newTabBtn) {
         list.appendChild(newTabBtn);
     }
@@ -2495,24 +2127,17 @@ function renderTabs() {
 
 function handleMouseMove(e) {
     if (!isDragging || !draggedElement || initialDraggedIndex === -1) return;
-
     totalDeltaX = e.pageX - startX;
     draggedElement.style.transform = `translateX(${totalDeltaX}px)`;
-
     const list = document.getElementById('tabs-list');
     const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) groupEls.push(newTabBtn);
-
     const draggedWidth = initialRects[initialDraggedIndex].width;
     const draggedGroup = tabGroups[initialDraggedIndex];
-
     const currentLeftEdge = initialRects[initialDraggedIndex].left + totalDeltaX;
     const currentRightEdge = currentLeftEdge + draggedWidth;
     const draggedCenterX = currentLeftEdge + draggedWidth / 2;
-
-
-
     let newGroupPreviewTarget = -1;
     if (draggedGroup && draggedGroup.tabIds.length === 1) {
         groupEls.forEach((el, idx) => {
@@ -2524,20 +2149,16 @@ function handleMouseMove(e) {
             const twoThird = elRect.left + elRect.width * 2 / 3;
             const comingFromRight = initialDraggedIndex > idx;
             if (comingFromRight) {
-
                 if (currentLeftEdge > oneThird && currentLeftEdge <= twoThird) {
                     newGroupPreviewTarget = idx;
                 }
             } else {
-
                 if (currentRightEdge >= oneThird && currentRightEdge < twoThird) {
                     newGroupPreviewTarget = idx;
                 }
             }
         });
     }
-
-
     if (newGroupPreviewTarget !== groupPreviewTargetIndex) {
         if (groupPreviewTargetIndex !== -1 && groupEls[groupPreviewTargetIndex]) {
             groupEls[groupPreviewTargetIndex].classList.remove('group-merge-preview');
@@ -2549,22 +2170,15 @@ function handleMouseMove(e) {
             draggedElement.classList.add('group-merge-preview');
         }
     }
-
-
     if (groupPreviewTargetIndex !== -1) {
         groupEls.forEach((el, idx) => {
             if (idx !== initialDraggedIndex) el.style.transform = '';
         });
         return;
     }
-
-
     groupEls.forEach((el, idx) => {
         if (idx === initialDraggedIndex) return;
-
         const elRect = initialRects[idx];
-
-
         if (el === newTabBtn) {
             const marginLeft = 4;
             const triggerLeft = elRect.left - marginLeft;
@@ -2576,9 +2190,7 @@ function handleMouseMove(e) {
             }
             return;
         }
-
         const elCenter = elRect.left + elRect.width / 2;
-
         if (initialDraggedIndex < idx && currentRightEdge > elCenter) {
             el.style.transform = `translateX(-${draggedWidth}px)`;
         } else if (initialDraggedIndex > idx && currentLeftEdge < elCenter) {
@@ -2591,22 +2203,15 @@ function handleMouseMove(e) {
 
 function handleMouseUp() {
     if (!isDragging || initialDraggedIndex === -1) return;
-
     isDragging = false;
-
     const list = document.getElementById('tabs-list');
     const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
-
-
     if (groupPreviewTargetIndex !== -1) {
         const targetGroup = tabGroups[groupPreviewTargetIndex];
         const draggedGroup = tabGroups[initialDraggedIndex];
-
         if (targetGroup && draggedGroup && targetGroup.tabIds.length === 1 && draggedGroup.tabIds.length === 1) {
             const primaryTabId = targetGroup.tabIds[0];
             const secondaryTabId = draggedGroup.tabIds[0];
-
-
             groupEls.forEach(el => {
                 el.style.transform = '';
                 el.style.zIndex = '';
@@ -2624,35 +2229,28 @@ function handleMouseUp() {
             initialDraggedIndex = -1;
             initialRects = [];
             totalDeltaX = 0;
-
             applySplit(primaryTabId, secondaryTabId);
             return;
         }
         groupPreviewTargetIndex = -1;
     }
-
-
     const draggedWidth = initialRects[initialDraggedIndex].width;
     const currentLeftEdge = initialRects[initialDraggedIndex].left + totalDeltaX;
     const currentRightEdge = currentLeftEdge + draggedWidth;
-
     let targetIndex = initialDraggedIndex;
     groupEls.forEach((el, idx) => {
         if (idx === initialDraggedIndex) return;
         const elRect = initialRects[idx];
         const elCenter = elRect.left + elRect.width / 2;
-
         if (initialDraggedIndex < idx && currentRightEdge > elCenter) {
             if (idx > targetIndex) targetIndex = idx;
         } else if (initialDraggedIndex > idx && currentLeftEdge < elCenter) {
             if (idx < targetIndex) targetIndex = idx;
         }
     });
-
     if (targetIndex !== initialDraggedIndex) {
         const [movedGroup] = tabGroups.splice(initialDraggedIndex, 1);
         tabGroups.splice(targetIndex, 0, movedGroup);
-
         if (activeGroupIndex === initialDraggedIndex) {
             activeGroupIndex = targetIndex;
         } else if (activeGroupIndex > initialDraggedIndex && activeGroupIndex <= targetIndex) {
@@ -2661,8 +2259,6 @@ function handleMouseUp() {
             activeGroupIndex++;
         }
     }
-
-
     groupEls.forEach(el => {
         el.style.transform = '';
         el.style.zIndex = '';
@@ -2672,24 +2268,17 @@ function handleMouseUp() {
     if (newTabBtn) {
         newTabBtn.style.transform = '';
     }
-
     clearTimeout(splitHoverTimer);
     splitHoverTargetIndex = -1;
-
     window.removeEventListener('mousemove', handleMouseMove);
     window.removeEventListener('mouseup', handleMouseUp);
-
     initialDraggedIndex = -1;
     initialRects = [];
     totalDeltaX = 0;
-
     normalizeTabs();
     saveTabsState();
     renderTabs();
 }
-
-
-
 
 function initSpotlightAskSelection() {
     if (window.LuminaSelection) {
@@ -2722,19 +2311,13 @@ function initSpotlightAskSelection() {
                         return;
                     }
                 }
-
-
                 if (window.LuminaAnnotation && range) {
                     window.LuminaAnnotation.highlight(range);
                 }
-
                 const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
                     ? secondaryActiveTabIndex
                     : activeTabIndex;
                 const targetTab = tabs[targetTabIdx];
-
-
-
                 handleSubmit(query, [], { mode: isDictionary ? 'dictionary' : 'qa' }, targetTab || null, displayQuery);
             },
             onTranslate: (text) => {
@@ -2756,7 +2339,6 @@ function initSpotlightAskSelection() {
                         <span>Send comment</span>
                     `;
                     entry.appendChild(btn);
-
                     btn.addEventListener('click', () => {
                         handleCommentSubmission(entry);
                     });
@@ -2764,36 +2346,28 @@ function initSpotlightAskSelection() {
             }
         });
     }
-
     document.addEventListener('mouseup', (e) => {
         const path = e.composedPath();
         const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
         if (isInsideLumina) return;
-
         setTimeout(() => {
             if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
                 LuminaSelection.expandToWordBoundaries();
             }
-
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
-
             const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
             if (!range) {
                 const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
-
-
             const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
             if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
                 const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
-
-
             const commonNode = range.commonAncestorContainer;
             const isInsideChat = commonNode && (
                 (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
@@ -2804,25 +2378,21 @@ function initSpotlightAskSelection() {
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
-
             const secondaryPane = document.getElementById('pane-secondary');
             spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
                 : 'primary';
-
             if (window.LuminaSelection) {
                 LuminaSelection.show(e.clientX, e.clientY, text, range);
             }
         }, 10);
     });
-
     document.addEventListener('click', (e) => {
         if (window.LuminaAnnotation) {
             const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
             if (hData) {
                 e.preventDefault();
                 e.stopPropagation();
-
                 if (window.LuminaSelection) {
                     LuminaSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
                 }
@@ -2836,12 +2406,10 @@ function handleCommentSubmission(entry) {
     try {
         const highlights = entry.querySelectorAll('.lumina-comment-highlight');
         console.log('[Lumina DEBUG] Highlights found:', highlights.length);
-
         if (highlights.length === 0) {
             console.warn('[Lumina] No highlights found in entry for comment submission');
             return;
         }
-
         let constructedPrompt = "The user has provided feedback on the following parts of the text:\n\n";
         highlights.forEach((h, idx) => {
             const originalText = h.textContent.trim();
@@ -2850,28 +2418,20 @@ function handleCommentSubmission(entry) {
             constructedPrompt += `- Text: "${originalText}"\n  Comment: "${comment}"\n`;
         });
         constructedPrompt += "\nPlease revise the content accordingly.";
-
-
         let targetTabIdx = -1;
         const paneSecondary = document.getElementById('pane-secondary');
         const isInSecondary = paneSecondary && paneSecondary.contains(entry);
-
         if (isInSecondary && isSplitMode) {
             targetTabIdx = secondaryActiveTabIndex;
         } else {
             targetTabIdx = activeTabIndex;
         }
-
         let targetTab = (targetTabIdx >= 0) ? tabs[targetTabIdx] : null;
-
-
         if (!targetTab) {
             console.warn('[Lumina DEBUG] No targetTab found by index, searching tabs array...');
             targetTab = tabs.find(t => t && t.chatUIInstance) || null;
         }
-
         console.log('[Lumina DEBUG] Resolved targetTab:', targetTab ? targetTab.title : 'NULL');
-
         if (typeof handleSubmit === 'function') {
             console.log('[Lumina DEBUG] Calling handleSubmit...');
             handleSubmit(constructedPrompt, [], { mode: 'proofread' }, targetTab, "Sent comments")
@@ -2880,36 +2440,23 @@ function handleCommentSubmission(entry) {
         } else {
             console.error('[Lumina DEBUG] handleSubmit is NOT a function!');
         }
-
-
         const btn = entry.querySelector('.lumina-send-comment-btn');
         if (btn) btn.remove();
-
     } catch (err) {
         console.error('[Lumina] Error in handleCommentSubmission:', err);
     }
 }
 
-
-
 function setupWebSourceTracking() {
-
     syncCurrentBrowserTab();
-
-
     chrome.tabs.onActivated.addListener(() => {
         syncCurrentBrowserTab();
     });
-
-
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'complete' || changeInfo.title || changeInfo.url) {
-
-
             if (tab.active) {
                 syncCurrentBrowserTab();
             }
-
             updateWebSelectionForTab(tabId, (source, sourceTabId) => {
                 if (String(source.tabId) !== sourceTabId) return source;
                 return {
@@ -2918,34 +2465,22 @@ function setupWebSourceTracking() {
                     url: tab.url || source.url
                 };
             });
-
             updateWebChips();
-
             if (webTabPickerEl) {
                 refreshWebTabPicker();
             }
-
-
             if (changeInfo.status === 'complete') {
                 refreshWebSourceTokensForTab(tabId);
             }
         }
     });
-
-
     chrome.tabs.onRemoved.addListener((tabId) => {
         updateWebSelectionForTab(tabId, (source, sourceTabId) => {
             if (String(source.tabId) === sourceTabId) return null;
             return source;
         });
-
-
         pinnedWebSources = pinnedWebSources.filter((source) => String(source.tabId) !== String(tabId));
-
-
         syncCurrentBrowserTab();
-
-
         updateWebChips();
     });
 }
@@ -2956,16 +2491,13 @@ function isWebPageUrl(url) {
 
 function syncCurrentBrowserTab() {
     const queryOptions = isSidePanel ? { active: true, currentWindow: true } : { active: true, lastFocusedWindow: true };
-
     const handleTabResult = (activeTab) => {
         saveCurrentWebSelection();
-
         if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
             chrome.windows.getAll({ populate: true }, (windows) => {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
                     .sort((a, b) => b.id - a.id);
-
                 const realTab = sortedWindows
                     .map(w => w.tabs.find(t => t.active))
                     .find(t => t && isWebPageUrl(t.url));
@@ -2979,7 +2511,6 @@ function syncCurrentBrowserTab() {
                     loadCurrentWebSelection();
                     updateWebChips();
                     refreshWebSourceTokensForTab(realTab.id);
-
                     if (webTabPickerEl) {
                         refreshWebTabPicker();
                     }
@@ -2987,7 +2518,6 @@ function syncCurrentBrowserTab() {
             });
             return;
         }
-
         if (activeTab && isWebPageUrl(activeTab.url)) {
             currentBrowserTab = {
                 tabId: activeTab.id,
@@ -3008,7 +2538,6 @@ function syncCurrentBrowserTab() {
             refreshWebTabPicker();
         }
     };
-
     chrome.tabs.query(queryOptions, (tabs) => {
         const activeTab = tabs && tabs[0];
         if (!activeTab && isSidePanel) {
@@ -3044,22 +2573,17 @@ function closeWebTabPicker() {
 function refreshWebTabPicker() {
     const anchorEl = webTabPickerAnchorEl;
     if (!anchorEl) return;
-
     closeWebTabPicker();
     openWebTabPicker(anchorEl);
 }
 
-
 function openWebTabPicker(anchorEl, spotlightTabId = null) {
     if (!anchorEl) return;
-
     if (webTabPickerEl && webTabPickerAnchorEl === anchorEl) {
         closeWebTabPicker();
         return;
     }
-
     closeWebTabPicker();
-
     chrome.tabs.query({ windowType: 'normal' }, (tabs) => {
         const availableTabs = (tabs || [])
             .filter((tab) => tab && isWebPageUrl(tab.url))
@@ -3069,22 +2593,17 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                 url: tab.url,
                 isActive: !!tab.active
             }));
-
         const activeSpotlightTabId = spotlightTabId || getCurrentSpotlightTabId();
         const selectedSources = activeSpotlightTabId ? getWebSelectionForScope(activeSpotlightTabId) : [];
         const selectedIds = new Set(selectedSources.map((source) => source.tabId));
-
         const picker = document.createElement('div');
         picker.className = 'lumina-web-tab-picker';
-
         const header = document.createElement('div');
         header.className = 'lumina-web-tab-picker-header';
         header.textContent = 'Select tabs';
         picker.appendChild(header);
-
         const list = document.createElement('div');
         list.className = 'lumina-web-tab-picker-list';
-
         if (availableTabs.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'lumina-web-tab-picker-empty';
@@ -3094,7 +2613,6 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
             availableTabs.forEach((tab) => {
                 const row = document.createElement('label');
                 row.className = 'lumina-web-tab-picker-item';
-
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'lumina-web-tab-picker-checkbox';
@@ -3104,7 +2622,6 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                     const selectedSet = new Set(
                         Array.from(list.querySelectorAll('.lumina-web-tab-picker-checkbox:checked')).map((item) => Number(item.value))
                     );
-
                     const nextSelection = availableTabs
                         .filter((item) => selectedSet.has(item.tabId))
                         .map((item) => ({
@@ -3112,11 +2629,8 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                             title: item.title,
                             url: item.url
                         }));
-
                     if (activeSpotlightTabId) {
                         saveWebSelectionForScope(activeSpotlightTabId, nextSelection);
-
-
                         const primaryTabId = getCurrentSpotlightTabId();
                         if (String(activeSpotlightTabId) === String(primaryTabId)) {
                             pinnedWebSources = nextSelection.map((item) => ({ ...item }));
@@ -3124,32 +2638,24 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                     }
                     updateWebChips();
                 });
-
                 const textWrap = document.createElement('div');
                 textWrap.className = 'lumina-web-tab-picker-item-text';
-
                 const titleEl = document.createElement('div');
                 titleEl.className = 'lumina-web-tab-picker-item-title';
                 titleEl.textContent = tab.title;
-
                 const urlEl = document.createElement('div');
                 urlEl.className = 'lumina-web-tab-picker-item-url';
                 urlEl.textContent = tab.url;
-
                 textWrap.appendChild(titleEl);
                 textWrap.appendChild(urlEl);
-
                 row.appendChild(checkbox);
                 row.appendChild(textWrap);
                 list.appendChild(row);
             });
         }
-
         picker.appendChild(list);
-
         const actions = document.createElement('div');
         actions.className = 'lumina-web-tab-picker-actions';
-
         const clearBtn = document.createElement('button');
         clearBtn.type = 'button';
         clearBtn.className = 'lumina-web-tab-picker-btn is-ghost';
@@ -3157,7 +2663,6 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
         clearBtn.addEventListener('click', () => {
             if (activeSpotlightTabId) {
                 saveWebSelectionForScope(activeSpotlightTabId, []);
-
                 const primaryTabId = getCurrentSpotlightTabId();
                 if (String(activeSpotlightTabId) === String(primaryTabId)) {
                     pinnedWebSources = [];
@@ -3169,7 +2674,6 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
             updateWebChips();
             closeWebTabPicker();
         });
-
         const selectAllBtn = document.createElement('button');
         selectAllBtn.type = 'button';
         selectAllBtn.className = 'lumina-web-tab-picker-btn is-primary';
@@ -3179,16 +2683,13 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
             checkboxList.forEach((checkbox) => {
                 checkbox.checked = true;
             });
-
             const nextSelection = availableTabs.map((item) => ({
                 tabId: item.tabId,
                 title: item.title,
                 url: item.url
             }));
-
             if (activeSpotlightTabId) {
                 saveWebSelectionForScope(activeSpotlightTabId, nextSelection);
-
                 const primaryTabId = getCurrentSpotlightTabId();
                 if (String(activeSpotlightTabId) === String(primaryTabId)) {
                     pinnedWebSources = nextSelection.map((item) => ({ ...item }));
@@ -3196,43 +2697,34 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
             }
             updateWebChips();
         });
-
         actions.appendChild(clearBtn);
         actions.appendChild(selectAllBtn);
         picker.appendChild(actions);
-
         document.body.appendChild(picker);
-
         const rect = anchorEl.getBoundingClientRect();
         const wrapper = anchorEl.closest('.lumina-chat-input-wrapper') || anchorEl.closest('.lumina-input-container');
         const preferredWidth = Math.min(wrapper ? wrapper.getBoundingClientRect().width : rect.width, window.innerWidth - 20);
         picker.style.width = `${preferredWidth}px`;
-
         const pickerHeight = picker.offsetHeight;
         let left = Math.max(10, Math.min(rect.left, window.innerWidth - preferredWidth - 10));
         let top = rect.bottom + 8;
         if (top + pickerHeight > window.innerHeight - 12) {
             top = Math.max(12, rect.top - pickerHeight - 8);
         }
-
         picker.style.left = `${left}px`;
         picker.style.top = `${top}px`;
-
         webTabPickerEl = picker;
         webTabPickerAnchorEl = anchorEl;
-
         webTabPickerOutsideHandler = (event) => {
             if (!webTabPickerEl) return;
             if (webTabPickerEl.contains(event.target) || (webTabPickerAnchorEl && webTabPickerAnchorEl.contains(event.target))) return;
             closeWebTabPicker();
         };
-
         webTabPickerKeyHandler = (event) => {
             if (event.key === 'Escape') {
                 closeWebTabPicker();
             }
         };
-
         setTimeout(() => {
             if (!webTabPickerEl) return;
             document.addEventListener('mousedown', webTabPickerOutsideHandler, true);
@@ -3262,18 +2754,15 @@ function getDomainDisplayName(url) {
 function createWebChipElement(source, selectedSources, spotlightTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
-
     const chip = document.createElement('div');
     chip.className = `lumina-web-chip ${source.isActive ? 'is-active' : ''} ${isGhost ? 'is-ghost' : ''}`;
     chip.removeAttribute('title');
-
     if (source.isSummary) {
         const totalTokens = selectedSources.reduce((sum, s) => sum + (parseInt(s.tokens) || 0), 0);
         chip.dataset.tokens = totalTokens;
     } else {
         chip.dataset.tokens = parseInt(source.tokens) || 0;
     }
-
     if (!hasMultipleTabs) {
         let favIconUrl = source.favIconUrl;
         if (!favIconUrl && source.url) {
@@ -3296,7 +2785,6 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
             chip.appendChild(faviconImg);
         }
     }
-
     const titleSpan = document.createElement('span');
     let displayName = source.displayTitle;
     if (!displayName && !hasMultipleTabs && source.url) {
@@ -3304,41 +2792,28 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
     }
     titleSpan.textContent = displayName || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
     chip.appendChild(titleSpan);
-
     chip.addEventListener('click', (event) => {
         event.stopPropagation();
-
         const container = chip.closest('.lumina-web-chips-group');
         if (container) container.dataset.muteTooltips = 'true';
-
-
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
             try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
         }
-
         if (source.isSummary) {
-
             saveWebSelectionForScope(spotlightTabId, []);
-
-
             const activeId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
             if (String(spotlightTabId) === String(activeId)) {
                 pinnedWebSources = [];
             }
-
             updateWebChips();
             return;
         }
-
         if (isGhost) {
-
             toggleWebSourcePin(source, true, spotlightTabId);
         } else {
-
             toggleWebSourcePin(source, null, spotlightTabId);
         }
     });
-
     return chip;
 }
 
@@ -3346,7 +2821,6 @@ function updateWebChips() {
     if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
         try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
     }
-
     const containers = document.querySelectorAll('.lumina-web-chips-group');
     containers.forEach(container => {
         const spotlightTabId = getSpotlightTabIdForPane(container);
@@ -3354,20 +2828,15 @@ function updateWebChips() {
             container.style.display = 'none';
             return;
         }
-
         container.style.display = 'flex';
-
         if (!container.dataset.muteHandlerSet) {
             container.addEventListener('mouseleave', () => {
                 container.dataset.muteTooltips = 'false';
             });
             container.dataset.muteHandlerSet = 'true';
         }
-
         const selectedSources = getWebSelectionForScope(spotlightTabId);
         const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
-
-        
         let newFingerprint = '';
         if (onValidWebPage) {
             const currentTabId = String(currentBrowserTab.tabId);
@@ -3375,18 +2844,13 @@ function updateWebChips() {
             const tokens = currentBrowserTabTokens.get(currentTabId) || 0;
             newFingerprint = `${currentTabId}|${isCurrentPinned ? 'active' : 'ghost'}|${tokens}|${currentBrowserTab.title || ''}`;
         }
-
-        
         if (container.dataset.chipFingerprint === newFingerprint) return;
         container.dataset.chipFingerprint = newFingerprint;
-
         container.innerHTML = '';
-
         if (onValidWebPage) {
             const currentTabId = String(currentBrowserTab.tabId);
             const isCurrentPinned = selectedSources.some(s => String(s.tabId) === currentTabId);
             const tokens = currentBrowserTabTokens.get(currentTabId) || 0;
-
             if (isCurrentPinned) {
                 const activeData = {
                     tabId: currentBrowserTab.tabId,
@@ -3412,7 +2876,6 @@ function updateWebChips() {
             }
         }
     });
-
     scheduleVisibleTabsMinHeightReflow();
 }
 
@@ -3421,24 +2884,18 @@ function scheduleVisibleTabsMinHeightReflow() {
         cancelAnimationFrame(minHeightReflowRaf);
         minHeightReflowRaf = null;
     }
-
     minHeightReflowRaf = requestAnimationFrame(() => {
         minHeightReflowRaf = null;
-
         const visibleTabIndexes = [activeTabIndex];
         if (isSplitMode && secondaryActiveTabIndex >= 0) {
             visibleTabIndexes.push(secondaryActiveTabIndex);
         }
-
         visibleTabIndexes.forEach((index) => {
             const tab = tabs[index];
             if (!tab?.historyEl || typeof tab.chatUIInstance?.setInitialEntryHeight !== 'function') return;
-
             const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
             if (!allEntries.length) return;
-
             const latestEntry = allEntries[allEntries.length - 1];
-
             tab.chatUIInstance.setInitialEntryHeight(latestEntry, true);
         });
     });
@@ -3446,16 +2903,12 @@ function scheduleVisibleTabsMinHeightReflow() {
 
 function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
     if (!source || !isWebPageUrl(source.url)) return;
-
     const targetSpotlightTabId = spotlightTabId || getCurrentSpotlightTabId();
     if (!targetSpotlightTabId) return;
-
     const currentSelection = getWebSelectionForScope(targetSpotlightTabId);
-
     const idx = currentSelection.findIndex(p => String(p.tabId) === String(source.tabId));
     if (idx > -1) {
         if (forceState === true) {
-
             currentSelection[idx] = {
                 tabId: source.tabId,
                 title: source.title || currentSelection[idx].title || 'Untitled',
@@ -3465,11 +2918,9 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
             updateWebChips();
             return;
         }
-
         currentSelection.splice(idx, 1);
     } else {
         if (forceState === false) return;
-
         currentSelection.push({
             tabId: source.tabId,
             title: source.title,
@@ -3477,24 +2928,16 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
         });
     }
     saveWebSelectionForScope(targetSpotlightTabId, currentSelection);
-
-
     const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
     if (String(targetSpotlightTabId) === String(activeTabId)) {
         pinnedWebSources = currentSelection.map((item) => ({ ...item }));
     }
-
     updateWebChips();
 }
-
-
-
 
 async function init() {
     if (isInitializing) return;
     isInitializing = true;
-
-    
     await new Promise((resolve) => {
         if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.getCurrent) {
             chrome.tabs.getCurrent((tab) => {
@@ -3503,8 +2946,6 @@ async function init() {
                     if (storedTabId && storedTabId !== String(tab.id)) {
                         const newInstId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
                         sessionStorage.setItem('lumina_spotlight_instance_id', newInstId);
-
-                        
                         KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
                         KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
                         KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -3525,7 +2966,6 @@ async function init() {
                             if (storedWinId && storedWinId !== String(win.id)) {
                                 const newInstId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
                                 sessionStorage.setItem('lumina_spotlight_instance_id', newInstId);
-
                                 KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
                                 KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
                                 KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -3548,7 +2988,6 @@ async function init() {
             resolve();
         }
     });
-
     if (window.LuminaSelection?.hide) {
         try {
             window.LuminaSelection.hide();
@@ -3564,7 +3003,6 @@ async function init() {
             el.style.overflow = '';
         }
     });
-
     const observer = new ResizeObserver((entries) => {
         for (const entry of entries) {
             const el = entry.target;
@@ -3591,13 +3029,8 @@ async function init() {
             el.classList.toggle('has-scrollbar', hasScroll);
         }
     });
-
-
     initSpotlightAskSelection();
-
-
     const inputArea = document.getElementById('input-area');
-
     if (inputArea) {
         inputArea.innerHTML = LuminaChatUI.getChatInputHTML(true);
         sharedInputUI = new LuminaChatUI(inputArea, {
@@ -3610,7 +3043,6 @@ async function init() {
             }
         });
     }
-
     const inputAreaSecondary = document.getElementById('input-area-secondary');
     if (inputAreaSecondary) {
         inputAreaSecondary.innerHTML = LuminaChatUI.getChatInputHTML(true);
@@ -3626,9 +3058,7 @@ async function init() {
             }
         });
     }
-
     setupResizer();
-
     shouldStartNewChat = false;
     try {
         const win = await new Promise((resolve) => chrome.windows.getCurrent(resolve));
@@ -3646,19 +3076,14 @@ async function init() {
     } catch (e) {
         console.error('[Spotlight] Failed to check pending query before initTabs:', e);
     }
-
     await initTabs();
-
-
     if (tabs.length === 0) {
         createTab();
     } else {
-
         if (tabs[activeTabIndex]) {
             chatUI = tabs[activeTabIndex].chatUIInstance;
             if (sharedInputUI) {
                 sharedInputUI.historyEl = tabs[activeTabIndex].historyEl;
-
                 sharedInputUI._updateActionBtnState();
             }
         }
@@ -3670,15 +3095,12 @@ async function init() {
             }
         }
     }
-
-    
     initTopbarModelSelector('primary');
     if (isSplitMode) {
         initTopbarModelSelector('secondary');
     }
     updateInputPlaceholder();
     updatePaneHighlight();
-
     if (typeof tabs !== 'undefined') {
         tabs.forEach((tab) => {
             if (tab && tab.sparkId && !tab.sessionId) {
@@ -3688,21 +3110,15 @@ async function init() {
             }
         });
     }
-
     updateWelcomeScreenState('primary');
     if (isSplitMode) {
         updateWelcomeScreenState('secondary');
     }
-
-    
     document.querySelectorAll('.split-toggle-btn').forEach(btn => {
         btn.addEventListener('click', toggleSplitMode);
     });
-
-    
     const panePrimary = document.getElementById('pane-primary');
     const paneSecondary = document.getElementById('pane-secondary');
-
     if (panePrimary) {
         const setPrimary = () => {
             if (isSplitMode && hoveredPane !== 'primary') {
@@ -3717,7 +3133,6 @@ async function init() {
         };
         panePrimary.addEventListener('click', setPrimary, true);
     }
-
     if (paneSecondary) {
         const setSecondary = () => {
             if (isSplitMode && hoveredPane !== 'secondary') {
@@ -3732,21 +3147,13 @@ async function init() {
         };
         paneSecondary.addEventListener('click', setSecondary, true);
     }
-
     window.addEventListener('resize', () => {
         if (isSplitMode && window.innerWidth < 900) {
             toggleSplitMode();
         }
     });
-
     setupPort();
-
-    
-
-
     setupRegenerateButtons();
-
-
     chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle', 'theme', 'contrast', 'accentColor'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
@@ -3754,28 +3161,20 @@ async function init() {
         questionMappings = items.questionMappings || [];
         askSelectionPopupEnabled = items.askSelectionPopupEnabled ?? false;
         advancedParamsByModel = items.advancedParamsByModel || {};
-
-        
         const themeVal = items.theme || (items.globalDefaults && items.globalDefaults.theme) || 'auto';
         const contrastVal = items.contrast || (items.globalDefaults && items.globalDefaults.contrast) || 'auto';
         const accentVal = items.accentColor || (items.globalDefaults && items.globalDefaults.accentColor) || 'default';
         let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
-        
-        
         if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
             mode = 'dark';
         }
-        
         document.body.setAttribute('data-theme', mode);
         document.body.setAttribute('data-accent', accentVal);
         document.body.setAttribute('data-contrast', contrastVal);
-
         const size = items.fontSize || (items.globalDefaults && items.globalDefaults.fontSize);
         if (size) {
             applyFontSize(size);
         }
-
-
         if (items.pendingMicToggle) {
             const diff = Date.now() - items.pendingMicToggle;
             if (diff < 5000) {
@@ -3788,22 +3187,16 @@ async function init() {
                 chrome.storage.local.remove(['pendingMicToggle']);
             }
         }
-
         setupGlobalListeners();
         setupWebSourceTracking();
         isInitializing = false;
     });
-
-
     chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'local') {
-
             const pendingKey = myWindowId ? `pending_sidepanel_query_${myWindowId}` : null;
             if (pendingKey && changes[pendingKey] && changes[pendingKey].newValue) {
                 processPendingQuery(changes[pendingKey].newValue, pendingKey);
             }
-
-
             if (changes.shortcuts) shortcuts = changes.shortcuts.newValue || {};
             if (changes.annotationShortcuts) annotationShortcuts = changes.annotationShortcuts.newValue || [];
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
@@ -3813,53 +3206,37 @@ async function init() {
             }
             if (changes.readWebpage) readWebpageEnabled = !!changes.readWebpage.newValue;
             if (changes.advancedParamsByModel) advancedParamsByModel = changes.advancedParamsByModel.newValue || {};
-
-
             if (changes.fontSize) {
                 applyFontSize(changes.fontSize.newValue);
             } else if (changes.globalDefaults && changes.globalDefaults.newValue && changes.globalDefaults.newValue.fontSize) {
                 applyFontSize(changes.globalDefaults.newValue.fontSize);
             }
-
-
             handleRemoteSync(changes, areaName);
         }
     });
-
-
     function processPendingQuery(data, storageKey) {
         if (!data) return;
-
-
         if (storageKey) {
             chrome.storage.local.remove([storageKey]);
         }
-
         const { query, displayQuery, queryId, mode, sourceTab, timestamp } = data;
-
-
         if (timestamp && (Date.now() - timestamp > 120000)) {
             console.log('[Spotlight] Skipping stale pending query:', queryId);
             return;
         }
-
         if (queryId && handledQueryIds.has(queryId)) {
             return;
         }
-
         const checkReady = async () => {
             const currentTab = tabs[activeTabIndex];
             if (currentTab && !isInitializing) {
                 if (queryId) handledQueryIds.add(queryId);
-
                 if (sourceTab) {
                     toggleWebSourcePin(sourceTab, true);
                 }
-
                 if (data.createNewChat) {
                     resetChat(false);
                 }
-
                 await ensureTabHistoryLoaded(currentTab);
                 handleSubmit(query, [], { mode: mode || 'qa' }, currentTab, displayQuery);
             } else {
@@ -3868,14 +3245,10 @@ async function init() {
         };
         checkReady();
     }
-
-
-
     document.addEventListener('lumina:spotlight-model-change', (e) => {
         const isSecondary = e.target.closest('#pane-secondary') !== null;
         const targetIndex = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
         const targetSharedUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
-
         const activeTab = tabs[targetIndex];
         if (activeTab && e.detail) {
             activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
@@ -3885,7 +3258,6 @@ async function init() {
             if (targetSharedUI) {
                 targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
             }
-
             const sidKey = activeTab.sessionId || 'null';
             chrome.storage.local.get(['lumina_session_settings'], (res) => {
                 const settings = res.lumina_session_settings || {};
@@ -3893,20 +3265,15 @@ async function init() {
                 settings[sidKey].selectedModel = activeTab.selectedModel;
                 chrome.storage.local.set({ lumina_session_settings: settings });
             });
-
             chrome.storage.local.set({ lastUsedModel: activeTab.selectedModel });
         }
     });
-
     chrome.runtime.onMessage.addListener((request) => {
         if (request.action === 'settings_updated') {
-
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
             if (size) applyFontSize(size);
         } else if (request.action === 'clear_selection') {
-
             window.getSelection().removeAllRanges();
-
             ensureFocus();
         } else if (request.action === 'new_chat') {
             resetChat();
@@ -3919,11 +3286,9 @@ async function init() {
                     return;
                 }
                 if (queryId) handledQueryIds.add(queryId);
-
                 if (sourceTab) {
                     toggleWebSourcePin(sourceTab, true);
                 }
-
                 const currentTab = tabs[activeTabIndex];
                 if (currentTab) {
                     ensureTabHistoryLoaded(currentTab).then(() => {
@@ -3939,8 +3304,6 @@ async function init() {
             });
         }
     });
-
-
     chrome.windows.getCurrent(async (win) => {
         if (!win || !win.id) return;
         const key = `pending_sidepanel_query_${win.id}`;
@@ -3949,7 +3312,6 @@ async function init() {
             processPendingQuery(storageData[key], key);
         }
     });
-
     if (new URLSearchParams(window.location.search).has('sidepanel')) {
         chrome.windows.getCurrent((win) => {
             if (win && win.id) {
@@ -3967,31 +3329,20 @@ async function init() {
             }
         });
     }
-
-
     function ensureFocus() {
         const targetInput = getHoveredInputEl();
         if (!targetInput) return;
-
-
         const sidebar = document.getElementById('lumina-sidebar');
         if (sidebar && sidebar.classList.contains('active')) return;
-
         const setCursorToEnd = (el) => {
             try {
                 el.focus();
-
                 const len = el.value.length;
                 el.setSelectionRange(len, len);
             } catch (e) {
-
             }
         };
-
-
         setCursorToEnd(targetInput);
-
-
         setTimeout(() => {
             const sidebar = document.getElementById('lumina-sidebar');
             const el = getHoveredInputEl();
@@ -4003,27 +3354,18 @@ async function init() {
             if (el && (!sidebar || !sidebar.classList.contains('active'))) setCursorToEnd(el);
         }, 150);
     }
-
-
     ensureFocus();
-
-
     window.addEventListener('focus', () => {
         const selection = window.getSelection().toString().trim();
-
         if (selection && (selection.includes('--lumina-') || selection.includes('var(--lumina'))) {
             window.getSelection().removeAllRanges();
             ensureFocus();
             return;
         }
-
-
         if (!selection) {
             ensureFocus();
         }
     });
-
-
     setInterval(() => {
         if (tabs[activeTabIndex]) {
             const currentScroll = tabs[activeTabIndex].historyEl.scrollTop;
@@ -4033,8 +3375,6 @@ async function init() {
             }
         }
     }, 5000);
-
-
     const updateReadTitles = () => {
         if (typeof sharedInputUI?.refreshReadPageTitle === 'function') sharedInputUI.refreshReadPageTitle();
         if (typeof sharedInputUISecondary?.refreshReadPageTitle === 'function') sharedInputUISecondary.refreshReadPageTitle();
@@ -4047,10 +3387,7 @@ async function init() {
             }
         });
     }
-
     initSidebar();
-
-    
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('settings') === '1' || urlParams.get('section')) {
         setTimeout(() => {
@@ -4072,25 +3409,19 @@ function initSidebar() {
     const newChatBtn = document.getElementById('sidebar-new-chat-btn');
     const settingsBtn = document.getElementById('sidebar-settings-btn');
     const searchBtn = document.getElementById('sidebar-search-btn');
-
-    
     let backdrop = document.querySelector('.sidebar-backdrop');
     if (!backdrop) {
         backdrop = document.createElement('div');
         backdrop.className = 'sidebar-backdrop';
         document.body.appendChild(backdrop);
     }
-
-    
     const isCollapsed = localStorage.getItem('lumina_sidebar_collapsed') === 'true';
     if (isCollapsed && sidebar && !isSidePanel) {
         sidebar.classList.add('sidebar-collapsed');
     }
-
-    
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); 
+            e.stopPropagation();
             if (isSidePanel || window.innerWidth <= 768) {
                 if (sidebar.classList.contains('active')) {
                     closeMobileSidebar();
@@ -4105,8 +3436,6 @@ function initSidebar() {
             }
         });
     }
-
-    
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
             if (isSidePanel || window.innerWidth <= 768) return;
@@ -4122,14 +3451,11 @@ function initSidebar() {
             }
         });
     }
-
-    
     const closeMobileSidebar = () => {
         if (sidebar) sidebar.classList.remove('active');
         if (backdrop) backdrop.classList.remove('active');
         document.body.classList.remove('sidebar-open');
     };
-
     if (closeBtn) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -4141,18 +3467,15 @@ function initSidebar() {
             }
         });
     }
-
     if (backdrop) {
         backdrop.addEventListener('click', closeMobileSidebar);
     }
-
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
             resetChat(null);
             closeMobileSidebar();
         });
     }
-
     const brandBtn = document.querySelector('.sidebar-brand');
     if (brandBtn) {
         brandBtn.style.cursor = 'pointer';
@@ -4165,7 +3488,6 @@ function initSidebar() {
             closeMobileSidebar();
         });
     }
-
     if (settingsBtn) {
         settingsBtn.addEventListener('click', () => {
             if (typeof LuminaSettingsModal !== 'undefined') {
@@ -4176,7 +3498,6 @@ function initSidebar() {
             closeMobileSidebar();
         });
     }
-
     if (searchBtn) {
         searchBtn.addEventListener('click', () => {
             if (typeof LuminaSearchModal !== 'undefined') {
@@ -4185,23 +3506,19 @@ function initSidebar() {
             closeMobileSidebar();
         });
     }
-
     const userProfileEl = document.querySelector('.user-profile');
     if (userProfileEl) {
         userProfileEl.style.cursor = 'pointer';
         userProfileEl.addEventListener('click', (e) => {
             e.stopPropagation();
-
             let ctxMenu = document.getElementById('user-profile-context-menu');
             if (!ctxMenu) {
                 ctxMenu = document.createElement('div');
                 ctxMenu.id = 'user-profile-context-menu';
                 ctxMenu.className = 'sidebar-chat-context-menu';
                 ctxMenu.style.display = 'none';
-
                 const currentName = (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated && LuminaAuth.user) ? (LuminaAuth.user.name || "User") : "Lumina User";
                 const isAuth = typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated;
-
                 ctxMenu.innerHTML = `
                     <div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">
                         ${currentName}
@@ -4217,7 +3534,6 @@ function initSidebar() {
                     </div>
                 `;
                 document.body.appendChild(ctxMenu);
-
                 ctxMenu.querySelectorAll('.sidebar-ctx-item').forEach(item => {
                     item.addEventListener('click', async (e) => {
                         const action = item.dataset.action;
@@ -4238,7 +3554,6 @@ function initSidebar() {
                     });
                 });
             }
-
             const isAuth = typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated;
             const currentName = (isAuth && LuminaAuth.user) ? (LuminaAuth.user.name || "User") : "Lumina User";
             const nameHeader = ctxMenu.querySelector('.sidebar-ctx-header-name');
@@ -4249,7 +3564,6 @@ function initSidebar() {
             if (logoutSpan) {
                 logoutSpan.textContent = isAuth ? 'Sign out' : 'Sign in';
             }
-
             const rect = userProfileEl.getBoundingClientRect();
             ctxMenu.style.display = 'block';
             let top = rect.top - ctxMenu.offsetHeight - 6;
@@ -4259,7 +3573,6 @@ function initSidebar() {
             ctxMenu.style.left = left + 'px';
         });
     }
-
     document.addEventListener('mousedown', (e) => {
         const userCtxMenu = document.getElementById('user-profile-context-menu');
         if (userCtxMenu && userCtxMenu.style.display !== 'none') {
@@ -4268,11 +3581,7 @@ function initSidebar() {
             }
         }
     });
-
-    
     renderRecentChatsSidebar();
-
-    
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local') {
             if (changes[ChatHistoryManager.STORAGE_KEY]) {
@@ -4284,11 +3593,9 @@ function initSidebar() {
             }
             if (changes.lumina_session_settings) {
                 sessionSettings = changes.lumina_session_settings.newValue || {};
-                
                 const tabsToUpdate = [];
                 if (activeTabIndex >= 0 && tabs[activeTabIndex]) tabsToUpdate.push({ tab: tabs[activeTabIndex], isSec: false });
                 if (typeof isSplitMode !== 'undefined' && isSplitMode && secondaryActiveTabIndex >= 0 && tabs[secondaryActiveTabIndex]) tabsToUpdate.push({ tab: tabs[secondaryActiveTabIndex], isSec: true });
-
                 let changedAny = false;
                 let promises = tabsToUpdate.map(({ tab, isSec }) => {
                     const sidKey = tab.sessionId || 'null';
@@ -4301,17 +3608,14 @@ function initSidebar() {
                                 targetInputUI.activeTabModel = { ...saved.selectedModel };
                             }
                             changedAny = true;
-
                             return new Promise((resolve) => {
                                 chrome.storage.local.get(['advancedParamsByModel'], (res) => {
                                     const advParams = res.advancedParamsByModel || {};
                                     const modelObj = saved.selectedModel;
                                     const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
                                     const modelParams = advParams[compositeKey] || advParams[modelObj.model] || {};
-
                                     const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                                     const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-
                                     tab.thinkingLevel = newThinkingLevel;
                                     if (tab.chatUIInstance) {
                                         tab.chatUIInstance.thinkingLevel = newThinkingLevel;
@@ -4327,7 +3631,6 @@ function initSidebar() {
                     }
                     return Promise.resolve();
                 });
-
                 Promise.all(promises).then(() => {
                     if (changedAny) {
                         if (typeof saveTabsState === 'function') {
@@ -4357,7 +3660,6 @@ function updateRecentChatsActiveState() {
     const targetIdx = isSec ? secondaryActiveTabIndex : activeTabIndex;
     const activeTab = (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
     const activeSessionId = activeTab ? activeTab.sessionId : null;
-
     document.querySelectorAll('#sidebar-recent-chats .recent-chat-item').forEach(item => {
         const sid = item.dataset.sessionId;
         if (activeSessionId && sid === activeSessionId) {
@@ -4378,7 +3680,6 @@ window.updateSidebarSparksActiveState = updateSidebarSparksActiveState;
 async function renderRecentChatsSidebar() {
     const listContainer = document.getElementById('sidebar-recent-chats');
     if (!listContainer) return;
-
     const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
     const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
     const historyData = Object.values(sessions)
@@ -4390,10 +3691,8 @@ async function renderRecentChatsSidebar() {
             }
             return b.updatedAt - a.updatedAt;
         });
-
     const sparksRes = await chrome.storage.local.get(['lumina_sparks']);
     const sparksMap = sparksRes.lumina_sparks || {};
-
     let html = '';
     if (historyData.length === 0) {
         html = '<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-sidebar-text-muted); text-align: center;">No recent chats</div>';
@@ -4406,9 +3705,7 @@ async function renderRecentChatsSidebar() {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
             }
             if (!displayTitle) displayTitle = "Untitled Chat";
-
             let iconHTML = '';
-
             const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
             const isActive = session.id === activeSessionId ? ' active' : '';
             const pinHTML = session.pinned ? `
@@ -4416,7 +3713,6 @@ async function renderRecentChatsSidebar() {
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
                 </span>
             ` : '';
-
             html += `
                 <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
                     ${iconHTML}
@@ -4428,8 +3724,6 @@ async function renderRecentChatsSidebar() {
                 </div>
             `;
         });
-
-        
         if (window.namingSessionIds && window.namingSessionIds.size > 0) {
             const storedIds = new Set(historyData.map(s => s.id));
             window.namingSessionIds.forEach(namingSid => {
@@ -4447,10 +3741,7 @@ async function renderRecentChatsSidebar() {
             });
         }
     }
-
     listContainer.innerHTML = html;
-
-    
     let ctxMenu = document.getElementById('sidebar-chat-context-menu');
     if (!ctxMenu) {
         ctxMenu = document.createElement('div');
@@ -4477,24 +3768,19 @@ async function renderRecentChatsSidebar() {
             </div>
         `;
         document.body.appendChild(ctxMenu);
-
-        
         document.addEventListener('mousedown', (e) => {
             if (!ctxMenu.contains(e.target) && !e.target.closest('.recent-chat-item__menu-btn')) {
                 ctxMenu.style.display = 'none';
                 document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
             }
         });
-
         ctxMenu.querySelectorAll('.sidebar-ctx-item').forEach(item => {
             item.addEventListener('click', async (e) => {
                 const action = item.dataset.action;
                 const sid = ctxMenu.dataset.sessionId;
                 ctxMenu.style.display = 'none';
                 document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
-
                 if (!sid) return;
-
                 if (action === 'pin') {
                     const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
                     const store = res[ChatHistoryManager.STORAGE_KEY] || {};
@@ -4572,15 +3858,11 @@ async function renderRecentChatsSidebar() {
             });
         });
     }
-
-    
     listContainer.querySelectorAll('.recent-chat-item__menu-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const sid = btn.dataset.sessionId;
             const parentItem = btn.closest('.recent-chat-item');
-
-            
             ctxMenu.dataset.sessionId = sid;
             const pinItem = ctxMenu.querySelector('[data-action="pin"]');
             if (pinItem) {
@@ -4589,7 +3871,6 @@ async function renderRecentChatsSidebar() {
                     const isPinned = !!store[sid]?.pinned;
                     const textEl = pinItem.querySelector('span');
                     if (textEl) textEl.textContent = isPinned ? 'Unpin' : 'Pin';
-
                     const svgContainer = pinItem.querySelector('svg');
                     if (svgContainer) {
                         if (isPinned) {
@@ -4602,12 +3883,8 @@ async function renderRecentChatsSidebar() {
                     }
                 });
             }
-
-            
             document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
             if (parentItem) parentItem.classList.add('ctx-active');
-
-            
             const rect = btn.getBoundingClientRect();
             ctxMenu.style.display = 'block';
             let top = rect.bottom + 4;
@@ -4620,24 +3897,18 @@ async function renderRecentChatsSidebar() {
             ctxMenu.style.left = left + 'px';
         });
     });
-
-    
     listContainer.querySelectorAll('.recent-chat-item').forEach(item => {
         item.addEventListener('click', async (e) => {
             if (e.target.closest('.recent-chat-item__menu-btn')) return;
-
-            
             listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
-
             const sid = item.dataset.sessionId;
             const contentKey = `lumina_session_${sid}`;
             const contentData = await chrome.storage.local.get([contentKey]);
             const messages = contentData[contentKey] || [];
             const meta = sessions[sid] || { id: sid };
             window.loadHistoryIntoNewTab(messages, meta, sid);
-            
             const sidebar = document.getElementById('lumina-sidebar');
             const backdrop = document.querySelector('.sidebar-backdrop');
             if (sidebar) sidebar.classList.remove('active');
@@ -4646,7 +3917,6 @@ async function renderRecentChatsSidebar() {
         });
     });
 }
-
 
 function syncSessionsWithBackground() {
     if (!port || tabs.length === 0) return;
@@ -4659,15 +3929,9 @@ function syncSessionsWithBackground() {
 function setupPort() {
     try {
         port = chrome.runtime.connect({ name: 'lumina-chat-stream' });
-
-
         syncSessionsWithBackground();
-
         port.onMessage.addListener((msg) => {
-
             let affectedTabs = [];
-
-
             if (msg.sessionId) {
                 affectedTabs = tabs.filter(t => t.sessionId === msg.sessionId);
             } else if (streamingTab && streamingTab.sessionId) {
@@ -4675,7 +3939,6 @@ function setupPort() {
             } else if (chatUI) {
                 affectedTabs = [tabs[activeTabIndex]];
             }
-
             if (msg.error) {
                 console.error('[Lumina Stream] error', {
                     tabId: streamingTab?.id || null,
@@ -4689,7 +3952,6 @@ function setupPort() {
                     targetUI.appendError(msg.error);
                     targetUI.currentAnswerDiv = null;
                 });
-
                 const _streamingIsSec = typeof isSplitMode !== 'undefined' && isSplitMode && streamingTab === tabs[secondaryActiveTabIndex];
                 const _streamingInputUI = _streamingIsSec ? sharedInputUISecondary : sharedInputUI;
                 if (_streamingInputUI) {
@@ -4699,51 +3961,34 @@ function setupPort() {
                 streamingTab = null;
                 return;
             }
-
-
             if (msg.action === 'web_search_status') {
                 affectedTabs.forEach(tab => {
                     tab.chatUIInstance.handleWebSearchStatus(msg);
                 });
                 return;
             }
-
-
-
-
             if (msg.action === 'chunk' && msg.chunk) {
                 affectedTabs.forEach(tab => {
                     tab.chatUIInstance.appendChunk(msg.chunk, tab.id !== streamingTab?.id);
                 });
             }
-
-
             if (msg.action === 'done') {
                 const sid = msg.sessionId || (streamingTab?.sessionId);
-
-
                 affectedTabs.forEach(tab => {
                     const targetUI = tab.chatUIInstance;
                     const answerDiv = targetUI.currentAnswerDiv;
                     const isRegen = !!targetUI._regenScrollLocked;
-
                     const skipScroll = isRegen || tab.id !== streamingTab?.id;
                     const skipMargin = isRegen;
                     targetUI.finishAnswer(skipMargin, skipScroll);
-
-
                     if (isRegen && targetUI._regenScrollContainer) {
                         const lockedContainer = targetUI._regenScrollContainer;
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
-
                                 lockedContainer.style.overflowAnchor = '';
-
-
                                 targetUI._regenScrollLocked = false;
                                 targetUI._regenScrollContainer = null;
                                 targetUI._regenScrollPosition = null;
-
                                 const sh = lockedContainer.scrollHeight;
                                 const vh = lockedContainer.clientHeight;
                                 const pos = lockedContainer.scrollTop;
@@ -4752,8 +3997,6 @@ function setupPort() {
                             });
                         });
                     }
-
-
                     requestAnimationFrame(() => {
                         const _doneIsSec = typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex];
                         const _doneInputUI = _doneIsSec ? sharedInputUISecondary : sharedInputUI;
@@ -4766,8 +4009,6 @@ function setupPort() {
                             if (entry) {
                                 const nav = entry.querySelector('.lumina-answer-nav');
                                 if (nav) nav.style.display = 'flex';
-
-
                                 if (targetUI._regenEntryType === 'translation' && targetUI._regenSourceText) {
                                     const latestTranslation = answerDiv.textContent.trim();
                                     chrome.runtime.sendMessage({
@@ -4781,25 +4022,17 @@ function setupPort() {
                         }
                     });
                 });
-
                 saveTabsState();
-
                 streamingTab = null;
                 streamDebugState = null;
             }
         });
-
         port.onDisconnect.addListener(() => {
             const lastError = chrome.runtime.lastError;
-
             if (streamingTab || (streamDebugState && streamDebugState.chunkCount > 0)) {
-
             } else {
             }
-
             port = null;
-
-
             if (streamingTab && streamingTab.sessionId) {
                 const affectedTabs = tabs.filter(t => t.sessionId === streamingTab.sessionId);
                 affectedTabs.forEach(t => {
@@ -4828,13 +4061,11 @@ function setupPort() {
             streamingTab = null;
             streamDebugState = null;
         });
-
     } catch (e) {
         console.error('[Spotlight] Failed to setup port:', e);
         port = null;
     }
 }
-
 
 let streamingTab = null;
 let streamDebugState = null;
@@ -4842,7 +4073,6 @@ let streamDebugState = null;
 async function handleSubmit(text, images, extra = {}, targetTab = null, displayQuery = null) {
     const currentTab = targetTab || tabs[activeTabIndex];
     if (!currentTab) return;
-
     if (!currentTab.sessionId) {
         const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
         currentTab.sessionId = newSessionId;
@@ -4857,8 +4087,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             targetUI.historyEl.dataset.sessionId = newSessionId;
         }
         updateUrlSessionId(newSessionId);
-
-        
         const currentModel = currentTab.selectedModel;
         const currentThinking = currentTab.thinkingLevel;
         chrome.storage.local.get(['lumina_session_settings'], (res) => {
@@ -4870,39 +4098,26 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             chrome.storage.local.set({ lumina_session_settings: settings });
         });
     }
-
-
     const now = Date.now();
     const isVeryClose = lastSubmitTime && (now - lastSubmitTime < 250);
     const isDuplicateText = lastSubmitTime && (now - lastSubmitTime < 1000) && lastSubmitText === text;
-
     if (isVeryClose || isDuplicateText) {
         console.warn('[Lumina] Rapid submission suppressed:', { text, diff: now - lastSubmitTime });
         return;
     }
     lastSubmitTime = now;
     lastSubmitText = text;
-
-
     const targetChatUI = currentTab.chatUIInstance;
-
-
     if (currentTab === tabs[activeTabIndex]) {
         chatUI = targetChatUI;
     }
-
-
     currentTab.userScrolledUp = false;
     if (targetChatUI) targetChatUI.disableAutoScroll = false;
-
     const _isSecTab = typeof isSplitMode !== 'undefined' && isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
     const _activeInputUI = _isSecTab ? sharedInputUISecondary : sharedInputUI;
     if (_activeInputUI) _activeInputUI.isGenerating = true;
-
-
     const translateMatch = text && text.match(/^translate:?\s*([\s\S]*)/i);
     const proofreadMatch = !translateMatch && text && text.match(/^proofread:?\s*([\s\S]*)/i);
-
     if (translateMatch) {
         text = translateMatch[1].trim();
         extra = { ...extra, mode: 'translate' };
@@ -4910,24 +4125,17 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         text = proofreadMatch[1].trim();
         extra = { ...extra, mode: 'proofread' };
     }
-
-
     if (currentTab) {
         const rawText = displayQuery || text || (images.length > 0 ? 'Video/Image Analysis' : 'Chat');
         const newTitle = rawText.length > 20 ? rawText.substring(0, 20) + '...' : rawText;
-
-
         tabs.forEach(t => {
             if (t.sessionId === currentTab.sessionId) {
                 t.title = newTitle;
             }
         });
-
         renderTabs();
         saveTabsState();
     }
-
-
     streamingTab = currentTab;
     streamDebugState = {
         tabId: currentTab.id,
@@ -4940,9 +4148,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         imageCount: images ? images.length : 0,
         mode: extra.mode || 'qa'
     };
-
-
-
     if (extra.mode === 'translate') {
         await targetChatUI.handleTranslation(text);
         if (_activeInputUI) {
@@ -4952,7 +4157,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         saveTabsState();
         return;
     }
-
     if (extra.mode === 'dictionary' || (text && text.match(/^Define: /i))) {
         const word = displayQuery || (text ? text.replace(/^Define: /i, '').trim() : '');
         if (word) {
@@ -4965,9 +4169,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             return;
         }
     }
-
     if (extra.mode === 'websource') {
-
         tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
             t.chatUIInstance.openWebSource(extra.source, text);
         });
@@ -4977,30 +4179,21 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
         return;
     }
-
-
     let untilEntryId = null;
     if (extra.isRecheck || extra.isRegenerate) {
         untilEntryId = extra.entryId;
         if (!untilEntryId) {
-
             const lastEntry = targetChatUI.historyEl.querySelector('.lumina-dict-entry:last-child');
             untilEntryId = lastEntry ? lastEntry.dataset.entryId : null;
         }
     }
-
-
     const isSecondaryTabForSubmit = typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && currentTab === tabs[secondaryActiveTabIndex];
     const activeInputUI = isSecondaryTabForSubmit ? sharedInputUISecondary : sharedInputUI;
     if (targetChatUI && activeInputUI) {
         targetChatUI.tokenLimit = activeInputUI.tokenLimit;
     }
-
     const conversationHistory = targetChatUI.gatherMessages(untilEntryId, false, currentTab?.thinkingLevel || activeInputUI?.thinkingLevel || 'none');
-
     let apiText = text;
-
-
     if (extra.isRegenerate && !text) {
         const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : null;
         if (targetEntry) {
@@ -5011,21 +4204,14 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             }
         }
     }
-
-
     let streamAction = 'chat_stream';
     if (extra.mode === 'proofread') {
         streamAction = 'proofread';
     }
-
-
     const syncTabs = tabs.filter(t => t.sessionId === currentTab.sessionId);
-
     syncTabs.forEach(t => {
-
         const skipMargin = t !== currentTab;
         const ui = t.chatUIInstance;
-
         if (!extra.isRecheck && !extra.isRegenerate) {
             ui.appendQuestion(text, images, {
                 editable: false,
@@ -5037,16 +4223,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             const pane = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0 && t === tabs[secondaryActiveTabIndex]) ? 'secondary' : 'primary';
             updateWelcomeScreenState(pane);
         } else {
-
             if (t !== currentTab) {
-
                 t.historyEl.innerHTML = currentTab.historyEl.innerHTML;
                 ui._setupHistoryDelegation(t.historyEl);
                 ui.initListeners(t.historyEl);
                 ui.syncStateFromDOM();
             }
-
-
             const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
             if (targetEntry) {
                 ui.clearAnswer(targetEntry);
@@ -5055,17 +4237,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     });
     saveTabsState(true);
-    
     if (typeof renderRecentChatsSidebar === 'function') {
-        
         setTimeout(renderRecentChatsSidebar, 0);
     }
-
     let pageContext = "";
     const isSpotlightWindow = !isSidePanel && !isWebApp;
-
     const shouldReadPage = isSpotlightWindow ? false : ((extra.readPage !== undefined) ? extra.readPage : readWebpageEnabled);
-
     let tabModel = currentTab?.selectedModel;
     if (!tabModel) {
         const isSecondaryTab = isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
@@ -5074,8 +4251,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             tabModel = fallbackUI.activeTabModel;
         }
     }
-
-    
     let webSourceScope = [];
     if (isSidePanel && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const selection = getWebSelectionForScope(currentTab.id);
@@ -5095,17 +4270,13 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             ];
         }
     }
-
     if (webSourceScope.length > 0) {
         try {
             const results = await Promise.all(webSourceScope.map(async (source) => {
                 const cacheKey = `${source.tabId}::${source.url}`;
-
-                
                 if (pageContextCache.has(cacheKey)) {
-                    return pageContextCache.get(cacheKey); 
+                    return pageContextCache.get(cacheKey);
                 }
-
                 try {
                     const tabResults = await chrome.scripting.executeScript({
                         target: { tabId: source.tabId, allFrames: true },
@@ -5123,9 +4294,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 }
                 return [];
             }));
-
             const flatResults = results.flat().filter(r => r && r.content);
-
             const uniqueResults = [];
             const cleanTextForCompare = (str) => {
                 return str.replace(/\[Context Source:[^\]]+\]/g, '')
@@ -5146,7 +4315,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 }
                 if (!isDuplicate) uniqueResults.push(ctx);
             });
-
             if (uniqueResults.length > 0) {
                 const pieces = uniqueResults.map((ctx, index) => {
                     const header = uniqueResults.length === 1
@@ -5155,7 +4323,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                     return `${header}\nURL: ${ctx.url}\n\n${ctx.content}`;
                 });
                 pageContext = pieces.join("\n\n---\n\n");
-
                 const currentUrl = currentBrowserTab ? currentBrowserTab.url : "";
                 if (currentTab && currentTab.lastContextUrl && currentTab.lastContextUrl !== currentUrl) {
                     const transitionMarker = `[SYSTEM NOTE: The user has navigated to a new page. Please prioritize the following context and ignore conflicting information from previous messages in this conversation.]`;
@@ -5167,8 +4334,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             console.error("[Spotlight] Failed to read pinned tabs:", err);
         }
     }
-
-
     const message = {
         action: streamAction,
         sessionId: currentTab?.sessionId,
@@ -5188,7 +4353,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 : {})
         }
     };
-
     if (currentTab && currentTab.sparkId) {
         const sparksRes = await chrome.storage.local.get(['lumina_sparks']);
         const sparks = sparksRes.lumina_sparks || {};
@@ -5209,30 +4373,23 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             }
         }
     }
-
-
     if (tabModel) {
         chrome.storage.local.set({ lastUsedModel: tabModel });
     }
-
-
     const sendMessage = () => {
         if (!port) setupPort();
         if (!port) throw new Error("Could not establish connection");
         port.postMessage(message);
-
         const stopHandler = () => {
             if (port) {
                 const sid = currentTab?.sessionId;
                 if (sid) {
                     port.postMessage({ action: 'stop_chat', sessionId: sid });
                 } else {
-
                     port.disconnect();
                     port = null;
                 }
             }
-
             syncTabs.forEach(tab => {
                 tab.chatUIInstance.removeLoading();
                 if (tab.chatUIInstance.currentAnswerDiv) {
@@ -5244,14 +4401,12 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 _activeInputUI._updateActionBtnState();
             }
         };
-
         if (_activeInputUI) {
             _activeInputUI.isGenerating = true;
             _activeInputUI.onStop = stopHandler;
             _activeInputUI._updateActionBtnState();
         }
     };
-
     try {
         sendMessage();
     } catch (e) {
@@ -5264,8 +4419,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             targetChatUI.appendError('Connection failed.');
         }
     }
-
-    
     if (
         !extra.isRegenerate &&
         !extra.isRecheck &&
@@ -5289,12 +4442,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     }
 }
 
-
 async function handleTranslation(text) {
     await chatUI.handleTranslation(text);
-
 }
-
 
 function matchesAnnotationShortcut(event, shortcut) {
     if (!shortcut) return false;
@@ -5302,18 +4452,14 @@ function matchesAnnotationShortcut(event, shortcut) {
     const altMatch = !!shortcut.altKey === event.altKey;
     const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
     const metaMatch = !!shortcut.metaKey === event.metaKey;
-
     const keyMatch = (shortcut.code && event.code === shortcut.code) ||
         (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
-
     const isMatched = ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
-
     return isMatched;
 }
 
 function setupGlobalListeners() {
     hoveredPane = 'primary';
-
     if (sharedInputUI?.inputEl) {
         sharedInputUI.inputEl.addEventListener('focus', () => {
             if (hoveredPane !== 'primary') {
@@ -5326,7 +4472,6 @@ function setupGlobalListeners() {
             }
         });
     }
-
     if (sharedInputUISecondary?.inputEl) {
         sharedInputUISecondary.inputEl.addEventListener('focus', () => {
             if (hoveredPane !== 'secondary') {
@@ -5339,7 +4484,6 @@ function setupGlobalListeners() {
             }
         });
     }
-
     document.addEventListener('keydown', (event) => {
         if (document.querySelector('.recording')) return;
         const searchOverlay = document.getElementById('lumina-search-overlay');
@@ -5348,29 +4492,22 @@ function setupGlobalListeners() {
             if (searchInput && document.activeElement !== searchInput) {
                 const selection = window.getSelection().toString().trim();
                 const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-
                 if (selection && !isTypeable) {
                     return;
                 }
-
                 if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
-
                 if (!isTypeable) {
                     searchInput.focus();
                     return;
                 }
-
                 event.stopPropagation();
                 event.stopImmediatePropagation();
                 event.preventDefault();
-
                 searchInput.focus();
-
                 if (searchInput.setSelectionRange) {
                     const len = searchInput.value.length;
                     searchInput.setSelectionRange(len, len);
                 }
-
                 const val = searchInput.value;
                 searchInput.value = val + event.key;
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -5387,13 +4524,11 @@ function setupGlobalListeners() {
                 event.stopImmediatePropagation();
                 const openChar = event.key;
                 const closeChar = pairs[openChar];
-
                 if (activeEl.isContentEditable) {
                     const sel = window.getSelection();
                     if (sel && sel.rangeCount > 0) {
                         const selectedText = sel.toString();
                         document.execCommand('insertText', false, openChar + selectedText + closeChar);
-
                         const range = sel.getRangeAt(0);
                         if (range.startContainer.nodeType === 3) {
                             const newOffset = Math.max(0, range.startOffset - 1);
@@ -5408,13 +4543,10 @@ function setupGlobalListeners() {
                     const start = activeEl.selectionStart;
                     const end = activeEl.selectionEnd;
                     const val = activeEl.value;
-
                     const before = val.substring(0, start);
                     const selectedText = val.substring(start, end);
                     const after = val.substring(end);
-
                     activeEl.value = before + openChar + selectedText + closeChar + after;
-
                     activeEl.focus();
                     const newCursor = start + 1 + selectedText.length;
                     activeEl.setSelectionRange(newCursor, newCursor);
@@ -5423,7 +4555,6 @@ function setupGlobalListeners() {
                 return;
             }
         }
-
         const activeElement = document.activeElement;
         const selection = window.getSelection().toString().trim();
         const isEditing = activeElement && (
@@ -5431,15 +4562,11 @@ function setupGlobalListeners() {
             activeElement.tagName === 'TEXTAREA' ||
             activeElement.isContentEditable
         );
-
-
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
             modifierKeyPressedAlone = true;
         } else {
             modifierKeyPressedAlone = false;
         }
-
-
         if (matchesShortcut(event, 'translateInput', shortcuts)) {
             const activeEl = document.activeElement;
             const isEditingLocal = activeEl && (
@@ -5447,16 +4574,13 @@ function setupGlobalListeners() {
                 activeEl.tagName === 'TEXTAREA' ||
                 activeEl.isContentEditable
             );
-
             if (isEditingLocal) {
                 if (activeEl.__luminaTranslating) return;
-
                 let textToTranslate = '';
                 let hasSelection = false;
                 let selectionStart = 0;
                 let selectionEnd = 0;
                 let paragraphNode = null;
-
                 if (activeEl.isContentEditable) {
                     const sel = window.getSelection();
                     if (sel && sel.rangeCount > 0) {
@@ -5484,7 +4608,6 @@ function setupGlobalListeners() {
                     selectionStart = activeEl.selectionStart;
                     selectionEnd = activeEl.selectionEnd;
                     hasSelection = selectionStart !== selectionEnd;
-
                     if (hasSelection) {
                         textToTranslate = activeEl.value.substring(selectionStart, selectionEnd);
                     } else {
@@ -5498,22 +4621,18 @@ function setupGlobalListeners() {
                             const startIdx = val.lastIndexOf('\n', cursor - 1) + 1;
                             let endIdx = val.indexOf('\n', cursor);
                             if (endIdx === -1) endIdx = val.length;
-
                             textToTranslate = val.substring(startIdx, endIdx);
                             selectionStart = startIdx;
                             selectionEnd = endIdx;
                         }
                     }
                 }
-
                 textToTranslate = textToTranslate.trim();
                 if (textToTranslate.length > 0) {
                     event.preventDefault();
                     event.stopPropagation();
                     event.stopImmediatePropagation();
-
                     activeEl.__luminaTranslating = true;
-
                     let targetEl = activeEl;
                     if (activeEl.isContentEditable) {
                         if (hasSelection) {
@@ -5536,14 +4655,11 @@ function setupGlobalListeners() {
                         activeEl.focus();
                         activeEl.setSelectionRange(selectionStart, selectionEnd);
                     }
-
                     const originalPointerEvents = activeEl.style.pointerEvents || '';
                     activeEl.style.pointerEvents = 'none';
-
                     const defaultColorStyle = window.getComputedStyle(activeEl).color || 'rgb(0,0,0)';
                     const rgbMatch = defaultColorStyle.match(/\d+/g);
                     const defaultRGB = rgbMatch ? rgbMatch.slice(0, 3).map(Number) : [0, 0, 0];
-
                     let styleEl = document.getElementById('lumina-pulse-style');
                     if (!styleEl) {
                         styleEl = document.createElement('style');
@@ -5551,19 +4667,15 @@ function setupGlobalListeners() {
                         document.head.appendChild(styleEl);
                     }
                     activeEl.classList.add('lumina-pulse-active');
-
                     let isPulsing = true;
                     const startTime = Date.now();
-
                     function smoothPulse() {
                         if (!isPulsing) return;
                         const elapsed = Date.now() - startTime;
                         const pulseFactor = 0.5 + 0.5 * Math.sin(elapsed * 0.005);
-
                         const r = Math.round(defaultRGB[0] + (26 - defaultRGB[0]) * pulseFactor);
                         const g = Math.round(defaultRGB[1] + (115 - defaultRGB[1]) * pulseFactor);
                         const b = Math.round(defaultRGB[2] + (232 - defaultRGB[2]) * pulseFactor);
-
                         styleEl.textContent = `
                           .lumina-pulse-active::selection {
                             background-color: transparent !important;
@@ -5573,7 +4685,6 @@ function setupGlobalListeners() {
                         requestAnimationFrame(smoothPulse);
                     }
                     requestAnimationFrame(smoothPulse);
-
                     try {
                         chrome.runtime.sendMessage({
                             action: 'translate_input_text',
@@ -5582,12 +4693,10 @@ function setupGlobalListeners() {
                             isPulsing = false;
                             activeEl.classList.remove('lumina-pulse-active');
                             if (styleEl) styleEl.textContent = '';
-
                             setTimeout(() => {
                                 activeEl.style.pointerEvents = originalPointerEvents;
                                 activeEl.__luminaTranslating = false;
                             }, 600);
-
                             if (response && response.translatedText) {
                                 if (activeEl.isContentEditable) {
                                     const cleanedText = response.translatedText.replace(/\n\n/g, '\n');
@@ -5602,7 +4711,6 @@ function setupGlobalListeners() {
                                             range.selectNodeContents(paragraphNode);
                                             sel.removeAllRanges();
                                             sel.addRange(range);
-
                                             document.execCommand('insertText', false, cleanedText);
                                             activeEl.dispatchEvent(new Event('input', { bubbles: true }));
                                         }
@@ -5612,11 +4720,9 @@ function setupGlobalListeners() {
                                     const before = val.substring(0, selectionStart);
                                     const after = val.substring(selectionEnd);
                                     activeEl.value = before + response.translatedText + after;
-
                                     activeEl.focus();
                                     const newCursorPos = selectionStart + response.translatedText.length;
                                     activeEl.setSelectionRange(newCursorPos, newCursorPos);
-
                                     activeEl.dispatchEvent(new Event('input', { bubbles: true }));
                                 }
                             }
@@ -5635,39 +4741,27 @@ function setupGlobalListeners() {
                 return;
             }
         }
-
         const shortcutActions = Object.keys(shortcuts);
         for (const action of shortcutActions) {
             const shortcut = shortcuts[action];
             if (!shortcut) continue;
             if (!isShortcutMatchImmediate(event, shortcut)) continue;
-
-
-
             if (isEditing) {
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
                 if (!hasModifier && !isOverridingShortcut) continue;
             }
-
-
-
             if ((action === 'translate' || action === 'askLumina' || action === 'audio') && !selection) {
-
                 if (action === 'audio' && _spotlightCurrentAudio) {
-
                 } else {
                     continue;
                 }
             }
-
             event.preventDefault();
             event.stopPropagation();
             dispatchConfiguredShortcutAction(action);
             return;
         }
-
-
         if (selection && questionMappings && questionMappings.length > 0) {
             if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
                 for (const mapping of questionMappings) {
@@ -5680,12 +4774,10 @@ function setupGlobalListeners() {
                         const eventKey = event.key.toLowerCase();
                         isMatch = (eventKey === keyLower && !event.ctrlKey && !event.metaKey && !event.altKey);
                     }
-
                     if (isMatch) {
                         event.preventDefault();
                         event.stopPropagation();
                         event.stopImmediatePropagation();
-
                         let fullQuestion;
                         const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph/i.test(mapping.prompt);
                         if (hasVariables) {
@@ -5696,25 +4788,19 @@ function setupGlobalListeners() {
                         } else {
                             fullQuestion = `"${selection}" ${mapping.prompt}`;
                         }
-
-
                         const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
                             ? secondaryActiveTabIndex
                             : activeTabIndex;
                         const targetTab = tabs[targetTabIdx];
-
-
                         if (targetTab && targetTab.chatUIInstance) {
                             const sel = window.getSelection();
                             const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                             if (range && range.startContainer) {
-
                                 if (window.LuminaAnnotation) {
                                     window.LuminaAnnotation.highlight(range);
                                 }
                             }
                         }
-
                         handleSubmit(fullQuestion, [], {}, targetTab || null);
                         window.getSelection().removeAllRanges();
                         if (window.LuminaSelection) LuminaSelection.hide();
@@ -5723,14 +4809,8 @@ function setupGlobalListeners() {
                 }
             }
         }
-
         const inputEl = getHoveredInputEl();
-
-
         if (event.key === ' ' && !selection) return;
-
-
-
         if (event.key === 'Enter') {
             const activeEl = document.activeElement;
             const isEditingLocal = activeEl && (
@@ -5738,19 +4818,16 @@ function setupGlobalListeners() {
                 activeEl.tagName === 'TEXTAREA' ||
                 activeEl.isContentEditable
             );
-
             if (!isEditingLocal) {
                 const targetInput = getHoveredInputEl();
                 const targetChatUI = targetInput === sharedInputUISecondary?.inputEl ? chatUISecondary : chatUI;
                 const hasInputText = !!targetInput && targetInput.value.trim().length > 0;
-
                 if (hasInputText && targetChatUI && typeof targetChatUI._handleSubmit === 'function') {
                     event.preventDefault();
                     event.stopPropagation();
                     targetChatUI._handleSubmit();
                     return;
                 }
-
                 if (targetInput) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -5758,19 +4835,13 @@ function setupGlobalListeners() {
                 }
             }
         }
-
-
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
-
-
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
-
             const inputEl = getHoveredInputEl();
             if (inputEl) {
                 event.preventDefault();
@@ -5780,33 +4851,22 @@ function setupGlobalListeners() {
             }
             return;
         }
-
-
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
-
-
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
-
             const inputEl = getHoveredInputEl();
             if (inputEl) {
                 inputEl.focus();
-
                 return;
             }
         }
-
-
-
         if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.length === 1) {
             return;
         }
-
-
         if (matchesShortcut(event, 'audio', shortcuts)) {
             if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
             event.preventDefault();
@@ -5819,12 +4879,10 @@ function setupGlobalListeners() {
                 const sel = window.getSelection();
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.LuminaSelection) {
-
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                         ? 'secondary' : 'primary';
-
                     LuminaSelection.show(0, 0, selection, range);
                     LuminaSelection.showInput();
                     window.getSelection().removeAllRanges();
@@ -5834,36 +4892,25 @@ function setupGlobalListeners() {
             }
             return;
         }
-
-
         if (selection && (window.LuminaSelection && !LuminaSelection.isInsideEditable())) {
-
-
             if (matchesShortcut(event, 'askLumina', shortcuts)) {
                 event.preventDefault();
                 event.stopPropagation();
-
                 const sel = window.getSelection();
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.LuminaSelection) {
                     const text = selection;
-
-
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
                     spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                         ? 'secondary' : 'primary';
-
                     LuminaSelection.show(0, 0, text, range);
                     LuminaSelection.showInput();
                     window.getSelection().removeAllRanges();
                     return;
                 }
             }
-
-
             if (matchesShortcut(event, 'translate', shortcuts)) {
-
                 event.preventDefault();
                 event.stopPropagation();
                 handleTranslation(selection);
@@ -5871,110 +4918,70 @@ function setupGlobalListeners() {
                 if (window.LuminaSelection) LuminaSelection.hide();
                 return;
             }
-
         }
-
-
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-
             const activeEl = document.activeElement;
             if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
                 return;
             }
-
-
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
-
             if (inputEl) inputEl.focus();
             return;
         }
-
-
-        
         for (const shortcut of annotationShortcuts) {
             if (shortcut.enabled === false) continue;
             if (matchesAnnotationShortcut(event, shortcut)) {
                 if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
-
                 const sel = window.getSelection();
                 const text = sel ? sel.toString().trim() : '';
                 if (text.length > 0 && sel.rangeCount > 0) {
                     event.preventDefault();
                     event.stopPropagation();
                     event.stopImmediatePropagation();
-
                     const range = sel.getRangeAt(0);
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
-
                     if (window.LuminaAnnotation) {
                         LuminaAnnotation.saveHighlight(range, color, highlightId);
                         LuminaAnnotation.applyHighlight(range, color, highlightId);
                     }
-
                     window.getSelection().removeAllRanges();
                     if (window.LuminaSelection) LuminaSelection.hide();
                     return;
                 }
             }
         }
-
         if (['Control', 'Shift', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(event.key)) return;
-
-
-
-
         const isWrongPaneFocused = isSplitMode && inputEl &&
             (inputEl === sharedInputUI?.inputEl ? activeElement === sharedInputUISecondary?.inputEl : activeElement === sharedInputUI?.inputEl);
-
-
         if ((!isEditing || isWrongPaneFocused) && inputEl) {
-
             const sidebar = document.getElementById('lumina-history-sidebar');
             if (sidebar && sidebar.classList.contains('open')) return;
-
-
-
             const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-
             if (selection && !isTypeable) {
-
                 return;
             }
-
-
-
             if (!isTypeable) {
                 inputEl.focus();
                 return;
             }
-
-
             event.stopPropagation();
             event.stopImmediatePropagation();
             event.preventDefault();
-
             inputEl.focus();
-
             if (inputEl.setSelectionRange) {
                 const len = inputEl.value.length;
                 inputEl.setSelectionRange(len, len);
             }
-
             const val = inputEl.value;
             inputEl.value = val + event.key;
             inputEl.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }, true);
-
-
     document.addEventListener('mousedown', (event) => {
-
-
         const resetShortcut = shortcuts.resetChat;
         if (!resetShortcut) return;
-
         if (isShortcutMatch(event, resetShortcut)) {
             event.preventDefault();
             resetChat();
@@ -5982,22 +4989,18 @@ function setupGlobalListeners() {
     });
 }
 
-
 function resetChat(isSecondary = null) {
     if (isSecondary === null) {
         isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && typeof hoveredPane !== 'undefined' && hoveredPane === 'secondary');
     }
     stopSpotlightAudio();
-
     const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
     if (targetIdx !== -1) {
         const activeTab = tabs[targetIdx];
-
         if (activeTab) {
             if (port && activeTab.sessionId) {
                 port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
             }
-
             activeTab.title = 'New Tab';
             activeTab.sessionId = null;
             if (!activeTab.selectedModel) {
@@ -6020,7 +5023,6 @@ function resetChat(isSecondary = null) {
             }
         }
     }
-
     const targetUI = isSecondary ? chatUISecondary : chatUI;
     if (targetUI) {
         targetUI.clearHistory();
@@ -6041,7 +5043,6 @@ function resetChat(isSecondary = null) {
             targetUI.inputEl.focus();
         }
     }
-
     if (isSecondary) {
         if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
             window.updateTopbarModelSelectorSecondary();
@@ -6051,7 +5052,6 @@ function resetChat(isSecondary = null) {
             window.updateTopbarModelSelector();
         }
     }
-
     renderTabs();
     saveTabsState();
     if (typeof updateRecentChatsActiveState === 'function') {
@@ -6062,26 +5062,20 @@ function resetChat(isSecondary = null) {
     }
     updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
     updateInputPlaceholder();
-
     const regenBtn = document.getElementById('lumina-regenerate-btn');
     if (regenBtn) regenBtn.style.display = 'none';
 }
 
-
 function setupRegenerateButtons() {
     const buttons = document.querySelectorAll('#lumina-regenerate-btn');
     buttons.forEach(btn => {
-
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
-
         newBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-
             const isSecondary = newBtn.closest('#pane-secondary') !== null;
             const targetUI = isSecondary ? chatUISecondary : chatUI;
-
             if (newBtn.classList.contains('loading')) {
                 if (targetUI && targetUI.onStop) targetUI.onStop();
                 if (targetUI) targetUI.hideStopButton();
@@ -6091,7 +5085,6 @@ function setupRegenerateButtons() {
         });
     });
 }
-
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -6133,7 +5126,6 @@ window.addEventListener('focus', () => {
     }
 });
 
-
 document.addEventListener('mousedown', (e) => {
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.button === 0) {
         const focused = document.activeElement;
@@ -6152,65 +5144,44 @@ document.addEventListener('mousedown', (e) => {
     }
 }, true);
 
-
 document.addEventListener('copy', (e) => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-
     const range = sel.getRangeAt(0);
     const fragment = range.cloneContents();
-
-
     function getVisibleText(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             return node.textContent;
         }
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
-
         const el = node;
         const tag = el.tagName.toLowerCase();
-
-
         if (['button', 'svg', 'mat-icon', 'script', 'style', 'noscript'].includes(tag)) {
             return '';
         }
-
-
         if (el.getAttribute('aria-hidden') === 'true') {
             return '';
         }
-
-
         const className = el.className?.toString() || '';
         if (/\b(icon|material-icons|google-symbols|fa-|glyphicon)\b/i.test(className)) {
             return '';
         }
-
-
         let text = '';
         for (const child of el.childNodes) {
             text += getVisibleText(child);
         }
-
-
         if (['div', 'p', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
             text = '\n' + text + '\n';
         }
-
         return text;
     }
-
     let extracted = getVisibleText(fragment);
-
-
     extracted = extracted
         .replace(/\n{3,}/g, '\n\n')
         .replace(/[ \t]+/g, ' ')
         .replace(/ ?\n ?/g, '\n')
         .trim();
-
     const original = sel.toString().trim();
-
     if (extracted && extracted !== original) {
         e.preventDefault();
         e.clipboardData.setData('text/plain', extracted);
@@ -6220,28 +5191,19 @@ document.addEventListener('copy', (e) => {
     }
 }, true);
 
-
-
 function triggerRegenerate(targetUI = null) {
     const tUI = targetUI || chatUI;
     const history = tUI?.historyEl;
     if (!history) return;
-
-
     const lastEntry = history.lastElementChild;
     if (!lastEntry || !lastEntry.classList.contains('lumina-dict-entry')) return;
-
     const entryType = lastEntry.dataset.entryType;
     let originalQuestion = null;
-
-
     if (entryType === 'translation') {
         const transSource = lastEntry.querySelector('.lumina-translation-source .lumina-translation-text');
         if (transSource) {
             const sourceText = transSource.textContent.trim();
             originalQuestion = `Translate this text: "${sourceText}"`;
-
-
             if (tUI) {
                 tUI._regenSourceText = sourceText;
                 tUI._regenEntryType = 'translation';
@@ -6254,14 +5216,10 @@ function triggerRegenerate(targetUI = null) {
             originalQuestion = `Look up and explain the meaning of: "${word}"`;
         }
     }
-
-
     if (!originalQuestion) {
         const questionEl = lastEntry.querySelector('.lumina-chat-question');
         if (questionEl) {
             originalQuestion = questionEl.textContent.trim();
-
-
             const contextEl = lastEntry.querySelector('.lumina-chat-context');
             if (contextEl) {
                 const ctxText = contextEl.dataset.fullText || contextEl.textContent.trim();
@@ -6271,29 +5229,20 @@ function triggerRegenerate(targetUI = null) {
             }
         }
     }
-
-
     if (!originalQuestion) return;
-
     if (tUI) tUI._handleQuestionRecheck(lastEntry, originalQuestion);
 }
-
-
 
 function showAnswerVersion(entryElement, direction) {
     const versions = Array.from(entryElement.querySelectorAll('.lumina-answer-version'));
     const activeIndex = versions.findIndex(v => v.classList.contains('active'));
-
     if (activeIndex === -1) return;
-
     let newIndex = activeIndex;
     if (direction === 'prev') newIndex = Math.max(0, activeIndex - 1);
     if (direction === 'next') newIndex = Math.min(versions.length - 1, activeIndex + 1);
-
     if (newIndex !== activeIndex) {
         versions[activeIndex].classList.remove('active');
         versions[newIndex].classList.add('active');
-
         updateVersionNav(entryElement, newIndex, versions.length);
     }
 }
@@ -6301,37 +5250,24 @@ function showAnswerVersion(entryElement, direction) {
 function updateVersionNav(entryElement, activeIndex, totalCount) {
     const nav = entryElement.querySelector('.lumina-answer-nav');
     if (!nav) return;
-
     const counter = nav.querySelector('.lumina-answer-nav-counter');
     const prevBtn = nav.querySelector('.nav-prev');
     const nextBtn = nav.querySelector('.nav-next');
-
     counter.textContent = `${activeIndex + 1} / ${totalCount}`;
-
     prevBtn.disabled = activeIndex === 0;
     nextBtn.disabled = activeIndex === totalCount - 1;
 }
 
-
 function isShortcutMatch(event, shortcut) {
     if (!shortcut) return false;
-
-
     const isLoneModifierShortcut = ['Control', 'Alt', 'Shift', 'Meta'].includes(shortcut.key);
-
     if (isLoneModifierShortcut) {
-
         if (event.type !== 'keyup') return false;
         if (event.key !== shortcut.key) return false;
-
-
         const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
         if (isSideSpecific && shortcut.code !== event.code) return false;
-
         return modifierKeyPressedAlone;
     }
-
-
     let keyMatch = false;
     if (event.type === 'mousedown' || event.type === 'mouseup' || event.type === 'click') {
         const buttonCode = 'Mouse' + event.button;
@@ -6341,40 +5277,29 @@ function isShortcutMatch(event, shortcut) {
         const shortcutKey = (shortcut.key || '').toLowerCase();
         keyMatch = (shortcut.code && event.code === shortcut.code) || eventKey === shortcutKey;
     }
-
     if (!keyMatch) return false;
-
-
     const wantsCtrl = !!shortcut.ctrlKey;
     const wantsMeta = !!shortcut.metaKey;
-
     const ctrlMatch = wantsCtrl
         ? (event.ctrlKey || (!wantsMeta && event.metaKey))
         : !event.ctrlKey;
     const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
     const altMatch = !!shortcut.altKey === event.altKey;
     const metaMatch = wantsMeta ? event.metaKey : (!event.metaKey || wantsCtrl);
-
-
     if (!shortcut.ctrlKey && !shortcut.shiftKey && !shortcut.altKey && !shortcut.metaKey) {
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
     }
-
     return ctrlMatch && shiftMatch && altMatch && metaMatch;
 }
 
 function isShortcutMatchImmediate(event, shortcut) {
     if (!shortcut) return false;
-
     const isModifierShortcut = ['Control', 'Alt', 'Shift', 'Meta'].includes(shortcut.key);
     if (!isModifierShortcut) return isShortcutMatch(event, shortcut);
-
     if (event.type !== 'keydown' || event.repeat) return false;
     if (event.key !== shortcut.key) return false;
-
     const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
     if (isSideSpecific && shortcut.code !== event.code) return false;
-
     return true;
 }
 
@@ -6389,24 +5314,20 @@ function dispatchConfiguredShortcutAction(action) {
             stopSpotlightAudio();
         }
     } else if (action === 'luminaChat') {
-
     } else if (action === 'askLumina') {
         const sel = window.getSelection();
         const text = sel ? sel.toString().trim() : '';
         const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
         if (!text || !range || !window.LuminaSelection) return;
-
         const commonNode = range.commonAncestorContainer;
         const secondaryPane = document.getElementById('pane-secondary');
         spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
             ? 'secondary' : 'primary';
-
         LuminaSelection.show(0, 0, text, range);
         LuminaSelection.showInput();
         sel.removeAllRanges();
     } else if (action === 'resetChat') {
         resetChat();
-
     } else if (action === 'micToggle') {
         const targetPane = (hoveredPane === 'secondary' && isSplitMode) ? 'secondary' : 'primary';
         const inputArea = document.getElementById(`input-area-${targetPane}`);
@@ -6422,11 +5343,9 @@ function cycleActiveModel() {
     const isSec = targetPane === 'secondary';
     const currentActiveTab = isSec ? tabs[secondaryActiveTabIndex] : tabs[activeTabIndex];
     if (!currentActiveTab) return;
-
     const otherTab = isSec
         ? (activeTabIndex >= 0 ? tabs[activeTabIndex] : null)
         : (typeof isSplitMode !== 'undefined' && isSplitMode && secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null);
-
     chrome.storage.local.get(['providers', 'modelChains'], async (data) => {
         let promptSupport;
         if (typeof window.getPromptApiSupport === 'function') {
@@ -6436,67 +5355,52 @@ function cycleActiveModel() {
         }
         const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
         if (chain.length <= 1) return;
-
         let currentModel = currentActiveTab.selectedModel?.model;
         let currentProviderId = currentActiveTab.selectedModel?.providerId;
-
         let currentIndex = chain.findIndex(item => item.model === currentModel && item.providerId === currentProviderId);
-
         const nextIndex = (currentIndex + 1) % chain.length;
         const nextItem = chain[nextIndex];
-
         const tabsToUpdate = [currentActiveTab];
         if (otherTab && otherTab.sessionId === currentActiveTab.sessionId) {
             tabsToUpdate.push(otherTab);
         }
-
         tabsToUpdate.forEach(tab => {
             const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
             const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-
             tab.selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
             setPaneActiveModel(tabIsSec ? 'secondary' : 'primary', tab.selectedModel);
-
             if (tab.chatUIInstance) {
                 tab.chatUIInstance.activeTabModel = { ...tab.selectedModel };
             }
             if (targetSharedUI) {
                 targetSharedUI.activeTabModel = { ...tab.selectedModel };
             }
-
             const labelId = tabIsSec ? 'topbar-model-label-secondary' : 'topbar-model-label';
             const label = document.getElementById(labelId);
             if (label) {
                 label.textContent = nextItem.displayName || nextItem.model;
             }
         });
-
         const sidKey = currentActiveTab.sessionId || 'null';
         chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
             const settings = res.lumina_session_settings || {};
             if (!settings[sidKey]) settings[sidKey] = {};
             settings[sidKey].selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
-
             const advancedParamsByModel = res.advancedParamsByModel || {};
             const compositeKey = nextItem.providerId ? `${nextItem.providerId}:${nextItem.model}` : nextItem.model;
             const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[nextItem.model] || {};
-
             const defaultThinking = window.LuminaModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
             const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-
             tabsToUpdate.forEach(tab => {
                 const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
                 const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-
                 tab.thinkingLevel = newThinkingLevel;
                 setPaneActiveThinking(tabIsSec ? 'secondary' : 'primary', newThinkingLevel);
                 settings[sidKey].thinkingLevel = newThinkingLevel;
-
                 if (tab.chatUIInstance) {
                     tab.chatUIInstance.thinkingLevel = newThinkingLevel;
                 }
             });
-
             chrome.storage.local.set({
                 lumina_session_settings: settings,
                 lastUsedModel: { model: nextItem.model, providerId: nextItem.providerId }
@@ -6520,31 +5424,24 @@ function cycleActiveModel() {
     });
 }
 
-
 function matchesShortcut(event, actionName, shortcuts) {
     const DEFAULT_SHORTCUTS = {
         regenerate: { code: 'KeyR', key: 'r' },
         translate: { code: 'KeyT', key: 't' },
-
         audio: { code: 'ShiftLeft', key: 'Shift', shiftKey: true }
     };
-
     const shortcut = shortcuts?.[actionName] || DEFAULT_SHORTCUTS[actionName];
     return isShortcutMatch(event, shortcut);
 }
 
-
 async function playSpotlightAudio(text) {
     if (!text) return;
-
     const normalizedText = text.trim();
-
     let speed = 1.1;
     try {
         const data = await chrome.storage.local.get(['audioSpeed']);
         speed = data.audioSpeed || 1.1;
     } catch (e) { }
-
     try {
         const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: normalizedText });
         if (cached && cached.success && cached.data) {
@@ -6553,20 +5450,15 @@ async function playSpotlightAudio(text) {
             return;
         }
     } catch (e) { }
-
-
     try {
         const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed });
         if (!result || !result.chunks || result.chunks.length === 0) return;
-
         for (const chunk of result.chunks) await playBase64Audio(chunk, speed);
-
         chrome.runtime.sendMessage({ action: 'setAudioCache', text: normalizedText, type: result.type, data: result.chunks }).catch(() => { });
     } catch (err) {
         console.error('[Spotlight] Play audio failed:', err);
     }
 }
-
 
 let _spotlightAudioCtx = null;
 function getSpotlightAudioCtx() {
@@ -6575,7 +5467,6 @@ function getSpotlightAudioCtx() {
     }
     return _spotlightAudioCtx;
 }
-
 
 let _spotlightCurrentAudio = null;
 let _spotlightAudioAborted = false;
@@ -6588,8 +5479,6 @@ function stopSpotlightAudio() {
     }
 }
 
-
-
 function playBase64Audio(base64Data, speed = 1.0) {
     return new Promise(async (resolve, reject) => {
         if (_spotlightAudioAborted) { resolve(); return; }
@@ -6598,8 +5487,6 @@ function playBase64Audio(base64Data, speed = 1.0) {
             const byteString = atob(parts[1]);
             const byteArray = new Uint8Array(byteString.length);
             for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
-
-
             let silenceOffset = 0;
             try {
                 const ctx = getSpotlightAudioCtx();
@@ -6613,10 +5500,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
                     }
                 }
             } catch (e) { }
-
             if (_spotlightAudioAborted) { resolve(); return; }
-
-
             const mime = parts[0].split(':')[1].split(';')[0];
             const blob = new Blob([byteArray], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
@@ -6628,7 +5512,6 @@ function playBase64Audio(base64Data, speed = 1.0) {
             audio.onerror = (e) => { _spotlightCurrentAudio = null; URL.revokeObjectURL(blobUrl); reject(e); };
             audio.play().catch(reject);
         } catch (e) {
-
             try {
                 const audio = new Audio(base64Data);
                 audio.playbackRate = speed;
@@ -6641,12 +5524,6 @@ function playBase64Audio(base64Data, speed = 1.0) {
     });
 }
 
-
-
-
-
-
-
 function initSpotlightDictLauncher() {
     if (!spotlightDictLauncherBtn) {
         spotlightDictLauncherBtn = document.createElement('div');
@@ -6655,20 +5532,16 @@ function initSpotlightDictLauncher() {
         spotlightDictLauncherBtn.style.display = 'none';
         spotlightDictLauncherBtn.style.zIndex = '10001';
         document.body.appendChild(spotlightDictLauncherBtn);
-
         spotlightDictLauncherBtn.onclick = (e) => {
             e.stopPropagation();
             const word = spotlightDictLauncherBtn.dataset.word;
             console.log('[Spotlight Debug] Launcher clicked for word:', word);
-
             const x = parseInt(spotlightDictLauncherBtn.style.left);
             const y = parseInt(spotlightDictLauncherBtn.style.top) + 38;
-
             showSpotlightDictionaryPopup(word, x, y);
             hideSpotlightDictLauncher();
         };
     }
-
     spotlightDictLauncherBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
 }
 
@@ -6687,15 +5560,8 @@ function hideSpotlightDictLauncher() {
 
 function showSpotlightDictionaryPopup(word, x, y) {
     console.log('[Spotlight Debug] Opening Dictionary Popup for:', word);
-
-
-
-
-
-
     const existing = document.getElementById('lumina-spotlight-dict-popup');
     if (existing) existing.remove();
-
     const popup = document.createElement('div');
     popup.id = 'lumina-spotlight-dict-popup';
     popup.className = 'lumina-dict-popup lumina-mode-dictionary';
@@ -6710,38 +5576,30 @@ function showSpotlightDictionaryPopup(word, x, y) {
     popup.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
     popup.style.overflow = 'hidden';
     popup.style.border = '1px solid rgba(0,0,0,0.1)';
-
     popup.innerHTML = `
-        <iframe src="https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word)}" 
+        <iframe src="https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word)}"
                 style="width: 100%; height: 100%; border: none; background: white;"></iframe>
     `;
-
     document.body.appendChild(popup);
 }
 
-
 window.addEventListener('mousedown', (e) => {
-
     if (window.mouseupTimer) {
         clearTimeout(window.mouseupTimer);
     }
-
     const path = e.composedPath();
     const isInsideAskBtn = path.some(el => el.id === 'lumina-action-bar');
     const isInsideAskInput = path.some(el => el.id === 'lumina-ask-input-popup');
     const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && el.classList.contains('lumina-dict-launcher'));
     const isInsideDictPopup = document.getElementById('lumina-spotlight-dict-popup')?.contains(e.target) ||
         path.some(el => (el.id === 'lumina-spotlight-dict-popup') || (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')));
-
     if (!isInsideAskBtn && !isInsideAskInput) {
         if (window.LuminaSelection) LuminaSelection.hide();
     }
-
     if (!isInsideDictLauncher && !isInsideDictPopup) {
         document.getElementById('lumina-spotlight-dict-popup')?.remove();
     }
 }, true);
-
 
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
@@ -6765,24 +5623,17 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
 });
 
-
 async function handleYouTubeTrigger(triggerInfo) {
     console.log('[Spotlight YT] handleYouTubeTrigger calling with:', triggerInfo);
     if (!triggerInfo || triggerInfo.action !== 'youtube_ask') return;
-
     const activeTab = tabs && tabs[activeTabIndex];
     console.log('[Spotlight YT] activeTabIndex:', activeTabIndex, 'activeTab exists:', !!activeTab);
-
     if (!activeTab) {
-
         setTimeout(() => handleYouTubeTrigger(triggerInfo), 200);
         return;
     }
-
-
     const handleFoundTab = (ytTab) => {
         console.log('[Spotlight YT] Processing YouTube tab:', ytTab ? ytTab.id : 'NOT FOUND');
-
         if (ytTab) {
             currentBrowserTab = {
                 tabId: ytTab.id,
@@ -6790,18 +5641,13 @@ async function handleYouTubeTrigger(triggerInfo) {
                 url: ytTab.url,
                 favIconUrl: ytTab.favIconUrl
             };
-
-
             console.log('[Spotlight YT] Pinning to active tab:', activeTab.id);
             toggleWebSourcePin(currentBrowserTab, true, activeTab.id);
-
-
             chrome.storage.local.remove('lumina_youtube_trigger');
         } else {
             console.warn('[Spotlight YT] Could not find any corresponding YouTube tab.');
         }
     };
-
     if (triggerInfo.tabId) {
         console.log('[Spotlight YT] Using direct tabId from trigger:', triggerInfo.tabId);
         chrome.tabs.get(triggerInfo.tabId, (tab) => {
@@ -6815,7 +5661,6 @@ async function handleYouTubeTrigger(triggerInfo) {
     } else {
         performTabQuery();
     }
-
     function performTabQuery() {
         console.log('[Spotlight YT] Querying tabs to find videoId:', triggerInfo.videoId);
         chrome.tabs.query({ currentWindow: false }, (tabs) => {
@@ -6831,19 +5676,15 @@ async function handleYouTubeTrigger(triggerInfo) {
     }
 }
 
-
 window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null, isSecondaryOverride = null) {
     if (tabs.length === 0) return;
-
     const isSecondary = isSecondaryOverride !== null ? isSecondaryOverride : (isSplitMode && hoveredPane === 'secondary');
     const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
     const activeTab = tabs[targetIdx];
     if (!activeTab) return;
-
     activeTab.sessionId = historySessionId;
     updateUrlSessionId(historySessionId);
     updatePaneBlankState();
-
     let displayTitle = meta.title || "Restored Chat";
     if (!meta.isRenamed && !meta.autoNamed && messages && messages.length > 0) {
         for (let i = messages.length - 1; i >= 0; i--) {
@@ -6863,23 +5704,17 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     if (!activeTab.selectedModel) {
         activeTab.selectedModel = savedSettings.selectedModel || meta.selectedModel || null;
     }
-
     if (!activeTab.thinkingLevel) {
-        
         const localData = await chrome.storage.local.get(['advancedParamsByModel']);
         const advParams = localData.advancedParamsByModel || {};
         const modelObj = activeTab.selectedModel;
         const compositeKey = modelObj ? (modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model) : '';
         const modelParams = advParams[compositeKey] || advParams[modelObj?.model] || {};
-
         const defaultThinking = modelObj ? window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId) : 'none';
-
         activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
     }
     activeTab.sparkId = meta.sparkId || null;
     if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = activeTab.sparkId;
-
-    
     try {
         const res = await chrome.storage.local.get(['lumina_session_settings']);
         const settings = res.lumina_session_settings || {};
@@ -6891,23 +5726,18 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
             settings[sidKey].thinkingLevel = activeTab.thinkingLevel;
         }
         await chrome.storage.local.set({ lumina_session_settings: settings });
-        
         sessionSettings = settings;
     } catch (e) {
         console.error('Failed to sync session settings', e);
     }
-
     const targetInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
     if (targetInputUI) {
         targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
         targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
         if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
         if (typeof targetInputUI.refreshReasoningSelector === 'function') targetInputUI.refreshReasoningSelector();
-
-        
         targetInputUI.restoreInputState(isSecondary ? activeTab.inputStateSecondary || null : activeTab.inputState || null);
     }
-
     updateInputPlaceholder();
     if (isSecondary) {
         if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
@@ -6921,14 +5751,12 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     if (typeof sidebarSparksRenderList === 'function') {
         sidebarSparksRenderList();
     }
-
     const chatData = {
         ...meta,
         messages: messages,
         sessionId: historySessionId,
         timestamp: meta.createdAt || meta.updatedAt
     };
-
     if (typeof ChatHistoryManager !== 'undefined' && typeof ChatHistoryManager.restoreChat === 'function') {
         showTopbarLoading(isSecondary ? 'secondary' : 'primary');
         if (activeTab.historyEl) {
@@ -6937,9 +5765,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         activeTab.historyEl.style.opacity = '0';
         activeTab.historyEl.style.transition = 'none';
         activeTab.historyEl.innerHTML = '';
-
         await ChatHistoryManager.restoreChat(chatData, activeTab.historyEl);
-
         normalizeRestoredHistory(activeTab.historyEl);
         activeTab.isHistoryLoaded = true;
         activeTab.isLoadingHistory = false;
@@ -6949,34 +5775,22 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         if (typeof updateTopbarSparkTitle === 'function') {
             updateTopbarSparkTitle();
         }
-
         syncTabUI(activeTab, isSecondary, true);
-
         if (targetIndex !== null && messages && messages[targetIndex]) {
-
             setTimeout(() => {
                 const targetNode = activeTab.historyEl.querySelector(`.lumina-chat-question[data-message-index="${targetIndex}"]`);
-
                 if (targetNode) {
                     const targetEntry = targetNode.closest('.lumina-dict-entry');
                     if (targetEntry) {
-
                         const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(targetEntry, activeTab.historyEl);
-
-
                         const maxScroll = Math.max(0, activeTab.historyEl.scrollHeight - activeTab.historyEl.clientHeight);
                         const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScroll));
-
                         activeTab.historyEl.scrollTo({
                             top: finalScrollTop,
                             behavior: 'instant'
                         });
-
-
                         activeTab.scrollTop = finalScrollTop;
                         activeTab.isAtBottom = (finalScrollTop >= maxScroll - 10);
-
-
                         targetNode.style.transition = 'background-color 0.5s';
                         const originalBg = targetNode.style.backgroundColor;
                         targetNode.style.backgroundColor = 'rgba(0, 86, 210, 0.1)';
@@ -7032,23 +5846,19 @@ async function renderDropdownMenu(pane = 'primary') {
     const isSec = (pane === 'secondary');
     const dropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
     if (!dropdown) return;
-
     const targetIdx = isSec ? secondaryActiveTabIndex : activeTabIndex;
     const activeTab = tabs[targetIdx];
     const sessionId = activeTab?.sessionId || null;
-
     let sessionMeta = null;
     if (sessionId) {
         const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
         const sessions = res[ChatHistoryManager.STORAGE_KEY] || {};
         sessionMeta = sessions[sessionId] || null;
     }
-
     const isPinned = sessionMeta?.pinned || false;
     const pinSVG = isPinned
         ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" /></svg>`
         : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>`;
-
     const html = `
         <div class="dropdown-section-title">This chat</div>
         <div class="dropdown-item action-item" id="dropdown-pin-btn">
@@ -7069,12 +5879,8 @@ async function renderDropdownMenu(pane = 'primary') {
             <span class="item-text">Delete</span>
         </div>
     `;
-
     dropdown.innerHTML = html;
-
     const hide = () => { dropdown.style.display = 'none'; };
-
-    
     dropdown.querySelector('#dropdown-pin-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
@@ -7118,8 +5924,6 @@ async function renderDropdownMenu(pane = 'primary') {
         }
         hide();
     });
-
-    
     dropdown.querySelector('#dropdown-rename-btn')?.addEventListener('click', async () => {
         if (!sessionId || !sessionMeta) return;
         let currentTitle = sessionMeta.title || 'Untitled Chat';
@@ -7138,15 +5942,11 @@ async function renderDropdownMenu(pane = 'primary') {
         }
         hide();
     });
-
-    
     dropdown.querySelector('#dropdown-duplicate-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         await ChatHistoryManager.duplicateChat(sessionId);
         hide();
     });
-
-    
     dropdown.querySelector('#dropdown-delete-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         const confirmed = await window.showCustomPopup({
@@ -7166,15 +5966,12 @@ async function renderDropdownMenu(pane = 'primary') {
         }
         hide();
     });
-
-    
     dropdown.querySelector('#dropdown-continue-btn')?.addEventListener('click', () => {
         let url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
         if (sessionId) url += `?session_id=${sessionId}`;
         chrome.tabs.create({ url });
         hide();
     });
-
     dropdown.querySelector('#dropdown-settings-btn')?.addEventListener('click', () => {
         if (typeof LuminaSettingsModal !== 'undefined') {
             LuminaSettingsModal.show();
@@ -7191,14 +5988,12 @@ function initTopbarModelSelector(pane = 'primary') {
     const btnId = isSec ? 'topbar-model-btn-secondary' : 'topbar-model-btn';
     const labelId = isSec ? 'topbar-model-label-secondary' : 'topbar-model-label';
     const dropdownId = isSec ? 'topbar-model-dropdown-secondary' : 'topbar-model-dropdown';
-
     const selector = document.getElementById(selectorId);
     if (!selector) return;
     const btn = document.getElementById(btnId);
     const label = document.getElementById(labelId);
     const dropdown = document.getElementById(dropdownId);
     if (!btn || !dropdown) return;
-
     if (btn.dataset.initializedModelSelector) {
         if (isSec) {
             if (window.updateTopbarModelSelectorSecondary) {
@@ -7212,18 +6007,14 @@ function initTopbarModelSelector(pane = 'primary') {
         return;
     }
     btn.dataset.initializedModelSelector = 'true';
-
     const render = (data) => {
         const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
         const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
-
-        
         const activeTab = isSec
             ? tabs[secondaryActiveTabIndex]
             : tabs[activeTabIndex];
         let currentModel = activeTab?.selectedModel?.model;
         let currentProviderId = activeTab?.selectedModel?.providerId;
-
         const lastUsed = data.lastUsedModel;
         if (!currentModel && lastUsed && lastUsed.model) {
             currentModel = lastUsed.model;
@@ -7233,7 +6024,6 @@ function initTopbarModelSelector(pane = 'primary') {
             currentModel = chain[0].model;
             currentProviderId = chain[0].providerId;
         }
-
         if (activeTab && currentModel) {
             activeTab.selectedModel = { model: currentModel, providerId: currentProviderId };
             const targetSharedUI = isSec ? sharedInputUISecondary : sharedInputUI;
@@ -7245,7 +6035,6 @@ function initTopbarModelSelector(pane = 'primary') {
                 }
             }
         }
-
         const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId);
         if (label) {
             if (activeChainItem) {
@@ -7254,44 +6043,35 @@ function initTopbarModelSelector(pane = 'primary') {
                 label.textContent = currentModel;
             }
         }
-
         dropdown.innerHTML = '';
         if (chain.length === 0) {
             dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:#70757a;">No models</div>';
             return;
         }
-
         chain.forEach((item) => {
             const el = document.createElement('button');
             const isActive = item.model === currentModel && item.providerId === currentProviderId;
             el.className = `lumina-model-item${isActive ? ' active' : ''}`;
-
             el.innerHTML = `<span class="model-name">${item.displayName || item.model}</span>`;
-
             el.onclick = (e) => {
                 e.stopPropagation();
                 if (label) label.textContent = item.displayName || item.model;
                 dropdown.classList.remove('active');
                 dropdown.querySelectorAll('.lumina-model-item').forEach(b => b.classList.remove('active'));
                 el.classList.add('active');
-
-                
                 const currentActiveTab = isSec
                     ? tabs[secondaryActiveTabIndex]
                     : tabs[activeTabIndex];
                 const otherTab = isSec
                     ? (activeTabIndex >= 0 ? tabs[activeTabIndex] : null)
                     : (typeof isSplitMode !== 'undefined' && isSplitMode && secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null);
-
                 const tabsToUpdate = [currentActiveTab];
                 if (otherTab && otherTab.sessionId === currentActiveTab.sessionId) {
                     tabsToUpdate.push(otherTab);
                 }
-
                 tabsToUpdate.forEach(tab => {
                     const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
                     const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-
                     tab.selectedModel = { model: item.model, providerId: item.providerId };
                     setPaneActiveModel(tabIsSec ? 'secondary' : 'primary', tab.selectedModel);
                     if (tab.chatUIInstance) {
@@ -7301,26 +6081,20 @@ function initTopbarModelSelector(pane = 'primary') {
                         targetSharedUI.activeTabModel = { ...tab.selectedModel };
                     }
                 });
-
                 if (currentActiveTab) {
                     const sidKey = currentActiveTab.sessionId || 'null';
                     chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
                         const settings = res.lumina_session_settings || {};
                         if (!settings[sidKey]) settings[sidKey] = {};
                         settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
-
-                        
                         const advancedParamsByModel = res.advancedParamsByModel || {};
                         const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
                         const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[item.model] || {};
-
                         const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
                         const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-
                         tabsToUpdate.forEach(tab => {
                             const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
                             const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-
                             tab.thinkingLevel = newThinkingLevel;
                             setPaneActiveThinking(tabIsSec ? 'secondary' : 'primary', newThinkingLevel);
                             settings[sidKey].thinkingLevel = newThinkingLevel;
@@ -7331,7 +6105,6 @@ function initTopbarModelSelector(pane = 'primary') {
                                 targetSharedUI.thinkingLevel = newThinkingLevel;
                             }
                         });
-
                         chrome.storage.local.set({ lumina_session_settings: settings }, () => {
                             tabsToUpdate.forEach(tab => {
                                 const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
@@ -7352,18 +6125,13 @@ function initTopbarModelSelector(pane = 'primary') {
                         });
                     });
                 }
-
                 chrome.storage.local.set({ lastUsedModel: { model: item.model, providerId: item.providerId } });
             };
             dropdown.appendChild(el);
         });
-
-        
         const divider = document.createElement('div');
         divider.className = 'lumina-model-divider';
         dropdown.appendChild(divider);
-
-        
         const thinkingItem = document.createElement('div');
         thinkingItem.className = 'lumina-model-item lumina-thinking-parent-item';
         thinkingItem.style.position = 'relative';
@@ -7371,7 +6139,6 @@ function initTopbarModelSelector(pane = 'primary') {
         thinkingItem.style.alignItems = 'center';
         thinkingItem.style.justifyContent = 'space-between';
         thinkingItem.style.cursor = 'pointer';
-
         const currentLevel = activeTab?.thinkingLevel || 'none';
         const titleMap = {
             'minimal': 'Minimal',
@@ -7380,7 +6147,6 @@ function initTopbarModelSelector(pane = 'primary') {
             'high': 'Extended',
             'none': 'None'
         };
-
         thinkingItem.innerHTML = `
             <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
                 <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
@@ -7388,18 +6154,13 @@ function initTopbarModelSelector(pane = 'primary') {
             </div>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
         `;
-
-        
         const submenu = document.createElement('div');
         submenu.className = 'lumina-thinking-submenu';
-
         const options = window.LuminaModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
-
         options.forEach((opt) => {
             const optEl = document.createElement('button');
             const isActive = currentLevel === opt.value;
             optEl.className = `lumina-thinking-opt-item ${isActive ? 'active' : ''}`;
-
             const checkmarkIcon = isActive ? `
                 <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--lumina-primary);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -7407,7 +6168,6 @@ function initTopbarModelSelector(pane = 'primary') {
             ` : `
                 <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px;"></span>
             `;
-
             optEl.innerHTML = `
                 ${checkmarkIcon}
                 <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
@@ -7415,26 +6175,21 @@ function initTopbarModelSelector(pane = 'primary') {
                     <span class="reasoning-desc" style="font-size:11px; color:var(--lumina-text-secondary);">${opt.desc}</span>
                 </div>
             `;
-
             optEl.onclick = (e) => {
                 e.stopPropagation();
-
                 const currentActiveTab = isSec
                     ? tabs[secondaryActiveTabIndex]
                     : tabs[activeTabIndex];
                 const otherTab = isSec
                     ? (activeTabIndex >= 0 ? tabs[activeTabIndex] : null)
                     : (typeof isSplitMode !== 'undefined' && isSplitMode && secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null);
-
                 const tabsToUpdate = [currentActiveTab];
                 if (otherTab && otherTab.sessionId === currentActiveTab.sessionId) {
                     tabsToUpdate.push(otherTab);
                 }
-
                 tabsToUpdate.forEach(tab => {
                     const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
                     const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-
                     tab.thinkingLevel = opt.value;
                     setPaneActiveThinking(tabIsSec ? 'secondary' : 'primary', opt.value);
                     if (tab.chatUIInstance) {
@@ -7444,14 +6199,12 @@ function initTopbarModelSelector(pane = 'primary') {
                         targetSharedUI.thinkingLevel = opt.value;
                     }
                 });
-
                 if (currentActiveTab) {
                     const sidKey = currentActiveTab.sessionId || 'null';
                     chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
                         const settings = res.lumina_session_settings || {};
                         if (!settings[sidKey]) settings[sidKey] = {};
                         settings[sidKey].thinkingLevel = opt.value;
-
                         const advancedParamsByModel = res.advancedParamsByModel || {};
                         const compositeKey = currentProviderId ? `${currentProviderId}:${currentModel}` : currentModel;
                         const key = compositeKey;
@@ -7461,7 +6214,6 @@ function initTopbarModelSelector(pane = 'primary') {
                         } else {
                             advancedParamsByModel[key].thinkingLevel = opt.value;
                         }
-
                         chrome.storage.local.set({ lumina_session_settings: settings, advancedParamsByModel }, () => {
                             tabsToUpdate.forEach(tab => {
                                 const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
@@ -7483,17 +6235,14 @@ function initTopbarModelSelector(pane = 'primary') {
             };
             submenu.appendChild(optEl);
         });
-
         thinkingItem.appendChild(submenu);
         dropdown.appendChild(thinkingItem);
     };
-
     const fetchAndRender = () => {
         const activeTab = isSec
             ? tabs[secondaryActiveTabIndex]
             : tabs[activeTabIndex];
         const sidKey = activeTab?.sessionId || 'null';
-
         chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
             if (typeof window.getPromptApiSupport === 'function') {
                 data.promptSupport = await window.getPromptApiSupport();
@@ -7511,9 +6260,7 @@ function initTopbarModelSelector(pane = 'primary') {
                     const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
                     const advancedParamsByModel = data.advancedParamsByModel || {};
                     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelObj.model] || {};
-
                     const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
-
                     activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
                 }
             }
@@ -7521,26 +6268,22 @@ function initTopbarModelSelector(pane = 'primary') {
             updateTopbarSparkTitle();
         });
     };
-
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (dropdown.classList.contains('active')) {
             dropdown.classList.remove('active');
         } else {
-            
             const moreDropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
             if (moreDropdown) moreDropdown.style.display = 'none';
             fetchAndRender();
             dropdown.classList.add('active');
         }
     });
-
     document.addEventListener('click', (e) => {
         if (!selector.contains(e.target) && dropdown.classList.contains('active')) {
             dropdown.classList.remove('active');
         }
     });
-
     if (isSec) {
         window.updateTopbarModelSelectorSecondary = fetchAndRender;
     } else {
@@ -7563,10 +6306,8 @@ function updateInputPlaceholder() {
         ? tabs[secondaryActiveTabIndex]
         : tabs[activeTabIndex];
     if (!activeTab) return;
-
     const targetInputUI = (isSplitMode && hoveredPane === 'secondary') ? sharedInputUISecondary : sharedInputUI;
     if (!targetInputUI || !targetInputUI.inputEl) return;
-
     if (activeTab.sparkId && sparksCache[activeTab.sparkId]) {
         const spark = sparksCache[activeTab.sparkId];
         targetInputUI.inputEl.placeholder = `Ask ${spark.name}...`;
@@ -7580,7 +6321,6 @@ function updateSidebarUserProfile(isAuthenticated, user) {
     const avatarEl = document.querySelector('.user-profile .user-avatar');
     const nameEl = document.querySelector('.user-profile .user-name');
     if (!avatarEl || !nameEl) return;
-
     if (isAuthenticated && user) {
         nameEl.textContent = user.name || "User";
         if (user.picture) {
@@ -7593,7 +6333,6 @@ function updateSidebarUserProfile(isAuthenticated, user) {
         avatarEl.textContent = "LU";
         nameEl.textContent = "Lumina User";
     }
-
     const profileEl = document.querySelector('.user-profile');
     if (profileEl) {
         profileEl.style.visibility = 'visible';
@@ -7608,7 +6347,6 @@ if (typeof LuminaAuth !== 'undefined') {
 function getDynamicWelcomeTitle() {
     const now = new Date();
     const hour = now.getHours();
-
     let nameSuffix = '';
     if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated && LuminaAuth.user && LuminaAuth.user.name) {
         const fullName = LuminaAuth.user.name;
@@ -7616,10 +6354,8 @@ function getDynamicWelcomeTitle() {
             nameSuffix = `, ${fullName}`;
         }
     }
-
     let options = [];
     if (hour >= 5 && hour < 8) {
-        
         options = [
             `Good morning, early bird${nameSuffix}!`,
             `Morning${nameSuffix}! Starting early?`,
@@ -7628,7 +6364,6 @@ function getDynamicWelcomeTitle() {
             `Early start today! What's on your mind?`
         ];
     } else if (hour >= 8 && hour < 12) {
-        
         options = [
             `Good morning${nameSuffix}!`,
             `Morning${nameSuffix}! Ready for today?`,
@@ -7637,7 +6372,6 @@ function getDynamicWelcomeTitle() {
             `Have a productive morning${nameSuffix}!`
         ];
     } else if (hour >= 12 && hour < 17) {
-        
         options = [
             `Good afternoon${nameSuffix}!`,
             `Hello${nameSuffix}! What's next?`,
@@ -7646,7 +6380,6 @@ function getDynamicWelcomeTitle() {
             `Afternoon focus mode!`
         ];
     } else if (hour >= 17 && hour < 21) {
-        
         options = [
             `Good evening${nameSuffix}!`,
             `Evening! Let's chat!`,
@@ -7655,7 +6388,6 @@ function getDynamicWelcomeTitle() {
             `Hope you had a great day!`
         ];
     } else if (hour >= 21 && hour < 24) {
-        
         options = [
             `Working late${nameSuffix}?`,
             `Good evening! Burning the midnight oil?`,
@@ -7664,7 +6396,6 @@ function getDynamicWelcomeTitle() {
             `Still going strong${nameSuffix}?`
         ];
     } else {
-        
         options = [
             `Night owl mode${nameSuffix}!`,
             `Still awake? What's on your mind?`,
@@ -7673,8 +6404,6 @@ function getDynamicWelcomeTitle() {
             `Shh, the world is asleep!`
         ];
     }
-
-    
     options.push(
         `Where should we start?`,
         `What's on your mind?`,
@@ -7682,7 +6411,6 @@ function getDynamicWelcomeTitle() {
         `Hello${nameSuffix}! Let's talk!`,
         `Ready to explore?`
     );
-
     const randomIndex = Math.floor(Math.random() * options.length);
     return options[randomIndex];
 }
@@ -7690,11 +6418,9 @@ function getDynamicWelcomeTitle() {
 function updatePaneBlankState() {
     const paneSecondary = document.getElementById('pane-secondary');
     if (!paneSecondary) return;
-
     const secTab = (isSplitMode && secondaryActiveTabIndex >= 0) ? tabs[secondaryActiveTabIndex] : null;
     const searchOverlay = document.getElementById('lumina-search-overlay');
     const isSearchOpen = searchOverlay && searchOverlay.style.display !== 'none' && searchOverlay.classList.contains('in-pane');
-
     if (isSplitMode && secTab && !secTab.sessionId && isSearchOpen) {
         paneSecondary.classList.add('is-blank');
     } else {
@@ -7706,17 +6432,13 @@ function updateWelcomeScreenState(pane = 'primary') {
     const isSec = (pane === 'secondary');
     const layout = document.getElementById(isSec ? 'chat-layout-secondary' : 'chat-layout');
     if (!layout) return;
-
     const targetTab = isSec
         ? (secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null)
         : (activeTabIndex >= 0 ? tabs[activeTabIndex] : null);
-
     const historyEl = targetTab ? targetTab.historyEl : document.getElementById(isSec ? 'chat-history-secondary' : 'chat-history');
     if (!historyEl) return;
-
     const searchOverlay = document.getElementById('lumina-search-overlay');
     const isSearchOpen = searchOverlay && searchOverlay.style.display !== 'none' && searchOverlay.classList.contains('in-pane');
-
     if (isSec && targetTab && !targetTab.sessionId && isSearchOpen) {
         layout.classList.remove('new-chat-homepage');
         const chatContainer = layout.querySelector('.lumina-chat-container');
@@ -7727,18 +6449,15 @@ function updateWelcomeScreenState(pane = 'primary') {
         updatePaneBlankState();
         return;
     }
-
     if (targetTab && targetTab.sessionId && (!targetTab.isHistoryLoaded || targetTab.isLoadingHistory)) {
         updatePaneBlankState();
         return;
     }
-
     const isSpark = targetTab && targetTab.sparkId;
     const hasEntries = historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card, .lumina-chat-question, .lumina-chat-answer') !== null;
     const chatContainer = layout.querySelector('.lumina-chat-container');
     if (!chatContainer) return;
     let welcomeEl = chatContainer.querySelector('.lumina-homepage-welcome');
-
     if (!hasEntries && !isSpark) {
         layout.classList.add('new-chat-homepage');
         if (!welcomeEl) {
@@ -7773,15 +6492,12 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.className = 'lumina-custom-popup-overlay';
-
         let inputHtml = '';
         if (isInput) {
             inputHtml = `<input type="text" class="lumina-custom-popup-input" placeholder="${placeholder}" value="${defaultValue.replace(/"/g, '&quot;')}">`;
         }
-
         const primaryBtnClass = isDanger ? 'lumina-custom-popup-btn-danger' : 'lumina-custom-popup-btn-primary';
         const bodyHtml = body ? `<div class="lumina-custom-popup-body">${body}</div>` : '';
-
         overlay.innerHTML = `
             <div class="lumina-custom-popup-box">
                 <h3 class="lumina-custom-popup-title">${title}</h3>
@@ -7793,11 +6509,8 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
                 </div>
             </div>
         `;
-
         document.body.appendChild(overlay);
-
         requestAnimationFrame(() => overlay.classList.add('active'));
-
         const inputEl = overlay.querySelector('.lumina-custom-popup-input');
         if (inputEl) {
             inputEl.focus();
@@ -7812,24 +6525,20 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
         } else {
             overlay.querySelector('.btn-confirm').focus();
         }
-
         const closePopup = () => {
             overlay.classList.remove('active');
             overlay.style.pointerEvents = 'none';
             setTimeout(() => overlay.remove(), 200);
         };
-
         const confirm = () => {
             const value = inputEl ? inputEl.value : true;
             closePopup();
             resolve(value);
         };
-
         const cancel = () => {
             closePopup();
             resolve(null);
         };
-
         overlay.querySelector('.btn-confirm').addEventListener('click', confirm);
         overlay.querySelector('.btn-cancel').addEventListener('click', cancel);
         overlay.addEventListener('mousedown', (e) => {
@@ -7840,16 +6549,12 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
 
 window.namingSessionIds = new Set();
 
-
 function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, history) {
     if (!sessionId || !questionText) return;
     if (!window.namingSessionIds) window.namingSessionIds = new Set();
     if (window.namingSessionIds.has(sessionId)) return;
-
     window.namingSessionIds.add(sessionId);
-    
     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
-
     chrome.runtime.sendMessage({
         action: 'generate_chat_title',
         modelObj: modelObj,
@@ -7863,23 +6568,15 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
             return;
         }
-
         window.namingSessionIds.delete(sessionId);
-
         if (response && response.success && response.title) {
             const cleanTitle = response.title.trim();
-
-            
-            
             if (typeof tabs !== 'undefined') {
                 tabs.forEach(t => {
                     if (t.sessionId === sessionId) t.title = cleanTitle;
                 });
                 if (typeof renderTabs === 'function') renderTabs();
             }
-
-            
-            
             const tryWriteTitle = async (attemptsLeft) => {
                 const freshResult = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
                 const freshSessions = freshResult[ChatHistoryManager.STORAGE_KEY] || {};
@@ -7887,12 +6584,10 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     freshSessions[sessionId].title = cleanTitle;
                     freshSessions[sessionId].autoNamed = true;
                     await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: freshSessions });
-                    
                     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
                 } else if (attemptsLeft > 0) {
                     setTimeout(() => tryWriteTitle(attemptsLeft - 1), 400);
                 } else {
-                    
                     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
                 }
             };
@@ -7904,66 +6599,46 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
     });
 }
 
-
 (function () {
     let sidebarTooltipEl = null;
-
     function showSidebarTooltip(e) {
         const item = e.target.closest('.recent-chat-item');
         if (!item) return;
-
         const titleEl = item.querySelector('.recent-chat-item__title');
         if (!titleEl) return;
-
-        
         const isTruncated = titleEl.scrollWidth > titleEl.clientWidth;
         if (!isTruncated) return;
-
         const titleText = item.getAttribute('data-title') || titleEl.textContent;
         if (!titleText) return;
-
         if (!sidebarTooltipEl) {
             sidebarTooltipEl = document.createElement('div');
             sidebarTooltipEl.className = 'lumina-sidebar-tooltip';
             document.body.appendChild(sidebarTooltipEl);
         }
-
         sidebarTooltipEl.textContent = titleText;
-
         const itemRect = item.getBoundingClientRect();
-
-        
         const left = itemRect.right + 10;
         sidebarTooltipEl.style.left = `${left}px`;
-
-        
         sidebarTooltipEl.classList.add('visible');
-
         const actualHeight = sidebarTooltipEl.offsetHeight;
         const top = itemRect.top + (itemRect.height - actualHeight) / 2;
         sidebarTooltipEl.style.top = `${top}px`;
     }
-
     function hideSidebarTooltip(e) {
         if (sidebarTooltipEl) {
             sidebarTooltipEl.classList.remove('visible');
         }
     }
-
-    
     document.addEventListener('mouseover', (e) => {
         if (e.target.closest('.recent-chat-item')) {
             showSidebarTooltip(e);
         }
     });
-
     document.addEventListener('mouseout', (e) => {
         if (e.target.closest('.recent-chat-item')) {
             hideSidebarTooltip(e);
         }
     });
-
-    
     window.LuminaCanvas = {
         currentDoc: {
             name: '',
@@ -7971,31 +6646,24 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             content: '',
             comments: []
         },
-
         handleStream(text) {
-            
             const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-create>|$)/i;
             const createMatch = text.match(createRegex);
             if (createMatch) {
                 const name = createMatch[1];
                 const type = createMatch[2];
                 const content = createMatch[3];
-
                 this.showCanvas();
                 this.setDocument(name, type, content);
                 return;
             }
-
-            
             const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-update>|$)/i;
             const updateMatch = text.match(updateRegex);
             if (updateMatch) {
                 const name = updateMatch[1];
                 const body = updateMatch[2];
-
                 const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
                 const replacementMatch = body.match(/<replacement>([\s\S]*?)(?:<\/replacement>|$)/i);
-
                 if (patternMatch && replacementMatch) {
                     const pattern = patternMatch[1];
                     const replacement = replacementMatch[2];
@@ -8003,7 +6671,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             }
         },
-
         handleDone(text) {
             const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/lumina-canvas-update>/gi;
             let match;
@@ -8017,7 +6684,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             }
         },
-
         showCanvas() {
             if (!isSplitMode) {
                 toggleSplitMode();
@@ -8027,7 +6693,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 paneSecondary.classList.add('canvas-active');
             }
         },
-
         hideCanvas() {
             const paneSecondary = document.getElementById('pane-secondary');
             if (paneSecondary) {
@@ -8037,12 +6702,10 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 toggleSplitMode();
             }
         },
-
         setDocument(name, type, content) {
             this.currentDoc.name = name;
             this.currentDoc.type = type;
             this.currentDoc.content = content;
-
             const titleInput = document.getElementById('lumina-canvas-title');
             const typeBadge = document.getElementById('lumina-canvas-type-badge');
             const editorTextarea = document.getElementById('lumina-canvas-editor');
@@ -8050,7 +6713,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             const codeTabBtn = document.getElementById('lumina-canvas-tab-code');
             const previewTabBtn = document.getElementById('lumina-canvas-tab-preview');
             const container = document.querySelector('.lumina-canvas-container');
-
             if (titleInput) titleInput.value = name;
             if (typeBadge) {
                 typeBadge.textContent = type.replace('code/', '').toUpperCase();
@@ -8066,7 +6728,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     documentView.textContent = content;
                 }
             }
-
             if (container) {
                 if (type === 'document') {
                     container.classList.add('type-document');
@@ -8074,7 +6735,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     container.classList.remove('type-document');
                 }
             }
-
             if (codeTabBtn) {
                 if (type === 'document') {
                     codeTabBtn.textContent = 'Edit';
@@ -8083,7 +6743,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
                 codeTabBtn.style.display = 'block';
             }
-
             if (previewTabBtn) {
                 if (type === 'document') {
                     previewTabBtn.textContent = 'Preview';
@@ -8095,15 +6754,12 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     previewTabBtn.style.display = 'none';
                 }
             }
-
             this.switchTab('code');
             this.updatePreview();
         },
-
         applyUpdate(name, pattern, replacement, isFinal) {
             let currentContent = this.currentDoc.content;
             let newContent = currentContent;
-
             if (pattern === '.*') {
                 newContent = replacement;
             } else {
@@ -8114,15 +6770,12 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     console.error('[Lumina Canvas] Regex error:', e);
                 }
             }
-
             this.currentDoc.content = newContent;
-
             const editorTextarea = document.getElementById('lumina-canvas-editor');
             if (editorTextarea) {
                 editorTextarea.value = newContent;
             }
             this.syncHighlighting(newContent);
-
             const documentView = document.getElementById('lumina-canvas-document');
             if (documentView && this.currentDoc.type === 'document') {
                 if (typeof marked !== 'undefined') {
@@ -8131,18 +6784,14 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     documentView.textContent = newContent;
                 }
             }
-
             if (isFinal) {
                 this.updatePreview();
             }
         },
-
         updatePreview() {
             const previewFrame = document.getElementById('lumina-canvas-preview-frame');
             if (!previewFrame) return;
-
             let content = this.currentDoc.content;
-
             if (this.currentDoc.type === 'code/react') {
                 content = `
                     <!DOCTYPE html>
@@ -8167,7 +6816,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     </html>
                 `;
             }
-
             try {
                 const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
                 doc.open();
@@ -8177,21 +6825,17 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 console.error('[Lumina Canvas] Preview injection error:', e);
             }
         },
-
         switchTab(tabId) {
             const codeTabBtn = document.getElementById('lumina-canvas-tab-code');
             const previewTabBtn = document.getElementById('lumina-canvas-tab-preview');
             const codePanel = document.getElementById('lumina-canvas-code-panel');
             const documentPanel = document.getElementById('lumina-canvas-document-panel');
             const previewPanel = document.getElementById('lumina-canvas-preview-panel');
-
             if (codePanel) codePanel.classList.remove('active');
             if (documentPanel) documentPanel.classList.remove('active');
             if (previewPanel) previewPanel.classList.remove('active');
-
             if (codeTabBtn) codeTabBtn.classList.remove('active');
             if (previewTabBtn) previewTabBtn.classList.remove('active');
-
             if (tabId === 'code') {
                 if (codeTabBtn) codeTabBtn.classList.add('active');
                 if (codePanel) codePanel.classList.add('active');
@@ -8209,7 +6853,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             }
         },
-
         syncHighlighting(code) {
             const codeEl = document.getElementById('lumina-canvas-highlight-code');
             if (codeEl) {
@@ -8226,23 +6869,19 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             }
         },
-
         init() {
             const closeBtn = document.getElementById('lumina-canvas-btn-close');
             if (closeBtn) {
                 closeBtn.onclick = () => this.hideCanvas();
             }
-
             const codeTabBtn = document.getElementById('lumina-canvas-tab-code');
             if (codeTabBtn) {
                 codeTabBtn.onclick = () => this.switchTab('code');
             }
-
             const previewTabBtn = document.getElementById('lumina-canvas-tab-preview');
             if (previewTabBtn) {
                 previewTabBtn.onclick = () => this.switchTab('preview');
             }
-
             const saveLocalDoc = () => {
                 const activeTab = tabs[activeTabIndex];
                 const sessionId = activeTab ? activeTab.sessionId : 'global';
@@ -8253,21 +6892,18 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     content: this.currentDoc.content
                 }));
             };
-
             const titleInput = document.getElementById('lumina-canvas-title');
             if (titleInput) {
                 titleInput.oninput = () => {
                     const oldName = this.currentDoc.name;
                     const newName = titleInput.value;
                     this.currentDoc.name = newName;
-
                     const activeTab = tabs[activeTabIndex];
                     const sessionId = activeTab ? activeTab.sessionId : 'global';
                     localStorage.removeItem(`lumina-canvas-${sessionId}-${oldName}`);
                     saveLocalDoc();
                 };
             }
-
             const textarea = document.getElementById('lumina-canvas-editor');
             const pre = document.getElementById('lumina-canvas-highlight-block');
             if (textarea && pre) {
@@ -8284,14 +6920,11 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 };
             }
         },
-
         loadVersionFromCard(card) {
             const cardTitle = card.querySelector('.lumina-canvas-card-title')?.textContent || '';
             if (!cardTitle) return;
-
             const activeTab = tabs[activeTabIndex];
             const sessionId = activeTab ? activeTab.sessionId : 'global';
-
             const localSaved = localStorage.getItem(`lumina-canvas-${sessionId}-${cardTitle}`);
             if (localSaved) {
                 try {
@@ -8303,19 +6936,14 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     console.error('[Lumina Canvas] Error loading local saved doc:', e);
                 }
             }
-
             const chatHistory = document.getElementById('chat-history') || document.getElementById('chat-history-secondary');
             if (!chatHistory) return;
-
             const allAnswers = Array.from(chatHistory.querySelectorAll('.lumina-chat-answer'));
-
             let docName = '';
             let docType = '';
             let docContent = '';
-
             allAnswers.forEach(ans => {
                 const rawText = ans.getAttribute('data-raw-text') || '';
-
                 const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/lumina-canvas-create>/gi;
                 let createMatch;
                 while ((createMatch = createRegex.exec(rawText)) !== null) {
@@ -8325,7 +6953,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                         docContent = createMatch[3];
                     }
                 }
-
                 const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/lumina-canvas-update>/gi;
                 let updateMatch;
                 while ((updateMatch = updateRegex.exec(rawText)) !== null) {
@@ -8351,16 +6978,13 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     }
                 }
             });
-
             if (docName) {
                 this.showCanvas();
                 this.setDocument(docName, docType, docContent);
             }
         }
     };
-
     window.LuminaCanvas.init();
-
     document.addEventListener('click', (e) => {
         const card = e.target.closest('.lumina-canvas-card');
         if (card) {
@@ -8378,5 +7002,3 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     });
 })();
-
-

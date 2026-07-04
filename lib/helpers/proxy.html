@@ -11,24 +11,21 @@
 <body>
     <iframe id="proxy-iframe" src="about:blank"></iframe>
     <script>
-        
+
         const params = new URLSearchParams(window.location.search);
         let targetUrl = params.get('url');
-        
+
         if (targetUrl) {
             console.log('Lumina Proxy initiating load for:', targetUrl);
             const iframe = document.getElementById('proxy-iframe');
-            
-            
+
             try {
                 targetUrl = decodeURIComponent(targetUrl);
                 if (!targetUrl.startsWith('http')) {
-                    
                     targetUrl = decodeURIComponent(targetUrl);
                 }
             } catch(e) {}
 
-            
             iframe.src = targetUrl;
         } else {
             document.body.innerHTML = '<div style="padding:20px; font-family:sans-serif; color:#666;">Waiting for URL...</div>';

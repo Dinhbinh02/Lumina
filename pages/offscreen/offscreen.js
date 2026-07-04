@@ -1,16 +1,12 @@
 
-
 let currentAudio = null;
-let currentAudioResolve = null; 
+let currentAudioResolve = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    
     if (request.action === 'offscreen_ping') {
         sendResponse({ success: true });
         return false;
     }
-
-    
     if (request.action === 'offscreen_playEdgeTTS') {
         playEdgeTTS(request.text, request.voice, request.speed)
             .then(() => sendResponse({ success: true }))
@@ -20,16 +16,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
         return true;
     }
-
-    
     if (request.action === 'offscreen_playAudio') {
         playAudio(request.url, request.speed)
             .then(() => sendResponse({ success: true }))
             .catch(err => sendResponse({ error: err.message }));
         return true;
     }
-
-    
     if (request.action === 'offscreen_playBase64') {
         console.log('[Offscreen] playBase64', { size: request.data?.length, speed: request.speed });
         playBase64(request.data, request.speed)
@@ -37,17 +29,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(err => sendResponse({ error: err.message }));
         return true;
     }
-
-
-    
     if (request.action === 'offscreen_stopAudio' || request.action === 'offscreen_stopGoogleAudio') {
-        stopCurrentAudio(); 
+        stopCurrentAudio();
         sendResponse({ success: true });
         return false;
     }
 });
-
-
 
 async function playEdgeTTS(text, voice = 'en-US-AriaNeural', speed = 1.0) {
     stopCurrentAudio();
@@ -71,7 +58,6 @@ function trimAudioBufferSilence(audioBuffer, threshold = 0.002) {
     const numChannels = audioBuffer.numberOfChannels;
     const sampleRate = audioBuffer.sampleRate;
     let firstSoundIndex = audioBuffer.length;
-
     for (let c = 0; c < numChannels; c++) {
         const channelData = audioBuffer.getChannelData(c);
         for (let i = 0; i < channelData.length; i++) {
@@ -83,14 +69,11 @@ function trimAudioBufferSilence(audioBuffer, threshold = 0.002) {
             }
         }
     }
-
     if (firstSoundIndex >= audioBuffer.length || firstSoundIndex === 0) {
         return audioBuffer;
     }
-
     const trimmedLength = audioBuffer.length - firstSoundIndex;
     const trimmedBuffer = (audioCtx || new (window.AudioContext || window.webkitAudioContext)()).createBuffer(numChannels, trimmedLength, sampleRate);
-
     for (let c = 0; c < numChannels; c++) {
         const channelData = audioBuffer.getChannelData(c);
         const trimmedChannelData = trimmedBuffer.getChannelData(c);
@@ -128,20 +111,15 @@ function playSound(url, speed = 1.0) {
             if (audioCtx.state === 'suspended') {
                 await audioCtx.resume();
             }
-
             const response = await fetch(url);
             const arrayBuffer = await response.arrayBuffer();
             let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
             audioBuffer = trimAudioBufferSilence(audioBuffer);
-
             const source = audioCtx.createBufferSource();
             source.buffer = audioBuffer;
             source.playbackRate.value = speed;
             source.connect(audioCtx.destination);
-
             audioSource = source;
-
             source.onended = () => {
                 if (audioSource === source) {
                     audioSource = null;
@@ -149,7 +127,6 @@ function playSound(url, speed = 1.0) {
                     resolve();
                 }
             };
-
             source.start(0);
         } catch (err) {
             audioSource = null;
