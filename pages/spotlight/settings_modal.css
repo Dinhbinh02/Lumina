@@ -45,7 +45,7 @@
 
 .lumina-settings-dialog {
   width: 700px;
-  max-width: 70vw;
+  max-width: 90vw;
   height: 600px;
   max-height: 85vh;
   background: var(--lumina-ui-bg) !important;
@@ -105,8 +105,8 @@
 }
 
 [data-theme="dark"] .lumina-settings-sidebar {
-  background: #1f1f1f !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: var(--lumina-ui-bg) !important;
+  border-right: 1px solid var(--lumina-ui-border) !important;
 }
 
 .lumina-settings-sidebar-header {
@@ -661,7 +661,7 @@
 
 .lumina-settings-provider-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr) !important;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -1414,7 +1414,7 @@
 @media (max-width: 768px) {
   .lumina-settings-dialog {
     width: 96vw;
-    max-width: 96vw;
+    max-width: 700px;
     height: 74vh;
     max-height: 74vh;
     flex-direction: column;
@@ -1439,15 +1439,11 @@
     background: var(--lumina-ui-bg, #ffffff) !important;
   }
 
-  [data-theme="dark"] .lumina-settings-sidebar {
-    background: #171717 !important;
-  }
-
   .lumina-settings-sidebar-header {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 12px 0 12px;
+    padding: 8px 8px 0 8px;
     margin-bottom: 0;
   }
 
@@ -1460,7 +1456,7 @@
   .lumina-settings-nav {
     flex-direction: row;
     overflow-x: auto;
-    padding: 6px 12px 12px 12px;
+    padding: 4px 8px 8px 8px;
     gap: 4px;
     scrollbar-width: none;
   }
@@ -1495,7 +1491,7 @@
   }
 
   .lumina-settings-main {
-    padding: 12px;
+    padding: 8px;
     flex: 1;
     overflow-y: auto;
   }

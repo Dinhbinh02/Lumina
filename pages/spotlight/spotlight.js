@@ -74,7 +74,7 @@ function bindContainerWheelForward(containerEl) {
 }
 
 
-const isWebApp = new URLSearchParams(window.location.search).get('webapp') === '1';
+let isWebApp = new URLSearchParams(window.location.search).get('webapp') === '1';
 const isSidePanel = new URLSearchParams(window.location.search).get('sidepanel') === '1';
 if (isSidePanel) {
     document.body.classList.add('is-sidepanel');
@@ -1238,66 +1238,77 @@ function normalizeTabs() {
 }
 
 async function ensureTabHistoryLoaded(tab) {
-    if (!tab || tab.isHistoryLoaded || tab.isLoadingHistory) return;
-    if (tab.sessionId) {
-        tab.isLoadingHistory = true;
-
-        const isSecondary = (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex !== -1 && tabs[secondaryActiveTabIndex] && tabs[secondaryActiveTabIndex].id === tab.id) || tab.id === 'tab-secondary';
-        const pane = isSecondary ? 'secondary' : 'primary';
-
-        showTopbarLoading(pane);
-
-        if (tab.historyEl) {
-            tab.historyEl.style.opacity = '0';
-            tab.historyEl.style.transition = 'none';
-        }
-
-        try {
-            const contentKey = `lumina_session_${tab.sessionId}`;
-            const contentData = await chrome.storage.local.get([contentKey]);
-            const messages = contentData[contentKey];
-            if (messages) {
-                const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
-                const meta = sessions[tab.sessionId] || {};
-                const chatData = {
-                    ...meta,
-                    messages: messages,
-                    sessionId: tab.sessionId,
-                    timestamp: meta.createdAt || meta.updatedAt
-                };
-
-                await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
-                normalizeRestoredHistory(tab.historyEl);
-
-                const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
-                if (allEntries.length > 0 && tab.chatUIInstance) {
-                    const lastEntry = allEntries[allEntries.length - 1];
-                    tab.chatUIInstance.clearEntryMargins(lastEntry);
-                    tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
-                }
-
-                scheduleScrollRestore(tab);
-                if (window.LuminaAnnotation) {
-                    LuminaAnnotation.loadHighlights(tab.id);
-                }
-            }
-        } catch (e) {
-            console.error('Failed to load tab history from JSON:', e);
-        } finally {
-            tab.isLoadingHistory = false;
-            tab.isHistoryLoaded = true;
-            hideTopbarLoading(pane);
-            if (typeof updateWelcomeScreenState === 'function') {
-                updateWelcomeScreenState(pane);
-            }
-        }
-    } else {
-        tab.isHistoryLoaded = true;
-        if (tab.sparkId && typeof renderSparkWelcomeScreen === 'function') {
-            await renderSparkWelcomeScreen(tab);
-        }
+    if (!tab) return;
+    if (tab.isHistoryLoaded) return;
+    if (tab.isLoadingHistory) {
+        return tab.loadingPromise;
     }
+
+    tab.isLoadingHistory = true;
+    tab.loadingPromise = (async () => {
+        if (tab.sessionId) {
+            const isSecondary = (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex !== -1 && tabs[secondaryActiveTabIndex] && tabs[secondaryActiveTabIndex].id === tab.id) || tab.id === 'tab-secondary';
+            const pane = isSecondary ? 'secondary' : 'primary';
+
+            showTopbarLoading(pane);
+
+            if (tab.historyEl) {
+                tab.historyEl.style.opacity = '0';
+                tab.historyEl.style.transition = 'none';
+            }
+
+            try {
+                const contentKey = `lumina_session_${tab.sessionId}`;
+                const contentData = await chrome.storage.local.get([contentKey]);
+                const messages = contentData[contentKey];
+                if (messages) {
+                    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
+                    const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+                    const meta = sessions[tab.sessionId] || {};
+                    const chatData = {
+                        ...meta,
+                        messages: messages,
+                        sessionId: tab.sessionId,
+                        timestamp: meta.createdAt || meta.updatedAt
+                    };
+
+                    await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
+                    normalizeRestoredHistory(tab.historyEl);
+
+                    const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+                    if (allEntries.length > 0 && tab.chatUIInstance) {
+                        const lastEntry = allEntries[allEntries.length - 1];
+                        tab.chatUIInstance.clearEntryMargins(lastEntry);
+                        tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+                    }
+
+                    scheduleScrollRestore(tab);
+                    if (window.LuminaAnnotation) {
+                        LuminaAnnotation.loadHighlights(tab.id);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load tab history from JSON:', e);
+            } finally {
+                tab.isLoadingHistory = false;
+                tab.isHistoryLoaded = true;
+                tab.loadingPromise = null;
+                hideTopbarLoading(pane);
+                if (typeof updateWelcomeScreenState === 'function') {
+                    updateWelcomeScreenState(pane);
+                }
+            }
+        } else {
+            tab.isHistoryLoaded = true;
+            tab.isLoadingHistory = false;
+            tab.loadingPromise = null;
+            if (tab.sparkId && typeof renderSparkWelcomeScreen === 'function') {
+                await renderSparkWelcomeScreen(tab);
+            }
+        }
+    })();
+
+    return tab.loadingPromise;
 }
 
 async function initTabs() {
@@ -1396,7 +1407,7 @@ async function initTabs() {
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
 
-        let sessionId = shouldStartNewChat ? null : (urlSessionId || savedTab?.sessionId || null);
+        let sessionId = (shouldStartNewChat || isWebApp) ? null : (urlSessionId || savedTab?.sessionId || null);
         let tabTitle = 'Chat';
         let meta = {};
 
@@ -1465,7 +1476,7 @@ async function initTabs() {
         tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
 
         // Check split mode
-        let storedSplitMode = data[KEYS.isSplitMode] ?? false;
+        let storedSplitMode = isWebApp ? false : (data[KEYS.isSplitMode] ?? false);
         let savedSecTab = null;
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
             savedSecTab = data[KEYS.tabs][1];
@@ -3624,9 +3635,12 @@ async function init() {
         if (win && win.id) {
             myWindowId = win.id;
             const key = `pending_sidepanel_query_${win.id}`;
-            const storageData = await chrome.storage.local.get([key]);
+            const storageData = await chrome.storage.local.get([key, 'spotlightWindowId']);
             if (storageData[key] && storageData[key].createNewChat) {
                 shouldStartNewChat = true;
+            }
+            if (!isSidePanel && win.id !== storageData.spotlightWindowId) {
+                isWebApp = true;
             }
         }
     } catch (e) {
@@ -7155,8 +7169,8 @@ async function renderDropdownMenu(pane = 'primary') {
 
     // Open in New Tab
     dropdown.querySelector('#dropdown-continue-btn')?.addEventListener('click', () => {
-        let url = chrome.runtime.getURL('pages/spotlight/spotlight.html') + '?webapp=1';
-        if (sessionId) url += `&session_id=${sessionId}`;
+        let url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
+        if (sessionId) url += `?session_id=${sessionId}`;
         chrome.tabs.create({ url });
         hide();
     });

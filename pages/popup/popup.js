@@ -28,14 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Open as new tab
     btnTab.addEventListener('click', () => {
-        const url = chrome.runtime.getURL('pages/spotlight/spotlight.html?webapp=1');
+        const url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
         chrome.tabs.create({ url });
         window.close();
     });
 
     // Open as window
     btnWindow.addEventListener('click', () => {
-        const url = chrome.runtime.getURL('pages/spotlight/spotlight.html?webapp=1');
+        const url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
         chrome.windows.create({
             url: url,
             type: 'popup',

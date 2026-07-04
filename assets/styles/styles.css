@@ -98,23 +98,32 @@ body {
 }
 
 /* User Accent Color Config */
-[data-accent="amber"], :host([data-accent="amber"]) {
+[data-accent="amber"],
+:host([data-accent="amber"]) {
   --lumina-primary-color: #d97706;
   --lumina-primary-rgb: 217, 119, 6;
 }
-[data-accent="emerald"], :host([data-accent="emerald"]) {
+
+[data-accent="emerald"],
+:host([data-accent="emerald"]) {
   --lumina-primary-color: #059669;
   --lumina-primary-rgb: 5, 150, 105;
 }
-[data-accent="sky"], :host([data-accent="sky"]) {
+
+[data-accent="sky"],
+:host([data-accent="sky"]) {
   --lumina-primary-color: #0284c7;
   --lumina-primary-rgb: 2, 132, 199;
 }
-[data-accent="indigo"], :host([data-accent="indigo"]) {
+
+[data-accent="indigo"],
+:host([data-accent="indigo"]) {
   --lumina-primary-color: #4f46e5;
   --lumina-primary-rgb: 79, 70, 229;
 }
-[data-accent="rose"], :host([data-accent="rose"]) {
+
+[data-accent="rose"],
+:host([data-accent="rose"]) {
   --lumina-primary-color: #e11d48;
   --lumina-primary-rgb: 225, 29, 72;
 }
@@ -5731,7 +5740,7 @@ body {
 }
 
 .is-sidepanel .lumina-chat-scroll-content {
-  padding: 10px 4px 0 4px !important;
+  padding: 10px 8px 0 8px !important;
   scrollbar-width: none !important;
   overflow-y: auto !important;
 }

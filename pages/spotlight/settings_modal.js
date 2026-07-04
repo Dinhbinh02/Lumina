@@ -1497,23 +1497,23 @@ class LuminaSettingsModal {
       const modifierCodes = [];
       if (e.ctrlKey) {
         if (this.recordingPressedCodes.has('ControlLeft')) modifierCodes.push('ControlLeft');
-        else if (this.recordingPressedCodes.has('ControlRight')) modifierCodes.push('ControlRight');
-        else modifierCodes.push('ControlLeft');
+        if (this.recordingPressedCodes.has('ControlRight')) modifierCodes.push('ControlRight');
+        if (modifierCodes.length === 0) modifierCodes.push('ControlLeft');
       }
       if (e.altKey) {
         if (this.recordingPressedCodes.has('AltLeft')) modifierCodes.push('AltLeft');
-        else if (this.recordingPressedCodes.has('AltRight')) modifierCodes.push('AltRight');
-        else modifierCodes.push('AltLeft');
+        if (this.recordingPressedCodes.has('AltRight')) modifierCodes.push('AltRight');
+        if (modifierCodes.length === 0) modifierCodes.push('AltLeft');
       }
       if (e.shiftKey) {
         if (this.recordingPressedCodes.has('ShiftLeft')) modifierCodes.push('ShiftLeft');
-        else if (this.recordingPressedCodes.has('ShiftRight')) modifierCodes.push('ShiftRight');
-        else modifierCodes.push('ShiftLeft');
+        if (this.recordingPressedCodes.has('ShiftRight')) modifierCodes.push('ShiftRight');
+        if (modifierCodes.length === 0) modifierCodes.push('ShiftLeft');
       }
       if (e.metaKey) {
         if (this.recordingPressedCodes.has('MetaLeft')) modifierCodes.push('MetaLeft');
-        else if (this.recordingPressedCodes.has('MetaRight')) modifierCodes.push('MetaRight');
-        else modifierCodes.push('MetaLeft');
+        if (this.recordingPressedCodes.has('MetaRight')) modifierCodes.push('MetaRight');
+        if (modifierCodes.length === 0) modifierCodes.push('MetaLeft');
       }
 
       const keyData = {
@@ -1538,12 +1538,28 @@ class LuminaSettingsModal {
     };
 
     const keyupHandler = (e) => {
-      this.recordingPressedCodes.delete(e.code);
-      if (this.currentRecordingInput !== box) return;
+      if (this.currentRecordingInput !== box) {
+        this.recordingPressedCodes.delete(e.code);
+        return;
+      }
 
       const isModifier = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
       if (isModifier) {
         this.recordingHadInput = true;
+
+        const MODIFIER_PAIRS = {
+          'Shift': ['ShiftLeft', 'ShiftRight'],
+          'Control': ['ControlLeft', 'ControlRight'],
+          'Alt': ['AltLeft', 'AltRight'],
+          'Meta': ['MetaLeft', 'MetaRight'],
+        };
+        const pair = MODIFIER_PAIRS[e.key];
+        let code = e.code;
+        if (pair && this.recordingPressedCodes.has(pair[0]) && this.recordingPressedCodes.has(pair[1])) {
+          code = e.key;
+        }
+
+        this.recordingPressedCodes.delete(e.code);
         this.stopRecording(box, false);
 
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -1553,20 +1569,55 @@ class LuminaSettingsModal {
         else if (e.key === 'Shift') display = isMac ? '⇧' : 'Shift';
         else if (e.key === 'Meta') display = isMac ? '⌘' : 'Win';
 
-        const modifierCodes = [e.code];
+        const modifierCodes = [];
+        const wasControl = e.ctrlKey || e.code.startsWith('Control');
+        const wasAlt = e.altKey || e.code.startsWith('Alt');
+        const wasShift = e.shiftKey || e.code.startsWith('Shift');
+        const wasMeta = e.metaKey || e.code.startsWith('Meta');
+
+        const ctrlIndex = modifierCodes.length;
+        if (wasControl) {
+          if (e.code.startsWith('Control')) modifierCodes.push(e.code);
+          if (this.recordingPressedCodes.has('ControlLeft') && e.code !== 'ControlLeft') modifierCodes.push('ControlLeft');
+          if (this.recordingPressedCodes.has('ControlRight') && e.code !== 'ControlRight') modifierCodes.push('ControlRight');
+          if (modifierCodes.length === ctrlIndex) modifierCodes.push('ControlLeft');
+        }
+        const altIndex = modifierCodes.length;
+        if (wasAlt) {
+          if (e.code.startsWith('Alt')) modifierCodes.push(e.code);
+          if (this.recordingPressedCodes.has('AltLeft') && e.code !== 'AltLeft') modifierCodes.push('AltLeft');
+          if (this.recordingPressedCodes.has('AltRight') && e.code !== 'AltRight') modifierCodes.push('AltRight');
+          if (modifierCodes.length === altIndex) modifierCodes.push('AltLeft');
+        }
+        const shiftIndex = modifierCodes.length;
+        if (wasShift) {
+          if (e.code.startsWith('Shift')) modifierCodes.push(e.code);
+          if (this.recordingPressedCodes.has('ShiftLeft') && e.code !== 'ShiftLeft') modifierCodes.push('ShiftLeft');
+          if (this.recordingPressedCodes.has('ShiftRight') && e.code !== 'ShiftRight') modifierCodes.push('ShiftRight');
+          if (modifierCodes.length === shiftIndex) modifierCodes.push('ShiftLeft');
+        }
+        const metaIndex = modifierCodes.length;
+        if (wasMeta) {
+          if (e.code.startsWith('Meta')) modifierCodes.push(e.code);
+          if (this.recordingPressedCodes.has('MetaLeft') && e.code !== 'MetaLeft') modifierCodes.push('MetaLeft');
+          if (this.recordingPressedCodes.has('MetaRight') && e.code !== 'MetaRight') modifierCodes.push('MetaRight');
+          if (modifierCodes.length === metaIndex) modifierCodes.push('MetaLeft');
+        }
 
         const keyData = {
-          code: e.code,
+          code: code,
           key: e.key,
           display: display,
-          ctrlKey: e.ctrlKey,
-          altKey: e.altKey,
-          shiftKey: e.shiftKey,
-          metaKey: e.metaKey,
+          ctrlKey: wasControl,
+          altKey: wasAlt,
+          shiftKey: wasShift,
+          metaKey: wasMeta,
           modifierCodes: modifierCodes
         };
         this.renderShortcutDisplay(box, keyData);
         this.saveCapturedShortcut(box.dataset.action, keyData);
+      } else {
+        this.recordingPressedCodes.delete(e.code);
       }
     };
 
@@ -1594,23 +1645,23 @@ class LuminaSettingsModal {
       const modifierCodes = [];
       if (e.ctrlKey) {
         if (this.recordingPressedCodes.has('ControlLeft')) modifierCodes.push('ControlLeft');
-        else if (this.recordingPressedCodes.has('ControlRight')) modifierCodes.push('ControlRight');
-        else modifierCodes.push('ControlLeft');
+        if (this.recordingPressedCodes.has('ControlRight')) modifierCodes.push('ControlRight');
+        if (modifierCodes.length === 0) modifierCodes.push('ControlLeft');
       }
       if (e.altKey) {
         if (this.recordingPressedCodes.has('AltLeft')) modifierCodes.push('AltLeft');
-        else if (this.recordingPressedCodes.has('AltRight')) modifierCodes.push('AltRight');
-        else modifierCodes.push('AltLeft');
+        if (this.recordingPressedCodes.has('AltRight')) modifierCodes.push('AltRight');
+        if (modifierCodes.length === 0) modifierCodes.push('AltLeft');
       }
       if (e.shiftKey) {
         if (this.recordingPressedCodes.has('ShiftLeft')) modifierCodes.push('ShiftLeft');
-        else if (this.recordingPressedCodes.has('ShiftRight')) modifierCodes.push('ShiftRight');
-        else modifierCodes.push('ShiftLeft');
+        if (this.recordingPressedCodes.has('ShiftRight')) modifierCodes.push('ShiftRight');
+        if (modifierCodes.length === 0) modifierCodes.push('ShiftLeft');
       }
       if (e.metaKey) {
         if (this.recordingPressedCodes.has('MetaLeft')) modifierCodes.push('MetaLeft');
-        else if (this.recordingPressedCodes.has('MetaRight')) modifierCodes.push('MetaRight');
-        else modifierCodes.push('MetaLeft');
+        if (this.recordingPressedCodes.has('MetaRight')) modifierCodes.push('MetaRight');
+        if (modifierCodes.length === 0) modifierCodes.push('MetaLeft');
       }
 
       const keyData = {
