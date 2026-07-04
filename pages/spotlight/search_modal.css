@@ -1,4 +1,4 @@
-/* search_modal.css */
+
 
 .lumina-search-dialog {
   width: 700px;
@@ -23,7 +23,7 @@
   width: 100%;
 }
 
-/* Search Header with Inline Close Button */
+
 .lumina-search-header {
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@
   flex: 1;
 }
 
-/* Custom Scrollbar */
+
 .lumina-search-results-section::-webkit-scrollbar {
   width: 6px;
 }
@@ -109,7 +109,7 @@
   border-radius: 10px;
 }
 
-/* New Chat Button */
+
 .lumina-search-new-chat {
   display: flex;
   align-items: center;
@@ -136,7 +136,7 @@
   flex-shrink: 0;
 }
 
-/* Group Headers */
+
 .lumina-search-group-header {
   font-size: 13px;
   font-weight: 500;
@@ -146,7 +146,7 @@
   letter-spacing: 0.3px;
 }
 
-/* Search Items */
+
 .lumina-search-item {
   display: flex;
   align-items: flex-start;
@@ -228,7 +228,7 @@
   font-size: 14px;
 }
 
-/* Close button for search overlay */
+
 .lumina-search-overlay-close-btn {
   position: absolute;
   top: 16px;
@@ -255,7 +255,7 @@
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-/* In-pane overlay styles */
+
 .lumina-settings-overlay.in-pane {
   position: absolute !important;
   top: 0 !important;

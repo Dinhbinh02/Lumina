@@ -83,7 +83,7 @@ if (isSidePanel) {
 function updateUrlSessionId(ignoredSessionId) {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // Determine the sids to write to the URL
+    
     let sids = [];
     if (typeof isSplitMode !== 'undefined' && isSplitMode) {
         const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
@@ -181,8 +181,8 @@ window.LuminaSelectionScope = {
     renderRecentChatsSidebar: () => { if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar(); }
 };
 
-// Cache nội dung trang web theo tabId+url, tránh fetch lại mỗi lần gửi
-const pageContextCache = new Map(); // key: `${tabId}::${url}` => pageContext string
+
+const pageContextCache = new Map(); 
 
 
 let chatUI = null;
@@ -255,7 +255,7 @@ async function toggleSplitMode() {
     if (!splitContainer) return;
 
     if (isSplitMode) {
-        // Turn off split mode
+        
         isSplitMode = false;
         secondaryActiveTabIndex = -1;
         chatUISecondary = null;
@@ -298,7 +298,7 @@ async function toggleSplitMode() {
             sidebarSparksRenderList();
         }
     } else {
-        // Turn on split mode
+        
         if (isSidePanel) {
             return;
         }
@@ -310,7 +310,7 @@ async function toggleSplitMode() {
         if (paneSecondary) paneSecondary.style.display = 'flex';
         if (resizer) resizer.style.display = 'flex';
 
-        // Load custom ratio or default 50
+        
         const storageData = await chrome.storage.local.get([KEYS.splitRatio]);
         const ratio = storageData[KEYS.splitRatio] || 50;
         if (panePrimary && paneSecondary) {
@@ -869,7 +869,7 @@ function showTopbarLoading(pane) {
         bar.style.transition = 'none';
         bar.style.transform = 'scaleX(0)';
         bar.classList.add('active');
-        // Force reflow
+        
         bar.offsetHeight;
         bar.style.transition = 'transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.2s ease';
         bar.style.transform = 'scaleX(0.85)';
@@ -1067,7 +1067,7 @@ async function handleRemoteSync(changes, areaName) {
                 const counterData = await chrome.storage.local.get([KEYS.tabCounter]);
                 if (counterData[KEYS.tabCounter]) tabCounter = counterData[KEYS.tabCounter];
 
-                // Calculate the new activeGroupIndex based on the active sessionId to prevent focus/tab resets
+                
                 let resolvedActiveGroupIndex = activeGroupIndex;
                 if (currentActiveSessionId) {
                     const targetTab = tabs.find(t => t.sessionId === currentActiveSessionId);
@@ -1178,7 +1178,7 @@ async function handleRemoteSync(changes, areaName) {
                     if (isActive || isSecondary) {
                         const ui = isSecondary ? sharedInputUISecondary : sharedInputUI;
                         if (ui && ui.isGenerating) {
-                            // Do not reset/abort if this tab is currently generating
+                            
                             console.log('[Lumina] Suppressing resetChat on active generation for tab:', tab.sessionId);
                         } else {
                             resetChat(isSecondary);
@@ -1475,7 +1475,7 @@ async function initTabs() {
         activeGroupIndex = 0;
         tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
 
-        // Check split mode
+        
         let storedSplitMode = isWebApp ? false : (data[KEYS.isSplitMode] ?? false);
         let savedSecTab = null;
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
@@ -1722,7 +1722,7 @@ function createTab(switchToIt = true) {
 }
 
 function duplicateTab(index) {
-    // No-op in single tab mode
+    
 }
 
 function switchGroup(groupIndex, skipScrollRestore = false) {
@@ -1940,7 +1940,7 @@ function setupResizer() {
     let isDragging = false;
     let animationFrameId = null;
 
-    // Cached values — computed once on mousedown, never inside mousemove
+    
     let cachedAvailableWidth = 0;
     let cachedOffsetLeft = 0;
     let lastPercentage = 50;
@@ -1954,7 +1954,7 @@ function setupResizer() {
         panePrimary.style.pointerEvents = 'none';
         paneSecondary.style.pointerEvents = 'none';
 
-        // Read layout once here — zero reflow during drag
+        
         const containerRect = splitContainer.getBoundingClientRect();
         const style = window.getComputedStyle(splitContainer);
         const paddingLeft = parseFloat(style.paddingLeft) || 0;
@@ -1968,7 +1968,7 @@ function setupResizer() {
         if (!isDragging) return;
         if (animationFrameId) return;
 
-        // Capture clientX immediately to avoid stale event data inside rAF
+        
         const clientX = e.clientX;
 
         animationFrameId = requestAnimationFrame(() => {
@@ -1979,15 +1979,15 @@ function setupResizer() {
             if (percentage < 20) percentage = 20;
             else if (percentage > 80) percentage = 80;
 
-            // Auto-snap to center (50%) when close (between 47.5% and 52.5%)
+            
             if (percentage >= 47.5 && percentage <= 52.5) percentage = 50;
 
-            // Skip DOM write if value hasn't changed meaningfully (< 0.05% delta)
+            
             if (Math.abs(percentage - lastPercentage) < 0.05) return;
             lastPercentage = percentage;
 
-            // Use width % instead of bare flex numbers.
-            // This avoids a full flex layout recalculation of the whole subtree.
+            
+            
             panePrimary.style.flex = `0 0 ${percentage}%`;
             paneSecondary.style.flex = `0 0 ${100 - percentage}%`;
         });
@@ -2125,7 +2125,7 @@ function saveTabsState(forceSaveChat = false) {
         [KEYS.activeGroupIndex]: activeGroupIndex,
         [KEYS.groupCounter]: groupCounter,
 
-        // Also write to global keys so new window sessions inherit this state
+        
         [GLOBAL_KEYS.tabs]: tabsMetadata,
         [GLOBAL_KEYS.tabCounter]: tabCounter,
         [GLOBAL_KEYS.activeTabIndex]: activeTabIndex,
@@ -2221,12 +2221,12 @@ function normalizeRestoredHistory(historyEl) {
             pinBtn.style.display = '';
         }
 
-        // Re-inject question actions to attach event listeners
+        
         if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.injectQuestionActions === 'function') {
             LuminaChatUI.injectQuestionActions(questionEl);
         }
 
-        // Re-attach version navigation button listeners
+        
         const nav = entry.querySelector('.lumina-answer-nav');
         if (nav) {
             const prevBtn = nav.querySelector('.nav-prev');
@@ -3367,7 +3367,7 @@ function updateWebChips() {
         const selectedSources = getWebSelectionForScope(spotlightTabId);
         const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
 
-        // Tính fingerprint của state hiện tại
+        
         let newFingerprint = '';
         if (onValidWebPage) {
             const currentTabId = String(currentBrowserTab.tabId);
@@ -3376,7 +3376,7 @@ function updateWebChips() {
             newFingerprint = `${currentTabId}|${isCurrentPinned ? 'active' : 'ghost'}|${tokens}|${currentBrowserTab.title || ''}`;
         }
 
-        // Chỉ rebuild DOM khi state thực sự thay đổi
+        
         if (container.dataset.chipFingerprint === newFingerprint) return;
         container.dataset.chipFingerprint = newFingerprint;
 
@@ -3494,7 +3494,7 @@ async function init() {
     if (isInitializing) return;
     isInitializing = true;
 
-    // Verify and ensure unique instanceId per browser tab/window (detect duplicated tabs)
+    
     await new Promise((resolve) => {
         if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.getCurrent) {
             chrome.tabs.getCurrent((tab) => {
@@ -3504,7 +3504,7 @@ async function init() {
                         const newInstId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
                         sessionStorage.setItem('lumina_spotlight_instance_id', newInstId);
 
-                        // Re-initialize KEYS properties based on the new instanceId
+                        
                         KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
                         KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
                         KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -3671,7 +3671,7 @@ async function init() {
         }
     }
 
-    // Initialize topbar model selectors
+    
     initTopbarModelSelector('primary');
     if (isSplitMode) {
         initTopbarModelSelector('secondary');
@@ -3694,12 +3694,12 @@ async function init() {
         updateWelcomeScreenState('secondary');
     }
 
-    // Wire up split screen toggles
+    
     document.querySelectorAll('.split-toggle-btn').forEach(btn => {
         btn.addEventListener('click', toggleSplitMode);
     });
 
-    // Setup click detection on the panes
+    
     const panePrimary = document.getElementById('pane-primary');
     const paneSecondary = document.getElementById('pane-secondary');
 
@@ -3741,7 +3741,7 @@ async function init() {
 
     setupPort();
 
-    // History loaded directly in initTabs if urlSessionId is present
+    
 
 
     setupRegenerateButtons();
@@ -3755,13 +3755,13 @@ async function init() {
         askSelectionPopupEnabled = items.askSelectionPopupEnabled ?? false;
         advancedParamsByModel = items.advancedParamsByModel || {};
 
-        // Apply theme settings
+        
         const themeVal = items.theme || (items.globalDefaults && items.globalDefaults.theme) || 'auto';
         const contrastVal = items.contrast || (items.globalDefaults && items.globalDefaults.contrast) || 'auto';
         const accentVal = items.accentColor || (items.globalDefaults && items.globalDefaults.accentColor) || 'default';
         let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
         
-        // Auto-enable dark theme in incognito mode
+        
         if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
             mode = 'dark';
         }
@@ -4050,7 +4050,7 @@ async function init() {
 
     initSidebar();
 
-    // Auto-open settings if requested via URL params
+    
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('settings') === '1' || urlParams.get('section')) {
         setTimeout(() => {
@@ -4073,7 +4073,7 @@ function initSidebar() {
     const settingsBtn = document.getElementById('sidebar-settings-btn');
     const searchBtn = document.getElementById('sidebar-search-btn');
 
-    // Create backdrop for mobile sidebar overlay
+    
     let backdrop = document.querySelector('.sidebar-backdrop');
     if (!backdrop) {
         backdrop = document.createElement('div');
@@ -4081,16 +4081,16 @@ function initSidebar() {
         document.body.appendChild(backdrop);
     }
 
-    // Load collapsed state from localStorage (only for non-sidepanel mode)
+    
     const isCollapsed = localStorage.getItem('lumina_sidebar_collapsed') === 'true';
     if (isCollapsed && sidebar && !isSidePanel) {
         sidebar.classList.add('sidebar-collapsed');
     }
 
-    // Toggle sidebar on desktop or mobile
+    
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent trigger click on sidebar container
+            e.stopPropagation(); 
             if (isSidePanel || window.innerWidth <= 768) {
                 if (sidebar.classList.contains('active')) {
                     closeMobileSidebar();
@@ -4106,7 +4106,7 @@ function initSidebar() {
         });
     }
 
-    // Toggle sidebar collapse/expand when clicking on empty space
+    
     if (sidebar) {
         sidebar.addEventListener('click', (e) => {
             if (isSidePanel || window.innerWidth <= 768) return;
@@ -4123,7 +4123,7 @@ function initSidebar() {
         });
     }
 
-    // Close mobile sidebar on backdrop click
+    
     const closeMobileSidebar = () => {
         if (sidebar) sidebar.classList.remove('active');
         if (backdrop) backdrop.classList.remove('active');
@@ -4269,10 +4269,10 @@ function initSidebar() {
         }
     });
 
-    // Initial render of recent chats
+    
     renderRecentChatsSidebar();
 
-    // Listen to storage changes to keep recent chats synchronized
+    
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local') {
             if (changes[ChatHistoryManager.STORAGE_KEY]) {
@@ -4429,7 +4429,7 @@ async function renderRecentChatsSidebar() {
             `;
         });
 
-        // Inject skeleton for any naming session not yet in storage
+        
         if (window.namingSessionIds && window.namingSessionIds.size > 0) {
             const storedIds = new Set(historyData.map(s => s.id));
             window.namingSessionIds.forEach(namingSid => {
@@ -4450,7 +4450,7 @@ async function renderRecentChatsSidebar() {
 
     listContainer.innerHTML = html;
 
-    // Ensure sidebar context menu exists
+    
     let ctxMenu = document.getElementById('sidebar-chat-context-menu');
     if (!ctxMenu) {
         ctxMenu = document.createElement('div');
@@ -4478,7 +4478,7 @@ async function renderRecentChatsSidebar() {
         `;
         document.body.appendChild(ctxMenu);
 
-        // Close on outside click
+        
         document.addEventListener('mousedown', (e) => {
             if (!ctxMenu.contains(e.target) && !e.target.closest('.recent-chat-item__menu-btn')) {
                 ctxMenu.style.display = 'none';
@@ -4573,14 +4573,14 @@ async function renderRecentChatsSidebar() {
         });
     }
 
-    // Wire up 3-dot buttons
+    
     listContainer.querySelectorAll('.recent-chat-item__menu-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const sid = btn.dataset.sessionId;
             const parentItem = btn.closest('.recent-chat-item');
 
-            // Recheck pinned state for label and icon
+            
             ctxMenu.dataset.sessionId = sid;
             const pinItem = ctxMenu.querySelector('[data-action="pin"]');
             if (pinItem) {
@@ -4603,11 +4603,11 @@ async function renderRecentChatsSidebar() {
                 });
             }
 
-            // Highlight active item
+            
             document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
             if (parentItem) parentItem.classList.add('ctx-active');
 
-            // Position menu near button
+            
             const rect = btn.getBoundingClientRect();
             ctxMenu.style.display = 'block';
             let top = rect.bottom + 4;
@@ -4621,12 +4621,12 @@ async function renderRecentChatsSidebar() {
         });
     });
 
-    // Wire up click to load chat
+    
     listContainer.querySelectorAll('.recent-chat-item').forEach(item => {
         item.addEventListener('click', async (e) => {
             if (e.target.closest('.recent-chat-item__menu-btn')) return;
 
-            // Set active immediately to prevent lag/delay
+            
             listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
@@ -4637,7 +4637,7 @@ async function renderRecentChatsSidebar() {
             const messages = contentData[contentKey] || [];
             const meta = sessions[sid] || { id: sid };
             window.loadHistoryIntoNewTab(messages, meta, sid);
-            // Close mobile sidebar after selecting a chat
+            
             const sidebar = document.getElementById('lumina-sidebar');
             const backdrop = document.querySelector('.sidebar-backdrop');
             if (sidebar) sidebar.classList.remove('active');
@@ -4858,7 +4858,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
         updateUrlSessionId(newSessionId);
 
-        // Copy settings of this new session to storage
+        
         const currentModel = currentTab.selectedModel;
         const currentThinking = currentTab.thinkingLevel;
         chrome.storage.local.get(['lumina_session_settings'], (res) => {
@@ -5055,9 +5055,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     });
     saveTabsState(true);
-    // Refresh sidebar list so the new session (with skeleton) appears immediately
+    
     if (typeof renderRecentChatsSidebar === 'function') {
-        // Use a small defer so saveCurrentChat's async storage write can race ahead
+        
         setTimeout(renderRecentChatsSidebar, 0);
     }
 
@@ -5075,7 +5075,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    // Xây dựng danh sách tab cần lấy nội dung (Chỉ kích hoạt khi ở isSidePanel)
+    
     let webSourceScope = [];
     if (isSidePanel && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
         const selection = getWebSelectionForScope(currentTab.id);
@@ -5101,9 +5101,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             const results = await Promise.all(webSourceScope.map(async (source) => {
                 const cacheKey = `${source.tabId}::${source.url}`;
 
-                // Dùng cache nếu URL chưa đổi
+                
                 if (pageContextCache.has(cacheKey)) {
-                    return pageContextCache.get(cacheKey); // mảng ctx objects
+                    return pageContextCache.get(cacheKey); 
                 }
 
                 try {
@@ -5265,7 +5265,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
 
-    // Fire title generation CONCURRENTLY with the main chat request
+    
     if (
         !extra.isRegenerate &&
         !extra.isRecheck &&
@@ -5891,7 +5891,7 @@ function setupGlobalListeners() {
         }
 
 
-        // Check annotation shortcuts
+        
         for (const shortcut of annotationShortcuts) {
             if (shortcut.enabled === false) continue;
             if (matchesAnnotationShortcut(event, shortcut)) {
@@ -6865,7 +6865,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     }
 
     if (!activeTab.thinkingLevel) {
-        // Load thinking level strictly from advancedParamsByModel
+        
         const localData = await chrome.storage.local.get(['advancedParamsByModel']);
         const advParams = localData.advancedParamsByModel || {};
         const modelObj = activeTab.selectedModel;
@@ -6879,7 +6879,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     activeTab.sparkId = meta.sparkId || null;
     if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = activeTab.sparkId;
 
-    // Save model and thinking level state to lumina_session_settings so selectors fetch them correctly
+    
     try {
         const res = await chrome.storage.local.get(['lumina_session_settings']);
         const settings = res.lumina_session_settings || {};
@@ -6891,7 +6891,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
             settings[sidKey].thinkingLevel = activeTab.thinkingLevel;
         }
         await chrome.storage.local.set({ lumina_session_settings: settings });
-        // Update local sessionSettings cache immediately so we don't have to wait for the storage listener
+        
         sessionSettings = settings;
     } catch (e) {
         console.error('Failed to sync session settings', e);
@@ -6904,7 +6904,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
         if (typeof targetInputUI.refreshReasoningSelector === 'function') targetInputUI.refreshReasoningSelector();
 
-        // Restore input state
+        
         targetInputUI.restoreInputState(isSecondary ? activeTab.inputStateSecondary || null : activeTab.inputState || null);
     }
 
@@ -7074,7 +7074,7 @@ async function renderDropdownMenu(pane = 'primary') {
 
     const hide = () => { dropdown.style.display = 'none'; };
 
-    // Pin / Unpin
+    
     dropdown.querySelector('#dropdown-pin-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
@@ -7119,7 +7119,7 @@ async function renderDropdownMenu(pane = 'primary') {
         hide();
     });
 
-    // Rename
+    
     dropdown.querySelector('#dropdown-rename-btn')?.addEventListener('click', async () => {
         if (!sessionId || !sessionMeta) return;
         let currentTitle = sessionMeta.title || 'Untitled Chat';
@@ -7139,14 +7139,14 @@ async function renderDropdownMenu(pane = 'primary') {
         hide();
     });
 
-    // Duplicate
+    
     dropdown.querySelector('#dropdown-duplicate-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         await ChatHistoryManager.duplicateChat(sessionId);
         hide();
     });
 
-    // Delete
+    
     dropdown.querySelector('#dropdown-delete-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         const confirmed = await window.showCustomPopup({
@@ -7167,7 +7167,7 @@ async function renderDropdownMenu(pane = 'primary') {
         hide();
     });
 
-    // Open in New Tab
+    
     dropdown.querySelector('#dropdown-continue-btn')?.addEventListener('click', () => {
         let url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
         if (sessionId) url += `?session_id=${sessionId}`;
@@ -7217,7 +7217,7 @@ function initTopbarModelSelector(pane = 'primary') {
         const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
         const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
 
-        // Find current model of active tab
+        
         const activeTab = isSec
             ? tabs[secondaryActiveTabIndex]
             : tabs[activeTabIndex];
@@ -7275,7 +7275,7 @@ function initTopbarModelSelector(pane = 'primary') {
                 dropdown.querySelectorAll('.lumina-model-item').forEach(b => b.classList.remove('active'));
                 el.classList.add('active');
 
-                // Update active tab model and other tab if sharing session
+                
                 const currentActiveTab = isSec
                     ? tabs[secondaryActiveTabIndex]
                     : tabs[activeTabIndex];
@@ -7309,7 +7309,7 @@ function initTopbarModelSelector(pane = 'primary') {
                         if (!settings[sidKey]) settings[sidKey] = {};
                         settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
 
-                        // Load and sync thinkingLevel for the new model
+                        
                         const advancedParamsByModel = res.advancedParamsByModel || {};
                         const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
                         const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[item.model] || {};
@@ -7358,12 +7358,12 @@ function initTopbarModelSelector(pane = 'primary') {
             dropdown.appendChild(el);
         });
 
-        // Divider
+        
         const divider = document.createElement('div');
         divider.className = 'lumina-model-divider';
         dropdown.appendChild(divider);
 
-        // Thinking level item
+        
         const thinkingItem = document.createElement('div');
         thinkingItem.className = 'lumina-model-item lumina-thinking-parent-item';
         thinkingItem.style.position = 'relative';
@@ -7389,7 +7389,7 @@ function initTopbarModelSelector(pane = 'primary') {
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
         `;
 
-        // Submenu
+        
         const submenu = document.createElement('div');
         submenu.className = 'lumina-thinking-submenu';
 
@@ -7527,7 +7527,7 @@ function initTopbarModelSelector(pane = 'primary') {
         if (dropdown.classList.contains('active')) {
             dropdown.classList.remove('active');
         } else {
-            // Close other dropdowns
+            
             const moreDropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
             if (moreDropdown) moreDropdown.style.display = 'none';
             fetchAndRender();
@@ -7619,7 +7619,7 @@ function getDynamicWelcomeTitle() {
 
     let options = [];
     if (hour >= 5 && hour < 8) {
-        // Early Morning
+        
         options = [
             `Good morning, early bird${nameSuffix}!`,
             `Morning${nameSuffix}! Starting early?`,
@@ -7628,7 +7628,7 @@ function getDynamicWelcomeTitle() {
             `Early start today! What's on your mind?`
         ];
     } else if (hour >= 8 && hour < 12) {
-        // Morning
+        
         options = [
             `Good morning${nameSuffix}!`,
             `Morning${nameSuffix}! Ready for today?`,
@@ -7637,7 +7637,7 @@ function getDynamicWelcomeTitle() {
             `Have a productive morning${nameSuffix}!`
         ];
     } else if (hour >= 12 && hour < 17) {
-        // Afternoon
+        
         options = [
             `Good afternoon${nameSuffix}!`,
             `Hello${nameSuffix}! What's next?`,
@@ -7646,7 +7646,7 @@ function getDynamicWelcomeTitle() {
             `Afternoon focus mode!`
         ];
     } else if (hour >= 17 && hour < 21) {
-        // Evening
+        
         options = [
             `Good evening${nameSuffix}!`,
             `Evening! Let's chat!`,
@@ -7655,7 +7655,7 @@ function getDynamicWelcomeTitle() {
             `Hope you had a great day!`
         ];
     } else if (hour >= 21 && hour < 24) {
-        // Late Night
+        
         options = [
             `Working late${nameSuffix}?`,
             `Good evening! Burning the midnight oil?`,
@@ -7664,7 +7664,7 @@ function getDynamicWelcomeTitle() {
             `Still going strong${nameSuffix}?`
         ];
     } else {
-        // Midnight / Overnight (0 - 5)
+        
         options = [
             `Night owl mode${nameSuffix}!`,
             `Still awake? What's on your mind?`,
@@ -7674,7 +7674,7 @@ function getDynamicWelcomeTitle() {
         ];
     }
 
-    // Add general fallbacks
+    
     options.push(
         `Where should we start?`,
         `What's on your mind?`,
@@ -7840,18 +7840,14 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
 
 window.namingSessionIds = new Set();
 
-/**
- * Fire chat title generation IN PARALLEL with the main AI request.
- * Shows skeleton on the sidebar item immediately; writes title to storage
- * once the session record appears (retries up to ~3 s).
- */
+
 function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, history) {
     if (!sessionId || !questionText) return;
     if (!window.namingSessionIds) window.namingSessionIds = new Set();
     if (window.namingSessionIds.has(sessionId)) return;
 
     window.namingSessionIds.add(sessionId);
-    // Render sidebar immediately so the skeleton appears
+    
     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
 
     chrome.runtime.sendMessage({
@@ -7873,8 +7869,8 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         if (response && response.success && response.title) {
             const cleanTitle = response.title.trim();
 
-            // Update in-memory tabs & tab bar — do NOT call saveTabsState() here
-            // because its debounced saveCurrentChat would overwrite the title in storage
+            
+            
             if (typeof tabs !== 'undefined') {
                 tabs.forEach(t => {
                     if (t.sessionId === sessionId) t.title = cleanTitle;
@@ -7882,8 +7878,8 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 if (typeof renderTabs === 'function') renderTabs();
             }
 
-            // Write title + autoNamed flag to storage atomically.
-            // Retry if the session record hasn't been flushed yet (race on first message).
+            
+            
             const tryWriteTitle = async (attemptsLeft) => {
                 const freshResult = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
                 const freshSessions = freshResult[ChatHistoryManager.STORAGE_KEY] || {};
@@ -7891,12 +7887,12 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     freshSessions[sessionId].title = cleanTitle;
                     freshSessions[sessionId].autoNamed = true;
                     await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: freshSessions });
-                    // Re-render after confirmed storage write
+                    
                     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
                 } else if (attemptsLeft > 0) {
                     setTimeout(() => tryWriteTitle(attemptsLeft - 1), 400);
                 } else {
-                    // Exhausted retries — still render to clear the skeleton
+                    
                     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
                 }
             };
@@ -7908,7 +7904,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
     });
 }
 
-// Sidebar Tooltip Implementation
+
 (function () {
     let sidebarTooltipEl = null;
 
@@ -7919,7 +7915,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         const titleEl = item.querySelector('.recent-chat-item__title');
         if (!titleEl) return;
 
-        // Only show if the title text is actually truncated
+        
         const isTruncated = titleEl.scrollWidth > titleEl.clientWidth;
         if (!isTruncated) return;
 
@@ -7936,11 +7932,11 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
         const itemRect = item.getBoundingClientRect();
 
-        // Position on the right side of the item
+        
         const left = itemRect.right + 10;
         sidebarTooltipEl.style.left = `${left}px`;
 
-        // Make it visible to calculate height
+        
         sidebarTooltipEl.classList.add('visible');
 
         const actualHeight = sidebarTooltipEl.offsetHeight;
@@ -7954,7 +7950,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     }
 
-    // Use event delegation for dynamic elements
+    
     document.addEventListener('mouseover', (e) => {
         if (e.target.closest('.recent-chat-item')) {
             showSidebarTooltip(e);
@@ -7967,7 +7963,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     });
 
-    // ── Lumina Canvas Implementation ──────────────────────────────────
+    
     window.LuminaCanvas = {
         currentDoc: {
             name: '',
@@ -7977,7 +7973,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         },
 
         handleStream(text) {
-            // 1. Detect <lumina-canvas-create>
+            
             const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-create>|$)/i;
             const createMatch = text.match(createRegex);
             if (createMatch) {
@@ -7990,7 +7986,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 return;
             }
 
-            // 2. Detect <lumina-canvas-update>
+            
             const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-update>|$)/i;
             const updateMatch = text.match(updateRegex);
             if (updateMatch) {

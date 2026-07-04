@@ -1,11 +1,8 @@
-/**
- * Lumina Sparks — Custom AI personalities
- * Manages: list panel, editor (name/instructions/knowledge), live preview chat
- */
+
 
 const SPARKS_KEY = 'lumina_sparks';
 
-// ─── Storage helpers ─────────────────────────────────────────────────────────
+
 
 const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
@@ -50,7 +47,7 @@ async function sparksLoad() {
             };
             needsSave = true;
         } else {
-            // Update description if it's empty, or matches the old long descriptions
+            
             const oldT1Desc = 'Friendly and expert tutor specializing in IELTS Writing Task 1 reports. Get interactive practice, vocabulary suggestions, and grammar corrections tailored to your essays.';
             const oldT2Desc = 'Supportive guide helping you master IELTS Writing Task 2 essays. Learn to analyze prompts, brainstorm strong ideas, structure arguments, and refine academic vocabulary.';
             
@@ -220,13 +217,13 @@ async function sparksRenderList() {
     });
 }
 
-// ─── Editor ───────────────────────────────────────────────────────────────────
+
 
 async function sparksOpenEditor(sparkId = null) {
     const sparks = await sparksLoad();
     const spark = sparkId ? (sparks[sparkId] || null) : null;
 
-    // Remove existing editor if any
+    
     document.getElementById('sparks-editor-overlay')?.remove();
 
     const overlay = document.createElement('div');
@@ -362,7 +359,7 @@ async function sparksOpenEditor(sparkId = null) {
         document.body.appendChild(overlay);
     }
 
-    // Setup resizer dragging logic
+    
     const sparksResizer = overlay.querySelector('#sparks-editor-resizer');
     const formPane = overlay.querySelector('.sparks-editor__form');
     const previewPane = overlay.querySelector('.sparks-editor__preview');
@@ -454,12 +451,12 @@ async function sparksOpenEditor(sparkId = null) {
         }
     });
 
-    // ── Back button ──
+    
     overlay.querySelector('#sparks-editor-back').addEventListener('click', () => {
         overlay.remove();
     });
 
-    // ── Name input → update title + enable preview ──
+    
     const nameInput = overlay.querySelector('#spark-name-input');
     const titleLabel = overlay.querySelector('.sparks-editor__title-row span');
     const previewEmpty = overlay.querySelector('#sparks-preview-empty');
@@ -524,7 +521,7 @@ async function sparksOpenEditor(sparkId = null) {
     }
     updatePreviewState();
 
-    // ── File upload ──
+    
     const fileInput = overlay.querySelector('#sparks-file-input');
     overlay.querySelector('#sparks-add-file-btn').addEventListener('click', () => fileInput.click());
 
@@ -537,11 +534,11 @@ async function sparksOpenEditor(sparkId = null) {
                         name: file.name,
                         type: file.type,
                         size: file.size,
-                        content: e.target.result  // base64 data URL or text
+                        content: e.target.result  
                     });
                     resolve();
                 };
-                // Read as text if text-based, otherwise as data URL
+                
                 if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|csv|json|js|ts|py|html|css|xml|yaml|yml)$/i)) {
                     reader.readAsText(file);
                 } else {
@@ -573,7 +570,7 @@ async function sparksOpenEditor(sparkId = null) {
         });
     }
 
-    // ── Save ──
+    
     overlay.querySelector('#sparks-editor-save').addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) {
@@ -599,7 +596,7 @@ async function sparksOpenEditor(sparkId = null) {
         sparksRenderList();
     });
 
-    // ── Preview Chat ──
+    
     const messagesEl = overlay.querySelector('#sparks-preview-messages');
 
     function buildSystemPrompt() {
@@ -634,17 +631,17 @@ async function sparksOpenEditor(sparkId = null) {
         input.value = '';
         input.style.height = 'auto';
 
-        // Show user message
+        
         appendPreviewMessage('user', text);
 
-        // Build history with system prompt
+        
         const systemPrompt = buildSystemPrompt();
         const historyForAPI = previewHistory.map(h => ({ role: h.role, parts: [{ text: h.text }] }));
 
         previewHistory.push({ role: 'user', text });
         updatePreviewState();
 
-        // AI response placeholder
+        
         const aiDiv = appendPreviewMessage('assistant', '');
         aiDiv.innerHTML = '<span class="sparks-typing-dot"></span><span class="sparks-typing-dot"></span><span class="sparks-typing-dot"></span>';
 
@@ -709,7 +706,7 @@ async function sparksOpenEditor(sparkId = null) {
         }
     });
 
-    // Auto-resize textarea
+    
     previewInput.addEventListener('input', () => {
         previewInput.style.height = 'auto';
         previewInput.style.height = Math.min(previewInput.scrollHeight, 100) + 'px';
@@ -809,7 +806,7 @@ async function sidebarSparksRenderList() {
             document.body.classList.remove('sidebar-open');
         });
 
-        // Drag and Drop
+        
         item.addEventListener('dragstart', (e) => {
             draggedItem = item;
             item.classList.add('dragging');
@@ -834,7 +831,7 @@ async function sidebarSparksRenderList() {
             item.classList.remove('dragging');
             draggedItem = null;
 
-            // Save order
+            
             const orderedIds = Array.from(container.querySelectorAll('.sidebar-spark-item')).map(el => el.dataset.sparkId);
             await sparksSaveOrder(orderedIds);
 

@@ -334,7 +334,7 @@
         const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host');
         if (isInsideShadow) return;
 
-        // Block propagation if there is selected text to disable the website's own selection popups
+        
         if (askSelectionPopupEnabled) {
             const sel = window.getSelection();
             const selText = sel ? sel.toString().trim() : '';

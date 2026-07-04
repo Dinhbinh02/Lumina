@@ -20,7 +20,7 @@
 <body class="lumina-spotlight-page" data-theme="light">
 
     <div class="lumina-app-container">
-        <!-- Sidebar -->
+        
         <aside class="lumina-sidebar" id="lumina-sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-brand">
@@ -106,7 +106,7 @@
                     <div class="sidebar-recent-section">
                         <div class="sidebar-section-title">Recent</div>
                         <div class="recent-chats-list" id="sidebar-recent-chats">
-                            <!-- Dynamic chat history items -->
+                            
                         </div>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
             </div>
 
             <div class="split-container" id="split-container">
-                <!-- Primary Pane -->
+                
                 <div class="spotlight-pane active" id="pane-primary">
                     <header class="topbar" id="spotlight-topbar">
                         <button class="topbar__action-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
@@ -223,12 +223,12 @@
                     </div>
                 </div>
 
-                <!-- Resizer Splitter -->
+                
                 <div class="spotlight-resizer" id="spotlight-resizer">
                     <div class="spotlight-resizer-handle"></div>
                 </div>
 
-                <!-- Secondary Pane -->
+                
                 <div class="spotlight-pane" id="pane-secondary">
                     <header class="topbar" id="spotlight-topbar-secondary">
                         <button class="topbar__action-btn" id="sidebar-toggle-btn-secondary" title="Toggle Sidebar">
@@ -286,7 +286,7 @@
 
     <input type="file" id="file-input" multiple>
 
-    <!-- ==================== LUMINA SEARCH OVERLAY ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-search-overlay" style="display: none;">
         <button class="lumina-search-overlay-close-btn" id="lumina-search-overlay-close-btn" title="Close Search">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
@@ -330,14 +330,14 @@
                         <span class="nav-text">New chat</span>
                     </div>
                     <div id="lumina-search-results-list" class="lumina-search-results-list">
-                        <!-- Search results will be rendered here dynamically -->
+                        
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ==================== LUMINA SETTINGS OVERLAY ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-settings-overlay">
         <div class="lumina-settings-dialog">
             <div class="lumina-settings-body">
@@ -421,7 +421,7 @@
                 </aside>
 
                 <main class="lumina-settings-main">
-                    <!-- Section General -->
+                    
                     <section class="lumina-settings-section active" id="lumina-settings-sec-general">
                         <h2 class="lumina-settings-section-title">General Settings</h2>
 
@@ -532,7 +532,7 @@
                         </div>
                     </section>
 
-                    <!-- Section Appearance -->
+                    
                     <section class="lumina-settings-section" id="lumina-settings-sec-appearance">
                         <h2 class="lumina-settings-section-title">Appearance Settings</h2>
 
@@ -671,7 +671,7 @@
                         </div>
                     </section>
 
-                    <!-- Section Personalization -->
+                    
                     <section class="lumina-settings-section" id="lumina-settings-sec-personalization">
                         <h2 class="lumina-settings-section-title">Personalization</h2>
 
@@ -788,7 +788,7 @@
                         </div>
                     </section>
 
-                    <!-- Section Keyboard -->
+                    
                     <section class="lumina-settings-section" id="lumina-settings-sec-keyboard">
                         <h2 class="lumina-settings-section-title">Keyboard</h2>
 
@@ -916,17 +916,17 @@
                         </div>
                     </section>
 
-                    <!-- Section Account -->
+                    
                     <section class="lumina-settings-section" id="lumina-settings-sec-account">
                         <h2 class="lumina-settings-section-title">Account</h2>
 
-                        <!-- Card 1: Cloud & Backup -->
+                        
                         <div class="lumina-settings-card">
                             <div class="lumina-settings-card-header">
                                 <h3>Cloud &amp; Backup</h3>
                             </div>
                             <div class="lumina-settings-card-body">
-                                <!-- Google Sign-in -->
+                                
                                 <div id="lumina-auth-logged-out" class="lumina-settings-auth-container">
                                     <div class="lumina-cloud-signin-row">
                                         <div class="lumina-cloud-signin-icon">
@@ -974,7 +974,7 @@
                                     </div>
                                 </div>
 
-                                <!-- File Backup Export/Import -->
+                                
                                 <div class="lumina-settings-row">
                                     <div class="lumina-settings-row-info">
                                         <span class="title">File Backup</span>
@@ -990,7 +990,7 @@
                                     </div>
                                 </div>
 
-                                <!-- History Retention -->
+                                
                                 <div class="lumina-settings-row">
                                     <div class="lumina-settings-row-info">
                                         <span class="title">History Retention Period</span>
@@ -1008,14 +1008,14 @@
                             </div>
                         </div>
 
-                        <!-- Card 2: Storage -->
+                        
                         <div class="lumina-settings-card">
                             <div class="lumina-settings-card-header">
                                 <h3>Storage</h3>
                             </div>
                             <div class="lumina-settings-card-body">
 
-                                <!-- macOS-style Storage Bar Dashboard -->
+                                
                                 <div class="lumina-storage-dashboard">
                                     <div class="lumina-storage-dashboard-header">
                                         <span class="lumina-storage-dashboard-label">Extension Storage</span>
@@ -1040,7 +1040,7 @@
                                     </div>
                                 </div>
 
-                                <!-- macOS-style Category Breakdown List -->
+                                
                                 <div class="lumina-storage-category-list">
                                     <div class="lumina-storage-category-item">
                                         <div class="lumina-storage-category-icon icon-db">
@@ -1083,14 +1083,14 @@
                                     </div>
                                 </div>
 
-                                <!-- Top 10 largest chat sessions -->
+                                
                                 <div class="lumina-storage-sessions-header">
                                     <span>Largest Chat Threads</span>
                                     <button type="button" id="lumina-delete-all-btn"
                                         class="lumina-settings-btn danger sm">Delete All</button>
                                 </div>
                                 <div class="lumina-storage-sessions-list" id="lumina-storage-sessions-list">
-                                    <!-- Will be populated dynamically -->
+                                    
                                 </div>
                             </div>
                         </div>
@@ -1101,7 +1101,7 @@
         </div>
     </div>
 
-    <!-- ==================== AI PROVIDER POPUP MODAL ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-provider-popup-overlay">
         <div class="lumina-provider-popup-dialog">
             <div class="lumina-provider-popup-header">
@@ -1153,7 +1153,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODEL POPUP ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-model-popup-overlay">
         <div class="lumina-provider-popup-dialog">
             <div class="lumina-provider-popup-header">
@@ -1202,7 +1202,7 @@
         </div>
     </div>
 
-    <!-- ==================== INSTRUCTION POPUP ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-instruction-popup-overlay">
         <div class="lumina-provider-popup-dialog">
             <div class="lumina-provider-popup-header">
@@ -1235,7 +1235,7 @@
         </div>
     </div>
 
-    <!-- ==================== MAPPING POPUP ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-mapping-popup-overlay">
         <div class="lumina-provider-popup-dialog">
             <div class="lumina-provider-popup-header">
@@ -1292,7 +1292,7 @@
         </div>
     </div>
 
-    <!-- ==================== ANNOTATION POPUP ==================== -->
+    
     <div class="lumina-settings-overlay" id="lumina-annotation-popup-overlay">
         <div class="lumina-provider-popup-dialog">
             <div class="lumina-provider-popup-header">
@@ -1333,7 +1333,7 @@
         </div>
     </div>
 
-    <!-- ==================== SETTINGS TEMPLATES ==================== -->
+    
     <template id="lumina-providerItemTemplate">
         <div class="lumina-settings-provider-card provider-item">
             <div class="provider-item-content">

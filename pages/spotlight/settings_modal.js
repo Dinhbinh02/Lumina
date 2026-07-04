@@ -34,7 +34,7 @@ class LuminaSettingsModal {
     this.bindKeyboardTab();
     this.bindAccountTab();
 
-    // Enable auto-expanding height on all textareas in the settings overlay
+    
     this.overlay.querySelectorAll('textarea').forEach(textarea => {
       this.enableAutoExpandTextarea(textarea);
     });
@@ -272,7 +272,7 @@ class LuminaSettingsModal {
     }
     if (checkKeysBtn) checkKeysBtn.addEventListener('click', () => this.checkApiKeys());
 
-    // Model Popup bindings
+    
     const cancelModelBtn = document.getElementById('lumina-cancel-model-btn');
     const saveModelBtn = document.getElementById('lumina-save-model-btn');
     const closeModelPopupBtn = document.getElementById('lumina-model-popup-close-btn');
@@ -372,7 +372,7 @@ class LuminaSettingsModal {
       list.appendChild(clone);
     });
 
-    // Append Add Provider Card
+    
     const addCard = document.createElement('div');
     addCard.className = 'lumina-settings-provider-card provider-item add-provider-card';
     addCard.id = 'lumina-add-provider-btn';
@@ -426,7 +426,7 @@ class LuminaSettingsModal {
       e.stopPropagation();
       const isCurrentlyOpen = menu.style.display === 'block';
 
-      // Close all other dropdown menus in the DOM first
+      
       document.querySelectorAll('.lumina-settings-dropdown-menu').forEach(m => {
         m.style.display = 'none';
       });
@@ -441,7 +441,7 @@ class LuminaSettingsModal {
       }
     });
 
-    // Support search filtering for model field
+    
     if (inputId === 'lumina-text-chain-model') {
       input.addEventListener('input', () => {
         const query = input.value.toLowerCase().trim();
@@ -456,7 +456,7 @@ class LuminaSettingsModal {
             item.style.display = 'none';
           }
         });
-        menu.style.display = 'block'; // Keep menu open while typing
+        menu.style.display = 'block'; 
       });
     }
 
@@ -470,7 +470,7 @@ class LuminaSettingsModal {
           this.adjustInputWidthToContent(input);
         }
 
-        // Only save options for settings dropdowns, not temporary modal inputs
+        
         if (inputId.startsWith('lumina-dict-') || inputId === 'lumina-history-retention-input' || inputId === 'lumina-settings-base-tone-input') {
           this.saveOptions();
         }
@@ -902,7 +902,7 @@ class LuminaSettingsModal {
     checkBtn.textContent = 'Checking...';
     checkBtn.disabled = true;
 
-    // Support comma-separated keys
+    
     const keysList = apiKey.split(',').map(k => k.trim()).filter(Boolean);
 
     if (keysList.length === 0) {
@@ -922,7 +922,7 @@ class LuminaSettingsModal {
 
     const isGemini = testUrlBase.includes('generativelanguage.googleapis.com');
 
-    // Run checks for all keys in parallel
+    
     const checkPromises = keysList.map((key, index) => {
       let keyUrl = testUrlBase;
       const headers = { 'Content-Type': 'application/json' };
@@ -1022,7 +1022,7 @@ class LuminaSettingsModal {
     if (!list) return;
     list.innerHTML = '';
 
-    // Append Add Model Card first (at the top)
+    
     const addCard = document.createElement('div');
     addCard.className = 'lumina-settings-chain-card chain-item add-model-card';
     addCard.id = 'lumina-open-add-model-btn';
@@ -1049,10 +1049,10 @@ class LuminaSettingsModal {
         const clone = temp.content.cloneNode(true);
         clone.querySelector('.chain-number').textContent = index + 1;
 
-        // Display model name (or custom name) in chain-title slot
+        
         clone.querySelector('.chain-title').textContent = item.displayName || item.modelName;
 
-        // Display human-readable provider name in chain-subtitle slot
+        
         const prov = this.providers.find(p => p.id === item.providerId);
         const providerName = prov ? prov.name : item.providerId;
         clone.querySelector('.chain-subtitle').textContent = providerName;
@@ -1127,7 +1127,7 @@ class LuminaSettingsModal {
       });
     }
 
-    // Instruction popup controls
+    
     const cancelInstBtn = document.getElementById('lumina-cancel-instruction-popup-btn');
     const saveInstBtn = document.getElementById('lumina-save-instruction-popup-btn');
     const closeInstPopupBtn = document.getElementById('lumina-instruction-popup-close-btn');
@@ -1635,7 +1635,7 @@ class LuminaSettingsModal {
         return;
       }
 
-      // Record mouse click
+      
       const code = 'Mouse' + e.button;
       let display = 'Click';
       if (e.button === 0) display = 'LClick';
@@ -1835,18 +1835,18 @@ class LuminaSettingsModal {
     const palette = document.getElementById('lumina-annotation-popup-color-palette');
 
     const colors = [
-      '#fff59d', // Soft Yellow
-      '#ffcc80', // Soft Orange
-      '#ef9a9a', // Soft Red
-      '#f48fb1', // Soft Pink
-      '#ce93d8', // Soft Purple
-      '#b39ddb', // Soft Lavender
-      '#90caf9', // Soft Blue
-      '#80deea', // Soft Cyan
-      '#80cbc4', // Soft Teal
-      '#a5d6a7', // Soft Green
-      '#e6ee9c', // Soft Lime
-      '#ffab91'  // Soft Coral
+      '#fff59d', 
+      '#ffcc80', 
+      '#ef9a9a', 
+      '#f48fb1', 
+      '#ce93d8', 
+      '#b39ddb', 
+      '#90caf9', 
+      '#80deea', 
+      '#80cbc4', 
+      '#a5d6a7', 
+      '#e6ee9c', 
+      '#ffab91'  
     ];
     let selectedColor = colors[0];
 
@@ -1975,7 +1975,7 @@ class LuminaSettingsModal {
   }
 
   static bindAccountTab() {
-    // Google OAuth & Sync bindings
+    
     const googleLoginBtn = document.getElementById('lumina-google-login-btn');
     if (googleLoginBtn) {
       googleLoginBtn.addEventListener('click', async () => {
@@ -2167,7 +2167,7 @@ class LuminaSettingsModal {
 
       const chatKeys = new Set();
 
-      // Classify each key into DB vs Config (ignoring Anki keys)
+      
       Object.keys(items).forEach(key => {
         const isAnkiKey = key.startsWith('rot_') || [
           'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
@@ -2194,17 +2194,17 @@ class LuminaSettingsModal {
 
         const totalBytes = dbSize + filesSize + configSize;
 
-        // Helper: format bytes
+        
         const fmt = (bytes) => {
           if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
           if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
           return `${bytes} B`;
         };
 
-        // Update total header
+        
         textEl.textContent = fmt(totalBytes);
 
-        // Update category list text
+        
         const dbSizeEl = document.getElementById('lumina-storage-db-size');
         const filesSizeEl = document.getElementById('lumina-storage-files-size');
         const configSizeEl = document.getElementById('lumina-storage-config-size');
@@ -2212,7 +2212,7 @@ class LuminaSettingsModal {
         if (filesSizeEl) filesSizeEl.textContent = fmt(filesSize);
         if (configSizeEl) configSizeEl.textContent = fmt(configSize);
 
-        // Animate macOS-style storage bar segments
+        
         if (totalBytes > 0) {
           const dbPct = (dbSize / totalBytes * 100).toFixed(2);
           const filesPct = (filesSize / totalBytes * 100).toFixed(2);
@@ -2222,7 +2222,7 @@ class LuminaSettingsModal {
           const barFiles = document.getElementById('lumina-storage-bar-files');
           const barConfig = document.getElementById('lumina-storage-bar-config');
 
-          // Brief delay so transition animates on open
+          
           requestAnimationFrame(() => {
             if (barDb) barDb.style.width = `${dbPct}%`;
             if (barFiles) barFiles.style.width = `${filesPct}%`;
@@ -2230,7 +2230,7 @@ class LuminaSettingsModal {
           });
         }
 
-        // Build Top 10 largest chat sessions list
+        
         const sessionsListEl = document.getElementById('lumina-storage-sessions-list');
         if (sessionsListEl) {
           const sessionsMetadata = items['lumina_chat_sessions'] || {};
@@ -2261,7 +2261,7 @@ class LuminaSettingsModal {
             });
           });
 
-          // Sort descending by size, take top 10
+          
           sessionList.sort((a, b) => b.size - a.size);
           const top10 = sessionList.slice(0, 10);
 

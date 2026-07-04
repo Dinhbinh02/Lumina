@@ -765,7 +765,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             editFieldsContainer.appendChild(setup);
         });
 
-        // Bind name/prompt events
+        
         editFieldsContainer.querySelectorAll('.field-name-input').forEach(el => {
             el.addEventListener('input', (e) => STATE.currentEditTemplate.fields[e.target.dataset.index].name = e.target.value);
         });
@@ -961,7 +961,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
 
-            // Toggle expansion
+            
             card.querySelector('.example-header').onclick = (e) => {
                 if (e.target.closest('button')) return;
                 card.classList.toggle('expanded');
@@ -973,13 +973,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             };
 
-            // Edit button
+            
             card.querySelector('.edit-example-btn').onclick = (e) => {
                 e.stopPropagation();
                 openExampleModal(idx);
             };
 
-            // Delete button
+            
             card.querySelector('.delete-example-btn').onclick = (e) => {
                 e.stopPropagation();
                 if (!confirm('Delete this example?')) return;
@@ -995,11 +995,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         let draftExample;
         let isNew = index === -1;
 
-        // Sub-function to render fields dynamically
+        
         const renderFields = (example) => {
             exampleFieldsContainer.innerHTML = '';
 
-            // Map template fields to example data
+            
             STATE.currentEditTemplate.fields.forEach(field => {
                 const group = document.createElement('div');
                 group.className = 'modal-group';
@@ -1013,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (isPlain) {
                     displayValue = displayValue.replace(/<[^>]*>/g, '').trim();
                 } else {
-                    // Luôn loại bỏ <p> rỗng trước khi render và không renderMarkdown ở đây
+                    
                     displayValue = sanitizeRichTextHTML(displayValue);
                 }
 
@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `;
                 exampleFieldsContainer.appendChild(group);
 
-                if (isInput) return; // No listeners needed for read-only input
+                if (isInput) return; 
 
                 
                 const toggle = group.querySelector('.modal-richtext-toggle');

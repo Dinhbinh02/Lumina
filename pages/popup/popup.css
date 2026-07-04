@@ -8,7 +8,7 @@
     --shadow-color: rgba(0, 0, 0, 0.08);
 }
 
-/* System preferences fallback */
+
 @media (prefers-color-scheme: dark) {
     :root {
         --bg-color: #3c3c3c;
@@ -21,7 +21,7 @@
     }
 }
 
-/* Explicit theme attribute overrides from settings */
+
 [data-theme="light"] {
     --bg-color: #ffffff;
     --text-primary: #1d1d1f;
@@ -40,7 +40,7 @@
     --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
-/* Custom Accent Colors */
+
 [data-accent="default"] {
     --accent-color: #0056D2;
 }
@@ -63,7 +63,7 @@
     --accent-color: #e11d48;
 }
 
-/* High Contrast Override */
+
 [data-contrast="high"] {
     --border-color: rgba(0, 0, 0, 0.5) !important;
     --text-primary: #000000 !important;

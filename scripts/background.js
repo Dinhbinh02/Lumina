@@ -776,7 +776,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             const role = (msg.role === 'model' || msg.role === 'assistant') ? 'model' : 'user';
             if (attachments && attachments.length > 0) {
                 const parts = [];
-                // If cachedContent is active, we skip appending the fileData/fileUri parameters to save bandwidth and avoid API conflicts.
+                
                 if (!cachedContent) {
                     const processed = await processAttachmentsForGemini(attachments);
                     parts.push(...processed.parts);
@@ -996,7 +996,7 @@ async function getModelChain(type = 'text', preferredModel = null) {
         let actPId = activeModel.providerId;
         const actModel = activeModel.model;
 
-        // Robust provider resolution if providerId is missing or invalid
+        
         if (!actPId || !data.providers?.some(p => p.id === actPId)) {
             const matchingChainItem = data.modelChains?.text?.find(item => item.model === actModel);
             if (matchingChainItem) {
@@ -1867,7 +1867,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             generateChatTitleFromModel(modelObj, question, images, files, history)
                 .then(title => sendResponse({ success: true, title }))
                 .catch(err => sendResponse({ success: false, error: err.message }));
-            return true; // async response
+            return true; 
         }
         case 'fetch_image_base64': {
             fetch(request.url)
@@ -1888,7 +1888,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(err => {
                     sendResponse({ success: false, error: err.message });
                 });
-            return true; // indicates asynchronous response
+            return true; 
         }
         case 'fetch_cambridge':
         case 'fetch_oxford': {
@@ -2102,7 +2102,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         bytes[i] = binaryString.charCodeAt(i);
                     }
 
-                    // 1. Write file to LuminaAttachmentDB for persistent local backup
+                    
                     try {
                         const dbKey = `${sessionId}_${attachmentId}_${request.fileName}`;
                         const blob = new Blob([bytes], { type: request.mimeType || 'application/octet-stream' });
@@ -2112,8 +2112,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         console.error('[DB Storage] Failed to write file locally:', storeErr);
                     }
 
-                    // File is now saved successfully in DB. 
-                    // We generate a local file reference URI (avoiding external host uploads).
+                    
+                    
                     const fileUrl = `local-db://${sessionId}/${attachmentId}/${request.fileName}`;
 
                     sendResponse({
@@ -4248,11 +4248,11 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
         text = data.choices?.[0]?.message?.content || '';
     }
 
-    // Clean up response text, extracting the title if the model output a conversational wrapper or labels
+    
     let cleanedText = text.trim();
     const lines = cleanedText.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length > 1) {
-        // Look for lines starting with common title prefixes
+        
         const titleLine = lines.find(l => /^(corrected\s+)?title\s*:/i.test(l));
         if (titleLine) {
             cleanedText = titleLine;

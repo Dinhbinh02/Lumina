@@ -11,7 +11,7 @@
 <body>
     <iframe id="proxy-iframe" src="about:blank"></iframe>
     <script>
-        // Lấy URL từ tham số query (?url=...)
+        
         const params = new URLSearchParams(window.location.search);
         let targetUrl = params.get('url');
         
@@ -19,16 +19,16 @@
             console.log('Lumina Proxy initiating load for:', targetUrl);
             const iframe = document.getElementById('proxy-iframe');
             
-            // Xử lý trường hợp URL bị mã hóa quá nhiều lần
+            
             try {
                 targetUrl = decodeURIComponent(targetUrl);
                 if (!targetUrl.startsWith('http')) {
-                    // Nếu vẫn chưa ra URL chuẩn, thử decode lại lần nữa
+                    
                     targetUrl = decodeURIComponent(targetUrl);
                 }
             } catch(e) {}
 
-            // Gán URL cho iframe
+            
             iframe.src = targetUrl;
         } else {
             document.body.innerHTML = '<div style="padding:20px; font-family:sans-serif; color:#666;">Waiting for URL...</div>';

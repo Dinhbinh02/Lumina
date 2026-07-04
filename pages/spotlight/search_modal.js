@@ -1,4 +1,4 @@
-/* search_modal.js */
+
 
 class LuminaSearchModal {
   static init() {
@@ -13,7 +13,7 @@ class LuminaSearchModal {
 
     if (this.initialized) return;
 
-    // Close when clicking overlay (but not dialog)
+    
     this.overlay.addEventListener('click', (e) => {
       if (e.target === this.overlay) this.hide();
     });
@@ -40,7 +40,7 @@ class LuminaSearchModal {
       });
     }
 
-    // Close on Escape, search when typing
+    
     this.searchInput.addEventListener('input', () => this.handleSearch());
     
     document.addEventListener('keydown', (e) => {
@@ -85,7 +85,7 @@ class LuminaSearchModal {
       }
     }, 50);
 
-    // Fetch latest sessions
+    
     const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
     this.sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
 
@@ -97,7 +97,7 @@ class LuminaSearchModal {
       const wasInPane = this.overlay.classList.contains('in-pane');
       this.overlay.style.display = 'none';
       this.overlay.classList.remove('in-pane');
-      document.body.appendChild(this.overlay); // Restore to body
+      document.body.appendChild(this.overlay); 
 
       if (wasInPane && !this.isSelectingChat && typeof isSplitMode !== 'undefined' && isSplitMode) {
         if (typeof toggleSplitMode === 'function') {
@@ -115,7 +115,7 @@ class LuminaSearchModal {
     const date = new Date(timestamp);
     const now = new Date();
     
-    // Strip time parts for day comparisons
+    
     const dDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const dNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -152,12 +152,12 @@ class LuminaSearchModal {
       displayText = (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
     }
     
-    // Escape HTML of the text before applying <b> highlights to prevent XSS
+    
     const tempDiv = document.createElement('div');
     tempDiv.textContent = displayText;
     const escapedText = tempDiv.innerHTML;
 
-    // Apply regex highlighting
+    
     return escapedText.replace(regex, '<b>$1</b>');
   }
 
@@ -168,7 +168,7 @@ class LuminaSearchModal {
     const historyData = Object.values(this.sessions).sort((a, b) => b.updatedAt - a.updatedAt);
 
     if (!query) {
-      // 2. Group and render chats by time period
+      
       const grouped = {};
       historyData.forEach(session => {
         const groupName = this.getTimeGroup(session.updatedAt);
@@ -178,7 +178,7 @@ class LuminaSearchModal {
         grouped[groupName].push(session);
       });
 
-      // Maintain a specific sorting order for grouping headers
+      
       const groupOrder = ['Today', 'Yesterday', 'Previous 3 Days', 'Previous 7 Days', 'Previous 30 Days'];
       const allGroups = Object.keys(grouped).sort((a, b) => {
         const idxA = groupOrder.indexOf(a);
@@ -187,7 +187,7 @@ class LuminaSearchModal {
         if (idxA !== -1) return -1;
         if (idxB !== -1) return 1;
         
-        // Month groups sorting
+        
         const parseGroup = (g) => {
           const parts = g.split(' ');
           const monthIndex = [
@@ -238,7 +238,7 @@ class LuminaSearchModal {
       });
 
     } else {
-      // 3. Search and display real-time results (Limit to 20)
+      
       const results = [];
       const escapedQuery = this.escapeRegExp(query);
       const regex = new RegExp(escapedQuery, 'i');
@@ -320,7 +320,7 @@ class LuminaSearchModal {
     const messages = contentData[contentKey] || [];
     const meta = this.sessions[sessionId] || { id: sessionId };
     
-    // Active immediate highlight in sidebar
+    
     const listContainer = document.getElementById('sidebar-recent-chats');
     if (listContainer) {
       listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
@@ -335,7 +335,7 @@ class LuminaSearchModal {
       window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
     }
 
-    // Close mobile sidebar after selecting a chat
+    
     const sidebar = document.getElementById('lumina-sidebar');
     const backdrop = document.querySelector('.sidebar-backdrop');
     if (sidebar) sidebar.classList.remove('active');
@@ -344,14 +344,14 @@ class LuminaSearchModal {
   }
 
   static getActiveSessionId() {
-    // 1. Try DOM active item
+    
     const activeSidebarItem = document.querySelector('#sidebar-recent-chats .recent-chat-item.active');
     if (activeSidebarItem) {
       const sid = activeSidebarItem.getAttribute('data-session-id');
       if (sid) return sid;
     }
     
-    // 2. Try LuminaSelectionScope API
+    
     if (typeof window.LuminaSelectionScope !== 'undefined') {
       const tabs = window.LuminaSelectionScope.getTabs();
       const activeIndex = window.LuminaSelectionScope.getActiveTabIndex();
@@ -378,7 +378,7 @@ class LuminaSearchModal {
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     
-    // Output standard date format MM/DD/YY as shown in Image 2 (e.g. 11/27/25)
+    
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);

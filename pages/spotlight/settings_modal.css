@@ -1056,7 +1056,7 @@
   align-items: center;
 }
 
-/* Add Model Card dashed styling */
+
 .lumina-settings-chain-card.add-model-card {
   border: 1.5px dashed rgba(0, 0, 0, 0.15) !important;
   background: transparent !important;
@@ -1508,7 +1508,7 @@
   }
 }
 
-/* AI Provider Popup Dialog */
+
 .lumina-provider-popup-dialog {
   width: 460px;
   max-width: 96vw;
@@ -1601,7 +1601,7 @@
   justify-content: flex-end;
 }
 
-/* API Key Status Panel inside Popup */
+
 .lumina-provider-popup-status {
   padding: 10px 12px;
   border-radius: 8px;
@@ -1768,7 +1768,7 @@
   box-sizing: border-box;
 }
 
-/* Annotation Styles */
+
 .annotation-color-preview {
   width: 16px;
   height: 16px;
@@ -1801,7 +1801,7 @@
   border-color: var(--lumina-ui-primary, #1a73e8) !important;
 }
 
-/* Detailed Storage Styles */
+
 .lumina-storage-details {
   margin-top: 12px;
   background: var(--lumina-bg-secondary, rgba(255, 255, 255, 0.03));
@@ -1916,7 +1916,7 @@
   height: 14px;
 }
 
-/* Google Drive Sync Estimation Breakdown */
+
 .lumina-gdrive-breakdown-divider {
   margin: 16px 0 12px 0;
   border-top: 1px dashed var(--lumina-border, rgba(255, 255, 255, 0.08));
@@ -1958,9 +1958,7 @@
   margin-top: 2px;
 }
 
-/* =============================================
-   Cloud & Backup - Google Sign-in row
-   ============================================= */
+
 .lumina-cloud-signin-row {
   display: flex;
   align-items: center;
@@ -2007,9 +2005,7 @@
   line-height: 1.4;
 }
 
-/* =============================================
-   Storage Dashboard (macOS style bar)
-   ============================================= */
+
 .lumina-storage-dashboard {
   margin-bottom: 16px;
 }
@@ -2100,9 +2096,7 @@
   background: #ffcc00;
 }
 
-/* =============================================
-   Storage Category List (macOS style)
-   ============================================= */
+
 .lumina-storage-category-list {
   border: 1px solid var(--lumina-border, rgba(255, 255, 255, 0.08));
   border-radius: 10px;
@@ -2156,9 +2150,7 @@
   white-space: nowrap;
 }
 
-/* =============================================
-   Storage - Session list header
-   ============================================= */
+
 .lumina-storage-sessions-header {
   display: flex;
   align-items: center;
