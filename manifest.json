@@ -116,8 +116,7 @@
       "js": [
         "lib/vendor/turndown.js",
         "lib/core/constants.js",
-        "lib/parsers/cambridge_parser.js",
-        "lib/parsers/oxford_parser.js",
+        "lib/parsers/freedict_parser.js",
         "lib/ui/dictionary_popup.js",
         "lib/ui/common.js",
         "lib/helpers/selection_utils.js",

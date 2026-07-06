@@ -1669,53 +1669,71 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
             return true;
         }
-        case 'fetch_cambridge':
-        case 'fetch_oxford': {
+        case 'fetch_dictionary': {
             const word = request.word ? request.word.toLowerCase().trim() : '';
             if (!word) {
                 sendResponse({ success: false, error: 'No word provided' });
                 return false;
             }
-            const isCambridge = request.action === 'fetch_cambridge';
-            const wordPath = encodeURIComponent(word.replace(/\s+/g, '-'));
-            const url = isCambridge
-                ? `https://dictionary.cambridge.org/dictionary/english/${wordPath}`
-                : `https://www.oxfordlearnersdictionaries.com/search/english/?q=${encodeURIComponent(word)}`;
-            const fetchWithFallback = async (targetUrl, isRetry = false) => {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const fetchOxfordAudio = async (w) => {
                 try {
-                    const res = await fetch(targetUrl, {
-                        signal: controller.signal,
+                    const oUrl = `https://www.oxfordlearnersdictionaries.com/search/english/direct/?q=${encodeURIComponent(w)}`;
+                    const oRes = await fetch(oUrl, {
                         headers: {
                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                            'Accept-Language': 'en-US,en;q=0.9',
                             'Referer': 'https://www.oxfordlearnersdictionaries.com/'
-                        },
-                        redirect: 'follow'
-                    });
-                    clearTimeout(timeoutId);
-                    if (res.status === 404 && !isRetry) {
-                        if (isCambridge) {
-                        } else {
-                            const fallbackUrl = `https://www.oxfordlearnersdictionaries.com/definition/english/${wordPath}`;
-                            return fetchWithFallback(fallbackUrl, true);
                         }
-                    }
-                    if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
-                    return res.text();
+                    });
+                    if (!oRes.ok) return null;
+                    const html = await oRes.text();
+                    const ukMatch = html.match(/data-src-mp3="([^"]+uk_pron[^"]+)"/i) || html.match(/data-src-mp3="([^"]+__gb_[^"]+)"/i);
+                    const usMatch = html.match(/data-src-mp3="([^"]+us_pron[^"]+)"/i) || html.match(/data-src-mp3="([^"]+__us_[^"]+)"/i);
+                    const ukIPAMatch = html.match(/class="phons_br"[^>]*>[\s\S]*?<span class="phon">([^<]+)<\/span>/i);
+                    const usIPAMatch = html.match(/class="phons_n_am"[^>]*>[\s\S]*?<span class="phon">([^<]+)<\/span>/i);
+                    return {
+                        uk: ukMatch ? ukMatch[1] : null,
+                        us: usMatch ? usMatch[1] : null,
+                        ukIpa: ukIPAMatch ? ukIPAMatch[1] : null,
+                        usIpa: usIPAMatch ? usIPAMatch[1] : null
+                    };
                 } catch (e) {
-                    clearTimeout(timeoutId);
-                    throw e;
+                    return null;
                 }
             };
-            fetchWithFallback(url)
-                .then(html => {
-                    sendResponse({ success: true, html });
+            
+            const freedictPromise = fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+                .then(async res => {
+                    if (res.status === 404) return [];
+                    if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
+                    return res.json();
+                });
+                
+            const oxfordPromise = fetchOxfordAudio(word).catch(() => null);
+            
+            Promise.all([freedictPromise, oxfordPromise])
+                .then(([data, oxford]) => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        if (oxford) {
+                            if (!data[0].phonetics) data[0].phonetics = [];
+                            // Unshift US then UK so UK is at the absolute front
+                            if (oxford.us || oxford.usIpa) {
+                                data[0].phonetics.unshift({ 
+                                    audio: oxford.us || '', 
+                                    text: oxford.usIpa || data[0].phonetic || '' 
+                                });
+                            }
+                            if (oxford.uk || oxford.ukIpa) {
+                                data[0].phonetics.unshift({ 
+                                    audio: oxford.uk || '', 
+                                    text: oxford.ukIpa || data[0].phonetic || '' 
+                                });
+                            }
+                        }
+                    }
+                    sendResponse({ success: true, data });
                 })
                 .catch(err => {
-                    console.error(`[Lumina BG] ${request.action} error:`, err.message);
+                    console.error(`[Lumina BG] fetch_dictionary error:`, err.message);
                     sendResponse({ success: false, error: err.message });
                 });
             return true;
@@ -1748,26 +1766,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
             return true;
         }
-        case 'fetch_oxford_url': {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            fetch(request.url, {
-                redirect: 'follow',
-                signal: controller.signal,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Referer': 'https://www.oxfordlearnersdictionaries.com/'
-                }
-            })
-                .then(res => {
-                    clearTimeout(timeoutId);
-                    return res.ok ? res.text() : Promise.reject(`Status ${res.status}`);
-                })
-                .then(html => sendResponse({ success: true, html }))
-                .catch(error => sendResponse({ success: false, error: String(error) }));
-            return true;
-        }
+
         case 'check_sidepanel_open': {
             const windowIdSync = sender.tab ? sender.tab.windowId : null;
             sendResponse({ isOpen: !!(windowIdSync && sidePanelPorts.has(windowIdSync)) });
