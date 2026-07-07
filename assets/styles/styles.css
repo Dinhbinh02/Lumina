@@ -2297,14 +2297,6 @@ body {
   cursor: pointer;
 }
 
-.lumina-action-btn.regenerate {
-  cursor: pointer !important;
-}
-
-.lumina-action-btn.active.regenerate svg,
-.lumina-action-btn.regenerate svg {
-  filter: none !important;
-}
 
 .lumina-tool-item.active {
   color: var(--lumina-primary) !important;

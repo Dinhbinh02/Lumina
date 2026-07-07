@@ -4111,8 +4111,11 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     if (currentTab === tabs[activeTabIndex]) {
         chatUI = targetChatUI;
     }
-    currentTab.userScrolledUp = false;
-    if (targetChatUI) targetChatUI.disableAutoScroll = false;
+    const isRegen = extra.isRegenerate || (extra.isRecheck && extra.isRegenerate);
+    if (!isRegen) {
+        currentTab.userScrolledUp = false;
+        if (targetChatUI) targetChatUI.disableAutoScroll = false;
+    }
     const _isSecTab = typeof isSplitMode !== 'undefined' && isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
     const _activeInputUI = _isSecTab ? sharedInputUISecondary : sharedInputUI;
     if (_activeInputUI) _activeInputUI.isGenerating = true;
@@ -5230,7 +5233,7 @@ function triggerRegenerate(targetUI = null) {
         }
     }
     if (!originalQuestion) return;
-    if (tUI) tUI._handleQuestionRecheck(lastEntry, originalQuestion);
+    if (tUI) tUI._handleQuestionRecheck(originalQuestion, lastEntry, true);
 }
 
 function showAnswerVersion(entryElement, direction) {
@@ -5328,6 +5331,12 @@ function dispatchConfiguredShortcutAction(action) {
         sel.removeAllRanges();
     } else if (action === 'resetChat') {
         resetChat();
+    } else if (action === 'retry') {
+        const targetPane = (hoveredPane === 'secondary' && isSplitMode) ? 'secondary' : 'primary';
+        const targetUI = targetPane === 'secondary' ? chatUISecondary : chatUI;
+        if (targetUI) {
+            triggerRegenerate(targetUI);
+        }
     } else if (action === 'micToggle') {
         const targetPane = (hoveredPane === 'secondary' && isSplitMode) ? 'secondary' : 'primary';
         const inputArea = document.getElementById(`input-area-${targetPane}`);
