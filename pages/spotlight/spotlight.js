@@ -1254,7 +1254,7 @@ async function initTabs() {
             id: 'tab-1',
             title: tabTitle,
             sessionId: sessionId,
-            sparkId: urlSessionId ? (meta.sparkId || null) : (savedTab?.sparkId || null),
+            sparkId: (shouldStartNewChat || isWebApp) ? null : (urlSessionId ? (meta.sparkId || null) : (savedTab?.sparkId || null)),
             scrollTop: savedTab?.scrollTop ?? -1,
             scrollAnchorIndex: savedTab?.scrollAnchorIndex ?? null,
             scrollAnchorOffset: savedTab?.scrollAnchorOffset ?? null,
@@ -1875,7 +1875,7 @@ function normalizeRestoredHistory(historyEl) {
             (pinBtn && (pinBtn.classList.contains('is-active') || pinBtn.getAttribute('aria-pressed') === 'true'));
         if (pinBtn) pinBtn.remove();
         const rawText = questionEl.dataset.rawText || questionEl.textContent.trim();
-        questionEl.className = `lumina-chat-question ${entryType}-question`;
+        questionEl.className = `lumina-chat-question${entryType !== 'qa' ? ` ${entryType}-question` : ''}`;
         questionEl.dataset.entryType = entryType;
         questionEl.removeAttribute('contenteditable');
         questionEl.classList.remove('lumina-question-editing', 'lumina-answer-editing');
