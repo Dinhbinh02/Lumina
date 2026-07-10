@@ -176,6 +176,8 @@ body {
   font-family: var(--lumina-font-family) !important;
   font-size: var(--lumina-fontSize, 13px) !important;
   line-height: normal !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 [data-theme="dark"] #lumina-action-bar {
@@ -694,6 +696,8 @@ body {
   transition: height 0.1s ease !important;
   font-family: var(--lumina-font-family) !important;
   font-size: var(--lumina-fontSize, 13px) !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 [data-theme="dark"] #lumina-ask-input-popup {

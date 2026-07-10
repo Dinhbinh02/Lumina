@@ -2281,6 +2281,15 @@ function handleMouseUp() {
 }
 
 function initSpotlightAskSelection() {
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    document.addEventListener('mousemove', (e) => {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        if (window.LuminaSelection) {
+            LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+        }
+    }, { passive: true });
     if (window.LuminaSelection) {
         LuminaSelection.init({
             shadowRoot: null,
@@ -2384,6 +2393,38 @@ function initSpotlightAskSelection() {
                 : 'primary';
             if (window.LuminaSelection) {
                 LuminaSelection.show(e.clientX, e.clientY, text, range);
+            }
+        }, 10);
+    });
+    document.addEventListener('keyup', (e) => {
+        setTimeout(() => {
+            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+                LuminaSelection.expandToWordBoundaries();
+            }
+            const sel = window.getSelection();
+            const text = sel ? sel.toString().trim() : '';
+            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+            if (!range || text.length === 0) {
+                return;
+            }
+            const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
+            if (!askSelectionPopupEnabled && !isInsideProofread) {
+                return;
+            }
+            const commonNode = range.commonAncestorContainer;
+            const isInsideChat = commonNode && (
+                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
+                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-scroll-content'))
+            );
+            if (!isInsideChat) {
+                return;
+            }
+            const secondaryPane = document.getElementById('pane-secondary');
+            spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+                ? 'secondary'
+                : 'primary';
+            if (window.LuminaSelection) {
+                LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
             }
         }, 10);
     });

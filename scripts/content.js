@@ -246,6 +246,15 @@
         });
         return processed;
     }
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        if (window.LuminaSelection) {
+            LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+        }
+    }, { passive: true });
     window.addEventListener('mouseup', (e) => {
         if (isExtensionDisabled) return;
         const path = e.composedPath();
@@ -295,6 +304,40 @@
             } else if (!isInsideShadow) {
                 const isHighlight = e.target.closest('.lumina-highlight');
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+            }
+        }, 50);
+    }, true);
+    window.addEventListener('keyup', (e) => {
+        if (isExtensionDisabled) return;
+        const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
+        const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+        setTimeout(() => {
+            if (window.LuminaSelection) {
+                if (isInput) {
+                    LuminaSelection.expandInputToWordBoundaries(activeElement);
+                } else {
+                    LuminaSelection.expandToWordBoundaries();
+                }
+            }
+            let text = '';
+            let range = null;
+            if (isInput) {
+                const start = activeElement.selectionStart;
+                const end = activeElement.selectionEnd;
+                if (start !== undefined && end !== undefined && start !== end) {
+                    text = activeElement.value.substring(start, end).trim();
+                }
+                range = null;
+            } else {
+                const finalSelection = window.getSelection();
+                text = finalSelection.toString().trim();
+                range = finalSelection.rangeCount > 0 ? finalSelection.getRangeAt(0) : null;
+            }
+            if (!askSelectionPopupEnabled || text.length === 0) {
+                return;
+            }
+            if (text.length > 0 && (range || isInput) && window.LuminaSelection) {
+                LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
             }
         }, 50);
     }, true);
