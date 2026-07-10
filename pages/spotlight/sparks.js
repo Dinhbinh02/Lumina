@@ -1,5 +1,7 @@
 
 const SPARKS_KEY = 'lumina_sparks';
+let sidebarSparksExpanded = false;
+
 
 const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
@@ -727,7 +729,7 @@ async function sidebarSparksRenderList() {
     const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
     const maxSparksToShow = 4;
     const hasMoreSparks = list.length > maxSparksToShow;
-    const visibleSparks = hasMoreSparks ? list.slice(0, maxSparksToShow) : list;
+    const visibleSparks = (hasMoreSparks && !sidebarSparksExpanded) ? list.slice(0, maxSparksToShow) : list;
     visibleSparks.forEach(spark => {
         const color = getSparkColor(spark.name);
         const avatarHTML = spark.avatar
@@ -745,30 +747,39 @@ async function sidebarSparksRenderList() {
         `;
     });
     if (hasMoreSparks) {
-        html += `
-            <div class="sidebar-spark-item sidebar-spark-all-btn" style="cursor: pointer;">
-                <div class="sidebar-spark-item__avatar" style="background-color: transparent; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="1"></circle>
-                        <circle cx="19" cy="12" r="1"></circle>
-                        <circle cx="5" cy="12" r="1"></circle>
-                    </svg>
+        if (!sidebarSparksExpanded) {
+            html += `
+                <div class="sidebar-spark-item sidebar-spark-all-btn" style="cursor: pointer;">
+                    <div class="sidebar-spark-item__avatar" style="background-color: transparent; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lumina-sidebar-text); opacity: 1;">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </div>
+                    <span class="sidebar-spark-item__title">All sparks</span>
                 </div>
-                <span class="sidebar-spark-item__title">All sparks</span>
-            </div>
-        `;
+            `;
+        } else {
+            html += `
+                <div class="sidebar-spark-item sidebar-spark-all-btn" style="cursor: pointer;">
+                    <div class="sidebar-spark-item__avatar" style="background-color: transparent; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lumina-sidebar-text); opacity: 1;">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </div>
+                    <span class="sidebar-spark-item__title">Show less</span>
+                </div>
+            `;
+        }
     }
     container.innerHTML = html;
     let draggedItem = null;
     container.querySelectorAll('.sidebar-spark-item').forEach(item => {
         item.addEventListener('click', (e) => {
             if (item.classList.contains('sidebar-spark-all-btn')) {
-                sparksOpenPage();
-                const sidebar = document.getElementById('lumina-sidebar');
-                const backdrop = document.querySelector('.sidebar-backdrop');
-                if (sidebar) sidebar.classList.remove('active');
-                if (backdrop) backdrop.classList.remove('active');
-                document.body.classList.remove('sidebar-open');
+                sidebarSparksExpanded = !sidebarSparksExpanded;
+                sidebarSparksRenderList();
                 return;
             }
             if (e.target.closest('.sidebar-spark-item__menu-btn')) return;

@@ -29,6 +29,26 @@ class LuminaSettingsModal {
     this.bindPersonalizationTab();
     this.bindKeyboardTab();
     this.bindAccountTab();
+
+    // Toggle API Key visibility in Lumina settings
+    const toggleLuminaKeyBtn = document.getElementById('toggle-lumina-key-visibility');
+    const luminaApiKeyInput = document.getElementById('lumina-provider-form-apikey');
+    const luminaEyeOpen = document.getElementById('lumina-eye-open-icon');
+    const luminaEyeClosed = document.getElementById('lumina-eye-closed-icon');
+    if (toggleLuminaKeyBtn && luminaApiKeyInput) {
+      toggleLuminaKeyBtn.addEventListener('click', () => {
+        if (luminaApiKeyInput.type === 'password') {
+          luminaApiKeyInput.type = 'text';
+          luminaEyeOpen.style.display = 'none';
+          luminaEyeClosed.style.display = 'block';
+        } else {
+          luminaApiKeyInput.type = 'password';
+          luminaEyeOpen.style.display = 'block';
+          luminaEyeClosed.style.display = 'none';
+        }
+      });
+    }
+
     this.overlay.querySelectorAll('textarea').forEach(textarea => {
       this.enableAutoExpandTextarea(textarea);
     });
