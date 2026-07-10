@@ -727,7 +727,7 @@ function bindHistoryScroll(tab) {
             tab.userScrolledUp = true;
             if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = true;
         }
-        const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+        const entries = tab.historyEl.querySelectorAll('.lumina-entry');
         if (entries.length > 0) {
             if (nearBottom) {
                 if (saveTimer) clearTimeout(saveTimer);
@@ -784,7 +784,7 @@ function hideTopbarLoading(pane) {
 
 function restoreScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
-    const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+    const entries = tab.historyEl.querySelectorAll('.lumina-entry');
     if (entries.length === 0) return;
     if (tab.scrollTop != null && tab.scrollTop !== -1) {
         tab.historyEl.scrollTop = tab.scrollTop;
@@ -803,7 +803,7 @@ function restoreScrollPosition(tab) {
 
 function restoreLatestScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
-    const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+    const entries = tab.historyEl.querySelectorAll('.lumina-entry');
     if (entries.length === 0) return;
     const latestEntry = entries[entries.length - 1];
     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
@@ -998,7 +998,7 @@ async function handleRemoteSync(changes, areaName) {
                                     await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                                     normalizeRestoredHistory(tab.historyEl);
                                     if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
-                                    const entries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+                                    const entries = tab.historyEl.querySelectorAll('.lumina-entry');
                                     const lastEntry = entries[entries.length - 1];
                                     if (lastEntry && tab.chatUIInstance) {
                                         tab.chatUIInstance.clearEntryMargins(lastEntry);
@@ -1108,7 +1108,7 @@ async function ensureTabHistoryLoaded(tab) {
                     };
                     await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                     normalizeRestoredHistory(tab.historyEl);
-                    const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+                    const allEntries = tab.historyEl.querySelectorAll('.lumina-entry');
                     if (allEntries.length > 0 && tab.chatUIInstance) {
                         const lastEntry = allEntries[allEntries.length - 1];
                         tab.chatUIInstance.clearEntryMargins(lastEntry);
@@ -1608,7 +1608,7 @@ function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
     if (tab.scrollTop !== -1) {
         tab.historyEl.scrollTop = tab.scrollTop;
     }
-    const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+    const allEntries = tab.historyEl.querySelectorAll('.lumina-entry');
     if (allEntries.length > 0) {
         const lastEntry = allEntries[allEntries.length - 1];
         requestAnimationFrame(() => {
@@ -1617,7 +1617,7 @@ function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
     }
     const regenBtn = document.getElementById('lumina-regenerate-btn');
     if (regenBtn) {
-        const hasEntry = tab.historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card');
+        const hasEntry = tab.historyEl.querySelector('.lumina-entry, .lumina-translation-card');
         regenBtn.style.display = hasEntry ? 'flex' : 'none';
     }
     if (!skipScrollRestore) {
@@ -1862,7 +1862,7 @@ function saveTabsState(forceSaveChat = false) {
 
 function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
-    historyEl.querySelectorAll('.lumina-dict-entry').forEach(entry => {
+    historyEl.querySelectorAll('.lumina-entry').forEach(entry => {
         if (entry.__normalized) return;
         entry.__normalized = true;
         entry.style.removeProperty('min-height');
@@ -2893,7 +2893,7 @@ function scheduleVisibleTabsMinHeightReflow() {
         visibleTabIndexes.forEach((index) => {
             const tab = tabs[index];
             if (!tab?.historyEl || typeof tab.chatUIInstance?.setInitialEntryHeight !== 'function') return;
-            const allEntries = tab.historyEl.querySelectorAll('.lumina-dict-entry');
+            const allEntries = tab.historyEl.querySelectorAll('.lumina-entry');
             if (!allEntries.length) return;
             const latestEntry = allEntries[allEntries.length - 1];
             tab.chatUIInstance.setInitialEntryHeight(latestEntry, true);
@@ -3519,20 +3519,12 @@ function initSidebar() {
                 ctxMenu.style.display = 'none';
                 const currentName = (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated && LuminaAuth.user) ? (LuminaAuth.user.name || "User") : "Lumina User";
                 const isAuth = typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated;
-                ctxMenu.innerHTML = `
-                    <div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">
-                        ${currentName}
-                    </div>
-                    <div class="sidebar-ctx-divider"></div>
-                    <div class="sidebar-ctx-item" data-action="sync">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
-                        <span>Sync now</span>
-                    </div>
-                    <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="logout">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                        <span>${isAuth ? 'Sign out' : 'Sign in'}</span>
-                    </div>
-                `;
+                ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
+                    { type: 'header', label: currentName },
+                    { type: 'divider' },
+                    { action: 'sync', label: 'Sync now', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>' },
+                    { action: 'logout', label: isAuth ? 'Sign out' : 'Sign in', danger: true, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>' }
+                ]);
                 document.body.appendChild(ctxMenu);
                 ctxMenu.querySelectorAll('.sidebar-ctx-item').forEach(item => {
                     item.addEventListener('click', async (e) => {
@@ -3748,25 +3740,13 @@ async function renderRecentChatsSidebar() {
         ctxMenu.id = 'sidebar-chat-context-menu';
         ctxMenu.className = 'sidebar-chat-context-menu';
         ctxMenu.style.display = 'none';
-        ctxMenu.innerHTML = `
-            <div class="sidebar-ctx-item" data-action="pin">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
-                <span>Pin</span>
-            </div>
-            <div class="sidebar-ctx-item" data-action="rename">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                <span>Rename</span>
-            </div>
-            <div class="sidebar-ctx-item" data-action="duplicate">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>Duplicate</span>
-            </div>
-            <div class="sidebar-ctx-divider"></div>
-            <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="delete">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                <span>Delete</span>
-            </div>
-        `;
+        ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
+            { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>' },
+            { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>' },
+            { action: 'duplicate', label: 'Duplicate', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
+            { type: 'divider' },
+            { action: 'delete', label: 'Delete', danger: true, icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' }
+        ]);
         document.body.appendChild(ctxMenu);
         document.addEventListener('mousedown', (e) => {
             if (!ctxMenu.contains(e.target) && !e.target.closest('.recent-chat-item__menu-btn')) {
@@ -4005,7 +3985,7 @@ function setupPort() {
                             _doneInputUI._updateActionBtnState();
                         }
                         if (answerDiv) {
-                            const entry = answerDiv.closest('.lumina-dict-entry');
+                            const entry = answerDiv.closest('.lumina-entry');
                             if (entry) {
                                 const nav = entry.querySelector('.lumina-answer-nav');
                                 if (nav) nav.style.display = 'flex';
@@ -4186,7 +4166,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     if (extra.isRecheck || extra.isRegenerate) {
         untilEntryId = extra.entryId;
         if (!untilEntryId) {
-            const lastEntry = targetChatUI.historyEl.querySelector('.lumina-dict-entry:last-child');
+            const lastEntry = targetChatUI.historyEl.querySelector('.lumina-entry:last-child');
             untilEntryId = lastEntry ? lastEntry.dataset.entryId : null;
         }
     }
@@ -4198,7 +4178,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     const conversationHistory = targetChatUI.gatherMessages(untilEntryId, false, currentTab?.thinkingLevel || activeInputUI?.thinkingLevel || 'none');
     let apiText = text;
     if (extra.isRegenerate && !text) {
-        const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : null;
+        const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-entry[data-entry-id="${untilEntryId}"]`) : null;
         if (targetEntry) {
             const questionEl = targetEntry.querySelector('.lumina-chat-question');
             if (questionEl) {
@@ -4232,7 +4212,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 ui.initListeners(t.historyEl);
                 ui.syncStateFromDOM();
             }
-            const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-dict-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
+            const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
             if (targetEntry) {
                 ui.clearAnswer(targetEntry);
                 ui.showLoading(targetEntry, skipMargin);
@@ -5108,7 +5088,7 @@ window.addEventListener('focus', () => {
     if (typeof tabs !== 'undefined' && Array.isArray(tabs) && typeof activeTabIndex !== 'undefined' && activeTabIndex >= 0) {
         const activeTab = tabs[activeTabIndex];
         if (activeTab && activeTab.historyEl && activeTab.chatUIInstance) {
-            const entries = activeTab.historyEl.querySelectorAll('.lumina-dict-entry');
+            const entries = activeTab.historyEl.querySelectorAll('.lumina-entry');
             const lastEntry = entries[entries.length - 1];
             if (lastEntry) {
                 activeTab.chatUIInstance.clearEntryMargins(lastEntry);
@@ -5118,7 +5098,7 @@ window.addEventListener('focus', () => {
         if (typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0) {
             const secTab = tabs[secondaryActiveTabIndex];
             if (secTab && secTab.historyEl && secTab.chatUIInstance) {
-                const entries = secTab.historyEl.querySelectorAll('.lumina-dict-entry');
+                const entries = secTab.historyEl.querySelectorAll('.lumina-entry');
                 const lastEntry = entries[entries.length - 1];
                 if (lastEntry) {
                     secTab.chatUIInstance.clearEntryMargins(lastEntry);
@@ -5199,7 +5179,7 @@ function triggerRegenerate(targetUI = null) {
     const history = tUI?.historyEl;
     if (!history) return;
     const lastEntry = history.lastElementChild;
-    if (!lastEntry || !lastEntry.classList.contains('lumina-dict-entry')) return;
+    if (!lastEntry || !lastEntry.classList.contains('lumina-entry')) return;
     const entryType = lastEntry.dataset.entryType;
     let originalQuestion = null;
     if (entryType === 'translation') {
@@ -5789,7 +5769,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
             setTimeout(() => {
                 const targetNode = activeTab.historyEl.querySelector(`.lumina-chat-question[data-message-index="${targetIndex}"]`);
                 if (targetNode) {
-                    const targetEntry = targetNode.closest('.lumina-dict-entry');
+                    const targetEntry = targetNode.closest('.lumina-entry');
                     if (targetEntry) {
                         const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(targetEntry, activeTab.historyEl);
                         const maxScroll = Math.max(0, activeTab.historyEl.scrollHeight - activeTab.historyEl.clientHeight);
@@ -5823,7 +5803,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                     } catch (e) { }
                     activeTab.historyEl.__processingPromises = null;
                 }
-                const entries = activeTab.historyEl.querySelectorAll('.lumina-dict-entry');
+                const entries = activeTab.historyEl.querySelectorAll('.lumina-entry');
                 if (entries.length > 0) {
                     const latestEntry = entries[entries.length - 1];
                     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, activeTab.historyEl);
@@ -6061,7 +6041,7 @@ function initTopbarModelSelector(pane = 'primary') {
             const el = document.createElement('button');
             const isActive = item.model === currentModel && item.providerId === currentProviderId;
             el.className = `lumina-model-item${isActive ? ' active' : ''}`;
-            el.innerHTML = `<span class="model-name">${item.displayName || item.model}</span>`;
+            el.innerHTML = LuminaTemplates.modelItem(item.displayName, item.model);
             el.onclick = (e) => {
                 e.stopPropagation();
                 if (label) label.textContent = item.displayName || item.model;
@@ -6463,7 +6443,7 @@ function updateWelcomeScreenState(pane = 'primary') {
         return;
     }
     const isSpark = targetTab && targetTab.sparkId;
-    const hasEntries = historyEl.querySelector('.lumina-dict-entry, .lumina-translation-card, .lumina-chat-question, .lumina-chat-answer') !== null;
+    const hasEntries = historyEl.querySelector('.lumina-entry, .lumina-translation-card, .lumina-chat-question, .lumina-chat-answer') !== null;
     const chatContainer = layout.querySelector('.lumina-chat-container');
     if (!chatContainer) return;
     let welcomeEl = chatContainer.querySelector('.lumina-homepage-welcome');

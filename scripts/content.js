@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
     let fontStyleElement = null;
     function injectFonts() {
         if (fontStyleElement || document.getElementById('lumina-fonts')) return;
@@ -1267,7 +1267,7 @@
         removeBtn.title = 'Remove context';
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const parentEntry = element.closest('.lumina-dict-entry');
+            const parentEntry = element.closest('.lumina-entry');
             if (parentEntry) {
                 parentEntry.remove();
             } else {

@@ -1,4 +1,4 @@
-* {
+﻿* {
   box-sizing: border-box;
 }
 
@@ -3279,7 +3279,7 @@ body {
   margin-top: 0px;
 }
 
-.lumina-dict-entry {
+.lumina-entry {
   display: flex;
   flex-direction: column;
   contain: layout style;

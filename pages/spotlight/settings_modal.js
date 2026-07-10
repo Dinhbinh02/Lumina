@@ -1,5 +1,6 @@
 class LuminaSettingsModal {
   static init() {
+    this.injectDOMTemplates();
     this.overlay = document.getElementById('lumina-settings-overlay');
     this.closeBtn = document.getElementById('lumina-settings-close-btn');
     this.navContainer = document.getElementById('lumina-settings-nav');
@@ -40,6 +41,142 @@ class LuminaSettingsModal {
       }
     });
     this.initialized = true;
+  }
+
+  static injectDOMTemplates() {
+    const templates = {
+      'lumina-providerItemTemplate': `
+        <div class="lumina-settings-provider-card provider-item">
+            <div class="provider-item-content">
+                <div class="provider-logo-container"></div>
+                <div class="provider-info">
+                    <span class="provider-title provider-item-name"></span>
+                    <span class="provider-badge"></span>
+                </div>
+            </div>
+        </div>
+      `,
+      'lumina-chainItemTemplate': `
+        <div class="lumina-settings-chain-card chain-item">
+            <div class="chain-drag-handle">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="9" x2="16" y2="9"></line>
+                    <line x1="8" y1="15" x2="16" y2="15"></line>
+                </svg>
+            </div>
+            <span class="chain-number"></span>
+            <div class="chain-details">
+                <span class="chain-title"></span>
+                <span class="chain-subtitle"></span>
+            </div>
+            <div class="chain-actions">
+                <button type="button" class="lumina-settings-icon-btn edit" title="Edit Model">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="lumina-settings-icon-btn remove" title="Remove">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+      `,
+      'lumina-mappingRowTemplate': `
+        <div class="lumina-settings-chain-card chain-item">
+            <span class="chain-number mapping-number"></span>
+            <div class="chain-details">
+                <span class="chain-title mapping-name"></span>
+            </div>
+            <div class="chain-actions">
+                <button type="button" class="lumina-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="lumina-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+      `,
+      'lumina-userFactItemTemplate': `
+        <div class="lumina-settings-chain-card chain-item">
+            <span class="chain-number fact-index"></span>
+            <div class="chain-details">
+                <span class="chain-title fact-text"></span>
+            </div>
+            <div class="chain-actions">
+                <button type="button" class="lumina-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="lumina-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+      `,
+      'lumina-annotationRowTemplate': `
+        <div class="lumina-settings-chain-card chain-item">
+            <span class="chain-number annotation-number"></span>
+            <div class="chain-details annotation-details">
+                <div class="annotation-color-preview"></div>
+                <span class="chain-title annotation-shortcut-text font-medium"></span>
+            </div>
+            <div class="chain-actions">
+                <button type="button" class="lumina-settings-icon-btn edit annotation-edit-btn" title="Edit Shortcut">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="lumina-settings-icon-btn remove annotation-delete-btn" title="Delete Shortcut">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+      `,
+      'lumina-apiKeyResultItemTemplate': `
+        <div class="lumina-settings-api-result-item">
+            <div class="api-result-header">
+                <span class="api-key-result-icon"></span>
+                <span class="api-key-result-name font-semibold"></span>
+                <span class="api-key-result-status badge"></span>
+            </div>
+            <div class="api-key-result-failed-info"></div>
+        </div>
+      `,
+      'lumina-failedKeyInfoTemplate': `
+        <div class="lumina-settings-failed-key-info">
+            • <code class="failed-key-name"></code> → <span class="failed-key-status"></span>
+        </div>
+      `
+    };
+
+    for (const [id, html] of Object.entries(templates)) {
+      if (!document.getElementById(id)) {
+        const temp = document.createElement('template');
+        temp.id = id;
+        temp.innerHTML = html.trim();
+        document.body.appendChild(temp);
+      }
+    }
   }
   static show() {
     if (!this.initialized) this.init();

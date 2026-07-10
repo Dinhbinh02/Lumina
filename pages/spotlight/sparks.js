@@ -638,7 +638,7 @@ async function sparksOpenEditor(sparkId = null) {
         previewHistory.push({ role: 'user', text });
         updatePreviewState();
         const aiDiv = appendPreviewMessage('assistant', '');
-        aiDiv.innerHTML = '<span class="sparks-typing-dot"></span><span class="sparks-typing-dot"></span><span class="sparks-typing-dot"></span>';
+        aiDiv.innerHTML = LuminaTemplates.thinkingDots();
         previewStreaming = true;
         previewSend.disabled = true;
         try {
