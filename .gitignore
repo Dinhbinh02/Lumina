@@ -12,8 +12,6 @@ pnpm-debug.log*
 .vscode/
 .idea/_metadata/
 scratch/
-CLAUDE.md
-claude.md
 docs/
 PROJECT_SYMBOLS.md
 

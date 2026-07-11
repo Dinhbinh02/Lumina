@@ -3814,10 +3814,8 @@ body {
 
 .lumina-dict-popup-prons {
   display: flex !important;
-  flex-wrap: wrap !important;
-  column-gap: 12px !important;
-  row-gap: 0 !important;
-  align-items: center !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
   margin-top: 2px !important;
 }
 

@@ -1675,62 +1675,130 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: false, error: 'No word provided' });
                 return false;
             }
-            const fetchOxfordAudio = async (w) => {
-                try {
-                    const oUrl = `https://www.oxfordlearnersdictionaries.com/search/english/direct/?q=${encodeURIComponent(w)}`;
-                    const oRes = await fetch(oUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                            'Referer': 'https://www.oxfordlearnersdictionaries.com/'
-                        }
-                    });
-                    if (!oRes.ok) return null;
-                    const html = await oRes.text();
-                    const ukMatch = html.match(/data-src-mp3="([^"]+uk_pron[^"]+)"/i) || html.match(/data-src-mp3="([^"]+__gb_[^"]+)"/i);
-                    const usMatch = html.match(/data-src-mp3="([^"]+us_pron[^"]+)"/i) || html.match(/data-src-mp3="([^"]+__us_[^"]+)"/i);
-                    const ukIPAMatch = html.match(/class="phons_br"[^>]*>[\s\S]*?<span class="phon">([^<]+)<\/span>/i);
-                    const usIPAMatch = html.match(/class="phons_n_am"[^>]*>[\s\S]*?<span class="phon">([^<]+)<\/span>/i);
-                    return {
-                        uk: ukMatch ? ukMatch[1] : null,
-                        us: usMatch ? usMatch[1] : null,
-                        ukIpa: ukIPAMatch ? ukIPAMatch[1] : null,
-                        usIpa: usIPAMatch ? usIPAMatch[1] : null
-                    };
-                } catch (e) {
-                    return null;
+
+            const getLemma = (w) => {
+                if (!w) return '';
+                if (w.endsWith('ss')) return w;
+                if (w.endsWith('ies')) return w.slice(0, -3) + 'y';
+                if (w.endsWith('es')) {
+                    const base = w.slice(0, -2);
+                    if (base.endsWith('sh') || base.endsWith('ch') || base.endsWith('x') || base.endsWith('s') || base.endsWith('z')) {
+                        return base;
+                    }
+                    return w.slice(0, -1);
                 }
+                if (w.endsWith('s') && !w.endsWith('us') && !w.endsWith('is') && !w.endsWith('as')) {
+                    return w.slice(0, -1);
+                }
+                if (w.endsWith('ing')) {
+                    return w.slice(0, -3);
+                }
+                if (w.endsWith('ed')) {
+                    return w.slice(0, -2);
+                }
+                return w;
             };
-            
-            const freedictPromise = fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
+
+            const fetchFreeDict = (w) => {
+                return fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w)}`, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+                    }
+                })
                 .then(async res => {
                     if (res.status === 404) return [];
                     if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
                     return res.json();
                 });
-                
-            const oxfordPromise = fetchOxfordAudio(word).catch(() => null);
-            
-            Promise.all([freedictPromise, oxfordPromise])
-                .then(([data, oxford]) => {
-                    if (Array.isArray(data) && data.length > 0) {
-                        if (oxford) {
-                            if (!data[0].phonetics) data[0].phonetics = [];
-                            // Unshift US then UK so UK is at the absolute front
-                            if (oxford.us || oxford.usIpa) {
-                                data[0].phonetics.unshift({ 
-                                    audio: oxford.us || '', 
-                                    text: oxford.usIpa || data[0].phonetic || '' 
-                                });
-                            }
-                            if (oxford.uk || oxford.ukIpa) {
-                                data[0].phonetics.unshift({ 
-                                    audio: oxford.uk || '', 
-                                    text: oxford.ukIpa || data[0].phonetic || '' 
-                                });
+            };
+
+            const fetchIPA = async (w) => {
+                try {
+                    const wikiRes = await fetch(`https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(w)}&prop=text&format=json`, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+                        }
+                    });
+                    if (wikiRes.ok) {
+                        const wikiData = await wikiRes.json();
+                        const html = wikiData?.parse?.text?.['*'] || '';
+                        const ipaMatches = [];
+                        const regex = /<span class="IPA[^"]*">([^<]+)<\/span>/gi;
+                        let match;
+                        while ((match = regex.exec(html)) !== null) {
+                            const cleaned = match[1].trim();
+                            if (cleaned && !ipaMatches.includes(cleaned)) {
+                                ipaMatches.push(cleaned);
                             }
                         }
+                        return ipaMatches;
                     }
-                    sendResponse({ success: true, data });
+                } catch (e) {
+                    console.warn('[Lumina BG] Wiktionary IPA scrape failed:', e);
+                }
+                return [];
+            };
+
+            const wordLower = word.toLowerCase().trim();
+
+            fetchFreeDict(wordLower)
+                .then(async data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        // Nếu ngay từ ban đầu tra đã có response rồi (nhưng chưa có ipa thì chạy request lấy ipa)
+                        let hasPhonetics = data[0].phonetics && data[0].phonetics.some(p => p.text);
+                        if (!hasPhonetics) {
+                            let ipas = await fetchIPA(wordLower);
+                            const lemma = getLemma(wordLower);
+                            if (ipas.length === 0 && lemma && lemma !== wordLower) {
+                                ipas = await fetchIPA(lemma);
+                                if (ipas.length > 0) {
+                                    data[0].word = lemma; // Cập nhật hiển thị thành từ gốc
+                                }
+                            }
+                            if (ipas.length > 0) {
+                                if (!Array.isArray(data[0].phonetics)) {
+                                    data[0].phonetics = [];
+                                }
+                                data[0].phonetics.push({ text: ipas[0] });
+                                if (ipas[1]) {
+                                    data[0].phonetics.push({ text: ipas[1] });
+                                }
+                            }
+                        }
+                        sendResponse({ success: true, data });
+                    } else {
+                        // nếu tra từ gốc trên Free Dictionary API không có response -> lúc này fallback về getlemma và chạy đồng thời getIPA, Free Dictionary API
+                        const lemma = getLemma(wordLower);
+                        if (lemma && lemma !== wordLower) {
+                            try {
+                                const [lemmaData, ipas] = await Promise.all([
+                                    fetchFreeDict(lemma).catch(() => []),
+                                    fetchIPA(lemma).catch(() => [])
+                                ]);
+
+                                if (Array.isArray(lemmaData) && lemmaData.length > 0) {
+                                    let hasPhonetics = lemmaData[0].phonetics && lemmaData[0].phonetics.some(p => p.text);
+                                    if (!hasPhonetics && ipas.length > 0) {
+                                        if (!Array.isArray(lemmaData[0].phonetics)) {
+                                            lemmaData[0].phonetics = [];
+                                        }
+                                        lemmaData[0].phonetics.push({ text: ipas[0] });
+                                        if (ipas[1]) {
+                                            lemmaData[0].phonetics.push({ text: ipas[1] });
+                                        }
+                                    }
+                                    sendResponse({ success: true, data: lemmaData });
+                                } else {
+                                    sendResponse({ success: true, data: [] });
+                                }
+                            } catch (e) {
+                                console.warn('[Lumina BG] Concurrent lemma fetch failed:', e);
+                                sendResponse({ success: true, data: [] });
+                            }
+                        } else {
+                            sendResponse({ success: true, data: [] });
+                        }
+                    }
                 })
                 .catch(err => {
                     console.error(`[Lumina BG] fetch_dictionary error:`, err.message);
@@ -3350,6 +3418,39 @@ async function stopGoogleAudioOffscreen() {
     }
 }
 
+function getLemma(w) {
+    if (!w) return '';
+    const word = w.toLowerCase().trim();
+    if (word.endsWith('ss')) return word;
+    if (word.endsWith('ies')) return word.slice(0, -3) + 'y';
+    if (word.endsWith('es')) {
+        const base = word.slice(0, -2);
+        if (base.endsWith('sh') || base.endsWith('ch') || base.endsWith('x') || base.endsWith('s') || base.endsWith('z')) {
+            return base;
+        }
+        return word.slice(0, -1);
+    }
+    if (word.endsWith('s') && !word.endsWith('us') && !word.endsWith('is') && !word.endsWith('as')) {
+        return word.slice(0, -1);
+    }
+    return word;
+}
+
+function getAmericanSpelling(w) {
+    if (!w) return '';
+    return w
+        .replace(/isation/gi, 'ization')
+        .replace(/isations/gi, 'izations')
+        .replace(/ise\b/gi, 'ize')
+        .replace(/ises\b/gi, 'izes')
+        .replace(/ised\b/gi, 'ized')
+        .replace(/ising\b/gi, 'izing')
+        .replace(/yse\b/gi, 'yze')
+        .replace(/yses\b/gi, 'yzes')
+        .replace(/ysed\b/gi, 'yzed')
+        .replace(/ysing\b/gi, 'yzing');
+}
+
 async function fetchAudio(text, speed = 1.0, forcedLang = null) {
     if (!text) return { type: null, chunks: [] };
     let normalizedText = text.trim();
@@ -3450,7 +3551,8 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
         return results.filter(Boolean);
     };
     if (wordCount <= 2) {
-        const oxfordUrl = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${normalizedText.toLowerCase()}--_gb_1.mp3`;
+        const audioText = getAmericanSpelling(normalizedText);
+        const oxfordUrl = `https://ssl.gstatic.com/dictionary/static/sounds/oxford/${audioText.toLowerCase()}--_gb_1.mp3`;
         const oxfordPromise = fetchToBase64(oxfordUrl).catch(() => null);
         const googlePromise = fetchGoogle();
         const oxfordData = await oxfordPromise;

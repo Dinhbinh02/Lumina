@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
     let fontStyleElement = null;
     function injectFonts() {
         if (fontStyleElement || document.getElementById('lumina-fonts')) return;
@@ -1132,37 +1132,39 @@
         type: null,
         data: null
     };
-    async function playCombinedAudio(text) {
+    async function playCombinedAudio(text, forcedLang = null) {
         if (!text) return;
         if (audioDebounceTimer) { clearTimeout(audioDebounceTimer); audioDebounceTimer = null; }
         audioAborted = true;
         if (currentAudioEl) { currentAudioEl.pause(); currentAudioEl = null; }
         audioAborted = false;
         const normalizedText = text.trim();
+        const cacheKey = forcedLang ? `${normalizedText}_${forcedLang}` : normalizedText;
         try {
             const storageData = await chrome.storage.local.get(['audioSpeed']);
             const speed = storageData.audioSpeed || 1.1;
-            if (audioCache.text === normalizedText && audioCache.data) {
+            if (audioCache.text === cacheKey && audioCache.data) {
                 const chunks = Array.isArray(audioCache.data) ? audioCache.data : [audioCache.data];
                 await playChunksSequentially(chunks, speed);
                 return;
             }
             try {
-                const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: normalizedText });
+                const cached = await chrome.runtime.sendMessage({ action: 'getAudioCache', text: cacheKey });
                 if (cached && cached.success && cached.data) {
                     const chunks = Array.isArray(cached.data) ? cached.data : [cached.data];
-                    audioCache = { text: normalizedText, type: cached.type, data: cached.data };
+                    audioCache = { text: cacheKey, type: cached.type, data: cached.data };
                     await playChunksSequentially(chunks, speed);
                     return;
                 }
             } catch (e) {  }
-            const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed });
+            const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed, lang: forcedLang });
             if (!result || !result.chunks || result.chunks.length === 0) return;
-            audioCache = { text: normalizedText, type: result.type, data: result.chunks };
+            audioCache = { text: cacheKey, type: result.type, data: result.chunks };
             await playChunksSequentially(result.chunks, speed);
-            chrome.runtime.sendMessage({ action: 'setAudioCache', text: normalizedText, type: result.type, data: result.chunks }).catch(() => { });
+            chrome.runtime.sendMessage({ action: 'setAudioCache', text: cacheKey, type: result.type, data: result.chunks }).catch(() => { });
         } catch (e) {  }
     }
+    window.LuminaPlayAudio = playCombinedAudio;
     async function playChunksSequentially(chunks, speed) {
         for (let i = 0; i < chunks.length; i++) {
             if (audioAborted) break;

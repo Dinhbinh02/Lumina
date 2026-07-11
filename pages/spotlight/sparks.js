@@ -76,6 +76,37 @@ Monitor the user's responses across multiple turns. If they start using the same
 - **Timeline Overuse Alert**: If they use "In the past... but now..." 2 times in a row, prompt them: "You are repeating the Timeline structure. Try starting your next answer with a concrete example first (Example-First)!"
 - **Template Filler Check**: If they start sentences with "Firstly/Secondly" or "There are many reasons", correct them: "That sounds too mechanical or memorized. Try starting with conversational fillers like 'To be honest' or 'Actually' instead."
 - **Concrete Check**: If their second sentence is just a paraphrase of the first, alert them: "This sentence is circular. Make it more concrete by mentioning a specific item, location, or personal experience to move the idea forward."`
+    },
+    'spark_ielts_reading_assistant': {
+        name: 'IELTS Reading Assistant',
+        description: 'Translate, explain vocabulary/grammar, and pinpoint exactly where answers are located in IELTS Reading.',
+        instructions: `You are a highly supportive, expert IELTS Reading Assistant. Your mission is to help the user master IELTS Reading by providing detailed translation, vocabulary analysis, grammar structure breakdown, answer verification, and locating evidence directly within the reading passages.
+
+**Tone/Format**: Efficient (Concise and plain). Answer directly and as briefly as possible with minimal text. Avoid verbose formatting, unnecessary bold headings, or decorative lists/tables unless absolutely required to answer the query. No greetings, introductions, or conversational fillers; start answering the question immediately. Respond in Vietnamese, keeping original English quotes and key terms intact.
+
+---
+
+### CORE CAPABILITIES
+
+1. TRANSLATION & PARAGRAPH ANALYSIS
+- When the user asks to translate or explain a difficult paragraph or sentence:
+  * Provide a natural and accurate Vietnamese translation.
+  * Identify and explain complex grammatical structures (e.g., passive voice, relative clauses, cleft sentences, nominalization, inversion, reduced relatives).
+  * Break down the sentence structure to show "who did what to whom" to help them grasp the core meaning.
+
+2. DIFFICULT VOCABULARY & COLLOCATIONS
+- For any difficult words/phrases requested:
+  * Provide the pronunciation (IPA), part of speech, and Vietnamese translation.
+  * Explain the context-specific meaning of the word in this particular reading passage.
+  * Highlight key synonyms, paraphrases, or collocations that are frequently tested in IELTS.
+
+3. ANSWER CHECKING & EVIDENCE LOCATION (CRUCIAL)
+- When the user asks about a question or wants to check answers:
+  * Identify the correct answer option (or verify if the user's choice is correct).
+  * Pinpoint the exact location of the answer in the reading passage (e.g., "Paragraph 3, sentence 2").
+  * Quote the original sentence containing the evidence in English.
+  * Explain the keyword mapping/paraphrasing: Show how keywords in the question map to synonyms in the quoted sentence (e.g., "Question: 'increased risk' ➔ Passage: 'more vulnerable to'").
+  * Explain why the other options are incorrect or not mentioned (if relevant, especially for True/False/Not Given or Multiple Choice questions).`
     }
 };
 
@@ -83,14 +114,7 @@ async function sparksLoad() {
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];
     let needsSave = false;
-    if (sparks && sparks['spark_ielts_read_listen_analyzer']) {
-        delete sparks['spark_ielts_read_listen_analyzer'];
-        needsSave = true;
-    }
-    if (sparks && sparks['spark_samsung_qa_assistant']) {
-        delete sparks['spark_samsung_qa_assistant'];
-        needsSave = true;
-    }
+
     if (!sparks) {
         sparks = {};
         needsSave = true;
@@ -110,46 +134,13 @@ async function sparksLoad() {
             };
             needsSave = true;
         } else {
-            const oldT1Desc = 'Friendly and expert tutor specializing in IELTS Writing Task 1 reports. Get interactive practice, vocabulary suggestions, and grammar corrections tailored to your essays.';
-            const oldT2Desc = 'Supportive guide helping you master IELTS Writing Task 2 essays. Learn to analyze prompts, brainstorm strong ideas, structure arguments, and refine academic vocabulary.';
-            if (existing.description === undefined ||
-                existing.description === '' ||
-                existing.description === oldT1Desc ||
-                existing.description === oldT2Desc) {
+            if (!existing.instructions) {
+                existing.instructions = defSpark.instructions;
+                existing.updatedAt = Date.now();
+                needsSave = true;
+            }
+            if (existing.description === undefined || existing.description === '') {
                 existing.description = defSpark.description || '';
-                needsSave = true;
-            }
-            if (id === 'spark_qa_assistant' && (!existing.instructions || !existing.instructions.includes('WAIT_FOR_CHECK_EXTERNAL') || !existing.instructions.includes('Avoid verbose formatting'))) {
-                existing.instructions = defSpark.instructions;
-                existing.description = defSpark.description;
-                existing.updatedAt = Date.now();
-                needsSave = true;
-            }
-            if (id === 'spark_ielts_writing_task1' && (!existing.instructions || !existing.instructions.includes('TASK ACHIEVEMENT (TA)'))) {
-                existing.instructions = defSpark.instructions;
-                existing.updatedAt = Date.now();
-                needsSave = true;
-            }
-            if (id === 'spark_ielts_writing_task2' && (!existing.instructions || !existing.instructions.includes('TASK RESPONSE (TR)'))) {
-                existing.instructions = defSpark.instructions;
-                existing.updatedAt = Date.now();
-                needsSave = true;
-            }
-            if (id === 'spark_ielts_speaking_coach' && (!existing.instructions || existing.instructions.includes('Vietnamese') || existing.instructions.includes('Tư duy Cụ thể hóa') || !existing.instructions.includes('5W1H'))) {
-                existing.instructions = defSpark.instructions;
-                existing.updatedAt = Date.now();
-                needsSave = true;
-            }
-
-            if (existing.instructions && (
-                existing.instructions.includes('[LANGUAGE REQUIREMENT]') ||
-                existing.instructions.includes('[YOUR ROLE]') ||
-                existing.instructions.includes('rigid evaluation template') ||
-                existing.instructions.includes('Scenario') ||
-                existing.instructions.includes('Inline Sentence')
-            )) {
-                existing.instructions = defSpark.instructions;
-                existing.updatedAt = Date.now();
                 needsSave = true;
             }
         }
