@@ -352,7 +352,7 @@ body {
   vertical-align: top;
 }
 
-.lumina-image-preview-item.is-file {
+.lumina-preview-item.is-file {
   width: auto !important;
   min-width: 156px !important;
   max-width: 240px !important;
@@ -366,6 +366,7 @@ body {
   border-radius: 16px;
   min-height: 60px;
   box-shadow: none;
+  cursor: pointer !important;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -586,7 +587,7 @@ body {
   height: 14px;
 }
 
-.lumina-image-preview-item.is-file .lumina-image-remove svg {
+.lumina-preview-item.is-file .lumina-image-remove svg {
   width: 9px;
   height: 9px;
 }
@@ -743,7 +744,7 @@ body {
   field-sizing: content !important;
 }
 
-.lumina-image-preview-item.is-file {
+.lumina-preview-item.is-file {
   width: auto;
   min-width: 100px;
   max-width: 150px;
@@ -1512,7 +1513,7 @@ body {
   border-radius: 6px !important;
   font-size: 0.86em !important;
   font-weight: 500 !important;
-  font-family: 'Google Sans Code', 'Source Code Pro', monospace !important;
+  font-family: monospace !important;
 }
 
 .lumina-chat-answer pre {
@@ -1541,7 +1542,7 @@ body {
   line-height: 1.6 !important;
   min-width: 100%;
   font-weight: 400 !important;
-  font-family: 'Google Sans Code', 'Source Code Pro', monospace !important;
+  font-family: monospace !important;
 }
 
 .lumina-chat-answer pre code .hljs-comment,
@@ -1668,7 +1669,7 @@ body {
   border-radius: 28px !important;
   background: var(--lumina-ui-bg, #ffffff) !important;
   border: none !important;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.16), 0 3px 12px rgba(0, 0, 0, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
@@ -1684,7 +1685,7 @@ body {
 [data-theme="dark"] .lumina-input-container {
   background: #1e1f20 !important;
   border: none !important;
-  box-shadow: 0 0 1px rgba(255, 255, 255, 0.2), 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.16), 0 3px 14px rgba(0, 0, 0, 0.3) !important;
 }
 
 .lumina-input-container::after {
@@ -2427,7 +2428,7 @@ body {
 }
 
 .lumina-input-container.lumina-drag-over::before {
-  content: '📎 Xem trước khi gửi\AThả File hoặc Ảnh vào đây để xem lại trước khi gửi' !important;
+  content: '📎 Drop files to preview' !important;
   white-space: pre-wrap !important;
   line-height: 1.6 !important;
   text-align: center !important;
@@ -2516,12 +2517,12 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.lumina-image-preview-item.is-file:hover {
+.lumina-preview-item.is-file:hover {
   transform: none;
   box-shadow: none;
 }
 
-.lumina-chat-question-files .lumina-image-preview-item.is-file {
+.lumina-chat-question-files .lumina-preview-item.is-file {
   margin-left: 0;
 }
 
@@ -2547,7 +2548,7 @@ body {
   align-self: stretch;
 }
 
-.lumina-image-preview-item.is-file .lumina-file-name {
+.lumina-preview-item.is-file .lumina-file-name {
   width: 100%;
   text-align: left;
   white-space: nowrap;
@@ -2590,7 +2591,7 @@ body {
   min-height: 14px;
 }
 
-.lumina-image-preview-item.is-file .lumina-image-remove {
+.lumina-preview-item.is-file .lumina-image-remove {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -2610,24 +2611,25 @@ body {
   transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
 
-.lumina-image-preview-item.is-file:hover .lumina-image-remove {
+.lumina-preview-item.is-file:hover .lumina-image-remove {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
 }
 
-.lumina-image-preview-item.is-file .lumina-image-remove:hover {
-  background: #e2eafd;
-  color: #49576d;
+.lumina-preview-item.is-file .lumina-image-remove:hover {
+  background: #ea4335 !important;
+  color: #ffffff !important;
+  border-color: #ea4335 !important;
 }
 
-[data-theme="dark"] .lumina-image-preview-item.is-file {
+[data-theme="dark"] .lumina-preview-item.is-file {
   background: #1e2a3b;
   border-color: #2c3d55;
   box-shadow: none;
 }
 
-[data-theme="dark"] .lumina-image-preview-item.is-file .lumina-file-name {
+[data-theme="dark"] .lumina-preview-item.is-file .lumina-file-name {
   color: #e6edf8;
 }
 
@@ -4323,7 +4325,7 @@ body {
   width: 100%;
 }
 
-.lumina-image-preview-item {
+.lumina-preview-item {
   position: relative;
   height: 60px;
   flex: 0 1 60px;
@@ -4331,11 +4333,11 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.lumina-image-preview-item.is-uploading {
+.lumina-preview-item.is-uploading {
   opacity: 0.6;
 }
 
-.lumina-image-preview-item.is-uploading::after {
+.lumina-preview-item.is-uploading::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -4351,11 +4353,11 @@ body {
   z-index: 10;
 }
 
-.lumina-image-preview-item.is-uploading .lumina-image-remove {
+.lumina-preview-item.is-uploading .lumina-image-remove {
   z-index: 12;
 }
 
-[data-theme="dark"] .lumina-image-preview-item.is-uploading::after {
+[data-theme="dark"] .lumina-preview-item.is-uploading::after {
   border-color: rgba(255, 255, 255, 0.2);
   border-top-color: #a8c7fa;
 }
@@ -4366,7 +4368,7 @@ body {
   }
 }
 
-.lumina-image-preview-item img {
+.lumina-preview-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -4393,12 +4395,13 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.lumina-image-preview-item:hover .lumina-image-remove {
+.lumina-preview-item:hover .lumina-image-remove {
   opacity: 1;
 }
 
 .lumina-image-remove:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: #ef4444 !important;
+  color: #ffffff !important;
   transform: scale(1.1);
 }
 
@@ -4435,10 +4438,16 @@ body {
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: rgba(10, 15, 30, 0.9) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   z-index: 10000 !important;
   border-radius: 0 !important;
   padding: 0 !important;
+}
+
+[data-theme="dark"] .lumina-preview-container.fixed-preview {
+  background: rgba(0, 0, 0, 0.65) !important;
 }
 
 .lumina-preview-controls-bar {
@@ -4450,7 +4459,7 @@ body {
   gap: 12px;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
+  padding: 6px 8px;
   border-radius: 99px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -4508,7 +4517,6 @@ body {
   max-height: 82vh;
   object-fit: contain;
   border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   cursor: default;
   user-select: none;
   -webkit-user-drag: none;
@@ -8895,4 +8903,562 @@ body.is-sidepanel .split-toggle-btn {
 
 #file-input {
   display: none !important;
+}
+
+/* Universal File Preview Window Styles */
+.lumina-preview-window {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--lumina-bg-primary);
+  border-radius: 16px;
+  border: 1px solid var(--lumina-border-color);
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  z-index: 10005;
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  width: 700px;
+  max-width: 95vw;
+  height: 600px;
+  max-height: 85vh;
+}
+
+[data-theme="dark"] .lumina-preview-window {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 768px) {
+  .lumina-preview-window {
+    /* Match settings dialog mobile layout exactly */
+    width: 96vw;
+    max-width: 700px;
+    height: 74vh;
+    max-height: 74vh;
+  }
+}
+
+/* Video Player Setup */
+.lumina-preview-window.is-video {
+  border-color: #000000;
+}
+
+/* Audio Player Card Setup (Compact on Desktop) */
+.lumina-preview-window.is-audio {
+  width: 700px;
+  max-width: 400px;
+  height: auto;
+  max-height: none;
+}
+
+@media (max-width: 768px) {
+  .lumina-preview-window.is-audio {
+    width: 96vw;
+    max-width: 400px;
+    height: auto;
+    max-height: none;
+  }
+}
+
+/* Fallback Card Setup (Compact on Desktop) */
+.lumina-preview-window.is-fallback {
+  width: 700px;
+  max-width: 420px;
+  height: auto;
+  max-height: none;
+}
+
+@media (max-width: 768px) {
+  .lumina-preview-window.is-fallback {
+    width: 96vw;
+    max-width: 420px;
+    height: auto;
+    max-height: none;
+  }
+}
+
+.lumina-preview-window-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  z-index: 10010;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+[data-theme="dark"] .lumina-preview-window-close {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lumina-preview-window-close:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  color: var(--lumina-text-primary) !important;
+  transform: scale(1.05);
+}
+
+[data-theme="dark"] .lumina-preview-window-close:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  transform: scale(1.05);
+}
+
+.lumina-preview-window-close:active {
+  transform: scale(0.95);
+}
+
+.lumina-preview-window-body {
+  flex: 1;
+  overflow: auto;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.lumina-preview-window-body.is-text-layout {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.lumina-preview-pdf-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  background: #f6f8fa;
+}
+
+[data-theme="dark"] .lumina-preview-pdf-container {
+  background: var(--lumina-bg-primary);
+}
+
+.lumina-preview-pdf-page {
+  max-width: 100%;
+}
+
+.lumina-preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  outline: none;
+  display: block;
+}
+
+/* Premium Audio Widget Layout */
+.lumina-preview-audio-wrapper {
+  width: 100%;
+  padding: 32px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  background: var(--lumina-bg-primary);
+}
+
+.lumina-preview-audio-art {
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  background: var(--lumina-sidebar-bg);
+  color: var(--lumina-primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--lumina-border-color);
+  transition: transform 0.3s ease;
+}
+
+.lumina-preview-audio-wrapper:hover .lumina-preview-audio-art {
+  transform: scale(1.04);
+}
+
+.lumina-preview-audio-info {
+  text-align: center;
+  width: 100%;
+}
+
+.lumina-preview-audio-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lumina-text-primary);
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.lumina-preview-audio-artist {
+  font-size: 12px;
+  color: var(--lumina-text-tertiary);
+  font-weight: 500;
+}
+
+.lumina-preview-audio {
+  width: 100%;
+  outline: none;
+  border-radius: 8px;
+}
+
+.lumina-preview-text-container,
+.lumina-preview-docx-xlsx-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: #f6f8fa;
+  color: #24292f;
+  padding: 0 12px;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border: none;
+  transform: translate3d(0, 0, 0);
+  will-change: scroll-position;
+}
+
+[data-theme="dark"] .lumina-preview-text-container,
+[data-theme="dark"] .lumina-preview-docx-xlsx-container {
+  background: var(--lumina-bg-primary);
+  color: var(--lumina-text-primary);
+}
+
+.lumina-preview-sheet-title {
+  margin: 0 0 10px 0;
+  color: #005cc5;
+  font-family: sans-serif;
+  border-bottom: 1px solid var(--lumina-border-color);
+  padding-bottom: 5px;
+}
+
+[data-theme="dark"] .lumina-preview-sheet-title {
+  color: #8be9fd;
+}
+
+.lumina-preview-pre {
+  white-space: pre-wrap;
+  background: var(--lumina-input-bg);
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 25px;
+  overflow-x: auto;
+  border: 1px solid var(--lumina-border-color);
+}
+
+[data-theme="dark"] .lumina-preview-pre {
+  background: #252526;
+  border: 1px solid #2d2d2d;
+}
+
+.lumina-preview-window-body.is-fallback-layout {
+  background: var(--lumina-bg-primary);
+  padding: 32px 24px;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.lumina-preview-fallback-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.lumina-preview-fallback-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+
+.lumina-preview-fallback-meta {
+  font-size: 12px;
+  color: var(--lumina-text-secondary);
+  margin-bottom: 20px;
+}
+
+.lumina-preview-fallback-desc {
+  font-size: 13px;
+  color: var(--lumina-text-secondary);
+  line-height: 1.5;
+}
+
+/* --- Code Preview Syntax Highlighting: Light Theme (Default) --- */
+.lumina-preview-window pre code .hljs-comment,
+.lumina-preview-window pre code .hljs-quote {
+  color: #6a737d !important;
+  font-style: italic !important;
+}
+
+.lumina-preview-window pre code .hljs-keyword,
+.lumina-preview-window pre code .hljs-selector-tag,
+.lumina-preview-window pre code .hljs-addition {
+  color: #d73a49 !important;
+  font-weight: 600 !important;
+}
+
+.lumina-preview-window pre code .hljs-string,
+.lumina-preview-window pre code .hljs-meta {
+  color: #0a3069 !important;
+}
+
+.lumina-preview-window pre code .hljs-number,
+.lumina-preview-window pre code .hljs-literal {
+  color: #0550ae !important;
+}
+
+.lumina-preview-window pre code .hljs-built_in,
+.lumina-preview-window pre code .hljs-class,
+.lumina-preview-window pre code .hljs-title {
+  color: #953800 !important;
+}
+
+.lumina-preview-window pre code .hljs-function .hljs-title {
+  color: #8250df !important;
+}
+
+.lumina-preview-window pre code .hljs-variable,
+.lumina-preview-window pre code .hljs-template-variable {
+  color: #24292f !important;
+}
+
+.lumina-preview-window pre code .hljs-tag,
+.lumina-preview-window pre code .hljs-name {
+  color: #116329 !important;
+}
+
+.lumina-preview-window pre code .hljs-attr,
+.lumina-preview-window pre code .hljs-attribute {
+  color: #0550ae !important;
+}
+
+.lumina-preview-window pre code .hljs-symbol,
+.lumina-preview-window pre code .hljs-bullet {
+  color: #e36209 !important;
+}
+
+.lumina-preview-window pre code .hljs-section {
+  color: #0550ae !important;
+  font-weight: bold !important;
+}
+
+.lumina-preview-window pre code .hljs-type {
+  color: #cf222e !important;
+}
+
+.lumina-preview-window pre code .hljs-deletion {
+  color: #82000e !important;
+  background-color: #ffebe9 !important;
+}
+
+/* --- Code Preview Syntax Highlighting: Dark Theme --- */
+[data-theme="dark"] .lumina-preview-window pre code .hljs-comment,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-quote {
+  color: #6272a4 !important;
+  font-style: italic !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-keyword,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-selector-tag,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-addition {
+  color: #ff79c6 !important;
+  font-weight: bold !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-string,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-meta {
+  color: #50fa7b !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-number,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-literal {
+  color: #bd93f9 !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-built_in,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-class,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-title {
+  color: #8be9fd !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-function .hljs-title {
+  color: #50fa7b !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-params {
+  color: #ffb86c !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-variable,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-template-variable,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-tag,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-name,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-selector-id,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-selector-class {
+  color: #ff79c6 !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-attr,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-attribute,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-symbol,
+[data-theme="dark"] .lumina-preview-window pre code .hljs-bullet {
+  color: #f1fa8c !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-section {
+  color: #8be9fd !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-type {
+  color: #8be9fd !important;
+}
+
+[data-theme="dark"] .lumina-preview-window pre code .hljs-deletion {
+  color: #ff5555 !important;
+}
+
+/* PDF Counter & Zoom Wrapper */
+.lumina-preview-pdf-counter-wrapper {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  color: #ffffff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  z-index: 10008;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+
+.pdf-page-indicator {
+  min-width: 45px;
+  text-align: center;
+}
+
+.pdf-counter-divider {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pdf-zoom-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.pdf-zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.pdf-zoom-percent {
+  min-width: 35px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Spreadsheet Table Viewer Setup */
+.lumina-preview-sheets-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.lumina-preview-sheets-table {
+  border-collapse: collapse;
+  width: max-content;
+  /* Make the table stretch to its natural width so we can scroll horizontally */
+  min-width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--lumina-bg-primary);
+  border: 1px solid var(--lumina-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.lumina-preview-sheets-table th {
+  background: var(--lumina-sidebar-bg);
+  color: var(--lumina-text-primary);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--lumina-border-color);
+  border-right: 1px solid var(--lumina-border-color);
+  white-space: pre-wrap;
+  word-break: break-word;
+  vertical-align: top;
+  max-width: 200px;
+}
+
+.lumina-preview-sheets-table td {
+  color: var(--lumina-text-secondary);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--lumina-border-color);
+  border-right: 1px solid var(--lumina-border-color);
+  white-space: pre-wrap;
+  word-break: break-word;
+  vertical-align: top;
+  max-width: 200px;
+}
+
+.lumina-preview-sheets-table tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .lumina-preview-sheets-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lumina-preview-sheets-table tr:last-child td {
+  border-bottom: none;
+}
+
+.lumina-preview-sheets-table th:last-child,
+.lumina-preview-sheets-table td:last-child {
+  border-right: none;
 }

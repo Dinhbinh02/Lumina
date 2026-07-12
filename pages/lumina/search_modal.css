@@ -1,7 +1,6 @@
-
 .lumina-search-dialog {
   width: 700px;
-  max-width: 96vw;
+  max-width: 95vw;
   height: 600px;
   max-height: 85vh;
   background: var(--lumina-ui-bg);

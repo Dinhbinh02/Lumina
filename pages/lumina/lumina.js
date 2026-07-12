@@ -2393,6 +2393,9 @@ function initSpotlightAskSelection() {
         }, 10);
     });
     document.addEventListener('keyup', (e) => {
+        const selectionKeys = ['Shift', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+        if (!selectionKeys.includes(e.key)) return;
+
         setTimeout(() => {
             if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
                 LuminaSelection.expandToWordBoundaries();
@@ -2420,7 +2423,12 @@ function initSpotlightAskSelection() {
                 ? 'secondary'
                 : 'primary';
             if (window.LuminaSelection) {
-                LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
+                // Nếu đang hiển thị sẵn rồi thì không định vị lại theo chuột nữa để tránh bị nhảy vị trí
+                if (LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
+                    LuminaSelection.show(undefined, undefined, text, range, false);
+                } else {
+                    LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
+                }
             }
         }, 10);
     });

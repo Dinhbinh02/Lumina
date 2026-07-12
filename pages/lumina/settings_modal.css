@@ -3,6 +3,7 @@
     opacity: 0;
     transform: scale(0.98) translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -13,6 +14,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1410,28 +1412,32 @@
 
 @media (max-width: 768px) {
   .lumina-settings-dialog {
-    width: 96vw;
+    width: 95vw;
     max-width: 700px;
     height: 74vh;
     max-height: 74vh;
     flex-direction: column;
     border-radius: 12px;
   }
+
   .lumina-settings-close-btn {
     position: static !important;
     margin: 0;
   }
+
   .lumina-settings-body {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
   }
+
   .lumina-settings-sidebar {
     width: 100%;
     padding: 0;
     border-right: none;
     background: var(--lumina-ui-bg, #ffffff) !important;
   }
+
   .lumina-settings-sidebar-header {
     display: flex !important;
     justify-content: space-between;
@@ -1439,11 +1445,13 @@
     padding: 8px 8px 0 8px;
     margin-bottom: 0;
   }
+
   .lumina-settings-title {
     font-size: 18px;
     font-weight: 600;
     color: var(--lumina-text-primary);
   }
+
   .lumina-settings-nav {
     flex-direction: row;
     overflow-x: auto;
@@ -1451,9 +1459,11 @@
     gap: 4px;
     scrollbar-width: none;
   }
+
   .lumina-settings-nav::-webkit-scrollbar {
     display: none;
   }
+
   .lumina-settings-nav-item {
     padding: 8px 14px;
     white-space: nowrap;
@@ -1467,25 +1477,30 @@
     gap: 6px;
     font-size: 13px;
   }
+
   .lumina-settings-nav-item.active {
     background: rgba(0, 0, 0, 0.05) !important;
     color: var(--lumina-text-primary) !important;
     border: none !important;
   }
+
   [data-theme="dark"] .lumina-settings-nav-item.active {
     background: rgba(255, 255, 255, 0.08) !important;
     color: #ffffff !important;
   }
+
   .lumina-settings-main {
     padding: 8px;
     flex: 1;
     overflow-y: auto;
   }
+
   .lumina-settings-section-title {
     position: static;
     padding-top: 0;
     background: transparent;
   }
+
   .lumina-settings-row-split {
     flex-direction: column;
     gap: 0;

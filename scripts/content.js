@@ -309,6 +309,10 @@
     }, true);
     window.addEventListener('keyup', (e) => {
         if (isExtensionDisabled) return;
+
+        const selectionKeys = ['Shift', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+        if (!selectionKeys.includes(e.key)) return;
+
         const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
         const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
         setTimeout(() => {
@@ -337,7 +341,12 @@
                 return;
             }
             if (text.length > 0 && (range || isInput) && window.LuminaSelection) {
-                LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
+                // Nếu đang hiển thị sẵn rồi thì không định vị lại theo chuột nữa để tránh bị nhảy vị trí
+                if (LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
+                    LuminaSelection.show(undefined, undefined, text, range, false);
+                } else {
+                    LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
+                }
             }
         }, 50);
     }, true);
@@ -395,13 +404,13 @@
                 applyAskSelectionStyles();
             }
             const hasThemeChange = changes.theme ||
-                                   changes.contrast ||
-                                   changes.accentColor ||
-                                   (changes.globalDefaults && changes.globalDefaults.newValue && (
-                                       changes.globalDefaults.newValue.theme !== changes.globalDefaults.oldValue?.theme ||
-                                       changes.globalDefaults.newValue.contrast !== changes.globalDefaults.oldValue?.contrast ||
-                                       changes.globalDefaults.newValue.accentColor !== changes.globalDefaults.oldValue?.accentColor
-                                   ));
+                changes.contrast ||
+                changes.accentColor ||
+                (changes.globalDefaults && changes.globalDefaults.newValue && (
+                    changes.globalDefaults.newValue.theme !== changes.globalDefaults.oldValue?.theme ||
+                    changes.globalDefaults.newValue.contrast !== changes.globalDefaults.oldValue?.contrast ||
+                    changes.globalDefaults.newValue.accentColor !== changes.globalDefaults.oldValue?.accentColor
+                ));
             if (hasThemeChange) {
                 cachedTheme = null;
                 cachedContrast = null;
@@ -1097,7 +1106,7 @@
         const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
         const metaMatch = !!shortcut.metaKey === event.metaKey;
         const keyMatch = (shortcut.code && event.code === shortcut.code) ||
-                         (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
+            (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
         return ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
     }
     function formatTextLikeOriginal(original, target) {
@@ -1156,13 +1165,13 @@
                     await playChunksSequentially(chunks, speed);
                     return;
                 }
-            } catch (e) {  }
+            } catch (e) { }
             const result = await chrome.runtime.sendMessage({ action: 'fetchAudio', text: normalizedText, speed, lang: forcedLang });
             if (!result || !result.chunks || result.chunks.length === 0) return;
             audioCache = { text: cacheKey, type: result.type, data: result.chunks };
             await playChunksSequentially(result.chunks, speed);
             chrome.runtime.sendMessage({ action: 'setAudioCache', text: cacheKey, type: result.type, data: result.chunks }).catch(() => { });
-        } catch (e) {  }
+        } catch (e) { }
     }
     window.LuminaPlayAudio = playCombinedAudio;
     async function playChunksSequentially(chunks, speed) {
@@ -1226,7 +1235,7 @@
                     audio.play().catch(() => { cleanup(); resolve(); });
                     return;
                 }
-            } catch (e) {  }
+            } catch (e) { }
             const audio = new Audio(blobUrl || base64);
             audio.playbackRate = speed;
             currentAudioEl = audio;
@@ -2087,10 +2096,10 @@
         syncTimeout = setTimeout(() => {
             try {
                 const currentText = (document.body ? document.body.innerText.slice(0, 1000) : "") +
-                                   (document.body ? document.body.innerText.slice(-1000) : "");
+                    (document.body ? document.body.innerText.slice(-1000) : "");
                 if (currentText !== lastContentHash) {
                     lastContentHash = currentText;
-                    chrome.runtime.sendMessage({ type: 'LUMINA_CONTENT_UPDATED' }).catch(() => {});
+                    chrome.runtime.sendMessage({ type: 'LUMINA_CONTENT_UPDATED' }).catch(() => { });
                 }
             } catch (e) {
             }
