@@ -537,11 +537,11 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--lumina-accent-color, #000000);
+  background: var(--lumina-primary-color);
 }
 
 [data-theme="dark"] .lumina-settings-control input[type="range"]::-webkit-slider-thumb {
-  background: var(--lumina-accent-color, #ffffff);
+  background: var(--lumina-primary-color);
 }
 
 .lumina-settings-segmented {
