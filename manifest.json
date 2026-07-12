@@ -104,7 +104,7 @@
     }
   ],
   "options_ui": {
-    "page": "pages/spotlight/spotlight.html?settings=1",
+    "page": "pages/lumina/lumina.html?settings=1",
     "open_in_tab": true
   },
   "content_scripts": [

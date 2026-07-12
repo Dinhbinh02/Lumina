@@ -102,9 +102,9 @@
     window.addEventListener('resize', () => {
         updateCachedZoom(() => {
             if (luminaShadowRoot) {
-                const spotlight = luminaShadowRoot.querySelector('.lumina-spotlight-overlay');
-                if (spotlight && typeof applyPopupStyles === 'function') {
-                    applyPopupStyles(spotlight, true);
+                const lumina = luminaShadowRoot.querySelector('.lumina-overlay');
+                if (lumina && typeof applyPopupStyles === 'function') {
+                    applyPopupStyles(lumina, true);
                 }
             }
             if (window.LuminaSelection) {
@@ -1382,7 +1382,7 @@
                 luminaHost.setAttribute('data-accent', accent || 'default');
                 luminaHost.setAttribute('data-contrast', contrast || 'auto');
             }
-            const overlays = luminaShadowRoot ? luminaShadowRoot.querySelectorAll('.lumina-spotlight-overlay') : [];
+            const overlays = luminaShadowRoot ? luminaShadowRoot.querySelectorAll('.lumina-overlay') : [];
             overlays.forEach(el => {
                 if (isDark) {
                     el.setAttribute('data-theme', 'dark');

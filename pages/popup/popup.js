@@ -16,17 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chrome.runtime.openOptionsPage) {
             chrome.runtime.openOptionsPage();
         } else {
-            window.open(chrome.runtime.getURL('pages/spotlight/spotlight.html?settings=1'));
+            window.open(chrome.runtime.getURL('pages/lumina/lumina.html?settings=1'));
         }
         window.close();
     });
     btnTab.addEventListener('click', () => {
-        const url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
+        const url = chrome.runtime.getURL('pages/lumina/lumina.html');
         chrome.tabs.create({ url });
         window.close();
     });
     btnWindow.addEventListener('click', () => {
-        const url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
+        const url = chrome.runtime.getURL('pages/lumina/lumina.html');
         chrome.windows.create({
             url: url,
             type: 'popup',

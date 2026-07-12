@@ -127,7 +127,7 @@ function toggleSidePanel(windowId) {
                 chrome.sidePanel.setOptions({
                     windowId,
                     enabled: true,
-                    path: 'pages/spotlight/spotlight.html?sidepanel=1'
+                    path: 'pages/lumina/lumina.html?sidepanel=1'
                 });
             });
         }
@@ -164,7 +164,7 @@ async function checkAndRegisterScripts() {
 function updateDisplayMode(mode) {
     if (!chrome.sidePanel) return;
     chrome.sidePanel.setOptions({
-        path: 'pages/spotlight/spotlight.html?sidepanel=1',
+        path: 'pages/lumina/lumina.html?sidepanel=1',
         enabled: true
     });
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
@@ -2194,7 +2194,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     };
                     chrome.storage.local.set({ 'lumina_youtube_trigger': enrichedTrigger });
                 }
-                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
+                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/lumina/lumina.html');
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,
@@ -2216,7 +2216,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             const windowIdQuery = sender.tab ? sender.tab.windowId : null;
             if (windowIdQuery) {
                 const queryId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
-                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/spotlight/spotlight.html');
+                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/lumina/lumina.html');
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,
@@ -2254,7 +2254,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })();
             return true;
         case 'open_options': {
-            let optionsUrl = chrome.runtime.getURL('pages/spotlight/spotlight.html?settings=1');
+            let optionsUrl = chrome.runtime.getURL('pages/lumina/lumina.html?settings=1');
             if (request.section) optionsUrl += `&section=${request.section}`;
             if (request.requestMic) optionsUrl += '&requestMic=1';
             chrome.tabs.create({ url: optionsUrl });
@@ -2429,7 +2429,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, count: keysToRemove.length });
             })();
             return true;
-        case 'open_spotlight_from_popup':
+        case 'open_lumina_from_popup':
             createSpotlightWindow();
             sendResponse({ success: true });
             return true;
@@ -2462,29 +2462,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-let spotlightWindowId = null;
-let spotlightInitialPosition = null;
-let spotlightHasMoved = false;
+let luminaWindowId = null;
+let luminaInitialPosition = null;
+let luminaHasMoved = false;
 
 async function getSpotlightWindowId() {
-    if (spotlightWindowId) {
+    if (luminaWindowId) {
         try {
-            const win = await chrome.windows.get(spotlightWindowId);
-            if (win) return spotlightWindowId;
+            const win = await chrome.windows.get(luminaWindowId);
+            if (win) return luminaWindowId;
         } catch (e) {
-            spotlightWindowId = null;
+            luminaWindowId = null;
         }
     }
-    const data = await chrome.storage.local.get(['spotlightWindowId']);
-    if (data.spotlightWindowId) {
+    const data = await chrome.storage.local.get(['luminaWindowId']);
+    if (data.luminaWindowId) {
         try {
-            const win = await chrome.windows.get(data.spotlightWindowId);
+            const win = await chrome.windows.get(data.luminaWindowId);
             if (win) {
-                spotlightWindowId = data.spotlightWindowId;
-                return spotlightWindowId;
+                luminaWindowId = data.luminaWindowId;
+                return luminaWindowId;
             }
         } catch (e) {
-            chrome.storage.local.remove('spotlightWindowId');
+            chrome.storage.local.remove('luminaWindowId');
         }
     }
     return null;
@@ -2536,8 +2536,8 @@ async function createSpotlightWindow() {
                 }
             }
         } catch (e) {
-            spotlightWindowId = null;
-            chrome.storage.local.remove('spotlightWindowId');
+            luminaWindowId = null;
+            chrome.storage.local.remove('luminaWindowId');
         }
     }
     if (isCreatingSpotlight) {
@@ -2546,10 +2546,10 @@ async function createSpotlightWindow() {
     isCreatingSpotlight = true;
     try {
         const saved = await new Promise(resolve => {
-            chrome.storage.local.get(['spotlightWidth', 'spotlightHeight', 'spotlightLeft', 'spotlightTop'], resolve);
+            chrome.storage.local.get(['luminaWidth', 'luminaHeight', 'luminaLeft', 'luminaTop'], resolve);
         });
-        const windowWidth = saved.spotlightWidth || 400;
-        const windowHeight = saved.spotlightHeight || 400;
+        const windowWidth = saved.luminaWidth || 400;
+        const windowHeight = saved.luminaHeight || 400;
         try {
             const displays = await chrome.system.display.getInfo();
             const lastFocused = await new Promise(resolve => {
@@ -2575,12 +2575,12 @@ async function createSpotlightWindow() {
                 }
                 return false;
             };
-            if (saved.spotlightLeft !== undefined && saved.spotlightTop !== undefined) {
-                if (isPositionValid(saved.spotlightLeft, saved.spotlightTop, windowWidth, windowHeight)) {
-                    left = saved.spotlightLeft;
-                    top = saved.spotlightTop;
+            if (saved.luminaLeft !== undefined && saved.luminaTop !== undefined) {
+                if (isPositionValid(saved.luminaLeft, saved.luminaTop, windowWidth, windowHeight)) {
+                    left = saved.luminaLeft;
+                    top = saved.luminaTop;
                 } else {
-                    await chrome.storage.local.remove(['spotlightLeft', 'spotlightTop']);
+                    await chrome.storage.local.remove(['luminaLeft', 'luminaTop']);
                 }
             }
             if (left === undefined || top === undefined) {
@@ -2612,7 +2612,7 @@ async function createSpotlightWindow() {
                 }
             }
             const windowConfig = {
-                url: 'pages/spotlight/spotlight.html',
+                url: 'pages/lumina/lumina.html',
                 type: 'popup',
                 width: windowWidth,
                 height: windowHeight,
@@ -2624,49 +2624,49 @@ async function createSpotlightWindow() {
             }
             chrome.windows.create(windowConfig, (win) => {
                 if (chrome.runtime.lastError || !win) {
-                    console.error('[Lumina] Failed to create spotlight window:', chrome.runtime.lastError?.message);
+                    console.error('[Lumina] Failed to create lumina window:', chrome.runtime.lastError?.message);
                     chrome.windows.create({
-                        url: 'pages/spotlight/spotlight.html',
+                        url: 'pages/lumina/lumina.html',
                         type: 'popup',
                         width: windowWidth,
                         height: windowHeight,
                         focused: true
                     }, (fallbackWin) => {
                         if (fallbackWin) {
-                            spotlightWindowId = fallbackWin.id;
-                            spotlightInitialPosition = { left: fallbackWin.left, top: fallbackWin.top };
-                            spotlightHasMoved = false;
-                            chrome.storage.local.set({ spotlightWindowId: fallbackWin.id });
+                            luminaWindowId = fallbackWin.id;
+                            luminaInitialPosition = { left: fallbackWin.left, top: fallbackWin.top };
+                            luminaHasMoved = false;
+                            chrome.storage.local.set({ luminaWindowId: fallbackWin.id });
                         } else {
-                            console.error('[Lumina] Failed to create spotlight window even with fallback');
+                            console.error('[Lumina] Failed to create lumina window even with fallback');
                         }
                     });
                     return;
                 }
-                spotlightWindowId = win.id;
-                spotlightInitialPosition = { left: win.left, top: win.top };
-                spotlightHasMoved = false;
-                chrome.storage.local.set({ spotlightWindowId: win.id });
+                luminaWindowId = win.id;
+                luminaInitialPosition = { left: win.left, top: win.top };
+                luminaHasMoved = false;
+                chrome.storage.local.set({ luminaWindowId: win.id });
             });
         } catch (error) {
-            console.error('Error creating spotlight window:', error);
+            console.error('Error creating lumina window:', error);
             chrome.windows.create({
-                url: 'pages/spotlight/spotlight.html',
+                url: 'pages/lumina/lumina.html',
                 type: 'popup',
                 width: windowWidth,
                 height: windowHeight,
                 focused: true
             }, (win) => {
                 if (win) {
-                    spotlightWindowId = win.id;
-                    spotlightInitialPosition = { left: win.left, top: win.top };
-                    spotlightHasMoved = false;
+                    luminaWindowId = win.id;
+                    luminaInitialPosition = { left: win.left, top: win.top };
+                    luminaHasMoved = false;
                     chrome.storage.local.set({
-                        spotlightWindowId: win.id,
-                        spotlightWidth: win.width,
-                        spotlightHeight: win.height,
-                        spotlightLeft: win.left,
-                        spotlightTop: win.top
+                        luminaWindowId: win.id,
+                        luminaWidth: win.width,
+                        luminaHeight: win.height,
+                        luminaLeft: win.left,
+                        luminaTop: win.top
                     });
                 }
             });
@@ -2677,47 +2677,47 @@ async function createSpotlightWindow() {
 }
 
 chrome.windows.onBoundsChanged.addListener(async (window) => {
-    let isSpotlight = (window.id === spotlightWindowId);
-    if (!isSpotlight && !spotlightWindowId) {
-        const data = await chrome.storage.local.get(['spotlightWindowId']);
-        if (data.spotlightWindowId === window.id) {
-            spotlightWindowId = window.id;
+    let isSpotlight = (window.id === luminaWindowId);
+    if (!isSpotlight && !luminaWindowId) {
+        const data = await chrome.storage.local.get(['luminaWindowId']);
+        if (data.luminaWindowId === window.id) {
+            luminaWindowId = window.id;
             isSpotlight = true;
         }
     }
     if (isSpotlight) {
-        if (spotlightInitialPosition) {
-            const movedX = Math.abs(window.left - spotlightInitialPosition.left) > 5;
-            const movedY = Math.abs(window.top - spotlightInitialPosition.top) > 5;
+        if (luminaInitialPosition) {
+            const movedX = Math.abs(window.left - luminaInitialPosition.left) > 5;
+            const movedY = Math.abs(window.top - luminaInitialPosition.top) > 5;
             if (movedX || movedY) {
-                if (!spotlightHasMoved) {
-                    spotlightHasMoved = true;
+                if (!luminaHasMoved) {
+                    luminaHasMoved = true;
                 }
-                spotlightInitialPosition = { left: window.left, top: window.top };
+                luminaInitialPosition = { left: window.left, top: window.top };
             }
         }
         chrome.storage.local.set({
-            spotlightWidth: window.width,
-            spotlightHeight: window.height,
-            spotlightLeft: window.left,
-            spotlightTop: window.top
+            luminaWidth: window.width,
+            luminaHeight: window.height,
+            luminaLeft: window.left,
+            luminaTop: window.top
         });
     }
 });
 
 chrome.windows.onRemoved.addListener(async (removedId) => {
-    let isSpotlight = (removedId === spotlightWindowId);
-    if (!isSpotlight && !spotlightWindowId) {
-        const data = await chrome.storage.local.get(['spotlightWindowId']);
-        if (data.spotlightWindowId === removedId) {
+    let isSpotlight = (removedId === luminaWindowId);
+    if (!isSpotlight && !luminaWindowId) {
+        const data = await chrome.storage.local.get(['luminaWindowId']);
+        if (data.luminaWindowId === removedId) {
             isSpotlight = true;
         }
     }
     if (isSpotlight) {
-        spotlightWindowId = null;
-        spotlightInitialPosition = null;
-        spotlightHasMoved = false;
-        chrome.storage.local.remove('spotlightWindowId');
+        luminaWindowId = null;
+        luminaInitialPosition = null;
+        luminaHasMoved = false;
+        chrome.storage.local.remove('luminaWindowId');
     }
 });
 

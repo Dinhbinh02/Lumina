@@ -113,15 +113,15 @@ function updateUrlSessionId(ignoredSessionId) {
 }
 
 const instanceId = (() => {
-    let instId = sessionStorage.getItem('lumina_spotlight_instance_id');
+    let instId = sessionStorage.getItem('lumina_lumina_instance_id');
     if (!instId) {
         instId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
-        sessionStorage.setItem('lumina_spotlight_instance_id', instId);
+        sessionStorage.setItem('lumina_lumina_instance_id', instId);
     }
     return instId;
 })();
 
-const STORAGE_PREFIX = isSidePanel ? 'sidepanel' : 'spotlight';
+const STORAGE_PREFIX = isSidePanel ? 'sidepanel' : 'lumina';
 
 const GLOBAL_KEYS = {
     tabs: `${STORAGE_PREFIX}_tabs`,
@@ -192,7 +192,7 @@ let splitHoverTimer = null;
 let splitHoverTargetIndex = -1;
 let isApplyingSplit = false;
 
-window.getActiveSpotlightTab = function () {
+window.getActiveLuminaTab = function () {
     const isSecondary = isSplitMode && hoveredPane === 'secondary';
     const targetIdx = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
     return (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
@@ -225,7 +225,7 @@ function updatePaneHighlight() {
 async function toggleSplitMode() {
     const splitContainer = document.getElementById('split-container');
     const paneSecondary = document.getElementById('pane-secondary');
-    const resizer = document.getElementById('spotlight-resizer');
+    const resizer = document.getElementById('lumina-resizer');
     const panePrimary = document.getElementById('pane-primary');
     if (!splitContainer) return;
     if (isSplitMode) {
@@ -376,7 +376,7 @@ let webTabPickerOutsideHandler = null;
 let webTabPickerKeyHandler = null;
 let minHeightReflowRaf = null;
 
-let spotlightAskSourcePane = 'primary';
+let luminaAskSourcePane = 'primary';
 let groupCounter = 1;
 let isInitializing = false;
 let handledQueryIds = new Set();
@@ -412,16 +412,16 @@ const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_source_selection_';
 
 const currentBrowserTabTokens = new Map();
 
-function getSpotlightTabIdForPane(container) {
+function getLuminaTabIdForPane(container) {
     return activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
 }
 
-function getWebSelectionScopeKey(spotlightTabId) {
-    if (spotlightTabId == null || !currentBrowserTab) return null;
-    return `${String(spotlightTabId)}_${String(currentBrowserTab.tabId)}`;
+function getWebSelectionScopeKey(luminaTabId) {
+    if (luminaTabId == null || !currentBrowserTab) return null;
+    return `${String(luminaTabId)}_${String(currentBrowserTab.tabId)}`;
 }
 
-function getCurrentSpotlightTabId() {
+function getCurrentLuminaTabId() {
     const tab = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex] : null;
     return tab ? tab.id : null;
 }
@@ -469,15 +469,15 @@ function deleteWebSelectionFromStorage(scopeKey) {
     localStorage.removeItem(key);
 }
 
-function getWebSelectionForScope(spotlightTabId) {
-    const scopeKey = getWebSelectionScopeKey(spotlightTabId);
+function getWebSelectionForScope(luminaTabId) {
+    const scopeKey = getWebSelectionScopeKey(luminaTabId);
     if (!scopeKey) return [];
     webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(scopeKey);
     return webSourceSelectionsByPageTabId[scopeKey] || [];
 }
 
-function saveWebSelectionForScope(spotlightTabId, selection) {
-    const scopeKey = getWebSelectionScopeKey(spotlightTabId);
+function saveWebSelectionForScope(luminaTabId, selection) {
+    const scopeKey = getWebSelectionScopeKey(luminaTabId);
     if (!scopeKey) return;
     const normalizedSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url)).map((source) => ({
         tabId: source.tabId,
@@ -488,7 +488,7 @@ function saveWebSelectionForScope(spotlightTabId, selection) {
     webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
     writeWebSelectionToStorage(scopeKey, normalizedSelection);
     if (normalizedSelection.length > 0) {
-        refreshWebSourceTokens(spotlightTabId, normalizedSelection);
+        refreshWebSourceTokens(luminaTabId, normalizedSelection);
     }
 }
 
@@ -559,7 +559,7 @@ async function fetchFreshWebContent(tabId) {
     }
 }
 
-async function refreshWebSourceTokens(spotlightTabId, selection) {
+async function refreshWebSourceTokens(luminaTabId, selection) {
     if (!selection || selection.length === 0) return;
     let updated = false;
     for (const source of selection) {
@@ -578,8 +578,8 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
         }
     }
     if (updated) {
-        if (spotlightTabId) {
-            const scopeKey = getWebSelectionScopeKey(spotlightTabId);
+        if (luminaTabId) {
+            const scopeKey = getWebSelectionScopeKey(luminaTabId);
             if (scopeKey) {
                 webSourceSelectionsByPageTabId[scopeKey] = selection;
                 writeWebSelectionToStorage(scopeKey, selection);
@@ -589,15 +589,15 @@ async function refreshWebSourceTokens(spotlightTabId, selection) {
     }
 }
 
-function saveCurrentWebSelection(spotlightTabId = null) {
-    const targetTabId = spotlightTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
+function saveCurrentWebSelection(luminaTabId = null) {
+    const targetTabId = luminaTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
     if (!targetTabId) return;
     const scopedSelection = getWebSelectionForScope(targetTabId);
     saveWebSelectionForScope(targetTabId, scopedSelection);
 }
 
-function loadCurrentWebSelection(spotlightTabId = null) {
-    const targetTabId = spotlightTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
+function loadCurrentWebSelection(luminaTabId = null) {
+    const targetTabId = luminaTabId || (activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null);
     if (!targetTabId) {
         pinnedWebSources = [];
         return;
@@ -650,11 +650,11 @@ function refreshWebSourceTokensForTab(tabId) {
         key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
     );
     storageKeys.forEach((storageKey) => {
-        const spotlightTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
-        const selection = readWebSelectionFromStorage(spotlightTabId);
+        const luminaTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
+        const selection = readWebSelectionFromStorage(luminaTabId);
         const matches = selection.filter(s => String(s.tabId) === stringTabId);
         if (matches.length > 0) {
-            refreshWebSourceTokens(spotlightTabId, matches);
+            refreshWebSourceTokens(luminaTabId, matches);
         }
     });
     if (currentBrowserTab && String(currentBrowserTab.tabId) === stringTabId) {
@@ -1143,7 +1143,7 @@ async function ensureTabHistoryLoaded(tab) {
 }
 
 async function initTabs() {
-    const topBar = document.getElementById('spotlight-topbar');
+    const topBar = document.getElementById('lumina-topbar');
     if (topBar) {
         topBar.style.display = 'flex';
     }
@@ -1307,7 +1307,7 @@ async function initTabs() {
             const splitContainer = document.getElementById('split-container');
             splitContainer?.classList.add('split-mode');
             const paneSecondary = document.getElementById('pane-secondary');
-            const resizer = document.getElementById('spotlight-resizer');
+            const resizer = document.getElementById('lumina-resizer');
             const panePrimary = document.getElementById('pane-primary');
             if (paneSecondary) paneSecondary.style.display = 'flex';
             if (resizer) resizer.style.display = 'flex';
@@ -1668,7 +1668,7 @@ function deactivateSplit() {
 }
 
 function setupResizer() {
-    const resizer = document.getElementById('spotlight-resizer');
+    const resizer = document.getElementById('lumina-resizer');
     const panePrimary = document.getElementById('pane-primary');
     const paneSecondary = document.getElementById('pane-secondary');
     const splitContainer = document.getElementById('split-container');
@@ -1753,7 +1753,7 @@ function closeTab(tabId) {
     tabs.splice(tabIndex, 1);
     if (tabToRemove.historyEl) tabToRemove.historyEl.remove();
     if (tabToRemove.sessionId) {
-        chrome.storage.local.remove([`spotlight_history_${tabToRemove.sessionId}`]);
+        chrome.storage.local.remove([`lumina_history_${tabToRemove.sessionId}`]);
     }
     const storageKeys = Object.keys(localStorage).filter(key =>
         key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${tabId}_`)
@@ -2026,19 +2026,19 @@ function renderTabs() {
         const groupEl = document.createElement('div');
         const isActive = groupIndex === activeGroupIndex;
         const isSplitGroup = group.tabIds.length > 1;
-        groupEl.className = `spotlight-tab ${isActive ? 'active' : ''} ${isSplitGroup ? 'is-split' : ''}`;
+        groupEl.className = `lumina-tab ${isActive ? 'active' : ''} ${isSplitGroup ? 'is-split' : ''}`;
         groupEl.dataset.groupIndex = groupIndex;
         group.tabIds.forEach((tabId, subIdx) => {
             const tab = tabs.find(t => t.id === tabId);
             if (!tab) return;
             const subTabEl = document.createElement('div');
-            subTabEl.className = 'spotlight-tab-sub';
+            subTabEl.className = 'lumina-tab-sub';
             subTabEl.dataset.tabId = tabId;
             const titleSpan = document.createElement('span');
-            titleSpan.className = 'spotlight-tab-title';
+            titleSpan.className = 'lumina-tab-title';
             titleSpan.textContent = tab.title;
             const closeBtn = document.createElement('button');
-            closeBtn.className = 'spotlight-tab-close';
+            closeBtn.className = 'lumina-tab-close';
             closeBtn.title = isSplitGroup && !isActive && subIdx === group.tabIds.length - 1
                 ? 'Close group'
                 : 'Close tab';
@@ -2055,7 +2055,7 @@ function renderTabs() {
             subTabEl.appendChild(closeBtn);
             let subTabClickTimer = null;
             subTabEl.onmousedown = (e) => {
-                if (e.target.closest('.spotlight-tab-close')) return;
+                if (e.target.closest('.lumina-tab-close')) return;
                 if (e.button !== 0) return;
                 let isInactiveTab = false;
                 if (groupIndex === activeGroupIndex) {
@@ -2088,7 +2088,7 @@ function renderTabs() {
                             isDragging = true;
                             draggedElement.classList.add('dragging-smooth');
                             draggedElement.style.zIndex = '1000';
-                            const allGroups = Array.from(list.querySelectorAll('.spotlight-tab'));
+                            const allGroups = Array.from(list.querySelectorAll('.lumina-tab'));
                             const newTabBtn = document.getElementById('new-tab-btn');
                             if (newTabBtn) allGroups.push(newTabBtn);
                             initialRects = allGroups.map(el => el.getBoundingClientRect());
@@ -2130,7 +2130,7 @@ function handleMouseMove(e) {
     totalDeltaX = e.pageX - startX;
     draggedElement.style.transform = `translateX(${totalDeltaX}px)`;
     const list = document.getElementById('tabs-list');
-    const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
+    const groupEls = Array.from(list.querySelectorAll('.lumina-tab'));
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) groupEls.push(newTabBtn);
     const draggedWidth = initialRects[initialDraggedIndex].width;
@@ -2205,7 +2205,7 @@ function handleMouseUp() {
     if (!isDragging || initialDraggedIndex === -1) return;
     isDragging = false;
     const list = document.getElementById('tabs-list');
-    const groupEls = Array.from(list.querySelectorAll('.spotlight-tab'));
+    const groupEls = Array.from(list.querySelectorAll('.lumina-tab'));
     if (groupPreviewTargetIndex !== -1) {
         const targetGroup = tabGroups[groupPreviewTargetIndex];
         const draggedGroup = tabGroups[initialDraggedIndex];
@@ -2299,7 +2299,7 @@ function initSpotlightAskSelection() {
                     return;
                 }
                 if (isTranslate) {
-                    const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
+                    const targetTabIdx = (luminaAskSourcePane === 'secondary' && isSplitMode)
                         ? secondaryActiveTabIndex
                         : activeTabIndex;
                     const targetTab = tabs[targetTabIdx];
@@ -2323,14 +2323,14 @@ function initSpotlightAskSelection() {
                 if (window.LuminaAnnotation && range) {
                     window.LuminaAnnotation.highlight(range);
                 }
-                const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
+                const targetTabIdx = (luminaAskSourcePane === 'secondary' && isSplitMode)
                     ? secondaryActiveTabIndex
                     : activeTabIndex;
                 const targetTab = tabs[targetTabIdx];
                 handleSubmit(query, [], { mode: isDictionary ? 'dictionary' : 'qa' }, targetTab || null, displayQuery);
             },
             onTranslate: (text) => {
-                const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
+                const targetTabIdx = (luminaAskSourcePane === 'secondary' && isSplitMode)
                     ? secondaryActiveTabIndex
                     : activeTabIndex;
                 const targetTab = tabs[targetTabIdx];
@@ -2388,7 +2388,7 @@ function initSpotlightAskSelection() {
                 return;
             }
             const secondaryPane = document.getElementById('pane-secondary');
-            spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+            luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
                 : 'primary';
             if (window.LuminaSelection) {
@@ -2420,7 +2420,7 @@ function initSpotlightAskSelection() {
                 return;
             }
             const secondaryPane = document.getElementById('pane-secondary');
-            spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+            luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
                 : 'primary';
             if (window.LuminaSelection) {
@@ -2618,7 +2618,7 @@ function refreshWebTabPicker() {
     openWebTabPicker(anchorEl);
 }
 
-function openWebTabPicker(anchorEl, spotlightTabId = null) {
+function openWebTabPicker(anchorEl, luminaTabId = null) {
     if (!anchorEl) return;
     if (webTabPickerEl && webTabPickerAnchorEl === anchorEl) {
         closeWebTabPicker();
@@ -2634,8 +2634,8 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                 url: tab.url,
                 isActive: !!tab.active
             }));
-        const activeSpotlightTabId = spotlightTabId || getCurrentSpotlightTabId();
-        const selectedSources = activeSpotlightTabId ? getWebSelectionForScope(activeSpotlightTabId) : [];
+        const activeLuminaTabId = luminaTabId || getCurrentLuminaTabId();
+        const selectedSources = activeLuminaTabId ? getWebSelectionForScope(activeLuminaTabId) : [];
         const selectedIds = new Set(selectedSources.map((source) => source.tabId));
         const picker = document.createElement('div');
         picker.className = 'lumina-web-tab-picker';
@@ -2670,10 +2670,10 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                             title: item.title,
                             url: item.url
                         }));
-                    if (activeSpotlightTabId) {
-                        saveWebSelectionForScope(activeSpotlightTabId, nextSelection);
-                        const primaryTabId = getCurrentSpotlightTabId();
-                        if (String(activeSpotlightTabId) === String(primaryTabId)) {
+                    if (activeLuminaTabId) {
+                        saveWebSelectionForScope(activeLuminaTabId, nextSelection);
+                        const primaryTabId = getCurrentLuminaTabId();
+                        if (String(activeLuminaTabId) === String(primaryTabId)) {
                             pinnedWebSources = nextSelection.map((item) => ({ ...item }));
                         }
                     }
@@ -2702,10 +2702,10 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
         clearBtn.className = 'lumina-web-tab-picker-btn is-ghost';
         clearBtn.textContent = 'Clear';
         clearBtn.addEventListener('click', () => {
-            if (activeSpotlightTabId) {
-                saveWebSelectionForScope(activeSpotlightTabId, []);
-                const primaryTabId = getCurrentSpotlightTabId();
-                if (String(activeSpotlightTabId) === String(primaryTabId)) {
+            if (activeLuminaTabId) {
+                saveWebSelectionForScope(activeLuminaTabId, []);
+                const primaryTabId = getCurrentLuminaTabId();
+                if (String(activeLuminaTabId) === String(primaryTabId)) {
                     pinnedWebSources = [];
                 }
             }
@@ -2729,10 +2729,10 @@ function openWebTabPicker(anchorEl, spotlightTabId = null) {
                 title: item.title,
                 url: item.url
             }));
-            if (activeSpotlightTabId) {
-                saveWebSelectionForScope(activeSpotlightTabId, nextSelection);
-                const primaryTabId = getCurrentSpotlightTabId();
-                if (String(activeSpotlightTabId) === String(primaryTabId)) {
+            if (activeLuminaTabId) {
+                saveWebSelectionForScope(activeLuminaTabId, nextSelection);
+                const primaryTabId = getCurrentLuminaTabId();
+                if (String(activeLuminaTabId) === String(primaryTabId)) {
                     pinnedWebSources = nextSelection.map((item) => ({ ...item }));
                 }
             }
@@ -2792,7 +2792,7 @@ function getDomainDisplayName(url) {
     }
 }
 
-function createWebChipElement(source, selectedSources, spotlightTabId) {
+function createWebChipElement(source, selectedSources, luminaTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
     const chip = document.createElement('div');
@@ -2841,18 +2841,18 @@ function createWebChipElement(source, selectedSources, spotlightTabId) {
             try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
         }
         if (source.isSummary) {
-            saveWebSelectionForScope(spotlightTabId, []);
+            saveWebSelectionForScope(luminaTabId, []);
             const activeId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
-            if (String(spotlightTabId) === String(activeId)) {
+            if (String(luminaTabId) === String(activeId)) {
                 pinnedWebSources = [];
             }
             updateWebChips();
             return;
         }
         if (isGhost) {
-            toggleWebSourcePin(source, true, spotlightTabId);
+            toggleWebSourcePin(source, true, luminaTabId);
         } else {
-            toggleWebSourcePin(source, null, spotlightTabId);
+            toggleWebSourcePin(source, null, luminaTabId);
         }
     });
     return chip;
@@ -2864,8 +2864,8 @@ function updateWebChips() {
     }
     const containers = document.querySelectorAll('.lumina-web-chips-group');
     containers.forEach(container => {
-        const spotlightTabId = getSpotlightTabIdForPane(container);
-        if (!spotlightTabId) {
+        const luminaTabId = getLuminaTabIdForPane(container);
+        if (!luminaTabId) {
             container.style.display = 'none';
             return;
         }
@@ -2876,7 +2876,7 @@ function updateWebChips() {
             });
             container.dataset.muteHandlerSet = 'true';
         }
-        const selectedSources = getWebSelectionForScope(spotlightTabId);
+        const selectedSources = getWebSelectionForScope(luminaTabId);
         const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
         let newFingerprint = '';
         if (onValidWebPage) {
@@ -2902,7 +2902,7 @@ function updateWebChips() {
                     isGhost: false,
                     tokens
                 };
-                container.appendChild(createWebChipElement(activeData, selectedSources, spotlightTabId));
+                container.appendChild(createWebChipElement(activeData, selectedSources, luminaTabId));
             } else {
                 const ghostData = {
                     tabId: currentBrowserTab.tabId,
@@ -2913,7 +2913,7 @@ function updateWebChips() {
                     isGhost: true,
                     tokens
                 };
-                container.appendChild(createWebChipElement(ghostData, selectedSources, spotlightTabId));
+                container.appendChild(createWebChipElement(ghostData, selectedSources, luminaTabId));
             }
         }
     });
@@ -2942,11 +2942,11 @@ function scheduleVisibleTabsMinHeightReflow() {
     });
 }
 
-function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
+function toggleWebSourcePin(source, forceState = null, luminaTabId = null) {
     if (!source || !isWebPageUrl(source.url)) return;
-    const targetSpotlightTabId = spotlightTabId || getCurrentSpotlightTabId();
-    if (!targetSpotlightTabId) return;
-    const currentSelection = getWebSelectionForScope(targetSpotlightTabId);
+    const targetLuminaTabId = luminaTabId || getCurrentLuminaTabId();
+    if (!targetLuminaTabId) return;
+    const currentSelection = getWebSelectionForScope(targetLuminaTabId);
     const idx = currentSelection.findIndex(p => String(p.tabId) === String(source.tabId));
     if (idx > -1) {
         if (forceState === true) {
@@ -2955,7 +2955,7 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
                 title: source.title || currentSelection[idx].title || 'Untitled',
                 url: source.url || currentSelection[idx].url
             };
-            saveWebSelectionForScope(targetSpotlightTabId, currentSelection);
+            saveWebSelectionForScope(targetLuminaTabId, currentSelection);
             updateWebChips();
             return;
         }
@@ -2968,9 +2968,9 @@ function toggleWebSourcePin(source, forceState = null, spotlightTabId = null) {
             url: source.url
         });
     }
-    saveWebSelectionForScope(targetSpotlightTabId, currentSelection);
+    saveWebSelectionForScope(targetLuminaTabId, currentSelection);
     const activeTabId = activeTabIndex >= 0 && tabs[activeTabIndex] ? tabs[activeTabIndex].id : null;
-    if (String(targetSpotlightTabId) === String(activeTabId)) {
+    if (String(targetLuminaTabId) === String(activeTabId)) {
         pinnedWebSources = currentSelection.map((item) => ({ ...item }));
     }
     updateWebChips();
@@ -2986,7 +2986,7 @@ async function init() {
                     const storedTabId = sessionStorage.getItem('lumina_tab_id');
                     if (storedTabId && storedTabId !== String(tab.id)) {
                         const newInstId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
-                        sessionStorage.setItem('lumina_spotlight_instance_id', newInstId);
+                        sessionStorage.setItem('lumina_lumina_instance_id', newInstId);
                         KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
                         KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
                         KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -3006,7 +3006,7 @@ async function init() {
                             const storedWinId = sessionStorage.getItem('lumina_window_id');
                             if (storedWinId && storedWinId !== String(win.id)) {
                                 const newInstId = 'inst_' + Date.now() + Math.random().toString(36).substr(2, 5);
-                                sessionStorage.setItem('lumina_spotlight_instance_id', newInstId);
+                                sessionStorage.setItem('lumina_lumina_instance_id', newInstId);
                                 KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
                                 KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
                                 KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -3106,11 +3106,11 @@ async function init() {
         if (win && win.id) {
             myWindowId = win.id;
             const key = `pending_sidepanel_query_${win.id}`;
-            const storageData = await chrome.storage.local.get([key, 'spotlightWindowId']);
+            const storageData = await chrome.storage.local.get([key, 'luminaWindowId']);
             if (storageData[key] && storageData[key].createNewChat) {
                 shouldStartNewChat = true;
             }
-            if (!isSidePanel && win.id !== storageData.spotlightWindowId) {
+            if (!isSidePanel && win.id !== storageData.luminaWindowId) {
                 isWebApp = true;
             }
         }
@@ -3286,7 +3286,7 @@ async function init() {
         };
         checkReady();
     }
-    document.addEventListener('lumina:spotlight-model-change', (e) => {
+    document.addEventListener('lumina:model-change', (e) => {
         const isSecondary = e.target.closest('#pane-secondary') !== null;
         const targetIndex = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
         const targetSharedUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
@@ -4776,7 +4776,7 @@ function setupGlobalListeners() {
                 if (!hasModifier && !isOverridingShortcut) continue;
             }
             if ((action === 'translate' || action === 'askLumina' || action === 'audio') && !selection) {
-                if (action === 'audio' && _spotlightCurrentAudio) {
+                if (action === 'audio' && _luminaCurrentAudio) {
                 } else {
                     continue;
                 }
@@ -4812,7 +4812,7 @@ function setupGlobalListeners() {
                         } else {
                             fullQuestion = `"${selection}" ${mapping.prompt}`;
                         }
-                        const targetTabIdx = (spotlightAskSourcePane === 'secondary' && isSplitMode)
+                        const targetTabIdx = (luminaAskSourcePane === 'secondary' && isSplitMode)
                             ? secondaryActiveTabIndex
                             : activeTabIndex;
                         const targetTab = tabs[targetTabIdx];
@@ -4897,7 +4897,7 @@ function setupGlobalListeners() {
             event.stopPropagation();
             if (selection) {
                 stopSpotlightAudio();
-                _spotlightAudioAborted = false;
+                _luminaAudioAborted = false;
                 playSpotlightAudio(selection);
             } else {
                 const sel = window.getSelection();
@@ -4905,7 +4905,7 @@ function setupGlobalListeners() {
                 if (range && window.LuminaSelection) {
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
-                    spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+                    luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                         ? 'secondary' : 'primary';
                     LuminaSelection.show(0, 0, selection, range);
                     LuminaSelection.showInput();
@@ -4926,7 +4926,7 @@ function setupGlobalListeners() {
                     const text = selection;
                     const commonNode = range.commonAncestorContainer;
                     const secondaryPane = document.getElementById('pane-secondary');
-                    spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+                    luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                         ? 'secondary' : 'primary';
                     LuminaSelection.show(0, 0, text, range);
                     LuminaSelection.showInput();
@@ -5332,7 +5332,7 @@ function dispatchConfiguredShortcutAction(action) {
         const selection = window.getSelection().toString().trim();
         if (selection) {
             stopSpotlightAudio();
-            _spotlightAudioAborted = false;
+            _luminaAudioAborted = false;
             playSpotlightAudio(selection);
         } else {
             stopSpotlightAudio();
@@ -5345,7 +5345,7 @@ function dispatchConfiguredShortcutAction(action) {
         if (!text || !range || !window.LuminaSelection) return;
         const commonNode = range.commonAncestorContainer;
         const secondaryPane = document.getElementById('pane-secondary');
-        spotlightAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
+        luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
             ? 'secondary' : 'primary';
         LuminaSelection.show(0, 0, text, range);
         LuminaSelection.showInput();
@@ -5490,28 +5490,28 @@ async function playSpotlightAudio(text) {
     }
 }
 
-let _spotlightAudioCtx = null;
+let _luminaAudioCtx = null;
 function getSpotlightAudioCtx() {
-    if (!_spotlightAudioCtx || _spotlightAudioCtx.state === 'closed') {
-        _spotlightAudioCtx = new AudioContext();
+    if (!_luminaAudioCtx || _luminaAudioCtx.state === 'closed') {
+        _luminaAudioCtx = new AudioContext();
     }
-    return _spotlightAudioCtx;
+    return _luminaAudioCtx;
 }
 
-let _spotlightCurrentAudio = null;
-let _spotlightAudioAborted = false;
+let _luminaCurrentAudio = null;
+let _luminaAudioAborted = false;
 
 function stopSpotlightAudio() {
-    _spotlightAudioAborted = true;
-    if (_spotlightCurrentAudio) {
-        _spotlightCurrentAudio.pause();
-        _spotlightCurrentAudio = null;
+    _luminaAudioAborted = true;
+    if (_luminaCurrentAudio) {
+        _luminaCurrentAudio.pause();
+        _luminaCurrentAudio = null;
     }
 }
 
 function playBase64Audio(base64Data, speed = 1.0) {
     return new Promise(async (resolve, reject) => {
-        if (_spotlightAudioAborted) { resolve(); return; }
+        if (_luminaAudioAborted) { resolve(); return; }
         try {
             const parts = base64Data.split(',');
             const byteString = atob(parts[1]);
@@ -5530,24 +5530,24 @@ function playBase64Audio(base64Data, speed = 1.0) {
                     }
                 }
             } catch (e) { }
-            if (_spotlightAudioAborted) { resolve(); return; }
+            if (_luminaAudioAborted) { resolve(); return; }
             const mime = parts[0].split(':')[1].split(';')[0];
             const blob = new Blob([byteArray], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
             const audio = new Audio(blobUrl);
             audio.playbackRate = speed;
             if (silenceOffset > 0) audio.currentTime = silenceOffset;
-            _spotlightCurrentAudio = audio;
-            audio.onended = () => { _spotlightCurrentAudio = null; URL.revokeObjectURL(blobUrl); resolve(); };
-            audio.onerror = (e) => { _spotlightCurrentAudio = null; URL.revokeObjectURL(blobUrl); reject(e); };
+            _luminaCurrentAudio = audio;
+            audio.onended = () => { _luminaCurrentAudio = null; URL.revokeObjectURL(blobUrl); resolve(); };
+            audio.onerror = (e) => { _luminaCurrentAudio = null; URL.revokeObjectURL(blobUrl); reject(e); };
             audio.play().catch(reject);
         } catch (e) {
             try {
                 const audio = new Audio(base64Data);
                 audio.playbackRate = speed;
-                _spotlightCurrentAudio = audio;
-                audio.onended = () => { _spotlightCurrentAudio = null; resolve(); };
-                audio.onerror = (err) => { _spotlightCurrentAudio = null; reject(err); };
+                _luminaCurrentAudio = audio;
+                audio.onended = () => { _luminaCurrentAudio = null; resolve(); };
+                audio.onerror = (err) => { _luminaCurrentAudio = null; reject(err); };
                 audio.play().catch(reject);
             } catch (e2) { reject(e2); }
         }
@@ -5555,45 +5555,45 @@ function playBase64Audio(base64Data, speed = 1.0) {
 }
 
 function initSpotlightDictLauncher() {
-    if (!spotlightDictLauncherBtn) {
-        spotlightDictLauncherBtn = document.createElement('div');
-        spotlightDictLauncherBtn.className = 'lumina-dict-launcher';
-        spotlightDictLauncherBtn.style.position = 'fixed';
-        spotlightDictLauncherBtn.style.display = 'none';
-        spotlightDictLauncherBtn.style.zIndex = '10001';
-        document.body.appendChild(spotlightDictLauncherBtn);
-        spotlightDictLauncherBtn.onclick = (e) => {
+    if (!luminaDictLauncherBtn) {
+        luminaDictLauncherBtn = document.createElement('div');
+        luminaDictLauncherBtn.className = 'lumina-dict-launcher';
+        luminaDictLauncherBtn.style.position = 'fixed';
+        luminaDictLauncherBtn.style.display = 'none';
+        luminaDictLauncherBtn.style.zIndex = '10001';
+        document.body.appendChild(luminaDictLauncherBtn);
+        luminaDictLauncherBtn.onclick = (e) => {
             e.stopPropagation();
-            const word = spotlightDictLauncherBtn.dataset.word;
+            const word = luminaDictLauncherBtn.dataset.word;
             console.log('[Spotlight Debug] Launcher clicked for word:', word);
-            const x = parseInt(spotlightDictLauncherBtn.style.left);
-            const y = parseInt(spotlightDictLauncherBtn.style.top) + 38;
+            const x = parseInt(luminaDictLauncherBtn.style.left);
+            const y = parseInt(luminaDictLauncherBtn.style.top) + 38;
             showSpotlightDictionaryPopup(word, x, y);
             hideSpotlightDictLauncher();
         };
     }
-    spotlightDictLauncherBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
+    luminaDictLauncherBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
 }
 
 function showSpotlightDictLauncher(x, y, word) {
     initSpotlightDictLauncher();
-    spotlightDictLauncherBtn.dataset.word = word;
-    spotlightDictLauncherBtn.style.left = x + 'px';
-    spotlightDictLauncherBtn.style.top = y + 'px';
-    spotlightDictLauncherBtn.style.display = 'flex';
+    luminaDictLauncherBtn.dataset.word = word;
+    luminaDictLauncherBtn.style.left = x + 'px';
+    luminaDictLauncherBtn.style.top = y + 'px';
+    luminaDictLauncherBtn.style.display = 'flex';
     console.log('[Spotlight Debug] Showing Dict Launcher at:', x, y, 'word:', word);
 }
 
 function hideSpotlightDictLauncher() {
-    if (spotlightDictLauncherBtn) spotlightDictLauncherBtn.style.display = 'none';
+    if (luminaDictLauncherBtn) luminaDictLauncherBtn.style.display = 'none';
 }
 
 function showSpotlightDictionaryPopup(word, x, y) {
     console.log('[Spotlight Debug] Opening Dictionary Popup for:', word);
-    const existing = document.getElementById('lumina-spotlight-dict-popup');
+    const existing = document.getElementById('lumina-dict-popup');
     if (existing) existing.remove();
     const popup = document.createElement('div');
-    popup.id = 'lumina-spotlight-dict-popup';
+    popup.id = 'lumina-dict-popup';
     popup.className = 'lumina-dict-popup lumina-mode-dictionary';
     popup.style.position = 'fixed';
     popup.style.top = y + 'px';
@@ -5621,13 +5621,13 @@ window.addEventListener('mousedown', (e) => {
     const isInsideAskBtn = path.some(el => el.id === 'lumina-action-bar');
     const isInsideAskInput = path.some(el => el.id === 'lumina-ask-input-popup');
     const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && el.classList.contains('lumina-dict-launcher'));
-    const isInsideDictPopup = document.getElementById('lumina-spotlight-dict-popup')?.contains(e.target) ||
-        path.some(el => (el.id === 'lumina-spotlight-dict-popup') || (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')));
+    const isInsideDictPopup = document.getElementById('lumina-dict-popup')?.contains(e.target) ||
+        path.some(el => (el.id === 'lumina-dict-popup') || (el.classList && el.classList.contains && el.classList.contains('lumina-mode-dictionary')));
     if (!isInsideAskBtn && !isInsideAskInput) {
         if (window.LuminaSelection) LuminaSelection.hide();
     }
     if (!isInsideDictLauncher && !isInsideDictPopup) {
-        document.getElementById('lumina-spotlight-dict-popup')?.remove();
+        document.getElementById('lumina-dict-popup')?.remove();
     }
 }, true);
 
@@ -5997,7 +5997,7 @@ async function renderDropdownMenu(pane = 'primary') {
         hide();
     });
     dropdown.querySelector('#dropdown-continue-btn')?.addEventListener('click', () => {
-        let url = chrome.runtime.getURL('pages/spotlight/spotlight.html');
+        let url = chrome.runtime.getURL('pages/lumina/lumina.html');
         if (sessionId) url += `?session_id=${sessionId}`;
         chrome.tabs.create({ url });
         hide();

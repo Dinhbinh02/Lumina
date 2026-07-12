@@ -148,7 +148,7 @@ body {
 
 .lumina-action-item svg,
 #lumina-action-bar svg,
-.spotlight-new-tab-btn svg,
+.lumina-new-tab-btn svg,
 .btn-chain-add svg,
 .lumina-icon svg {
   stroke-width: var(--lumina-icon-stroke-weight) !important;
@@ -598,7 +598,7 @@ body {
   opacity: 1;
 }
 
-.lumina-spotlight-icon svg {
+.lumina-icon svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
@@ -3137,7 +3137,7 @@ body {
   background: #dc2626 !important;
 }
 
-.lumina-spotlight-wrapper {
+.lumina-wrapper {
   font-size: inherit !important;
   line-height: 21px !important;
   letter-spacing: normal !important;
@@ -3145,7 +3145,7 @@ body {
   box-sizing: border-box !important;
 }
 
-.lumina-spotlight-bar {
+.lumina-bar {
   width: 600px;
   max-width: 90vw;
   background: var(--lumina-input-bg);
@@ -3161,7 +3161,7 @@ body {
   transform: translateZ(0);
 }
 
-.lumina-spotlight-bar::after {
+.lumina-bar::after {
   content: "" !important;
   position: absolute !important;
   inset: -1px !important;
@@ -3182,7 +3182,7 @@ body {
   will-change: background-position;
 }
 
-.lumina-spotlight-icon {
+.lumina-icon {
   width: 48px;
   height: 48px;
   display: flex;
@@ -3191,7 +3191,7 @@ body {
   color: var(--lumina-primary-color);
 }
 
-.lumina-spotlight-input {
+.lumina-input {
   flex: 1;
   border: none;
   background: transparent;
@@ -3202,7 +3202,7 @@ body {
   font-weight: 500 !important;
 }
 
-.lumina-spotlight-input::placeholder {
+.lumina-input::placeholder {
   color: #999;
   font-weight: 400 !important;
 }
@@ -3992,7 +3992,7 @@ body {
   }
 }
 
-@keyframes lumina-morph-spotlight {
+@keyframes lumina-morph-main {
   0% {
     width: 600px;
     min-height: 60px;
@@ -5287,7 +5287,7 @@ body {
   fill: none;
 }
 
-.lumina-spotlight-page {
+.lumina-page {
   background: transparent;
   margin: 0;
   padding: 0;
@@ -5640,7 +5640,7 @@ body {
   display: none !important;
 }
 
-.is-sidepanel .spotlight-main-area {
+.is-sidepanel .lumina-main-area {
   flex: 1;
 }
 
@@ -8177,7 +8177,7 @@ body {
   padding: 8px 8px 8px 0px;
 }
 
-.split-container:not(.split-mode) .spotlight-pane {
+.split-container:not(.split-mode) .lumina-pane {
   border-radius: 0;
   border: none;
 }
@@ -8194,7 +8194,7 @@ body {
   display: none;
 }
 
-.spotlight-pane {
+.lumina-pane {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -8212,22 +8212,22 @@ body {
   will-change: flex-basis;
 }
 
-[data-theme="dark"] .spotlight-pane {
+[data-theme="dark"] .lumina-pane {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.split-mode .spotlight-pane {
+.split-mode .lumina-pane {
   opacity: 1;
   transition: none;
 }
 
-.split-mode .spotlight-pane.active {
+.split-mode .lumina-pane.active {
   opacity: 1;
   border-color: var(--lumina-primary-color) !important;
   box-shadow: none;
 }
 
-.spotlight-resizer {
+.lumina-resizer {
   width: 8px;
   cursor: col-resize;
   display: none;
@@ -8240,7 +8240,7 @@ body {
   margin: 0 -4px;
 }
 
-.spotlight-resizer-handle {
+.lumina-resizer-handle {
   width: 4px;
   height: 24px;
   background: var(--lumina-border-color, #d0d0d0);
@@ -8248,8 +8248,8 @@ body {
   transition: background 0.2s ease, height 0.2s ease, width 0.2s ease;
 }
 
-.spotlight-resizer:hover .spotlight-resizer-handle,
-.spotlight-resizer.dragging .spotlight-resizer-handle {
+.lumina-resizer:hover .lumina-resizer-handle,
+.lumina-resizer.dragging .lumina-resizer-handle {
   background: var(--lumina-primary-color);
   height: 36px;
   width: 6px;
@@ -8264,7 +8264,7 @@ body.is-sidepanel .split-toggle-btn {
     padding: 0 !important;
   }
 
-  .spotlight-pane {
+  .lumina-pane {
     border-radius: 0 !important;
     border: none !important;
   }
@@ -8461,15 +8461,15 @@ body.is-sidepanel .split-toggle-btn {
   transform: translateX(0);
 }
 
-.spotlight-pane.canvas-active #chat-layout-secondary {
+.lumina-pane.canvas-active #chat-layout-secondary {
   display: none !important;
 }
 
-.spotlight-pane.canvas-active #spotlight-topbar-secondary {
+.lumina-pane.canvas-active #lumina-topbar-secondary {
   display: none !important;
 }
 
-.spotlight-pane.canvas-active #canvas-layout-secondary {
+.lumina-pane.canvas-active #canvas-layout-secondary {
   display: flex !important;
 }
 

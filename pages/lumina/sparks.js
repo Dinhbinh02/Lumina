@@ -184,7 +184,7 @@ function sparksNewId() {
 function sparksOpenPage() {
     const chatLayout = document.getElementById('chat-layout');
     const sparksPage = document.getElementById('sparks-page');
-    const topbar = document.getElementById('spotlight-topbar');
+    const topbar = document.getElementById('lumina-topbar');
     if (chatLayout && sparksPage) {
         chatLayout.style.display = 'none';
         if (topbar) topbar.style.display = 'none';
@@ -198,7 +198,7 @@ function sparksOpenPage() {
 function sparksClosePage() {
     const chatLayout = document.getElementById('chat-layout');
     const sparksPage = document.getElementById('sparks-page');
-    const topbar = document.getElementById('spotlight-topbar');
+    const topbar = document.getElementById('lumina-topbar');
     if (chatLayout && sparksPage) {
         sparksPage.style.display = 'none';
         if (topbar) topbar.style.display = 'flex';

@@ -2034,7 +2034,7 @@ class LuminaSettingsModal {
         if (isAnkiKey) return;
         const valueStr = JSON.stringify(items[key]);
         const sizeBytes = valueStr ? valueStr.length : 0;
-        if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('spotlight_history_')) {
+        if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('lumina_history_')) {
           dbSize += sizeBytes;
           chatKeys.add(key);
         } else {

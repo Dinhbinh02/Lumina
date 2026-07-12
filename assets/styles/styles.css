@@ -130,7 +130,7 @@ body {
 
 .lumina-action-item svg,
 #lumina-action-bar svg,
-.spotlight-new-tab-btn svg,
+.lumina-new-tab-btn svg,
 .btn-chain-add svg,
 .lumina-icon svg {
   stroke-width: var(--lumina-icon-stroke-weight) !important;

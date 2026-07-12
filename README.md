@@ -59,7 +59,7 @@ After loading the extension:
 ## Project Structure
 
 - `manifest.json` — Extension manifest
-- `pages/` — UI pages for options, chat, spotlight, Anki, and other surfaces
+- `pages/` — UI pages for options, chat, lumina, Anki, and other surfaces
 - `scripts/` — Background, content, and page scripts
 - `assets/` — Icons, images, and styles
 - `lib/` — Shared libraries and vendor code
