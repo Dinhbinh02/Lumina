@@ -2031,18 +2031,16 @@ function renderTabs() {
         group.tabIds.forEach((tabId, subIdx) => {
             const tab = tabs.find(t => t.id === tabId);
             if (!tab) return;
-            const subTabEl = document.createElement('div');
-            subTabEl.className = 'lumina-tab-sub';
+            const temp = document.getElementById('lumina-tabItemTemplate');
+            const clone = temp.content.cloneNode(true);
+            const subTabEl = clone.querySelector('.lumina-tab-sub');
             subTabEl.dataset.tabId = tabId;
-            const titleSpan = document.createElement('span');
-            titleSpan.className = 'lumina-tab-title';
+            const titleSpan = subTabEl.querySelector('.lumina-tab-title');
             titleSpan.textContent = tab.title;
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'lumina-tab-close';
+            const closeBtn = subTabEl.querySelector('.lumina-tab-close');
             closeBtn.title = isSplitGroup && !isActive && subIdx === group.tabIds.length - 1
                 ? 'Close group'
                 : 'Close tab';
-            closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" /></svg>';
             closeBtn.onclick = (e) => {
                 e.stopPropagation();
                 if (isSplitGroup && !isActive && subIdx === group.tabIds.length - 1) {
@@ -2051,8 +2049,6 @@ function renderTabs() {
                     closeTab(tabId);
                 }
             };
-            subTabEl.appendChild(titleSpan);
-            subTabEl.appendChild(closeBtn);
             let subTabClickTimer = null;
             subTabEl.onmousedown = (e) => {
                 if (e.target.closest('.lumina-tab-close')) return;
@@ -2795,7 +2791,9 @@ function getDomainDisplayName(url) {
 function createWebChipElement(source, selectedSources, luminaTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
-    const chip = document.createElement('div');
+    const temp = document.getElementById('lumina-webChipTemplate');
+    const clone = temp.content.cloneNode(true);
+    const chip = clone.querySelector('.lumina-web-chip');
     chip.className = `lumina-web-chip ${source.isActive ? 'is-active' : ''} ${isGhost ? 'is-ghost' : ''}`;
     chip.removeAttribute('title');
     if (source.isSummary) {
@@ -2823,16 +2821,15 @@ function createWebChipElement(source, selectedSources, luminaTabId) {
             faviconImg.onerror = () => {
                 faviconImg.style.display = 'none';
             };
-            chip.appendChild(faviconImg);
+            chip.insertBefore(faviconImg, chip.firstChild);
         }
     }
-    const titleSpan = document.createElement('span');
+    const titleSpan = chip.querySelector('.chip-title');
     let displayName = source.displayTitle;
     if (!displayName && !hasMultipleTabs && source.url) {
         displayName = getDomainDisplayName(source.url);
     }
     titleSpan.textContent = displayName || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
-    chip.appendChild(titleSpan);
     chip.addEventListener('click', (event) => {
         event.stopPropagation();
         const container = chip.closest('.lumina-web-chips-group');
@@ -6082,7 +6079,11 @@ function initTopbarModelSelector(pane = 'primary') {
             const el = document.createElement('button');
             const isActive = item.model === currentModel && item.providerId === currentProviderId;
             el.className = `lumina-model-item${isActive ? ' active' : ''}`;
-            el.innerHTML = LuminaTemplates.modelItem(item.displayName, item.model);
+            const temp = document.getElementById('lumina-modelItemTemplate');
+            const clone = temp.content.cloneNode(true);
+            clone.querySelector('.model-name').textContent = item.displayName || item.model;
+            clone.querySelector('.model-id').textContent = item.model;
+            el.appendChild(clone);
             el.onclick = (e) => {
                 e.stopPropagation();
                 if (label) label.textContent = item.displayName || item.model;

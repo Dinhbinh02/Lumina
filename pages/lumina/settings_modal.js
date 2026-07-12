@@ -1737,7 +1737,7 @@ class LuminaSettingsModal {
     const shortcutBox = document.getElementById('lumina-annotation-popup-shortcut');
     const palette = document.getElementById('lumina-annotation-popup-color-palette');
     const colors = [
-      '#fff59d',
+      '#FFFB78',
       '#ffcc80',
       '#ef9a9a',
       '#f48fb1',

@@ -114,14 +114,14 @@
         "https://*/*"
       ],
       "js": [
-        "lib/vendor/turndown.js",
         "lib/core/constants.js",
+        "lib/helpers/annotation_utils.js",
+        "lib/helpers/selection_utils.js",
+        "lib/vendor/turndown.js",
         "lib/parsers/freedict_parser.js",
         "lib/ui/dictionary_popup.js",
         "lib/ui/common.js",
-        "lib/helpers/selection_utils.js",
         "lib/helpers/youtube_utils.js",
-        "lib/helpers/annotation_utils.js",
         "scripts/content.js"
       ],
       "run_at": "document_end",

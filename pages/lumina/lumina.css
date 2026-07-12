@@ -513,43 +513,43 @@ body {
 }
 
 .lumina-icon-copy {
-  -webkit-mask-image: url("../icons/lumina/copy.svg");
-  mask-image: url("../icons/lumina/copy.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/copy.svg");
+  mask-image: url("../../assets/icons/lumina/copy.svg");
 }
 
 .lumina-icon-copy-alt {
-  -webkit-mask-image: url("../icons/lumina/copy-alt.svg");
-  mask-image: url("../icons/lumina/copy-alt.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/copy-alt.svg");
+  mask-image: url("../../assets/icons/lumina/copy-alt.svg");
 }
 
 .lumina-icon-file-edit {
-  -webkit-mask-image: url("../icons/lumina/file-edit.svg");
-  mask-image: url("../icons/lumina/file-edit.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/file-edit.svg");
+  mask-image: url("../../assets/icons/lumina/file-edit.svg");
 }
 
 .lumina-icon-plus {
-  -webkit-mask-image: url("../icons/lumina/plus.svg");
-  mask-image: url("../icons/lumina/plus.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/plus.svg");
+  mask-image: url("../../assets/icons/lumina/plus.svg");
 }
 
 .lumina-icon-refresh {
-  -webkit-mask-image: url("../icons/lumina/refresh.svg");
-  mask-image: url("../icons/lumina/refresh.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/refresh.svg");
+  mask-image: url("../../assets/icons/lumina/refresh.svg");
 }
 
 .lumina-icon-text-check {
-  -webkit-mask-image: url("../icons/lumina/text-check.svg");
-  mask-image: url("../icons/lumina/text-check.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/text-check.svg");
+  mask-image: url("../../assets/icons/lumina/text-check.svg");
 }
 
 .lumina-icon-thumbtack {
-  -webkit-mask-image: url("../icons/lumina/star.svg");
-  mask-image: url("../icons/lumina/star.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/star.svg");
+  mask-image: url("../../assets/icons/lumina/star.svg");
 }
 
 .lumina-icon-thumbtack-filled {
-  -webkit-mask-image: url("../icons/lumina/star.svg");
-  mask-image: url("../icons/lumina/star.svg");
+  -webkit-mask-image: url("../../assets/icons/lumina/star.svg");
+  mask-image: url("../../assets/icons/lumina/star.svg");
 }
 
 .lumina-action-item .lumina-svg-icon {
