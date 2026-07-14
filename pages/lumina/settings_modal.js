@@ -258,9 +258,9 @@ class LuminaSettingsModal {
       const themeVal = items.theme || 'auto';
       const contrastVal = items.contrast || 'auto';
       const accentVal = items.accentColor || 'default';
-      document.getElementById('lumina-settings-theme').value = themeVal;
-      document.getElementById('lumina-settings-contrast').value = contrastVal;
-      document.getElementById('lumina-settings-accent').value = accentVal;
+      this.setDropdownValue('lumina-settings-theme', 'lumina-settings-theme-menu', themeVal, 'System');
+      this.setDropdownValue('lumina-settings-contrast', 'lumina-settings-contrast-menu', contrastVal, 'System');
+      this.setDropdownValue('lumina-settings-accent', 'lumina-settings-accent-menu', accentVal, 'Default');
       let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
       if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
         mode = 'dark';
@@ -268,16 +268,14 @@ class LuminaSettingsModal {
       document.body.setAttribute('data-theme', mode);
       document.body.setAttribute('data-accent', accentVal);
       document.body.setAttribute('data-contrast', contrastVal);
-      document.getElementById('lumina-settings-language').value = items.language || 'auto';
+      this.setDropdownValue('lumina-settings-language', 'lumina-settings-language-menu', items.language || 'auto', 'Auto-detect');
       document.getElementById('lumina-settings-dictation-toggle').checked = items.dictationEnabled !== false;
-      document.getElementById('lumina-settings-spoken-lang').value = items.spokenLanguage || 'auto';
-      document.getElementById('lumina-settings-voice-select').value = items.voice || 'sol';
+      this.setDropdownValue('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu', items.spokenLanguage || 'auto', 'Auto-detect');
+      this.setDropdownValue('lumina-settings-voice-select', 'lumina-settings-voice-select-menu', items.voice || 'sol', 'Sol');
       document.getElementById('lumina-settings-separate-voice').checked = items.separateVoiceEnabled === true;
       const fsVal = items.fontSize || 14;
       const fsInput = document.getElementById('lumina-settings-fontsize');
       if (fsInput) fsInput.value = fsVal;
-      const fsSpan = document.getElementById('lumina-settings-fontsize-value');
-      if (fsSpan) fsSpan.textContent = fsVal + 'px';
       const toneInput = document.getElementById('lumina-settings-base-tone-input');
       if (toneInput) {
         const toneVal = items.baseTone || 'default';
@@ -328,20 +326,21 @@ class LuminaSettingsModal {
   }
   static saveOptions() {
     const getVal = (id, fallback = '') => document.getElementById(id)?.value || fallback;
+    const getDropdownVal = (id, fallback = '') => document.getElementById(id)?.dataset.value || fallback;
     const getChecked = (id) => document.getElementById(id)?.checked || false;
     const getInt = (id, fallback = 3) => {
       const el = document.getElementById(id);
       return el ? parseInt(el.value, 10) : fallback;
     };
     const settings = {
-      theme: getVal('lumina-settings-theme', 'auto'),
-      contrast: getVal('lumina-settings-contrast', 'auto'),
-      accentColor: getVal('lumina-settings-accent', 'default'),
-      fontSize: getInt('lumina-settings-fontsize', 14),
-      language: getVal('lumina-settings-language', 'auto'),
+      theme: getDropdownVal('lumina-settings-theme', 'auto'),
+      contrast: getDropdownVal('lumina-settings-contrast', 'auto'),
+      accentColor: getDropdownVal('lumina-settings-accent', 'default'),
+      fontSize: parseFloat(getVal('lumina-settings-fontsize', '14')) || 14,
+      language: getDropdownVal('lumina-settings-language', 'auto'),
       dictationEnabled: document.getElementById('lumina-settings-dictation-toggle') ? getChecked('lumina-settings-dictation-toggle') : true,
-      spokenLanguage: getVal('lumina-settings-spoken-lang', 'auto'),
-      voice: getVal('lumina-settings-voice-select', 'sol'),
+      spokenLanguage: getDropdownVal('lumina-settings-spoken-lang', 'auto'),
+      voice: getDropdownVal('lumina-settings-voice-select', 'sol'),
       separateVoiceEnabled: getChecked('lumina-settings-separate-voice'),
       baseTone: document.getElementById('lumina-settings-base-tone-input')?.dataset.value || 'default',
       charWarm: getInt('lumina-settings-char-warm', 3),
@@ -563,7 +562,18 @@ class LuminaSettingsModal {
         if (inputId === 'lumina-settings-base-tone-input') {
           this.adjustInputWidthToContent(input);
         }
-        if (inputId.startsWith('lumina-dict-') || inputId === 'lumina-history-retention-input' || inputId === 'lumina-settings-base-tone-input') {
+        if (
+          inputId.startsWith('lumina-dict-') ||
+          inputId === 'lumina-history-retention-input' ||
+          inputId === 'lumina-settings-base-tone-input' ||
+          inputId === 'lumina-settings-fontsize' ||
+          inputId === 'lumina-settings-theme' ||
+          inputId === 'lumina-settings-contrast' ||
+          inputId === 'lumina-settings-accent' ||
+          inputId === 'lumina-settings-language' ||
+          inputId === 'lumina-settings-spoken-lang' ||
+          inputId === 'lumina-settings-voice-select'
+        ) {
           this.saveOptions();
         }
         if (inputId === 'lumina-text-chain-provider') {
@@ -577,6 +587,14 @@ class LuminaSettingsModal {
         }
       }
     });
+  }
+  static setDropdownValue(inputId, menuId, val, defaultText) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.dataset.value = val;
+    const menu = document.getElementById(menuId);
+    const matchedDiv = menu?.querySelector(`div[data-val="${val}"]`);
+    input.value = matchedDiv ? matchedDiv.textContent : defaultText;
   }
   static adjustInputWidthToContent(input) {
     if (!input) return;
@@ -1076,25 +1094,26 @@ class LuminaSettingsModal {
     }
   }
   static bindAppearanceTab() {
-    const elements = [
-      'lumina-settings-theme', 'lumina-settings-contrast', 'lumina-settings-accent',
-      'lumina-settings-language', 'lumina-settings-spoken-lang', 'lumina-settings-voice-select'
-    ];
-    elements.forEach(id => {
-      document.getElementById(id).addEventListener('change', () => this.saveOptions());
-    });
-    const fsSlider = document.getElementById('lumina-settings-fontsize');
-    if (fsSlider) {
-      fsSlider.addEventListener('input', (e) => {
-        const valSpan = document.getElementById('lumina-settings-fontsize-value');
-        if (valSpan) valSpan.textContent = e.target.value + 'px';
+    this.setupDropdownInputs('lumina-settings-theme', 'lumina-settings-theme-menu');
+    this.setupDropdownInputs('lumina-settings-contrast', 'lumina-settings-contrast-menu');
+    this.setupDropdownInputs('lumina-settings-accent', 'lumina-settings-accent-menu');
+    this.setupDropdownInputs('lumina-settings-language', 'lumina-settings-language-menu');
+    this.setupDropdownInputs('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu');
+    this.setupDropdownInputs('lumina-settings-voice-select', 'lumina-settings-voice-select-menu');
+    this.setupDropdownInputs('lumina-settings-fontsize', 'lumina-settings-fontsize-menu');
+    const fsInput = document.getElementById('lumina-settings-fontsize');
+    if (fsInput) {
+      fsInput.addEventListener('change', () => this.saveOptions());
+      fsInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          fsInput.blur();
+        }
       });
-      fsSlider.addEventListener('change', () => this.saveOptions());
     }
     document.getElementById('lumina-settings-dictation-toggle').addEventListener('change', () => this.saveOptions());
     document.getElementById('lumina-settings-separate-voice').addEventListener('change', () => this.saveOptions());
     document.getElementById('lumina-settings-voice-play-btn').addEventListener('click', () => {
-      const voice = document.getElementById('lumina-settings-voice-select').value;
+      const voice = document.getElementById('lumina-settings-voice-select').dataset.value || 'sol';
       const audio = new Audio();
       audio.src = `../../assets/audio/voice_${voice}.mp3`;
       audio.play().catch(() => {

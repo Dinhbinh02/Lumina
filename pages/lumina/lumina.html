@@ -520,11 +520,14 @@
                                     <span class="title">Appearance</span>
                                 </div>
                                 <div class="lumina-settings-control">
-                                    <select id="lumina-settings-theme" class="lumina-settings-select">
-                                        <option value="auto">System</option>
-                                        <option value="light">Light</option>
-                                        <option value="dark">Dark</option>
-                                    </select>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-theme" readonly value="System" data-value="auto">
+                                        <div id="lumina-settings-theme-menu" class="lumina-settings-dropdown-menu">
+                                            <div data-val="auto">System</div>
+                                            <div data-val="light">Light</div>
+                                            <div data-val="dark">Dark</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -533,11 +536,37 @@
                                     <span class="title">Font size</span>
                                 </div>
                                 <div class="lumina-settings-control">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <input type="range" id="lumina-settings-fontsize" min="11" max="17" step="1"
-                                            style="width: 120px; cursor: pointer;">
-                                        <span id="lumina-settings-fontsize-value"
-                                            style="font-size: 13px; font-weight: 500; min-width: 32px;">14px</span>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-fontsize" value="14">
+                                        <div id="lumina-settings-fontsize-menu" class="lumina-settings-dropdown-menu">
+                                            <div>11</div>
+                                            <div>11.5</div>
+                                            <div>12</div>
+                                            <div>12.5</div>
+                                            <div>13</div>
+                                            <div>13.5</div>
+                                            <div>14</div>
+                                            <div>14.5</div>
+                                            <div>15</div>
+                                            <div>15.5</div>
+                                            <div>16</div>
+                                            <div>16.5</div>
+                                            <div>17</div>
+                                            <div>17.5</div>
+                                            <div>18</div>
+                                            <div>18.5</div>
+                                            <div>19</div>
+                                            <div>19.5</div>
+                                            <div>20</div>
+                                            <div>20.5</div>
+                                            <div>21</div>
+                                            <div>21.5</div>
+                                            <div>22</div>
+                                            <div>22.5</div>
+                                            <div>23</div>
+                                            <div>23.5</div>
+                                            <div>24</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -547,11 +576,14 @@
                                     <span class="title">Contrast</span>
                                 </div>
                                 <div class="lumina-settings-control">
-                                    <select id="lumina-settings-contrast" class="lumina-settings-select">
-                                        <option value="auto">System</option>
-                                        <option value="standard">Standard</option>
-                                        <option value="high">High</option>
-                                    </select>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-contrast" readonly value="System" data-value="auto">
+                                        <div id="lumina-settings-contrast-menu" class="lumina-settings-dropdown-menu">
+                                            <div data-val="auto">System</div>
+                                            <div data-val="standard">Standard</div>
+                                            <div data-val="high">High</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -560,14 +592,17 @@
                                     <span class="title">Accent color</span>
                                 </div>
                                 <div class="lumina-settings-control">
-                                    <select id="lumina-settings-accent" class="lumina-settings-select">
-                                        <option value="default">Default</option>
-                                        <option value="amber">Amber</option>
-                                        <option value="emerald">Emerald</option>
-                                        <option value="sky">Sky</option>
-                                        <option value="indigo">Indigo</option>
-                                        <option value="rose">Rose</option>
-                                    </select>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-accent" readonly value="Default" data-value="default">
+                                        <div id="lumina-settings-accent-menu" class="lumina-settings-dropdown-menu">
+                                            <div data-val="default">Default</div>
+                                            <div data-val="amber">Amber</div>
+                                            <div data-val="emerald">Emerald</div>
+                                            <div data-val="sky">Sky</div>
+                                            <div data-val="indigo">Indigo</div>
+                                            <div data-val="rose">Rose</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -576,11 +611,14 @@
                                     <span class="title">Language</span>
                                 </div>
                                 <div class="lumina-settings-control">
-                                    <select id="lumina-settings-language" class="lumina-settings-select">
-                                        <option value="auto">Auto-detect</option>
-                                        <option value="en">English</option>
-                                        <option value="vi">Tiếng Việt</option>
-                                    </select>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-language" readonly value="Auto-detect" data-value="auto">
+                                        <div id="lumina-settings-language-menu" class="lumina-settings-dropdown-menu">
+                                            <div data-val="auto">Auto-detect</div>
+                                            <div data-val="en">English</div>
+                                            <div data-val="vi">Tiếng Việt</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -604,11 +642,14 @@
                                         not listed, it may still be supported via auto-detection.</span>
                                 </div>
                                 <div class="lumina-settings-control">
-                                    <select id="lumina-settings-spoken-lang" class="lumina-settings-select">
-                                        <option value="auto">Auto-detect</option>
-                                        <option value="en">English</option>
-                                        <option value="vi">Tiếng Việt</option>
-                                    </select>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-spoken-lang" readonly value="Auto-detect" data-value="auto">
+                                        <div id="lumina-settings-spoken-lang-menu" class="lumina-settings-dropdown-menu">
+                                            <div data-val="auto">Auto-detect</div>
+                                            <div data-val="en">English</div>
+                                            <div data-val="vi">Tiếng Việt</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -624,12 +665,15 @@
                                         </svg>
                                         Play
                                     </button>
-                                    <select id="lumina-settings-voice-select" class="lumina-settings-select">
-                                        <option value="sol">Sol</option>
-                                        <option value="cove">Cove</option>
-                                        <option value="ember">Ember</option>
-                                        <option value="breeze">Breeze</option>
-                                    </select>
+                                    <div class="lumina-settings-dropdown-wrapper">
+                                        <input type="text" id="lumina-settings-voice-select" readonly value="Sol" data-value="sol">
+                                        <div id="lumina-settings-voice-select-menu" class="lumina-settings-dropdown-menu">
+                                            <div data-val="sol">Sol</div>
+                                            <div data-val="cove">Cove</div>
+                                            <div data-val="ember">Ember</div>
+                                            <div data-val="breeze">Breeze</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
