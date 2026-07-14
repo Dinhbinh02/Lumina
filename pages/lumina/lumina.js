@@ -1922,7 +1922,6 @@ function normalizeRestoredHistory(historyEl) {
             }
         }
         if (questionEl) {
-            const imgs = entry.querySelectorAll('img[data-attachment-id]');
             let parsedImages = null;
             if (questionEl.dataset.images) {
                 try {
@@ -1933,46 +1932,75 @@ function normalizeRestoredHistory(historyEl) {
             }
             const hydratedFiles = [];
             const promises = [];
-            imgs.forEach(img => {
-                const attachmentId = img.dataset.attachmentId;
-                if (attachmentId) {
-                    const p = LuminaAttachmentDB.get(attachmentId).then(async (blob) => {
-                        if (blob) {
-                            const objectUrl = URL.createObjectURL(blob);
-                            img.src = objectUrl;
-                            img.onclick = (e) => {
-                                e.stopPropagation();
-                                const tab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
-                                if (tab && tab.chatUIInstance) {
-                                    tab.chatUIInstance.showImagePreview(objectUrl, img.alt);
+            if (parsedImages && Array.isArray(parsedImages.files) && parsedImages.files.length > 0) {
+                parsedImages.files.forEach(file => {
+                    if (file && file.attachmentId) {
+                        const p = LuminaAttachmentDB.get(file.attachmentId).then(async (blob) => {
+                            if (blob) {
+                                if (file.isImage) {
+                                    const objectUrl = URL.createObjectURL(blob);
+                                    const img = entry.querySelector(`img[data-attachment-id="${file.attachmentId}"]`);
+                                    if (img) {
+                                        img.src = objectUrl;
+                                        img.onclick = (e) => {
+                                            e.stopPropagation();
+                                            const tab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+                                            if (tab && tab.chatUIInstance) {
+                                                tab.chatUIInstance.showImagePreview(objectUrl, img.alt);
+                                            }
+                                        };
+                                    }
                                 }
-                            };
-                            const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
-                            if (dataUrl) {
-                                let fileObj = null;
-                                if (parsedImages && Array.isArray(parsedImages.files)) {
-                                    fileObj = parsedImages.files.find(f => f.attachmentId === attachmentId);
+                                const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                                if (dataUrl) {
+                                    file.dataUrl = dataUrl;
                                 }
-                                if (fileObj) {
-                                    fileObj.dataUrl = dataUrl;
-                                } else {
-                                    fileObj = {
+                            }
+                            hydratedFiles.push(file);
+                        }).catch(err => {
+                            console.error('Failed to hydrate attachment', file.attachmentId, err);
+                            hydratedFiles.push(file);
+                        });
+                        promises.push(p);
+                    } else {
+                        hydratedFiles.push(file);
+                    }
+                });
+            } else {
+                const imgs = entry.querySelectorAll('img[data-attachment-id]');
+                imgs.forEach(img => {
+                    const attachmentId = img.dataset.attachmentId;
+                    if (attachmentId) {
+                        const p = LuminaAttachmentDB.get(attachmentId).then(async (blob) => {
+                            if (blob) {
+                                const objectUrl = URL.createObjectURL(blob);
+                                img.src = objectUrl;
+                                img.onclick = (e) => {
+                                    e.stopPropagation();
+                                    const tab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+                                    if (tab && tab.chatUIInstance) {
+                                        tab.chatUIInstance.showImagePreview(objectUrl, img.alt);
+                                    }
+                                };
+                                const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                                if (dataUrl) {
+                                    const fileObj = {
                                         name: img.alt || 'Image',
                                         mimeType: blob.type,
                                         isImage: true,
                                         dataUrl: dataUrl,
                                         attachmentId: attachmentId
                                     };
+                                    hydratedFiles.push(fileObj);
                                 }
-                                hydratedFiles.push(fileObj);
                             }
-                        }
-                    }).catch(err => {
-                        console.error('Failed to hydrate attachment', attachmentId, err);
-                    });
-                    promises.push(p);
-                }
-            });
+                        }).catch(err => {
+                            console.error('Failed to hydrate attachment', attachmentId, err);
+                        });
+                        promises.push(p);
+                    }
+                });
+            }
             if (promises.length > 0) {
                 Promise.all(promises).then(() => {
                     if (hydratedFiles.length > 0) {
@@ -5204,6 +5232,21 @@ document.addEventListener('copy', (e) => {
         }
         return text;
     }
+    function sanitizeHtmlFragment(frag) {
+        const temp = document.createElement('div');
+        temp.appendChild(frag.cloneNode(true));
+        temp.querySelectorAll('*').forEach(el => {
+            el.removeAttribute('data-images');
+            el.removeAttribute('data-files');
+            el.removeAttribute('data-raw-text');
+            if (el.tagName === 'IMG' && el.src && el.src.startsWith('data:')) {
+                if (el.src.length > 500 * 1024) {
+                    el.removeAttribute('src');
+                }
+            }
+        });
+        return temp.innerHTML;
+    }
     let extracted = getVisibleText(fragment);
     extracted = extracted
         .replace(/\n{3,}/g, '\n\n')
@@ -5211,13 +5254,11 @@ document.addEventListener('copy', (e) => {
         .replace(/ ?\n ?/g, '\n')
         .trim();
     const original = sel.toString().trim();
-    if (extracted && extracted !== original) {
-        e.preventDefault();
-        e.clipboardData.setData('text/plain', extracted);
-    } else if (extracted !== original) {
-        e.preventDefault();
-        e.clipboardData.setData('text/plain', original);
-    }
+    const finalPlain = (extracted && extracted !== original) ? extracted : original;
+    const sanitizedHtml = sanitizeHtmlFragment(fragment);
+    e.preventDefault();
+    e.clipboardData.setData('text/plain', finalPlain);
+    e.clipboardData.setData('text/html', sanitizedHtml);
 }, true);
 
 function triggerRegenerate(targetUI = null) {
