@@ -3743,6 +3743,7 @@ function updateSidebarSparksActiveState() {
 }
 window.updateSidebarSparksActiveState = updateSidebarSparksActiveState;
 
+let recentChatsLimit = 30;
 async function renderRecentChatsSidebar() {
     const listContainer = document.getElementById('sidebar-recent-chats');
     if (!listContainer) return;
@@ -3765,7 +3766,17 @@ async function renderRecentChatsSidebar() {
     } else {
         const activeTab = tabs[activeTabIndex];
         const activeSessionId = activeTab ? activeTab.sessionId : null;
-        historyData.slice(0, 30).forEach(session => {
+
+        // Ensure the active session is always rendered and not cut off by the limit
+        let activeIndex = -1;
+        if (activeSessionId) {
+            activeIndex = historyData.findIndex(s => s.id === activeSessionId);
+        }
+        if (activeIndex >= recentChatsLimit) {
+            recentChatsLimit = Math.ceil((activeIndex + 1) / 30) * 30;
+        }
+
+        historyData.slice(0, recentChatsLimit).forEach(session => {
             let displayTitle = session.title;
             if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
@@ -3808,6 +3819,32 @@ async function renderRecentChatsSidebar() {
         }
     }
     listContainer.innerHTML = html;
+
+    const attachScroll = (el) => {
+        if (!el || el.__scrollListenerAttached) return;
+        el.__scrollListenerAttached = true;
+        el.addEventListener('scroll', () => {
+            const threshold = 150;
+            const position = el.scrollTop + el.clientHeight;
+            const height = el.scrollHeight;
+            if (height - position < threshold) {
+                if (recentChatsLimit < historyData.length && !window.__loadingMoreRecentChats) {
+                    window.__loadingMoreRecentChats = true;
+                    recentChatsLimit += 30;
+                    renderRecentChatsSidebar().then(() => {
+                        window.__loadingMoreRecentChats = false;
+                    }).catch(() => {
+                        window.__loadingMoreRecentChats = false;
+                    });
+                }
+            }
+        });
+    };
+
+    attachScroll(listContainer.closest('.sidebar-scrollable-wrapper'));
+    attachScroll(listContainer.closest('.sidebar-scrollable-content'));
+    attachScroll(listContainer.closest('.lumina-sidebar'));
+
     let ctxMenu = document.getElementById('sidebar-chat-context-menu');
     if (!ctxMenu) {
         ctxMenu = document.createElement('div');
@@ -6802,11 +6839,15 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             }
             this.syncHighlighting(content);
             if (documentView) {
-                if (typeof marked !== 'undefined') {
-                    documentView.innerHTML = marked.parse(content);
-                } else {
+                window.ensureMarkedLoaded().then(() => {
+                    if (typeof marked !== 'undefined') {
+                        documentView.innerHTML = marked.parse(content);
+                    } else {
+                        documentView.textContent = content;
+                    }
+                }).catch(() => {
                     documentView.textContent = content;
-                }
+                });
             }
             if (container) {
                 if (type === 'document') {
@@ -6858,11 +6899,15 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             this.syncHighlighting(newContent);
             const documentView = document.getElementById('lumina-canvas-document');
             if (documentView && this.currentDoc.type === 'document') {
-                if (typeof marked !== 'undefined') {
-                    documentView.innerHTML = marked.parse(newContent);
-                } else {
+                window.ensureMarkedLoaded().then(() => {
+                    if (typeof marked !== 'undefined') {
+                        documentView.innerHTML = marked.parse(newContent);
+                    } else {
+                        documentView.textContent = newContent;
+                    }
+                }).catch(() => {
                     documentView.textContent = newContent;
-                }
+                });
             }
             if (isFinal) {
                 this.updatePreview();
@@ -6924,8 +6969,16 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 if (this.currentDoc.type === 'document') {
                     if (documentPanel) documentPanel.classList.add('active');
                     const documentView = document.getElementById('lumina-canvas-document');
-                    if (documentView && typeof marked !== 'undefined') {
-                        documentView.innerHTML = marked.parse(this.currentDoc.content);
+                    if (documentView) {
+                        window.ensureMarkedLoaded().then(() => {
+                            if (typeof marked !== 'undefined') {
+                                documentView.innerHTML = marked.parse(this.currentDoc.content);
+                            } else {
+                                documentView.textContent = this.currentDoc.content;
+                            }
+                        }).catch(() => {
+                            documentView.textContent = this.currentDoc.content;
+                        });
                     }
                 } else {
                     if (previewPanel) previewPanel.classList.add('active');
@@ -6941,12 +6994,14 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;');
                 codeEl.innerHTML = escaped.endsWith('\n') ? escaped + ' ' : escaped;
-                if (typeof hljs !== 'undefined') {
-                    let lang = (this.currentDoc.type || 'javascript').replace('code/', '');
-                    if (lang === 'react') lang = 'jsx';
-                    codeEl.className = lang;
-                    hljs.highlightElement(codeEl);
-                }
+                window.ensureHighlightLoaded().then(() => {
+                    if (typeof hljs !== 'undefined') {
+                        let lang = (this.currentDoc.type || 'javascript').replace('code/', '');
+                        if (lang === 'react') lang = 'jsx';
+                        codeEl.className = lang;
+                        hljs.highlightElement(codeEl);
+                    }
+                });
             }
         },
         init() {

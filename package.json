@@ -1,0 +1,9 @@
+{
+  "name": "lumina",
+  "version": "1.0.0",
+  "description": "Fast, private, and flexible AI assistant for your browser.",
+  "scripts": {
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1",
+    "dev": "powershell -ExecutionPolicy Bypass -File build.ps1 --watch"
+  }
+}
