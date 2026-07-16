@@ -7606,6 +7606,9 @@ class LuminaChatUI {
                 setTimeout(resolve, 1);
             }
         });
+        if (typeof window.ensureHighlightLoaded === 'function') {
+            await window.ensureHighlightLoaded();
+        }
         if (typeof hljs !== 'undefined') {
             const blocks = Array.from(container.querySelectorAll('pre code'));
             for (const block of blocks) {
