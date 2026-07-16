@@ -2808,6 +2808,7 @@ chrome.runtime.onConnect.addListener((port) => {
                             - __[Part of Speech]__ (e.g. __[noun]__).
                             - Clear meanings: ONE short, easy-to-understand sentence max.
                             - Vietnamese translations in parentheses.
+                              *IMPORTANT*: Ensure high translation accuracy for economic, academic, and financial terms. Do NOT translate "capital" as "thủ đô" when used in economics/finance/social/human resources contexts (e.g., "fiscal capital", "human capital", "venture capital", "social capital" where it means "vốn" or "nguồn lực"). Translate "fiscal" as "tài khóa/ngân sách".
                             - 1-2 example sentences in italics.
                             Avoid long technical explanations. Be very concise.`;
                     }
