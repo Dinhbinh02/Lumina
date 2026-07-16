@@ -1227,7 +1227,7 @@ async function initTabs() {
             const activeIdx = data[KEYS.activeTabIndex] || 0;
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
-        let sessionId = (shouldStartNewChat || isWebApp) ? null : (urlSessionId || savedTab?.sessionId || null);
+        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp ? null : (savedTab?.sessionId || null)));
         let tabTitle = 'Chat';
         let meta = {};
         if (sessionId) {
@@ -1254,7 +1254,7 @@ async function initTabs() {
             id: 'tab-1',
             title: tabTitle,
             sessionId: sessionId,
-            sparkId: (shouldStartNewChat || isWebApp) ? null : (urlSessionId ? (meta.sparkId || null) : (savedTab?.sparkId || null)),
+            sparkId: shouldStartNewChat ? null : (urlSessionId ? (meta.sparkId || null) : (isWebApp ? null : (savedTab?.sparkId || null))),
             scrollTop: savedTab?.scrollTop ?? -1,
             scrollAnchorIndex: savedTab?.scrollAnchorIndex ?? null,
             scrollAnchorOffset: savedTab?.scrollAnchorOffset ?? null,
@@ -1288,12 +1288,12 @@ async function initTabs() {
         activeTabIndex = 0;
         activeGroupIndex = 0;
         tabGroups = [{ id: 'group-1', tabIds: ['tab-1'], ratio: 100 }];
-        let storedSplitMode = isWebApp ? false : (data[KEYS.isSplitMode] ?? false);
+        let storedSplitMode = urlSecSessionId ? true : (isWebApp ? false : (data[KEYS.isSplitMode] ?? false));
         let savedSecTab = null;
         if (data[KEYS.tabs] && data[KEYS.tabs].length > 1) {
             savedSecTab = data[KEYS.tabs][1];
         }
-        let secSessionId = urlSecSessionId || savedSecTab?.sessionId || null;
+        let secSessionId = urlSecSessionId || (isWebApp ? null : (savedSecTab?.sessionId || null));
         if (storedSplitMode && (!secSessionId || isSidePanel)) {
             storedSplitMode = false;
             chrome.storage.local.set({
@@ -1342,7 +1342,7 @@ async function initTabs() {
                 id: 'tab-secondary',
                 title: secTabTitle,
                 sessionId: secSessionId,
-                sparkId: savedSecTab?.sparkId || null,
+                sparkId: urlSecSessionId ? (secMeta.sparkId || null) : (isWebApp ? null : (savedSecTab?.sparkId || null)),
                 scrollTop: savedSecTab?.scrollTop ?? -1,
                 scrollAnchorIndex: savedSecTab?.scrollAnchorIndex ?? null,
                 scrollAnchorOffset: savedSecTab?.scrollAnchorOffset ?? null,
