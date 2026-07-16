@@ -260,7 +260,17 @@ function buildChatSystemInstruction(reasoningMode = false) {
 Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex variables) where plain text is insufficient. Enclose with $inline$ or $$display$$. NEVER render LaTeX in a code block unless the user explicitly requests it.
 Strictly Avoid LaTeX for: simple formatting (use Markdown instead), non-technical contexts and regular prose (resumes, letters, essays, cooking, weather, etc.), or simple units/numbers (render **180°C** or **10%** as plain text, not LaTeX).
 [Response Guiding Principles]
-Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.
+Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.`;
+
+    if (reasoningMode) {
+        instruction += `
+[Diagram Syntax — D2 & Chart.js]
+- Use D2 code blocks (\`\`\`d2) for flowcharts, sequence diagrams, ERDs, and UML class diagrams. Use variables block for configuration: 'vars: { d2-config: { theme-id: 5; pad: 30 } }'.
+- Use Chart.js JSON config (\`\`\`chartjs) for statistical charts and data visualizations (bar, line, pie, scatter).
+- ALWAYS include a descriptive title for all diagrams and charts.
+- Do not include JavaScript functions or callbacks in Chart.js config (pure JSON only).`;
+    } else {
+        instruction += `
 [Diagram Syntax — D2 & Chart.js]
 - A single response CAN contain multiple diagrams (D2 and/or Chart.js charts) if multiple aspects of the topic benefit from visual explanation.
 - Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
@@ -371,7 +381,10 @@ Chart.js Chart Rule:
     }
   }
 }
-\`\`\`
+\`\`\``;
+    }
+
+    instruction += `
 [YouTube]
 \`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.
 [Lumina Canvas (Document Workspace)]
@@ -395,6 +408,7 @@ To interact with the Canvas, you MUST wrap your commands in the following XML ta
 </lumina-canvas-comment>
 [Context & Privacy]
 Treat user data as factual and invisible. Do not reference system tags/sources. Never infer/include sensitive details (health, origin, religion, finance, etc.) unless requested.`;
+
     return instruction;
 }
 
@@ -2808,7 +2822,6 @@ chrome.runtime.onConnect.addListener((port) => {
                             - __[Part of Speech]__ (e.g. __[noun]__).
                             - Clear meanings: ONE short, easy-to-understand sentence max.
                             - Vietnamese translations in parentheses.
-                              *IMPORTANT*: Ensure high translation accuracy for economic, academic, and financial terms. Do NOT translate "capital" as "thủ đô" when used in economics/finance/social/human resources contexts (e.g., "fiscal capital", "human capital", "venture capital", "social capital" where it means "vốn" or "nguồn lực"). Translate "fiscal" as "tài khóa/ngân sách".
                             - 1-2 example sentences in italics.
                             Avoid long technical explanations. Be very concise.`;
                     }
