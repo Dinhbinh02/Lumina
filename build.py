@@ -9,6 +9,7 @@ JS_FILES = [
     'lib/parsers/freedict_parser.js',
     'lib/ui/dictionary_popup.js',
     'lib/core/attachment_db.js',
+    'lib/vendor/marked.min.js',
     'lib/ui/common.js',
     'lib/core/auth.js',
     'lib/core/chat_history.js',
