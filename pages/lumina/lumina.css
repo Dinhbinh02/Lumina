@@ -25,7 +25,7 @@ body {
 }
 
 ::selection {
-  background: rgba(var(--lumina-primary-rgb), 0.3) !important;
+  background: color-mix(in srgb, var(--lumina-primary-color) 30%, var(--lumina-bg-primary)) !important;
   color: inherit !important;
   text-shadow: none !important;
 }
@@ -1613,7 +1613,7 @@ body {
 .lumina-chat-answer pre ::selection,
 .lumina-chat-answer pre code ::selection,
 .lumina-chat-answer pre span ::selection {
-  background: rgba(98, 114, 164, 0.4) !important;
+  background: color-mix(in srgb, rgb(98, 114, 164) 40%, #282a36) !important;
   color: inherit !important;
 }
 
