@@ -6,8 +6,16 @@ $JS_FILES = @(
     'lib/ui/dictionary_popup.js',
     'lib/core/attachment_db.js',
     'lib/vendor/marked.min.js',
+    'lib/vendor/highlight.min.js',
+    'lib/vendor/katex/katex.min.js',
+    'lib/vendor/katex/auto-render.min.js',
+    'lib/vendor/chart.min.js',
+    'lib/vendor/pdf.min.js',
     'lib/ui/common.js',
     'lib/core/auth.js',
+    'lib/core/highlight_db.js',
+    'lib/core/chat_db.js',
+    'lib/core/migration.js',
     'lib/core/chat_history.js',
     'lib/ui/history_panel.js',
     'lib/core/token_utils.js',
@@ -19,6 +27,7 @@ $JS_FILES = @(
 )
 
 $CSS_FILES = @(
+    'lib/vendor/katex/katex.min.css',
     'pages/lumina/lumina.css',
     'pages/lumina/settings_modal.css',
     'pages/lumina/search_modal.css'

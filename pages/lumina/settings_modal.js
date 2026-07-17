@@ -410,6 +410,31 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-dict-model', 'lumina-dict-model-list');
     this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
     this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
+
+    const clearCacheBtn = document.getElementById('lumina-clear-cache-btn');
+    if (clearCacheBtn) {
+      clearCacheBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all cached images, audio, and search history? This will free up storage space.')) {
+          chrome.storage.local.get(null, (items) => {
+            const keysToRemove = [];
+            Object.keys(items).forEach(key => {
+              if (key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('spotlight_history_')) {
+                keysToRemove.push(key);
+              }
+            });
+
+            if (keysToRemove.length > 0) {
+              chrome.storage.local.remove(keysToRemove);
+            }
+
+            chrome.storage.local.remove(['audio_cache'], () => {
+              alert('Cache cleared successfully!');
+              this.updateStorageUsage();
+            });
+          });
+        }
+      });
+    }
   }
   static getDefaultProviders() {
     return [
@@ -2041,10 +2066,43 @@ class LuminaSettingsModal {
   static updateStorageUsage() {
     const textEl = document.getElementById('lumina-storage-usage-text');
     if (!textEl) return;
-    chrome.storage.local.get(null, (items) => {
-      let dbSize = 0;
+    chrome.storage.local.get(null, async (items) => {
+      const now = Date.now();
+      const expiredImgKeys = [];
+      Object.keys(items).forEach(key => {
+        if (key.startsWith('lumina_img_cache_')) {
+          const item = items[key];
+          if (item && item.timestamp && (now - item.timestamp > 7 * 24 * 60 * 60 * 1000)) {
+            expiredImgKeys.push(key);
+            delete items[key];
+          }
+        }
+      });
+
+      let audioChanged = false;
+      const audioCache = items['audio_cache'];
+      if (audioCache && audioCache.entries) {
+        const AUDIO_EXPIRATION = 7 * 24 * 60 * 60 * 1000;
+        Object.keys(audioCache.entries).forEach(key => {
+          const entry = audioCache.entries[key];
+          const entryTimestamp = entry.timestamp || audioCache.lastUpdate;
+          if (entryTimestamp && (now - entryTimestamp > AUDIO_EXPIRATION)) {
+            delete audioCache.entries[key];
+            audioChanged = true;
+          }
+        });
+        if (audioChanged) {
+          chrome.storage.local.set({ audio_cache: audioCache });
+        }
+      }
+
+      if (expiredImgKeys.length > 0) {
+        chrome.storage.local.remove(expiredImgKeys);
+      }
+
+      let dbSize = await LuminaChatDB.getStorageUsage();
       let configSize = 0;
-      const chatKeys = new Set();
+      let cacheSize = 0;
       Object.keys(items).forEach(key => {
         const isAnkiKey = key.startsWith('rot_') || [
           'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
@@ -2054,18 +2112,19 @@ class LuminaSettingsModal {
         const valueStr = JSON.stringify(items[key]);
         const sizeBytes = valueStr ? valueStr.length : 0;
         if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('lumina_history_')) {
-          dbSize += sizeBytes;
-          chatKeys.add(key);
+          return; // Skip legacy storage keys
+        } else if (key === 'audio_cache' || key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('spotlight_history_')) {
+          cacheSize += sizeBytes;
         } else {
           configSize += sizeBytes;
         }
       });
-      chrome.runtime.sendMessage({ action: 'get_stored_files' }, (response) => {
+      chrome.runtime.sendMessage({ action: 'get_stored_files' }, async (response) => {
         let filesSize = 0;
         if (response && response.success && Array.isArray(response.files)) {
           filesSize = response.files.reduce((acc, f) => acc + (f.size || 0), 0);
         }
-        const totalBytes = dbSize + filesSize + configSize;
+        const totalBytes = dbSize + filesSize + configSize + cacheSize;
         const fmt = (bytes) => {
           if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
           if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -2075,30 +2134,35 @@ class LuminaSettingsModal {
         const dbSizeEl = document.getElementById('lumina-storage-db-size');
         const filesSizeEl = document.getElementById('lumina-storage-files-size');
         const configSizeEl = document.getElementById('lumina-storage-config-size');
+        const cacheSizeEl = document.getElementById('lumina-storage-cache-size');
         if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize);
         if (filesSizeEl) filesSizeEl.textContent = fmt(filesSize);
         if (configSizeEl) configSizeEl.textContent = fmt(configSize);
+        if (cacheSizeEl) cacheSizeEl.textContent = fmt(cacheSize);
         if (totalBytes > 0) {
           const dbPct = (dbSize / totalBytes * 100).toFixed(2);
           const filesPct = (filesSize / totalBytes * 100).toFixed(2);
           const configPct = (configSize / totalBytes * 100).toFixed(2);
+          const cachePct = (cacheSize / totalBytes * 100).toFixed(2);
           const barDb = document.getElementById('lumina-storage-bar-db');
           const barFiles = document.getElementById('lumina-storage-bar-files');
           const barConfig = document.getElementById('lumina-storage-bar-config');
+          const barCache = document.getElementById('lumina-storage-bar-cache');
           requestAnimationFrame(() => {
             if (barDb) barDb.style.width = `${dbPct}%`;
             if (barFiles) barFiles.style.width = `${filesPct}%`;
             if (barConfig) barConfig.style.width = `${configPct}%`;
+            if (barCache) barCache.style.width = `${cachePct}%`;
           });
         }
         const sessionsListEl = document.getElementById('lumina-storage-sessions-list');
         if (sessionsListEl) {
-          const sessionsMetadata = items['lumina_chat_sessions'] || {};
+          const sessionsMetadata = await LuminaChatDB.getAllSessions();
           const sessionList = [];
-          Object.keys(sessionsMetadata).forEach(sessionId => {
+          for (const sessionId of Object.keys(sessionsMetadata)) {
             const meta = sessionsMetadata[sessionId];
-            if (!meta) return;
-            const sessionMessages = items[`lumina_session_${sessionId}`];
+            if (!meta) continue;
+            const sessionMessages = await LuminaChatDB.getMessages(sessionId);
             const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : '';
             const metaStr = JSON.stringify(meta);
             let sessionFilesSize = 0;
@@ -2114,7 +2178,7 @@ class LuminaSettingsModal {
               timestamp: meta.timestamp || Date.now(),
               size: totalSessionBytes
             });
-          });
+          }
           sessionList.sort((a, b) => b.size - a.size);
           const top10 = sessionList.slice(0, 10);
           if (top10.length === 0) {

@@ -2130,6 +2130,10 @@
   background: linear-gradient(90deg, #ffd93d, #ffcc00);
 }
 
+.lumina-storage-bar-segment.seg-cache {
+  background: linear-gradient(90deg, #4da3ff, #007aff);
+}
+
 .lumina-storage-bar-legend {
   display: flex;
   gap: 16px;
@@ -2162,6 +2166,10 @@
 
 .lumina-storage-legend-item .dot.seg-config {
   background: #ffcc00;
+}
+
+.lumina-storage-legend-item .dot.seg-cache {
+  background: #007aff;
 }
 
 .lumina-storage-category-list {
@@ -2201,6 +2209,11 @@
 .lumina-storage-category-icon.icon-config {
   background: rgba(255, 204, 0, 0.15);
   color: #ffcc00;
+}
+
+.lumina-storage-category-icon.icon-cache {
+  background: rgba(0, 122, 255, 0.15);
+  color: #007aff;
 }
 
 .lumina-storage-category-name {

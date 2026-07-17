@@ -1049,6 +1049,8 @@
                                             style="width: 0%"></div>
                                         <div class="lumina-storage-bar-segment seg-config"
                                             id="lumina-storage-bar-config" style="width: 0%"></div>
+                                        <div class="lumina-storage-bar-segment seg-cache"
+                                            id="lumina-storage-bar-cache" style="width: 0%"></div>
                                     </div>
                                     <div class="lumina-storage-bar-legend">
                                         <span class="lumina-storage-legend-item"><i class="dot seg-db"></i>Chat
@@ -1057,6 +1059,7 @@
                                             Files</span>
                                         <span class="lumina-storage-legend-item"><i class="dot seg-config"></i>Settings
                                             &amp; Config</span>
+                                        <span class="lumina-storage-legend-item"><i class="dot seg-cache"></i>Cache</span>
                                     </div>
                                 </div>
 
@@ -1100,12 +1103,28 @@
                                         <span class="lumina-storage-category-size"
                                             id="lumina-storage-config-size">—</span>
                                     </div>
+                                    <div class="lumina-storage-category-item">
+                                        <div class="lumina-storage-category-icon icon-cache">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                                stroke="currentColor" stroke-width="1.8">
+                                                <path d="M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10z"></path>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                        </div>
+                                        <span class="lumina-storage-category-name">Cache (Images &amp; Audio)</span>
+                                        <span class="lumina-storage-category-size"
+                                            id="lumina-storage-cache-size">—</span>
+                                    </div>
                                 </div>
 
                                 <div class="lumina-storage-sessions-header">
                                     <span>Largest Chat Threads</span>
-                                    <button type="button" id="lumina-delete-all-btn"
-                                        class="lumina-settings-btn danger sm">Delete All</button>
+                                    <div class="lumina-storage-actions-group" style="display: flex; gap: 8px;">
+                                        <button type="button" id="lumina-clear-cache-btn"
+                                            class="lumina-settings-btn secondary sm">Clear Cache</button>
+                                        <button type="button" id="lumina-delete-all-btn"
+                                            class="lumina-settings-btn danger sm">Delete All</button>
+                                    </div>
                                 </div>
                                 <div class="lumina-storage-sessions-list" id="lumina-storage-sessions-list">
 

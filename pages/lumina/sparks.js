@@ -975,8 +975,7 @@ async function renderSparkWelcomeScreen(activeTab) {
     const sparks = await sparksLoad();
     const spark = sparks[activeTab.sparkId];
     if (!spark) return;
-    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-    const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+    const sessions = await ChatHistoryManager.getAllHistories();
     const sparkChats = Object.values(sessions)
         .filter(s => s.sparkId === spark.id)
         .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -1021,9 +1020,7 @@ async function renderSparkWelcomeScreen(activeTab) {
     historyEl.querySelectorAll('.spark-welcome__recent-item').forEach(item => {
         item.addEventListener('click', async () => {
             const sid = item.dataset.sessionId;
-            const contentKey = `lumina_session_${sid}`;
-            const contentData = await chrome.storage.local.get([contentKey]);
-            const messages = contentData[contentKey] || [];
+            const messages = await ChatHistoryManager.getSessionMessages(sid);
             const meta = sessions[sid] || { id: sid };
             const isSecondary = (historyEl.id === 'chat-history-secondary');
             window.loadHistoryIntoNewTab(messages, meta, sid, null, isSecondary);

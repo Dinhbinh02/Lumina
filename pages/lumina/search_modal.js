@@ -68,8 +68,7 @@ class LuminaSearchModal {
         this.searchInput.focus();
       }
     }, 50);
-    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-    this.sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+    this.sessions = await ChatHistoryManager.getAllHistories();
     this.handleSearch();
   }
   static hide() {
@@ -255,9 +254,7 @@ class LuminaSearchModal {
     this.isSelectingChat = true;
     this.hide();
     this.isSelectingChat = false;
-    const contentKey = `lumina_session_${sessionId}`;
-    const contentData = await chrome.storage.local.get([contentKey]);
-    const messages = contentData[contentKey] || [];
+    const messages = await ChatHistoryManager.getSessionMessages(sessionId);
     const meta = this.sessions[sessionId] || { id: sessionId };
     const listContainer = document.getElementById('sidebar-recent-chats');
     if (listContainer) {

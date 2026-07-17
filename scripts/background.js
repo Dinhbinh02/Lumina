@@ -2,12 +2,25 @@ importScripts('../lib/vendor/marked.min.js');
 importScripts('../lib/core/constants.js');
 importScripts('../lib/core/memory.js');
 importScripts('../lib/core/attachment_db.js');
+importScripts('../lib/core/highlight_db.js');
+importScripts('../lib/core/chat_db.js');
 importScripts('../lib/core/auth.js');
 importScripts('../lib/core/token_utils.js');
 
 const DEFAULTS = LUMINA_DEFAULTS;
 
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
+
+// Clean up zombie instance state keys from previous sessions on startup
+chrome.storage.local.get(null, (allData) => {
+    if (chrome.runtime.lastError) return;
+    const keysToRemove = Object.keys(allData).filter(key => key.includes('_inst_'));
+    if (keysToRemove.length > 0) {
+        chrome.storage.local.remove(keysToRemove, () => {
+            console.log('[Lumina BG] Cleaned up zombie instance keys:', keysToRemove);
+        });
+    }
+});
 
 function getPromptApiNamespace() {
     if (typeof chrome !== 'undefined' && chrome.ai && chrome.ai.languageModel) {
@@ -1052,7 +1065,7 @@ async function setStatus(tabId, text, type = 'loading') {
     }
 }
 
-const CACHE_EXPIRATION_MS = 14 * 24 * 60 * 60 * 1000;
+const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function getLuminaCache(cacheKey) {
     try {
@@ -1903,8 +1916,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             (async () => {
                 try {
                     const metadata = await LuminaAttachmentDB.getAllMetadata();
-                    const sessionsResult = await chrome.storage.local.get(['lumina_chat_sessions']);
-                    const sessions = sessionsResult.lumina_chat_sessions || {};
+                    const sessions = await LuminaChatDB.getAllSessions();
                     const activeSessionIds = new Set(Object.keys(sessions));
                     for (const item of metadata) {
                         const parts = item.key.split('_');
@@ -3755,12 +3767,91 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     cleanedText = cleanedText.replace(/^(suggested\s+)?title\s*:\s*/i, '');
     cleanedText = cleanedText.replace(/^chat\s+title\s*:\s*/i, '');
     cleanedText = cleanedText.trim().replace(/^["']|["']$/g, '').trim();
-    if (!cleanedText || cleanedText.length > 50) {
-        const firstLine = text.split('\n')[0].trim().replace(/^["']|["']$/g, '').trim();
-        if (firstLine && firstLine.length <= 50) {
-            return firstLine;
-        }
-        return question.substring(0, 20);
+    if (!cleanedText) {
+        return question.substring(0, 30);
     }
     return cleanedText;
 }
+
+// Highlights message handlers
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'load_highlights') {
+        LuminaHighlightDB.get(request.url).then(highlights => {
+            sendResponse({ success: true, highlights: highlights || [] });
+        }).catch(err => {
+            console.error('[Lumina BG] load_highlights error:', err);
+            sendResponse({ success: false, error: err.message });
+        });
+        return true; // Keep channel open for async response
+    }
+    
+    if (request.action === 'save_highlight') {
+        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+            const list = highlights || [];
+            list.push(request.highlight);
+            await LuminaHighlightDB.put(request.url, list);
+            sendResponse({ success: true });
+        }).catch(err => {
+            console.error('[Lumina BG] save_highlight error:', err);
+            sendResponse({ success: false, error: err.message });
+        });
+        return true;
+    }
+    
+    if (request.action === 'undo_last_highlight') {
+        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+            const list = highlights || [];
+            if (list.length === 0) {
+                sendResponse({ success: true, lastHighlight: null });
+                return;
+            }
+            const lastHighlight = list.pop();
+            await LuminaHighlightDB.put(request.url, list);
+            sendResponse({ success: true, lastHighlight });
+        }).catch(err => {
+            console.error('[Lumina BG] undo_last_highlight error:', err);
+            sendResponse({ success: false, error: err.message });
+        });
+        return true;
+    }
+    
+    if (request.action === 'remove_highlights') {
+        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+            const list = highlights || [];
+            const idsStr = request.ids.map(id => id.toString());
+            // In the flat array, item[0] is the highlight ID
+            const filtered = list.filter(h => !idsStr.includes(h[0].toString()));
+            await LuminaHighlightDB.put(request.url, filtered);
+            sendResponse({ success: true });
+        }).catch(err => {
+            console.error('[Lumina BG] remove_highlights error:', err);
+            sendResponse({ success: false, error: err.message });
+        });
+        return true;
+    }
+    
+    if (request.action === 'update_highlight_color') {
+        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+            const list = highlights || [];
+            // In the flat array, item[0] is ID, item[1] is color
+            const highlight = list.find(h => h[0].toString() === request.id.toString());
+            if (highlight) {
+                highlight[1] = request.color;
+                await LuminaHighlightDB.put(request.url, list);
+            }
+            sendResponse({ success: true });
+        }).catch(err => {
+            console.error('[Lumina BG] update_highlight_color error:', err);
+            sendResponse({ success: false, error: err.message });
+        });
+        return true;
+    }
+    
+    // Broadcast forwarding to all panels (including the sender)
+    if ((request.action === 'lumina_session_updated' || 
+         request.action === 'lumina_sessions_index_updated' || 
+         request.action === 'lumina_sessions_deleted') && !request.isBroadcast) {
+        request.isBroadcast = true;
+        chrome.runtime.sendMessage(request).catch(() => {});
+    }
+});

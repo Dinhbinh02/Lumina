@@ -963,95 +963,7 @@ async function handleRemoteSync(changes, areaName) {
             }
         }
     }
-    for (const key in changes) {
-        if (key.startsWith('lumina_session_')) {
-            const sid = key.replace('lumina_session_', '');
-            const lastLocalSave = window._localSavedSessions?.[sid];
-            const isRecentLocalSave = lastLocalSave && (Date.now() - lastLocalSave < 1000);
-            if (isRecentLocalSave) {
-                continue;
-            }
-            const affected = tabs.filter(t => t.sessionId === sid);
-            if (affected.length > 0) {
-                const isGeneratingLocally = (
-                    (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid) ||
-                    (sharedInputUISecondary && sharedInputUISecondary.isGenerating && streamingTab && streamingTab.sessionId === sid)
-                );
-                if (!isGeneratingLocally) {
-                    const messages = changes[key].newValue;
-                    if (messages && Array.isArray(messages)) {
-                        chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]).then(result => {
-                            const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
-                            const meta = sessions[sid] || {};
-                            const chatData = {
-                                ...meta,
-                                messages: messages,
-                                sessionId: sid,
-                                timestamp: meta.createdAt || meta.updatedAt
-                            };
-                            affected.forEach(async (tab) => {
-                                if (isRecentLocalSave && window._lastSavingHistoryEl === tab.historyEl) {
-                                    return;
-                                }
-                                if (tab.historyEl) {
-                                    const savedScrollTop = tab.historyEl.scrollTop;
-                                    await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
-                                    normalizeRestoredHistory(tab.historyEl);
-                                    if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
-                                    const entries = tab.historyEl.querySelectorAll('.lumina-entry');
-                                    const lastEntry = entries[entries.length - 1];
-                                    if (lastEntry && tab.chatUIInstance) {
-                                        tab.chatUIInstance.clearEntryMargins(lastEntry);
-                                        tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
-                                    }
-                                    tab.historyEl.scrollTop = savedScrollTop;
-                                }
-                            });
-                        });
-                    }
-                }
-            }
-        }
-    }
-    if (changes['lumina_chat_sessions']) {
-        const oldSessions = changes['lumina_chat_sessions'].oldValue || {};
-        const newSessions = changes['lumina_chat_sessions'].newValue || {};
-        const deletedIds = Object.keys(oldSessions).filter(id => !newSessions[id]);
-        if (deletedIds.length > 0) {
-            let updated = false;
-            tabs.forEach((tab, index) => {
-                if (tab.sessionId && deletedIds.includes(tab.sessionId)) {
-                    const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
-                    const isActive = (index === activeTabIndex);
-                    if (isActive || isSecondary) {
-                        const ui = isSecondary ? sharedInputUISecondary : sharedInputUI;
-                        if (ui && ui.isGenerating) {
-                            console.log('[Lumina] Suppressing resetChat on active generation for tab:', tab.sessionId);
-                        } else {
-                            resetChat(isSecondary);
-                            updated = true;
-                        }
-                    } else {
-                        tab.title = 'New Tab';
-                        tab.sessionId = null;
-                        tab.sparkId = null;
-                        if (tab.chatUIInstance) tab.chatUIInstance.sparkId = null;
-                        tab.isHistoryLoaded = false;
-                        if (tab.historyEl) {
-                            tab.historyEl.removeAttribute('data-session-id');
-                            tab.historyEl.innerHTML = '';
-                        }
-                        updated = true;
-                    }
-                }
-            });
-            if (updated) {
-                renderTabs();
-                if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
-                saveTabsState();
-            }
-        }
-    }
+    // Session changes and index changes are now synced via runtime message broadcasts
 }
 
 function normalizeTabs() {
@@ -1093,12 +1005,9 @@ async function ensureTabHistoryLoaded(tab) {
                 tab.historyEl.style.transition = 'none';
             }
             try {
-                const contentKey = `lumina_session_${tab.sessionId}`;
-                const contentData = await chrome.storage.local.get([contentKey]);
-                const messages = contentData[contentKey];
+                const messages = await ChatHistoryManager.getSessionMessages(tab.sessionId);
                 if (messages) {
-                    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                    const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+                    const sessions = await ChatHistoryManager.getAllHistories();
                     const meta = sessions[tab.sessionId] || {};
                     const chatData = {
                         ...meta,
@@ -1231,8 +1140,7 @@ async function initTabs() {
         let tabTitle = 'Chat';
         let meta = {};
         if (sessionId) {
-            const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-            const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+            const sessions = await ChatHistoryManager.getAllHistories();
             meta = sessions[sessionId] || {};
             tabTitle = meta.title || 'Chat';
         }
@@ -1319,8 +1227,7 @@ async function initTabs() {
             let secTabTitle = savedSecTab?.title || 'Chat 2';
             let secMeta = {};
             if (secSessionId) {
-                const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+                const sessions = await ChatHistoryManager.getAllHistories();
                 secMeta = sessions[secSessionId] || {};
                 secTabTitle = secMeta.title || 'Chat 2';
             }
@@ -2451,7 +2358,7 @@ function initSpotlightAskSelection() {
                 ? 'secondary'
                 : 'primary';
             if (window.LuminaSelection) {
-                // Nếu đang hiển thị sẵn rồi thì không định vị lại theo chuột nữa để tránh bị nhảy vị trí
+                // Náº¿u Ä‘ang hiá»ƒn thá»‹ sáºµn rá»“i thÃ¬ khÃ´ng Ä‘á»‹nh vá»‹ láº¡i theo chuá»™t ná»¯a Ä‘á»ƒ trÃ¡nh bá»‹ nháº£y vá»‹ trÃ­
                 if (LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
                     LuminaSelection.show(undefined, undefined, text, range, false);
                 } else {
@@ -3343,7 +3250,92 @@ async function init() {
         }
     });
     chrome.runtime.onMessage.addListener((request) => {
-        if (request.action === 'settings_updated') {
+        if (request.action === 'lumina_session_updated') {
+            const sid = request.sessionId;
+            const affected = tabs.filter(t => t.sessionId === sid);
+            if (affected.length > 0) {
+                const isRecentLocalSave = window._localSavedSessions?.[sid] && (Date.now() - window._localSavedSessions[sid] < 1000);
+                if (!isRecentLocalSave) {
+                    const isGeneratingLocally = (
+                        (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid) ||
+                        (sharedInputUISecondary && sharedInputUISecondary.isGenerating && streamingTab && streamingTab.sessionId === sid)
+                    );
+                    if (!isGeneratingLocally) {
+                        Promise.all([
+                            LuminaChatDB.getMessages(sid),
+                            LuminaChatDB.getSession(sid)
+                        ]).then(([messages, meta]) => {
+                            if (messages) {
+                                const chatData = {
+                                    ...meta,
+                                    messages: messages,
+                                    sessionId: sid,
+                                    timestamp: meta?.createdAt || meta?.updatedAt
+                                };
+                                affected.forEach(async (tab) => {
+                                    if (isRecentLocalSave && window._lastSavingHistoryEl === tab.historyEl) {
+                                        return;
+                                    }
+                                    if (tab.historyEl) {
+                                        const savedScrollTop = tab.historyEl.scrollTop;
+                                        await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
+                                        normalizeRestoredHistory(tab.historyEl);
+                                        if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
+                                        const entries = tab.historyEl.querySelectorAll('.lumina-entry');
+                                        const lastEntry = entries[entries.length - 1];
+                                        if (lastEntry && tab.chatUIInstance) {
+                                            tab.chatUIInstance.clearEntryMargins(lastEntry);
+                                            tab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
+                                        }
+                                        tab.historyEl.scrollTop = savedScrollTop;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+        } else if (request.action === 'lumina_sessions_deleted') {
+            const deletedIds = request.deletedIds || [];
+            if (deletedIds.length > 0) {
+                let updated = false;
+                tabs.forEach((tab, index) => {
+                    if (tab.sessionId && deletedIds.includes(tab.sessionId)) {
+                        const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
+                        const isActive = (index === activeTabIndex);
+                        if (isActive || isSecondary) {
+                            const ui = isSecondary ? sharedInputUISecondary : sharedInputUI;
+                            if (ui && ui.isGenerating) {
+                                console.log('[Lumina] Suppressing resetChat on active generation for tab:', tab.sessionId);
+                            } else {
+                                resetChat(isSecondary);
+                                updated = true;
+                            }
+                        } else {
+                            tab.title = 'New Tab';
+                            tab.sessionId = null;
+                            tab.sparkId = null;
+                            if (tab.chatUIInstance) tab.chatUIInstance.sparkId = null;
+                            tab.isHistoryLoaded = false;
+                            if (tab.historyEl) {
+                                tab.historyEl.removeAttribute('data-session-id');
+                                tab.historyEl.innerHTML = '';
+                            }
+                            updated = true;
+                        }
+                    }
+                });
+                if (updated) {
+                    renderTabs();
+                    if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
+                    saveTabsState();
+                }
+            }
+        } else if (request.action === 'lumina_sessions_index_updated') {
+            if (typeof renderRecentChatsSidebar === 'function') {
+                renderRecentChatsSidebar();
+            }
+        } else if (request.action === 'settings_updated') {
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
             if (size) applyFontSize(size);
         } else if (request.action === 'clear_selection') {
@@ -3747,8 +3739,7 @@ let recentChatsLimit = 30;
 async function renderRecentChatsSidebar() {
     const listContainer = document.getElementById('sidebar-recent-chats');
     if (!listContainer) return;
-    const result = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-    const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+    const sessions = await ChatHistoryManager.getAllHistories();
     const historyData = Object.values(sessions)
         .sort((a, b) => {
             const aPinned = !!a.pinned;
@@ -3891,7 +3882,7 @@ async function renderRecentChatsSidebar() {
                                 confirmLabel: 'Pin'
                             });
                             if (newTitle === null) return;
-                            session.pinned = true;
+                        session.pinned = true;
                             if (newTitle.trim()) {
                                 session.title = newTitle.trim();
                                 session.isRenamed = true;
@@ -3899,7 +3890,8 @@ async function renderRecentChatsSidebar() {
                         } else {
                             session.pinned = false;
                         }
-                        await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: store });
+                        await LuminaChatDB.putSession(session);
+                        chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                         if (session.isRenamed) {
                             const activeTab = tabs[activeTabIndex];
                             if (activeTab && activeTab.sessionId === sid) {
@@ -3957,9 +3949,8 @@ async function renderRecentChatsSidebar() {
             ctxMenu.dataset.sessionId = sid;
             const pinItem = ctxMenu.querySelector('[data-action="pin"]');
             if (pinItem) {
-                chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]).then(res => {
-                    const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-                    const isPinned = !!store[sid]?.pinned;
+                LuminaChatDB.getSession(sid).then(session => {
+                    const isPinned = !!session?.pinned;
                     const textEl = pinItem.querySelector('span');
                     if (textEl) textEl.textContent = isPinned ? 'Unpin' : 'Pin';
                     const svgContainer = pinItem.querySelector('svg');
@@ -3995,9 +3986,7 @@ async function renderRecentChatsSidebar() {
             document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
             const sid = item.dataset.sessionId;
-            const contentKey = `lumina_session_${sid}`;
-            const contentData = await chrome.storage.local.get([contentKey]);
-            const messages = contentData[contentKey] || [];
+            const messages = await ChatHistoryManager.getSessionMessages(sid);
             const meta = sessions[sid] || { id: sid };
             window.loadHistoryIntoNewTab(messages, meta, sid);
             const sidebar = document.getElementById('lumina-sidebar');
@@ -4165,7 +4154,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     const currentTab = targetTab || tabs[activeTabIndex];
     if (!currentTab) return;
     if (!currentTab.sessionId) {
-        const newSessionId = 'session_' + Date.now() + Math.random().toString(36).substr(2, 5);
+        const newSessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         currentTab.sessionId = newSessionId;
         currentTab.isHistoryLoaded = true;
         currentTab.isLoadingHistory = false;
@@ -4524,8 +4513,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     ) {
         const nameText = apiText || text;
         if (nameText && nameText.trim()) {
-            chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY], (result) => {
-                const sessions = result[ChatHistoryManager.STORAGE_KEY] || {};
+            ChatHistoryManager.getAllHistories().then((sessions) => {
                 const meta = sessions[currentTab.sessionId] || {};
                 console.log("[AutoNaming Check]", { sessionId: currentTab.sessionId, autoNamed: meta.autoNamed, isRenamed: meta.isRenamed, exists: !!sessions[currentTab.sessionId] });
                 if (!meta.autoNamed && !meta.isRenamed) {
@@ -5964,9 +5952,7 @@ async function renderDropdownMenu(pane = 'primary') {
     const sessionId = activeTab?.sessionId || null;
     let sessionMeta = null;
     if (sessionId) {
-        const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-        const sessions = res[ChatHistoryManager.STORAGE_KEY] || {};
-        sessionMeta = sessions[sessionId] || null;
+        sessionMeta = await LuminaChatDB.getSession(sessionId);
     }
     const isPinned = sessionMeta?.pinned || false;
     const pinSVG = isPinned
@@ -5996,9 +5982,7 @@ async function renderDropdownMenu(pane = 'primary') {
     const hide = () => { dropdown.style.display = 'none'; };
     dropdown.querySelector('#dropdown-pin-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
-        const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-        const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-        const session = store[sessionId];
+        const session = await LuminaChatDB.getSession(sessionId);
         if (session) {
             const currentlyPinned = !!session.pinned;
             if (!currentlyPinned) {
@@ -6025,7 +6009,8 @@ async function renderDropdownMenu(pane = 'primary') {
             } else {
                 session.pinned = false;
             }
-            await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: store });
+            await LuminaChatDB.putSession(session);
+            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             if (session.isRenamed) {
                 const currentActiveTab = tabs[targetIdx];
                 if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
@@ -6671,6 +6656,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
     if (!window.namingSessionIds) window.namingSessionIds = new Set();
     if (window.namingSessionIds.has(sessionId)) return;
     window.namingSessionIds.add(sessionId);
+    console.log('[AutoNaming] Starting title generation for:', sessionId, questionText);
     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
     chrome.runtime.sendMessage({
         action: 'generate_chat_title',
@@ -6688,6 +6674,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         window.namingSessionIds.delete(sessionId);
         if (response && response.success && response.title) {
             const cleanTitle = response.title.trim();
+            console.log('[AutoNaming] Generated title successfully:', cleanTitle);
             if (typeof tabs !== 'undefined') {
                 tabs.forEach(t => {
                     if (t.sessionId === sessionId) t.title = cleanTitle;
@@ -6695,16 +6682,18 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 if (typeof renderTabs === 'function') renderTabs();
             }
             const tryWriteTitle = async (attemptsLeft) => {
-                const freshResult = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                const freshSessions = freshResult[ChatHistoryManager.STORAGE_KEY] || {};
-                if (freshSessions[sessionId]) {
-                    freshSessions[sessionId].title = cleanTitle;
-                    freshSessions[sessionId].autoNamed = true;
-                    await chrome.storage.local.set({ [ChatHistoryManager.STORAGE_KEY]: freshSessions });
-                    if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
+                const session = await LuminaChatDB.getSession(sessionId);
+                console.log('[AutoNaming] tryWriteTitle check:', { sessionId, sessionExists: !!session, attemptsLeft });
+                if (session) {
+                    session.title = cleanTitle;
+                    session.autoNamed = true;
+                    await LuminaChatDB.putSession(session);
+                    console.log('[AutoNaming] Successfully wrote title to DB for:', sessionId);
+                    chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                 } else if (attemptsLeft > 0) {
                     setTimeout(() => tryWriteTitle(attemptsLeft - 1), 400);
                 } else {
+                    console.warn('[AutoNaming] Failed to write title after all attempts (session not found in DB)');
                     if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar();
                 }
             };
