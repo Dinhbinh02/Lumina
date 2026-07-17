@@ -11590,7 +11590,6 @@ body.is-sidepanel .split-toggle-btn {
   max-height: 85vh;
   background: var(--lumina-ui-bg);
   border-radius: 20px;
-  box-shadow: var(--lumina-shadow-primary);
   display: flex;
   flex-direction: column;
   position: relative;

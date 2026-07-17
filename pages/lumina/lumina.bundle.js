@@ -6403,6 +6403,22 @@ class LuminaChatUI {
         this._addPreparedFile(fileObj);
         this.renderFilePreviews();
     }
+    getAttachmentDbKey(fileObj) {
+        if (!fileObj) return '';
+        if (fileObj.fileUri && fileObj.fileUri.startsWith('local-db://')) {
+            const urlParts = fileObj.fileUri.replace('local-db://', '').split('/');
+            if (urlParts.length >= 3) {
+                const sessionId = urlParts[0];
+                const attachmentId = urlParts[1];
+                const name = urlParts.slice(2).join('/');
+                return `${sessionId}_${attachmentId}_${name}`;
+            }
+        }
+        const sessionId = this.currentSessionId || 'temp_session';
+        const attachmentId = fileObj.attachmentId;
+        const fileName = fileObj.name;
+        return `${sessionId}_${attachmentId}_${fileName}`;
+    }
     removeFile(index) {
         const file = this.attachedFiles[index];
         if (!file) return;
@@ -6417,6 +6433,12 @@ class LuminaChatUI {
                 const isGroupChild = item?.parentAttachmentId === groupId;
                 if (isGroupRoot || isGroupChild) {
                     this._revokeObjectUrl(item?.previewUrl);
+                    const dbKey = this.getAttachmentDbKey(item);
+                    if (typeof LuminaAttachmentDB !== 'undefined') {
+                        LuminaAttachmentDB.delete(dbKey).catch(err => {
+                            console.error('Failed to delete removed input preview file from DB', err);
+                        });
+                    }
                     return;
                 }
                 kept.push(item);
@@ -6424,6 +6446,12 @@ class LuminaChatUI {
             this.attachedFiles = kept;
         } else {
             this._revokeObjectUrl(file?.previewUrl);
+            const dbKey = this.getAttachmentDbKey(file);
+            if (typeof LuminaAttachmentDB !== 'undefined') {
+                LuminaAttachmentDB.delete(dbKey).catch(err => {
+                    console.error('Failed to delete removed input preview file from DB', err);
+                });
+            }
             this.attachedFiles.splice(index, 1);
         }
         this._syncSelectedImagesFromAttachments();
@@ -6431,7 +6459,13 @@ class LuminaChatUI {
         this._updateContainerState();
     }
     clearImages() {
-        this.attachedFiles.forEach(file => this._revokeObjectUrl(file?.previewUrl));
+        this.attachedFiles.forEach(file => {
+            this._revokeObjectUrl(file?.previewUrl);
+            const dbKey = this.getAttachmentDbKey(file);
+            if (typeof LuminaAttachmentDB !== 'undefined') {
+                LuminaAttachmentDB.delete(dbKey).catch(() => {});
+            }
+        });
         this.attachedFiles = [];
         this.selectedImages = [];
         this.renderFilePreviews();
@@ -10701,6 +10735,66 @@ if (typeof globalThis !== 'undefined') {
 
 // --- BUNDLED FROM: lib/core/migration.js ---
 (async function() {
+    // --- STANDALONE HIGHLIGHTS & OBSOLETE KEYS PURGE ---
+    try {
+        const allLocalData = await chrome.storage.local.get(null);
+        const keysToRemove = [];
+        for (const key of Object.keys(allLocalData)) {
+            // Check highlights
+            if (key.startsWith('highlights_')) {
+                const legacyHighlights = allLocalData[key] || [];
+                if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
+                    const flatHighlights = legacyHighlights.map(h => {
+                        if (Array.isArray(h)) return h; // already flat
+                        if (!h || !h.rangeData) return null;
+                        return [
+                            h.id,
+                            h.color,
+                            Array.isArray(h.rangeData.startPath) ? h.rangeData.startPath.join('/') : '',
+                            h.rangeData.startOffset,
+                            Array.isArray(h.rangeData.endPath) ? h.rangeData.endPath.join('/') : '',
+                            h.rangeData.endOffset,
+                            h.rangeData.text || '',
+                            h.timestamp || Date.now()
+                        ];
+                    }).filter(Boolean);
+                    
+                    if (flatHighlights.length > 0) {
+                        try {
+                            const existing = await LuminaHighlightDB.get(key);
+                            if (!existing || existing.length === 0) {
+                                await LuminaHighlightDB.put(key, flatHighlights);
+                                console.log(`[Lumina Migration] Migrated highlights to IndexedDB for key: ${key}`);
+                            }
+                        } catch (dbErr) {
+                            console.error(`[Lumina Migration] Failed to migrate highlights for key: ${key}`, dbErr);
+                        }
+                    }
+                }
+                keysToRemove.push(key);
+            }
+            
+            // Check obsolete keys (chatbox, spotlight, tavilyApiKey, monica, lynote)
+            const lowerKey = key.toLowerCase();
+            if (
+                key.startsWith('chatbox_') || 
+                lowerKey.includes('spotlight') || 
+                key === 'tavilyApiKey' ||
+                lowerKey.includes('monica') || 
+                lowerKey.includes('lynote')
+            ) {
+                keysToRemove.push(key);
+            }
+        }
+        
+        if (keysToRemove.length > 0) {
+            await chrome.storage.local.remove(keysToRemove);
+            console.log('[Lumina Migration] Successfully purged legacy/obsolete keys from local storage:', keysToRemove);
+        }
+    } catch (err) {
+        console.error('[Lumina Migration] Standalone highlights/obsolete keys purge failed:', err);
+    }
+
     const MIGRATION_FLAG = 'lumina_session_migrated_v7';
     const PREV_MIGRATION_FLAGS = [
         'lumina_session_migrated_v2', 
@@ -11216,6 +11310,10 @@ const ChatHistoryManager = {
         }
         const history = historyContainer || currentPopup.querySelector('.lumina-chat-history');
         if (!history) return;
+        
+        const restoreId = Math.random().toString(36).substr(2, 9);
+        history.__activeRestoreId = restoreId;
+        
         history.innerHTML = '';
         if (chatData.context) currentContext = chatData.context;
         
@@ -11265,8 +11363,10 @@ const ChatHistoryManager = {
         }
 
         const renderGroup = async (group, targetContainer) => {
+            if (history.__activeRestoreId !== restoreId) return;
             let i = 0;
             while (i < group.length) {
+                if (history.__activeRestoreId !== restoreId) return;
                 const item = group[i];
                 const msg = item.msg;
                 const msgIdx = item.originalIndex;
@@ -11649,6 +11749,7 @@ const ChatHistoryManager = {
 
         if (bypassPagination) {
             for (const group of qaGroups) {
+                if (history.__activeRestoreId !== restoreId) return;
                 await renderGroup(group, history);
             }
         } else {
@@ -11664,9 +11765,11 @@ const ChatHistoryManager = {
                 <svg class="lumina-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px; margin-right: 6px; display: none; animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
                 <span>Load older messages (${remainingGroups.length} remaining)</span>
             `;
+            if (history.__activeRestoreId !== restoreId) return;
             history.appendChild(loadMoreDiv);
             
             for (const group of initialGroups) {
+                if (history.__activeRestoreId !== restoreId) return;
                 await renderGroup(group, history);
             }
 
@@ -15969,7 +16072,7 @@ function bindHistoryScroll(tab) {
             if (nearBottom) {
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => {
-                    saveTabsState();
+                    saveTabsState(false, false);
                 }, 200);
                 return;
             }
@@ -15986,7 +16089,7 @@ function bindHistoryScroll(tab) {
         }
         if (saveTimer) clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
-            saveTabsState();
+            saveTabsState(false, false);
         }, 200);
     }, { passive: true });
 }
@@ -16373,7 +16476,7 @@ async function initTabs() {
             const activeIdx = data[KEYS.activeTabIndex] || 0;
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
-        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp ? null : (savedTab?.sessionId || null)));
+        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp || isSidePanel ? null : (savedTab?.sessionId || null)));
         let tabTitle = 'Chat';
         let meta = {};
         if (sessionId) {
@@ -16938,7 +17041,7 @@ function updateTabTitle(chatUIInstance, title) {
     }
 }
 
-function saveTabsState(forceSaveChat = false) {
+function saveTabsState(forceSaveChat = false, saveHistory = true) {
     const tabsMetadata = tabs.map(tab => {
         if (tab.chatUIInstance) {
             tab.selectedModel = tab.chatUIInstance.activeTabModel || tab.selectedModel || null;
@@ -16976,7 +17079,7 @@ function saveTabsState(forceSaveChat = false) {
         ? (secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null)
         : (activeTabIndex >= 0 ? tabs[activeTabIndex] : null);
     const savedSessionIds = new Set();
-    if (activeTab && activeTab.sessionId && activeTab.historyEl) {
+    if (saveHistory && activeTab && activeTab.sessionId && activeTab.historyEl) {
         savedSessionIds.add(activeTab.sessionId);
         window._localSavedSessions[activeTab.sessionId] = Date.now();
         window._lastSavingHistoryEl = activeTab.historyEl;
@@ -18722,6 +18825,10 @@ function initSidebar() {
     if (isCollapsed && sidebar && !isSidePanel) {
         sidebar.classList.add('sidebar-collapsed');
     }
+    const initStyle = document.getElementById('sidebar-init-style');
+    if (initStyle) {
+        initStyle.remove();
+    }
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -19119,7 +19226,7 @@ async function renderRecentChatsSidebar() {
                                 confirmLabel: 'Pin'
                             });
                             if (newTitle === null) return;
-                        session.pinned = true;
+                            session.pinned = true;
                             if (newTitle.trim()) {
                                 session.title = newTitle.trim();
                                 session.isRenamed = true;
@@ -21109,7 +21216,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         activeTab.isLoadingHistory = false;
         updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
         renderTabs();
-        saveTabsState();
+        saveTabsState(false, false);
         if (typeof updateTopbarSparkTitle === 'function') {
             updateTopbarSparkTitle();
         }
@@ -21390,7 +21497,7 @@ function initTopbarModelSelector(pane = 'primary') {
             const temp = document.getElementById('lumina-modelItemTemplate');
             const clone = temp.content.cloneNode(true);
             clone.querySelector('.model-name').textContent = item.displayName || item.model;
-            clone.querySelector('.model-id').textContent = item.model;
+            clone.querySelector('.model-id').style.display = 'none';
             el.appendChild(clone);
             el.onclick = (e) => {
                 e.stopPropagation();

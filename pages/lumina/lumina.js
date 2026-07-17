@@ -732,7 +732,7 @@ function bindHistoryScroll(tab) {
             if (nearBottom) {
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => {
-                    saveTabsState();
+                    saveTabsState(false, false);
                 }, 200);
                 return;
             }
@@ -749,7 +749,7 @@ function bindHistoryScroll(tab) {
         }
         if (saveTimer) clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
-            saveTabsState();
+            saveTabsState(false, false);
         }, 200);
     }, { passive: true });
 }
@@ -1136,7 +1136,7 @@ async function initTabs() {
             const activeIdx = data[KEYS.activeTabIndex] || 0;
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
-        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp ? null : (savedTab?.sessionId || null)));
+        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp || isSidePanel ? null : (savedTab?.sessionId || null)));
         let tabTitle = 'Chat';
         let meta = {};
         if (sessionId) {
@@ -1701,7 +1701,7 @@ function updateTabTitle(chatUIInstance, title) {
     }
 }
 
-function saveTabsState(forceSaveChat = false) {
+function saveTabsState(forceSaveChat = false, saveHistory = true) {
     const tabsMetadata = tabs.map(tab => {
         if (tab.chatUIInstance) {
             tab.selectedModel = tab.chatUIInstance.activeTabModel || tab.selectedModel || null;
@@ -1739,7 +1739,7 @@ function saveTabsState(forceSaveChat = false) {
         ? (secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null)
         : (activeTabIndex >= 0 ? tabs[activeTabIndex] : null);
     const savedSessionIds = new Set();
-    if (activeTab && activeTab.sessionId && activeTab.historyEl) {
+    if (saveHistory && activeTab && activeTab.sessionId && activeTab.historyEl) {
         savedSessionIds.add(activeTab.sessionId);
         window._localSavedSessions[activeTab.sessionId] = Date.now();
         window._lastSavingHistoryEl = activeTab.historyEl;
@@ -3485,6 +3485,10 @@ function initSidebar() {
     if (isCollapsed && sidebar && !isSidePanel) {
         sidebar.classList.add('sidebar-collapsed');
     }
+    const initStyle = document.getElementById('sidebar-init-style');
+    if (initStyle) {
+        initStyle.remove();
+    }
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3882,7 +3886,7 @@ async function renderRecentChatsSidebar() {
                                 confirmLabel: 'Pin'
                             });
                             if (newTitle === null) return;
-                        session.pinned = true;
+                            session.pinned = true;
                             if (newTitle.trim()) {
                                 session.title = newTitle.trim();
                                 session.isRenamed = true;
@@ -5872,7 +5876,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         activeTab.isLoadingHistory = false;
         updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
         renderTabs();
-        saveTabsState();
+        saveTabsState(false, false);
         if (typeof updateTopbarSparkTitle === 'function') {
             updateTopbarSparkTitle();
         }
@@ -6153,7 +6157,7 @@ function initTopbarModelSelector(pane = 'primary') {
             const temp = document.getElementById('lumina-modelItemTemplate');
             const clone = temp.content.cloneNode(true);
             clone.querySelector('.model-name').textContent = item.displayName || item.model;
-            clone.querySelector('.model-id').textContent = item.model;
+            clone.querySelector('.model-id').style.display = 'none';
             el.appendChild(clone);
             el.onclick = (e) => {
                 e.stopPropagation();
