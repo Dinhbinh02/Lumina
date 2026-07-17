@@ -2291,8 +2291,15 @@ function initSpotlightAskSelection() {
         const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
         if (isInsideLumina) return;
         setTimeout(() => {
-            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
-                LuminaSelection.expandToWordBoundaries();
+            if (window.LuminaSelection) {
+                if (LuminaSelection.isInsideEditable()) {
+                    const activeElement = LuminaSelection.getDeepActiveElement();
+                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                        LuminaSelection.expandInputToWordBoundaries(activeElement);
+                    }
+                } else {
+                    LuminaSelection.expandToWordBoundaries();
+                }
             }
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
@@ -2332,8 +2339,15 @@ function initSpotlightAskSelection() {
         if (!selectionKeys.includes(e.key)) return;
 
         setTimeout(() => {
-            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
-                LuminaSelection.expandToWordBoundaries();
+            if (window.LuminaSelection) {
+                if (LuminaSelection.isInsideEditable()) {
+                    const activeElement = LuminaSelection.getDeepActiveElement();
+                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                        LuminaSelection.expandInputToWordBoundaries(activeElement);
+                    }
+                } else {
+                    LuminaSelection.expandToWordBoundaries();
+                }
             }
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
@@ -3138,6 +3152,10 @@ async function init() {
     chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle', 'theme', 'contrast', 'accentColor'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
+        if (shortcuts.undefined !== undefined) {
+            delete shortcuts.undefined;
+            chrome.storage.local.set({ shortcuts: shortcuts });
+        }
         annotationShortcuts = items.annotationShortcuts || [];
         questionMappings = items.questionMappings || [];
         askSelectionPopupEnabled = items.askSelectionPopupEnabled ?? false;
@@ -4534,12 +4552,13 @@ async function handleTranslation(text) {
 
 function matchesAnnotationShortcut(event, shortcut) {
     if (!shortcut) return false;
-    const ctrlMatch = !!shortcut.ctrlKey === event.ctrlKey;
-    const altMatch = !!shortcut.altKey === event.altKey;
-    const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
-    const metaMatch = !!shortcut.metaKey === event.metaKey;
-    const keyMatch = (shortcut.code && event.code === shortcut.code) ||
-        (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
+    const target = shortcut.keyData || shortcut;
+    const ctrlMatch = !!target.ctrlKey === event.ctrlKey;
+    const altMatch = !!target.altKey === event.altKey;
+    const shiftMatch = !!target.shiftKey === event.shiftKey;
+    const metaMatch = !!target.metaKey === event.metaKey;
+    const keyMatch = (target.code && event.code === target.code) ||
+        (event.key && event.key.toLowerCase() === (target.key || "").toLowerCase());
     const isMatched = ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
     return isMatched;
 }
@@ -4572,6 +4591,18 @@ function setupGlobalListeners() {
     }
     document.addEventListener('keydown', (event) => {
         if (document.querySelector('.recording')) return;
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            const activeElement = document.activeElement;
+            const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
+            if (!isInput) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                if (window.LuminaAnnotation) LuminaAnnotation.undoLastHighlight();
+                return;
+            }
+        }
         const searchOverlay = document.getElementById('lumina-search-overlay');
         if (searchOverlay && searchOverlay.style.display === 'flex') {
             const searchInput = document.getElementById('lumina-search-input');
@@ -4829,9 +4860,11 @@ function setupGlobalListeners() {
         }
         const shortcutActions = Object.keys(shortcuts);
         for (const action of shortcutActions) {
+            if (action === 'undefined' || !action) continue;
             const shortcut = shortcuts[action];
             if (!shortcut) continue;
-            if (!isShortcutMatchImmediate(event, shortcut)) continue;
+            const isMatch = isShortcutMatchImmediate(event, shortcut);
+            if (!isMatch) continue;
             if (isEditing) {
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
@@ -4864,30 +4897,23 @@ function setupGlobalListeners() {
                         event.preventDefault();
                         event.stopPropagation();
                         event.stopImmediatePropagation();
-                        let fullQuestion;
-                        const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph/i.test(mapping.prompt);
-                        if (hasVariables) {
-                            fullQuestion = mapping.prompt
-                                .replace(/\$SelectedText|SelectedText/gi, selection)
-                                .replace(/\$Sentence/gi, selection)
-                                .replace(/\$Paragraph/gi, selection);
-                        } else {
-                            fullQuestion = `"${selection}" ${mapping.prompt}`;
-                        }
+                        const displayQuestion = mapping.prompt
+                            .replace(/\$SelectedText|SelectedText/gi, selection)
+                            .replace(/\$Sentence/gi, selection)
+                            .replace(/\$Paragraph/gi, selection)
+                            .trim();
+                        const fullQuestion = displayQuestion;
                         const targetTabIdx = (luminaAskSourcePane === 'secondary' && isSplitMode)
                             ? secondaryActiveTabIndex
                             : activeTabIndex;
                         const targetTab = tabs[targetTabIdx];
-                        if (targetTab && targetTab.chatUIInstance) {
-                            const sel = window.getSelection();
-                            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-                            if (range && range.startContainer) {
-                                if (window.LuminaAnnotation) {
-                                    window.LuminaAnnotation.highlight(range);
-                                }
-                            }
+                        const sel = window.getSelection();
+                        const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+                        const shouldHighlight = (mapping.highlight !== false) && (mapping.enableHighlight !== false);
+                        if (shouldHighlight && window.LuminaAnnotation && range) {
+                            window.LuminaAnnotation.highlight(range);
                         }
-                        handleSubmit(fullQuestion, [], {}, targetTab || null);
+                        handleSubmit(fullQuestion, [], { mode: 'qa' }, targetTab || null, displayQuestion);
                         window.getSelection().removeAllRanges();
                         if (window.LuminaSelection) LuminaSelection.hide();
                         return;
@@ -5017,10 +5043,16 @@ function setupGlobalListeners() {
         }
         for (const shortcut of annotationShortcuts) {
             if (shortcut.enabled === false) continue;
-            if (matchesAnnotationShortcut(event, shortcut)) {
-                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+            const matched = matchesAnnotationShortcut(event, shortcut);
+            console.log('[Lumina Keydown Debug] Shortcut:', shortcut.key, 'Matched:', matched);
+            if (matched) {
+                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) {
+                    console.log('[Lumina Keydown Debug] Inside editable, skipping.');
+                    continue;
+                }
                 const sel = window.getSelection();
                 const text = sel ? sel.toString().trim() : '';
+                console.log('[Lumina Keydown Debug] Selection text:', text, 'rangeCount:', sel ? sel.rangeCount : 0);
                 if (text.length > 0 && sel.rangeCount > 0) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -5028,6 +5060,7 @@ function setupGlobalListeners() {
                     const range = sel.getRangeAt(0);
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
+                    console.log('[Lumina Keydown Debug] Highlighting range with color:', color);
                     if (window.LuminaAnnotation) {
                         LuminaAnnotation.saveHighlight(range, color, highlightId);
                         LuminaAnnotation.applyHighlight(range, color, highlightId);

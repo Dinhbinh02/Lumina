@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -1037,6 +1037,7 @@ window.LuminaSelection = {
                     }
                     node = node.parentNode || (node.host && node.host.nodeType === 1 ? node.host : null);
                 }
+                return false;
             }
         } catch (e) { return false; }
         const active = this.getDeepActiveElement();
@@ -14269,7 +14270,9 @@ class LuminaSettingsModal {
         this.renderShortcutDisplay(box, keyData);
         this.recordingHadInput = true;
         this.stopRecording(box, false);
-        this.saveCapturedShortcut(box.dataset.action, keyData);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, keyData);
+        }
       }
     };
     const keyupHandler = (e) => {
@@ -14343,7 +14346,9 @@ class LuminaSettingsModal {
           modifierCodes: modifierCodes
         };
         this.renderShortcutDisplay(box, keyData);
-        this.saveCapturedShortcut(box.dataset.action, keyData);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, keyData);
+        }
       } else {
         this.recordingPressedCodes.delete(e.code);
       }
@@ -14357,7 +14362,9 @@ class LuminaSettingsModal {
         delete box.dataset.key;
         this.renderShortcutDisplay(box, null);
         this.stopRecording(box, false);
-        this.saveCapturedShortcut(box.dataset.action, null);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, null);
+        }
         return;
       }
       const code = 'Mouse' + e.button;
@@ -14403,7 +14410,9 @@ class LuminaSettingsModal {
         this.justRecordedMouseClick = false;
       }, 100);
       this.stopRecording(box, false);
-      this.saveCapturedShortcut(box.dataset.action, keyData);
+      if (box.dataset.action) {
+        this.saveCapturedShortcut(box.dataset.action, keyData);
+      }
     };
     const contextmenuHandler = (e) => {
       e.preventDefault();
@@ -17631,8 +17640,15 @@ function initSpotlightAskSelection() {
         const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
         if (isInsideLumina) return;
         setTimeout(() => {
-            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
-                LuminaSelection.expandToWordBoundaries();
+            if (window.LuminaSelection) {
+                if (LuminaSelection.isInsideEditable()) {
+                    const activeElement = LuminaSelection.getDeepActiveElement();
+                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                        LuminaSelection.expandInputToWordBoundaries(activeElement);
+                    }
+                } else {
+                    LuminaSelection.expandToWordBoundaries();
+                }
             }
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
@@ -17672,8 +17688,15 @@ function initSpotlightAskSelection() {
         if (!selectionKeys.includes(e.key)) return;
 
         setTimeout(() => {
-            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
-                LuminaSelection.expandToWordBoundaries();
+            if (window.LuminaSelection) {
+                if (LuminaSelection.isInsideEditable()) {
+                    const activeElement = LuminaSelection.getDeepActiveElement();
+                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                        LuminaSelection.expandInputToWordBoundaries(activeElement);
+                    }
+                } else {
+                    LuminaSelection.expandToWordBoundaries();
+                }
             }
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
@@ -18478,6 +18501,10 @@ async function init() {
     chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle', 'theme', 'contrast', 'accentColor'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
+        if (shortcuts.undefined !== undefined) {
+            delete shortcuts.undefined;
+            chrome.storage.local.set({ shortcuts: shortcuts });
+        }
         annotationShortcuts = items.annotationShortcuts || [];
         questionMappings = items.questionMappings || [];
         askSelectionPopupEnabled = items.askSelectionPopupEnabled ?? false;
@@ -19874,12 +19901,13 @@ async function handleTranslation(text) {
 
 function matchesAnnotationShortcut(event, shortcut) {
     if (!shortcut) return false;
-    const ctrlMatch = !!shortcut.ctrlKey === event.ctrlKey;
-    const altMatch = !!shortcut.altKey === event.altKey;
-    const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
-    const metaMatch = !!shortcut.metaKey === event.metaKey;
-    const keyMatch = (shortcut.code && event.code === shortcut.code) ||
-        (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
+    const target = shortcut.keyData || shortcut;
+    const ctrlMatch = !!target.ctrlKey === event.ctrlKey;
+    const altMatch = !!target.altKey === event.altKey;
+    const shiftMatch = !!target.shiftKey === event.shiftKey;
+    const metaMatch = !!target.metaKey === event.metaKey;
+    const keyMatch = (target.code && event.code === target.code) ||
+        (event.key && event.key.toLowerCase() === (target.key || "").toLowerCase());
     const isMatched = ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
     return isMatched;
 }
@@ -19912,6 +19940,18 @@ function setupGlobalListeners() {
     }
     document.addEventListener('keydown', (event) => {
         if (document.querySelector('.recording')) return;
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            const activeElement = document.activeElement;
+            const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
+            if (!isInput) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                if (window.LuminaAnnotation) LuminaAnnotation.undoLastHighlight();
+                return;
+            }
+        }
         const searchOverlay = document.getElementById('lumina-search-overlay');
         if (searchOverlay && searchOverlay.style.display === 'flex') {
             const searchInput = document.getElementById('lumina-search-input');
@@ -20169,9 +20209,11 @@ function setupGlobalListeners() {
         }
         const shortcutActions = Object.keys(shortcuts);
         for (const action of shortcutActions) {
+            if (action === 'undefined' || !action) continue;
             const shortcut = shortcuts[action];
             if (!shortcut) continue;
-            if (!isShortcutMatchImmediate(event, shortcut)) continue;
+            const isMatch = isShortcutMatchImmediate(event, shortcut);
+            if (!isMatch) continue;
             if (isEditing) {
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
@@ -20204,30 +20246,23 @@ function setupGlobalListeners() {
                         event.preventDefault();
                         event.stopPropagation();
                         event.stopImmediatePropagation();
-                        let fullQuestion;
-                        const hasVariables = /\$SelectedText|"SelectedText"|\$Sentence|\$Paragraph/i.test(mapping.prompt);
-                        if (hasVariables) {
-                            fullQuestion = mapping.prompt
-                                .replace(/\$SelectedText|SelectedText/gi, selection)
-                                .replace(/\$Sentence/gi, selection)
-                                .replace(/\$Paragraph/gi, selection);
-                        } else {
-                            fullQuestion = `"${selection}" ${mapping.prompt}`;
-                        }
+                        const displayQuestion = mapping.prompt
+                            .replace(/\$SelectedText|SelectedText/gi, selection)
+                            .replace(/\$Sentence/gi, selection)
+                            .replace(/\$Paragraph/gi, selection)
+                            .trim();
+                        const fullQuestion = displayQuestion;
                         const targetTabIdx = (luminaAskSourcePane === 'secondary' && isSplitMode)
                             ? secondaryActiveTabIndex
                             : activeTabIndex;
                         const targetTab = tabs[targetTabIdx];
-                        if (targetTab && targetTab.chatUIInstance) {
-                            const sel = window.getSelection();
-                            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-                            if (range && range.startContainer) {
-                                if (window.LuminaAnnotation) {
-                                    window.LuminaAnnotation.highlight(range);
-                                }
-                            }
+                        const sel = window.getSelection();
+                        const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+                        const shouldHighlight = (mapping.highlight !== false) && (mapping.enableHighlight !== false);
+                        if (shouldHighlight && window.LuminaAnnotation && range) {
+                            window.LuminaAnnotation.highlight(range);
                         }
-                        handleSubmit(fullQuestion, [], {}, targetTab || null);
+                        handleSubmit(fullQuestion, [], { mode: 'qa' }, targetTab || null, displayQuestion);
                         window.getSelection().removeAllRanges();
                         if (window.LuminaSelection) LuminaSelection.hide();
                         return;
@@ -20357,10 +20392,16 @@ function setupGlobalListeners() {
         }
         for (const shortcut of annotationShortcuts) {
             if (shortcut.enabled === false) continue;
-            if (matchesAnnotationShortcut(event, shortcut)) {
-                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+            const matched = matchesAnnotationShortcut(event, shortcut);
+            console.log('[Lumina Keydown Debug] Shortcut:', shortcut.key, 'Matched:', matched);
+            if (matched) {
+                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) {
+                    console.log('[Lumina Keydown Debug] Inside editable, skipping.');
+                    continue;
+                }
                 const sel = window.getSelection();
                 const text = sel ? sel.toString().trim() : '';
+                console.log('[Lumina Keydown Debug] Selection text:', text, 'rangeCount:', sel ? sel.rangeCount : 0);
                 if (text.length > 0 && sel.rangeCount > 0) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -20368,6 +20409,7 @@ function setupGlobalListeners() {
                     const range = sel.getRangeAt(0);
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
+                    console.log('[Lumina Keydown Debug] Highlighting range with color:', color);
                     if (window.LuminaAnnotation) {
                         LuminaAnnotation.saveHighlight(range, color, highlightId);
                         LuminaAnnotation.applyHighlight(range, color, highlightId);
@@ -22487,7 +22529,7 @@ const DEFAULT_SPARKS = {
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
         description: 'Supportive guide for IELTS Writing Task 2. Brainstorm ideas and refine essays.',
-        instructions: 'You are a highly supportive, expert IELTS Writing Task 2 Tutor, operating with the analytical precision of an official IELTS Examiner to guide the user toward a perfect Band 9.0 score.\n\nYour role is to help the user learn and improve in a completely natural, conversational, and direct manner. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal grade/evaluation. Simply read the user\'s input, converse like a friendly, experienced teacher, point out errors naturally, and explain concepts directly within your conversation.\n\nTo push the user toward the maximum band score, you must meticulously audit their writing against the official core grading criteria within your natural conversation:\n\n1. TASK RESPONSE (TR):\n- Ensure the user explicitly presents a clear, consistent position throughout the entire essay (from the Introduction to the Conclusion). If their position shifts or becomes ambiguous mid-way, point it out immediately.\n- Meticulously check if all parts of the prompt are fully addressed. (e.g., In a \'Discuss both views\' essay, they must sufficiently develop both sides; in a two-part question, both questions must get equal weight).\n- Audit the development of main ideas. Catch the "Band 6.5 trap" where ideas are listed but lack depth, or become repetitive. Force the user to extend their points using logical explanation, causes, or concrete examples rather than over-generalizing.\n\n2. COHERENCE & COHESION (CC):\n- Monitor paragraph structure. Ensure each paragraph has one clear central topic (usually stated in a strong topic sentence) and a logical progression of ideas.\n- Actively eliminate "mechanical/formulaic cohesive devices" (e.g., overusing \'Firstly\', \'Moving on\', \'Moreover\', \'Furthermore\', \'In conclusion\' at the beginning of sentences, which caps CC at Band 6). Guide them to use sophisticated, integrated linking words, adverbial clauses, or referential pronouns (\'this issue\', \'the former\', \'such measures\') to ensure a seamless, invisible flow.\n- Ensure the paragraphing is logical (typically a clean 4 or 5-paragraph structure depending on the prompt type).\n\n3. LEXICAL RESOURCE (LR):\n- Check for precise paraphrasing in the introduction. Ensure they don\'t copy chunks of words directly from the prompt.\n- Audit word choice and collocation accuracy. Do not let the user use "rare/big words" incorrectly just to sound smart (a classic Band 6/7 mistake). Ensure style and register remain strictly academic and formal (ban informal contractions or conversational phrases like \'plus\', \'kids\', \'wanna\').\n\n4. GRAMMATICAL RANGE & ACCURACY (GRA):\n- Check for a natural mix of simple and complex sentence structures. Complex sentences must enhance clarity, not distort or complicate the meaning.\n- Maintain absolute strictness on grammar punctuation (such as correct use of relative clauses, semicolons, and comma splices) and core accuracy errors (subject-verb agreement, article usage, and tense consistency).\n\nFEEDBACK PROTOCOL:\n- Read the user\'s input and briefly highlight what they did well to maintain engagement.\n- Deliver corrections smoothly within your natural dialogue.\n- Use "Before vs. After" transformations directly inside your response to demonstrate how a Band 6.5 argument or sentence can be rewritten to meet Band 9.0 standards.\n\nCLASSIFICATION & TAGGING PROTOCOL:\nAt the start of a new essay practice, brainstorming session, or whenever the user submits a new prompt, identify and list the Essay Type and Topic at the very beginning of your response in this exact format:\n🏷️ Essay Type: [Essay Type name]\n🗂️ Topic: [Topic name]\n\nAvailable Essay Types:\n1. Opinion / Agree or Disagree\n2. Discussion / Discuss both views\n3. Advantages & Disadvantages\n4. Problem & Solution / Cause & Effect\n5. Two-part Question / Direct Question\n\nAvailable Topics:\n1. Education (Tuition fees, university vs. vocational training, curriculum, studying abroad)\n2. Environment & Energy (Climate change, plastic waste, renewable energy)\n3. Technology & Media (Artificial Intelligence, social media, smartphones, news)\n4. Government & Society (Taxes, public investment, wealth gap, social issues)\n5. Work & Employment (Unemployment, work-life balance, remote work, retirement)\n6. Health & Sport (Obesity, healthcare systems, healthy lifestyles, community sports)\n7. Crime & Law (Punishment, rehabilitation, surveillance cameras, juvenile delinquency)\n8. Tourism & Travel (Mass tourism, economic/cultural impacts, public transport)\n9. Culture & Heritage (Loss of identity, museums, traditional clothing, globalization)\n10. Family & Children (Parenting, generation gap, parental roles)\n11. Animal Welfare (Animal testing, zoos, vegetarianism, wildlife conservation)\n12. City vs. Rural (Migration, housing prices, traffic congestion, urban pollution)\n\nUse these classifications to structure your essay advice, target vocabulary recommendations, and filter/group vocabulary lists for the user.'
+        instructions: 'You are a highly supportive, expert IELTS Writing Task 2 Tutor, guiding the user toward a Band 8.0+ score by focusing heavily on strong logic, structure, and natural collocations rather than overly complex or obscure vocabulary.\n\nYour role is to help the user learn, brainstorm, and improve in a completely natural, conversational, and direct manner. You can converse in the user\'s preferred language (e.g., Vietnamese or English) naturally. Avoid using any fixed templates or rigid assessment headers unless explicitly requested. Point out errors naturally and explain concepts directly.\n\nTo push the user toward a Band 8.0+ score, you must prioritize and audit their writing against these criteria:\n\n1. IDEA BRAINSTORMING & DEVELOPMENT (CRITICAL):\n- Standardize idea generation using the STEEPLE technique (Social, Technological, Economic, Environmental, Political, Legal, Ethical) to select the 2-3 most practical, doable angles for any prompt.\n- Develop arguments using the "Logic Ladder" (Bắc cầu logic): Main Idea ➔ Why is it true (Explanation/Mechanism)? ➔ How does it happen (Concrete detail/Examples)? ➔ What is the result (Consequence/Impact)? This ensures deep, logical progression rather than shallow listing.\n- Focus heavily on logical clarity. Do not let the user overcomplicate their logic. Keep arguments realistic and logical.\n\n2. TASK RESPONSE (TR):\n- Ensure a clear, consistent position throughout the essay. Ensure all parts of the prompt are fully addressed with balanced development.\n\n3. COHERENCE & COHESION (CC):\n- Check that each paragraph has one central topic (topic sentence) and logical progression. Eliminate formulaic cohesive devices ("Firstly", "Furthermore", "In conclusion" at sentence starts). Guide them to use sophisticated, integrated linking words or referential pronouns.\n\n4. LEXICAL RESOURCE (LR) & GRAMMAR (GRA):\n- Focus on Band 8.0 vocabulary and natural collocations. Avoid rare/big words used incorrectly just to sound like Band 9.0. Ensure academic style without being overly flowery or pedantic.\n- Audit tense consistency, punctuation, and core grammar accuracy (subject-verb agreement, prepositions for data, and article usage).\n\nFEEDBACK & BRAINSTORM FLOW:\n- Read the user\'s input. Highlight strong points briefly.\n- Deliver corrections smoothly in the user\'s preferred language.\n- Use "Before vs. After" transformations to show how a Band 6.0/6.5 sentence/argument can be elevated to a Band 8.0 standard, highlighting the logical flow and natural collocations.'
     },
     'spark_qa_assistant': {
         name: 'QA Assistant',

@@ -1519,7 +1519,9 @@ class LuminaSettingsModal {
         this.renderShortcutDisplay(box, keyData);
         this.recordingHadInput = true;
         this.stopRecording(box, false);
-        this.saveCapturedShortcut(box.dataset.action, keyData);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, keyData);
+        }
       }
     };
     const keyupHandler = (e) => {
@@ -1593,7 +1595,9 @@ class LuminaSettingsModal {
           modifierCodes: modifierCodes
         };
         this.renderShortcutDisplay(box, keyData);
-        this.saveCapturedShortcut(box.dataset.action, keyData);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, keyData);
+        }
       } else {
         this.recordingPressedCodes.delete(e.code);
       }
@@ -1607,7 +1611,9 @@ class LuminaSettingsModal {
         delete box.dataset.key;
         this.renderShortcutDisplay(box, null);
         this.stopRecording(box, false);
-        this.saveCapturedShortcut(box.dataset.action, null);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, null);
+        }
         return;
       }
       const code = 'Mouse' + e.button;
@@ -1653,7 +1659,9 @@ class LuminaSettingsModal {
         this.justRecordedMouseClick = false;
       }, 100);
       this.stopRecording(box, false);
-      this.saveCapturedShortcut(box.dataset.action, keyData);
+      if (box.dataset.action) {
+        this.saveCapturedShortcut(box.dataset.action, keyData);
+      }
     };
     const contextmenuHandler = (e) => {
       e.preventDefault();

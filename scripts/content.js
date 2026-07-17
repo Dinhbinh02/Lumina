@@ -1101,12 +1101,13 @@
     }, true);
     function matchesAnnotationShortcut(event, shortcut) {
         if (!shortcut) return false;
-        const ctrlMatch = !!shortcut.ctrlKey === event.ctrlKey;
-        const altMatch = !!shortcut.altKey === event.altKey;
-        const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
-        const metaMatch = !!shortcut.metaKey === event.metaKey;
-        const keyMatch = (shortcut.code && event.code === shortcut.code) ||
-            (event.key && event.key.toLowerCase() === (shortcut.key || "").toLowerCase());
+        const target = shortcut.keyData || shortcut;
+        const ctrlMatch = !!target.ctrlKey === event.ctrlKey;
+        const altMatch = !!target.altKey === event.altKey;
+        const shiftMatch = !!target.shiftKey === event.shiftKey;
+        const metaMatch = !!target.metaKey === event.metaKey;
+        const keyMatch = (target.code && event.code === target.code) ||
+            (event.key && event.key.toLowerCase() === (target.key || "").toLowerCase());
         return ctrlMatch && altMatch && shiftMatch && metaMatch && keyMatch;
     }
     function formatTextLikeOriginal(original, target) {
