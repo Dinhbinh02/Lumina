@@ -4058,6 +4058,7 @@ async function renderRecentChatsSidebar() {
                         } else {
                             session.pinned = false;
                         }
+                        session.updatedAt = Date.now();
                         await LuminaChatDB.putSession(session);
                         chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                         if (session.isRenamed) {
@@ -4093,6 +4094,7 @@ async function renderRecentChatsSidebar() {
                         const isArchived = !!meta.archived;
                         if (isArchived) {
                             meta.archived = false;
+                            meta.updatedAt = Date.now();
                             await LuminaChatDB.putSession(meta);
                             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                             renderRecentChatsSidebar();
@@ -4114,6 +4116,7 @@ async function renderRecentChatsSidebar() {
                                     meta.isRenamed = true;
                                 }
                                 meta.archived = true;
+                                meta.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(meta);
                                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                                 renderRecentChatsSidebar();
@@ -6328,6 +6331,7 @@ async function renderDropdownMenu(pane = 'primary') {
             } else {
                 session.pinned = false;
             }
+            session.updatedAt = Date.now();
             await LuminaChatDB.putSession(session);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             if (session.isRenamed) {
@@ -6346,6 +6350,7 @@ async function renderDropdownMenu(pane = 'primary') {
         const isArchived = !!sessionMeta.archived;
         if (isArchived) {
             sessionMeta.archived = false;
+            sessionMeta.updatedAt = Date.now();
             await LuminaChatDB.putSession(sessionMeta);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             renderRecentChatsSidebar();
@@ -6367,6 +6372,7 @@ async function renderDropdownMenu(pane = 'primary') {
                     sessionMeta.isRenamed = true;
                 }
                 sessionMeta.archived = true;
+                sessionMeta.updatedAt = Date.now();
                 await LuminaChatDB.putSession(sessionMeta);
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                 renderRecentChatsSidebar();
