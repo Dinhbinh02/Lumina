@@ -11,16 +11,24 @@ const DEFAULTS = LUMINA_DEFAULTS;
 
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
 
-// Clean up zombie instance state keys from previous sessions on startup
+// Clean up zombie instance state keys and legacy highlights from previous sessions on startup
 chrome.storage.local.get(null, (allData) => {
     if (chrome.runtime.lastError) return;
-    const keysToRemove = Object.keys(allData).filter(key => key.includes('_inst_'));
+    const keysToRemove = Object.keys(allData).filter(key => key.includes('_inst_') || key.startsWith('highlights_'));
     if (keysToRemove.length > 0) {
         chrome.storage.local.remove(keysToRemove, () => {
-            console.log('[Lumina BG] Cleaned up zombie instance keys:', keysToRemove);
+            console.log('[Lumina BG] Cleaned up zombie instance and legacy highlights keys:', keysToRemove);
         });
     }
 });
+
+// Clean up expired image and audio queries from IndexedDB on startup
+if (typeof LuminaImageCacheDB !== 'undefined' && LuminaImageCacheDB.cleanupExpired) {
+    LuminaImageCacheDB.cleanupExpired().catch(err => console.error('[Lumina BG] Failed to clean up IndexedDB image cache:', err));
+}
+if (typeof LuminaAudioCacheDB !== 'undefined' && LuminaAudioCacheDB.cleanupExpired) {
+    LuminaAudioCacheDB.cleanupExpired().catch(err => console.error('[Lumina BG] Failed to clean up IndexedDB audio cache:', err));
+}
 
 function getPromptApiNamespace() {
     if (typeof chrome !== 'undefined' && chrome.ai && chrome.ai.languageModel) {
@@ -261,6 +269,8 @@ function buildChatSystemInstruction(reasoningMode = false) {
     const currentTime = new Date().toLocaleString('en-US', { timeZone: userTimeZone });
     const currentYear = new Date().getFullYear();
     let instruction = `You are a helpful, neutral, and balanced AI assistant. Note: current year is ${currentYear}.
+[Language Rule]
+- Respond in the language of the user's query. If the query consists of a single word, term, or phrase in English but the preceding conversation history is in another language, respond in that language.
 [Coding Guidelines & Code Block Gating]
 - Write clean, clear, modular, and extremely easy-to-understand code.
 - NEVER include comments inside the code block (no inline comments, no descriptive documentation comments, no commented-out code). Keep the code clean, self-explanatory, and completely comment-free.
@@ -278,7 +288,7 @@ Provide clear, natural, and well-structured responses. Use formatting tools (hea
     if (reasoningMode) {
         instruction += `
 [Diagram Syntax — D2 & Chart.js]
-- Use D2 code blocks (\`\`\`d2) for flowcharts, sequence diagrams, ERDs, and UML class diagrams. Use variables block for configuration: 'vars: { d2-config: { theme-id: 5; pad: 30 } }'.
+- Use D2 code blocks (\`\`\`d2) for flowcharts, sequence diagrams, ERDs, and UML class diagrams. Configure variables on separate lines: 'vars: { d2-config: { theme-id: 5 \\n pad: 30 } }'.
 - Use Chart.js JSON config (\`\`\`chartjs) for statistical charts and data visualizations (bar, line, pie, scatter).
 - ALWAYS include a descriptive title for all diagrams and charts.
 - Do not include JavaScript functions or callbacks in Chart.js config (pure JSON only).`;
@@ -293,17 +303,22 @@ CRITICAL D2 SYNTAX RULES:
 1. Valid shapes ONLY: rectangle, square, page, parallelogram, document, cylinder, queue, package, step, callout, stored_data, person, diamond, oval, circle, hexagon, cloud. Do NOT use "folder", "star", "triangle", "card", "rounded_square", "rounded-rectangle".
 2. Nested nodes MUST use full path from outside (e.g., 'Nucleus.mRNA -> Cytoplasm.Ribosome'). Plain 'mRNA -> Ribosome' is a syntax error.
 3. Text labels with spaces/special characters MUST be quoted in double quotes. E.g. A: "Label text"
-4. Color Styling & Padding: Set theme-id (3: Grape Soda, 4: Mixed Berry, 5: Sunset Glow, 6: Forest, 7: Cool Classics) and ALWAYS specify a border padding 'pad: 30' (value between 20 and 50) in vars.d2-config to leave comfortable empty space around all 4 sides of the diagram.
+4. Color Styling & Padding: Set theme-id (3: Grape Soda, 4: Mixed Berry, 5: Sunset Glow, 6: Forest, 7: Cool Classics) and ALWAYS specify a border padding in vars.d2-config (on separate lines, NO semicolons) to leave comfortable empty space around all 4 sides of the diagram. E.g., 'vars: { d2-config: { theme-id: 5 \\n pad: 30 } }'.
 5. Node identifiers (keys) MUST be ASCII-only, without spaces, special characters, or non-ASCII/accented letters (e.g. use 'Nen' or 'Compressor' instead of 'Nén'). Accents, spaces, and Unicode are ONLY allowed inside the double-quoted label string value (e.g. Nen: "Nén").
 PREMIUM DIAGRAM GUIDELINES (Make them beautiful!):
 - Use styling classes ('classes: { classname: { style.fill: "#hex"; style.stroke: "#hex" } }') to define reusable styles.
 - Enhance key boxes with 3D/Shadow: 'style.3d: true' or 'style.shadow: true'.
 - Make connections dynamic: use 'style.animated: true' for active/important data flows (in cycles, pipelines, or feedback loops, animate ALL connections in the path to show the flow clearly).
-- ALWAYS add titles or legends using positioning: e.g., 'title: "My Diagram" {near: top-center; style.font-size: 16; style.bold: true}'.
-- Leave clean margins by specifying border padding, e.g. 'pad: 30' inside vars.d2-config.
+- ALWAYS add titles or legends using positioning inside a block (never use mixed inline title syntax): e.g., 'title: { label: "My Diagram" \\n style.bold: true \\n style.font-size: 16 \\n style.stroke-width: 0 \\n style.fill: none }'.
+- Leave clean margins by specifying border padding inside vars.d2-config.
 D2 Example (Beautiful):
 \`\`\`d2
-vars: { d2-config: { theme-id: 5; pad: 30 } }
+vars: {
+  d2-config: {
+    theme-id: 5
+    pad: 30
+  }
+}
 classes: {
   core: {
     style.fill: "#ff79c6"
@@ -312,10 +327,12 @@ classes: {
   }
 }
 direction: right
-title: "Data Pipeline" {
-  near: top-left
+title: {
+  label: "Data Pipeline"
   style.bold: true
   style.font-size: 16
+  style.stroke-width: 0
+  style.fill: none
 }
 Start: "Ingestion" {
   class: core
@@ -613,7 +630,7 @@ function filterParentAttachments(attachments) {
     });
 }
 
-function processAttachments(attachments) {
+async function processAttachments(attachments) {
     const parts = [];
     const unsupported = [];
     if (!attachments || !Array.isArray(attachments)) return { parts, unsupported };
@@ -648,6 +665,9 @@ function processAttachments(attachments) {
             }
             if (mimeType.startsWith('audio/')) {
                 let base64Data = item.data;
+                if (!base64Data && item.fileUri && item.fileUri.startsWith('local-db://')) {
+                    base64Data = await readOpfsFileAsBase64(item.fileUri, itemName);
+                }
                 if (!base64Data && item.dataUrl) {
                     const matches = item.dataUrl.match(/^data:(.+?);base64,(.+)$/);
                     if (matches) base64Data = matches[2];
@@ -659,8 +679,24 @@ function processAttachments(attachments) {
                 }
             } else if (mimeType.startsWith('image/')) {
                 let url = item.dataUrl || item.previewUrl;
+                if (!url && item.fileUri) {
+                    if (item.fileUri.startsWith('local-db://')) {
+                        const b64Data = await readOpfsFileAsBase64(item.fileUri, itemName);
+                        if (b64Data) {
+                            url = `data:${mimeType};base64,${b64Data}`;
+                        } else if (item.dataUrl && item.dataUrl.startsWith('data:')) {
+                            url = item.dataUrl;
+                        }
+                    } else {
+                        url = item.fileUri;
+                    }
+                }
                 if (!url && mimeType && item.data) url = `data:${mimeType};base64,${item.data}`;
-                if (url) parts.push({ type: "image_url", image_url: { url, detail: item.detail || "auto" } });
+                if (url) {
+                    parts.push({ type: "image_url", image_url: { url, detail: item.detail || "auto" } });
+                } else {
+                    unsupported.push({ name: itemName, mimeType });
+                }
             } else {
                 unsupported.push({ name: itemName, mimeType });
             }
@@ -706,6 +742,18 @@ async function processAttachmentsForGemini(attachments) {
                                 mimeType: mimeType
                             }
                         });
+                    } else if (item.dataUrl && item.dataUrl.startsWith('data:')) {
+                        const matches = item.dataUrl.match(/^data:([^;]+);base64,(.+)$/i);
+                        if (matches) {
+                            parts.push({
+                                inlineData: {
+                                    data: matches[2],
+                                    mimeType: normalizeMimeType(matches[1])
+                                }
+                            });
+                        } else {
+                            unsupported.push({ name: itemName, mimeType });
+                        }
                     } else {
                         unsupported.push({ name: itemName, mimeType });
                     }
@@ -716,6 +764,18 @@ async function processAttachmentsForGemini(attachments) {
                             mimeType: mimeType
                         }
                     });
+                }
+            } else if (item.dataUrl && item.dataUrl.startsWith('data:')) {
+                const matches = item.dataUrl.match(/^data:([^;]+);base64,(.+)$/i);
+                if (matches) {
+                    parts.push({
+                        inlineData: {
+                            data: matches[2],
+                            mimeType: normalizeMimeType(matches[1])
+                        }
+                    });
+                } else {
+                    unsupported.push({ name: itemName, mimeType });
                 }
             } else {
                 unsupported.push({ name: itemName, mimeType });
@@ -865,7 +925,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         if (attachments && attachments.length > 0) {
             const parts = [];
             if (msg.text) parts.push({ type: "text", text: msg.text });
-            const processed = processAttachments(attachments);
+            const processed = await processAttachments(attachments);
             parts.push(...processed.parts);
             if (processed.unsupported.length > 0) {
                 parts.push({ type: "text", text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
@@ -878,7 +938,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     if (imageData && imageData.length > 0) {
         const parts = [{ type: "text", text: currentQ }];
         const currentAttachments = Array.isArray(imageData) ? imageData : [imageData];
-        const processed = processAttachments(currentAttachments);
+        const processed = await processAttachments(currentAttachments);
         parts.push(...processed.parts);
         openaiMessages.push({ role: 'user', content: parts });
     } else {
@@ -1065,7 +1125,7 @@ async function setStatus(tabId, text, type = 'loading') {
     }
 }
 
-const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
+const CACHE_EXPIRATION_MS = 1 * 24 * 60 * 60 * 1000;
 
 async function getLuminaCache(cacheKey) {
     try {
@@ -1114,10 +1174,9 @@ const AUDIO_CACHE_MAX_ENTRIES = 200;
 
 async function getAudioFromCache(text) {
     try {
-        const cache = await getLuminaCache(AUDIO_CACHE_KEY);
-        const key = text.trim().toLowerCase();
-        const entry = cache.entries[key];
-        if (entry && entry.data) {
+        if (typeof LuminaAudioCacheDB !== 'undefined') {
+            const key = text.trim().toLowerCase();
+            const entry = await LuminaAudioCacheDB.get(key);
             return entry;
         }
         return null;
@@ -1129,14 +1188,15 @@ async function getAudioFromCache(text) {
 
 async function setAudioCache(text, type, data) {
     try {
-        const cache = await getLuminaCache(AUDIO_CACHE_KEY);
-        const key = text.trim().toLowerCase();
-        cache.entries[key] = {
-            type,
-            data,
-            timestamp: Date.now()
-        };
-        await setLuminaCache(AUDIO_CACHE_KEY, cache.entries, AUDIO_CACHE_MAX_ENTRIES);
+        if (typeof LuminaAudioCacheDB !== 'undefined') {
+            const key = text.trim().toLowerCase();
+            const entry = {
+                type,
+                data,
+                timestamp: Date.now()
+            };
+            await LuminaAudioCacheDB.put(key, entry);
+        }
     } catch (e) {
         console.error('[Lumina Audio] Cache write error:', e);
     }
@@ -1228,13 +1288,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     if (initialContext && initialContext.trim().length > 0) {
         let processedContext = optimizeContextString(initialContext);
         console.log("%c[Lumina Context Debug] Web Source Content:", "color: #34c759; font-weight: bold;", processedContext);
-        if (currentMessages.length > 0) {
-            const contextInstruction = `\n\n### Webpage Source Content:\n${processedContext}\n\n(Note: This content is for background reference only. Prioritize the user's current goal in the history.)`;
-            systemInstruction += contextInstruction;
-            systemInstruction += "\nIMPORTANT: If context is provided, prioritize its information and avoid making unsupported claims.";
-        } else {
-            augmentedQuestion = `### Webpage Source Content:\n${processedContext}\n\n---\n\n### User Instruction:\n${augmentedQuestion}`;
-        }
+        augmentedQuestion = `### User Instruction:\n${augmentedQuestion}\n\n---\n\n### Webpage Source Content:\n(Note: This content is provided solely for factual lookup. Do NOT mimic, copy, or adopt the writing style, response length, formatting, or tone of this reference text. Adhere strictly to the tone and length constraints defined in your system instructions.)\n\n${processedContext}`;
     }
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
@@ -1732,11 +1786,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
                     }
                 })
-                .then(async res => {
-                    if (res.status === 404) return [];
-                    if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
-                    return res.json();
-                });
+                    .then(async res => {
+                        if (res.status === 404) return [];
+                        if (!res.ok) throw new Error(`HTTP Status ${res.status}`);
+                        return res.json();
+                    });
             };
 
             const fetchIPA = async (w) => {
@@ -1873,14 +1927,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     const metadata = await LuminaAttachmentDB.getAllMetadata();
                     const files = [];
                     for (const item of metadata) {
-                        const parts = item.key.split('_');
+                        const attIdx = item.key.indexOf('_att-');
+                        const fileAttIdx = item.key.indexOf('_file_att_');
+                        let splitIdx = -1;
+                        if (attIdx !== -1) {
+                            splitIdx = attIdx;
+                        } else if (fileAttIdx !== -1) {
+                            splitIdx = fileAttIdx;
+                        }
                         let sessionId = 'unknown';
                         let attachmentId = 'unknown';
                         let displayName = item.key;
-                        if (parts.length >= 3) {
-                            sessionId = parts[0] + '_' + parts[1];
-                            attachmentId = parts[2];
-                            displayName = parts.slice(3).join('_');
+                        if (splitIdx !== -1) {
+                            sessionId = item.key.substring(0, splitIdx);
+                            const remaining = item.key.substring(splitIdx + 1);
+                            const nextUnderscore = remaining.indexOf('_');
+                            if (nextUnderscore !== -1) {
+                                attachmentId = remaining.substring(0, nextUnderscore);
+                                displayName = remaining.substring(nextUnderscore + 1);
+                            } else {
+                                attachmentId = remaining;
+                            }
+                        } else {
+                            const parts = item.key.split('_');
+                            if (parts.length >= 3) {
+                                sessionId = parts[0] + '_' + parts[1];
+                                attachmentId = parts[2];
+                                displayName = parts.slice(3).join('_');
+                            }
                         }
                         files.push({
                             rawName: item.key,
@@ -1892,7 +1966,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         });
                     }
                     files.sort((a, b) => b.size - a.size);
-                    sendResponse({ success: true, files });
+                    const audioDbSize = typeof LuminaAudioCacheDB !== 'undefined' && typeof LuminaAudioCacheDB.getStorageUsage === 'function'
+                        ? await LuminaAudioCacheDB.getStorageUsage()
+                        : 0;
+                    const imageDbSize = typeof LuminaImageCacheDB !== 'undefined' && typeof LuminaImageCacheDB.getStorageUsage === 'function'
+                        ? await LuminaImageCacheDB.getStorageUsage()
+                        : 0;
+                    sendResponse({ success: true, files, audioDbSize, imageDbSize });
                 } catch (e) {
                     console.error('[DB get_stored_files] error:', e);
                     sendResponse({ success: false, error: e.message });
@@ -3784,7 +3864,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true; // Keep channel open for async response
     }
-    
+
     if (request.action === 'save_highlight') {
         LuminaHighlightDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
@@ -3797,7 +3877,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     }
-    
+
     if (request.action === 'undo_last_highlight') {
         LuminaHighlightDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
@@ -3814,7 +3894,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     }
-    
+
     if (request.action === 'remove_highlights') {
         LuminaHighlightDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
@@ -3829,7 +3909,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     }
-    
+
     if (request.action === 'update_highlight_color') {
         LuminaHighlightDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
@@ -3846,12 +3926,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     }
-    
+
     // Broadcast forwarding to all panels (including the sender)
-    if ((request.action === 'lumina_session_updated' || 
-         request.action === 'lumina_sessions_index_updated' || 
-         request.action === 'lumina_sessions_deleted') && !request.isBroadcast) {
+    if ((request.action === 'lumina_session_updated' ||
+        request.action === 'lumina_sessions_index_updated' ||
+        request.action === 'lumina_sessions_deleted') && !request.isBroadcast) {
         request.isBroadcast = true;
-        chrome.runtime.sendMessage(request).catch(() => {});
+        chrome.runtime.sendMessage(request).catch(() => { });
     }
 });

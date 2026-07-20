@@ -15,6 +15,7 @@ JS_FILES = [
     'lib/vendor/katex/auto-render.min.js',
     'lib/vendor/chart.min.js',
     'lib/vendor/pdf.min.js',
+    'lib/helpers/file_processor.js',
     'lib/ui/common.js',
     'lib/core/auth.js',
     'lib/core/highlight_db.js',
@@ -67,6 +68,16 @@ def build():
             
     with open(CSS_BUNDLE, 'w', encoding='utf-8') as out:
         out.write(css_content)
+        
+    # Copy KaTeX fonts
+    import shutil
+    src_fonts = 'lib/vendor/katex/fonts'
+    dest_fonts = 'pages/lumina/fonts'
+    if os.path.exists(src_fonts):
+        if os.path.exists(dest_fonts):
+            shutil.rmtree(dest_fonts)
+        shutil.copytree(src_fonts, dest_fonts)
+        print("Copied KaTeX fonts to pages/lumina/fonts")
         
     print("Build complete!")
 

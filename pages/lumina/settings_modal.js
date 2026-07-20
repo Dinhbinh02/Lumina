@@ -222,7 +222,7 @@ class LuminaSettingsModal {
   static async loadSettings() {
     const keys = [
       'providers', 'modelChains', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
-      'theme', 'contrast', 'accentColor', 'language', 'dictationEnabled', 'spokenLanguage',
+      'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight', 'language', 'dictationEnabled', 'spokenLanguage',
       'voice', 'separateVoiceEnabled', 'baseTone', 'charWarm', 'charEnthusiastic',
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
       'questionMappings', 'annotationShortcuts', 'dictLanguage',
@@ -258,9 +258,17 @@ class LuminaSettingsModal {
       const themeVal = items.theme || 'auto';
       const contrastVal = items.contrast || 'auto';
       const accentVal = items.accentColor || 'default';
+      const fontFamilyVal = items.fontFamily || 'default';
+      const fontWeightVal = items.fontWeight || '400';
       this.setDropdownValue('lumina-settings-theme', 'lumina-settings-theme-menu', themeVal, 'System');
       this.setDropdownValue('lumina-settings-contrast', 'lumina-settings-contrast-menu', contrastVal, 'System');
       this.setDropdownValue('lumina-settings-accent', 'lumina-settings-accent-menu', accentVal, 'Default');
+      this.setDropdownValue('lumina-settings-fontfamily', 'lumina-settings-fontfamily-menu', fontFamilyVal, 'Default');
+      const weightLabels = { '300': 'Thin', '350': 'Book', '400': 'Normal', '450': 'Medium', '500': 'Semi-bold' };
+      this.setDropdownValue('lumina-settings-fontweight', 'lumina-settings-fontweight-menu', fontWeightVal, weightLabels[fontWeightVal] || 'Normal');
+      document.body.className = document.body.className.replace(/\blumina-font-\S+/g, '');
+      document.body.classList.add(`lumina-font-${fontFamilyVal}`);
+      document.documentElement.style.setProperty('--lumina-weight-base', fontWeightVal);
       let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
       if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
         mode = 'dark';
@@ -336,6 +344,8 @@ class LuminaSettingsModal {
       theme: getDropdownVal('lumina-settings-theme', 'auto'),
       contrast: getDropdownVal('lumina-settings-contrast', 'auto'),
       accentColor: getDropdownVal('lumina-settings-accent', 'default'),
+      fontFamily: getDropdownVal('lumina-settings-fontfamily', 'default'),
+      fontWeight: getDropdownVal('lumina-settings-fontweight', '400'),
       fontSize: parseFloat(getVal('lumina-settings-fontsize', '14')) || 14,
       language: getDropdownVal('lumina-settings-language', 'auto'),
       dictationEnabled: document.getElementById('lumina-settings-dictation-toggle') ? getChecked('lumina-settings-dictation-toggle') : true,
@@ -369,6 +379,9 @@ class LuminaSettingsModal {
       }
       document.body.setAttribute('data-accent', settings.accentColor);
       document.body.setAttribute('data-contrast', settings.contrast);
+      document.body.className = document.body.className.replace(/\blumina-font-\S+/g, '');
+      document.body.classList.add(`lumina-font-${settings.fontFamily}`);
+      document.documentElement.style.setProperty('--lumina-weight-base', settings.fontWeight);
       if (typeof applyFontSize === 'function') {
         applyFontSize(settings.fontSize);
       }
@@ -425,6 +438,14 @@ class LuminaSettingsModal {
 
             if (keysToRemove.length > 0) {
               chrome.storage.local.remove(keysToRemove);
+            }
+
+            if (typeof LuminaImageCacheDB !== 'undefined' && LuminaImageCacheDB.clear) {
+              LuminaImageCacheDB.clear().catch(err => console.error('Failed to clear LuminaImageCacheDB:', err));
+            }
+
+            if (typeof LuminaAudioCacheDB !== 'undefined' && LuminaAudioCacheDB.clear) {
+              LuminaAudioCacheDB.clear().catch(err => console.error('Failed to clear LuminaAudioCacheDB:', err));
             }
 
             chrome.storage.local.remove(['audio_cache'], () => {
@@ -595,6 +616,8 @@ class LuminaSettingsModal {
           inputId === 'lumina-settings-theme' ||
           inputId === 'lumina-settings-contrast' ||
           inputId === 'lumina-settings-accent' ||
+          inputId === 'lumina-settings-fontfamily' ||
+          inputId === 'lumina-settings-fontweight' ||
           inputId === 'lumina-settings-language' ||
           inputId === 'lumina-settings-spoken-lang' ||
           inputId === 'lumina-settings-voice-select'
@@ -1122,6 +1145,8 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-settings-theme', 'lumina-settings-theme-menu');
     this.setupDropdownInputs('lumina-settings-contrast', 'lumina-settings-contrast-menu');
     this.setupDropdownInputs('lumina-settings-accent', 'lumina-settings-accent-menu');
+    this.setupDropdownInputs('lumina-settings-fontfamily', 'lumina-settings-fontfamily-menu');
+    this.setupDropdownInputs('lumina-settings-fontweight', 'lumina-settings-fontweight-menu');
     this.setupDropdownInputs('lumina-settings-language', 'lumina-settings-language-menu');
     this.setupDropdownInputs('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu');
     this.setupDropdownInputs('lumina-settings-voice-select', 'lumina-settings-voice-select-menu');
@@ -2078,9 +2103,9 @@ class LuminaSettingsModal {
       const now = Date.now();
       const expiredImgKeys = [];
       Object.keys(items).forEach(key => {
-        if (key.startsWith('lumina_img_cache_')) {
+        if (key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_')) {
           const item = items[key];
-          if (item && item.timestamp && (now - item.timestamp > 7 * 24 * 60 * 60 * 1000)) {
+          if (item && item.timestamp && (now - item.timestamp > 1 * 24 * 60 * 60 * 1000)) {
             expiredImgKeys.push(key);
             delete items[key];
           }
@@ -2090,7 +2115,7 @@ class LuminaSettingsModal {
       let audioChanged = false;
       const audioCache = items['audio_cache'];
       if (audioCache && audioCache.entries) {
-        const AUDIO_EXPIRATION = 7 * 24 * 60 * 60 * 1000;
+        const AUDIO_EXPIRATION = 1 * 24 * 60 * 60 * 1000;
         Object.keys(audioCache.entries).forEach(key => {
           const entry = audioCache.entries[key];
           const entryTimestamp = entry.timestamp || audioCache.lastUpdate;
@@ -2112,6 +2137,10 @@ class LuminaSettingsModal {
       let configSize = 0;
       let cacheSize = 0;
       Object.keys(items).forEach(key => {
+        if (key === 'attachments') {
+          chrome.storage.local.remove('attachments');
+          return;
+        }
         const isAnkiKey = key.startsWith('rot_') || [
           'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
           'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent'
@@ -2119,9 +2148,12 @@ class LuminaSettingsModal {
         if (isAnkiKey) return;
         const valueStr = JSON.stringify(items[key]);
         const sizeBytes = valueStr ? valueStr.length : 0;
+        if (sizeBytes > 1024) {
+          console.log(`[Storage Debug] Large Key: ${key}, Size: ${(sizeBytes / 1024).toFixed(2)} KB`);
+        }
         if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('lumina_history_')) {
-          return; // Skip legacy storage keys
-        } else if (key === 'audio_cache' || key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('spotlight_history_')) {
+          return; // Skip legacy/moved storage keys
+        } else if (key.startsWith('spotlight_history_') || key === 'audio_cache' || key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('yt_transcript_')) {
           cacheSize += sizeBytes;
         } else {
           configSize += sizeBytes;
@@ -2129,10 +2161,17 @@ class LuminaSettingsModal {
       });
       chrome.runtime.sendMessage({ action: 'get_stored_files' }, async (response) => {
         let filesSize = 0;
-        if (response && response.success && Array.isArray(response.files)) {
-          filesSize = response.files.reduce((acc, f) => acc + (f.size || 0), 0);
+        let audioDbSize = 0;
+        let imageDbSize = 0;
+        if (response && response.success) {
+          if (Array.isArray(response.files)) {
+            filesSize = response.files.reduce((acc, f) => acc + (f.size || 0), 0);
+          }
+          audioDbSize = response.audioDbSize || 0;
+          imageDbSize = response.imageDbSize || 0;
         }
-        const totalBytes = dbSize + filesSize + configSize + cacheSize;
+        const totalCacheSize = cacheSize + audioDbSize + imageDbSize;
+        const totalBytes = dbSize + filesSize + configSize + totalCacheSize;
         const fmt = (bytes) => {
           if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
           if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -2140,25 +2179,20 @@ class LuminaSettingsModal {
         };
         textEl.textContent = fmt(totalBytes);
         const dbSizeEl = document.getElementById('lumina-storage-db-size');
-        const filesSizeEl = document.getElementById('lumina-storage-files-size');
         const configSizeEl = document.getElementById('lumina-storage-config-size');
         const cacheSizeEl = document.getElementById('lumina-storage-cache-size');
-        if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize);
-        if (filesSizeEl) filesSizeEl.textContent = fmt(filesSize);
+        if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize + filesSize);
         if (configSizeEl) configSizeEl.textContent = fmt(configSize);
-        if (cacheSizeEl) cacheSizeEl.textContent = fmt(cacheSize);
+        if (cacheSizeEl) cacheSizeEl.textContent = fmt(totalCacheSize);
         if (totalBytes > 0) {
-          const dbPct = (dbSize / totalBytes * 100).toFixed(2);
-          const filesPct = (filesSize / totalBytes * 100).toFixed(2);
+          const dbPct = ((dbSize + filesSize) / totalBytes * 100).toFixed(2);
           const configPct = (configSize / totalBytes * 100).toFixed(2);
-          const cachePct = (cacheSize / totalBytes * 100).toFixed(2);
+          const cachePct = (totalCacheSize / totalBytes * 100).toFixed(2);
           const barDb = document.getElementById('lumina-storage-bar-db');
-          const barFiles = document.getElementById('lumina-storage-bar-files');
           const barConfig = document.getElementById('lumina-storage-bar-config');
           const barCache = document.getElementById('lumina-storage-bar-cache');
           requestAnimationFrame(() => {
             if (barDb) barDb.style.width = `${dbPct}%`;
-            if (barFiles) barFiles.style.width = `${filesPct}%`;
             if (barConfig) barConfig.style.width = `${configPct}%`;
             if (barCache) barCache.style.width = `${cachePct}%`;
           });
@@ -2173,13 +2207,17 @@ class LuminaSettingsModal {
             const sessionMessages = await LuminaChatDB.getMessages(sessionId);
             const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : '';
             const metaStr = JSON.stringify(meta);
+            // Match getStorageUsage() which counts key + value length × 2 (UTF-16)
+            const messagesKeyStr = JSON.stringify(sessionId + '_messages');
+            const metaKeyStr = JSON.stringify(sessionId);
+            const dbBytes = (messagesKeyStr.length + messagesStr.length + metaKeyStr.length + metaStr.length) * 2;
             let sessionFilesSize = 0;
             if (response && response.success && Array.isArray(response.files)) {
               sessionFilesSize = response.files
                 .filter(f => f.sessionId === sessionId)
                 .reduce((acc, f) => acc + (f.size || 0), 0);
             }
-            const totalSessionBytes = messagesStr.length + metaStr.length + sessionFilesSize;
+            const totalSessionBytes = dbBytes + sessionFilesSize;
             sessionList.push({
               id: sessionId,
               title: meta.title || 'Untitled Chat',

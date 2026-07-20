@@ -4,10 +4,13 @@
 
 :host,
 body,
-button {
-  font-family: var(--lumina-font-family);
+input,
+button,
+select,
+textarea {
+  font-family: var(--lumina-font-family) !important;
   font-size: var(--lumina-fontSize, 13px);
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular);
   margin: 0;
 }
 
@@ -24,11 +27,7 @@ body {
   font-size: inherit;
 }
 
-::selection {
-  background: color-mix(in srgb, var(--lumina-primary-color) 30%, var(--lumina-bg-primary)) !important;
-  color: inherit !important;
-  text-shadow: none !important;
-}
+
 
 :root,
 :host {
@@ -56,7 +55,16 @@ body {
   --lumina-radius-sm: 12px;
   --lumina-input-bg: #FFFFFF;
   --lumina-border-color: rgba(0, 0, 0, 0.12);
-  --lumina-font-family: 'Google Sans', 'Google Sans Text', system-ui, -apple-system, sans-serif;
+  --lumina-font-sans: 'Inter', sans-serif;
+  --lumina-font-serif: 'Noto Serif', serif;
+  --lumina-font-mono: 'Google Sans Code', monospace;
+  --lumina-font-family: var(--lumina-font-sans);
+  --lumina-font-family-monospace: var(--lumina-font-mono);
+  --lumina-weight-base: 400;
+  --lumina-weight-regular: var(--lumina-weight-base);
+  --lumina-weight-medium: calc(var(--lumina-weight-base) + 100);
+  --lumina-weight-semibold: calc(var(--lumina-weight-base) + 200);
+  --lumina-weight-bold: calc(var(--lumina-weight-base) + 300);
   --lumina-chat-bg: #FFFFFF;
   --lumina-bg-primary: #ffffff;
   --lumina-sidebar-bg: #f1f6fe;
@@ -294,7 +302,7 @@ body {
   padding: 0 !important;
   margin: 0 4px 0 0 !important;
   font-size: 1em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   user-select: none !important;
   cursor: pointer !important;
   vertical-align: middle !important;
@@ -494,7 +502,7 @@ body {
   display: none;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Google+Sans:wght@300;400;500;600&family=Google+Sans+Text:wght@300;400;500;600&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght,MONO@0,300..800,1;1,300..800,1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 
 :host {
   all: initial;
@@ -722,7 +730,7 @@ body {
   outline: none !important;
   padding: 5px 12px !important;
   font-size: 1em !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   color: var(--lumina-text-primary) !important;
   min-height: 23px !important;
   max-height: 180px !important;
@@ -793,7 +801,7 @@ body {
 }
 
 .lumina-thinking-step.active {
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-primary);
 }
 
@@ -900,7 +908,7 @@ body {
   -webkit-backdrop-filter: none;
   margin-bottom: 0 !important;
   box-shadow: none;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   border-radius: 16px;
   position: relative;
 }
@@ -974,7 +982,7 @@ body {
   font-variant-numeric: tabular-nums;
   min-width: 32px;
   text-align: center;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   font-size: 0.85em !important;
 }
 
@@ -1089,7 +1097,7 @@ body {
   color: #ffffff !important;
   padding: 6px 16px !important;
   border-radius: 20px !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-question-edit-toolbar .lumina-edit-save:hover {
@@ -1230,13 +1238,13 @@ body {
 
 .lumina-spark-message-header .lumina-spark-name {
   color: var(--lumina-text-primary) !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-spark-message-header .lumina-spark-separator,
 .lumina-spark-message-header .lumina-spark-type {
   color: var(--lumina-text-tertiary) !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .lumina-chat-answer.is-stopped,
@@ -1260,7 +1268,7 @@ body {
 
 .lumina-chat-answer strong,
 .lumina-chat-answer b {
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   color: inherit !important;
 }
 
@@ -1282,7 +1290,7 @@ body {
   margin-bottom: 0.4em !important;
   line-height: 1.35 !important;
   color: var(--lumina-text-primary) !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
 }
 
 .lumina-chat-answer h1:first-child,
@@ -1371,7 +1379,7 @@ body {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   font-size: 0.9em !important;
   color: var(--alert-title-color) !important;
   text-transform: capitalize !important;
@@ -1491,7 +1499,7 @@ body {
 
 .lumina-chat-answer th {
   background: rgba(0, 0, 0, 0.04) !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
 }
 
 [data-theme="dark"] .lumina-chat-answer th {
@@ -1512,7 +1520,7 @@ body {
   padding: 2px 6px !important;
   border-radius: 6px !important;
   font-size: 0.86em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   font-family: monospace !important;
 }
 
@@ -1526,7 +1534,7 @@ body {
   box-shadow: none !important;
   position: relative !important;
   white-space: pre !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 [data-theme="dark"] .lumina-chat-answer pre {
@@ -1541,7 +1549,7 @@ body {
   font-size: 13px !important;
   line-height: 1.6 !important;
   min-width: 100%;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   font-family: monospace !important;
 }
 
@@ -1555,7 +1563,7 @@ body {
 .lumina-chat-answer pre code .hljs-selector-tag,
 .lumina-chat-answer pre code .hljs-addition {
   color: #ff79c6 !important;
-  font-weight: bold !important;
+  font-weight: var(--lumina-weight-bold) !important;
 }
 
 .lumina-chat-answer pre code .hljs-string,
@@ -1625,7 +1633,7 @@ body {
 }
 
 .lumina-chat-answer .mord .mtight {
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
 }
 
 .lumina-chat-input-wrapper {
@@ -1707,7 +1715,7 @@ body {
   letter-spacing: normal !important;
   outline: none !important;
   box-sizing: border-box !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   color: var(--lumina-text-primary) !important;
   resize: none !important;
   overflow-y: auto !important;
@@ -1806,7 +1814,7 @@ body {
   text-overflow: ellipsis !important;
   color: var(--lumina-text-secondary, #5f6368) !important;
   opacity: 0.65 !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   font-family: var(--lumina-font-family) !important;
   font-size: 1em !important;
   -webkit-font-smoothing: antialiased !important;
@@ -1979,7 +1987,7 @@ body {
 .lumina-input-bar .lumina-current-reasoning {
   color: var(--lumina-text-primary) !important;
   font-size: 0.96em !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2068,14 +2076,14 @@ body {
 
 .lumina-reasoning-item .reasoning-title {
   font-size: 0.96em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: var(--lumina-text-primary) !important;
   line-height: 1.3 !important;
 }
 
 .lumina-reasoning-item .reasoning-desc {
   font-size: 0.79em !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   color: var(--lumina-text-secondary, #70757a) !important;
   line-height: 1.3 !important;
 }
@@ -2152,7 +2160,7 @@ body {
   padding: 0 12px !important;
   gap: 6px !important;
   font-size: 0.9em !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   color: var(--lumina-text-primary) !important;
   border-radius: 16px !important;
 }
@@ -2258,7 +2266,7 @@ body {
   border: none !important;
   background: transparent !important;
   color: var(--lumina-text-primary) !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   cursor: pointer !important;
   border-radius: 8px !important;
   text-align: left !important;
@@ -2280,7 +2288,7 @@ body {
 }
 
 .lumina-tools-toggle span {
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .lumina-action-btn {
@@ -2370,7 +2378,7 @@ body {
   cursor: pointer !important;
   text-align: left;
   transition: background 0.15s ease;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   cursor: pointer;
 }
 
@@ -2445,7 +2453,7 @@ body {
   justify-content: center !important;
   flex-direction: column !important;
   color: var(--lumina-primary-color, #0076d6) !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   font-size: 1.07em !important;
   border: 2px dashed var(--lumina-primary-color, #0076d6) !important;
   border-radius: 12px !important;
@@ -2558,7 +2566,7 @@ body {
   line-height: 1;
   letter-spacing: -0.01em;
   color: #273142;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .lumina-file-meta-row {
@@ -2583,7 +2591,7 @@ body {
   align-self: center;
   font-size: 0.71em;
   opacity: 0.8;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   letter-spacing: 0.06em;
   color: #4a5870;
   text-transform: uppercase;
@@ -2657,7 +2665,7 @@ body {
 }
 
 .lumina-status-text {
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   letter-spacing: 0.3px;
   color: var(--lumina-text-primary);
   line-height: 1.4 !important;
@@ -2836,7 +2844,7 @@ body {
   box-shadow: none;
   min-width: 0 !important;
   max-width: 100% !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .lumina-model-btn:hover {
@@ -2996,7 +3004,7 @@ body {
   border-radius: 8px !important;
   gap: 8px !important;
   min-height: auto !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-model-item:hover {
@@ -3006,7 +3014,7 @@ body {
 .lumina-model-item.active {
   background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1));
   color: var(--lumina-primary, #007aff);
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-model-item .model-info {
@@ -3201,12 +3209,12 @@ body {
   color: var(--lumina-text-primary);
   padding: 12px 8px;
   outline: none;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-input::placeholder {
   color: #999;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .lumina-translate-logo {
@@ -3226,7 +3234,7 @@ body {
 }
 
 .lumina-dict-word {
-  font-weight: 700 !important;
+  font-weight: var(--lumina-weight-bold) !important;
   font-size: 1.6em !important;
   color: var(--lumina-text-primary);
   letter-spacing: -0.03em;
@@ -3239,7 +3247,7 @@ body {
 .lumina-dict-pos {
   display: inline-block;
   font-size: 0.85em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   color: var(--lumina-primary-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -3252,7 +3260,7 @@ body {
 }
 
 .lumina-dict-meaning-text {
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   color: var(--lumina-text-primary);
   line-height: 1.5;
   display: inline;
@@ -3269,13 +3277,13 @@ body {
   padding-left: 12px;
   border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.4);
   font-size: 0.92em !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   line-height: 1.65;
 }
 
 .lumina-dict-translation {
   color: var(--lumina-text-secondary);
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .lumina-entry {
@@ -3409,7 +3417,7 @@ body {
   background: transparent !important;
   border-radius: 0 !important;
   font-size: 0.85em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   color: #5f6368 !important;
   cursor: pointer !important;
   transition: none !important;
@@ -3500,7 +3508,7 @@ body {
 
 .lumina-dict-status-title {
   font-size: 1.25em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   margin-bottom: 10px !important;
   color: var(--lumina-text-primary) !important;
   letter-spacing: -0.01em !important;
@@ -3510,7 +3518,7 @@ body {
   font-size: 0.95em !important;
   line-height: 1.6 !important;
   color: var(--lumina-text-secondary) !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .status-error .lumina-dict-status-icon {
@@ -3560,7 +3568,7 @@ body {
   font-size: 0.85em !important;
   text-transform: lowercase !important;
   color: var(--lumina-text-secondary) !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   font-style: italic !important;
   text-align: right !important;
   opacity: 0.7 !important;
@@ -3601,7 +3609,7 @@ body {
 .lumina-dictionary-popup .lumina-dict-popup-title {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 1.4em !important;
-  font-weight: 800 !important;
+  font-weight: var(--lumina-weight-bold) !important;
   color: var(--lumina-text-primary) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
@@ -3666,11 +3674,11 @@ body {
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
 }
 
 .lumina-dict-pron-group .lumina-dict-ipa {
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-dict-pron-group.uk {
@@ -3683,7 +3691,7 @@ body {
 
 .lumina-dict-lang {
   font-size: 0.9em !important;
-  font-weight: 800 !important;
+  font-weight: var(--lumina-weight-bold) !important;
   line-height: 1.2 !important;
   text-transform: uppercase !important;
 }
@@ -3692,7 +3700,7 @@ body {
   font-family: "Lucida Sans Unicode", "Arial Unicode MS", "Doulos SIL", "Charis SIL", "Gentium Plus", sans-serif !important;
   font-size: 0.95em !important;
   letter-spacing: 0.03em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   color: var(--lumina-text-primary) !important;
   line-height: 1.2 !important;
   margin-top: -1px !important;
@@ -3722,7 +3730,7 @@ body {
 
 .lumina-dict-sense-indicator {
   font-size: 0.76em !important;
-  font-weight: 700 !important;
+  font-weight: var(--lumina-weight-bold) !important;
   color: var(--lumina-primary-color) !important;
   background: rgba(var(--lumina-primary-rgb, 0, 86, 210), 0.08) !important;
   text-transform: uppercase !important;
@@ -3914,7 +3922,7 @@ body {
 
 .lumina-chat-answer .katex .text {
   font-family: var(--lumina-font-family) !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-chat-answer .katex-display {
@@ -3944,7 +3952,7 @@ body {
   height: 28px !important;
   cursor: pointer !important;
   font-size: 1em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: #1d1d1f !important;
   transition: all 0.2s ease !important;
   letter-spacing: -0.01em !important;
@@ -3965,7 +3973,7 @@ body {
   height: 28px !important;
   cursor: pointer !important;
   font-size: 1em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: #1d1d1f !important;
   transition: all 0.2s ease !important;
   letter-spacing: -0.01em !important;
@@ -4079,7 +4087,7 @@ body {
   color: #c4c7c5;
   font-family: var(--lumina-font-family), sans-serif;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .lumina-code-actions {
@@ -4152,7 +4160,7 @@ body {
 }
 
 .lumina-image-preview-container {
-  padding: 8px 4px 0 4px;
+  padding: 8px 2px 0 2px;
 }
 
 .lumina-image-preview-container:empty {
@@ -4173,6 +4181,8 @@ body {
   flex: 0 1 60px;
   min-width: 30px;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .lumina-preview-item.is-uploading {
@@ -4214,7 +4224,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
@@ -4280,7 +4290,7 @@ body {
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: rgba(0, 0, 0, 0.4) !important;
+  background: #1c1c1e !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   z-index: 10000 !important;
@@ -4289,7 +4299,7 @@ body {
 }
 
 [data-theme="dark"] .lumina-preview-container.fixed-preview {
-  background: rgba(0, 0, 0, 0.65) !important;
+  background: #1c1c1e !important;
 }
 
 .lumina-preview-controls-bar {
@@ -4314,7 +4324,7 @@ body {
   color: rgba(255, 255, 255, 0.9);
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 0.93em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   min-width: 42px;
   text-align: center;
 }
@@ -4373,7 +4383,6 @@ body {
 
 .lumina-preview-img.zoomed {
   cursor: default;
-  border-radius: 4px;
 }
 
 .lumina-preview-img.dragging {
@@ -4426,7 +4435,7 @@ body {
 .lumina-image-query {
   padding: 12px 16px;
   font-size: 0.95em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-primary);
   border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   display: flex;
@@ -4539,7 +4548,7 @@ body {
 }
 
 .lumina-searching-indicator span {
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   letter-spacing: 0.3px;
   color: var(--lumina-text-secondary);
 }
@@ -4571,14 +4580,14 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 0.9em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: #000;
   transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
 .lumina-search-step.completed {
   color: #000;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
 }
 
 .lumina-step-icon {
@@ -4596,12 +4605,12 @@ body {
 
 .lumina-step-label {
   flex: 1;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: #000;
 }
 
 .lumina-step-query {
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: #000;
 }
 
@@ -4613,7 +4622,7 @@ body {
   padding: 0 5px 2px 5px;
   margin: 0 2px;
   font-size: 0.85em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   line-height: 18px;
   color: var(--lumina-primary-color);
   background: rgba(var(--lumina-primary-rgb), 0.15);
@@ -4651,7 +4660,7 @@ body {
   z-index: 1000;
   text-align: left;
   font-size: 0.85em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   line-height: 1.4;
   color: var(--lumina-text-primary);
 }
@@ -4688,7 +4697,7 @@ body {
 
 .lumina-sources-title {
   font-size: 0.85em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   color: var(--lumina-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -4724,7 +4733,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 0.85em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   color: white;
   background: var(--lumina-primary-color);
   border-radius: 12px;
@@ -4738,7 +4747,7 @@ body {
 
 .lumina-source-name {
   font-size: 0.92em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   color: var(--lumina-text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -4862,7 +4871,7 @@ body {
   padding: 6px 14px !important;
   border-radius: 8px !important;
   font-size: 0.93em !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   border: 1px solid transparent !important;
@@ -4897,7 +4906,7 @@ body {
   cursor: pointer;
   user-select: none;
   font-size: 0.85em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-secondary);
   border: 1px solid var(--lumina-border-color);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -4921,27 +4930,29 @@ body {
 
 .lumina-web-chip.is-active {
   border-width: 1px;
-  border-color: transparent !important;
-  background: rgba(0, 86, 210, 0.08) !important;
+  border-color: rgba(0, 86, 210, 0.25) !important;
+  color: #0056d2 !important;
+  background: rgba(0, 86, 210, 0.14) !important;
   opacity: 1;
   box-shadow: none !important;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .lumina-web-chip.is-active:hover {
-  background: rgba(0, 86, 210, 0.15) !important;
-  border-color: transparent !important;
+  background: rgba(0, 86, 210, 0.22) !important;
+  border-color: rgba(0, 86, 210, 0.35) !important;
   box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active {
-  background: rgba(10, 132, 255, 0.15) !important;
-  border-color: transparent !important;
+  background: rgba(10, 132, 255, 0.22) !important;
+  color: #70b5ff !important;
+  border-color: rgba(10, 132, 255, 0.4) !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active:hover {
-  background: rgba(10, 132, 255, 0.25) !important;
-  border-color: transparent !important;
+  background: rgba(10, 132, 255, 0.32) !important;
+  border-color: rgba(10, 132, 255, 0.5) !important;
 }
 
 .lumina-web-chip.is-ghost {
@@ -5113,7 +5124,7 @@ body {
   cursor: pointer;
   font-family: var(--lumina-font-family);
   font-size: 1em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   width: calc(100% - 32px);
   box-shadow: var(--lumina-shadow-secondary);
@@ -5149,7 +5160,6 @@ body {
   flex-direction: column;
   overflow: hidden !important;
   box-sizing: border-box;
-  font-family: var(--lumina-font-family);
   font-size: 0.8125em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -5262,7 +5272,7 @@ body {
 
 .lumina-dict-translation-label {
   font-size: 0.79em !important;
-  font-weight: 700 !important;
+  font-weight: var(--lumina-weight-bold) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   color: var(--lumina-text-secondary, rgba(0, 0, 0, 0.5)) !important;
@@ -5296,7 +5306,7 @@ body {
 
 .lumina-dict-translated-text {
   font-size: 1em !important;
-  font-weight: 500 !important;
+  font-weight: var(--lumina-weight-medium) !important;
   line-height: 1.5 !important;
   color: #000000 !important;
   white-space: pre-wrap !important;
@@ -5441,7 +5451,7 @@ body {
 .topbar__logo-text {
   font-family: 'Google Sans', sans-serif;
   font-size: 1.07em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary, #1f1f1f);
   letter-spacing: -0.2px;
 }
@@ -5518,7 +5528,7 @@ body {
   color: var(--lumina-text-primary, #1f1f1f);
   font-family: inherit;
   font-size: 0.93em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
@@ -5569,7 +5579,7 @@ body {
 
 .sync-profile__name {
   font-size: 0.93em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-primary, #1f1f1f);
   white-space: nowrap;
   overflow: hidden;
@@ -5685,7 +5695,7 @@ body {
 
 .dropdown-section-title {
   font-size: 0.79em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-secondary, #70757a);
   padding: 8px 12px 6px 12px;
   text-transform: uppercase;
@@ -5705,7 +5715,7 @@ body {
   transition: background 0.15s, color 0.15s;
   user-select: none;
   font-family: inherit;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 [data-theme="dark"] .dropdown-item {
@@ -5814,7 +5824,7 @@ body {
   cursor: pointer;
   font-family: inherit;
   font-size: 1em !important;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: #1f1f1f !important;
   transition: background 0.2s;
   box-shadow: none !important;
@@ -5877,7 +5887,7 @@ body {
   border: none !important;
   color: #1f1f1f !important;
   font-size: 0.96em !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   cursor: pointer !important;
   text-align: left !important;
   transition: background 0.15s;
@@ -5897,7 +5907,7 @@ body {
 
 .topbar .lumina-model-item.active {
   color: #007aff !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
 }
 
 .lumina-answer-content {
@@ -6180,7 +6190,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   font-size: 1em;
   color: var(--lumina-sidebar-text);
   opacity: 1;
@@ -6192,7 +6202,7 @@ body {
 
 .brand-name {
   color: var(--lumina-sidebar-text);
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   font-size: 15px;
   letter-spacing: -0.2px;
 }
@@ -6255,7 +6265,7 @@ body {
   border: none;
   border-radius: 8px;
   padding: 0 6px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-sidebar-text);
   cursor: pointer;
   width: 100%;
@@ -6270,7 +6280,7 @@ body {
 }
 
 #sidebar-new-spark-btn {
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular);
 }
 
 .sidebar-nav-item:hover:not(.disabled) {
@@ -6279,7 +6289,7 @@ body {
 
 .sidebar-nav-item.active {
   background-color: var(--lumina-sidebar-active-bg);
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .sidebar-nav-item.disabled {
@@ -6334,7 +6344,7 @@ body {
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   padding-right: 2px;
 }
 
@@ -6529,7 +6539,7 @@ body {
 
 .recent-chat-item.active {
   background-color: var(--lumina-sidebar-active-bg);
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .sidebar-chat-context-menu {
@@ -6556,7 +6566,7 @@ body {
   padding: 7px 12px;
   border-radius: 6px;
   font-size: 0.93em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-primary, #202124);
   cursor: pointer;
   transition: background 0.12s;
@@ -6691,7 +6701,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-weight: var(--lumina-weight-bold);
   font-size: 0.86em;
   flex-shrink: 0;
   border: none;
@@ -6702,7 +6712,7 @@ body {
 
 .user-name {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-sidebar-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6939,9 +6949,8 @@ body {
 }
 
 .sparks-page__title {
-  font-family: 'Outfit', 'Google Sans', sans-serif;
   font-size: 1.57em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-sidebar-text);
 }
 
@@ -6955,7 +6964,7 @@ body {
   border-radius: 8px;
   padding: 8px 14px;
   font-size: 0.93em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -6988,7 +6997,7 @@ body {
 
 .sparks-empty p {
   font-size: 1.14em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   margin: 0 0 6px 0;
   color: var(--lumina-sidebar-text);
 }
@@ -7032,7 +7041,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   font-size: 1.29em;
   flex-shrink: 0;
 }
@@ -7044,7 +7053,7 @@ body {
 
 .spark-card__name {
   font-size: 1em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-sidebar-text);
   margin-bottom: 4px;
   overflow: hidden;
@@ -7188,9 +7197,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Outfit', 'Google Sans', sans-serif;
   font-size: 1.14em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-sidebar-text);
 }
 
@@ -7205,7 +7213,7 @@ body {
   border-radius: 6px;
   padding: 6px 14px;
   font-size: 0.93em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   cursor: pointer;
 }
 
@@ -7230,12 +7238,12 @@ body {
 
 .sparks-label {
   font-size: 0.93em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-sidebar-text);
 }
 
 .sparks-label-hint {
-  font-weight: normal;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-sidebar-text-muted);
 }
 
@@ -7323,7 +7331,7 @@ body {
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 0.86em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -7360,7 +7368,7 @@ body {
   align-items: center;
   padding: 0 16px;
   font-size: 0.93em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-sidebar-text-muted);
   border-bottom: none;
   flex-shrink: 0;
@@ -7547,7 +7555,7 @@ body {
 
 .sidebar-spark-item.active {
   background-color: var(--lumina-sidebar-active-bg);
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .sidebar-spark-item.dragging {
@@ -7570,7 +7578,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 0.86em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   flex-shrink: 0;
   transition: width 0.25s ease, height 0.25s ease, font-size 0.25s ease;
 }
@@ -7650,7 +7658,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 3.14em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   margin-bottom: 20px;
 }
 
@@ -7671,7 +7679,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 2.4em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   cursor: pointer;
   overflow: hidden;
   transition: opacity 0.2s;
@@ -7703,7 +7711,7 @@ body {
 
 .spark-welcome__title {
   font-size: clamp(1.6em, 5vw, 1.8em) !important;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   margin-bottom: 30px;
   color: var(--lumina-sidebar-text, #1f1f1f);
   text-align: center;
@@ -7721,7 +7729,7 @@ body {
 
 .spark-welcome__recent-title {
   font-size: 0.93em;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-sidebar-text-muted, #70757a);
   padding: 4px 6px;
   letter-spacing: 0.5px;
@@ -7761,7 +7769,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 0.71em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   flex-shrink: 0;
 }
 
@@ -7788,7 +7796,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   font-size: 1.07em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-sidebar-text);
   pointer-events: none;
 }
@@ -7823,7 +7831,7 @@ body {
 
 .spark-crop-title {
   font-size: 1.14em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   margin-bottom: 16px;
   color: var(--lumina-sidebar-text);
 }
@@ -7873,7 +7881,7 @@ body {
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   cursor: pointer;
   border: none;
   transition: opacity 0.2s;
@@ -7945,7 +7953,7 @@ body {
 
 .lumina-custom-popup-title {
   font-size: 1.14em;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary);
   margin: 0;
 }
@@ -7988,7 +7996,7 @@ body {
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   cursor: pointer;
   border: none;
   background: transparent;
@@ -8183,9 +8191,8 @@ body.is-sidepanel .split-toggle-btn {
 }
 
 .layout.new-chat-homepage .welcome-title {
-  font-family: 'Outfit', 'Google Sans', sans-serif !important;
   font-size: clamp(1.8em, 5vw, 2.2em) !important;
-  font-weight: 300 !important;
+  font-weight: var(--lumina-weight-regular) !important;
   color: #1f1f1f !important;
   text-align: center !important;
   margin: 0 !important;
@@ -8247,7 +8254,7 @@ body.is-sidepanel .split-toggle-btn {
   color: #2ecc71;
   padding: 2px 6px;
   border-radius: 4px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   display: inline-block;
 }
 
@@ -8259,7 +8266,7 @@ body.is-sidepanel .split-toggle-btn {
   text-decoration: none;
   padding: 2px 6px;
   border-radius: 4px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   display: inline-block;
 }
 
@@ -8380,9 +8387,8 @@ body.is-sidepanel .split-toggle-btn {
 #lumina-canvas-title {
   background: transparent;
   border: none;
-  font-family: var(--lumina-font-family), 'Outfit', system-ui, sans-serif;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary, #1f1f1f);
   width: 100%;
   max-width: 320px;
@@ -8408,7 +8414,7 @@ body.is-sidepanel .split-toggle-btn {
 
 .lumina-canvas-badge {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   padding: 2px 6px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -8446,7 +8452,7 @@ body.is-sidepanel .split-toggle-btn {
   border-radius: 8px;
   font-family: var(--lumina-font-family), system-ui, sans-serif;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   color: #5f6368;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -8644,20 +8650,18 @@ body.is-sidepanel .split-toggle-btn {
 
 .lumina-document-view h1 {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--lumina-weight-bold);
   margin-top: 10px;
   margin-bottom: 24px;
   color: #111111;
-  font-family: 'Outfit', sans-serif;
 }
 
 .lumina-document-view h2 {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   margin-top: 24px;
   margin-bottom: 14px;
   color: #222222;
-  font-family: 'Outfit', sans-serif;
 }
 
 .lumina-canvas-card {
@@ -8713,9 +8717,8 @@ body.is-sidepanel .split-toggle-btn {
 }
 
 .lumina-canvas-card-title {
-  font-family: var(--lumina-font-family), 'Outfit', sans-serif;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: #1f1f1f;
   line-height: 1.3;
 }
@@ -8953,7 +8956,7 @@ body.is-sidepanel .split-toggle-btn {
 
 .lumina-preview-audio-title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary);
   margin-bottom: 4px;
   word-break: break-all;
@@ -8962,7 +8965,7 @@ body.is-sidepanel .split-toggle-btn {
 .lumina-preview-audio-artist {
   font-size: 12px;
   color: var(--lumina-text-tertiary);
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .lumina-preview-audio {
@@ -9040,7 +9043,7 @@ body.is-sidepanel .split-toggle-btn {
 }
 
 .lumina-preview-fallback-name {
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   font-size: 16px;
   margin-bottom: 10px;
   word-break: break-all;
@@ -9069,7 +9072,7 @@ body.is-sidepanel .split-toggle-btn {
 .lumina-preview-window pre code .hljs-selector-tag,
 .lumina-preview-window pre code .hljs-addition {
   color: #d73a49 !important;
-  font-weight: 600 !important;
+  font-weight: var(--lumina-weight-semibold) !important;
 }
 
 .lumina-preview-window pre code .hljs-string,
@@ -9114,7 +9117,7 @@ body.is-sidepanel .split-toggle-btn {
 
 .lumina-preview-window pre code .hljs-section {
   color: #0550ae !important;
-  font-weight: bold !important;
+  font-weight: var(--lumina-weight-bold) !important;
 }
 
 .lumina-preview-window pre code .hljs-type {
@@ -9137,7 +9140,7 @@ body.is-sidepanel .split-toggle-btn {
 [data-theme="dark"] .lumina-preview-window pre code .hljs-selector-tag,
 [data-theme="dark"] .lumina-preview-window pre code .hljs-addition {
   color: #ff79c6 !important;
-  font-weight: bold !important;
+  font-weight: var(--lumina-weight-bold) !important;
 }
 
 [data-theme="dark"] .lumina-preview-window pre code .hljs-string,
@@ -9204,7 +9207,7 @@ body.is-sidepanel .split-toggle-btn {
   border-radius: 20px;
   font-size: 12px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium);
   z-index: 10008;
   display: flex;
   align-items: center;
@@ -9230,7 +9233,7 @@ body.is-sidepanel .split-toggle-btn {
   border: none;
   color: #ffffff;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   cursor: pointer;
   padding: 0 4px;
   display: flex;
@@ -9278,7 +9281,7 @@ body.is-sidepanel .split-toggle-btn {
 .lumina-preview-sheets-table th {
   background: var(--lumina-sidebar-bg);
   color: var(--lumina-text-primary);
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold);
   text-align: left;
   padding: 10px 14px;
   border-bottom: 2px solid var(--lumina-border-color);
@@ -9315,4 +9318,50 @@ body.is-sidepanel .split-toggle-btn {
 .lumina-preview-sheets-table th:last-child,
 .lumina-preview-sheets-table td:last-child {
   border-right: none;
+}
+
+body.lumina-font-serif {
+  --lumina-font-family: var(--lumina-font-serif) !important;
+}
+
+code,
+pre,
+kbd,
+samp,
+.monospace,
+.lumina-code-block,
+[class*="code"],
+[class*="mono"] {
+  font-family: var(--lumina-font-family-monospace, monospace) !important;
+}
+
+/* Notion Typography Weight overrides */
+strong,
+b,
+.medium,
+.lumina-settings-btn,
+label,
+.shortcut-key {
+  font-weight: var(--lumina-weight-medium) !important;
+}
+
+h2,
+h3,
+h4,
+h5,
+h6,
+.semibold,
+.lumina-settings-title,
+.provider-title,
+.chain-title,
+.sparks-page__title,
+.sparks-editor__title-row,
+.lumina-canvas-card-title {
+  font-weight: var(--lumina-weight-semibold) !important;
+}
+
+h1,
+.bold,
+.welcome-title {
+  font-weight: var(--lumina-weight-bold) !important;
 }

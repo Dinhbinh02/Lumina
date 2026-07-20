@@ -115,7 +115,7 @@
   user-select: none;
   font-family: var(--lumina-font-family);
   font-size: 13px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
 }
 
 .lumina-search-new-chat:hover {
@@ -132,7 +132,7 @@
 
 .lumina-search-group-header {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
   color: var(--lumina-text-tertiary);
   margin: 8px 10px 4px 10px;
   text-transform: capitalize;
@@ -171,7 +171,7 @@
 
 .lumina-search-item-title {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
   color: var(--lumina-text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -187,7 +187,7 @@
 
 .lumina-search-item-current {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-primary-color);
   background-color: rgba(10, 132, 255, 0.15);
   padding: 2px 6px;
@@ -209,7 +209,7 @@
 }
 
 .lumina-search-item-snippet b {
-  font-weight: 700;
+  font-weight: var(--lumina-weight-bold) ;
   color: var(--lumina-text-primary);
 }
 

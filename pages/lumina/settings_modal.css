@@ -31,7 +31,6 @@
   align-items: center;
   justify-content: center;
   z-index: 20000;
-  animation: lumina-settings-bg-fade 0.2s ease-out;
 }
 
 [data-theme="dark"] .lumina-settings-overlay {
@@ -50,7 +49,7 @@
   max-height: 85vh;
   background: var(--lumina-ui-bg) !important;
   border-radius: 12px;
-  box-shadow: 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12), 0 11px 15px -7px rgba(0, 0, 0, 0.2);
+  box-shadow: none !important;
   display: flex;
   position: relative;
   overflow: hidden;
@@ -58,7 +57,7 @@
 }
 
 [data-theme="dark"] .lumina-settings-dialog {
-  box-shadow: 0 24px 38px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: none !important;
 }
 
 .lumina-settings-close-btn {
@@ -119,7 +118,7 @@
 
 .lumina-settings-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary);
 }
 
@@ -138,9 +137,8 @@
   background: transparent !important;
   border: none;
   color: #0f0f0f !important;
-  font-family: var(--lumina-font-family);
   font-size: 13.5px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
   text-align: left;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -167,7 +165,7 @@
 
 .lumina-settings-nav-item.active {
   background: rgba(0, 0, 0, 0.06) !important;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 [data-theme="dark"] .lumina-settings-nav-item.active {
@@ -191,7 +189,7 @@
 
 .lumina-settings-section-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   margin-top: 0;
   margin-bottom: 18px;
   color: var(--lumina-text-primary);
@@ -216,7 +214,7 @@
 
 .lumina-settings-card-header h3 {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   margin: 0 0 4px 0;
   color: var(--lumina-text-primary);
 }
@@ -229,7 +227,7 @@
 
 .lumina-settings-group-title {
   font-size: 13.5px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
   margin: 18px 0 8px 0;
   color: var(--lumina-text-primary);
 }
@@ -279,7 +277,7 @@
 
 .lumina-settings-row-info .title {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
   color: var(--lumina-text-primary);
 }
 
@@ -300,7 +298,6 @@
 .lumina-settings-field input,
 .lumina-settings-field textarea,
 .lumina-settings-form input {
-  font-family: var(--lumina-font-family);
   font-size: 13px;
   padding: 6px 10px;
   border-radius: 8px;
@@ -451,7 +448,7 @@
 
 .lumina-settings-field label {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
   color: var(--lumina-text-secondary);
 }
 
@@ -584,7 +581,6 @@
 }
 
 .lumina-settings-btn {
-  font-family: var(--lumina-font-family);
   font-size: 13px;
   padding: 6px 12px;
   border-radius: 8px;
@@ -652,7 +648,7 @@
 }
 
 .font-semibold {
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 .text-error {
@@ -781,7 +777,7 @@
 
 .provider-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 .provider-badge {
@@ -793,13 +789,13 @@
 .provider-badge.active {
   background: #e8f0fe;
   color: #1557b0;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 [data-theme="dark"] .provider-badge.active {
   background: rgba(26, 115, 232, 0.25);
   color: #8ab4f8;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 .provider-badge.inactive {
@@ -1016,7 +1012,7 @@
 
 .chain-number {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: var(--lumina-weight-bold) ;
   color: var(--lumina-text-secondary);
   background: rgba(0, 0, 0, 0.04);
   min-width: 20px;
@@ -1044,7 +1040,7 @@
 
 .chain-title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary);
 }
 
@@ -1052,7 +1048,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 .chain-subtitle {
@@ -1143,8 +1139,7 @@
   padding: 2px 6px;
   border-radius: 5px;
   font-size: 13px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
   color: var(--lumina-text-primary);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
   margin: 0 2px;
@@ -1365,7 +1360,7 @@
 
 .profile-meta #lumina-user-name {
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary);
 }
 
@@ -1377,7 +1372,7 @@
 .profile-meta #lumina-sync-status {
   font-size: 11px;
   color: var(--lumina-text-muted, #757575);
-  font-weight: normal;
+  font-weight: var(--lumina-weight-regular) ;
   margin-top: 1px;
 }
 
@@ -1400,7 +1395,7 @@
 
 .lumina-settings-results-title {
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 .lumina-settings-api-result-item {
@@ -1458,7 +1453,7 @@
 
   .lumina-settings-title {
     font-size: 18px;
-    font-weight: 600;
+    font-weight: var(--lumina-weight-semibold) ;
     color: var(--lumina-text-primary);
   }
 
@@ -1480,7 +1475,7 @@
     border-radius: 8px;
     background: transparent !important;
     border: none !important;
-    font-weight: 500;
+    font-weight: var(--lumina-weight-medium) ;
     color: var(--lumina-text-secondary);
     display: flex;
     align-items: center;
@@ -1618,7 +1613,7 @@
 
 .lumina-provider-popup-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary);
 }
 
@@ -1719,7 +1714,7 @@
 .mapping-name {
   color: var(--lumina-text-primary, #000000) !important;
   font-size: 13px !important;
-  font-weight: 400 !important;
+  font-weight: var(--lumina-weight-regular) !important;
 }
 
 #lumina-mapping-popup-overlay .lumina-settings-shortcut-row {
@@ -1766,7 +1761,7 @@
 
 .lumina-variable-tag {
   color: #1a73e8 !important;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
   display: inline-block;
   user-select: none;
 }
@@ -1788,9 +1783,8 @@
   color: var(--lumina-text-primary) !important;
   padding: 4px 12px;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
   cursor: pointer;
-  font-family: var(--lumina-font-family);
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -1856,7 +1850,7 @@
 }
 
 .annotation-shortcut-text {
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
 }
 
 .swatch {
@@ -1900,7 +1894,7 @@
 }
 
 .lumina-storage-breakdown-item span:not(.label) {
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -1908,7 +1902,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   text-transform: uppercase;
   color: var(--lumina-text-muted, #757575);
   margin-bottom: 8px;
@@ -1939,7 +1933,7 @@
 
 .lumina-storage-session-title {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: var(--lumina-weight-regular) ;
   color: var(--lumina-text-primary, #e8eaed);
   white-space: nowrap;
   overflow: hidden;
@@ -1959,7 +1953,7 @@
 
 .lumina-storage-session-size {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-secondary, #9aa0a6);
 }
 
@@ -1994,7 +1988,7 @@
 
 .lumina-gdrive-breakdown-title {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   text-transform: uppercase;
   color: var(--lumina-text-secondary, #9aa0a6);
   margin-bottom: 10px;
@@ -2018,7 +2012,7 @@
 
 .lumina-gdrive-breakdown-card .value {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: var(--lumina-weight-bold) ;
   color: var(--lumina-ui-primary, #1a73e8);
 }
 
@@ -2064,7 +2058,7 @@
 
 .lumina-cloud-signin-info .title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -2087,7 +2081,7 @@
 
 .lumina-storage-dashboard-label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -2097,7 +2091,7 @@
 }
 
 .lumina-storage-dashboard-total span {
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -2219,13 +2213,13 @@
 .lumina-storage-category-name {
   flex: 1;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
   color: var(--lumina-text-primary, #e8eaed);
 }
 
 .lumina-storage-category-size {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--lumina-weight-medium) ;
   color: var(--lumina-text-secondary, #9aa0a6);
   white-space: nowrap;
 }
@@ -2239,7 +2233,7 @@
 
 .lumina-storage-sessions-header>span {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--lumina-weight-semibold) ;
   color: var(--lumina-text-secondary, #9aa0a6);
 }
 

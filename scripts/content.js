@@ -1,32 +1,4 @@
 (() => {
-    let fontStyleElement = null;
-    function injectFonts() {
-        if (fontStyleElement || document.getElementById('lumina-fonts')) return;
-        const fontCss = `@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');`;
-        fontStyleElement = document.createElement('style');
-        fontStyleElement.id = 'lumina-fonts';
-        fontStyleElement.textContent = fontCss;
-        if (document.head) {
-            document.head.appendChild(fontStyleElement);
-        } else {
-            const headObserver = new MutationObserver(() => {
-                if (document.head) {
-                    if (!document.getElementById('lumina-fonts')) {
-                        document.head.appendChild(fontStyleElement);
-                    }
-                    headObserver.disconnect();
-                }
-            });
-            headObserver.observe(document.documentElement, { childList: true });
-        }
-    }
-    function removeFonts() {
-        if (fontStyleElement) {
-            fontStyleElement.remove();
-            fontStyleElement = null;
-        }
-    }
-    injectFonts();
     window.katexLoaded = true;
     class EventCleanupManager {
         constructor() {
@@ -423,7 +395,6 @@
         const disabledDomains = items.disabledDomains || [];
         if (disabledDomains.includes(window.location.hostname)) {
             isExtensionDisabled = true;
-            removeFonts();
         }
     });
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -431,10 +402,7 @@
         if (request.action === 'toggle_extension_state') {
             isExtensionDisabled = !request.isEnabled;
             if (isExtensionDisabled) {
-                removeFonts();
                 if (window.LuminaSelection) LuminaSelection.hide();
-            } else {
-                injectFonts();
             }
         } else if (request.action === 'get_page_content') {
             extractMainContent().then(result => {
@@ -1835,207 +1803,177 @@
     window.luminaEstimateTokens = luminaEstimateTokens;
     class YouTubeButtonManager {
         constructor() {
-            this.injected = false;
             this.button = null;
-            this.observer = null;
+            this.copyButton = null;
+            this.intervalId = null;
             this.currentVideoId = null;
             this.injectStyles();
+            this.setupGlobalListener();
         }
         injectStyles() {
             if (document.getElementById('lumina-yt-styles')) return;
             const style = document.createElement('style');
             style.id = 'lumina-yt-styles';
             style.textContent = `
-                #title.ytd-watch-metadata {
-                    display: grid !important;
-                    grid-template-columns: 1fr auto !important;
+                /* Hide native Gemini icons */
+                button[aria-label="Ask"] .ytSpecButtonShapeNextIcon,
+                button[title="Ask"] .ytSpecButtonShapeNextIcon,
+                #lumina-yt-ask-btn .ytSpecButtonShapeNextIcon {
+                    display: none !important;
+                }
+                /* Hide native Download icons */
+                button[aria-label="Download"] .ytSpecButtonShapeNextIcon,
+                button[title="Download"] .ytSpecButtonShapeNextIcon,
+                #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextIcon {
+                    display: none !important;
+                }
+                
+                /* Replace Ask text with Ask Lumina */
+                button[aria-label="Ask"] .ytSpecButtonShapeNextButtonTextContent,
+                button[title="Ask"] .ytSpecButtonShapeNextButtonTextContent,
+                #lumina-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent {
+                    font-size: 0 !important;
+                    display: inline-flex !important;
                     align-items: center !important;
-                    gap: 8px !important;
-                    width: 100% !important;
+                    height: 100% !important;
+                    vertical-align: middle !important;
                 }
-                .lumina-yt-title-left {
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    min-width: 0;
-                    overflow: hidden;
+                button[aria-label="Ask"] .ytSpecButtonShapeNextButtonTextContent::before,
+                button[title="Ask"] .ytSpecButtonShapeNextButtonTextContent::before,
+                #lumina-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent::before {
+                    content: "Ask Lumina" !important;
+                    font-size: 14px !important;
+                    display: inline-block !important;
+                    vertical-align: middle !important;
                 }
-                .lumina-yt-title-left h1,
-                .lumina-yt-title-left yt-formatted-string {
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    display: block !important;
+
+                /* Replace Download text with Copy Transcript */
+                button[aria-label="Download"] .ytSpecButtonShapeNextButtonTextContent,
+                button[title="Download"] .ytSpecButtonShapeNextButtonTextContent,
+                #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent {
+                    font-size: 0 !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    height: 100% !important;
+                    vertical-align: middle !important;
                 }
-                .lumina-yt-ask-btn {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 0 16px;
-                    height: 36px;
-                    border-radius: 18px;
-                    font-family: "Roboto", "Arial", sans-serif;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    border: none;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    position: relative;
-                    overflow: hidden;
-                    white-space: nowrap;
-                    flex-shrink: 0;
-                    z-index: 10;
+                button[aria-label="Download"] .ytSpecButtonShapeNextButtonTextContent::before,
+                button[title="Download"] .ytSpecButtonShapeNextButtonTextContent::before,
+                #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent::before {
+                    content: "Copy Transcript" !important;
+                    font-size: 14px !important;
+                    display: inline-block !important;
+                    vertical-align: middle !important;
                 }
-                /* Ready State - Solid Blue */
-                .lumina-yt-ask-btn.is-ready {
-                    background: #065fd4;
-                    color: white;
+
+                /* Copy Transcript States */
+                #lumina-yt-copy-transcript-btn.is-fetching .ytSpecButtonShapeNextButtonTextContent::before {
+                    content: "Fetching..." !important;
                 }
-                .lumina-yt-ask-btn.is-ready:hover {
-                    filter: brightness(1.1);
+                #lumina-yt-copy-transcript-btn.is-copied .ytSpecButtonShapeNextButtonTextContent::before {
+                    content: "Copied!" !important;
                 }
-                /* Loading State - Shimmer */
-                .lumina-yt-ask-btn.is-loading {
-                    background: #f2f2f2;
-                    color: #606060;
-                    cursor: wait;
-                    pointer-events: none;
+                #lumina-yt-copy-transcript-btn.is-error .ytSpecButtonShapeNextButtonTextContent::before {
+                    content: "Error!" !important;
                 }
-                .lumina-yt-ask-btn.is-loading::after {
-                    content: "";
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    bottom: 0;
-                    left: 0;
-                    transform: translateX(-100%);
-                    background: linear-gradient(
-                        90deg,
-                        rgba(255, 255, 255, 0) 0%,
-                        rgba(255, 255, 255, 0.6) 50%,
-                        rgba(255, 255, 255, 0) 100%
-                    );
-                    animation: lumina-shimmer 1.5s infinite;
-                }
-                @keyframes lumina-shimmer {
-                    100% {
-                        transform: translateX(100%);
-                    }
-                }
-                .lumina-yt-ask-btn .lumina-icon {
-                    width: 18px;
-                    height: 18px;
-                    margin-right: 8px;
-                    fill: currentColor;
-                }
-                html[dark] .lumina-yt-ask-btn.is-loading {
-                    background: #272727;
-                    color: #aaa;
-                }
-                html[dark] .lumina-yt-ask-btn.is-loading::after {
-                    background: linear-gradient(
-                        90deg,
-                        rgba(255, 255, 255, 0) 0%,
-                        rgba(255, 255, 255, 0.1) 50%,
-                        rgba(255, 255, 255, 0) 100%
-                    );
+                #lumina-yt-copy-transcript-btn.is-not-found .ytSpecButtonShapeNextButtonTextContent::before {
+                    content: "No Transcript!" !important;
                 }
             `;
             document.head.appendChild(style);
         }
-        async init() {
+        setupGlobalListener() {
+            window.addEventListener('click', async (e) => {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                
+                // Check if the click target is the Ask button or inside it
+                const askBtn = e.target.closest('button[aria-label="Ask"], button[title="Ask"], #lumina-yt-ask-btn');
+                if (askBtn) {
+                    console.log('[Lumina YT] Global capturing click intercepted on Ask!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.handleAction();
+                    return;
+                }
+
+                // Check if the click target is the Copy Transcript button or inside it
+                const copyBtn = e.target.closest('button[aria-label="Download"], button[title="Download"], #lumina-yt-copy-transcript-btn');
+                if (copyBtn) {
+                    console.log('[Lumina YT] Global capturing click intercepted on Copy Transcript!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.handleCopyTranscript();
+                }
+            }, true); // Capturing phase ensures we run before YouTube's framework
+        }
+        init() {
             const videoId = this.getVideoId();
             if (!videoId) {
                 this.removeButton();
                 return;
             }
             this.currentVideoId = videoId;
-            this.injectButton();
-            this.updateState('loading');
-            try {
-                const transcript = await YoutubeUtils.fetchTranscript(window.location.href);
-                if (transcript && this.currentVideoId === videoId) {
-                    this.updateState('ready');
-                } else if (this.currentVideoId === videoId) {
-                    this.updateState('ready');
-                }
-            } catch (err) {
-                if (this.currentVideoId === videoId) {
-                    this.updateState('ready');
-                }
+            
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
             }
+            this.intervalId = setInterval(() => {
+                this.injectButton();
+            }, 1000);
+            
+            this.injectButton();
         }
         getVideoId() {
             const url = new URL(window.location.href);
             return url.searchParams.get('v') || (url.pathname.startsWith('/shorts/') ? url.pathname.split('/')[2] : null);
         }
         injectButton() {
-            const titleContainer = document.querySelector('#title.ytd-watch-metadata');
-            if (!titleContainer) {
-                if (!this.retryCount) this.retryCount = 0;
-                if (this.retryCount < 10) {
-                    this.retryCount++;
-                    setTimeout(() => this.injectButton(), 500);
-                }
-                return;
+            // 1. Hijack YouTube's native "Ask" button
+            const nativeBtn = document.querySelector('button[aria-label="Ask"], button[title="Ask"]');
+            if (nativeBtn && nativeBtn.id !== 'lumina-yt-ask-btn') {
+                console.log('[Lumina YT] Hijacked native Ask button id');
+                nativeBtn.id = 'lumina-yt-ask-btn';
+                this.button = nativeBtn;
             }
-            let leftContainer = titleContainer.querySelector('.lumina-yt-title-left');
-            if (!leftContainer) {
-                leftContainer = document.createElement('div');
-                leftContainer.className = 'lumina-yt-title-left';
-                titleContainer.appendChild(leftContainer);
-            }
-            const children = Array.from(titleContainer.childNodes);
-            let needsMove = false;
-            children.forEach(child => {
-                const isOurContainer = child === leftContainer;
-                const isOurButton = child.id === 'lumina-yt-ask-btn' || (child.classList && child.classList.contains('lumina-yt-ask-btn'));
-                if (!isOurContainer && !isOurButton) {
-                    leftContainer.appendChild(child);
-                    needsMove = true;
-                }
-            });
-            if (leftContainer) {
-                leftContainer.removeAttribute?.('title');
-                leftContainer.querySelectorAll?.('[title]').forEach(el => el.removeAttribute('title'));
-            }
-            if (document.getElementById('lumina-yt-ask-btn')) {
-                if (needsMove) {
-                    titleContainer.appendChild(document.getElementById('lumina-yt-ask-btn'));
-                }
-                return;
-            }
-            const btn = document.createElement('button');
-            btn.id = 'lumina-yt-ask-btn';
-            btn.className = 'lumina-yt-ask-btn is-loading';
-            btn.innerHTML = `<span class="lumina-text">Fetching...</span>`;
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.handleAction();
-            });
-            titleContainer.appendChild(btn);
-            this.button = btn;
-            if (!this.observer) {
-                this.observer = new MutationObserver((mutations) => {
-                    if (!document.getElementById('lumina-yt-ask-btn')) {
-                        this.injectButton();
-                    }
-                });
-                this.observer.observe(titleContainer, { childList: true });
+
+            // 2. Hijack YouTube's native "Download" button
+            const downloadBtn = document.querySelector('button[aria-label="Download"], button[title="Download"]');
+            if (downloadBtn && downloadBtn.id !== 'lumina-yt-copy-transcript-btn') {
+                console.log('[Lumina YT] Hijacked native Download button id');
+                downloadBtn.id = 'lumina-yt-copy-transcript-btn';
+                this.copyButton = downloadBtn;
             }
         }
-        updateState(state) {
-            const btn = document.getElementById('lumina-yt-ask-btn');
+        async handleCopyTranscript() {
+            const btn = document.getElementById('lumina-yt-copy-transcript-btn');
             if (!btn) return;
-            const text = btn.querySelector('.lumina-text');
-            if (state === 'loading') {
-                btn.className = 'lumina-yt-ask-btn is-loading';
-                text.textContent = 'Fetching...';
-            } else {
-                btn.className = 'lumina-yt-ask-btn is-ready';
-                text.textContent = 'Ask Lumina';
+
+            btn.classList.remove('is-copied', 'is-error', 'is-not-found');
+            btn.classList.add('is-fetching');
+
+            try {
+                const transcript = await YoutubeUtils.fetchTranscript(window.location.href);
+                btn.classList.remove('is-fetching');
+                if (transcript) {
+                    await navigator.clipboard.writeText(transcript);
+                    btn.classList.add('is-copied');
+                } else {
+                    btn.classList.add('is-not-found');
+                }
+            } catch (err) {
+                console.error('[Lumina YT] Failed to copy transcript:', err);
+                btn.classList.remove('is-fetching');
+                btn.classList.add('is-error');
             }
+
+            setTimeout(() => {
+                const currentBtn = document.getElementById('lumina-yt-copy-transcript-btn');
+                if (currentBtn) {
+                    currentBtn.classList.remove('is-fetching', 'is-copied', 'is-error', 'is-not-found');
+                }
+            }, 2000);
         }
         async handleAction() {
             const triggerInfo = {
@@ -2055,12 +1993,12 @@
             }
         }
         removeButton() {
-            const btn = document.getElementById('lumina-yt-ask-btn');
-            if (btn) btn.remove();
-            if (this.observer) {
-                this.observer.disconnect();
-                this.observer = null;
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
             }
+            this.button = null;
+            this.copyButton = null;
         }
     }
     const ytButtonManager = new YouTubeButtonManager();

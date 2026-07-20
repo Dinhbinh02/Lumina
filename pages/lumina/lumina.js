@@ -103,12 +103,20 @@ function updateUrlSessionId(ignoredSessionId) {
             const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
             window.history.replaceState({ path: newUrl }, '', newUrl);
         }
-        return;
-    }
-    if (urlParams.get('sid') !== sidVal) {
+    } else if (urlParams.get('sid') !== sidVal) {
         urlParams.set('sid', sidVal);
         const newUrl = window.location.pathname + '?' + urlParams.toString();
         window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+    if (!isSidePanel && typeof chrome !== 'undefined' && chrome.runtime) {
+        const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+        if (activeTab) {
+            chrome.runtime.sendMessage({
+                action: 'lumina_active_session_changed',
+                sessionId: activeTab.sessionId || '',
+                title: activeTab.title || 'Lumina Chat'
+            }).catch(() => {});
+        }
     }
 }
 
@@ -517,7 +525,37 @@ async function ensureContentScriptsInjected(tabId) {
 
 async function fetchFreshWebContent(tabId) {
     const tabInfo = await chrome.tabs.get(parseInt(tabId)).catch(() => null);
-    if (!tabInfo || tabInfo.status !== 'complete') return null;
+    if (!tabInfo) return null;
+    if (typeof tabInfo.url === 'string' && tabInfo.url.startsWith('chrome-extension://') && tabInfo.url.includes('?sid=')) {
+        try {
+            const urlObj = new URL(tabInfo.url);
+            const sid = urlObj.searchParams.get('sid');
+            if (sid) {
+                let messages = await ChatHistoryManager.getSessionMessages(sid);
+                if (messages && messages.length > 0) {
+                    const qMessages = messages.filter(m => m.type === 'question');
+                    const limitCount = 10;
+                    if (qMessages.length > limitCount) {
+                        const targetQuestion = qMessages[qMessages.length - limitCount];
+                        const startIndex = messages.indexOf(targetQuestion);
+                        if (startIndex !== -1) {
+                            messages = messages.slice(startIndex);
+                        }
+                    }
+                    return messages.map(msg => {
+                        const role = msg.type === 'question' ? 'User' : 'Assistant';
+                        const text = typeof msg.content === 'string' ? msg.content : '';
+                        const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                        return `${role}: ${cleanText}`;
+                    }).join('\n\n');
+                }
+            }
+        } catch (e) {
+            console.error('[Lumina WebSource] Failed to fetch Lumina tab content:', e);
+        }
+        return null;
+    }
+    if (tabInfo.status !== 'complete') return null;
     await ensureContentScriptsInjected(parseInt(tabId));
     try {
         const results = await chrome.scripting.executeScript({
@@ -1781,7 +1819,7 @@ function normalizeRestoredHistory(historyEl) {
         const wasPinned = questionEl.classList.contains('is-pinned-question') ||
             (pinBtn && (pinBtn.classList.contains('is-active') || pinBtn.getAttribute('aria-pressed') === 'true'));
         if (pinBtn) pinBtn.remove();
-        const rawText = questionEl.dataset.rawText || questionEl.textContent.trim();
+        const rawText = questionEl.getAttribute('data-raw-text') || questionEl.textContent.trim();
         questionEl.className = `lumina-chat-question${entryType !== 'qa' ? ` ${entryType}-question` : ''}`;
         questionEl.dataset.entryType = entryType;
         questionEl.removeAttribute('contenteditable');
@@ -2480,7 +2518,11 @@ function setupWebSourceTracking() {
 }
 
 function isWebPageUrl(url) {
-    return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+    return typeof url === 'string' && (
+        url.startsWith('http://') || 
+        url.startsWith('https://') || 
+        (url.startsWith('chrome-extension://') && url.includes('?sid='))
+    );
 }
 
 function syncCurrentBrowserTab() {
@@ -2488,6 +2530,21 @@ function syncCurrentBrowserTab() {
     const handleTabResult = (activeTab) => {
         saveCurrentWebSelection();
         if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
+            if (activeTab.url.includes('?sid=')) {
+                currentBrowserTab = {
+                    tabId: activeTab.id,
+                    title: activeTab.title || 'Lumina Chat',
+                    url: activeTab.url,
+                    favIconUrl: activeTab.favIconUrl
+                };
+                loadCurrentWebSelection();
+                updateWebChips();
+                refreshWebSourceTokensForTab(activeTab.id);
+                if (webTabPickerEl) {
+                    refreshWebTabPicker();
+                }
+                return;
+            }
             chrome.windows.getAll({ populate: true }, (windows) => {
                 const sortedWindows = windows
                     .filter(w => w.type === 'normal')
@@ -2729,6 +2786,9 @@ function openWebTabPicker(anchorEl, luminaTabId = null) {
 
 function getDomainDisplayName(url) {
     if (!url) return '';
+    if (url.startsWith('chrome-extension://')) {
+        return 'Lumina';
+    }
     try {
         let hostname = new URL(url).hostname;
         if (hostname.startsWith('www.')) {
@@ -2761,7 +2821,9 @@ function createWebChipElement(source, selectedSources, luminaTabId) {
     }
     if (!hasMultipleTabs) {
         let favIconUrl = source.favIconUrl;
-        if (!favIconUrl && source.url) {
+        if (source.url && source.url.startsWith('chrome-extension://')) {
+            favIconUrl = chrome.runtime.getURL('assets/icons/icon16.png');
+        } else if (!favIconUrl && source.url) {
             try {
                 const domain = new URL(source.url).hostname;
                 favIconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
@@ -3149,7 +3211,7 @@ async function init() {
     });
     setupPort();
     setupRegenerateButtons();
-    chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle', 'theme', 'contrast', 'accentColor'], (items) => {
+    chrome.storage.local.get(['fontSize', 'shortcuts', 'annotationShortcuts', 'globalDefaults', 'questionMappings', 'askSelectionPopupEnabled', 'readWebpage', 'advancedParamsByModel', 'pendingMicToggle', 'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight'], (items) => {
         if (items.readWebpage !== undefined) readWebpageEnabled = !!items.readWebpage;
         shortcuts = items.shortcuts || {};
         if (shortcuts.undefined !== undefined) {
@@ -3163,6 +3225,8 @@ async function init() {
         const themeVal = items.theme || (items.globalDefaults && items.globalDefaults.theme) || 'auto';
         const contrastVal = items.contrast || (items.globalDefaults && items.globalDefaults.contrast) || 'auto';
         const accentVal = items.accentColor || (items.globalDefaults && items.globalDefaults.accentColor) || 'default';
+        const fontFamilyVal = items.fontFamily || 'default';
+        const fontWeightVal = items.fontWeight || '400';
         let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
         if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
             mode = 'dark';
@@ -3170,6 +3234,9 @@ async function init() {
         document.body.setAttribute('data-theme', mode);
         document.body.setAttribute('data-accent', accentVal);
         document.body.setAttribute('data-contrast', contrastVal);
+        document.body.className = document.body.className.replace(/\blumina-font-\S+/g, '');
+        document.body.classList.add(`lumina-font-${fontFamilyVal}`);
+        document.documentElement.style.setProperty('--lumina-weight-base', fontWeightVal);
         const size = items.fontSize || (items.globalDefaults && items.globalDefaults.fontSize);
         if (size) {
             applyFontSize(size);
@@ -3195,6 +3262,15 @@ async function init() {
             const pendingKey = myWindowId ? `pending_sidepanel_query_${myWindowId}` : null;
             if (pendingKey && changes[pendingKey] && changes[pendingKey].newValue) {
                 processPendingQuery(changes[pendingKey].newValue, pendingKey);
+            }
+            if (changes.fontFamily) {
+                const fontFamilyVal = changes.fontFamily.newValue || 'default';
+                document.body.className = document.body.className.replace(/\blumina-font-\S+/g, '');
+                document.body.classList.add(`lumina-font-${fontFamilyVal}`);
+            }
+            if (changes.fontWeight) {
+                const fontWeightVal = changes.fontWeight.newValue || '400';
+                document.documentElement.style.setProperty('--lumina-weight-base', fontWeightVal);
             }
             if (changes.shortcuts) shortcuts = changes.shortcuts.newValue || {};
             if (changes.annotationShortcuts) annotationShortcuts = changes.annotationShortcuts.newValue || [];
@@ -3386,6 +3462,32 @@ async function init() {
                     toggleWebSourcePin(request.source, true);
                 }
             });
+        } else if (request.action === 'lumina_active_session_changed') {
+            if (isSidePanel) {
+                chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabsList) => {
+                    const activeTab = tabsList && tabsList[0];
+                    if (activeTab && typeof activeTab.url === 'string' && activeTab.url.startsWith('chrome-extension://')) {
+                        let newUrl = activeTab.url;
+                        try {
+                            const urlObj = new URL(activeTab.url);
+                            urlObj.searchParams.set('sid', request.sessionId);
+                            newUrl = urlObj.toString();
+                        } catch (e) {}
+                        currentBrowserTab = {
+                            tabId: activeTab.id,
+                            title: 'Lumina',
+                            url: newUrl,
+                            favIconUrl: activeTab.favIconUrl
+                        };
+                        loadCurrentWebSelection();
+                        updateWebChips();
+                        refreshWebSourceTokensForTab(activeTab.id);
+                        if (webTabPickerEl) {
+                            refreshWebTabPicker();
+                        }
+                    }
+                });
+            }
         }
     });
     chrome.windows.getCurrent(async (win) => {
@@ -3771,25 +3873,30 @@ async function renderRecentChatsSidebar() {
             }
             return b.updatedAt - a.updatedAt;
         });
+
+    const recentData = historyData.filter(s => !s.archived);
+    const archivedData = historyData.filter(s => !!s.archived);
+
     const sparksRes = await chrome.storage.local.get(['lumina_sparks']);
     const sparksMap = sparksRes.lumina_sparks || {};
     let html = '';
-    if (historyData.length === 0) {
+    
+    const activeTab = tabs[activeTabIndex];
+    const activeSessionId = activeTab ? activeTab.sessionId : null;
+
+    if (recentData.length === 0) {
         html = '<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-sidebar-text-muted); text-align: center;">No recent chats</div>';
     } else {
-        const activeTab = tabs[activeTabIndex];
-        const activeSessionId = activeTab ? activeTab.sessionId : null;
-
         // Ensure the active session is always rendered and not cut off by the limit
         let activeIndex = -1;
         if (activeSessionId) {
-            activeIndex = historyData.findIndex(s => s.id === activeSessionId);
+            activeIndex = recentData.findIndex(s => s.id === activeSessionId);
         }
         if (activeIndex >= recentChatsLimit) {
             recentChatsLimit = Math.ceil((activeIndex + 1) / 30) * 30;
         }
 
-        historyData.slice(0, recentChatsLimit).forEach(session => {
+        recentData.slice(0, recentChatsLimit).forEach(session => {
             let displayTitle = session.title;
             if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
@@ -3815,7 +3922,7 @@ async function renderRecentChatsSidebar() {
             `;
         });
         if (window.namingSessionIds && window.namingSessionIds.size > 0) {
-            const storedIds = new Set(historyData.map(s => s.id));
+            const storedIds = new Set(recentData.map(s => s.id));
             window.namingSessionIds.forEach(namingSid => {
                 if (!storedIds.has(namingSid)) {
                     const isActive = namingSid === activeSessionId ? ' active' : '';
@@ -3833,6 +3940,44 @@ async function renderRecentChatsSidebar() {
     }
     listContainer.innerHTML = html;
 
+    const archiveSectionEl = document.getElementById('sidebar-archive-section');
+    const archivedContainer = document.getElementById('sidebar-archived-chats');
+    if (archiveSectionEl && archivedContainer) {
+        if (archivedData.length > 0) {
+            archiveSectionEl.style.display = 'block';
+            let archiveHtml = '';
+            archivedData.forEach(session => {
+                let displayTitle = session.title;
+                if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+                    displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+                }
+                if (!displayTitle) displayTitle = "Untitled Chat";
+                let iconHTML = '';
+                const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
+                const isActive = session.id === activeSessionId ? ' active' : '';
+                const pinHTML = session.pinned ? `
+                    <span class="recent-chat-item__pin-icon" title="Pinned">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
+                    </span>
+                ` : '';
+                archiveHtml += `
+                    <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
+                        ${iconHTML}
+                        <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
+                        ${pinHTML}
+                        <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                    </div>
+                `;
+            });
+            archivedContainer.innerHTML = archiveHtml;
+        } else {
+            archiveSectionEl.style.display = 'none';
+            archivedContainer.innerHTML = '';
+        }
+    }
+
     const attachScroll = (el) => {
         if (!el || el.__scrollListenerAttached) return;
         el.__scrollListenerAttached = true;
@@ -3841,7 +3986,7 @@ async function renderRecentChatsSidebar() {
             const position = el.scrollTop + el.clientHeight;
             const height = el.scrollHeight;
             if (height - position < threshold) {
-                if (recentChatsLimit < historyData.length && !window.__loadingMoreRecentChats) {
+                if (recentChatsLimit < recentData.length && !window.__loadingMoreRecentChats) {
                     window.__loadingMoreRecentChats = true;
                     recentChatsLimit += 30;
                     renderRecentChatsSidebar().then(() => {
@@ -3868,6 +4013,7 @@ async function renderRecentChatsSidebar() {
             { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>' },
             { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>' },
             { action: 'duplicate', label: 'Duplicate', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
+            { action: 'archive', label: 'Archive', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
             { type: 'divider' },
             { action: 'delete', label: 'Delete', danger: true, icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' }
         ]);
@@ -3886,9 +4032,7 @@ async function renderRecentChatsSidebar() {
                 document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
                 if (!sid) return;
                 if (action === 'pin') {
-                    const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                    const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-                    const session = store[sid];
+                    const session = await LuminaChatDB.getSession(sid);
                     if (session) {
                         const currentlyPinned = !!session.pinned;
                         if (!currentlyPinned) {
@@ -3924,9 +4068,7 @@ async function renderRecentChatsSidebar() {
                         renderRecentChatsSidebar();
                     }
                 } else if (action === 'rename') {
-                    const res = await chrome.storage.local.get([ChatHistoryManager.STORAGE_KEY]);
-                    const store = res[ChatHistoryManager.STORAGE_KEY] || {};
-                    const meta = store[sid];
+                    const meta = await LuminaChatDB.getSession(sid);
                     let currentTitle = meta?.title || 'Untitled Chat';
                     if (!meta?.isRenamed && !meta?.autoNamed && meta?.questions?.length > 0) {
                         currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
@@ -3943,6 +4085,39 @@ async function renderRecentChatsSidebar() {
                     }
                 } else if (action === 'duplicate') {
                     await ChatHistoryManager.duplicateChat(sid);
+                } else if (action === 'archive') {
+                    const meta = await LuminaChatDB.getSession(sid);
+                    if (meta) {
+                        const isArchived = !!meta.archived;
+                        if (isArchived) {
+                            meta.archived = false;
+                            await LuminaChatDB.putSession(meta);
+                            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
+                            renderRecentChatsSidebar();
+                        } else {
+                            let currentTitle = meta.title || 'Untitled Chat';
+                            if (!meta.isRenamed && !meta.autoNamed && meta.questions && meta.questions.length > 0) {
+                                currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
+                            }
+                            const newTitle = await window.showCustomPopup({
+                                title: 'Archive Chat',
+                                body: 'Rename this chat to archive:',
+                                isInput: true,
+                                defaultValue: currentTitle,
+                                confirmLabel: 'Archive'
+                            });
+                            if (newTitle !== null) {
+                                if (newTitle.trim()) {
+                                    meta.title = newTitle.trim();
+                                    meta.isRenamed = true;
+                                }
+                                meta.archived = true;
+                                await LuminaChatDB.putSession(meta);
+                                chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
+                                renderRecentChatsSidebar();
+                            }
+                        }
+                    }
                 } else if (action === 'delete') {
                     const confirmed = await window.showCustomPopup({
                         title: 'Delete Chat',
@@ -3963,59 +4138,85 @@ async function renderRecentChatsSidebar() {
             });
         });
     }
-    listContainer.querySelectorAll('.recent-chat-item__menu-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const sid = btn.dataset.sessionId;
-            const parentItem = btn.closest('.recent-chat-item');
-            ctxMenu.dataset.sessionId = sid;
-            const pinItem = ctxMenu.querySelector('[data-action="pin"]');
-            if (pinItem) {
-                LuminaChatDB.getSession(sid).then(session => {
-                    const isPinned = !!session?.pinned;
-                    const textEl = pinItem.querySelector('span');
-                    if (textEl) textEl.textContent = isPinned ? 'Unpin' : 'Pin';
-                    const svgContainer = pinItem.querySelector('svg');
-                    if (svgContainer) {
-                        if (isPinned) {
-                            svgContainer.setAttribute('stroke-width', '1.8');
-                            svgContainer.innerHTML = `<path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" />`;
-                        } else {
-                            svgContainer.setAttribute('stroke-width', '2.0');
-                            svgContainer.innerHTML = `<path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" />`;
+
+    const containers = [listContainer];
+    if (archivedContainer) containers.push(archivedContainer);
+
+    containers.forEach(container => {
+        container.querySelectorAll('.recent-chat-item__menu-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sid = btn.dataset.sessionId;
+                const parentItem = btn.closest('.recent-chat-item');
+                ctxMenu.dataset.sessionId = sid;
+                
+                const pinItem = ctxMenu.querySelector('[data-action="pin"]');
+                if (pinItem) {
+                    LuminaChatDB.getSession(sid).then(session => {
+                        const isPinned = !!session?.pinned;
+                        const textEl = pinItem.querySelector('span');
+                        if (textEl) textEl.textContent = isPinned ? 'Unpin' : 'Pin';
+                        const svgContainer = pinItem.querySelector('svg');
+                        if (svgContainer) {
+                            if (isPinned) {
+                                svgContainer.setAttribute('stroke-width', '1.8');
+                                svgContainer.innerHTML = `<path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" />`;
+                            } else {
+                                svgContainer.setAttribute('stroke-width', '2.0');
+                                svgContainer.innerHTML = `<path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" />`;
+                            }
                         }
-                    }
-                });
-            }
-            document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
-            if (parentItem) parentItem.classList.add('ctx-active');
-            const rect = btn.getBoundingClientRect();
-            ctxMenu.style.display = 'block';
-            let top = rect.bottom + 4;
-            let left = rect.right - ctxMenu.offsetWidth;
-            if (left < 4) left = 4;
-            if (top + ctxMenu.offsetHeight > window.innerHeight - 4) {
-                top = rect.top - ctxMenu.offsetHeight - 4;
-            }
-            ctxMenu.style.top = top + 'px';
-            ctxMenu.style.left = left + 'px';
+                    });
+                }
+
+                const archiveItem = ctxMenu.querySelector('[data-action="archive"]');
+                if (archiveItem) {
+                    LuminaChatDB.getSession(sid).then(session => {
+                        const isArchived = !!session?.archived;
+                        const textEl = archiveItem.querySelector('span');
+                        if (textEl) textEl.textContent = isArchived ? 'Unarchive' : 'Archive';
+                        const svgContainer = archiveItem.querySelector('svg');
+                        if (svgContainer) {
+                            if (isArchived) {
+                                svgContainer.innerHTML = `<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/><polyline points="10 9 12 7 14 9"/><line x1="12" y1="7" x2="12" y2="13"/>`;
+                            } else {
+                                svgContainer.innerHTML = `<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/>`;
+                            }
+                        }
+                    });
+                }
+
+                document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
+                if (parentItem) parentItem.classList.add('ctx-active');
+                const rect = btn.getBoundingClientRect();
+                ctxMenu.style.display = 'block';
+                let top = rect.bottom + 4;
+                let left = rect.right - ctxMenu.offsetWidth;
+                if (left < 4) left = 4;
+                if (top + ctxMenu.offsetHeight > window.innerHeight - 4) {
+                    top = rect.top - ctxMenu.offsetHeight - 4;
+                }
+                ctxMenu.style.top = top + 'px';
+                ctxMenu.style.left = left + 'px';
+            });
         });
-    });
-    listContainer.querySelectorAll('.recent-chat-item').forEach(item => {
-        item.addEventListener('click', async (e) => {
-            if (e.target.closest('.recent-chat-item__menu-btn')) return;
-            listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
-            item.classList.add('active');
-            const sid = item.dataset.sessionId;
-            const messages = await ChatHistoryManager.getSessionMessages(sid);
-            const meta = sessions[sid] || { id: sid };
-            window.loadHistoryIntoNewTab(messages, meta, sid);
-            const sidebar = document.getElementById('lumina-sidebar');
-            const backdrop = document.querySelector('.sidebar-backdrop');
-            if (sidebar) sidebar.classList.remove('active');
-            if (backdrop) backdrop.classList.remove('active');
-            document.body.classList.remove('sidebar-open');
+
+        container.querySelectorAll('.recent-chat-item').forEach(item => {
+            item.addEventListener('click', async (e) => {
+                if (e.target.closest('.recent-chat-item__menu-btn')) return;
+                document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                const sid = item.dataset.sessionId;
+                const messages = await ChatHistoryManager.getSessionMessages(sid);
+                const meta = sessions[sid] || { id: sid };
+                window.loadHistoryIntoNewTab(messages, meta, sid);
+                const sidebar = document.getElementById('lumina-sidebar');
+                const backdrop = document.querySelector('.sidebar-backdrop');
+                if (sidebar) sidebar.classList.remove('active');
+                if (backdrop) backdrop.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+            });
         });
     });
 }
@@ -4304,7 +4505,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         if (targetEntry) {
             const questionEl = targetEntry.querySelector('.lumina-chat-question');
             if (questionEl) {
-                text = questionEl.dataset.rawText || questionEl.textContent.trim();
+                text = questionEl.getAttribute('data-raw-text') || questionEl.textContent.trim();
                 apiText = text;
             }
         }
@@ -4381,6 +4582,43 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 const cacheKey = `${source.tabId}::${source.url}`;
                 if (pageContextCache.has(cacheKey)) {
                     return pageContextCache.get(cacheKey);
+                }
+                // Check if it's a Lumina page tab
+                if (typeof source.url === 'string' && source.url.startsWith('chrome-extension://') && source.url.includes('?sid=')) {
+                    try {
+                        const urlObj = new URL(source.url);
+                        const sid = urlObj.searchParams.get('sid');
+                        if (sid) {
+                            let messages = await ChatHistoryManager.getSessionMessages(sid);
+                            if (messages && messages.length > 0) {
+                                const qMessages = messages.filter(m => m.type === 'question');
+                                const limitCount = 10;
+                                if (qMessages.length > limitCount) {
+                                    const targetQuestion = qMessages[qMessages.length - limitCount];
+                                    const startIndex = messages.indexOf(targetQuestion);
+                                    if (startIndex !== -1) {
+                                        messages = messages.slice(startIndex);
+                                    }
+                                }
+                                const formattedChat = messages.map(msg => {
+                                    const role = msg.type === 'question' ? 'User' : 'Assistant';
+                                    const text = typeof msg.content === 'string' ? msg.content : '';
+                                    const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                                    return `${role}: ${cleanText}`;
+                                }).join('\n\n');
+                                const ctxList = [{
+                                    content: formattedChat,
+                                    url: source.url,
+                                    title: source.title || 'Lumina Chat'
+                                }];
+                                pageContextCache.set(cacheKey, ctxList);
+                                return ctxList;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[Spotlight] Failed to read Lumina tab:', e);
+                    }
+                    return [];
                 }
                 try {
                     const tabResults = await chrome.scripting.executeScript({
@@ -5044,15 +5282,12 @@ function setupGlobalListeners() {
         for (const shortcut of annotationShortcuts) {
             if (shortcut.enabled === false) continue;
             const matched = matchesAnnotationShortcut(event, shortcut);
-            console.log('[Lumina Keydown Debug] Shortcut:', shortcut.key, 'Matched:', matched);
             if (matched) {
                 if (window.LuminaSelection && LuminaSelection.isInsideEditable()) {
-                    console.log('[Lumina Keydown Debug] Inside editable, skipping.');
                     continue;
                 }
                 const sel = window.getSelection();
                 const text = sel ? sel.toString().trim() : '';
-                console.log('[Lumina Keydown Debug] Selection text:', text, 'rangeCount:', sel ? sel.rangeCount : 0);
                 if (text.length > 0 && sel.rangeCount > 0) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -5060,7 +5295,6 @@ function setupGlobalListeners() {
                     const range = sel.getRangeAt(0);
                     const highlightId = 'lh_' + Date.now();
                     const color = shortcut.color || '#ffeb3b';
-                    console.log('[Lumina Keydown Debug] Highlighting range with color:', color);
                     if (window.LuminaAnnotation) {
                         LuminaAnnotation.saveHighlight(range, color, highlightId);
                         LuminaAnnotation.applyHighlight(range, color, highlightId);
@@ -5914,6 +6148,13 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
             updateTopbarSparkTitle();
         }
         syncTabUI(activeTab, isSecondary, true);
+        if (window.LuminaAnnotation) {
+            LuminaAnnotation.clearAllHighlights();
+            const pTab = tabs[activeTabIndex];
+            const sTab = isSplitMode ? tabs[secondaryActiveTabIndex] : null;
+            if (pTab) LuminaAnnotation.loadHighlights(pTab.id);
+            if (sTab) LuminaAnnotation.loadHighlights(sTab.id);
+        }
         if (targetIndex !== null && messages && messages[targetIndex]) {
             setTimeout(() => {
                 const targetNode = activeTab.historyEl.querySelector(`.lumina-chat-question[data-message-index="${targetIndex}"]`);
@@ -5992,14 +6233,22 @@ async function renderDropdownMenu(pane = 'primary') {
         sessionMeta = await LuminaChatDB.getSession(sessionId);
     }
     const isPinned = sessionMeta?.pinned || false;
+    const isArchived = sessionMeta?.archived || false;
     const pinSVG = isPinned
         ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" /></svg>`
         : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>`;
+    const archiveSVG = isArchived
+        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/><polyline points="10 9 12 7 14 9"/><line x1="12" y1="7" x2="12" y2="13"/></svg>`
+        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
     const html = `
         <div class="dropdown-section-title">This chat</div>
         <div class="dropdown-item action-item" id="dropdown-pin-btn">
             ${pinSVG}
             <span class="item-text">${isPinned ? 'Unpin' : 'Pin'}</span>
+        </div>
+        <div class="dropdown-item action-item" id="dropdown-archive-btn">
+            ${archiveSVG}
+            <span class="item-text">${isArchived ? 'Unarchive' : 'Archive'}</span>
         </div>
         <div class="dropdown-item action-item" id="dropdown-rename-btn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
@@ -6056,6 +6305,39 @@ async function renderDropdownMenu(pane = 'primary') {
                 }
             }
             renderRecentChatsSidebar();
+        }
+        hide();
+    });
+    dropdown.querySelector('#dropdown-archive-btn')?.addEventListener('click', async () => {
+        if (!sessionId || !sessionMeta) return;
+        const isArchived = !!sessionMeta.archived;
+        if (isArchived) {
+            sessionMeta.archived = false;
+            await LuminaChatDB.putSession(sessionMeta);
+            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
+            renderRecentChatsSidebar();
+        } else {
+            let currentTitle = sessionMeta.title || 'Untitled Chat';
+            if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
+                currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
+            }
+            const newTitle = await window.showCustomPopup({
+                title: 'Archive Chat',
+                body: 'Rename this chat to archive:',
+                isInput: true,
+                defaultValue: currentTitle,
+                confirmLabel: 'Archive'
+            });
+            if (newTitle !== null) {
+                if (newTitle.trim()) {
+                    sessionMeta.title = newTitle.trim();
+                    sessionMeta.isRenamed = true;
+                }
+                sessionMeta.archived = true;
+                await LuminaChatDB.putSession(sessionMeta);
+                chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
+                renderRecentChatsSidebar();
+            }
         }
         hide();
     });
