@@ -396,6 +396,13 @@
                             </svg>
                             Account
                         </button>
+                        <button type="button" class="lumina-settings-nav-item" data-section="skills">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                            Skills
+                        </button>
                     </nav>
                 </aside>
 
@@ -1152,6 +1159,21 @@
                         </div>
                     </section>
 
+                    <section class="lumina-settings-section" id="lumina-settings-sec-skills">
+                        <h2 class="lumina-settings-section-title">General Skills</h2>
+                        <div class="lumina-settings-card">
+                            <div class="lumina-settings-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Manage Skills</h3>
+                                <button type="button" class="lumina-settings-btn primary sm" id="lumina-add-skill-btn">Add Skill</button>
+                            </div>
+                            <div class="lumina-settings-card-body">
+                                <div id="lumina-skills-list" class="lumina-settings-chain-list">
+                                    <div class="lumina-settings-empty-state">No skills created yet. Click "Add Skill" above to start.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                 </main>
             </div>
         </div>
@@ -1431,6 +1453,49 @@
             <span class="chip-title"></span>
         </div>
     </template>
+
+    <div class="lumina-settings-overlay" id="lumina-skill-popup-overlay" style="display: none; z-index: 11000 !important;">
+        <div class="lumina-provider-popup-dialog">
+            <div class="lumina-provider-popup-header">
+                <span class="lumina-provider-popup-title" id="lumina-skill-popup-title">Add Skill</span>
+                <button type="button" class="lumina-provider-popup-close-btn" id="lumina-skill-popup-close-btn"
+                    aria-label="Close Skill Form">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="lumina-provider-popup-body">
+                <input type="hidden" id="lumina-skill-form-index" value="">
+                <input type="hidden" id="lumina-skill-form-id" value="">
+                <div class="lumina-settings-field">
+                    <label for="lumina-skill-popup-id">Skill ID * (Gõ /id để gọi, chỉ viết liền không dấu, e.g. ielts_tutor)</label>
+                    <input type="text" id="lumina-skill-popup-id" placeholder="e.g. ielts_tutor" style="text-transform: lowercase;">
+                </div>
+                <div class="lumina-settings-field">
+                    <label for="lumina-skill-popup-name">Skill Name *</label>
+                    <input type="text" id="lumina-skill-popup-name" placeholder="e.g. IELTS Writing Tutor">
+                </div>
+                <div class="lumina-settings-field">
+                    <label for="lumina-skill-popup-description">Description</label>
+                    <input type="text" id="lumina-skill-popup-description" placeholder="e.g. Hướng dẫn sửa bài Writing Task 2">
+                </div>
+                <div class="lumina-settings-field">
+                    <label for="lumina-skill-popup-prompt">Prompt Instructions *</label>
+                    <textarea id="lumina-skill-popup-prompt" rows="5" placeholder="System instructions for the AI when this skill is active..."></textarea>
+                </div>
+            </div>
+            <div class="lumina-provider-popup-footer">
+                <div class="lumina-provider-popup-footer-right">
+                    <button type="button" id="lumina-cancel-skill-popup-btn"
+                        class="lumina-settings-btn secondary">Cancel</button>
+                    <button type="button" id="lumina-save-skill-popup-btn"
+                        class="lumina-settings-btn primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="lumina.bundle.js" defer></script>
 </body>

@@ -16,9 +16,10 @@ chrome.storage.local.get(null, (allData) => {
     if (chrome.runtime.lastError) return;
     const keysToRemove = Object.keys(allData).filter(key => key.includes('_inst_') || key.startsWith('highlights_'));
     if (keysToRemove.length > 0) {
-        chrome.storage.local.remove(keysToRemove, () => {
-            console.log('[Lumina BG] Cleaned up zombie instance and legacy highlights keys:', keysToRemove);
-        });
+        chrome.storage.local.remove(keysToRemove, () => {});
+    }
+    if (!allData.lumina_skills) {
+        chrome.storage.local.set({ lumina_skills: LUMINA_DEFAULT_SKILLS || [] });
     }
 });
 

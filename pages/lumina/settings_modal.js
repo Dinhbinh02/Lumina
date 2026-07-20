@@ -29,6 +29,7 @@ class LuminaSettingsModal {
     this.bindPersonalizationTab();
     this.bindKeyboardTab();
     this.bindAccountTab();
+    this.bindSkillsTab();
 
     // Toggle API Key visibility in Lumina settings
     const toggleLuminaKeyBtn = document.getElementById('toggle-lumina-key-visibility');
@@ -227,7 +228,7 @@ class LuminaSettingsModal {
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
       'questionMappings', 'annotationShortcuts', 'dictLanguage',
       'translateInputEngine', 'translateEngine', 'dictProvider', 'dictModel',
-      'historyRetentionMonths', 'shortcuts'
+      'historyRetentionMonths', 'shortcuts', 'lumina_skills'
     ];
     chrome.storage.local.get(keys, (items) => {
       this.providers = (items.providers || this.getDefaultProviders()).filter(p => p.id !== 'grok-default' && p.id !== 'grok');
@@ -312,6 +313,8 @@ class LuminaSettingsModal {
       this.renderQuestionMappings();
       this.annotationShortcuts = items.annotationShortcuts || [];
       this.renderAnnotationShortcuts();
+      this.skills = items.lumina_skills || window.LUMINA_DEFAULT_SKILLS || [];
+      this.renderSkillsList();
       this.loadShortcutsKeys(items);
       const retentionInput = document.getElementById('lumina-history-retention-input');
       const savedRet = items.historyRetentionMonths !== undefined ? items.historyRetentionMonths : 3;
@@ -2148,9 +2151,7 @@ class LuminaSettingsModal {
         if (isAnkiKey) return;
         const valueStr = JSON.stringify(items[key]);
         const sizeBytes = valueStr ? valueStr.length : 0;
-        if (sizeBytes > 1024) {
-          console.log(`[Storage Debug] Large Key: ${key}, Size: ${(sizeBytes / 1024).toFixed(2)} KB`);
-        }
+
         if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('lumina_history_')) {
           return; // Skip legacy/moved storage keys
         } else if (key.startsWith('spotlight_history_') || key === 'audio_cache' || key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('yt_transcript_')) {
@@ -2309,6 +2310,203 @@ class LuminaSettingsModal {
           }
         }
       });
+    });
+  }
+  static bindSkillsTab() {
+    const addSkillBtn = document.getElementById('lumina-add-skill-btn');
+    if (addSkillBtn) {
+      addSkillBtn.addEventListener('click', () => {
+        this.showSkillForm();
+      });
+    }
+
+    const cancelSkillBtn = document.getElementById('lumina-cancel-skill-popup-btn');
+    const saveSkillBtn = document.getElementById('lumina-save-skill-popup-btn');
+    const closeSkillPopupBtn = document.getElementById('lumina-skill-popup-close-btn');
+    const skillPopupOverlay = document.getElementById('lumina-skill-popup-overlay');
+
+    if (cancelSkillBtn) cancelSkillBtn.addEventListener('click', () => this.hideSkillForm());
+    if (saveSkillBtn) saveSkillBtn.addEventListener('click', () => this.saveSkillPopup());
+    if (closeSkillPopupBtn) closeSkillPopupBtn.addEventListener('click', () => this.hideSkillForm());
+    if (skillPopupOverlay) {
+      skillPopupOverlay.addEventListener('click', (e) => {
+        if (e.target === skillPopupOverlay) this.hideSkillForm();
+      });
+    }
+  }
+
+  static showSkillForm(id = null) {
+    const overlay = document.getElementById('lumina-skill-popup-overlay');
+    const titleEl = document.getElementById('lumina-skill-popup-title');
+    const idInput = document.getElementById('lumina-skill-popup-id');
+    const nameInput = document.getElementById('lumina-skill-popup-name');
+    const descInput = document.getElementById('lumina-skill-popup-description');
+    const promptInput = document.getElementById('lumina-skill-popup-prompt');
+    const formId = document.getElementById('lumina-skill-form-id');
+
+    if (!overlay || !idInput || !nameInput || !descInput || !promptInput || !formId) return;
+
+    if (id) {
+      const skill = this.skills.find(s => s.id === id);
+      if (skill) {
+        titleEl.textContent = 'Edit Skill';
+        formId.value = id;
+        idInput.value = skill.id;
+        idInput.disabled = true;
+        nameInput.value = skill.name;
+        descInput.value = skill.description || '';
+        promptInput.value = skill.prompt || '';
+      }
+    } else {
+      titleEl.textContent = 'Add Skill';
+      formId.value = '';
+      idInput.value = '';
+      idInput.disabled = false;
+      nameInput.value = '';
+      descInput.value = '';
+      promptInput.value = '';
+    }
+    overlay.style.display = 'flex';
+  }
+
+  static hideSkillForm() {
+    const overlay = document.getElementById('lumina-skill-popup-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  static saveSkillPopup() {
+    const idInput = document.getElementById('lumina-skill-popup-id');
+    const nameInput = document.getElementById('lumina-skill-popup-name');
+    const descInput = document.getElementById('lumina-skill-popup-description');
+    const promptInput = document.getElementById('lumina-skill-popup-prompt');
+    const formId = document.getElementById('lumina-skill-form-id');
+
+    if (!idInput || !nameInput || !promptInput) return;
+
+    const rawId = idInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const name = nameInput.value.trim();
+    const description = descInput.value.trim();
+    const prompt = promptInput.value.trim();
+    const editingId = formId.value;
+
+    if (!rawId || !name || !prompt) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+
+    if (!editingId) {
+      if (this.skills.some(s => s.id === rawId)) {
+        alert('Skill ID already exists. Please choose a unique ID.');
+        return;
+      }
+      this.skills.push({
+        id: rawId,
+        name,
+        description,
+        prompt,
+        type: 'general',
+        enabled: true
+      });
+    } else {
+      const idx = this.skills.findIndex(s => s.id === editingId);
+      if (idx !== -1) {
+        this.skills[idx].name = name;
+        this.skills[idx].description = description;
+        this.skills[idx].prompt = prompt;
+      }
+    }
+
+    chrome.storage.local.set({ lumina_skills: this.skills }, () => {
+      this.renderSkillsList();
+      this.hideSkillForm();
+      if (typeof window.sharedInputUI?.updateActiveSkillsUI === 'function') {
+        window.sharedInputUI.updateActiveSkillsUI();
+      }
+      if (typeof window.sharedInputUISecondary?.updateActiveSkillsUI === 'function') {
+        window.sharedInputUISecondary.updateActiveSkillsUI();
+      }
+    });
+  }
+
+  static renderSkillsList() {
+    const list = document.getElementById('lumina-skills-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!this.skills || this.skills.length === 0) {
+      list.innerHTML = '<div class="lumina-settings-empty-state">No skills created yet. Click "Add Skill" above to start.</div>';
+      return;
+    }
+
+    this.skills.forEach((skill, idx) => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'lumina-settings-chain-card chain-item';
+      
+      const numberEl = document.createElement('span');
+      numberEl.className = 'chain-number skill-number';
+      numberEl.textContent = idx + 1;
+      itemEl.appendChild(numberEl);
+
+      const detailsEl = document.createElement('div');
+      detailsEl.className = 'chain-details';
+      
+      const titleEl = document.createElement('span');
+      titleEl.className = 'chain-title skill-name';
+      titleEl.textContent = `/${skill.id} (${skill.name})`;
+      detailsEl.appendChild(titleEl);
+
+      const descEl = document.createElement('span');
+      descEl.className = 'chain-subtitle skill-desc';
+      descEl.textContent = skill.description || '';
+      detailsEl.appendChild(descEl);
+
+      itemEl.appendChild(detailsEl);
+
+      const actionsEl = document.createElement('div');
+      actionsEl.className = 'chain-actions';
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'lumina-settings-icon-btn edit skill-edit-btn';
+      editBtn.title = 'Edit Skill';
+      editBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+      `;
+      editBtn.addEventListener('click', () => this.showSkillForm(skill.id));
+      actionsEl.appendChild(editBtn);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'lumina-settings-icon-btn remove skill-delete-btn';
+      deleteBtn.title = 'Delete Skill';
+      deleteBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+      `;
+      deleteBtn.addEventListener('click', async () => {
+        const confirmed = confirm(`Are you sure you want to delete the skill /${skill.id}?`);
+        if (confirmed) {
+          this.skills = this.skills.filter(s => s.id !== skill.id);
+          chrome.storage.local.set({ lumina_skills: this.skills }, () => {
+            this.renderSkillsList();
+            if (typeof window.sharedInputUI?.removeActiveSkill === 'function') {
+              window.sharedInputUI.removeActiveSkill(skill.id);
+            }
+            if (typeof window.sharedInputUISecondary?.removeActiveSkill === 'function') {
+              window.sharedInputUISecondary.removeActiveSkill(skill.id);
+            }
+          });
+        }
+      });
+      actionsEl.appendChild(deleteBtn);
+
+      itemEl.appendChild(actionsEl);
+      list.appendChild(itemEl);
     });
   }
 }

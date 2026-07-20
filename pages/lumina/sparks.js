@@ -431,7 +431,19 @@ async function sparksOpenEditor(sparkId = null) {
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 Add files
                             </button>
-                            <input type="file" id="sparks-file-input" multiple accept="*/*" style="display:none">
+                        </div>
+                    </div>
+                    <div class="sparks-field">
+                        <label class="sparks-label">
+                            Skills
+                            <span class="sparks-label-hint">— add custom slash commands for this Spark</span>
+                        </label>
+                        <div class="sparks-skills-area" id="sparks-skills-area">
+                            <div class="sparks-skills-list" id="sparks-skills-list-container"></div>
+                            <button type="button" class="sparks-add-skill-btn" id="sparks-editor-add-skill-btn" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--lumina-sidebar-bg); border: 1px solid var(--lumina-border-color); border-radius: 6px; cursor: pointer; color: var(--lumina-text-primary); font-size: 12px; margin-top: 6px;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add Spark Skill
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -532,6 +544,7 @@ async function sparksOpenEditor(sparkId = null) {
         });
     }
     let currentFiles = [...knowledgeFiles];
+    let currentSkills = spark?.skills ? [...spark.skills] : [];
     let currentAvatar = spark?.avatar || null;
     let previewHistory = [];
     let previewStreaming = false;
@@ -658,6 +671,137 @@ async function sparksOpenEditor(sparkId = null) {
             });
         });
     }
+
+    function openSparkSkillEditor(skill = null, onSave) {
+        const popup = document.createElement('div');
+        popup.className = 'lumina-settings-overlay';
+        popup.style.display = 'flex';
+        popup.style.zIndex = '12000';
+        popup.innerHTML = `
+            <div class="lumina-provider-popup-dialog">
+                <div class="lumina-provider-popup-header">
+                    <span class="lumina-provider-popup-title">${skill ? 'Edit Spark Skill' : 'Add Spark Skill'}</span>
+                    <button type="button" class="lumina-provider-popup-close-btn" id="spark-skill-close">×</button>
+                </div>
+                <div class="lumina-provider-popup-body">
+                    <div class="lumina-settings-field">
+                        <label>Skill ID * (Gõ /id để gọi)</label>
+                        <input type="text" id="spark-skill-id" placeholder="e.g. essay_evaluator" value="${skill ? skill.id : ''}" ${skill ? 'disabled' : ''} style="text-transform: lowercase;">
+                    </div>
+                    <div class="lumina-settings-field">
+                        <label>Skill Name *</label>
+                        <input type="text" id="spark-skill-name" placeholder="e.g. Essay Evaluator" value="${skill ? escapeHtml(skill.name) : ''}">
+                    </div>
+                    <div class="lumina-settings-field">
+                        <label>Description</label>
+                        <input type="text" id="spark-skill-desc" placeholder="e.g. Chấm điểm bài viết IELTS" value="${skill ? escapeHtml(skill.description || '') : ''}">
+                    </div>
+                    <div class="lumina-settings-field">
+                        <label>Prompt Instructions *</label>
+                        <textarea id="spark-skill-prompt" rows="5" placeholder="Instructions...">${skill ? escapeHtml(skill.prompt || '') : ''}</textarea>
+                    </div>
+                </div>
+                <div class="lumina-provider-popup-footer">
+                    <div class="lumina-provider-popup-footer-right">
+                        <button type="button" class="lumina-settings-btn secondary" id="spark-skill-cancel">Cancel</button>
+                        <button type="button" class="lumina-settings-btn primary" id="spark-skill-save">Save</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+
+        const close = () => popup.remove();
+        popup.querySelector('#spark-skill-close').onclick = close;
+        popup.querySelector('#spark-skill-cancel').onclick = close;
+        popup.querySelector('#spark-skill-save').onclick = () => {
+            const idInput = popup.querySelector('#spark-skill-id');
+            const nameInput = popup.querySelector('#spark-skill-name');
+            const descInput = popup.querySelector('#spark-skill-desc');
+            const promptInput = popup.querySelector('#spark-skill-prompt');
+
+            const rawId = idInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            const name = nameInput.value.trim();
+            const description = descInput.value.trim();
+            const prompt = promptInput.value.trim();
+
+            if (!rawId || !name || !prompt) {
+                alert('Please fill out all required fields.');
+                return;
+            }
+
+            onSave({ id: rawId, name, description, prompt, enabled: true });
+            close();
+        };
+    }
+
+    function renderSparkSkills() {
+        const container = overlay.querySelector('#sparks-skills-list-container');
+        if (!container) return;
+        if (currentSkills.length === 0) {
+            container.innerHTML = '<div style="font-size:12px; color:var(--lumina-text-secondary); padding:4px 0;">No custom skills for this Spark yet.</div>';
+            return;
+        }
+        container.innerHTML = currentSkills.map((s, idx) => `
+            <div class="lumina-settings-chain-card chain-item" style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--lumina-sidebar-bg); border: 1px solid var(--lumina-border-color); border-radius: 6px;">
+                <div class="chain-details" style="display: flex; flex-direction: column; gap: 2px;">
+                    <span class="chain-title skill-name" style="font-weight: var(--lumina-weight-semibold); font-size: 12px; color: var(--lumina-text-primary);">/${s.id} (${escapeHtml(s.name)})</span>
+                    <span class="chain-subtitle skill-desc" style="font-size: 10.5px; color: var(--lumina-text-secondary);">${escapeHtml(s.description || '')}</span>
+                </div>
+                <div class="chain-actions" style="display: flex; gap: 4px;">
+                    <button type="button" class="lumina-settings-icon-btn edit-spark-skill" data-idx="${idx}" title="Edit Skill" style="background: none; border: none; cursor: pointer; color: var(--lumina-text-secondary); padding: 4px;">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                    </button>
+                    <button type="button" class="lumina-settings-icon-btn remove-spark-skill" data-idx="${idx}" title="Delete Skill" style="background: none; border: none; cursor: pointer; color: var(--lumina-text-secondary); padding: 4px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        container.querySelectorAll('.edit-spark-skill').forEach(btn => {
+            btn.onclick = () => {
+                const idx = parseInt(btn.dataset.idx);
+                openSparkSkillEditor(currentSkills[idx], (updatedSkill) => {
+                    currentSkills[idx] = updatedSkill;
+                    renderSparkSkills();
+                });
+            };
+        });
+
+        container.querySelectorAll('.remove-spark-skill').forEach(btn => {
+            btn.onclick = () => {
+                const idx = parseInt(btn.dataset.idx);
+                if (confirm(`Delete skill /${currentSkills[idx].id}?`)) {
+                    currentSkills.splice(idx, 1);
+                    renderSparkSkills();
+                }
+            };
+        });
+    }
+
+    renderSparkSkills();
+
+    const addSkillBtn = overlay.querySelector('#sparks-editor-add-skill-btn');
+    if (addSkillBtn) {
+        addSkillBtn.onclick = (e) => {
+            e.preventDefault();
+            openSparkSkillEditor(null, (newSkill) => {
+                if (currentSkills.some(s => s.id === newSkill.id)) {
+                    alert('A skill with this ID already exists in this Spark.');
+                    return;
+                }
+                currentSkills.push(newSkill);
+                renderSparkSkills();
+            });
+        };
+    }
     overlay.querySelector('#sparks-editor-save').addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) {
@@ -674,6 +818,7 @@ async function sparksOpenEditor(sparkId = null) {
             description: overlay.querySelector('#spark-description-input').value.trim(),
             instructions: overlay.querySelector('#spark-instructions-input').value.trim(),
             knowledgeFiles: currentFiles,
+            skills: currentSkills,
             avatar: currentAvatar,
             createdAt: sparks[id]?.createdAt || Date.now(),
             updatedAt: Date.now()

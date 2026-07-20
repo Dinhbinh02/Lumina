@@ -338,6 +338,7 @@ async function toggleSplitMode() {
         chatUISecondary = secondaryTab.chatUIInstance;
         if (sharedInputUISecondary) {
             sharedInputUISecondary.historyEl = initialHistorySecondary;
+            sharedInputUISecondary.sparkId = secondaryTab.sparkId;
             sharedInputUISecondary.restoreInputState(secondaryTab.inputStateSecondary || null);
             sharedInputUISecondary.activeTabModel = secondaryTab.selectedModel ? { ...secondaryTab.selectedModel } : null;
             sharedInputUISecondary.thinkingLevel = secondaryTab.thinkingLevel || null;
@@ -1505,6 +1506,7 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     setPaneActiveThinking('secondary', null);
     if (sharedInputUI) {
         sharedInputUI.historyEl = primaryTab.historyEl;
+        sharedInputUI.sparkId = primaryTab.sparkId;
         sharedInputUI.restoreInputState(primaryTab.inputState || null);
         sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
         sharedInputUI.thinkingLevel = primaryTab.thinkingLevel || null;
@@ -4716,6 +4718,36 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             }
         }
     }
+
+    const activeSkillsIds = currentTab?.chatUIInstance?.activeSkillIds || [];
+    if (activeSkillsIds.length > 0) {
+        const skillsData = await chrome.storage.local.get(['lumina_skills', 'lumina_sparks']);
+        const generalSkills = skillsData.lumina_skills || window.LUMINA_DEFAULT_SKILLS || [];
+        
+        let skillsPrompts = [];
+        for (const id of activeSkillsIds) {
+            let skill = generalSkills.find(s => s.id === id);
+            if (!skill && currentTab.sparkId && skillsData.lumina_sparks) {
+                const spark = skillsData.lumina_sparks[currentTab.sparkId];
+                if (spark && Array.isArray(spark.skills)) {
+                    skill = spark.skills.find(s => s.id === id);
+                }
+            }
+            if (skill && skill.prompt) {
+                skillsPrompts.push(`[Skill: ${skill.name}]\n${skill.prompt}`);
+            }
+        }
+        
+        if (skillsPrompts.length > 0) {
+            const skillsInstruction = `\n\n# Active Skills\nYou must follow the instructions of these active skills:\n\n` + skillsPrompts.join('\n\n---\n\n');
+            if (message.systemOverride) {
+                message.systemOverride += skillsInstruction;
+            } else {
+                message.systemOverride = skillsInstruction;
+            }
+        }
+    }
+
     if (tabModel) {
         chrome.storage.local.set({ lastUsedModel: tabModel });
     }
@@ -6104,6 +6136,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     }
     const targetInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
     if (targetInputUI) {
+        targetInputUI.sparkId = activeTab.sparkId;
         targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
         targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
         if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
