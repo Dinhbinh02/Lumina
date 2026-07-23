@@ -338,7 +338,6 @@ async function toggleSplitMode() {
         chatUISecondary = secondaryTab.chatUIInstance;
         if (sharedInputUISecondary) {
             sharedInputUISecondary.historyEl = initialHistorySecondary;
-            sharedInputUISecondary.sparkId = secondaryTab.sparkId;
             sharedInputUISecondary.restoreInputState(secondaryTab.inputStateSecondary || null);
             sharedInputUISecondary.activeTabModel = secondaryTab.selectedModel ? { ...secondaryTab.selectedModel } : null;
             sharedInputUISecondary.thinkingLevel = secondaryTab.thinkingLevel || null;
@@ -1175,7 +1174,7 @@ async function initTabs() {
             const activeIdx = data[KEYS.activeTabIndex] || 0;
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
-        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp || isSidePanel ? null : (savedTab?.sessionId || null)));
+        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp ? null : (savedTab?.sessionId || null)));
         let tabTitle = 'Chat';
         let meta = {};
         if (sessionId) {
@@ -1506,7 +1505,6 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     setPaneActiveThinking('secondary', null);
     if (sharedInputUI) {
         sharedInputUI.historyEl = primaryTab.historyEl;
-        sharedInputUI.sparkId = primaryTab.sparkId;
         sharedInputUI.restoreInputState(primaryTab.inputState || null);
         sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
         sharedInputUI.thinkingLevel = primaryTab.thinkingLevel || null;
@@ -2331,40 +2329,53 @@ function initSpotlightAskSelection() {
         const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
         if (isInsideLumina) return;
         setTimeout(() => {
+            const targetEl = (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))
+                ? e.target
+                : (e.target && e.target.closest ? e.target.closest('input, textarea') : null);
+            const activeElement = targetEl || (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
+            const isTextareaOrInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
             if (window.LuminaSelection) {
-                if (LuminaSelection.isInsideEditable()) {
-                    const activeElement = LuminaSelection.getDeepActiveElement();
-                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                        LuminaSelection.expandInputToWordBoundaries(activeElement);
-                    }
+                if (isTextareaOrInput) {
+                    LuminaSelection.expandInputToWordBoundaries(activeElement);
                 } else {
                     LuminaSelection.expandToWordBoundaries();
                 }
             }
-            const sel = window.getSelection();
-            const text = sel ? sel.toString().trim() : '';
-            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-            if (!range) {
-                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
-                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+
+            if (isTextareaOrInput) {
+                if (window.LuminaSelection) LuminaSelection.hide();
                 return;
             }
-            const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
-            if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
+
+            const sel = window.getSelection();
+            const text = sel ? sel.toString().trim() : '';
+            const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+            if (!range || text.length === 0) {
                 const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
             const commonNode = range.commonAncestorContainer;
-            const isInsideChat = commonNode && (
-                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
-                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-scroll-content'))
+            const isInsideAnswer = commonNode && (
+                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-answer')) ||
+                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-answer'))
             );
-            if (!isInsideChat) {
+
+            if (!isInsideAnswer) {
                 const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
+
+            const isInsideProofread = range && (range.startContainer.parentElement?.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
+
+            if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
+                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+                return;
+            }
+
             const secondaryPane = document.getElementById('pane-secondary');
             luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
@@ -2379,40 +2390,42 @@ function initSpotlightAskSelection() {
         if (!selectionKeys.includes(e.key)) return;
 
         setTimeout(() => {
+            const activeElement = (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'))
+                ? document.activeElement
+                : (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
+            const isTextareaOrInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
             if (window.LuminaSelection) {
-                if (LuminaSelection.isInsideEditable()) {
-                    const activeElement = LuminaSelection.getDeepActiveElement();
-                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                        LuminaSelection.expandInputToWordBoundaries(activeElement);
-                    }
+                if (isTextareaOrInput) {
+                    LuminaSelection.expandInputToWordBoundaries(activeElement);
                 } else {
                     LuminaSelection.expandToWordBoundaries();
                 }
             }
+
+            if (isTextareaOrInput) return;
+
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
-            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-            if (!range || text.length === 0) {
-                return;
-            }
-            const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
-            if (!askSelectionPopupEnabled && !isInsideProofread) {
-                return;
-            }
+            const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+            if (!range || text.length === 0) return;
+
             const commonNode = range.commonAncestorContainer;
-            const isInsideChat = commonNode && (
-                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
-                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-scroll-content'))
+            const isInsideAnswer = commonNode && (
+                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-answer')) ||
+                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-answer'))
             );
-            if (!isInsideChat) {
-                return;
-            }
+            if (!isInsideAnswer) return;
+
+            const isInsideProofread = range && (range.startContainer.parentElement?.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
+
+            if (!askSelectionPopupEnabled && !isInsideProofread) return;
+
             const secondaryPane = document.getElementById('pane-secondary');
             luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
                 : 'primary';
             if (window.LuminaSelection) {
-                // Náº¿u Ä‘ang hiá»ƒn thá»‹ sáºµn rá»“i thÃ¬ khÃ´ng Ä‘á»‹nh vá»‹ láº¡i theo chuá»™t ná»¯a Ä‘á»ƒ trÃ¡nh bá»‹ nháº£y vá»‹ trÃ­
                 if (LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
                     LuminaSelection.show(undefined, undefined, text, range, false);
                 } else {
@@ -3636,9 +3649,6 @@ function initSidebar() {
                 if (sidebar.classList.contains('sidebar-collapsed')) {
                     sidebar.classList.remove('sidebar-collapsed');
                     localStorage.setItem('lumina_sidebar_collapsed', 'false');
-                } else {
-                    sidebar.classList.add('sidebar-collapsed');
-                    localStorage.setItem('lumina_sidebar_collapsed', 'true');
                 }
             }
         });
@@ -4014,6 +4024,7 @@ async function renderRecentChatsSidebar() {
         ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
             { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>' },
             { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>' },
+            { action: 'generate_title', label: 'Generate title', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>' },
             { action: 'duplicate', label: 'Duplicate', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
             { action: 'archive', label: 'Archive', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
             { type: 'divider' },
@@ -4058,7 +4069,6 @@ async function renderRecentChatsSidebar() {
                         } else {
                             session.pinned = false;
                         }
-                        session.updatedAt = Date.now();
                         await LuminaChatDB.putSession(session);
                         chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                         if (session.isRenamed) {
@@ -4086,6 +4096,50 @@ async function renderRecentChatsSidebar() {
                     if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
                         await ChatHistoryManager.renameChat(sid, newTitle.trim());
                     }
+                } else if (action === 'generate_title') {
+                    const session = await LuminaChatDB.getSession(sid);
+                    if (!session || !session.questions || session.questions.length === 0) {
+                        if (typeof LuminaToast !== 'undefined') LuminaToast.show('No chat content to generate title.', 'info');
+                        return;
+                    }
+                    const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                    if (chatItemEl) chatItemEl.classList.add('is-naming');
+
+                    if (typeof LuminaToast !== 'undefined') LuminaToast.show('✨ Generating chat title...', 'info');
+                    let fullText = session.questions.map(q => {
+                        let text = `User: ${q.text || ''}`;
+                        if (q.answers) {
+                            const ans = Object.values(q.answers).find(a => a && a.text);
+                            if (ans) text += `\nAI: ${ans.text}`;
+                        }
+                        return text;
+                    }).join('\n\n');
+                    const currentModel = typeof LuminaModelSelector !== 'undefined' ? LuminaModelSelector.getSelectedModel('text') : null;
+                    chrome.runtime.sendMessage({
+                        action: 'generate_chat_title',
+                        modelObj: currentModel,
+                        question: fullText,
+                        images: null,
+                        files: null,
+                        history: []
+                    }, async (res) => {
+                        if (chatItemEl) chatItemEl.classList.remove('is-naming');
+                        if (res && res.success && res.title) {
+                            const newTitle = res.title.trim();
+                            await ChatHistoryManager.renameChat(sid, newTitle);
+                            const updatedSession = await LuminaChatDB.getSession(sid);
+                            if (updatedSession) {
+                                updatedSession.autoNamed = true;
+                                updatedSession.isRenamed = true;
+                                await LuminaChatDB.putSession(updatedSession);
+                            }
+                            if (typeof LuminaToast !== 'undefined') LuminaToast.show(`Title updated: "${newTitle}"`, 'success');
+                            renderRecentChatsSidebar();
+                            renderTabs();
+                        } else {
+                            if (typeof LuminaToast !== 'undefined') LuminaToast.show('Failed to generate title: ' + (res?.error || 'Unknown error'), 'error');
+                        }
+                    });
                 } else if (action === 'duplicate') {
                     await ChatHistoryManager.duplicateChat(sid);
                 } else if (action === 'archive') {
@@ -4094,7 +4148,6 @@ async function renderRecentChatsSidebar() {
                         const isArchived = !!meta.archived;
                         if (isArchived) {
                             meta.archived = false;
-                            meta.updatedAt = Date.now();
                             await LuminaChatDB.putSession(meta);
                             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                             renderRecentChatsSidebar();
@@ -4116,7 +4169,6 @@ async function renderRecentChatsSidebar() {
                                     meta.isRenamed = true;
                                 }
                                 meta.archived = true;
-                                meta.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(meta);
                                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                                 renderRecentChatsSidebar();
@@ -4721,36 +4773,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             }
         }
     }
-
-    const activeSkillsIds = currentTab?.chatUIInstance?.activeSkillIds || [];
-    if (activeSkillsIds.length > 0) {
-        const skillsData = await chrome.storage.local.get(['lumina_skills', 'lumina_sparks']);
-        const generalSkills = skillsData.lumina_skills || window.LUMINA_DEFAULT_SKILLS || [];
-        
-        let skillsPrompts = [];
-        for (const id of activeSkillsIds) {
-            let skill = generalSkills.find(s => s.id === id);
-            if (!skill && currentTab.sparkId && skillsData.lumina_sparks) {
-                const spark = skillsData.lumina_sparks[currentTab.sparkId];
-                if (spark && Array.isArray(spark.skills)) {
-                    skill = spark.skills.find(s => s.id === id);
-                }
-            }
-            if (skill && skill.prompt) {
-                skillsPrompts.push(`[Skill: ${skill.name}]\n${skill.prompt}`);
-            }
-        }
-        
-        if (skillsPrompts.length > 0) {
-            const skillsInstruction = `\n\n# Active Skills\nYou must follow the instructions of these active skills:\n\n` + skillsPrompts.join('\n\n---\n\n');
-            if (message.systemOverride) {
-                message.systemOverride += skillsInstruction;
-            } else {
-                message.systemOverride = skillsInstruction;
-            }
-        }
-    }
-
     if (tabModel) {
         chrome.storage.local.set({ lastUsedModel: tabModel });
     }
@@ -6139,7 +6161,6 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     }
     const targetInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
     if (targetInputUI) {
-        targetInputUI.sparkId = activeTab.sparkId;
         targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
         targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
         if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
@@ -6331,7 +6352,6 @@ async function renderDropdownMenu(pane = 'primary') {
             } else {
                 session.pinned = false;
             }
-            session.updatedAt = Date.now();
             await LuminaChatDB.putSession(session);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             if (session.isRenamed) {
@@ -6350,7 +6370,6 @@ async function renderDropdownMenu(pane = 'primary') {
         const isArchived = !!sessionMeta.archived;
         if (isArchived) {
             sessionMeta.archived = false;
-            sessionMeta.updatedAt = Date.now();
             await LuminaChatDB.putSession(sessionMeta);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             renderRecentChatsSidebar();
@@ -6372,7 +6391,6 @@ async function renderDropdownMenu(pane = 'primary') {
                     sessionMeta.isRenamed = true;
                 }
                 sessionMeta.archived = true;
-                sessionMeta.updatedAt = Date.now();
                 await LuminaChatDB.putSession(sessionMeta);
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                 renderRecentChatsSidebar();

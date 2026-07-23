@@ -115,6 +115,7 @@
       ],
       "js": [
         "lib/core/constants.js",
+        "lib/helpers/file_processor.js",
         "lib/helpers/annotation_utils.js",
         "lib/helpers/selection_utils.js",
         "lib/vendor/turndown.js",

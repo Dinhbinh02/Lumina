@@ -1,4 +1,4 @@
-
+﻿
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -67,38 +67,10 @@ function getKeysArray(keyStr) {
     if (!keyStr) return [];
     return keyStr.split(',').map(k => k.trim()).filter(k => k.length > 0);
 }
-var LUMINA_DEFAULT_SKILLS = [
-    {
-        id: 'vocab_builder',
-        name: 'Vocabulary Builder',
-        description: 'Phân tích từ mới, cung cấp phiên âm IPA, dịch nghĩa, ví dụ thực tế và từ đồng nghĩa.',
-        prompt: 'Khi tôi gửi một hoặc nhiều từ vựng mới, hãy phân tích chi tiết từ đó theo cấu trúc sau:\n1. **Từ vựng**: [Từ đó] ([Từ loại])\n2. **Phiên âm IPA**: [Phiên âm chuẩn UK/US]\n3. **Nghĩa tiếng Việt**: [Dịch nghĩa ngắn gọn và chuẩn xác nhất]\n4. **Cách dùng theo ngữ cảnh**:\n   - [Ngữ cảnh 1 (ví dụ: Giao tiếp thường ngày, Học thuật...)]: [Mô tả cách dùng]\n   - [Ngữ cảnh 2 (nếu có)]: [Mô tả cách dùng]\n5. **Ví dụ thực tế**:\n   - *[Câu ví dụ tiếng Anh]* -> [Dịch nghĩa câu ví dụ]\n6. **Từ đồng nghĩa & Trái nghĩa**:\n   - Đồng nghĩa: [Từ 1, Từ 2]\n   - Trái nghĩa: [Từ 1, Từ 2]\nHãy giữ định dạng sạch sẽ, dễ đọc bằng Markdown.',
-        type: 'general',
-        enabled: true
-    },
-    {
-        id: 'ielts_brainstormer',
-        name: 'IELTS Task 2 Brainstormer',
-        description: 'Hướng dẫn tư duy, phân tích đề bài và xây dựng dàn ý chi tiết cho IELTS Writing Task 2.',
-        prompt: 'Bạn là một Giám khảo IELTS kỳ cựu. Khi tôi gửi một đề bài IELTS Writing Task 2, hãy thực hiện các bước sau:\n1. **Phân tích đề (Task Analysis)**: Xác định dạng bài (Agree/Disagree, Discussion, Cause-Effect...), chủ đề chính (Topic), và các khía cạnh cần trả lời.\n2. **Dàn ý ý tưởng (Brainstorming Matrix)**:\n   - **Hướng tiếp cận 1 (Side A / Supporting Idea 1)**: Nêu 2 luận điểm (Arguments) kèm theo giải thích ngắn (Explanation) và ví dụ (Examples).\n   - **Hướng tiếp cận 2 (Side B / Supporting Idea 2)**: Nêu 2 luận điểm kèm theo giải thích ngắn và ví dụ.\n3. **Từ vựng đắt giá (Collocations/Topic Vocabulary)**: Gợi ý 5-7 cụm từ band 7.0+ thuộc chủ đề này kèm nghĩa và câu ví dụ minh họa.\n*Lưu ý: Không viết cả bài essay, chỉ tập trung gợi mở tư duy và cung cấp dàn ý tối ưu.*',
-        type: 'general',
-        enabled: true
-    },
-    {
-        id: 'ielts_grader',
-        name: 'IELTS Essay Grader',
-        description: 'Đánh giá chi tiết bài viết IELTS Writing Task 2 dựa trên 4 tiêu chí chuẩn của BC/IDP và cho điểm ước lượng.',
-        prompt: 'Hãy đóng vai làm Giám khảo chấm thi IELTS. Tôi sẽ gửi cho bạn một bài viết Writing Task 2 (có thể kèm đề bài). Hãy đánh giá bài viết theo đúng 4 tiêu chí chuẩn:\n1. **Task Achievement (TA)**: Đánh giá khả năng trả lời đề bài, độ dài và độ hoàn thiện của bài luận.\n2. **Coherence and Cohesion (CC)**: Đánh giá sự mạch lạc, liên kết giữa các câu, các đoạn và cách sử dụng từ nối.\n3. **Lexical Resource (LR)**: Đánh giá vốn từ vựng, độ tự nhiên, cách dùng collocation và lỗi chính tả.\n4. **Grammatical Range and Accuracy (GRA)**: Đánh giá sự đa dạng cấu trúc ngữ pháp và độ chính xác của các câu.\n\nĐầu ra yêu cầu:\n- **Band Score Ước lượng**: [Ví dụ: 6.5] (và điểm thành phần cho từng tiêu chí).\n- **Phân tích chi tiết**: Chỉ ra các lỗi sai cụ thể (từ vựng, ngữ pháp, diễn đạt) kèm câu sửa lại tốt hơn.\n- **Bài viết viết lại mẫu (Sample Essay)**: Viết lại bài của tôi ở mức Band 8.0+ để tôi học tập các cấu trúc nâng cao.',
-        type: 'general',
-        enabled: true
-    }
-];
-
 if (typeof self !== 'undefined') {
     self.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
     self.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
     self.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
-    self.LUMINA_DEFAULT_SKILLS = LUMINA_DEFAULT_SKILLS;
     self.escapeHtml = escapeHtml;
     self.getTodayString = getTodayString;
     self.getKeysArray = getKeysArray;
@@ -1122,9 +1094,16 @@ window.LuminaSelection = {
         }
     },
     isInsideEditable() {
+        const active = this.getDeepActiveElement();
+        if (active && (
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) ||
+            active.isContentEditable ||
+            active.getAttribute('contenteditable') === 'true' ||
+            active.getAttribute('role') === 'textbox'
+        )) return true;
         const sel = window.getSelection();
         try {
-            if (sel && sel.rangeCount > 0 && sel.toString().trim().length > 0) {
+            if (sel && sel.rangeCount > 0) {
                 let node = sel.anchorNode;
                 while (node && node !== document.documentElement) {
                     if (node.nodeType === 1) {
@@ -1136,16 +1115,9 @@ window.LuminaSelection = {
                     }
                     node = node.parentNode || (node.host && node.host.nodeType === 1 ? node.host : null);
                 }
-                return false;
             }
-        } catch (e) { return false; }
-        const active = this.getDeepActiveElement();
-        return active && (
-            ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) ||
-            active.isContentEditable ||
-            active.getAttribute('contenteditable') === 'true' ||
-            active.getAttribute('role') === 'textbox'
-        );
+        } catch (e) { }
+        return false;
     },
     getSelectionRelativeOffsets(container) {
         try {
@@ -4235,6 +4207,13 @@ const LuminaFileProcessor = {
     }
 };
 
+if (typeof self !== 'undefined') {
+    self.LuminaFileProcessor = LuminaFileProcessor;
+}
+if (typeof window !== 'undefined') {
+    window.LuminaFileProcessor = LuminaFileProcessor;
+}
+
 
 // --- BUNDLED FROM: lib/ui/common.js ---
 if (typeof marked !== 'undefined') {
@@ -4957,7 +4936,8 @@ function _renderChartJSWrapper(wrapper) {
 
 async function _getKrokiUrl(source) {
     try {
-        const stream = new Response(source).body.pipeThrough(new CompressionStream('deflate'));
+        const data = new TextEncoder().encode(source);
+        const stream = new Response(data).body.pipeThrough(new CompressionStream('deflate'));
         const buffer = await new Response(stream).arrayBuffer();
         const uint8 = new Uint8Array(buffer);
         let binaryString = '';
@@ -4966,7 +4946,7 @@ async function _getKrokiUrl(source) {
             binaryString += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
         }
         const base64 = btoa(binaryString);
-        const urlSafeBase64 = base64.replace(/\+/g, '-').replace(/\//g, '_');
+        const urlSafeBase64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
         return `https://kroki.io/d2/svg/${urlSafeBase64}?sketch=true`;
     } catch (e) {
         console.warn('[Lumina D2] Compression error, fallback to POST:', e);
@@ -5012,22 +4992,24 @@ async function _renderD2Wrapper(wrapper) {
         wrapper.classList.add('is-loading');
         wrapper.classList.remove('lumina-d2-rendered');
         try {
-            const getUrl = await _getKrokiUrl(source);
-            let response;
-            if (getUrl) {
-                response = await fetch(getUrl);
-            } else {
+            let response = await fetch('https://kroki.io/d2/svg', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    diagram_source: source,
+                    diagram_options: {
+                        sketch: 'true'
+                    }
+                })
+            });
+            if (!response.ok) {
+                // Try fallback without sketch option
                 response = await fetch('https://kroki.io/d2/svg', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        diagram_source: source,
-                        diagram_options: {
-                            sketch: 'true'
-                        }
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ diagram_source: source })
                 });
             }
             if (!response.ok) throw new Error('Kroki response error');
@@ -5346,10 +5328,8 @@ class LuminaChatUI {
         this.tokenLimit = null;
         this.isGenerating = false;
         this.onStop = null;
-        this.activeSkillIds = [];
         if (this.inputEl && !this.options.skipInputSetup) {
             this._updateActionBtnState();
-            this.setupSlashMenu();
         }
     }
     syncStateFromDOM() {
@@ -7573,7 +7553,6 @@ class LuminaChatUI {
                 <div class="lumina-redirect-group" id="redirect-chips-group"></div>
             </div>
             <div class="lumina-input-container">
-                <div class="lumina-active-skills" id="active-skills-group" style="display: none;"></div>
                 <div class="lumina-file-preview-container lumina-image-preview-container"></div>
                 <div class="lumina-input-bar" id="input-bar">
                     <div class="lumina-left-actions">
@@ -7609,13 +7588,13 @@ class LuminaChatUI {
         const input = this.inputEl;
 
         input.addEventListener('paste', async (e) => {
-            const text = e.clipboardData.getData('text');
+            const text = e.clipboardData?.getData('text');
             if (!text) return;
 
             const isTable = text.includes('\t') && (text.includes('\n') || text.includes('\r'));
             const isLongText = text.length > 10000 || (text.split(/\r?\n/).length > 50 && text.length > 2000);
 
-            if (isTable || isLongText) {
+            if ((isTable || isLongText) && typeof LuminaFileProcessor !== 'undefined') {
                 e.preventDefault();
                 const filename = isTable ? 'Pasted table.tsv' : 'Pasted text.txt';
                 const mimeType = isTable ? 'text/tab-separated-values' : 'text/plain';
@@ -8049,18 +8028,13 @@ class LuminaChatUI {
             text: this.inputEl ? this.inputEl.value : '',
             isProofreadMode: this.isProofreadMode || false,
             isTranslateMode: this.isTranslateMode || false,
-            placeholder: this.inputEl ? this.inputEl.placeholder : 'Ask anything...',
-            activeSkillIds: this.activeSkillIds || []
+            placeholder: this.inputEl ? this.inputEl.placeholder : 'Ask anything...'
         };
     }
     restoreInputState(state) {
         if (!this.inputEl) return;
         const queryInPopup = (selector) => this.container.querySelector(selector) || document.querySelector(selector);
         if (this._removeActiveModes) this._removeActiveModes();
-        
-        this.activeSkillIds = state?.activeSkillIds || [];
-        this.updateActiveSkillsUI();
-
         if (!state) {
             this.inputEl.value = '';
             this.inputEl.style.height = 'auto';
@@ -8094,176 +8068,6 @@ class LuminaChatUI {
         this._updateActionBtnState();
     }
     _setupMentions() { }
-    async getAvailableSkills() {
-        return new Promise((resolve) => {
-            chrome.storage.local.get(['lumina_skills', 'lumina_sparks'], (data) => {
-                let list = [];
-                const generalSkills = data.lumina_skills || window.LUMINA_DEFAULT_SKILLS || [];
-                list = list.concat(generalSkills.filter(s => s.enabled !== false));
-
-                if (this.sparkId && data.lumina_sparks) {
-                    const spark = data.lumina_sparks[this.sparkId];
-                    if (spark && Array.isArray(spark.skills)) {
-                        list = list.concat(spark.skills.map(s => ({ ...s, type: 'spark', sparkId: this.sparkId })));
-                    }
-                }
-                resolve(list);
-            });
-        });
-    }
-    async setupSlashMenu() {
-        if (!this.inputEl) return;
-        const wrapper = this.container.querySelector('.lumina-chat-input-wrapper') || this.inputEl.closest('.lumina-chat-input-wrapper');
-        if (!wrapper) return;
-
-        let menuEl = wrapper.querySelector('.lumina-slash-menu');
-        if (!menuEl) {
-            menuEl = document.createElement('div');
-            menuEl.className = 'lumina-slash-menu';
-            menuEl.style.display = 'none';
-            wrapper.appendChild(menuEl);
-        }
-
-        let selectedIndex = 0;
-        let filteredSkills = [];
-
-        const closeMenu = () => {
-            menuEl.style.display = 'none';
-            menuEl.innerHTML = '';
-        };
-
-        const renderMenu = (skills) => {
-            if (skills.length === 0) {
-                closeMenu();
-                return;
-            }
-            menuEl.style.display = 'block';
-            menuEl.innerHTML = skills.map((s, idx) => {
-                const isActive = idx === selectedIndex ? 'active' : '';
-                const typeLabel = s.type === 'spark' ? 'Spark' : 'General';
-                return `
-                    <div class="lumina-slash-menu-item ${isActive}" data-id="${s.id}" data-idx="${idx}">
-                        <div class="lumina-slash-menu-item-info">
-                            <span class="lumina-slash-menu-item-name">/${s.id} (${s.name})</span>
-                            <span class="lumina-slash-menu-item-desc">${s.description || ''}</span>
-                        </div>
-                        <span class="lumina-slash-menu-item-type">${typeLabel}</span>
-                    </div>
-                `;
-            }).join('');
-
-            const activeItem = menuEl.querySelector('.lumina-slash-menu-item.active');
-            if (activeItem) {
-                activeItem.scrollIntoView({ block: 'nearest' });
-            }
-
-            menuEl.querySelectorAll('.lumina-slash-menu-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const id = item.getAttribute('data-id');
-                    this.addActiveSkill(id);
-                    this.inputEl.value = '';
-                    if (this._checkExpand) this._checkExpand();
-                    closeMenu();
-                });
-            });
-        };
-
-        this.inputEl.addEventListener('input', async () => {
-            const val = this.inputEl.value;
-            if (val.startsWith('/') && !val.includes(' ')) {
-                const query = val.slice(1).toLowerCase();
-                const allSkills = await this.getAvailableSkills();
-                filteredSkills = allSkills.filter(s => 
-                    s.id.toLowerCase().includes(query) || 
-                    s.name.toLowerCase().includes(query) || 
-                    (s.description && s.description.toLowerCase().includes(query))
-                );
-                selectedIndex = 0;
-                renderMenu(filteredSkills);
-            } else {
-                closeMenu();
-            }
-        });
-
-        this.inputEl.addEventListener('keydown', (e) => {
-            if (menuEl.style.display === 'block') {
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    selectedIndex = (selectedIndex + 1) % filteredSkills.length;
-                    renderMenu(filteredSkills);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    selectedIndex = (selectedIndex - 1 + filteredSkills.length) % filteredSkills.length;
-                    renderMenu(filteredSkills);
-                } else if (e.key === 'Enter' || e.key === 'Tab') {
-                    e.preventDefault();
-                    if (filteredSkills[selectedIndex]) {
-                        this.addActiveSkill(filteredSkills[selectedIndex].id);
-                        this.inputEl.value = '';
-                        if (this._checkExpand) this._checkExpand();
-                        closeMenu();
-                    }
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    closeMenu();
-                }
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!wrapper.contains(e.target)) {
-                closeMenu();
-            }
-        });
-    }
-    addActiveSkill(id) {
-        if (!this.activeSkillIds) this.activeSkillIds = [];
-        if (!this.activeSkillIds.includes(id)) {
-            this.activeSkillIds.push(id);
-            this.updateActiveSkillsUI();
-            this._updateContainerState();
-            this._updateActionBtnState();
-            this._throttledUpdateTokenCount();
-        }
-    }
-    removeActiveSkill(id) {
-        if (!this.activeSkillIds) return;
-        this.activeSkillIds = this.activeSkillIds.filter(x => x !== id);
-        this.updateActiveSkillsUI();
-        this._updateContainerState();
-        this._updateActionBtnState();
-        this._throttledUpdateTokenCount();
-    }
-    async updateActiveSkillsUI() {
-        const groupEl = this.container.querySelector('#active-skills-group');
-        if (!groupEl) return;
-        if (!this.activeSkillIds || this.activeSkillIds.length === 0) {
-            groupEl.style.display = 'none';
-            groupEl.innerHTML = '';
-            return;
-        }
-
-        const allSkills = await this.getAvailableSkills();
-        groupEl.style.display = 'flex';
-        groupEl.innerHTML = this.activeSkillIds.map(id => {
-            const skill = allSkills.find(s => s.id === id) || { name: id };
-            return `
-                <div class="lumina-skill-badge" data-id="${id}">
-                    <span class="lumina-skill-badge-name">${escapeHtml(skill.name)}</span>
-                    <span class="lumina-skill-badge-close" data-id="${id}">&times;</span>
-                </div>
-            `;
-        }).join('');
-
-        groupEl.querySelectorAll('.lumina-skill-badge-close').forEach(btn => {
-            btn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const id = btn.getAttribute('data-id');
-                this.removeActiveSkill(id);
-            };
-        });
-    }
     _updateContainerState() {
         const queryInPopup = (selector) => this.container.querySelector(selector) || document.querySelector(selector);
         const container = queryInPopup('.lumina-input-container');
@@ -8660,6 +8464,12 @@ class LuminaChatUI {
             actionBtn.title = "Send";
             actionBtn.setAttribute('disabled', 'true');
         }
+    }
+    _isDocxFile(file) {
+        return typeof LuminaFileProcessor !== 'undefined' && LuminaFileProcessor.isDocxFile ? LuminaFileProcessor.isDocxFile(file) : (file?.name || '').toLowerCase().endsWith('.docx');
+    }
+    _isXlsxFile(file) {
+        return typeof LuminaFileProcessor !== 'undefined' && LuminaFileProcessor.isXlsxFile ? LuminaFileProcessor.isXlsxFile(file) : (file?.name || '').toLowerCase().endsWith('.xlsx');
     }
     _fileToDataURL(file) {
         return LuminaFileProcessor.fileToDataURL(file);
@@ -9467,6 +9277,17 @@ class LuminaChatUI {
                 await yieldToMain();
                 try {
                     if (!block.__hljs_done) {
+                        // Prevent highlighting ASCII art/diagrams falsely labeled as CSS (lacking curly braces)
+                        let langClass = Array.from(block.classList).find(c => c.startsWith('language-'));
+                        if (langClass) {
+                            const lang = langClass.replace('language-', '').toLowerCase();
+                            const text = block.textContent;
+                            if (['css', 'less', 'scss'].includes(lang) && !text.includes('{') && !text.includes('}')) {
+                                block.classList.remove(langClass);
+                                block.classList.add('language-plaintext');
+                                block.classList.remove('hljs');
+                            }
+                        }
                         if (hljs.highlightElement) hljs.highlightElement(block);
                         else if (hljs.highlightBlock) hljs.highlightBlock(block);
                         block.__hljs_done = true;
@@ -13705,7 +13526,6 @@ class LuminaSettingsModal {
     this.bindPersonalizationTab();
     this.bindKeyboardTab();
     this.bindAccountTab();
-    this.bindSkillsTab();
 
     // Toggle API Key visibility in Lumina settings
     const toggleLuminaKeyBtn = document.getElementById('toggle-lumina-key-visibility');
@@ -13904,7 +13724,7 @@ class LuminaSettingsModal {
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
       'questionMappings', 'annotationShortcuts', 'dictLanguage',
       'translateInputEngine', 'translateEngine', 'dictProvider', 'dictModel',
-      'historyRetentionMonths', 'shortcuts', 'lumina_skills'
+      'historyRetentionMonths', 'shortcuts'
     ];
     chrome.storage.local.get(keys, (items) => {
       this.providers = (items.providers || this.getDefaultProviders()).filter(p => p.id !== 'grok-default' && p.id !== 'grok');
@@ -13989,8 +13809,6 @@ class LuminaSettingsModal {
       this.renderQuestionMappings();
       this.annotationShortcuts = items.annotationShortcuts || [];
       this.renderAnnotationShortcuts();
-      this.skills = items.lumina_skills || window.LUMINA_DEFAULT_SKILLS || [];
-      this.renderSkillsList();
       this.loadShortcutsKeys(items);
       const retentionInput = document.getElementById('lumina-history-retention-input');
       const savedRet = items.historyRetentionMonths !== undefined ? items.historyRetentionMonths : 3;
@@ -15988,203 +15806,6 @@ class LuminaSettingsModal {
       });
     });
   }
-  static bindSkillsTab() {
-    const addSkillBtn = document.getElementById('lumina-add-skill-btn');
-    if (addSkillBtn) {
-      addSkillBtn.addEventListener('click', () => {
-        this.showSkillForm();
-      });
-    }
-
-    const cancelSkillBtn = document.getElementById('lumina-cancel-skill-popup-btn');
-    const saveSkillBtn = document.getElementById('lumina-save-skill-popup-btn');
-    const closeSkillPopupBtn = document.getElementById('lumina-skill-popup-close-btn');
-    const skillPopupOverlay = document.getElementById('lumina-skill-popup-overlay');
-
-    if (cancelSkillBtn) cancelSkillBtn.addEventListener('click', () => this.hideSkillForm());
-    if (saveSkillBtn) saveSkillBtn.addEventListener('click', () => this.saveSkillPopup());
-    if (closeSkillPopupBtn) closeSkillPopupBtn.addEventListener('click', () => this.hideSkillForm());
-    if (skillPopupOverlay) {
-      skillPopupOverlay.addEventListener('click', (e) => {
-        if (e.target === skillPopupOverlay) this.hideSkillForm();
-      });
-    }
-  }
-
-  static showSkillForm(id = null) {
-    const overlay = document.getElementById('lumina-skill-popup-overlay');
-    const titleEl = document.getElementById('lumina-skill-popup-title');
-    const idInput = document.getElementById('lumina-skill-popup-id');
-    const nameInput = document.getElementById('lumina-skill-popup-name');
-    const descInput = document.getElementById('lumina-skill-popup-description');
-    const promptInput = document.getElementById('lumina-skill-popup-prompt');
-    const formId = document.getElementById('lumina-skill-form-id');
-
-    if (!overlay || !idInput || !nameInput || !descInput || !promptInput || !formId) return;
-
-    if (id) {
-      const skill = this.skills.find(s => s.id === id);
-      if (skill) {
-        titleEl.textContent = 'Edit Skill';
-        formId.value = id;
-        idInput.value = skill.id;
-        idInput.disabled = true;
-        nameInput.value = skill.name;
-        descInput.value = skill.description || '';
-        promptInput.value = skill.prompt || '';
-      }
-    } else {
-      titleEl.textContent = 'Add Skill';
-      formId.value = '';
-      idInput.value = '';
-      idInput.disabled = false;
-      nameInput.value = '';
-      descInput.value = '';
-      promptInput.value = '';
-    }
-    overlay.style.display = 'flex';
-  }
-
-  static hideSkillForm() {
-    const overlay = document.getElementById('lumina-skill-popup-overlay');
-    if (overlay) overlay.style.display = 'none';
-  }
-
-  static saveSkillPopup() {
-    const idInput = document.getElementById('lumina-skill-popup-id');
-    const nameInput = document.getElementById('lumina-skill-popup-name');
-    const descInput = document.getElementById('lumina-skill-popup-description');
-    const promptInput = document.getElementById('lumina-skill-popup-prompt');
-    const formId = document.getElementById('lumina-skill-form-id');
-
-    if (!idInput || !nameInput || !promptInput) return;
-
-    const rawId = idInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-    const name = nameInput.value.trim();
-    const description = descInput.value.trim();
-    const prompt = promptInput.value.trim();
-    const editingId = formId.value;
-
-    if (!rawId || !name || !prompt) {
-      alert('Please fill out all required fields.');
-      return;
-    }
-
-    if (!editingId) {
-      if (this.skills.some(s => s.id === rawId)) {
-        alert('Skill ID already exists. Please choose a unique ID.');
-        return;
-      }
-      this.skills.push({
-        id: rawId,
-        name,
-        description,
-        prompt,
-        type: 'general',
-        enabled: true
-      });
-    } else {
-      const idx = this.skills.findIndex(s => s.id === editingId);
-      if (idx !== -1) {
-        this.skills[idx].name = name;
-        this.skills[idx].description = description;
-        this.skills[idx].prompt = prompt;
-      }
-    }
-
-    chrome.storage.local.set({ lumina_skills: this.skills }, () => {
-      this.renderSkillsList();
-      this.hideSkillForm();
-      if (typeof window.sharedInputUI?.updateActiveSkillsUI === 'function') {
-        window.sharedInputUI.updateActiveSkillsUI();
-      }
-      if (typeof window.sharedInputUISecondary?.updateActiveSkillsUI === 'function') {
-        window.sharedInputUISecondary.updateActiveSkillsUI();
-      }
-    });
-  }
-
-  static renderSkillsList() {
-    const list = document.getElementById('lumina-skills-list');
-    if (!list) return;
-    list.innerHTML = '';
-
-    if (!this.skills || this.skills.length === 0) {
-      list.innerHTML = '<div class="lumina-settings-empty-state">No skills created yet. Click "Add Skill" above to start.</div>';
-      return;
-    }
-
-    this.skills.forEach((skill, idx) => {
-      const itemEl = document.createElement('div');
-      itemEl.className = 'lumina-settings-chain-card chain-item';
-      
-      const numberEl = document.createElement('span');
-      numberEl.className = 'chain-number skill-number';
-      numberEl.textContent = idx + 1;
-      itemEl.appendChild(numberEl);
-
-      const detailsEl = document.createElement('div');
-      detailsEl.className = 'chain-details';
-      
-      const titleEl = document.createElement('span');
-      titleEl.className = 'chain-title skill-name';
-      titleEl.textContent = `/${skill.id} (${skill.name})`;
-      detailsEl.appendChild(titleEl);
-
-      const descEl = document.createElement('span');
-      descEl.className = 'chain-subtitle skill-desc';
-      descEl.textContent = skill.description || '';
-      detailsEl.appendChild(descEl);
-
-      itemEl.appendChild(detailsEl);
-
-      const actionsEl = document.createElement('div');
-      actionsEl.className = 'chain-actions';
-
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'lumina-settings-icon-btn edit skill-edit-btn';
-      editBtn.title = 'Edit Skill';
-      editBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-          </svg>
-      `;
-      editBtn.addEventListener('click', () => this.showSkillForm(skill.id));
-      actionsEl.appendChild(editBtn);
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'lumina-settings-icon-btn remove skill-delete-btn';
-      deleteBtn.title = 'Delete Skill';
-      deleteBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-      `;
-      deleteBtn.addEventListener('click', async () => {
-        const confirmed = confirm(`Are you sure you want to delete the skill /${skill.id}?`);
-        if (confirmed) {
-          this.skills = this.skills.filter(s => s.id !== skill.id);
-          chrome.storage.local.set({ lumina_skills: this.skills }, () => {
-            this.renderSkillsList();
-            if (typeof window.sharedInputUI?.removeActiveSkill === 'function') {
-              window.sharedInputUI.removeActiveSkill(skill.id);
-            }
-            if (typeof window.sharedInputUISecondary?.removeActiveSkill === 'function') {
-              window.sharedInputUISecondary.removeActiveSkill(skill.id);
-            }
-          });
-        }
-      });
-      actionsEl.appendChild(deleteBtn);
-
-      itemEl.appendChild(actionsEl);
-      list.appendChild(itemEl);
-    });
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16848,7 +16469,6 @@ async function toggleSplitMode() {
         chatUISecondary = secondaryTab.chatUIInstance;
         if (sharedInputUISecondary) {
             sharedInputUISecondary.historyEl = initialHistorySecondary;
-            sharedInputUISecondary.sparkId = secondaryTab.sparkId;
             sharedInputUISecondary.restoreInputState(secondaryTab.inputStateSecondary || null);
             sharedInputUISecondary.activeTabModel = secondaryTab.selectedModel ? { ...secondaryTab.selectedModel } : null;
             sharedInputUISecondary.thinkingLevel = secondaryTab.thinkingLevel || null;
@@ -17685,7 +17305,7 @@ async function initTabs() {
             const activeIdx = data[KEYS.activeTabIndex] || 0;
             savedTab = data[KEYS.tabs][activeIdx] || data[KEYS.tabs][0];
         }
-        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp || isSidePanel ? null : (savedTab?.sessionId || null)));
+        let sessionId = shouldStartNewChat ? null : (urlSessionId || (isWebApp ? null : (savedTab?.sessionId || null)));
         let tabTitle = 'Chat';
         let meta = {};
         if (sessionId) {
@@ -18016,7 +17636,6 @@ function switchGroup(groupIndex, skipScrollRestore = false) {
     setPaneActiveThinking('secondary', null);
     if (sharedInputUI) {
         sharedInputUI.historyEl = primaryTab.historyEl;
-        sharedInputUI.sparkId = primaryTab.sparkId;
         sharedInputUI.restoreInputState(primaryTab.inputState || null);
         sharedInputUI.activeTabModel = primaryTab.selectedModel ? { ...primaryTab.selectedModel } : null;
         sharedInputUI.thinkingLevel = primaryTab.thinkingLevel || null;
@@ -18841,40 +18460,53 @@ function initSpotlightAskSelection() {
         const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
         if (isInsideLumina) return;
         setTimeout(() => {
+            const targetEl = (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))
+                ? e.target
+                : (e.target && e.target.closest ? e.target.closest('input, textarea') : null);
+            const activeElement = targetEl || (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
+            const isTextareaOrInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
             if (window.LuminaSelection) {
-                if (LuminaSelection.isInsideEditable()) {
-                    const activeElement = LuminaSelection.getDeepActiveElement();
-                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                        LuminaSelection.expandInputToWordBoundaries(activeElement);
-                    }
+                if (isTextareaOrInput) {
+                    LuminaSelection.expandInputToWordBoundaries(activeElement);
                 } else {
                     LuminaSelection.expandToWordBoundaries();
                 }
             }
-            const sel = window.getSelection();
-            const text = sel ? sel.toString().trim() : '';
-            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-            if (!range) {
-                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
-                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+
+            if (isTextareaOrInput) {
+                if (window.LuminaSelection) LuminaSelection.hide();
                 return;
             }
-            const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
-            if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
+
+            const sel = window.getSelection();
+            const text = sel ? sel.toString().trim() : '';
+            const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+            if (!range || text.length === 0) {
                 const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
             const commonNode = range.commonAncestorContainer;
-            const isInsideChat = commonNode && (
-                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
-                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-scroll-content'))
+            const isInsideAnswer = commonNode && (
+                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-answer')) ||
+                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-answer'))
             );
-            if (!isInsideChat) {
+
+            if (!isInsideAnswer) {
                 const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
                 return;
             }
+
+            const isInsideProofread = range && (range.startContainer.parentElement?.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
+
+            if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
+                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+                return;
+            }
+
             const secondaryPane = document.getElementById('pane-secondary');
             luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
@@ -18889,40 +18521,42 @@ function initSpotlightAskSelection() {
         if (!selectionKeys.includes(e.key)) return;
 
         setTimeout(() => {
+            const activeElement = (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'))
+                ? document.activeElement
+                : (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
+            const isTextareaOrInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
             if (window.LuminaSelection) {
-                if (LuminaSelection.isInsideEditable()) {
-                    const activeElement = LuminaSelection.getDeepActiveElement();
-                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                        LuminaSelection.expandInputToWordBoundaries(activeElement);
-                    }
+                if (isTextareaOrInput) {
+                    LuminaSelection.expandInputToWordBoundaries(activeElement);
                 } else {
                     LuminaSelection.expandToWordBoundaries();
                 }
             }
+
+            if (isTextareaOrInput) return;
+
             const sel = window.getSelection();
             const text = sel ? sel.toString().trim() : '';
-            const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-            if (!range || text.length === 0) {
-                return;
-            }
-            const isInsideProofread = range && (range.startContainer.parentElement.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
-            if (!askSelectionPopupEnabled && !isInsideProofread) {
-                return;
-            }
+            const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+            if (!range || text.length === 0) return;
+
             const commonNode = range.commonAncestorContainer;
-            const isInsideChat = commonNode && (
-                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-scroll-content')) ||
-                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-scroll-content'))
+            const isInsideAnswer = commonNode && (
+                (commonNode.nodeType === 1 && commonNode.closest('.lumina-chat-answer')) ||
+                (commonNode.parentNode && commonNode.parentNode.closest('.lumina-chat-answer'))
             );
-            if (!isInsideChat) {
-                return;
-            }
+            if (!isInsideAnswer) return;
+
+            const isInsideProofread = range && (range.startContainer.parentElement?.closest('.lumina-proofread-editable') || range.startContainer.closest?.('.lumina-proofread-editable'));
+
+            if (!askSelectionPopupEnabled && !isInsideProofread) return;
+
             const secondaryPane = document.getElementById('pane-secondary');
             luminaAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
                 ? 'secondary'
                 : 'primary';
             if (window.LuminaSelection) {
-                // Náº¿u Ä‘ang hiá»ƒn thá»‹ sáºµn rá»“i thÃ¬ khÃ´ng Ä‘á»‹nh vá»‹ láº¡i theo chuá»™t ná»¯a Ä‘á»ƒ trÃ¡nh bá»‹ nháº£y vá»‹ trÃ­
                 if (LuminaSelection.btn && LuminaSelection.btn.style.display === 'flex') {
                     LuminaSelection.show(undefined, undefined, text, range, false);
                 } else {
@@ -20146,9 +19780,6 @@ function initSidebar() {
                 if (sidebar.classList.contains('sidebar-collapsed')) {
                     sidebar.classList.remove('sidebar-collapsed');
                     localStorage.setItem('lumina_sidebar_collapsed', 'false');
-                } else {
-                    sidebar.classList.add('sidebar-collapsed');
-                    localStorage.setItem('lumina_sidebar_collapsed', 'true');
                 }
             }
         });
@@ -20524,6 +20155,7 @@ async function renderRecentChatsSidebar() {
         ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
             { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>' },
             { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>' },
+            { action: 'generate_title', label: 'Generate title', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>' },
             { action: 'duplicate', label: 'Duplicate', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
             { action: 'archive', label: 'Archive', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
             { type: 'divider' },
@@ -20568,7 +20200,6 @@ async function renderRecentChatsSidebar() {
                         } else {
                             session.pinned = false;
                         }
-                        session.updatedAt = Date.now();
                         await LuminaChatDB.putSession(session);
                         chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                         if (session.isRenamed) {
@@ -20596,6 +20227,50 @@ async function renderRecentChatsSidebar() {
                     if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
                         await ChatHistoryManager.renameChat(sid, newTitle.trim());
                     }
+                } else if (action === 'generate_title') {
+                    const session = await LuminaChatDB.getSession(sid);
+                    if (!session || !session.questions || session.questions.length === 0) {
+                        if (typeof LuminaToast !== 'undefined') LuminaToast.show('No chat content to generate title.', 'info');
+                        return;
+                    }
+                    const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                    if (chatItemEl) chatItemEl.classList.add('is-naming');
+
+                    if (typeof LuminaToast !== 'undefined') LuminaToast.show('✨ Generating chat title...', 'info');
+                    let fullText = session.questions.map(q => {
+                        let text = `User: ${q.text || ''}`;
+                        if (q.answers) {
+                            const ans = Object.values(q.answers).find(a => a && a.text);
+                            if (ans) text += `\nAI: ${ans.text}`;
+                        }
+                        return text;
+                    }).join('\n\n');
+                    const currentModel = typeof LuminaModelSelector !== 'undefined' ? LuminaModelSelector.getSelectedModel('text') : null;
+                    chrome.runtime.sendMessage({
+                        action: 'generate_chat_title',
+                        modelObj: currentModel,
+                        question: fullText,
+                        images: null,
+                        files: null,
+                        history: []
+                    }, async (res) => {
+                        if (chatItemEl) chatItemEl.classList.remove('is-naming');
+                        if (res && res.success && res.title) {
+                            const newTitle = res.title.trim();
+                            await ChatHistoryManager.renameChat(sid, newTitle);
+                            const updatedSession = await LuminaChatDB.getSession(sid);
+                            if (updatedSession) {
+                                updatedSession.autoNamed = true;
+                                updatedSession.isRenamed = true;
+                                await LuminaChatDB.putSession(updatedSession);
+                            }
+                            if (typeof LuminaToast !== 'undefined') LuminaToast.show(`Title updated: "${newTitle}"`, 'success');
+                            renderRecentChatsSidebar();
+                            renderTabs();
+                        } else {
+                            if (typeof LuminaToast !== 'undefined') LuminaToast.show('Failed to generate title: ' + (res?.error || 'Unknown error'), 'error');
+                        }
+                    });
                 } else if (action === 'duplicate') {
                     await ChatHistoryManager.duplicateChat(sid);
                 } else if (action === 'archive') {
@@ -20604,7 +20279,6 @@ async function renderRecentChatsSidebar() {
                         const isArchived = !!meta.archived;
                         if (isArchived) {
                             meta.archived = false;
-                            meta.updatedAt = Date.now();
                             await LuminaChatDB.putSession(meta);
                             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                             renderRecentChatsSidebar();
@@ -20626,7 +20300,6 @@ async function renderRecentChatsSidebar() {
                                     meta.isRenamed = true;
                                 }
                                 meta.archived = true;
-                                meta.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(meta);
                                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                                 renderRecentChatsSidebar();
@@ -21231,36 +20904,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             }
         }
     }
-
-    const activeSkillsIds = currentTab?.chatUIInstance?.activeSkillIds || [];
-    if (activeSkillsIds.length > 0) {
-        const skillsData = await chrome.storage.local.get(['lumina_skills', 'lumina_sparks']);
-        const generalSkills = skillsData.lumina_skills || window.LUMINA_DEFAULT_SKILLS || [];
-        
-        let skillsPrompts = [];
-        for (const id of activeSkillsIds) {
-            let skill = generalSkills.find(s => s.id === id);
-            if (!skill && currentTab.sparkId && skillsData.lumina_sparks) {
-                const spark = skillsData.lumina_sparks[currentTab.sparkId];
-                if (spark && Array.isArray(spark.skills)) {
-                    skill = spark.skills.find(s => s.id === id);
-                }
-            }
-            if (skill && skill.prompt) {
-                skillsPrompts.push(`[Skill: ${skill.name}]\n${skill.prompt}`);
-            }
-        }
-        
-        if (skillsPrompts.length > 0) {
-            const skillsInstruction = `\n\n# Active Skills\nYou must follow the instructions of these active skills:\n\n` + skillsPrompts.join('\n\n---\n\n');
-            if (message.systemOverride) {
-                message.systemOverride += skillsInstruction;
-            } else {
-                message.systemOverride = skillsInstruction;
-            }
-        }
-    }
-
     if (tabModel) {
         chrome.storage.local.set({ lastUsedModel: tabModel });
     }
@@ -22649,7 +22292,6 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     }
     const targetInputUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
     if (targetInputUI) {
-        targetInputUI.sparkId = activeTab.sparkId;
         targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
         targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
         if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
@@ -22841,7 +22483,6 @@ async function renderDropdownMenu(pane = 'primary') {
             } else {
                 session.pinned = false;
             }
-            session.updatedAt = Date.now();
             await LuminaChatDB.putSession(session);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             if (session.isRenamed) {
@@ -22860,7 +22501,6 @@ async function renderDropdownMenu(pane = 'primary') {
         const isArchived = !!sessionMeta.archived;
         if (isArchived) {
             sessionMeta.archived = false;
-            sessionMeta.updatedAt = Date.now();
             await LuminaChatDB.putSession(sessionMeta);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             renderRecentChatsSidebar();
@@ -22882,7 +22522,6 @@ async function renderDropdownMenu(pane = 'primary') {
                     sessionMeta.isRenamed = true;
                 }
                 sessionMeta.archived = true;
-                sessionMeta.updatedAt = Date.now();
                 await LuminaChatDB.putSession(sessionMeta);
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
                 renderRecentChatsSidebar();
@@ -24083,22 +23722,18 @@ Guide the user to scan the problem from micro to macro levels to choose exactly 
   - "Is X correct/true?" prompts: Evaluate the prediction's truth/falsity using Reasons/Causes (why it will or will not happen) rather than simple pros/cons.
   - "Causes/Problems & Solutions" prompts: Keep it objective (NO personal agree/disagree opinion). Body 1 lists causes/problems; Body 2 proposes government-level solutions (using Law/Enforcement or Funding/Incentives) that map 1-to-1 with Body 1.
 
-4. VOCABULARY PHILOSOPHY (Từ dễ điểm cao)
-- Avoid the "Thesaurus Trap": Actively discourage the use of rare, fancy, or complex words that lead to unnatural expressions. Prioritize simple, common words used with high precision.
-- Focus on Collocations: Band 8.0+ Lexical Resource is achieved by flexible and precise combinations of common words (e.g., "bear the burden" instead of "carry the heavy weight", "address basic needs" instead of "solve necessary things", "subsidize these expenses").
-- Perspective Shift over Synonym Lookup: Instead of mechanical word-for-word translation, paraphrase by shifting the active subject/actor (e.g., instead of "schools teach", use "students learn" or "governments incorporate").
-
-5. COHESION & EXPRESSION TECHNIQUES
+4. COHESION & EXPRESSION TECHNIQUES
+- Perspective Shift Paraphrasing: Shift the actor of the action (e.g., instead of "schools teach", use "students learn" or "governments incorporate") to avoid unnatural thesaurus synonyms (like using "coach" instead of "teach").
 - Summarizing Nouns (This/Such + Noun): Keep cohesion tight by referring to the previous sentence's concept as the subject of the next sentence (e.g., "This proposition", "Such a ban", "Such a shift", "This practice", "This restriction").
 
-6. TUTORING & AUDITING PROTOCOL
+5. TUTORING & AUDITING PROTOCOL
 When auditing user writing:
 1. Check Structure: Verify if it is a 4-paragraph layout.
 2. Check Thesis Stance: Ensure the stance is consistent from Intro to Conclusion and matches the prompt type.
 3. Audit Supporting Ideas: Identify [Core Idea] and [Development] for each supporting idea. Check if the correct development strategy (Impact, Reason, Example) was used.
 4. Check Special Prompt Alignment: Ensure no personal opinions in Causes/Solutions, better alternatives are provided for "Best" prompts, and solutions map 1-1 to causes.
 5. Check for Personal Examples: Flag and correct any personal references.
-6. Check Vocabulary: Flag and replace forced "fancy" vocabulary (unnatural thesaurus synonyms). Guide the user to rewrite using simple, natural, and high-precision collocations (Từ dễ điểm cao).
+6. Check Vocabulary: Replace thesaurus errors with natural collocations using Perspective Shift.
 7. Check Cohesion: Look for opportunities to use "This/Such + Noun".`
     },
     'spark_qa_assistant': {
@@ -24434,19 +24069,7 @@ async function sparksOpenEditor(sparkId = null) {
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 Add files
                             </button>
-                        </div>
-                    </div>
-                    <div class="sparks-field">
-                        <label class="sparks-label">
-                            Skills
-                            <span class="sparks-label-hint">— add custom slash commands for this Spark</span>
-                        </label>
-                        <div class="sparks-skills-area" id="sparks-skills-area">
-                            <div class="sparks-skills-list" id="sparks-skills-list-container"></div>
-                            <button type="button" class="sparks-add-skill-btn" id="sparks-editor-add-skill-btn" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--lumina-sidebar-bg); border: 1px solid var(--lumina-border-color); border-radius: 6px; cursor: pointer; color: var(--lumina-text-primary); font-size: 12px; margin-top: 6px;">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Add Spark Skill
-                            </button>
+                            <input type="file" id="sparks-file-input" multiple accept="*/*" style="display:none">
                         </div>
                     </div>
                 </div>
@@ -24547,7 +24170,6 @@ async function sparksOpenEditor(sparkId = null) {
         });
     }
     let currentFiles = [...knowledgeFiles];
-    let currentSkills = spark?.skills ? [...spark.skills] : [];
     let currentAvatar = spark?.avatar || null;
     let previewHistory = [];
     let previewStreaming = false;
@@ -24674,137 +24296,6 @@ async function sparksOpenEditor(sparkId = null) {
             });
         });
     }
-
-    function openSparkSkillEditor(skill = null, onSave) {
-        const popup = document.createElement('div');
-        popup.className = 'lumina-settings-overlay';
-        popup.style.display = 'flex';
-        popup.style.zIndex = '12000';
-        popup.innerHTML = `
-            <div class="lumina-provider-popup-dialog">
-                <div class="lumina-provider-popup-header">
-                    <span class="lumina-provider-popup-title">${skill ? 'Edit Spark Skill' : 'Add Spark Skill'}</span>
-                    <button type="button" class="lumina-provider-popup-close-btn" id="spark-skill-close">×</button>
-                </div>
-                <div class="lumina-provider-popup-body">
-                    <div class="lumina-settings-field">
-                        <label>Skill ID * (Gõ /id để gọi)</label>
-                        <input type="text" id="spark-skill-id" placeholder="e.g. essay_evaluator" value="${skill ? skill.id : ''}" ${skill ? 'disabled' : ''} style="text-transform: lowercase;">
-                    </div>
-                    <div class="lumina-settings-field">
-                        <label>Skill Name *</label>
-                        <input type="text" id="spark-skill-name" placeholder="e.g. Essay Evaluator" value="${skill ? escapeHtml(skill.name) : ''}">
-                    </div>
-                    <div class="lumina-settings-field">
-                        <label>Description</label>
-                        <input type="text" id="spark-skill-desc" placeholder="e.g. Chấm điểm bài viết IELTS" value="${skill ? escapeHtml(skill.description || '') : ''}">
-                    </div>
-                    <div class="lumina-settings-field">
-                        <label>Prompt Instructions *</label>
-                        <textarea id="spark-skill-prompt" rows="5" placeholder="Instructions...">${skill ? escapeHtml(skill.prompt || '') : ''}</textarea>
-                    </div>
-                </div>
-                <div class="lumina-provider-popup-footer">
-                    <div class="lumina-provider-popup-footer-right">
-                        <button type="button" class="lumina-settings-btn secondary" id="spark-skill-cancel">Cancel</button>
-                        <button type="button" class="lumina-settings-btn primary" id="spark-skill-save">Save</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(popup);
-
-        const close = () => popup.remove();
-        popup.querySelector('#spark-skill-close').onclick = close;
-        popup.querySelector('#spark-skill-cancel').onclick = close;
-        popup.querySelector('#spark-skill-save').onclick = () => {
-            const idInput = popup.querySelector('#spark-skill-id');
-            const nameInput = popup.querySelector('#spark-skill-name');
-            const descInput = popup.querySelector('#spark-skill-desc');
-            const promptInput = popup.querySelector('#spark-skill-prompt');
-
-            const rawId = idInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-            const name = nameInput.value.trim();
-            const description = descInput.value.trim();
-            const prompt = promptInput.value.trim();
-
-            if (!rawId || !name || !prompt) {
-                alert('Please fill out all required fields.');
-                return;
-            }
-
-            onSave({ id: rawId, name, description, prompt, enabled: true });
-            close();
-        };
-    }
-
-    function renderSparkSkills() {
-        const container = overlay.querySelector('#sparks-skills-list-container');
-        if (!container) return;
-        if (currentSkills.length === 0) {
-            container.innerHTML = '<div style="font-size:12px; color:var(--lumina-text-secondary); padding:4px 0;">No custom skills for this Spark yet.</div>';
-            return;
-        }
-        container.innerHTML = currentSkills.map((s, idx) => `
-            <div class="lumina-settings-chain-card chain-item" style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--lumina-sidebar-bg); border: 1px solid var(--lumina-border-color); border-radius: 6px;">
-                <div class="chain-details" style="display: flex; flex-direction: column; gap: 2px;">
-                    <span class="chain-title skill-name" style="font-weight: var(--lumina-weight-semibold); font-size: 12px; color: var(--lumina-text-primary);">/${s.id} (${escapeHtml(s.name)})</span>
-                    <span class="chain-subtitle skill-desc" style="font-size: 10.5px; color: var(--lumina-text-secondary);">${escapeHtml(s.description || '')}</span>
-                </div>
-                <div class="chain-actions" style="display: flex; gap: 4px;">
-                    <button type="button" class="lumina-settings-icon-btn edit-spark-skill" data-idx="${idx}" title="Edit Skill" style="background: none; border: none; cursor: pointer; color: var(--lumina-text-secondary); padding: 4px;">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                        </svg>
-                    </button>
-                    <button type="button" class="lumina-settings-icon-btn remove-spark-skill" data-idx="${idx}" title="Delete Skill" style="background: none; border: none; cursor: pointer; color: var(--lumina-text-secondary); padding: 4px;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-
-        container.querySelectorAll('.edit-spark-skill').forEach(btn => {
-            btn.onclick = () => {
-                const idx = parseInt(btn.dataset.idx);
-                openSparkSkillEditor(currentSkills[idx], (updatedSkill) => {
-                    currentSkills[idx] = updatedSkill;
-                    renderSparkSkills();
-                });
-            };
-        });
-
-        container.querySelectorAll('.remove-spark-skill').forEach(btn => {
-            btn.onclick = () => {
-                const idx = parseInt(btn.dataset.idx);
-                if (confirm(`Delete skill /${currentSkills[idx].id}?`)) {
-                    currentSkills.splice(idx, 1);
-                    renderSparkSkills();
-                }
-            };
-        });
-    }
-
-    renderSparkSkills();
-
-    const addSkillBtn = overlay.querySelector('#sparks-editor-add-skill-btn');
-    if (addSkillBtn) {
-        addSkillBtn.onclick = (e) => {
-            e.preventDefault();
-            openSparkSkillEditor(null, (newSkill) => {
-                if (currentSkills.some(s => s.id === newSkill.id)) {
-                    alert('A skill with this ID already exists in this Spark.');
-                    return;
-                }
-                currentSkills.push(newSkill);
-                renderSparkSkills();
-            });
-        };
-    }
     overlay.querySelector('#sparks-editor-save').addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) {
@@ -24821,7 +24312,6 @@ async function sparksOpenEditor(sparkId = null) {
             description: overlay.querySelector('#spark-description-input').value.trim(),
             instructions: overlay.querySelector('#spark-instructions-input').value.trim(),
             knowledgeFiles: currentFiles,
-            skills: currentSkills,
             avatar: currentAvatar,
             createdAt: sparks[id]?.createdAt || Date.now(),
             updatedAt: Date.now()

@@ -18,9 +18,6 @@ chrome.storage.local.get(null, (allData) => {
     if (keysToRemove.length > 0) {
         chrome.storage.local.remove(keysToRemove, () => {});
     }
-    if (!allData.lumina_skills) {
-        chrome.storage.local.set({ lumina_skills: LUMINA_DEFAULT_SKILLS || [] });
-    }
 });
 
 // Clean up expired image and audio queries from IndexedDB on startup
@@ -278,7 +275,8 @@ function buildChatSystemInstruction(reasoningMode = false) {
 - Use backticks (\`) or code blocks (\`\`\`) ONLY for actual programming source code (JavaScript, CSS, HTML, Python, etc.) or terminal/database commands.
 - STRICTLY FORBIDDEN: Do NOT use backticks or code blocks for:
   - English/Vietnamese grammar formulas, templates, or sentence patterns (e.g. write **S + V + from A to B** instead of \`S + V + from A to B\`).
-  - Regular prose, essays, vocabulary terms, or example sentences (e.g. write *The company's profits plummeted* instead of \`The company's profits plummeted\`).
+  - Regular prose, essays, quotes, vocabulary terms, or example sentences (e.g. write *The company's profits plummeted* instead of \`The company's profits plummeted\`).
+  - Quotes or blockquotes (>): NEVER wrap quoted text, essay examples, or sentences inside backticks or code blocks. Use standard text, bold, or italics inside blockquotes.
   - Mathematical equations (use LaTeX instead).
 [LaTeX Rules]
 Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex variables) where plain text is insufficient. Enclose with $inline$ or $$display$$. NEVER render LaTeX in a code block unless the user explicitly requests it.
@@ -301,16 +299,17 @@ Provide clear, natural, and well-structured responses. Use formatting tools (hea
 - Use Chart.js JSON config (chartjs code blocks) for all statistical charts and data visualizations: bar charts, line charts, pie/doughnut charts, scatter plots, radar charts, etc.
 - EVERY diagram or chart (both D2 and Chart.js) MUST ALWAYS have a clear, descriptive title to make it self-explanatory.
 CRITICAL D2 SYNTAX RULES:
-1. Valid shapes ONLY: rectangle, square, page, parallelogram, document, cylinder, queue, package, step, callout, stored_data, person, diamond, oval, circle, hexagon, cloud. Do NOT use "folder", "star", "triangle", "card", "rounded_square", "rounded-rectangle".
-2. Nested nodes MUST use full path from outside (e.g., 'Nucleus.mRNA -> Cytoplasm.Ribosome'). Plain 'mRNA -> Ribosome' is a syntax error.
-3. Text labels with spaces/special characters MUST be quoted in double quotes. E.g. A: "Label text"
-4. Color Styling & Padding: Set theme-id (3: Grape Soda, 4: Mixed Berry, 5: Sunset Glow, 6: Forest, 7: Cool Classics) and ALWAYS specify a border padding in vars.d2-config (on separate lines, NO semicolons) to leave comfortable empty space around all 4 sides of the diagram. E.g., 'vars: { d2-config: { theme-id: 5 \\n pad: 30 } }'.
-5. Node identifiers (keys) MUST be ASCII-only, without spaces, special characters, or non-ASCII/accented letters (e.g. use 'Nen' or 'Compressor' instead of 'Nén'). Accents, spaces, and Unicode are ONLY allowed inside the double-quoted label string value (e.g. Nen: "Nén").
+1. Valid shapes ONLY: rectangle, square, document, cylinder, queue, package, step, callout, stored_data, person, diamond, oval, circle, hexagon, cloud. STRICTLY FORBIDDEN: Do NOT use "browser", "folder", "star", "triangle", "card", "rounded_square", "rounded-rectangle". (Use shape: rectangle instead of "browser").
+2. NEVER use 'style.fill: none'. For transparent background, use 'style.fill: transparent' or omit style.fill. Valid fills are valid named colors (e.g. "orange"), hex codes (e.g. "#f0ff3a"), "transparent", or gradients.
+3. Nested nodes MUST use full path from outside (e.g., 'Nucleus.mRNA -> Cytoplasm.Ribosome'). Plain 'mRNA -> Ribosome' is a syntax error.
+4. Text labels with spaces/special characters MUST be quoted in double quotes. E.g. A: "Label text"
+5. Color Styling & Padding: Set theme-id (3: Grape Soda, 4: Mixed Berry, 5: Sunset Glow, 6: Forest, 7: Cool Classics) and ALWAYS specify a border padding in vars.d2-config (on separate lines, NO semicolons) to leave comfortable empty space around all 4 sides of the diagram. E.g., 'vars: { d2-config: { theme-id: 5 \\n pad: 30 } }'.
+6. Node identifiers (keys) MUST be ASCII-only, without spaces, special characters, or non-ASCII/accented letters (e.g. use 'Nen' or 'Compressor' instead of 'Nén'). Accents, spaces, and Unicode are ONLY allowed inside the double-quoted label string value (e.g. Nen: "Nén").
 PREMIUM DIAGRAM GUIDELINES (Make them beautiful!):
 - Use styling classes ('classes: { classname: { style.fill: "#hex"; style.stroke: "#hex" } }') to define reusable styles.
 - Enhance key boxes with 3D/Shadow: 'style.3d: true' or 'style.shadow: true'.
 - Make connections dynamic: use 'style.animated: true' for active/important data flows (in cycles, pipelines, or feedback loops, animate ALL connections in the path to show the flow clearly).
-- ALWAYS add titles or legends using positioning inside a block (never use mixed inline title syntax): e.g., 'title: { label: "My Diagram" \\n style.bold: true \\n style.font-size: 16 \\n style.stroke-width: 0 \\n style.fill: none }'.
+- ALWAYS add titles or legends using positioning inside a block: e.g., 'title: { label: "My Diagram" \\n style.bold: true \\n style.font-size: 16 \\n style.stroke-width: 0 \\n style.fill: transparent }'.
 - Leave clean margins by specifying border padding inside vars.d2-config.
 D2 Example (Beautiful):
 \`\`\`d2
@@ -333,7 +332,7 @@ title: {
   style.bold: true
   style.font-size: 16
   style.stroke-width: 0
-  style.fill: none
+  style.fill: transparent
 }
 Start: "Ingestion" {
   class: core
@@ -835,30 +834,34 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             generationConfig.temperature = temperature;
             generationConfig.topP = topP;
         }
-        let level = normalizedThinkingLevel || 'minimal';
-        if (level === 'none') {
-            level = 'minimal';
-        }
-        if (isGemini3) {
-            generationConfig.thinkingConfig = {
-                includeThoughts: true,
-                thinkingLevel: level
-            };
+        if (params.disableThinking) {
+            delete generationConfig.thinkingConfig;
         } else {
-            let budget = -1;
-            if (level === 'minimal') {
-                budget = 0;
-            } else if (level === 'low') {
-                budget = 1024;
-            } else if (level === 'medium') {
-                budget = -1;
-            } else if (level === 'high') {
-                budget = 4096;
+            let level = normalizedThinkingLevel || 'minimal';
+            if (level === 'none') {
+                level = 'minimal';
             }
-            generationConfig.thinkingConfig = {
-                includeThoughts: budget > 0 || budget === -1,
-                thinkingBudget: budget
-            };
+            if (isGemini3) {
+                generationConfig.thinkingConfig = {
+                    includeThoughts: true,
+                    thinkingLevel: level
+                };
+            } else {
+                let budget = -1;
+                if (level === 'minimal') {
+                    budget = 0;
+                } else if (level === 'low') {
+                    budget = 1024;
+                } else if (level === 'medium') {
+                    budget = -1;
+                } else if (level === 'high') {
+                    budget = 4096;
+                }
+                generationConfig.thinkingConfig = {
+                    includeThoughts: budget > 0 || budget === -1,
+                    thinkingBudget: budget
+                };
+            }
         }
         const geminiBody = {
             contents: geminiContents,
@@ -3793,19 +3796,20 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     const config = chain[0];
     const { model, providerType: currentProvider, endpoint, apiKey } = config;
     const keys = getKeysArray(apiKey);
-    const systemInstruction = `Analyze the preceding conversation and generate a concise, descriptive chat title in 8 words or fewer. Capture the core topic, main intent, or action item directly without using filler words, matching the language of the prompt. Respond with ONLY the title itself, nothing else. Do not wrap the title in quotes.`;
+    const systemInstruction = `Analyze the preceding prompt/conversation and generate a concise, descriptive chat title in 8 words or fewer. Capture the core topic or main intent directly without filler words, matching the language of the prompt. Respond ONLY with the title itself, nothing else. Do not wrap in quotes.`;
     const attachments = [];
     if (Array.isArray(images)) attachments.push(...images);
     if (Array.isArray(files)) attachments.push(...files);
     const payloadParams = {
         model, endpoint, providerType: currentProvider,
-        temperature: 0.3, topP: 1.0, maxTokens: 100, parsedCustomParams: {},
-        normalizedThinkingLevel: '', isGemini25Model: false, reasoningMode: false,
+        temperature: 0.3, topP: 1.0, maxTokens: 50, parsedCustomParams: {},
+        normalizedThinkingLevel: 'none', isGemini25Model: false, reasoningMode: false,
         imageData: attachments.length > 0 ? attachments : null,
-        isStreaming: false, cachedContent: null
+        isStreaming: false, cachedContent: null, disableThinking: true
     };
+    const titlePrompt = `Generate a concise, descriptive chat title (8 words or fewer) in the exact same language for the following prompt. Respond ONLY with the title text itself, without quotes or conversational filler:\n\n${question}`;
     const response = await fetchWithRotation(keys, async (key) => {
-        const payload = await buildApiPayload(history || [], question, systemInstruction, key, payloadParams);
+        const payload = await buildApiPayload(history || [], titlePrompt, systemInstruction, key, payloadParams);
         const headers = { 'Content-Type': 'application/json' };
         if (key) {
             const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
@@ -3828,7 +3832,9 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     let text = '';
     const isGemini = currentProvider === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
     if (isGemini) {
-        text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        const textParts = parts.filter(p => p.text && !p.thoughtSignature && !p.thought);
+        text = textParts.length > 0 ? textParts[textParts.length - 1].text : (parts[0]?.text || '');
     } else {
         text = data.choices?.[0]?.message?.content || '';
     }

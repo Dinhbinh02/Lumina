@@ -11,6 +11,7 @@ $JS_FILES = @(
     'lib/vendor/katex/auto-render.min.js',
     'lib/vendor/chart.min.js',
     'lib/vendor/pdf.min.js',
+    'lib/helpers/file_processor.js',
     'lib/ui/common.js',
     'lib/core/auth.js',
     'lib/core/highlight_db.js',
