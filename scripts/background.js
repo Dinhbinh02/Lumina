@@ -256,7 +256,7 @@ function optimizeContextString(text) {
 
 function isGeminiModel(modelName) {
     const m = String(modelName || '').toLowerCase();
-    return m.includes('gemini') || m.includes('google');
+    return m.includes('gemini') && !m.includes('gemma');
 }
 
 function buildChatSystemInstruction(reasoningMode = false) {
@@ -266,9 +266,16 @@ function buildChatSystemInstruction(reasoningMode = false) {
     } catch (e) { }
     const currentTime = new Date().toLocaleString('en-US', { timeZone: userTimeZone });
     const currentYear = new Date().getFullYear();
-    let instruction = `You are a helpful, neutral, and balanced AI assistant. Note: current year is ${currentYear}.
+    let instruction = `You are a helpful and adaptive AI assistant. Note: current year is ${currentYear}.
 [Language Rule]
 - Respond in the language of the user's query. If the query consists of a single word, term, or phrase in English but the preceding conversation history is in another language, respond in that language.
+[Response Quality & Formatting]
+- Specifics Over Generalities: Replace vague claims with concrete details or numbers where applicable (e.g., write "150 min/week of moderate cardio reduces cardiovascular risk by 30-40%" instead of "Exercise has many benefits").
+- Fluctuate Layout Naturally: Avoid rigid, repetitive formatting. Match your layout naturally to the content without forcing unnecessary walls of headers or bullet points for every turn.
+- Define technical terms inline on first use if the query uses simple language (e.g., "lipolysis (breaking down fat)").
+[Follow-Up Rules]
+- Closed/Definitive tasks (facts, math, translations, code, JSON, direct questions): Generate a complete, self-contained response. DO NOT add trailing follow-up questions or menus at the end.
+- Broad/Ambiguous/Advice queries: Answer directly first, then optionally ask a single relevant follow-up question to guide the user.
 [Coding Guidelines & Code Block Gating]
 - Write clean, clear, modular, and extremely easy-to-understand code.
 - NEVER include comments inside the code block (no inline comments, no descriptive documentation comments, no commented-out code). Keep the code clean, self-explanatory, and completely comment-free.
@@ -282,17 +289,7 @@ function buildChatSystemInstruction(reasoningMode = false) {
 Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex variables) where plain text is insufficient. Enclose with $inline$ or $$display$$. NEVER render LaTeX in a code block unless the user explicitly requests it.
 Strictly Avoid LaTeX for: simple formatting (use Markdown instead), non-technical contexts and regular prose (resumes, letters, essays, cooking, weather, etc.), or simple units/numbers (render **180°C** or **10%** as plain text, not LaTeX).
 [Response Guiding Principles]
-Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.`;
-
-    if (reasoningMode) {
-        instruction += `
-[Diagram Syntax — D2 & Chart.js]
-- Use D2 code blocks (\`\`\`d2) for flowcharts, sequence diagrams, ERDs, and UML class diagrams. Configure variables on separate lines: 'vars: { d2-config: { theme-id: 5 \\n pad: 30 } }'.
-- Use Chart.js JSON config (\`\`\`chartjs) for statistical charts and data visualizations (bar, line, pie, scatter).
-- ALWAYS include a descriptive title for all diagrams and charts.
-- Do not include JavaScript functions or callbacks in Chart.js config (pure JSON only).`;
-    } else {
-        instruction += `
+Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.
 [Diagram Syntax — D2 & Chart.js]
 - A single response CAN contain multiple diagrams (D2 and/or Chart.js charts) if multiple aspects of the topic benefit from visual explanation.
 - Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
@@ -411,10 +408,8 @@ Chart.js Chart Rule:
     }
   }
 }
-\`\`\``;
-    }
+\`\`\`
 
-    instruction += `
 [YouTube]
 \`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.
 [Lumina Canvas (Document Workspace)]
@@ -436,8 +431,9 @@ To interact with the Canvas, you MUST wrap your commands in the following XML ta
 <pattern>regex_pattern</pattern>
 <comment>suggestion</comment>
 </lumina-canvas-comment>
-[Context & Privacy]
-Treat user data as factual and invisible. Do not reference system tags/sources. Never infer/include sensitive details (health, origin, religion, finance, etc.) unless requested.`;
+[Context & Personalization Privacy]
+- When using user context or preferences, blend them in seamlessly. NEVER preface responses with artificial meta-phrases like "Based on your info," "Given your profile," or "Since you mentioned."
+- Treat user data as factual and invisible. Do not reference system tags/sources. Never infer or include sensitive personal details (health conditions, origin, religion, financial status, etc.) unless explicitly requested.`;
 
     return instruction;
 }
@@ -974,8 +970,11 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             openaiBody.max_tokens = 4096;
         }
     }
-    if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
-        openaiBody.reasoning_effort = normalizedThinkingLevel;
+    if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+        const effortMap = { minimal: 'low', low: 'low', medium: 'medium', high: 'high' };
+        if (effortMap[normalizedThinkingLevel]) {
+            openaiBody.reasoning_effort = effortMap[normalizedThinkingLevel];
+        }
     }
     return { url: normalizeOpenAICompatibleEndpoint(endpoint, '/chat/completions'), body: openaiBody };
 }
@@ -2178,8 +2177,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             if (maxTokens) {
                                 body.max_tokens = maxTokens;
                             }
-                            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
-                                body.reasoning_effort = normalizedThinkingLevel;
+                            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+                                const effortMap = { minimal: 'low', low: 'low', medium: 'medium', high: 'high' };
+                                if (effortMap[normalizedThinkingLevel]) {
+                                    body.reasoning_effort = effortMap[normalizedThinkingLevel];
+                                }
                             }
                             return fetch(endpoint || 'https://api.openai.com/v1/chat/completions', {
                                 method: 'POST',
@@ -3166,14 +3168,9 @@ async function getActiveModelForTranslation() {
     const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[config.model] || {};
     const currentModel = config.model;
     const isGemini = config.providerType === 'gemini' ||
-        (currentModel && currentModel.toLowerCase().includes('gemini'));
-    const isGemma4 = /gemma-4/i.test(currentModel);
-    let thinkingLevel = modelParams.thinkingLevel || (isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none'));
-    if (isGemma4) {
-        if (thinkingLevel !== 'high') {
-            thinkingLevel = 'minimal';
-        }
-    } else if (isGemini && thinkingLevel === 'none') {
+        (currentModel && currentModel.toLowerCase().includes('gemini') && !currentModel.toLowerCase().includes('gemma'));
+    let thinkingLevel = modelParams.thinkingLevel || (isGemini ? 'minimal' : 'none');
+    if (isGemini && thinkingLevel === 'none') {
         thinkingLevel = 'minimal';
     }
     return { config, thinkingLevel };
@@ -3249,8 +3246,11 @@ Example Output:
                 temperature: 0.3,
                 response_format: { type: 'json_object' }
             };
-            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none' && normalizedThinkingLevel !== 'minimal') {
-                openaiBody.reasoning_effort = normalizedThinkingLevel;
+            if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
+                const effortMap = { minimal: 'low', low: 'low', medium: 'medium', high: 'high' };
+                if (effortMap[normalizedThinkingLevel]) {
+                    openaiBody.reasoning_effort = effortMap[normalizedThinkingLevel];
+                }
             }
             payloadBody = openaiBody;
         }
@@ -3870,10 +3870,10 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
     return cleanedText;
 }
 
-// Highlights message handlers
+// Highlights & Annotations message handlers
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'load_highlights') {
-        LuminaHighlightDB.get(request.url).then(highlights => {
+        LuminaAnnotationDB.get(request.url).then(highlights => {
             sendResponse({ success: true, highlights: highlights || [] });
         }).catch(err => {
             console.error('[Lumina BG] load_highlights error:', err);
@@ -3883,10 +3883,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'save_highlight') {
-        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+        LuminaAnnotationDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
             list.push(request.highlight);
-            await LuminaHighlightDB.put(request.url, list);
+            await LuminaAnnotationDB.put(request.url, list);
             sendResponse({ success: true });
         }).catch(err => {
             console.error('[Lumina BG] save_highlight error:', err);
@@ -3896,14 +3896,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'undo_last_highlight') {
-        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+        LuminaAnnotationDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
             if (list.length === 0) {
                 sendResponse({ success: true, lastHighlight: null });
                 return;
             }
             const lastHighlight = list.pop();
-            await LuminaHighlightDB.put(request.url, list);
+            await LuminaAnnotationDB.put(request.url, list);
             sendResponse({ success: true, lastHighlight });
         }).catch(err => {
             console.error('[Lumina BG] undo_last_highlight error:', err);
@@ -3913,12 +3913,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'remove_highlights') {
-        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+        LuminaAnnotationDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
             const idsStr = request.ids.map(id => id.toString());
             // In the flat array, item[0] is the highlight ID
             const filtered = list.filter(h => !idsStr.includes(h[0].toString()));
-            await LuminaHighlightDB.put(request.url, filtered);
+            await LuminaAnnotationDB.put(request.url, filtered);
             sendResponse({ success: true });
         }).catch(err => {
             console.error('[Lumina BG] remove_highlights error:', err);
@@ -3928,17 +3928,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'update_highlight_color') {
-        LuminaHighlightDB.get(request.url).then(async (highlights) => {
+        LuminaAnnotationDB.get(request.url).then(async (highlights) => {
             const list = highlights || [];
             // In the flat array, item[0] is ID, item[1] is color
             const highlight = list.find(h => h[0].toString() === request.id.toString());
             if (highlight) {
                 highlight[1] = request.color;
-                await LuminaHighlightDB.put(request.url, list);
+                await LuminaAnnotationDB.put(request.url, list);
             }
             sendResponse({ success: true });
         }).catch(err => {
             console.error('[Lumina BG] update_highlight_color error:', err);
+            sendResponse({ success: false, error: err.message });
+        });
+        return true;
+    }
+
+    if (request.action === 'update_highlight_comment') {
+        LuminaAnnotationDB.get(request.url).then(async (highlights) => {
+            const list = highlights || [];
+            // In the flat array, item[0] is ID, item[8] is comment
+            const highlight = list.find(h => h[0].toString() === request.id.toString());
+            if (highlight) {
+                highlight[8] = request.comment;
+                await LuminaAnnotationDB.put(request.url, list);
+            }
+            sendResponse({ success: true });
+        }).catch(err => {
+            console.error('[Lumina BG] update_highlight_comment error:', err);
             sendResponse({ success: false, error: err.message });
         });
         return true;

@@ -1,4 +1,4 @@
-
+﻿
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -147,20 +147,21 @@ window.LuminaAnnotation = {
         if (!h || !h.rangeData) return null;
         return [
             h.id,
-            h.color,
+            h.color || '',
             h.rangeData.startPath.join('/'),
             h.rangeData.startOffset,
             h.rangeData.endPath.join('/'),
             h.rangeData.endOffset,
             h.rangeData.text || '',
-            h.timestamp || Date.now()
+            h.timestamp || Date.now(),
+            h.comment || ''
         ];
     },
     deserializeHighlight(arr) {
         if (!Array.isArray(arr) || arr.length < 6) return null;
         return {
             id: arr[0],
-            color: arr[1],
+            color: arr[1] || null,
             rangeData: {
                 startPath: arr[2].split('/').map(Number),
                 startOffset: arr[3],
@@ -168,7 +169,8 @@ window.LuminaAnnotation = {
                 endOffset: arr[5],
                 text: arr[6] || ''
             },
-            timestamp: arr[7] || Date.now()
+            timestamp: arr[7] || Date.now(),
+            comment: arr[8] || ''
         };
     },
     isLuminaAndNotAnswer(range) {
@@ -184,13 +186,13 @@ window.LuminaAnnotation = {
         }
         return false;
     },
-    highlight(range, color = '#FFFB78', id = null) {
+    highlight(range, color = '#FFFB78', id = null, comment = '') {
         if (!range || range.collapsed) return null;
         if (this.isLuminaAndNotAnswer(range)) return null;
         const highlightId = id || Date.now().toString();
         const rangeToHighlight = range.cloneRange();
-        this.saveHighlight(rangeToHighlight, color, highlightId);
-        this.applyHighlight(rangeToHighlight, color, highlightId);
+        this.saveHighlight(rangeToHighlight, color, highlightId, comment);
+        this.applyHighlight(rangeToHighlight, color, highlightId, comment);
         return highlightId;
     },
     injectHighlightCSS(color) {
@@ -199,35 +201,58 @@ window.LuminaAnnotation = {
             this.styleElement.id = 'lumina-highlight-styles';
             (document.head || document.documentElement).appendChild(this.styleElement);
         }
-        const cleanColor = color.toLowerCase().replace('#', '');
-        const styleRule = `::highlight(lumina-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }\n`;
-        if (!this.styleElement.textContent.includes(`lumina-hl-${cleanColor}`)) {
-            this.styleElement.textContent += styleRule;
+        if (color) {
+            const cleanColor = color.toLowerCase().replace('#', '');
+            const styleRule = `::highlight(lumina-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }\n`;
+            if (!this.styleElement.textContent.includes(`lumina-hl-${cleanColor}`)) {
+                this.styleElement.textContent += styleRule;
+            }
+        }
+        const commentRule = `::highlight(lumina-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }\n`;
+        if (!this.styleElement.textContent.includes('lumina-comment-underline')) {
+            this.styleElement.textContent += commentRule;
         }
     },
-    applyHighlight(range, color, highlightId = null) {
+    applyHighlight(range, color, highlightId = null, comment = '') {
         if (!range || range.collapsed || !window.Highlight || !CSS.highlights) return;
         if (this.isLuminaAndNotAnswer(range)) return;
-        const normalizedColor = color.toLowerCase();
-        let highlightObj = this.highlightObjects.get(normalizedColor);
-        if (!highlightObj) {
-            highlightObj = new Highlight();
-            this.highlightObjects.set(normalizedColor, highlightObj);
-            const cleanColor = normalizedColor.replace('#', '');
-            CSS.highlights.set(`lumina-hl-${cleanColor}`, highlightObj);
-            this.injectHighlightCSS(normalizedColor);
+        this.injectHighlightCSS(color);
+        if (color) {
+            const normalizedColor = color.toLowerCase();
+            let highlightObj = this.highlightObjects.get(normalizedColor);
+            if (!highlightObj) {
+                highlightObj = new Highlight();
+                this.highlightObjects.set(normalizedColor, highlightObj);
+                const cleanColor = normalizedColor.replace('#', '');
+                CSS.highlights.set(`lumina-hl-${cleanColor}`, highlightObj);
+            }
+            highlightObj.add(range);
         }
-        highlightObj.add(range);
+        if (comment && comment.trim()) {
+            let commentObj = this.highlightObjects.get('comment-underline');
+            if (!commentObj) {
+                commentObj = new Highlight();
+                this.highlightObjects.set('comment-underline', commentObj);
+                CSS.highlights.set('lumina-comment-underline', commentObj);
+            }
+            commentObj.add(range);
+        }
         if (highlightId) {
-            this.highlightsMap.set(highlightId, { range, color: normalizedColor });
+            const existing = this.highlightsMap.get(highlightId) || {};
+            this.highlightsMap.set(highlightId, {
+                range,
+                color: color ? color.toLowerCase() : existing.color,
+                comment: comment !== undefined ? comment : (existing.comment || '')
+            });
         }
     },
     getHighlightAtCoords(x, y) {
         for (const [id, data] of this.highlightsMap.entries()) {
+            if (!data.range) continue;
             const rects = data.range.getClientRects();
             for (const rect of rects) {
                 if (x >= rect.left - 2 && x <= rect.right + 2 && y >= rect.top - 2 && y <= rect.bottom + 2) {
-                    return { id, color: data.color, range: data.range };
+                    return { id, color: data.color, comment: data.comment, range: data.range };
                 }
             }
         }
@@ -284,12 +309,13 @@ window.LuminaAnnotation = {
             this.retryObserver = null;
         }
     },
-    saveHighlight(range, color, id) {
+    saveHighlight(range, color, id, comment = '') {
         if (this.isLuminaAndNotAnswer(range)) return;
         const storageKey = this.getStorageKey(range);
         const hData = {
             id,
             color,
+            comment,
             rangeData: this.serializeRange(range),
             timestamp: Date.now()
         };
@@ -299,6 +325,15 @@ window.LuminaAnnotation = {
             url: storageKey,
             highlight: flatHighlight
         });
+    },
+    addComment(range, commentText, color = null, id = null) {
+        if (!range || range.collapsed) return null;
+        if (this.isLuminaAndNotAnswer(range)) return null;
+        const highlightId = id || Date.now().toString();
+        const rangeToHighlight = range.cloneRange();
+        this.saveHighlight(rangeToHighlight, color, highlightId, commentText);
+        this.applyHighlight(rangeToHighlight, color, highlightId, commentText);
+        return highlightId;
     },
     setupRetryObserver() {
         if (this.retryObserver) return;
@@ -312,7 +347,7 @@ window.LuminaAnnotation = {
             this.unrestoredHighlights.forEach(h => {
                 const range = this.deserializeRange(h.rangeData);
                 if (range) {
-                    this.applyHighlight(range, h.color, h.id);
+                    this.applyHighlight(range, h.color, h.id, h.comment);
                 } else {
                     stillUnrestored.push(h);
                 }
@@ -356,7 +391,7 @@ window.LuminaAnnotation = {
             highlights.forEach(h => {
                 const range = this.deserializeRange(h.rangeData);
                 if (range) {
-                    this.applyHighlight(range, h.color, h.id);
+                    this.applyHighlight(range, h.color, h.id, h.comment);
                 } else {
                     if (!this.unrestoredHighlights.some(item => item.id === h.id)) {
                         this.unrestoredHighlights.push(h);
@@ -373,26 +408,30 @@ window.LuminaAnnotation = {
         const orphanedIds = [];
         for (const [id, data] of this.highlightsMap.entries()) {
             if (data.range) {
-                if (!document.body.contains(data.range.startContainer) || !document.body.contains(data.range.endContainer)) {
+                const sc = data.range.startContainer;
+                const ec = data.range.endContainer;
+                if (!sc || !ec || !sc.isConnected || !ec.isConnected || (document.body && (!document.body.contains(sc) || !document.body.contains(ec)))) {
                     orphanedIds.push(id);
                 }
             }
         }
         if (orphanedIds.length > 0) {
-            console.log('[Lumina Annotation] Removing orphaned highlights from storage:', orphanedIds);
             this.removeHighlightsByIds(orphanedIds);
         }
     },
     setupOrphanedObserver() {
-        if (typeof window === 'undefined' || !window.location.href.includes('lumina.html')) return;
+        if (typeof window === 'undefined') return;
         if (this.orphanedObserver) return;
         this.orphanedObserver = new MutationObserver(() => {
             this.checkOrphanedHighlights();
         });
-        this.orphanedObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        const targetNode = document.body || document.documentElement;
+        if (targetNode) {
+            this.orphanedObserver.observe(targetNode, {
+                childList: true,
+                subtree: true
+            });
+        }
     },
     undoLastHighlight() {
         const storageKey = this.getStorageKey();
@@ -428,9 +467,13 @@ window.LuminaAnnotation = {
         ids.forEach(id => {
             const data = this.highlightsMap.get(id);
             if (data) {
-                const highlightObj = this.highlightObjects.get(data.color);
-                if (highlightObj) {
-                    highlightObj.delete(data.range);
+                if (data.color) {
+                    const highlightObj = this.highlightObjects.get(data.color);
+                    if (highlightObj) highlightObj.delete(data.range);
+                }
+                if (data.comment) {
+                    const commentObj = this.highlightObjects.get('comment-underline');
+                    if (commentObj) commentObj.delete(data.range);
                 }
                 this.highlightsMap.delete(id);
             }
@@ -453,9 +496,9 @@ window.LuminaAnnotation = {
         if (data) {
             const oldColor = data.color;
             const newColorNormalized = newColor.toLowerCase();
-            const oldHighlightObj = this.highlightObjects.get(oldColor);
-            if (oldHighlightObj) {
-                oldHighlightObj.delete(data.range);
+            if (oldColor) {
+                const oldHighlightObj = this.highlightObjects.get(oldColor);
+                if (oldHighlightObj) oldHighlightObj.delete(data.range);
             }
             let newHighlightObj = this.highlightObjects.get(newColorNormalized);
             if (!newHighlightObj) {
@@ -467,6 +510,33 @@ window.LuminaAnnotation = {
             }
             newHighlightObj.add(data.range);
             data.color = newColorNormalized;
+        }
+    },
+    updateHighlightComment(id, newComment) {
+        if (!id) return;
+        const data = this.highlightsMap.get(id);
+        const storageKey = this.getStorageKey(data ? data.range : null);
+        chrome.runtime.sendMessage({
+            action: 'update_highlight_comment',
+            url: storageKey,
+            id: id,
+            comment: newComment || ''
+        });
+        if (data) {
+            const commentObj = this.highlightObjects.get('comment-underline');
+            if (newComment && newComment.trim()) {
+                if (commentObj) commentObj.add(data.range);
+                else {
+                    const newCommentObj = new Highlight();
+                    this.highlightObjects.set('comment-underline', newCommentObj);
+                    CSS.highlights.set('lumina-comment-underline', newCommentObj);
+                    newCommentObj.add(data.range);
+                    this.injectHighlightCSS();
+                }
+            } else {
+                if (commentObj) commentObj.delete(data.range);
+            }
+            data.comment = newComment || '';
         }
     }
 };
@@ -628,21 +698,21 @@ window.LuminaSelection = {
         const dictIconSrc = (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function')
             ? chrome.runtime.getURL('assets/icons/favicon.ico')
             : 'assets/icons/favicon.ico';
-        const luminaLogoSrc = (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function')
-            ? chrome.runtime.getURL('assets/icons/icon32.png')
-            : 'assets/icons/icon32.png';
         let html = '';
         if (this.annotationMode) {
             html += `
-                <div class="lumina-color-swatch lumina-clear-highlight" title="Clear Highlight" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                <div class="lumina-color-swatch lumina-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <div class="lumina-action-item lumina-action-comment" title="Edit/Add Comment">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
             this.ANNOTATION_COLORS.forEach(color => {
                 const isActive = color.toLowerCase() === (this.currentHighlightColor || '').toLowerCase();
                 html += `
                     <div class="lumina-action-item lumina-action-highlight-btn ${isActive ? 'active' : ''}" data-color="${color}" title="Change Color">
-                        <div class="lumina-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? '2px solid var(--lumina-ui-primary, #1a73e8)' : '1px solid rgba(0,0,0,0.15)'};"></div>
+                        <div class="lumina-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? '2px solid var(--lumina-ui-primary, #6366f1)' : '1px solid rgba(0,0,0,0.15)'};"></div>
                     </div>
                 `;
             });
@@ -656,11 +726,11 @@ window.LuminaSelection = {
                 `;
             }
             html += `
-                <div class="lumina-action-item lumina-action-ask" title="Ask Lumina">
-                    <img class="lumina-action-logo" src="${luminaLogoSrc}" alt="" aria-hidden="true" style="width: 16px; height: 16px; display: block;" />
-                </div>
                 <div class="lumina-action-item lumina-action-dict" title="Dictionary">
                     <img class="lumina-dict-logo" src="${dictIconSrc}" alt="" aria-hidden="true" style="width: 16px; height: 16px; display: block;" />
+                </div>
+                <div class="lumina-action-item lumina-action-comment" title="Add Comment">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block; opacity: 0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
             html += `
@@ -709,17 +779,32 @@ window.LuminaSelection = {
         this.inputPopup.style.cssText = 'pointer-events: auto; display: none; visibility: hidden;';
         this.inputPopup.innerHTML = `
             <div class="lumina-ask-input-wrapper">
-                <textarea class="lumina-ask-input-field" placeholder="Ask anything..."></textarea>
-                <div class="lumina-tooltip"></div>
+                <textarea class="lumina-ask-input-field" placeholder="Add a comment..."></textarea>
             </div>
         `;
         this.inputField = this.inputPopup.querySelector('.lumina-ask-input-field');
-        this.btn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); });
+
+        // Hover tooltip for comments
+        this.hoverTooltip = document.createElement('div');
+        this.hoverTooltip.id = 'lumina-comment-hover-tooltip';
+        this.hoverTooltip.style.cssText = 'pointer-events: auto; display: none; visibility: hidden; position: fixed; z-index: 2147483647;';
+        this.shadowRoot.appendChild(this.hoverTooltip);
+
+        const markInteracting = () => {
+            this.isInteractingWithActionBar = true;
+            if (this._interactingTimer) clearTimeout(this._interactingTimer);
+            this._interactingTimer = setTimeout(() => {
+                this.isInteractingWithActionBar = false;
+            }, 400);
+        };
+
+        this.btn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); markInteracting(); });
+        this.btn.addEventListener('mouseup', (e) => { e.preventDefault(); e.stopPropagation(); markInteracting(); });
         this.btn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
+            markInteracting();
             const dictBtn = e.target.closest('.lumina-action-dict');
-            const translateBtn = e.target.closest('.lumina-action-translate');
-            const askBtn = e.target.closest('.lumina-action-ask');
+            const commentBtn = e.target.closest('.lumina-action-comment');
             const expandBtn = e.target.closest('.lumina-action-expand-colors');
             const highlightBtn = e.target.closest('.lumina-action-highlight-btn');
             const clearHighlightBtn = e.target.closest('.lumina-clear-highlight');
@@ -766,26 +851,36 @@ window.LuminaSelection = {
                 const selection = window.getSelection();
                 if (selection) selection.removeAllRanges();
                 this.hide();
-            } else if (translateBtn) {
-                if (this.onSubmit) this.onSubmit(`Translate: ${this.text}`, this.text, false, this.sourceEntry, this.range, true);
-                const selection = window.getSelection();
-                if (selection) selection.removeAllRanges();
-                this.hide();
-            } else {
-                this.showInput();
+                return;
+            }
+            if (commentBtn) {
+                this.showCommentInput();
+                return;
             }
         });
+
+        const handleSaveComment = () => {
+            const commentText = this.inputField.value.trim();
+            if (commentText) {
+                if (this.annotationMode && this.currentAnnotationId) {
+                    if (window.LuminaAnnotation) {
+                        window.LuminaAnnotation.updateHighlightComment(this.currentAnnotationId, commentText);
+                    }
+                } else {
+                    if (window.LuminaAnnotation && this.range) {
+                        window.LuminaAnnotation.addComment(this.range, commentText, null);
+                    }
+                    const selection = window.getSelection();
+                    if (selection) selection.removeAllRanges();
+                }
+            }
+            this.hide();
+        };
+
         this.inputField.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                const query = this.inputField.value.trim();
-                if (query || this.text) {
-                    const fullQuestion = query ? `"${this.text}" ${query}` : `"${this.text}"`;
-                    if (this.onSubmit) this.onSubmit(fullQuestion, fullQuestion, false, this.sourceEntry, this.range);
-                    const selection = window.getSelection();
-                    if (selection) selection.removeAllRanges();
-                    this.hide();
-                }
+                handleSaveComment();
             } else if (e.key === 'Escape') {
                 this.hide();
             }
@@ -793,11 +888,74 @@ window.LuminaSelection = {
         this.inputPopup.addEventListener('mousedown', (e) => e.stopPropagation());
         this.shadowRoot.appendChild(this.btn);
         this.shadowRoot.appendChild(this.inputPopup);
+
+        // Track hover over commented text
+        document.addEventListener('mousemove', (e) => {
+            if (this.inputPopup && this.inputPopup.style.display === 'flex') return;
+            if (this.btn && this.btn.style.display === 'flex') return;
+
+            const hData = window.LuminaAnnotation ? window.LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY) : null;
+            if (hData && hData.comment) {
+                if (this.currentHoveredAnnotationId === hData.id && this.hoverTooltip && this.hoverTooltip.style.display === 'block') {
+                    return; // Already showing this comment, prevent flickering
+                }
+                this.showHoverCommentTooltip(e.clientX, e.clientY, hData);
+            } else {
+                if (this.hoverTooltip && this.hoverTooltip.style.display === 'block') {
+                    this.hideHoverTooltip();
+                }
+            }
+        }, { passive: true });
+
         window.addEventListener('scroll', () => {
             if (this.btn && this.btn.style.display === 'flex') {
                 this.updatePosition(this.btn);
             }
         }, { passive: true });
+    },
+    hideHoverTooltip() {
+        this.currentHoveredAnnotationId = null;
+        if (this.hoverTooltip) {
+            this.hoverTooltip.style.display = 'none';
+            this.hoverTooltip.style.visibility = 'hidden';
+        }
+    },
+    showHoverCommentTooltip(x, y, hData) {
+        if (!this.hoverTooltip || !hData || !hData.comment) return;
+        this.currentHoveredAnnotationId = hData.id;
+        this.hoverTooltip.innerHTML = `
+            <div class="lumina-comment-tooltip-card">
+                <span class="lumina-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
+            </div>
+        `;
+
+        this.hoverTooltip.style.display = 'block';
+        this.hoverTooltip.style.visibility = 'visible';
+
+        const cardHeight = this.hoverTooltip.offsetHeight || 30;
+        const cardWidth = this.hoverTooltip.offsetWidth || 160;
+
+        // Anchor at the START (top-left) of the selected text range
+        let startRect = null;
+        if (hData.range) {
+            const rects = hData.range.getClientRects();
+            startRect = rects.length > 0 ? rects[0] : hData.range.getBoundingClientRect();
+        }
+
+        let left = startRect ? startRect.left : x;
+        let top = startRect ? startRect.top - cardHeight - 2 : y - cardHeight - 2;
+
+        // Fallback below start line if top is offscreen
+        if (top < 10 && startRect) {
+            top = startRect.bottom + 2;
+        }
+
+        if (left + cardWidth > window.innerWidth - 10) left = Math.max(10, window.innerWidth - cardWidth - 10);
+        if (left < 10) left = 10;
+        if (top < 10) top = 10;
+
+        this.hoverTooltip.style.left = left + 'px';
+        this.hoverTooltip.style.top = top + 'px';
     },
     cleanup() {
         this.setScrollLock(false);
@@ -892,15 +1050,20 @@ window.LuminaSelection = {
         this.updatePosition(this.btn);
         this._bindSelectionScrollTracking();
     },
-    showInput() {
+    showCommentInput() {
         if (!this.inputPopup || !this.btn) return;
         this.btn.style.display = 'none';
         this.btn.style.visibility = 'hidden';
         this.inputPopup.style.display = 'flex';
         this.inputPopup.style.visibility = 'visible';
         if (this.inputField) {
-            this.inputField.value = '';
-            this.inputField.setAttribute('placeholder', 'Ask anything...');
+            let existingComment = '';
+            if (this.annotationMode && this.currentAnnotationId && window.LuminaAnnotation) {
+                const data = window.LuminaAnnotation.highlightsMap.get(this.currentAnnotationId);
+                if (data) existingComment = data.comment || '';
+            }
+            this.inputField.value = existingComment;
+            this.inputField.setAttribute('placeholder', 'Add a comment...');
             setTimeout(() => {
                 this.inputField.focus();
             }, 10);
@@ -908,6 +1071,9 @@ window.LuminaSelection = {
         this.updatePosition(this.inputPopup);
         this._bindSelectionScrollTracking();
         this.setScrollLock(true);
+    },
+    escapeHtml(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     },
     showAnnotationMenu(targetElOrRange, id, currentColor) {
         if (!this.btn || !targetElOrRange) return;
@@ -933,20 +1099,7 @@ window.LuminaSelection = {
         if (!this.btn) return;
         this.annotationMode = false;
         this.currentAnnotationId = null;
-        const dictIconSrc = (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function')
-            ? chrome.runtime.getURL('assets/icons/favicon.ico')
-            : 'assets/icons/favicon.ico';
-        const luminaLogoSrc = (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function')
-            ? chrome.runtime.getURL('assets/icons/icon32.png')
-            : 'assets/icons/icon32.png';
-        this.btn.innerHTML = `
-            <div class="lumina-action-item lumina-action-dict" title="Dictionary">
-                <img class="lumina-dict-logo" src="${dictIconSrc}" alt="" aria-hidden="true" style="width: 16px; height: 16px; display: block;" />
-            </div>
-            <div class="lumina-action-item lumina-action-ask" title="Ask Lumina">
-                <img class="lumina-action-logo" src="${luminaLogoSrc}" alt="" aria-hidden="true" style="width: 16px; height: 16px; display: block;" />
-            </div>
-        `;
+        this.renderDefaultActionBar();
     },
     hide() {
         if (this.btn) {
@@ -5130,25 +5283,21 @@ const LuminaModelHelper = {
     getThinkingOptions(currentModel, currentProviderId, providers = []) {
         const provider = providers.find(p => p.id === currentProviderId);
         const isGemini = (provider ? (provider.type === 'gemini') : false) ||
-            (currentModel && currentModel.toLowerCase().includes('gemini')) ||
+            (currentModel && currentModel.toLowerCase().includes('gemini') && !currentModel.toLowerCase().includes('gemma')) ||
             (currentProviderId && currentProviderId.toLowerCase().includes('gemini'));
         const isGemma4 = currentModel ? /gemma-4/i.test(currentModel) : false;
-        const isGemma = currentModel ? (/gemma/i.test(currentModel) && !isGemma4) : false;
-        if (isGemma4) {
-            return [
-                { value: 'minimal', title: 'Minimal', desc: 'Minimal thinking, very fast' },
-                { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
-            ];
-        } else if (isGemma) {
-            return [
-                { value: 'none', title: 'None', desc: 'Thinking is not supported' }
-            ];
-        } else if (isGemini) {
+        const isGemmaOld = currentModel ? (/gemma/i.test(currentModel) && !isGemma4) : false;
+
+        if (isGemini) {
             return [
                 { value: 'minimal', title: 'Minimal', desc: 'Minimal thinking, very fast' },
                 { value: 'low', title: 'Low', desc: 'Short thinking, fast response' },
                 { value: 'medium', title: 'Standard', desc: 'Best for most questions' },
                 { value: 'high', title: 'Extended', desc: 'Complex problem solving' }
+            ];
+        } else if (isGemmaOld) {
+            return [
+                { value: 'none', title: 'None', desc: 'Thinking is not supported' }
             ];
         } else {
             return [
@@ -5159,11 +5308,12 @@ const LuminaModelHelper = {
             ];
         }
     },
-    getDefaultThinking(modelName, providerId) {
-        const isGemini = (providerId && providerId.toLowerCase().includes('gemini')) ||
-            (modelName && modelName.toLowerCase().includes('gemini'));
-        const isGemma4 = /gemma-4/i.test(modelName);
-        return isGemma4 ? 'minimal' : (isGemini ? 'minimal' : 'none');
+    getDefaultThinking(modelName, providerId, providers = []) {
+        const provider = providers && providers.find(p => p.id === providerId);
+        const isGemini = (provider ? (provider.type === 'gemini') : false) ||
+            (providerId && providerId.toLowerCase().includes('gemini')) ||
+            (modelName && modelName.toLowerCase().includes('gemini') && !modelName.toLowerCase().includes('gemma'));
+        return isGemini ? 'minimal' : 'none';
     }
 };
 window.LuminaModelHelper = LuminaModelHelper;
@@ -10869,10 +11019,10 @@ class SyncManager {
             const remoteTimestamp = remoteBackup ? new Date(remoteBackup.timestamp).getTime() : 0;
             const localData = await chrome.storage.local.get(null);
 
-            // Load highlights from IndexedDB
-            if (typeof LuminaHighlightDB !== 'undefined') {
+            // Load highlights/annotations from IndexedDB
+            if (typeof LuminaAnnotationDB !== 'undefined') {
                 try {
-                    const highlights = await LuminaHighlightDB.getAll();
+                    const highlights = await LuminaAnnotationDB.getAll();
                     for (const [key, val] of Object.entries(highlights)) {
                         localData[key] = val;
                     }
@@ -11028,11 +11178,11 @@ class SyncManager {
             const now = Date.now();
             mergedData.last_sync_time = now;
             mergedData.last_sync_hash = newHash;
-            // Save highlights to IndexedDB
-            if (typeof LuminaHighlightDB !== 'undefined') {
+            // Save highlights/annotations to IndexedDB
+            if (typeof LuminaAnnotationDB !== 'undefined') {
                 for (const key of Object.keys(mergedData)) {
                     if (key.startsWith('highlights_')) {
-                        await LuminaHighlightDB.put(key, mergedData[key]).catch(err => {
+                        await LuminaAnnotationDB.put(key, mergedData[key]).catch(err => {
                             console.error('[Sync] Failed to save highlight to IndexedDB:', key, err);
                         });
                         delete mergedData[key];
@@ -11040,7 +11190,7 @@ class SyncManager {
                 }
                 for (const key of localKeysToRemove) {
                     if (key.startsWith('highlights_')) {
-                        await LuminaHighlightDB.delete(key).catch(err => {
+                        await LuminaAnnotationDB.delete(key).catch(err => {
                             console.error('[Sync] Failed to delete highlight from IndexedDB:', key, err);
                         });
                     }
@@ -11148,7 +11298,7 @@ if (typeof window !== 'undefined') {
 
 
 // --- BUNDLED FROM: lib/core/highlight_db.js ---
-const LuminaHighlightDB = {
+const LuminaAnnotationDB = {
     DB_NAME: 'LuminaHighlightDB',
     DB_VERSION: 1,
     STORE_NAME: 'highlights',
@@ -11233,7 +11383,7 @@ const LuminaHighlightDB = {
 
 // Export to self for background environment dynamic import
 if (typeof self !== 'undefined') {
-    self.LuminaHighlightDB = LuminaHighlightDB;
+    self.LuminaAnnotationDB = LuminaAnnotationDB;
 }
 
 
@@ -11418,9 +11568,9 @@ if (typeof globalThis !== 'undefined') {
                     
                     if (flatHighlights.length > 0) {
                         try {
-                            const existing = await LuminaHighlightDB.get(key);
+                            const existing = await LuminaAnnotationDB.get(key);
                             if (!existing || existing.length === 0) {
-                                await LuminaHighlightDB.put(key, flatHighlights);
+                                await LuminaAnnotationDB.put(key, flatHighlights);
                                 console.log(`[Lumina Migration] Migrated highlights to IndexedDB for key: ${key}`);
                             }
                         } catch (dbErr) {
@@ -11511,7 +11661,7 @@ if (typeof globalThis !== 'undefined') {
                     const flatHighlights = legacyHighlights.map(serializeHighlight).filter(Boolean);
                     if (flatHighlights.length > 0) {
                         try {
-                            await LuminaHighlightDB.put(key, flatHighlights);
+                            await LuminaAnnotationDB.put(key, flatHighlights);
                             console.log(`[Lumina Migration] Successfully migrated highlights to IndexedDB for key: ${key}`);
                         } catch (dbErr) {
                             console.error(`[Lumina Migration] Failed to save highlights for key: ${key}`, dbErr);
@@ -18456,8 +18606,9 @@ function initSpotlightAskSelection() {
         });
     }
     document.addEventListener('mouseup', (e) => {
+        if (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
         const path = e.composedPath();
-        const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup');
+        const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup' || el.id === 'lumina-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'lumina-shadow-host'));
         if (isInsideLumina) return;
         setTimeout(() => {
             const targetEl = (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))
@@ -18566,6 +18717,10 @@ function initSpotlightAskSelection() {
         }, 10);
     });
     document.addEventListener('click', (e) => {
+        const path = e.composedPath();
+        const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup' || el.id === 'lumina-shadow-host' || el.id === 'lumina-comment-hover-tooltip' || (el.tagName && el.tagName.toLowerCase() === 'lumina-shadow-host'));
+        if (isInsideLumina || (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar)) return;
+
         if (window.LuminaAnnotation) {
             const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
             if (hData) {

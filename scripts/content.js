@@ -229,8 +229,9 @@
     }, { passive: true });
     window.addEventListener('mouseup', (e) => {
         if (isExtensionDisabled) return;
+        if (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
         const path = e.composedPath();
-        const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host');
+        const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'lumina-shadow-host'));
         if (isInsideShadow) return;
         if (askSelectionPopupEnabled) {
             const sel = window.getSelection();
@@ -2014,6 +2015,10 @@
     }
     document.addEventListener('click', (e) => {
         if (isExtensionDisabled) return;
+        const path = e.composedPath();
+        const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup' || el.id === 'lumina-shadow-host' || el.id === 'lumina-comment-hover-tooltip' || (el.tagName && el.tagName.toLowerCase() === 'lumina-shadow-host'));
+        if (isInsideLumina || (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar)) return;
+
         if (window.LuminaAnnotation) {
             const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
             if (hData) {
