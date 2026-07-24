@@ -839,6 +839,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             generationConfig.temperature = temperature;
             generationConfig.topP = topP;
         }
+        const isThinkingLevelSupported = /gemini-[3-9]/i.test(model) || /gemma-4/i.test(model);
         if (params.disableThinking) {
             delete generationConfig.thinkingConfig;
         } else {
@@ -846,10 +847,10 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             if (level === 'none') {
                 level = 'minimal';
             }
-            if (isGemini3) {
+            if (isThinkingLevelSupported) {
                 generationConfig.thinkingConfig = {
                     includeThoughts: true,
-                    thinkingLevel: level
+                    thinkingLevel: level === 'high' ? 'high' : 'minimal'
                 };
             } else {
                 let budget = -1;
@@ -1247,7 +1248,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
     const providerId = config.providerId;
     const compositeKey = providerId ? `${providerId}:${model}` : model;
-    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[model] || {};
+    const modelParams = (providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!providerId ? (advancedParamsByModel[model] || {}) : {});
     const temperature = requestOptions.temperature ?? modelParams.temperature ?? 1.0;
     const topP = modelParams.topP ?? 1.0;
     const maxTokens = requestOptions.maxTokens ?? modelParams.maxTokens ?? null;
@@ -2099,7 +2100,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     const modelToUse = model || found.model || 'gemini-2.0-flash';
                     const advancedParamsByModel = data.advancedParamsByModel || {};
                     const compositeKey = providerId ? `${providerId}:${modelToUse}` : modelToUse;
-                    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelToUse] || {};
+                    const modelParams = (providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!providerId ? (advancedParamsByModel[modelToUse] || {}) : {});
                     const temperature = modelParams.temperature ?? 0.7;
                     const topP = modelParams.topP ?? 1.0;
                     const maxTokens = modelParams.maxTokens ?? null;
@@ -2126,14 +2127,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                 generationConfig.temperature = temperature;
                                 generationConfig.topP = topP;
                             }
+                            const isThinkingLevelSupported = /gemini-[3-9]/i.test(modelToUse) || /gemma-4/i.test(modelToUse);
                             let level = normalizedThinkingLevel || 'minimal';
                             if (level === 'none') {
                                 level = 'minimal';
                             }
-                            if (isGemini3) {
+                            if (isThinkingLevelSupported) {
                                 generationConfig.thinkingConfig = {
                                     includeThoughts: true,
-                                    thinkingLevel: level
+                                    thinkingLevel: level === 'high' ? 'high' : 'minimal'
                                 };
                             } else {
                                 let budget = -1;
@@ -3165,7 +3167,7 @@ async function getActiveModelForTranslation() {
     if (!config) return null;
     const advancedParamsByModel = data.advancedParamsByModel || {};
     const compositeKey = config.providerId ? `${config.providerId}:${config.model}` : config.model;
-    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[config.model] || {};
+    const modelParams = (config.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!config.providerId ? (advancedParamsByModel[config.model] || {}) : {});
     const currentModel = config.model;
     const isGemini = config.providerType === 'gemini' ||
         (currentModel && currentModel.toLowerCase().includes('gemini') && !currentModel.toLowerCase().includes('gemma'));
@@ -3216,8 +3218,8 @@ Example Output:
                 temperature: 0.3,
                 responseMimeType: 'application/json'
             };
-            const isGemini3 = /gemini-[3-9]/i.test(modelToUse);
-            if (isGemini3) {
+            const isThinkingLevelSupported = /gemini-[3-9]/i.test(modelToUse) || /gemma-4/i.test(modelToUse);
+            if (isThinkingLevelSupported) {
                 geminiConfig.thinkingConfig = {
                     includeThoughts: true,
                     thinkingLevel: 'minimal'

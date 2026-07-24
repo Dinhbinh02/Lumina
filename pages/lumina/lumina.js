@@ -3812,7 +3812,7 @@ function initSidebar() {
                                     const advParams = res.advancedParamsByModel || {};
                                     const modelObj = saved.selectedModel;
                                     const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
-                                    const modelParams = advParams[compositeKey] || advParams[modelObj.model] || {};
+                                    const modelParams = (modelObj.providerId && advParams[compositeKey]) ? advParams[compositeKey] : (!modelObj.providerId ? (advParams[modelObj.model] || {}) : {});
                                     const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                                     const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
                                     tab.thinkingLevel = newThinkingLevel;
@@ -5822,7 +5822,7 @@ function cycleActiveModel() {
             settings[sidKey].selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
             const advancedParamsByModel = res.advancedParamsByModel || {};
             const compositeKey = nextItem.providerId ? `${nextItem.providerId}:${nextItem.model}` : nextItem.model;
-            const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[nextItem.model] || {};
+            const modelParams = (nextItem.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!nextItem.providerId ? (advancedParamsByModel[nextItem.model] || {}) : {});
             const defaultThinking = window.LuminaModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
             const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
             tabsToUpdate.forEach(tab => {
@@ -6572,7 +6572,7 @@ function initTopbarModelSelector(pane = 'primary') {
                         settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
                         const advancedParamsByModel = res.advancedParamsByModel || {};
                         const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
-                        const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[item.model] || {};
+                        const modelParams = (item.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!item.providerId ? (advancedParamsByModel[item.model] || {}) : {});
                         const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
                         const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
                         tabsToUpdate.forEach(tab => {
@@ -6742,7 +6742,7 @@ function initTopbarModelSelector(pane = 'primary') {
                 if (modelObj) {
                     const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
                     const advancedParamsByModel = data.advancedParamsByModel || {};
-                    const modelParams = advancedParamsByModel[compositeKey] || advancedParamsByModel[modelObj.model] || {};
+                    const modelParams = (modelObj.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!modelObj.providerId ? (advancedParamsByModel[modelObj.model] || {}) : {});
                     const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                     activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
                 }
