@@ -785,6 +785,14 @@ async function processAttachmentsForGemini(attachments) {
     return { parts, unsupported };
 }
 
+function cleanThinkingBlocks(text) {
+    if (!text || typeof text !== 'string') return text || '';
+    return text
+        .replace(/<(think|thought|reasoning|details)>[\s\S]*?<\/(think|thought|reasoning|details)>/gi, '')
+        .replace(/^<(think|thought|reasoning|details)>[\s\S]*/gi, '')
+        .trim();
+}
+
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true, cachedContent = null } = params;
     const enableWebSearch = true;
@@ -794,6 +802,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         for (const msg of msgs) {
             const attachments = msg.files || msg.images;
             const role = (msg.role === 'model' || msg.role === 'assistant') ? 'model' : 'user';
+            const cleanText = cleanThinkingBlocks(msg.text || '');
             if (attachments && attachments.length > 0) {
                 const parts = [];
                 if (!cachedContent) {
@@ -803,11 +812,11 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
                         parts.push({ text: `[Note] Skipped unsupported attachments: ${processed.unsupported.map(i => i.name).join(', ')}` });
                     }
                 }
-                if (msg.text) parts.push({ text: msg.text });
+                if (cleanText) parts.push({ text: cleanText });
                 if (parts.length === 0) parts.push({ text: '' });
                 geminiContents.push({ role, parts });
             } else {
-                geminiContents.push({ role, parts: [{ text: msg.text || '' }] });
+                geminiContents.push({ role, parts: [{ text: cleanText }] });
             }
         }
         if (imageData && imageData.length > 0) {
@@ -926,9 +935,10 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     }
     for (const msg of msgs) {
         const attachments = msg.files || msg.images;
+        const cleanText = cleanThinkingBlocks(msg.text || '');
         if (attachments && attachments.length > 0) {
             const parts = [];
-            if (msg.text) parts.push({ type: "text", text: msg.text });
+            if (cleanText) parts.push({ type: "text", text: cleanText });
             const processed = await processAttachments(attachments);
             parts.push(...processed.parts);
             if (processed.unsupported.length > 0) {
@@ -936,7 +946,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             }
             openaiMessages.push({ role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user', content: parts });
         } else {
-            openaiMessages.push({ role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user', content: msg.text });
+            openaiMessages.push({ role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user', content: cleanText });
         }
     }
     if (imageData && imageData.length > 0) {

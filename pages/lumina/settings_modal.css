@@ -31,6 +31,8 @@
   align-items: center;
   justify-content: center;
   z-index: 20000;
+  animation: none !important;
+  transition: none !important;
 }
 
 [data-theme="dark"] .lumina-settings-overlay {
@@ -54,6 +56,8 @@
   position: relative;
   overflow: hidden;
   border: 1px solid var(--lumina-ui-border);
+  animation: none !important;
+  transition: none !important;
 }
 
 [data-theme="dark"] .lumina-settings-dialog {
@@ -1588,7 +1592,8 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  animation: lumina-settings-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: none !important;
+  transition: none !important;
 }
 
 #lumina-model-popup-overlay .lumina-provider-popup-dialog {
