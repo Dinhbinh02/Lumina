@@ -3965,6 +3965,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+strong .katex,
+b .katex,
+strong .katex *,
+b .katex * {
+  font-weight: bold !important;
+}
+
 .lumina-chat-answer .katex .text {
   font-family: var(--lumina-font-family) !important;
   font-weight: var(--lumina-weight-medium) !important;

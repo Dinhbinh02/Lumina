@@ -817,7 +817,7 @@ class LuminaSettingsModal {
         modelInput.style.cursor = 'not-allowed';
       } else {
         modelInput.style.opacity = '1';
-        modelInput.style.cursor = 'pointer';
+        modelInput.style.cursor = 'text';
       }
     }
     if (customNameInput) {

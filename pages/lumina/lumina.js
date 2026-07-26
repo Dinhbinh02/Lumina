@@ -6320,6 +6320,10 @@ async function renderDropdownMenu(pane = 'primary') {
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span class="item-text">Duplicate</span>
         </div>
+        <div class="dropdown-item action-item" id="dropdown-copy-chat-btn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span class="item-text">Copy Chat</span>
+        </div>
         <div class="dropdown-divider"></div>
         <div class="dropdown-item action-item action-item--danger" id="dropdown-delete-btn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -6424,6 +6428,62 @@ async function renderDropdownMenu(pane = 'primary') {
     dropdown.querySelector('#dropdown-duplicate-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         await ChatHistoryManager.duplicateChat(sessionId);
+        hide();
+    });
+    dropdown.querySelector('#dropdown-copy-chat-btn')?.addEventListener('click', async () => {
+        if (!sessionId) return;
+        let fullText = '';
+        const messages = typeof ChatHistoryManager !== 'undefined' ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
+        if (messages && messages.length > 0) {
+            let blocks = [];
+            let currentBlock = [];
+            messages.forEach(msg => {
+                const role = msg.type === 'question' ? 'User' : 'Model';
+                const text = msg.content || msg.text || '';
+                if (role === 'User') {
+                    if (currentBlock.length > 0) {
+                        blocks.push(currentBlock.join('\n\n'));
+                        currentBlock = [];
+                    }
+                    currentBlock.push(`User:\n${text}`);
+                } else {
+                    currentBlock.push(`Model:\n${text}`);
+                }
+            });
+            if (currentBlock.length > 0) {
+                blocks.push(currentBlock.join('\n\n'));
+            }
+            fullText = blocks.join('\n\n---\n\n');
+        } else {
+            const session = await LuminaChatDB.getSession(sessionId);
+            if (session && session.questions && session.questions.length > 0) {
+                fullText = session.questions.map(q => {
+                    let text = `User:\n${q.text || ''}`;
+                    if (q.answers) {
+                        const answerList = Array.isArray(q.answers) ? q.answers : Object.values(q.answers);
+                        const selectedAns = q.selectedVersionId 
+                            ? (q.answers[q.selectedVersionId] || answerList.find(a => a && a.text))
+                            : answerList.find(a => a && a.text);
+                        if (selectedAns && selectedAns.text) {
+                            text += `\n\nModel:\n${selectedAns.text}`;
+                        }
+                    }
+                    return text;
+                }).filter(Boolean).join('\n\n---\n\n');
+            }
+        }
+        if (!fullText) {
+            if (typeof LuminaToast !== 'undefined') LuminaToast.show('No chat content to copy.', 'info');
+            hide();
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(fullText);
+            if (typeof LuminaToast !== 'undefined') LuminaToast.show('Copied entire chat to clipboard!', 'success');
+        } catch (err) {
+            console.error('Failed to copy chat:', err);
+            if (typeof LuminaToast !== 'undefined') LuminaToast.show('Failed to copy chat.', 'error');
+        }
         hide();
     });
     dropdown.querySelector('#dropdown-delete-btn')?.addEventListener('click', async () => {

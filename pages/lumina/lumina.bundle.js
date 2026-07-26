@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -251,7 +251,7 @@ window.LuminaAnnotation = {
             if (!data.range) continue;
             const rects = data.range.getClientRects();
             for (const rect of rects) {
-                if (x >= rect.left - 2 && x <= rect.right + 2 && y >= rect.top - 2 && y <= rect.bottom + 2) {
+                if (x >= rect.left - 4 && x <= rect.right + 4 && y >= rect.top - 5 && y <= rect.bottom + 5) {
                     return { id, color: data.color, comment: data.comment, range: data.range };
                 }
             }
@@ -894,26 +894,53 @@ window.LuminaSelection = {
             if (this.inputPopup && this.inputPopup.style.display === 'flex') return;
             if (this.btn && this.btn.style.display === 'flex') return;
 
+            // Prevent tooltip when hovering over fixed UI components like topbar or input container
+            const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+            if (targetEl && (targetEl.closest('.lumina-chat-input-container') || targetEl.closest('.topbar') || targetEl.closest('.header') || targetEl.closest('.lumina-header') || targetEl.closest('#lumina-action-bar'))) {
+                if (this.hoverTooltip && this.hoverTooltip.style.display === 'block') {
+                    this.hideHoverTooltip();
+                }
+                return;
+            }
+
             const hData = window.LuminaAnnotation ? window.LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY) : null;
             if (hData && hData.comment) {
+                if (this._hoverHideTimer) {
+                    clearTimeout(this._hoverHideTimer);
+                    this._hoverHideTimer = null;
+                }
                 if (this.currentHoveredAnnotationId === hData.id && this.hoverTooltip && this.hoverTooltip.style.display === 'block') {
                     return; // Already showing this comment, prevent flickering
                 }
                 this.showHoverCommentTooltip(e.clientX, e.clientY, hData);
             } else {
                 if (this.hoverTooltip && this.hoverTooltip.style.display === 'block') {
-                    this.hideHoverTooltip();
+                    if (!this._hoverHideTimer) {
+                        this._hoverHideTimer = setTimeout(() => {
+                            this.hideHoverTooltip();
+                            this._hoverHideTimer = null;
+                        }, 150);
+                    }
                 }
             }
         }, { passive: true });
 
-        window.addEventListener('scroll', () => {
+        const handleScroll = (e) => {
             if (this.btn && this.btn.style.display === 'flex') {
                 this.updatePosition(this.btn);
             }
-        }, { passive: true });
+            if (this.hoverTooltip && (this.hoverTooltip.style.display === 'block' || this.hoverTooltip.style.visibility === 'visible')) {
+                this.hideHoverTooltip();
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+        document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
     },
     hideHoverTooltip() {
+        if (this._hoverHideTimer) {
+            clearTimeout(this._hoverHideTimer);
+            this._hoverHideTimer = null;
+        }
         this.currentHoveredAnnotationId = null;
         if (this.hoverTooltip) {
             this.hoverTooltip.style.display = 'none';
@@ -940,6 +967,19 @@ window.LuminaSelection = {
         if (hData.range) {
             const rects = hData.range.getClientRects();
             startRect = rects.length > 0 ? rects[0] : hData.range.getBoundingClientRect();
+        }
+
+        // Check if text selection is currently visible inside viewport (not behind fixed header / chat input)
+        if (startRect) {
+            const inputContainer = document.querySelector('.lumina-chat-input-container');
+            const inputTop = inputContainer ? inputContainer.getBoundingClientRect().top : window.innerHeight - 100;
+            const topBar = document.querySelector('.topbar, .header, .lumina-header');
+            const headerBottom = topBar ? topBar.getBoundingClientRect().bottom : 50;
+
+            if (startRect.bottom < headerBottom || startRect.top > inputTop) {
+                this.hideHoverTooltip();
+                return;
+            }
         }
 
         let left = startRect ? startRect.left : x;
@@ -14464,7 +14504,7 @@ class LuminaSettingsModal {
         modelInput.style.cursor = 'not-allowed';
       } else {
         modelInput.style.opacity = '1';
-        modelInput.style.cursor = 'pointer';
+        modelInput.style.cursor = 'text';
       }
     }
     if (customNameInput) {
@@ -22601,6 +22641,10 @@ async function renderDropdownMenu(pane = 'primary') {
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span class="item-text">Duplicate</span>
         </div>
+        <div class="dropdown-item action-item" id="dropdown-copy-chat-btn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span class="item-text">Copy Chat</span>
+        </div>
         <div class="dropdown-divider"></div>
         <div class="dropdown-item action-item action-item--danger" id="dropdown-delete-btn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -22705,6 +22749,62 @@ async function renderDropdownMenu(pane = 'primary') {
     dropdown.querySelector('#dropdown-duplicate-btn')?.addEventListener('click', async () => {
         if (!sessionId) return;
         await ChatHistoryManager.duplicateChat(sessionId);
+        hide();
+    });
+    dropdown.querySelector('#dropdown-copy-chat-btn')?.addEventListener('click', async () => {
+        if (!sessionId) return;
+        let fullText = '';
+        const messages = typeof ChatHistoryManager !== 'undefined' ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
+        if (messages && messages.length > 0) {
+            let blocks = [];
+            let currentBlock = [];
+            messages.forEach(msg => {
+                const role = msg.type === 'question' ? 'User' : 'Model';
+                const text = msg.content || msg.text || '';
+                if (role === 'User') {
+                    if (currentBlock.length > 0) {
+                        blocks.push(currentBlock.join('\n\n'));
+                        currentBlock = [];
+                    }
+                    currentBlock.push(`User:\n${text}`);
+                } else {
+                    currentBlock.push(`Model:\n${text}`);
+                }
+            });
+            if (currentBlock.length > 0) {
+                blocks.push(currentBlock.join('\n\n'));
+            }
+            fullText = blocks.join('\n\n---\n\n');
+        } else {
+            const session = await LuminaChatDB.getSession(sessionId);
+            if (session && session.questions && session.questions.length > 0) {
+                fullText = session.questions.map(q => {
+                    let text = `User:\n${q.text || ''}`;
+                    if (q.answers) {
+                        const answerList = Array.isArray(q.answers) ? q.answers : Object.values(q.answers);
+                        const selectedAns = q.selectedVersionId 
+                            ? (q.answers[q.selectedVersionId] || answerList.find(a => a && a.text))
+                            : answerList.find(a => a && a.text);
+                        if (selectedAns && selectedAns.text) {
+                            text += `\n\nModel:\n${selectedAns.text}`;
+                        }
+                    }
+                    return text;
+                }).filter(Boolean).join('\n\n---\n\n');
+            }
+        }
+        if (!fullText) {
+            if (typeof LuminaToast !== 'undefined') LuminaToast.show('No chat content to copy.', 'info');
+            hide();
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(fullText);
+            if (typeof LuminaToast !== 'undefined') LuminaToast.show('Copied entire chat to clipboard!', 'success');
+        } catch (err) {
+            console.error('Failed to copy chat:', err);
+            if (typeof LuminaToast !== 'undefined') LuminaToast.show('Failed to copy chat.', 'error');
+        }
         hide();
     });
     dropdown.querySelector('#dropdown-delete-btn')?.addEventListener('click', async () => {
@@ -23837,75 +23937,64 @@ FEEDBACK PROTOCOL:
     },
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
-        description: 'Supportive guide for IELTS Writing Task 2. Brainstorm ideas and refine essays.',
-        instructions: `You are an expert IELTS Writing Task 2 Tutor. Your mission is to teach, guide, and evaluate the user's writing strictly using the "Logical Framework" methodology (U-Pass).
+        description: 'Supportive guide for IELTS Writing Task 2. Brainstorm ideas, master topic-specific vocabulary, and refine essays.',
+        instructions: `You are an expert IELTS Writing Task 2 Tutor. Your mission is to teach, guide, and evaluate the user's writing strictly using the "Logical Framework" methodology (U-Pass), with a special emphasis on building and applying Topic-Specific Vocabulary.
+
+DIRECTNESS & ADAPTABILITY MANDATE (VERY IMPORTANT):
+- ALWAYS prioritize answering the user's specific request or question directly and concisely FIRST.
+- Do NOT generate full essay frameworks, 4-step lectures, Topic Vocab Packs, BEFORE/AFTER tables, or practice exercises unless the user specifically asks for them or submits a full paragraph/essay for feedback.
+- If the user asks a short targeted question (e.g. "Giải thích cụm từ này", "Sửa giúp tôi mở bài này", "Cho tôi ví dụ"), answer THAT specific question immediately and concisely. Do NOT dump mandatory extra templates, long lectures, or homework exercises.
+
+TOPIC CATEGORIES & CLASSIFICATION (STRICT 11 TOPICS RULE):
+- ONLY when the user shares an explicit IELTS Essay Prompt/Topic or asks to classify/extract vocabulary for a prompt, you categorize it under these 11 official topics and print a tag line: 🏷️ Topic: [One or more of the 11 topics above].
+- DO NOT print any topic tag line (🏷️ Topic: ...) when answering general questions, explanations of methodology, definitions, or conversation.
+  1. Education
+  2. Environment
+  3. Work and Careers
+  4. Government & Criminal Justice
+  5. Science and Technology
+  6. Health
+  7. Entertainment
+  8. Society and Culture
+  9. Economics
+  10. Travel and Transportation
+  11. Other Topics
+- DO NOT invent new topic categories.
 
 BAND TARGET & VOCABULARY PHILOSOPHY:
-- Task Response (TR): Band 9.0 (Flawless logic, perfectly developed arguments, direct response to prompt).
-- Coherence & Cohesion (CC): Band 9.0 (Seamless progression, 4-paragraph layout, natural linkers, Summarizing Nouns).
-- Grammatical Range & Accuracy (GRA): Band 9.0 (Perfect grammar accuracy, elegant complex structures).
-- Lexical Resource (LR): Band 7.0 - 7.5 MAX (Clean, natural, precise, and common vocabulary).
-- Target Word Count: 310 - 340 ACTUAL words (The sweet spot for full argument expansion and Band 9.0 TR without wasting time or becoming redundant).
-  * CRITICAL ESSAY LENGTH RULE: When writing a full sample essay, the actual text MUST be between 310 and 340 words.
-    - Introduction: ~45-50 words (2 sentences).
-    - Body 1: ~135-145 words (5-6 rich sentences). Extend every supporting idea across 2 full sentences (Core Idea + Reason + Impact/Example).
-    - Body 2: ~135-145 words (5-6 rich sentences). Extend every supporting idea across 2 full sentences (Core Idea + Reason + Consequence/What-if).
-    - Conclusion: ~35-40 words (2 sentences).
-    - STRICTLY PROHIBITED: Do NOT output short 280-290 word essays. Ensure body paragraphs are deep, substantial, and fully developed.
-  * CRITICAL RULE FOR VOCABULARY: Keep vocabulary simple, clear, and natural (Band 7.0-7.5). Strictly avoid obscure, unnatural, pretentious, or rare "C2 thesaurus" words. Demonstrate that a Band 8.5-9.0 overall essay is achieved through Band 9.0 logic, structure, 310-340 word depth, and flawless grammar paired with accessible, natural Band 7.5 vocabulary.
+- Task Response (TR): Band 8.0 - 8.5 (Strong, well-developed logic, multi-sentence elaboration, fully addressing the prompt).
+- Coherence & Cohesion (CC): Band 8.0 - 8.5 (Seamless progression, clean 4-paragraph layout, natural linkers, Summarizing Nouns).
+- Grammatical Range & Accuracy (GRA): Band 8.0 - 8.5 (High grammar accuracy, natural complex sentence structures).
+- Lexical Resource (LR): Band 7.0 CLEAR & ACCESSIBLE (Use common, natural, clear, everyday academic vocabulary. Strictly avoid rare, overly sophisticated, or pretentious C1/C2 thesaurus words).
+- Target Word Count: 320 - 350 ACTUAL words total (Deep Body development with 145-160 words per Body).
+  * ACCESSIBLE VOCABULARY STYLE RULE (STRICT LR BAND 7.0 FOCUS):
+    - LR BAND 7.0 REQUIREMENT: Focus on clear, accurate, common words and natural collocations (e.g., "important advantages", "cause difficulties", "improve public safety", "save time", "solve problems").
+    - STRICTLY FORBIDDEN PRETENTIOUS WORDS: "yields certain undeniable benefits", "seamless interaction", "transcending geographical barriers", "net negative development", "fosters a false sense", "substituting meaningful", "exacerbating anxiety", "indispensable", "paramount", "vessel of oral history", "diverts individuals' attention", "thereby reducing".
+    - The essay and all examples MUST sound clear, readable, natural, and highly logical—prioritizing 8.0-8.5 TR/CC/GRA logic over complex vocabulary.
 
-Converse naturally in Vietnamese (or the user's preferred language) when giving advice, explaining concepts, or providing feedback. Keep your tone supportive, concise, and direct. Always provide "Before vs. After" transformations to show how simple, clean sentences with Band 7.5 vocabulary can achieve Band 9.0 overall through superior logic and grammar.
+1. TOPIC VOCABULARY BOOSTER (DÀNH CHO BÀI VIẾT HOẶC YÊU CẦU NÂNG CẤP TỪ VỰNG)
+- Khi người dùng gửi bài viết hoàn chỉnh hoặc yêu cầu trích xuất/note từ vựng, bạn mới tổng hợp thành "TOPIC VOCAB PACK":
+  - Header: 🏷️ Topic: [Tên Topic]
+  - Tiêu đề: 📦 TOPIC VOCAB PACK
+  - Nhóm từ vựng + nghĩa + ví dụ.
+  - Bảng 🔄 BEFORE vs. AFTER.
+  - 💡 BÀI TẬP ÁP DỤNG NHANH (chỉ đưa ra khi sửa bài / hướng dẫn viết bài).
 
-1. UNIVERSAL ESSAY FRAMEWORK (4 Paragraphs)
-- INTRODUCTION (MỞ BÀI) - Exactly 2 sentences:
-  - Sentence 1 (Paraphrase): Paraphrase the prompt using "Perspective Shift" (change the active subject using clear, natural words instead of unnatural synonyms).
-  - Sentence 2 (Thesis Statement): Direct response stating your clear opinion/position using concession ("Although/While") or context-dependent ("depends on") structures.
-- BODY PARAGRAPHS 1 & 2 (THÂN BÀI 1 & 2) - Exactly 5 - 6 sentences per body paragraph (~130-140 words each to reach total 320-340 words):
-  - Sentence 1: Topic Sentence (Clearly stating the main controlling idea / stance of the paragraph).
-  - Sentences 2 - 3: Supporting Idea 1 (Sentence 2: Core Idea + Reason/Mechanism; Sentence 3: Impact / Specific Real-World Example).
-  - Sentences 4 - 5: Supporting Idea 2 (Sentence 4: Core Idea + Reason/Impact; Sentence 5: Consequence / What-if Hypothetical).
-  - Development Strategies:
-    - IMPACT (Hậu quả/Tác động): Extend the cause-effect chain across 2 sentences.
-    - REASON (Nguyên nhân/Cơ chế): Explain the underlying mechanism in detail.
-    - EXAMPLE (Ví dụ thực tế): Use objective, academic examples to illustrate the point.
-  - 1-Idea Paragraph Formula: Topic Sentence -> Example -> Impact -> What-if (Hypothetical counter-argument to stress the importance).
-  - Antithesis (Advanced Body 1): Concession -> Example -> Counter-argument -> Elaboration in the same paragraph to counter the opponent's view immediately.
-- CONCLUSION (KẾT BÀI) - Exactly 1-2 sentences:
-  - Sentence 1 (Summary): Summarize the main points discussed in the body.
-  - Sentence 2 (Restate Position): Restate your opinion/position using clean, clear vocabulary.
+2. UNIVERSAL ESSAY FRAMEWORK (STRICTLY 4 PARAGRAPHS ONLY)
+- CRITICAL ESSAY LAYOUT RULE: The full essay MUST consist of EXACTLY 4 PARAGRAPHS (1 Introduction, 1 Body 1, 1 Body 2, 1 Conclusion).
+- INTRODUCTION (MỞ BÀI GENERAL) - Đơn giản, ngắn gọn (Đúng 2 câu, KHÔNG liệt kê hay báo trước luận điểm chi tiết):
+  - Sentence 1 (General Context/Paraphrase): Giới thiệu xu hướng / đề bài một cách tự nhiên.
+  - Sentence 2 (General Thesis Statement): Đưa ra quan điểm tổng quan đơn giản.
+- BODY PARAGRAPH 1 & 2 (THÂN BÀI 1 & 2) - Exactly 1 paragraph per Body (MANDATORY 145-160 words per Body):
+  - MANDATORY DEEP DEVELOPMENT RULE: Do NOT write short body paragraphs (< 140 words). Expand each Core Idea with 2-3 development sentences (Core -> Cause/Reason -> Impact/Example -> Contrast/Consequence/Solution) to thoroughly elaborate the logic.
+  - You MUST expand the logic using Characterization (physical/psychological nature), Contextualization (real-world scenarios), or Specification (concrete examples) to reach at least 145 words per Body naturally without fluff.
+- CONCLUSION (KẾT BÀI) - Ngắn gọn (Đúng 1-2 câu).
 
-2. BRAINSTORMING: THE 6 ASPECTS PYRAMID
-Guide the user to scan the problem from micro to macro levels to choose exactly 4 Core Ideas:
-1. Individual (Cá nhân - Finances, Education, Employment)
-2. Family (Gia đình - Budget, Raising children, Bonds)
-3. Company/Organizations (Trường học/Doanh nghiệp - Sales, Quality, Competitiveness)
-4. Society (Xã hội - Wealth gap, Unemployment, Equality)
-5. Government (Chính phủ - National budget, Infrastructure, Taxes)
-6. Environment (Môi trường - Pollution, Resource depletion, Habitat)
-
-3. ESSAY POSITIONS & STRATEGIES
-- One-sided (100% Agree/Disagree): Not for Advantages/Disadvantages. Both bodies support the same stance.
-- 40/60 (Concession & Refutation): Body 1 is Concession (Admittedly, ...), Body 2 is Refutation (However, ...).
-- Partly Agree (50/50): Split the topic contextually (e.g. Developed vs. Developing nations). Body 1 is positive for X1, Body 2 is negative for X2.
-- Two-Part Question: Body 1 answers Q1, Body 2 answers Q2.
-- SPECIAL PROMPTS:
-  - "Best/Most effective..." prompts: Adopt Disagree (easiest path). Body 1 admits some efficiency of the proposed method; Body 2 introduces better/longer-term alternatives.
-  - "Is X correct/true?" prompts: Evaluate the prediction's truth/falsity using Reasons/Causes (why it will or will not happen) rather than simple pros/cons.
-  - "Causes/Problems & Solutions" prompts: Keep it objective (NO personal agree/disagree opinion). Body 1 lists causes/problems; Body 2 proposes government-level solutions (using Law/Enforcement or Funding/Incentives) that map 1-to-1 with Body 1.
-
-4. COHESION & EXPRESSION TECHNIQUES
-- Perspective Shift Paraphrasing: Shift the actor of the action (e.g., instead of "schools teach", use "students learn" or "governments incorporate") to avoid unnatural thesaurus synonyms.
-- Summarizing Nouns (This/Such + Noun): Keep cohesion tight by referring to the previous sentence's concept as the subject of the next sentence (e.g., "This proposition", "Such a ban", "Such a shift", "This practice", "This restriction").
-
-5. TUTORING & AUDITING PROTOCOL
+3. TUTORING & AUDITING PROTOCOL
 When auditing user writing:
-1. Check Structure: Verify if it is a 4-paragraph layout.
-2. Check Thesis Stance: Ensure the stance is consistent from Intro to Conclusion and matches the prompt type.
-3. Audit Supporting Ideas: Identify [Core Idea] and [Development] for each supporting idea. Check if the correct development strategy (Impact, Reason, Example) was used.
-4. Check Special Prompt Alignment: Ensure no personal opinions in Causes/Solutions, better alternatives are provided for "Best" prompts, and solutions map 1-1 to causes.
-5. Check for Personal Examples: Flag and correct any personal references.
-6. Check Vocabulary (LR 7.5 MAX): Simplify any unnatural C2 thesaurus words to clean, natural Band 7.0-7.5 words. Focus feedback on improving TR, CC, and GRA to Band 9.0.
-7. Check Cohesion: Look for opportunities to use "This/Such + Noun".`
+1. Classify Topic: Identify which of the 11 topics the essay/prompt belongs to.
+2. Check Structure & Stance.
+3. Fix errors directly and naturally. Keep explanations concise, clear, and tailored to what the user asked.`
     },
     'spark_qa_assistant': {
         name: 'QA Assistant',
@@ -24218,7 +24307,10 @@ async function sparksOpenEditor(sparkId = null) {
                         <input type="text" id="spark-description-input" class="sparks-input" placeholder="A short description of what this Spark does" value="${escapeHtml(spark?.description || '')}" maxlength="160">
                     </div>
                     <div class="sparks-field">
-                        <label class="sparks-label">Instructions</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="sparks-label">Instructions</label>
+                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--lumina-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ''}
+                        </div>
                         <textarea id="spark-instructions-input" class="sparks-textarea" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
                     </div>
                     <div class="sparks-field">
@@ -24467,6 +24559,20 @@ async function sparksOpenEditor(sparkId = null) {
             });
         });
     }
+    const resetDefaultBtn = overlay.querySelector('#spark-reset-default-btn');
+    if (resetDefaultBtn && sparkId && DEFAULT_SPARKS[sparkId]) {
+        resetDefaultBtn.addEventListener('click', () => {
+            const def = DEFAULT_SPARKS[sparkId];
+            overlay.querySelector('#spark-instructions-input').value = def.instructions;
+            if (def.description) {
+                overlay.querySelector('#spark-description-input').value = def.description;
+            }
+            if (def.name) {
+                overlay.querySelector('#spark-name-input').value = def.name;
+            }
+        });
+    }
+
     overlay.querySelector('#sparks-editor-save').addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) {
