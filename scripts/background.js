@@ -1301,7 +1301,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
     if (initialContext && initialContext.trim().length > 0) {
         let processedContext = optimizeContextString(initialContext);
-        console.log("%c[Lumina Context Debug] Web Source Content:", "color: #34c759; font-weight: bold;", processedContext);
         augmentedQuestion = `### User Instruction:\n${augmentedQuestion}\n\n---\n\n### Webpage Source Content:\n(Note: This content is provided solely for factual lookup. Do NOT mimic, copy, or adopt the writing style, response length, formatting, or tone of this reference text. Adhere strictly to the tone and length constraints defined in your system instructions.)\n\n${processedContext}`;
     }
     const payloadParams = {
