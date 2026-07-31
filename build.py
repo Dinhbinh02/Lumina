@@ -25,6 +25,7 @@ JS_FILES = [
     'lib/ui/history_panel.js',
     'lib/core/token_utils.js',
     'lib/core/memory.js',
+    'lib/core/gemini_live.js',
     'pages/lumina/settings_modal.js',
     'pages/lumina/search_modal.js',
     'pages/lumina/lumina.js',

@@ -10,8 +10,7 @@ var LUMINA_DEFAULTS = {
     disabledDomains: [],
     maxContextTokens: null,
     readWebpage: true,
-    reasoningMode: false,
-    enableWebSearch: true
+    reasoningMode: false
 };
 
 if (typeof self.LUMINA_CONSTANTS_INITIALIZED === 'undefined') {
@@ -2162,6 +2161,7 @@ const LuminaAttachmentDB = {
     DB_VERSION: 1,
     STORE_NAME: 'attachments',
     _db: null,
+
     init() {
         return new Promise((resolve, reject) => {
             if (this._db) return resolve(this._db);
@@ -2174,11 +2174,14 @@ const LuminaAttachmentDB = {
             };
             request.onsuccess = (e) => {
                 this._db = e.target.result;
+                this._db.onclose = () => { this._db = null; };
+                this._db.onversionchange = () => { if (this._db) { this._db.close(); this._db = null; } };
                 resolve(this._db);
             };
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     async put(key, blob) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -2189,6 +2192,7 @@ const LuminaAttachmentDB = {
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     async get(key) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -2199,6 +2203,7 @@ const LuminaAttachmentDB = {
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     async delete(key) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -2209,6 +2214,7 @@ const LuminaAttachmentDB = {
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     async clear() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -2219,6 +2225,7 @@ const LuminaAttachmentDB = {
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     async getAll(maxSize = 2 * 1024 * 1024) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -2233,16 +2240,12 @@ const LuminaAttachmentDB = {
                     const key = cursor.key;
                     const blob = cursor.value;
                     if (blob instanceof Blob) {
-                        if (blob.size > maxSize) {
-                            cursor.continue();
-                            return;
+                        if (blob.size <= maxSize) {
+                            const p = this.blobToDataURL(blob).then(dataUrl => {
+                                if (dataUrl) results[key] = dataUrl;
+                            });
+                            conversionPromises.push(p);
                         }
-                        const p = this.blobToDataURL(blob).then(dataUrl => {
-                            if (dataUrl) {
-                                results[key] = dataUrl;
-                            }
-                        });
-                        conversionPromises.push(p);
                     }
                     cursor.continue();
                 } else {
@@ -2254,6 +2257,7 @@ const LuminaAttachmentDB = {
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     async getAllMetadata() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -2281,17 +2285,21 @@ const LuminaAttachmentDB = {
             request.onerror = (e) => reject(e.target.error);
         });
     },
+
     dataURLtoBlob(dataUrl) {
+        if (!dataUrl || typeof dataUrl !== 'string') return null;
         try {
-            const parts = dataUrl.split(',');
-            if (parts.length < 2) return null;
-            const mimeMatch = parts[0].match(/:(.*?);/);
+            const commaIdx = dataUrl.indexOf(',');
+            if (commaIdx === -1) return null;
+            const header = dataUrl.substring(0, commaIdx);
+            const base64Data = dataUrl.substring(commaIdx + 1);
+            const mimeMatch = header.match(/:(.*?);/);
             const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-            const bstr = atob(parts[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
+            const bstr = atob(base64Data);
+            const len = bstr.length;
+            const u8arr = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                u8arr[i] = bstr.charCodeAt(i);
             }
             return new Blob([u8arr], { type: mime });
         } catch (e) {
@@ -2299,6 +2307,17 @@ const LuminaAttachmentDB = {
             return null;
         }
     },
+
+    async dataURLtoBlobAsync(dataUrl) {
+        if (!dataUrl || typeof dataUrl !== 'string') return null;
+        try {
+            const res = await fetch(dataUrl);
+            return await res.blob();
+        } catch (e) {
+            return this.dataURLtoBlob(dataUrl);
+        }
+    },
+
     blobToDataURL(blob) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -2306,6 +2325,21 @@ const LuminaAttachmentDB = {
             reader.onerror = () => resolve(null);
             reader.readAsDataURL(blob);
         });
+    },
+
+    async cleanupStorage(maxTotalBytes = 250 * 1024 * 1024) {
+        const metadataList = await this.getAllMetadata();
+        let totalBytes = metadataList.reduce((acc, item) => acc + item.size, 0);
+        if (totalBytes <= maxTotalBytes) return { freed: 0, remaining: totalBytes };
+
+        let freedBytes = 0;
+        for (const item of metadataList) {
+            if (totalBytes <= maxTotalBytes) break;
+            await this.delete(item.key).catch(() => {});
+            freedBytes += item.size;
+            totalBytes -= item.size;
+        }
+        return { freed: freedBytes, remaining: totalBytes };
     }
 };
 
@@ -2326,6 +2360,8 @@ const LuminaImageCacheDB = {
             };
             request.onsuccess = (e) => {
                 this._db = e.target.result;
+                this._db.onclose = () => { this._db = null; };
+                this._db.onversionchange = () => { if (this._db) { this._db.close(); this._db = null; } };
                 resolve(this._db);
             };
             request.onerror = (e) => reject(e.target.error);
@@ -2444,6 +2480,8 @@ const LuminaAudioCacheDB = {
             };
             request.onsuccess = (e) => {
                 this._db = e.target.result;
+                this._db.onclose = () => { this._db = null; };
+                this._db.onversionchange = () => { if (this._db) { this._db.close(); this._db = null; } };
                 resolve(this._db);
             };
             request.onerror = (e) => reject(e.target.error);
@@ -2453,10 +2491,10 @@ const LuminaAudioCacheDB = {
         const db = await this.init();
         let dbValue = { ...entry };
         if (entry && entry.data && Array.isArray(entry.data)) {
-            dbValue.data = entry.data.map(base64 => {
+            dbValue.data = await Promise.all(entry.data.map(async base64 => {
                 if (typeof base64 !== 'string' || !base64.startsWith('data:')) return base64;
-                return LuminaAttachmentDB.dataURLtoBlob(base64) || base64;
-            });
+                return (await LuminaAttachmentDB.dataURLtoBlobAsync(base64)) || base64;
+            }));
         }
         return new Promise((resolve, reject) => {
             const tx = db.transaction(this.STORE_NAME, 'readwrite');
@@ -11355,6 +11393,8 @@ const LuminaAnnotationDB = {
             };
             request.onsuccess = (e) => {
                 this._db = e.target.result;
+                this._db.onclose = () => { this._db = null; };
+                this._db.onversionchange = () => { if (this._db) { this._db.close(); this._db = null; } };
                 resolve(this._db);
             };
             request.onerror = (e) => reject(e.target.error);
@@ -11405,18 +11445,18 @@ const LuminaAnnotationDB = {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(this.STORE_NAME, 'readonly');
             const store = tx.objectStore(this.STORE_NAME);
-            const request = store.openCursor();
-            const results = {};
-            request.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    results[cursor.key] = cursor.value;
-                    cursor.continue();
-                } else {
-                    resolve(results);
+            const keysReq = store.getAllKeys();
+            const valsReq = store.getAll();
+            tx.oncomplete = () => {
+                const keys = keysReq.result || [];
+                const vals = valsReq.result || [];
+                const results = {};
+                for (let i = 0; i < keys.length; i++) {
+                    results[keys[i]] = vals[i];
                 }
+                resolve(results);
             };
-            request.onerror = (e) => reject(e.target.error);
+            tx.onerror = (e) => reject(e.target.error);
         });
     }
 };
@@ -11450,6 +11490,8 @@ const LuminaChatDB = {
             };
             request.onsuccess = (e) => {
                 this._db = e.target.result;
+                this._db.onclose = () => { this._db = null; };
+                this._db.onversionchange = () => { if (this._db) { this._db.close(); this._db = null; } };
                 resolve(this._db);
             };
             request.onerror = (e) => reject(e.target.error);
@@ -13692,6 +13734,459 @@ const UserMemory = {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = UserMemory;
+}
+
+
+// --- BUNDLED FROM: lib/core/gemini_live.js ---
+/**
+ * Lumina Gemini Live API Engine
+ * Handles real-time bidirectional WebSocket voice & vision streaming with Gemini Live API.
+ */
+class GeminiLiveClient {
+    constructor(options = {}) {
+        this.apiKey = options.apiKey || '';
+        this.modelName = options.modelName || 'gemini-3.1-flash-live-preview';
+        this.voiceName = options.voiceName || 'Puck';
+        this.ws = null;
+
+        // Audio contexts
+        this.inputAudioCtx = null;
+        this.outputAudioCtx = null;
+        this.mediaStream = null;
+        this.audioProcessor = null;
+
+        // Audio playback state
+        this.audioQueue = [];
+        this.isPlaying = false;
+        this.scheduledTime = 0;
+        this.activeSources = [];
+
+        // Vision state
+        this.isVisionEnabled = false;
+        this.visionTimer = null;
+
+        // Session reconnect state
+        this.isManualDisconnect = false;
+        this.isReconnecting = false;
+
+        // Callbacks
+        this.onStatusChange = options.onStatusChange || (() => {});
+        this.onTranscript = options.onTranscript || (() => {});
+        this.onVolumeWave = options.onVolumeWave || (() => {});
+        this.onError = options.onError || (() => {});
+    }
+
+    async connect() {
+        if (!this.apiKey) {
+            this.onError('API Key is missing. Please set your Gemini API Key in Lumina Settings.');
+            return false;
+        }
+
+        this.isManualDisconnect = false;
+        const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${this.apiKey}`;
+        this.onStatusChange('connecting', 'Connecting to Gemini Live...');
+
+        try {
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                this.onStatusChange('connected', 'Connected. Sending setup...');
+                this._sendSetupPayload();
+                if (!this.mediaStream) {
+                    this._initMicrophone();
+                }
+            };
+
+            this.ws.onmessage = (event) => {
+                this._handleServerMessage(event.data);
+            };
+
+            this.ws.onerror = (err) => {
+                console.error('[Gemini Live WSS Error]', err);
+                this.onError('WebSocket connection error.');
+                this.onStatusChange('error', 'Connection error');
+            };
+
+            this.ws.onclose = (ev) => {
+                console.log('[Gemini Live WSS Closed]', ev.code, ev.reason);
+                if ((ev.code === 1008 || ev.code === 1006) && !this.isManualDisconnect) {
+                    this.onStatusChange('connecting', 'Auto-reconnecting session...');
+                    this._reconnectGracefully();
+                    return;
+                }
+                this.onStatusChange('disconnected', 'Disconnected');
+                this.disconnect(false);
+            };
+
+            return true;
+        } catch (e) {
+            console.error('[Gemini Live Connect Exception]', e);
+            this.onError(e.message);
+            return false;
+        }
+    }
+
+    _sendSetupPayload() {
+        const setupMessage = {
+            setup: {
+                model: `models/${this.modelName}`,
+                generationConfig: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: {
+                                voiceName: this.voiceName
+                            }
+                        }
+                    }
+                },
+                outputAudioTranscription: {},
+                inputAudioTranscription: {}
+            }
+        };
+
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(setupMessage));
+            this.onStatusChange('listening', 'Listening...');
+        }
+    }
+
+    async _initMicrophone() {
+        try {
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    channelCount: 1,
+                    sampleRate: 16000,
+                    echoCancellation: true,
+                    noiseSuppression: true
+                }
+            });
+
+            this.inputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const source = this.inputAudioCtx.createMediaStreamSource(this.mediaStream);
+
+            const processAudioData = (inputData) => {
+                if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+                // Calculate volume level for UI wave visualization
+                let sum = 0;
+                for (let i = 0; i < inputData.length; i++) {
+                    sum += inputData[i] * inputData[i];
+                }
+                const rms = Math.sqrt(sum / inputData.length);
+                this.onVolumeWave(rms);
+
+                // Convert Float32Array to 16-bit PCM Int16Array
+                const pcm16 = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                    const s = Math.max(-1, Math.min(1, inputData[i]));
+                    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+
+                // Convert Int16Array bytes to Base64 string
+                const bytes = new Uint8Array(pcm16.buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const base64Audio = btoa(binary);
+
+                // Send realtimeInput audio chunk
+                const realtimeMsg = {
+                    realtimeInput: {
+                        audio: {
+                            data: base64Audio,
+                            mimeType: 'audio/pcm;rate=16000'
+                        }
+                    }
+                };
+                this.ws.send(JSON.stringify(realtimeMsg));
+            };
+
+            let useWorklet = false;
+            if (this.inputAudioCtx.audioWorklet) {
+                try {
+                    let workletUrl = 'lib/core/pcm_processor.js';
+                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+                        workletUrl = chrome.runtime.getURL('lib/core/pcm_processor.js');
+                    }
+                    await this.inputAudioCtx.audioWorklet.addModule(workletUrl);
+
+                    this.audioWorkletNode = new AudioWorkletNode(this.inputAudioCtx, 'pcm-worklet-processor');
+                    this.audioWorkletNode.port.onmessage = (e) => {
+                        processAudioData(e.data);
+                    };
+                    source.connect(this.audioWorkletNode);
+                    this.audioWorkletNode.connect(this.inputAudioCtx.destination);
+                    useWorklet = true;
+                } catch (e) {
+                    console.warn('[Gemini Live AudioWorklet Fallback to ScriptProcessor]', e);
+                }
+            }
+
+            if (!useWorklet) {
+                this.audioProcessor = this.inputAudioCtx.createScriptProcessor(512, 1, 1);
+                source.connect(this.audioProcessor);
+                this.audioProcessor.connect(this.inputAudioCtx.destination);
+                this.audioProcessor.onaudioprocess = (e) => {
+                    processAudioData(e.inputBuffer.getChannelData(0));
+                };
+            }
+        } catch (err) {
+            console.error('[Gemini Live Mic Access Error]', err);
+            this.onError('Microphone access denied or unequipped: ' + err.message);
+        }
+    }
+
+    async _handleServerMessage(rawData) {
+        try {
+            let textData = rawData;
+            if (rawData instanceof Blob) {
+                textData = await rawData.text();
+            } else if (rawData instanceof ArrayBuffer) {
+                textData = new TextDecoder().decode(rawData);
+            }
+            const msg = JSON.parse(textData);
+
+            // Handle GoAway Signal (Session time limit warning / auto reconnect)
+            if (msg.goAway) {
+                console.log('[Gemini Live GoAway received]', msg.goAway);
+                this.onStatusChange('connecting', 'Renewing session...');
+                this._reconnectGracefully();
+                return;
+            }
+
+            if (msg.serverContent) {
+                const sc = msg.serverContent;
+
+                // Handle interruption / barge-in
+                if (sc.interrupted) {
+                    this._stopAudioPlayback();
+                    this.onStatusChange('listening', 'Listening...');
+                }
+
+                // Handle Model Output Audio
+                if (sc.modelTurn && sc.modelTurn.parts) {
+                    for (const part of sc.modelTurn.parts) {
+                        if (part.inlineData && part.inlineData.data) {
+                            this.onStatusChange('speaking', 'Gemini is speaking...');
+                            this._playPcm24kChunk(part.inlineData.data);
+                        }
+                    }
+                }
+
+                // Handle Transcriptions
+                if (sc.inputTranscription && sc.inputTranscription.text) {
+                    this.onTranscript('user', sc.inputTranscription.text);
+                }
+                if (sc.outputTranscription && sc.outputTranscription.text) {
+                    this.onTranscript('gemini', sc.outputTranscription.text);
+                }
+
+                if (sc.turnComplete) {
+                    this.onStatusChange('listening', 'Listening...');
+                }
+            }
+        } catch (err) {
+            console.error('[Gemini Live Parse Error]', err, rawData);
+        }
+    }
+
+    _playPcm24kChunk(base64Data) {
+        if (!this.outputAudioCtx) {
+            this.outputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+            this.scheduledTime = this.outputAudioCtx.currentTime;
+        }
+
+        if (this.outputAudioCtx.state === 'suspended') {
+            this.outputAudioCtx.resume();
+        }
+
+        // Decode Base64 to Int16Array
+        const binaryStr = atob(base64Data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const int16Array = new Int16Array(bytes.buffer);
+
+        // Convert Int16 to Float32 [-1.0, 1.0]
+        const float32Array = new Float32Array(int16Array.length);
+        for (let i = 0; i < int16Array.length; i++) {
+            float32Array[i] = int16Array[i] / 32768.0;
+        }
+
+        // Create AudioBuffer at 24000Hz
+        const buffer = this.outputAudioCtx.createBuffer(1, float32Array.length, 24000);
+        buffer.getChannelData(0).set(float32Array);
+
+        const source = this.outputAudioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.outputAudioCtx.destination);
+
+        const now = this.outputAudioCtx.currentTime;
+        if (this.scheduledTime < now) {
+            this.scheduledTime = now;
+        }
+
+        source.start(this.scheduledTime);
+        this.scheduledTime += buffer.duration;
+        this.activeSources.push(source);
+
+        source.onended = () => {
+            const idx = this.activeSources.indexOf(source);
+            if (idx !== -1) this.activeSources.splice(idx, 1);
+            if (this.activeSources.length === 0) {
+                this.onStatusChange('listening', 'Listening...');
+            }
+        };
+    }
+
+    _stopAudioPlayback() {
+        for (const src of this.activeSources) {
+            try {
+                src.stop();
+            } catch (e) {}
+        }
+        this.activeSources = [];
+        if (this.outputAudioCtx) {
+            this.scheduledTime = this.outputAudioCtx.currentTime;
+        }
+    }
+
+    sendTextMessage(text) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const msg = {
+                realtimeInput: {
+                    text: text
+                }
+            };
+            this.ws.send(JSON.stringify(msg));
+        }
+    }
+
+    toggleVision(enable) {
+        this.isVisionEnabled = enable;
+        if (enable) {
+            this._startVisionStreaming();
+        } else {
+            this._stopVisionStreaming();
+        }
+    }
+
+    _startVisionStreaming() {
+        this._stopVisionStreaming();
+        this.visionTimer = setInterval(async () => {
+            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 640;
+                canvas.height = 360;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#4285f4';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillText('Lumina Live Vision', 30, 60);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                const base64Jpg = dataUrl.split(',')[1];
+
+                const msg = {
+                    realtimeInput: {
+                        video: {
+                            data: base64Jpg,
+                            mimeType: 'image/jpeg'
+                        }
+                    }
+                };
+                this.ws.send(JSON.stringify(msg));
+            } catch (e) {
+                console.error('[Gemini Live Vision Error]', e);
+            }
+        }, 1000); // 1 FPS
+    }
+
+    _stopVisionStreaming() {
+        if (this.visionTimer) {
+            clearInterval(this.visionTimer);
+            this.visionTimer = null;
+        }
+    }
+
+    async _reconnectGracefully() {
+        if (this.isReconnecting) return;
+        this.isReconnecting = true;
+
+        if (this.ws) {
+            try {
+                this.ws.onopen = null;
+                this.ws.onmessage = null;
+                this.ws.onerror = null;
+                this.ws.onclose = null;
+                if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+                    this.ws.close();
+                }
+            } catch (e) {}
+            this.ws = null;
+        }
+
+        setTimeout(async () => {
+            this.isReconnecting = false;
+            if (!this.isManualDisconnect) {
+                await this.connect();
+            }
+        }, 300);
+    }
+
+    disconnect(isManual = true) {
+        if (isManual) {
+            this.isManualDisconnect = true;
+        }
+        this._stopVisionStreaming();
+        this._stopAudioPlayback();
+
+        if (this.audioWorkletNode) {
+            try { this.audioWorkletNode.disconnect(); } catch (e) {}
+            this.audioWorkletNode = null;
+        }
+        if (this.audioProcessor) {
+            try { this.audioProcessor.disconnect(); } catch (e) {}
+            this.audioProcessor = null;
+        }
+        if (this.inputAudioCtx) {
+            try { this.inputAudioCtx.close(); } catch (e) {}
+            this.inputAudioCtx = null;
+        }
+        if (this.outputAudioCtx) {
+            try { this.outputAudioCtx.close(); } catch (e) {}
+            this.outputAudioCtx = null;
+        }
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+            this.mediaStream = null;
+        }
+        if (this.ws) {
+            try {
+                this.ws.onopen = null;
+                this.ws.onmessage = null;
+                this.ws.onerror = null;
+                this.ws.onclose = null;
+                if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+                    this.ws.close();
+                }
+            } catch (e) {}
+            this.ws = null;
+        }
+        this.onStatusChange('disconnected', 'Disconnected');
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.GeminiLiveClient = GeminiLiveClient;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.GeminiLiveClient = GeminiLiveClient;
 }
 
 
@@ -20015,6 +20510,17 @@ function initSidebar() {
             closeMobileSidebar();
         });
     }
+    const geminiLiveBtn = document.getElementById('sidebar-gemini-live-btn');
+    if (geminiLiveBtn) {
+        geminiLiveBtn.addEventListener('click', () => {
+            if (typeof window.initGeminiLiveModal === 'function') {
+                window.initGeminiLiveModal();
+            } else if (typeof initGeminiLiveModal === 'function') {
+                initGeminiLiveModal();
+            }
+            closeMobileSidebar();
+        });
+    }
     const brandBtn = document.querySelector('.sidebar-brand');
     if (brandBtn) {
         brandBtn.style.cursor = 'pointer';
@@ -23898,6 +24404,178 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             window.LuminaCanvas.loadVersionFromCard(card);
         }
     });
+
+    let currentGeminiLiveClient = null;
+
+    function initGeminiLiveModal() {
+        const modal = document.getElementById('lumina-live-modal');
+        if (!modal) return;
+
+        modal.style.display = 'flex';
+
+        const statusDot = modal.querySelector('.live-status-dot');
+        const statusText = document.getElementById('lumina-live-status-text');
+        const closeBtn = document.getElementById('lumina-live-close-btn');
+        const micBtn = document.getElementById('lumina-live-mic-toggle');
+        const visionBtn = document.getElementById('lumina-live-vision-toggle');
+        const endBtn = document.getElementById('lumina-live-end-btn');
+        const voiceSelect = document.getElementById('lumina-live-voice-select');
+        const transcriptBox = document.getElementById('lumina-live-transcript-box');
+        const sphere = document.getElementById('lumina-live-sphere');
+
+        if (transcriptBox) {
+            transcriptBox.innerHTML = '<div class="transcript-placeholder">Start talking to Gemini Live...</div>';
+        }
+
+        chrome.storage.local.get(null, (res) => {
+            let apiKey = res.geminiApiKey || '';
+            const providers = res.providers || [];
+            if (!apiKey && Array.isArray(providers)) {
+                let provider = providers.find(p => (p.id === 'gemini' || p.type === 'gemini' || (typeof p.endpoint === 'string' && p.endpoint.includes('generativelanguage.googleapis.com'))) && p.apiKey && p.apiKey.trim().length > 0);
+                if (!provider) {
+                    provider = providers.find(p => p.apiKey && p.apiKey.trim().length > 0 && (p.name?.toLowerCase().includes('gemini') || p.id?.toLowerCase().includes('gemini')));
+                }
+                if (provider && provider.apiKey) {
+                    apiKey = provider.apiKey;
+                }
+            }
+
+            if (apiKey) {
+                const keys = apiKey.split(',').map(k => k.trim()).filter(Boolean);
+                if (keys.length > 0) apiKey = keys[0];
+            }
+
+            if (!apiKey) {
+                alert('Vui lòng cài đặt Gemini API Key trong Settings trước khi sử dụng Gemini Live!');
+                modal.style.display = 'none';
+                if (typeof LuminaSettingsModal !== 'undefined') LuminaSettingsModal.show();
+                return;
+            }
+
+            const selectedVoice = voiceSelect ? voiceSelect.value : 'Puck';
+
+            currentGeminiLiveClient = new GeminiLiveClient({
+                apiKey: apiKey,
+                modelName: 'gemini-3.1-flash-live-preview',
+                voiceName: selectedVoice,
+                onStatusChange: (status, message) => {
+                    if (statusText) statusText.textContent = message;
+                    if (statusDot) {
+                        statusDot.className = 'live-status-dot';
+                        if (status === 'listening') statusDot.classList.add('active');
+                        if (status === 'speaking') statusDot.classList.add('speaking');
+                    }
+                },
+                onTranscript: (speaker, text) => {
+                    if (!transcriptBox || !text) return;
+                    const placeholder = transcriptBox.querySelector('.transcript-placeholder');
+                    if (placeholder) placeholder.remove();
+
+                    const cleanText = text.trim();
+                    if (!cleanText) return;
+
+                    const lastEntry = transcriptBox.lastElementChild;
+                    if (lastEntry && lastEntry.dataset.speaker === speaker) {
+                        const contentSpan = lastEntry.querySelector('.transcript-content');
+                        if (contentSpan) {
+                            contentSpan.textContent += (contentSpan.textContent ? ' ' : '') + cleanText;
+                        } else {
+                            lastEntry.innerHTML += ' ' + cleanText;
+                        }
+                    } else {
+                        const div = document.createElement('div');
+                        div.className = 'transcript-entry';
+                        div.dataset.speaker = speaker;
+                        const label = speaker === 'user' ? 'You' : 'Gemini';
+                        div.innerHTML = `<strong>${label}:</strong> <span class="transcript-content">${cleanText}</span>`;
+                        transcriptBox.appendChild(div);
+                    }
+                    transcriptBox.scrollTop = transcriptBox.scrollHeight;
+                },
+                onVolumeWave: (volume) => {
+                    if (sphere) {
+                        const scale = 1 + Math.min(volume * 4, 1.2);
+                        sphere.style.transform = `scale(${scale})`;
+                    }
+                },
+                onError: (errMsg) => {
+                    if (statusText) statusText.textContent = 'Error: ' + errMsg;
+                }
+            });
+
+            currentGeminiLiveClient.connect();
+        });
+
+        const closeModal = () => {
+            if (currentGeminiLiveClient) {
+                currentGeminiLiveClient.disconnect();
+                currentGeminiLiveClient = null;
+            }
+            modal.style.display = 'none';
+        };
+
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (endBtn) endBtn.onclick = closeModal;
+
+        if (micBtn) {
+            let micMuted = false;
+            micBtn.onclick = () => {
+                micMuted = !micMuted;
+                micBtn.classList.toggle('active', micMuted);
+                if (currentGeminiLiveClient && currentGeminiLiveClient.mediaStream) {
+                    currentGeminiLiveClient.mediaStream.getAudioTracks().forEach(t => t.enabled = !micMuted);
+                }
+            };
+        }
+
+        if (visionBtn) {
+            let visionActive = false;
+            visionBtn.onclick = () => {
+                visionActive = !visionActive;
+                visionBtn.classList.toggle('active', visionActive);
+                if (currentGeminiLiveClient) {
+                    currentGeminiLiveClient.toggleVision(visionActive);
+                }
+            };
+        }
+
+        if (voiceSelect) {
+            voiceSelect.onchange = () => {
+                if (currentGeminiLiveClient) {
+                    currentGeminiLiveClient.voiceName = voiceSelect.value;
+                    currentGeminiLiveClient.disconnect();
+                    setTimeout(() => {
+                        initGeminiLiveModal();
+                    }, 300);
+                }
+            };
+        }
+
+        const textForm = document.getElementById('lumina-live-text-form');
+        const textInput = document.getElementById('lumina-live-text-input');
+        if (textForm && textInput) {
+            textForm.onsubmit = (e) => {
+                e.preventDefault();
+                const val = textInput.value.trim();
+                if (val && currentGeminiLiveClient) {
+                    currentGeminiLiveClient.sendTextMessage(val);
+                    if (transcriptBox) {
+                        const placeholder = transcriptBox.querySelector('.transcript-placeholder');
+                        if (placeholder) placeholder.remove();
+                        const div = document.createElement('div');
+                        div.className = 'transcript-entry';
+                        div.dataset.speaker = 'user';
+                        div.innerHTML = `<strong>You:</strong> <span class="transcript-content">${val}</span>`;
+                        transcriptBox.appendChild(div);
+                        transcriptBox.scrollTop = transcriptBox.scrollHeight;
+                    }
+                    textInput.value = '';
+                }
+            };
+        }
+    }
+
+    window.initGeminiLiveModal = initGeminiLiveModal;
 })();
 
 

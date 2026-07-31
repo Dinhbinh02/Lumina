@@ -791,7 +791,6 @@ function cleanThinkingBlocks(text) {
 
 async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     const { model, endpoint, providerType, temperature, topP, parsedCustomParams, normalizedThinkingLevel, isGemini25Model, reasoningMode, imageData, maxTokens = null, isStreaming = true, cachedContent = null } = params;
-    const enableWebSearch = true;
     const isGemini = providerType === 'gemini' || (typeof endpoint === 'string' && endpoint.includes('generativelanguage.googleapis.com'));
     if (isGemini) {
         const geminiContents = [];
@@ -835,26 +834,34 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             ...parsedCustomParams
         };
         const isGemini3 = /gemini-[3-9]/i.test(model);
+        const isGemma = /gemma/i.test(model);
         if (!isGemini3) {
             generationConfig.temperature = temperature;
             generationConfig.topP = topP;
         }
-        const isThinkingLevelSupported = /gemini-[3-9]/i.test(model) || /gemma-4/i.test(model);
         if (params.disableThinking) {
             delete generationConfig.thinkingConfig;
         } else {
-            let level = normalizedThinkingLevel || 'minimal';
-            if (level === 'none') {
-                level = 'minimal';
-            }
-            if (isThinkingLevelSupported) {
+            let level = normalizedThinkingLevel || 'medium';
+            if (isGemma) {
+                // Gemma 4 under Gemini provider supports only 2 thinking levels: 'minimal' and 'high'
+                const gemmaLevel = (level === 'high' || level === 'medium') ? 'high' : 'minimal';
                 generationConfig.thinkingConfig = {
                     includeThoughts: true,
-                    thinkingLevel: level === 'high' ? 'high' : 'minimal'
+                    thinkingLevel: gemmaLevel
+                };
+            } else if (isGemini3) {
+                // Gemini 3+ models support thinkingLevel: 'minimal', 'low', 'medium', 'high'
+                const validLevels = ['minimal', 'low', 'medium', 'high'];
+                const targetLevel = validLevels.includes(level) ? level : (level === 'none' ? 'minimal' : 'medium');
+                generationConfig.thinkingConfig = {
+                    includeThoughts: true,
+                    thinkingLevel: targetLevel
                 };
             } else {
+                // Gemini 2.5 and older models use thinkingBudget
                 let budget = -1;
-                if (level === 'minimal') {
+                if (level === 'none' || level === 'minimal') {
                     budget = 0;
                 } else if (level === 'low') {
                     budget = 1024;
@@ -872,13 +879,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         const geminiBody = {
             contents: geminiContents,
             generationConfig,
-            safetySettings: [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
-            ],
             ...(sysPrompt ? {
                 system_instruction: {
                     parts: [{ text: sysPrompt }]
@@ -886,20 +886,6 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             } : {}),
             ...(cachedContent ? { cachedContent } : {})
         };
-        const hasUrlInHistory = msgs && msgs.some(m => /https?:\/\/[^\s]+/.test(m.text || ''));
-        const hasUrl = hasUrlInHistory || /https?:\/\/[^\s]+/.test(currentQ || '');
-        const isSecondPassSearch = (currentQ || '').includes('### Web Search Results for');
-        const useUrlContext = hasUrl || isSecondPassSearch;
-        if (useUrlContext && isGemini3) {
-            geminiBody.tools = [{
-                url_context: {}
-            }];
-            if (!/gemini-2\.5-flash-lite/i.test(model)) {
-                geminiBody.toolConfig = {
-                    includeServerSideToolInvocations: true
-                };
-            }
-        }
         const method = isStreaming ? 'streamGenerateContent' : 'generateContent';
         let baseEndpoint = endpoint.replace(/\/$/, '')
             .replace(/\/openai\/chat\/completions$/, '')
@@ -971,8 +957,8 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             openaiBody.max_tokens = 4096;
         }
     }
-    if (normalizedThinkingLevel && normalizedThinkingLevel !== 'none') {
-        const effortMap = { minimal: 'low', low: 'low', medium: 'medium', high: 'high' };
+    if (normalizedThinkingLevel) {
+        const effortMap = { none: 'none', minimal: 'low', low: 'low', medium: 'medium', high: 'high' };
         if (effortMap[normalizedThinkingLevel]) {
             openaiBody.reasoning_effort = effortMap[normalizedThinkingLevel];
         }
@@ -1244,7 +1230,6 @@ async function fetchPageContent(url) {
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Lumina BG][${action}]`;
-    const enableWebSearch = true;
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
     const providerId = config.providerId;
     const compositeKey = providerId ? `${providerId}:${model}` : model;
@@ -1275,7 +1260,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
     const keys = getKeysArray(apiKey);
     const reasoningMode = !!globalSettings.reasoningMode;
-    let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode, enableWebSearch);
+    let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode);
     if (action === 'proofread') {
         systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
     }
@@ -3685,118 +3670,6 @@ async function fetchAudio(text, speed = 1.0, forcedLang = null) {
     }
     const googleChunks = await fetchGoogle();
     return { type: 'google', chunks: googleChunks };
-}
-
-const SEARXNG_INSTANCES = [
-    'https://searx.be',
-    'https://searx.or.tz',
-    'https://search.privacyredirect.com',
-    'https://searx.work',
-    'https://searx.nixnet.services',
-    'https://searx.tiekoetter.com',
-    'https://searx.space'
-];
-
-async function performSearXNGSearch(query) {
-    const instances = [...SEARXNG_INSTANCES].sort(() => Math.random() - 0.5);
-    for (const instance of instances) {
-        try {
-            console.log(`[Lumina] Trying SearXNG Search at ${instance} for: "${query}"`);
-            const url = `${instance}/search?q=${encodeURIComponent(query)}&format=json`;
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
-            });
-            if (response.ok) {
-                const contentType = response.headers.get('content-type') || '';
-                if (!contentType.includes('application/json')) {
-                    throw new Error(`Response is not JSON (Content-Type: ${contentType})`);
-                }
-                const data = await response.json();
-                if (data && Array.isArray(data.results) && data.results.length > 0) {
-                    return data.results.slice(0, 5).map((r, idx) => {
-                        return `[Result ${idx + 1}]
-Title: ${r.title || ''}
-URL: ${r.url}
-Snippet: ${r.content || ''}`;
-                    }).join('\n\n');
-                }
-            }
-        } catch (e) {
-            console.warn(`[Lumina] SearXNG instance ${instance} failed: ${e.message || e}`);
-        }
-    }
-    return 'No results found.';
-}
-
-async function performWebSearch(query) {
-    try {
-        console.log(`[Lumina] Performing DuckDuckGo Search for: "${query}"`);
-        const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-        });
-        if (!response.ok) {
-            throw new Error(`DDG responded with status ${response.status}`);
-        }
-        const html = await response.text();
-        if (html.includes('anomaly') || html.includes('captcha') || !html.includes('result__url')) {
-            console.warn('[Lumina] DuckDuckGo blocked or returned no results. Trying SearXNG fallback...');
-            return await performSearXNGSearch(query);
-        }
-        const results = [];
-        const blocks = html.split('<div class="result results_links results_links_deep web-result ">');
-        for (let i = 1; i < blocks.length && results.length < 5; i++) {
-            const block = blocks[i];
-            const urlMatch = block.match(/<a class="result__url"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
-            const snippetMatch = block.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
-            if (urlMatch) {
-                let rawUrl = urlMatch[1];
-                let title = urlMatch[2].replace(/<[^>]*>/g, '').trim();
-                let snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, '').trim() : '';
-                let actualUrl = rawUrl;
-                if (rawUrl.includes('uddg=')) {
-                    try {
-                        const searchParams = new URLSearchParams(rawUrl.split('?')[1]);
-                        const uddg = searchParams.get('uddg');
-                        if (uddg) actualUrl = decodeURIComponent(uddg);
-                    } catch (e) {
-                        try {
-                            const matchUddg = rawUrl.match(/[?&]uddg=([^&]+)/);
-                            if (matchUddg) actualUrl = decodeURIComponent(matchUddg[1]);
-                        } catch (err) { }
-                    }
-                }
-                title = title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-                snippet = snippet.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-                results.push({ title, url: actualUrl, content: snippet });
-            }
-        }
-        if (results.length > 0) {
-            return results.map((r, idx) => `[Result ${idx + 1}]
-Title: ${r.title}
-URL: ${r.url}
-Snippet: ${r.content}`).join('\n\n');
-        }
-        return await performSearXNGSearch(query);
-    } catch (e) {
-        console.error('[Lumina] DDG search error, falling back to SearXNG...', e);
-        return await performSearXNGSearch(query);
-    }
-}
-
-function extractUrlsFromSearchResults(text) {
-    if (!text) return [];
-    const urls = [];
-    const regex = /URL:\s*(https?:\/\/[^\s\n\)\>\]]+)/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-        urls.push(match[1]);
-    }
-    return urls;
 }
 
 async function generateChatTitleFromModel(modelObj, question, images, files, history) {

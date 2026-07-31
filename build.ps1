@@ -1,3 +1,6 @@
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+if (-not $ScriptDir) { $ScriptDir = Get-Location }
+
 $JS_FILES = @(
     'lib/core/constants.js',
     'lib/helpers/annotation_utils.js',
@@ -21,6 +24,7 @@ $JS_FILES = @(
     'lib/ui/history_panel.js',
     'lib/core/token_utils.js',
     'lib/core/memory.js',
+    'lib/core/gemini_live.js',
     'pages/lumina/settings_modal.js',
     'pages/lumina/search_modal.js',
     'pages/lumina/lumina.js',
@@ -34,20 +38,21 @@ $CSS_FILES = @(
     'pages/lumina/search_modal.css'
 )
 
-$JS_BUNDLE = 'pages/lumina/lumina.bundle.js'
-$CSS_BUNDLE = 'pages/lumina/lumina.bundle.css'
+$JS_BUNDLE = Join-Path $ScriptDir "pages/lumina/lumina.bundle.js"
+$CSS_BUNDLE = Join-Path $ScriptDir "pages/lumina/lumina.bundle.css"
 
-function Build-Bundles {
-    Write-Host "Building bundles..."
+function Invoke-LuminaBuild {
+    Write-Host "Building bundles to $JS_BUNDLE..."
     
     # Bundle JS
     $js_content = ""
     foreach ($f in $JS_FILES) {
-        if (Test-Path $f) {
+        $fullPath = Join-Path $ScriptDir $f
+        if (Test-Path $fullPath) {
             $js_content += "`n// --- BUNDLED FROM: $f ---`n"
-            $js_content += [System.IO.File]::ReadAllText($f) + "`n"
+            $js_content += [System.IO.File]::ReadAllText($fullPath) + "`n"
         } else {
-            Write-Warning "File not found: $f"
+            Write-Warning "File not found: $fullPath"
         }
     }
     [System.IO.File]::WriteAllText($JS_BUNDLE, $js_content, [System.Text.Encoding]::UTF8)
@@ -55,11 +60,12 @@ function Build-Bundles {
     # Bundle CSS
     $css_content = ""
     foreach ($f in $CSS_FILES) {
-        if (Test-Path $f) {
+        $fullPath = Join-Path $ScriptDir $f
+        if (Test-Path $fullPath) {
             $css_content += "`n/* --- BUNDLED FROM: $f --- */`n"
-            $css_content += [System.IO.File]::ReadAllText($f) + "`n"
+            $css_content += [System.IO.File]::ReadAllText($fullPath) + "`n"
         } else {
-            Write-Warning "File not found: $f"
+            Write-Warning "File not found: $fullPath"
         }
     }
     [System.IO.File]::WriteAllText($CSS_BUNDLE, $css_content, [System.Text.Encoding]::UTF8)
@@ -69,14 +75,15 @@ function Build-Bundles {
 
 if ($args -contains "--watch") {
     Write-Host "Watching for changes..."
-    Build-Bundles
+    Invoke-LuminaBuild
     
     # Store last write times
     $mtimes = @{}
     $all_files = $JS_FILES + $CSS_FILES
     foreach ($f in $all_files) {
-        if (Test-Path $f) {
-            $mtimes[$f] = (Get-Item $f).LastWriteTime
+        $fullPath = Join-Path $ScriptDir $f
+        if (Test-Path $fullPath) {
+            $mtimes[$f] = (Get-Item $fullPath).LastWriteTime
         }
     }
     
@@ -85,8 +92,9 @@ if ($args -contains "--watch") {
             Start-Sleep -Milliseconds 500
             $changed = $false
             foreach ($f in $all_files) {
-                if (Test-Path $f) {
-                    $curr = (Get-Item $f).LastWriteTime
+                $fullPath = Join-Path $ScriptDir $f
+                if (Test-Path $fullPath) {
+                    $curr = (Get-Item $fullPath).LastWriteTime
                     if (-not $mtimes.ContainsKey($f) -or $mtimes[$f] -ne $curr) {
                         $mtimes[$f] = $curr
                         Write-Host "File changed: $f"
@@ -95,12 +103,12 @@ if ($args -contains "--watch") {
                 }
             }
             if ($changed) {
-                Build-Bundles
+                Invoke-LuminaBuild
             }
         }
     } catch {
         Write-Host "Stopping watcher..."
     }
 } else {
-    Build-Bundles
+    Invoke-LuminaBuild
 }

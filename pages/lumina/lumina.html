@@ -63,6 +63,15 @@
                     </svg>
                     <span class="nav-text">New chat</span>
                 </button>
+                <button class="sidebar-nav-item" id="sidebar-gemini-live-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                    <span class="nav-text">Gemini Live</span>
+                </button>
             </div>
 
             <div class="sidebar-scrollable-wrapper">
@@ -1431,6 +1440,75 @@
             <span class="chip-title"></span>
         </div>
     </template>
+
+    <!-- Lumina Gemini Live Mode Overlay Modal -->
+    <div class="lumina-live-modal-overlay" id="lumina-live-modal" style="display: none;">
+        <div class="lumina-live-modal-content">
+            <header class="lumina-live-header">
+                <div class="live-brand">
+                    <span class="live-status-dot"></span>
+                    <span class="live-status-text" id="lumina-live-status-text">Disconnected</span>
+                </div>
+                <button type="button" class="lumina-live-close-btn" id="lumina-live-close-btn" title="Close Live Session">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </header>
+
+            <div class="lumina-live-body">
+                <div class="lumina-live-visualizer-container">
+                    <div class="lumina-live-sphere" id="lumina-live-sphere">
+                        <div class="sphere-wave wave1"></div>
+                        <div class="sphere-wave wave2"></div>
+                        <div class="sphere-core"></div>
+                    </div>
+                </div>
+
+                <div class="lumina-live-transcript-box" id="lumina-live-transcript-box">
+                    <div class="transcript-placeholder">Start talking to Gemini Live...</div>
+                </div>
+
+                <form class="lumina-live-input-box" id="lumina-live-text-form">
+                    <input type="text" id="lumina-live-text-input" placeholder="Type a message to Gemini Live..." autocomplete="off" />
+                    <button type="submit" id="lumina-live-text-send" title="Send text message">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <footer class="lumina-live-controls">
+                <button type="button" class="live-control-btn mic-btn" id="lumina-live-mic-toggle" title="Mute/Unmute Mic">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                </button>
+                <button type="button" class="live-control-btn vision-btn" id="lumina-live-vision-toggle" title="Screen Vision Stream">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </button>
+                <select class="live-voice-select" id="lumina-live-voice-select" title="Voice Selection">
+                    <option value="Puck" selected>Puck (Enthusiastic Male)</option>
+                    <option value="Charon">Charon (Deep Male)</option>
+                    <option value="Kore">Kore (Relaxed Female)</option>
+                    <option value="Fenrir">Fenrir (Intense Male)</option>
+                    <option value="Aoede">Aoede (Warm Female)</option>
+                </select>
+                <button type="button" class="live-control-btn end-btn" id="lumina-live-end-btn" title="End Live Call">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 2.59 3.4z" transform="rotate(135 12 12)"/>
+                    </svg>
+                </button>
+            </footer>
+        </div>
+    </div>
 
     <script src="lumina.bundle.js" defer></script>
 </body>

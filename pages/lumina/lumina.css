@@ -9417,3 +9417,283 @@ h1,
 .welcome-title {
   font-weight: var(--lumina-weight-bold) !important;
 }
+
+/* --- GEMINI LIVE SIDEBAR NAV & OVERLAY MODAL --- */
+#sidebar-gemini-live-btn {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.08), rgba(234, 67, 53, 0.08));
+  border: 1px solid rgba(66, 133, 244, 0.15);
+  color: var(--text-color, #1a1a1a);
+  transition: all 0.25s ease;
+}
+#sidebar-gemini-live-btn:hover {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.15), rgba(234, 67, 53, 0.15));
+  border-color: rgba(66, 133, 244, 0.4);
+  transform: translateY(-1px);
+}
+#sidebar-gemini-live-btn svg {
+  color: #4285f4;
+}
+
+.lumina-live-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  background: rgba(10, 12, 18, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.lumina-live-modal-content {
+  width: 90%;
+  max-width: 540px;
+  height: 80vh;
+  max-height: 650px;
+  background: #12151e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(66, 133, 244, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.lumina-live-header {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.live-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.live-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #9aa0a6;
+  transition: background 0.3s;
+}
+
+.live-status-dot.active {
+  background: #34a853;
+  box-shadow: 0 0 10px #34a853;
+}
+
+.live-status-dot.speaking {
+  background: #4285f4;
+  box-shadow: 0 0 10px #4285f4;
+}
+
+.lumina-live-close-btn {
+  background: transparent;
+  border: none;
+  color: #9aa0a6;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.lumina-live-close-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lumina-live-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.lumina-live-visualizer-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.lumina-live-sphere {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sphere-core {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ea4335, #fb8c00, #4285f4, #34a853);
+  background-size: 200% 200%;
+  animation: gradientGlow 3s ease infinite;
+  box-shadow: 0 0 30px rgba(66, 133, 244, 0.5);
+  z-index: 2;
+}
+
+.sphere-wave {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(66, 133, 244, 0.4);
+  animation: wavePulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.sphere-wave.wave1 { width: 90px; height: 90px; animation-delay: 0s; }
+.sphere-wave.wave2 { width: 120px; height: 120px; animation-delay: 0.6s; }
+
+@keyframes gradientGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes wavePulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.lumina-live-transcript-box {
+  width: 100%;
+  max-height: 140px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e8eaed;
+}
+
+.transcript-placeholder {
+  color: #80868b;
+  text-align: center;
+  font-style: italic;
+}
+
+.transcript-entry {
+  margin-bottom: 8px;
+}
+.transcript-entry strong {
+  color: #8ab4f8;
+}
+
+.lumina-live-controls {
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 12px;
+}
+
+.live-control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.live-control-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: scale(1.05);
+}
+
+.live-control-btn.active {
+  background: #4285f4;
+  color: #fff;
+}
+
+.live-control-btn.end-btn {
+  background: #ea4335;
+}
+.live-control-btn.end-btn:hover {
+  background: #d93025;
+}
+
+.live-voice-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.live-voice-select option {
+  background: #181b24;
+  color: #fff;
+}
+
+.lumina-live-input-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.lumina-live-input-box input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 10px 16px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.lumina-live-input-box input:focus {
+  border-color: #6366f1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.lumina-live-input-box button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.lumina-live-input-box button:hover {
+  transform: scale(1.06);
+  opacity: 0.95;
+}
