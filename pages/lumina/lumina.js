@@ -3115,26 +3115,6 @@ async function init() {
             isPrimaryInput: true,
             alwaysExpanded: true,
             onSubmit: (text, images, extra) => {
-                if (currentGeminiLiveClient && currentGeminiLiveClient.ws && currentGeminiLiveClient.ws.readyState === WebSocket.OPEN) {
-                    const cleanText = (text || '').trim();
-                    if (cleanText) {
-                        currentGeminiLiveClient.sendTextMessage(cleanText);
-                        const getActiveUI = () => {
-                            if (typeof activeTabIndex !== 'undefined' && typeof tabs !== 'undefined' && tabs[activeTabIndex] && tabs[activeTabIndex].chatUI) {
-                                return tabs[activeTabIndex].chatUI;
-                            }
-                            return typeof primaryChatUI !== 'undefined' ? primaryChatUI : null;
-                        };
-                        const chatUI = getActiveUI();
-                        if (chatUI) {
-                            chatUI.createQuestionDiv(cleanText);
-                            if (typeof ChatHistoryManager !== 'undefined' && chatUI.historyEl) {
-                                ChatHistoryManager.saveCurrentChat(chatUI.historyEl);
-                            }
-                        }
-                    }
-                    return;
-                }
                 const activeTab = tabs[activeTabIndex];
                 if (activeTab) handleSubmit(text, images, extra, activeTab);
             }
@@ -3148,20 +3128,6 @@ async function init() {
             isPrimaryInput: false,
             alwaysExpanded: true,
             onSubmit: (text, images, extra) => {
-                if (currentGeminiLiveClient && currentGeminiLiveClient.ws && currentGeminiLiveClient.ws.readyState === WebSocket.OPEN) {
-                    const cleanText = (text || '').trim();
-                    if (cleanText) {
-                        currentGeminiLiveClient.sendTextMessage(cleanText);
-                        if (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0 && tabs[secondaryActiveTabIndex] && tabs[secondaryActiveTabIndex].chatUI) {
-                            const chatUI = tabs[secondaryActiveTabIndex].chatUI;
-                            chatUI.createQuestionDiv(cleanText);
-                            if (typeof ChatHistoryManager !== 'undefined' && chatUI.historyEl) {
-                                ChatHistoryManager.saveCurrentChat(chatUI.historyEl);
-                            }
-                        }
-                    }
-                    return;
-                }
                 if (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0) {
                     const secTab = tabs[secondaryActiveTabIndex];
                     if (secTab) handleSubmit(text, images, extra, secTab);
@@ -7614,22 +7580,25 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
     let currentGeminiLiveClient = null;
 
-    function initGeminiLiveSession() {
-        const liveBar = document.getElementById('lumina-live-bar');
-        if (liveBar) {
-            const inputContainer = document.querySelector('.lumina-input-container') || document.querySelector('.lumina-chat-input-wrapper') || document.getElementById('input-area');
-            if (inputContainer) {
-                inputContainer.insertBefore(liveBar, inputContainer.firstChild);
-            }
-            liveBar.style.display = 'flex';
-        }
+    function initGeminiLiveModal() {
+        const modal = document.getElementById('lumina-live-modal');
+        if (!modal) return;
 
-        const statusDot = liveBar ? liveBar.querySelector('.live-status-dot') : null;
+        modal.style.display = 'flex';
+
+        const statusDot = modal.querySelector('.live-status-dot');
         const statusText = document.getElementById('lumina-live-status-text');
+        const closeBtn = document.getElementById('lumina-live-close-btn');
         const micBtn = document.getElementById('lumina-live-mic-toggle');
         const visionBtn = document.getElementById('lumina-live-vision-toggle');
         const endBtn = document.getElementById('lumina-live-end-btn');
         const voiceSelect = document.getElementById('lumina-live-voice-select');
+        const transcriptBox = document.getElementById('lumina-live-transcript-box');
+        const sphere = document.getElementById('lumina-live-sphere');
+
+        if (transcriptBox) {
+            transcriptBox.innerHTML = '<div class="transcript-placeholder">Start talking to Gemini Live...</div>';
+        }
 
         chrome.storage.local.get(null, (res) => {
             let apiKey = res.geminiApiKey || '';
@@ -7651,20 +7620,19 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
             if (!apiKey) {
                 alert('Vui lòng cài đặt Gemini API Key trong Settings trước khi sử dụng Gemini Live!');
-                if (liveBar) liveBar.style.display = 'none';
+                modal.style.display = 'none';
                 if (typeof LuminaSettingsModal !== 'undefined') LuminaSettingsModal.show();
                 return;
             }
 
             const selectedVoice = voiceSelect ? voiceSelect.value : 'Puck';
-            let activeQuestionDiv = null;
 
             currentGeminiLiveClient = new GeminiLiveClient({
                 apiKey: apiKey,
                 modelName: 'gemini-3.1-flash-live-preview',
                 voiceName: selectedVoice,
                 onStatusChange: (status, message) => {
-                    if (statusText) statusText.textContent = 'Live: ' + message;
+                    if (statusText) statusText.textContent = message;
                     if (statusDot) {
                         statusDot.className = 'live-status-dot';
                         if (status === 'listening') statusDot.classList.add('active');
@@ -7672,58 +7640,55 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     }
                 },
                 onTranscript: (speaker, text) => {
-                    if (!text) return;
+                    if (!transcriptBox || !text) return;
+                    const placeholder = transcriptBox.querySelector('.transcript-placeholder');
+                    if (placeholder) placeholder.remove();
+
                     const cleanText = text.trim();
                     if (!cleanText) return;
 
-                    const getActiveUI = () => {
-                        if (typeof activeTabIndex !== 'undefined' && typeof tabs !== 'undefined' && tabs[activeTabIndex] && tabs[activeTabIndex].chatUI) {
-                            return tabs[activeTabIndex].chatUI;
-                        }
-                        return typeof primaryChatUI !== 'undefined' ? primaryChatUI : null;
-                    };
-
-                    const chatUI = getActiveUI();
-                    if (!chatUI) return;
-
-                    if (speaker === 'user') {
-                        if (!activeQuestionDiv) {
-                            activeQuestionDiv = chatUI.createQuestionDiv(cleanText);
+                    const lastEntry = transcriptBox.lastElementChild;
+                    if (lastEntry && lastEntry.dataset.speaker === speaker) {
+                        const contentSpan = lastEntry.querySelector('.transcript-content');
+                        if (contentSpan) {
+                            contentSpan.textContent += (contentSpan.textContent ? ' ' : '') + cleanText;
                         } else {
-                            const qText = activeQuestionDiv.querySelector('.lumina-question-text');
-                            if (qText) {
-                                qText.textContent += ' ' + cleanText;
-                            }
+                            lastEntry.innerHTML += ' ' + cleanText;
                         }
-                    } else if (speaker === 'gemini') {
-                        activeQuestionDiv = null;
-                        chatUI.appendChunk(cleanText);
+                    } else {
+                        const div = document.createElement('div');
+                        div.className = 'transcript-entry';
+                        div.dataset.speaker = speaker;
+                        const label = speaker === 'user' ? 'You' : 'Gemini';
+                        div.innerHTML = `<strong>${label}:</strong> <span class="transcript-content">${cleanText}</span>`;
+                        transcriptBox.appendChild(div);
                     }
-
-                    if (typeof ChatHistoryManager !== 'undefined' && chatUI.historyEl) {
-                        ChatHistoryManager.saveCurrentChat(chatUI.historyEl);
-                    }
+                    transcriptBox.scrollTop = transcriptBox.scrollHeight;
                 },
                 onVolumeWave: (volume) => {
-                    // Wave feedback
+                    if (sphere) {
+                        const scale = 1 + Math.min(volume * 4, 1.2);
+                        sphere.style.transform = `scale(${scale})`;
+                    }
                 },
                 onError: (errMsg) => {
-                    if (statusText) statusText.textContent = 'Live Error: ' + errMsg;
+                    if (statusText) statusText.textContent = 'Error: ' + errMsg;
                 }
             });
 
             currentGeminiLiveClient.connect();
         });
 
-        const closeSession = () => {
+        const closeModal = () => {
             if (currentGeminiLiveClient) {
                 currentGeminiLiveClient.disconnect();
                 currentGeminiLiveClient = null;
             }
-            if (liveBar) liveBar.style.display = 'none';
+            modal.style.display = 'none';
         };
 
-        if (endBtn) endBtn.onclick = closeSession;
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (endBtn) endBtn.onclick = closeModal;
 
         if (micBtn) {
             let micMuted = false;
@@ -7753,13 +7718,35 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     currentGeminiLiveClient.voiceName = voiceSelect.value;
                     currentGeminiLiveClient.disconnect();
                     setTimeout(() => {
-                        initGeminiLiveSession();
+                        initGeminiLiveModal();
                     }, 300);
+                }
+            };
+        }
+
+        const textForm = document.getElementById('lumina-live-text-form');
+        const textInput = document.getElementById('lumina-live-text-input');
+        if (textForm && textInput) {
+            textForm.onsubmit = (e) => {
+                e.preventDefault();
+                const val = textInput.value.trim();
+                if (val && currentGeminiLiveClient) {
+                    currentGeminiLiveClient.sendTextMessage(val);
+                    if (transcriptBox) {
+                        const placeholder = transcriptBox.querySelector('.transcript-placeholder');
+                        if (placeholder) placeholder.remove();
+                        const div = document.createElement('div');
+                        div.className = 'transcript-entry';
+                        div.dataset.speaker = 'user';
+                        div.innerHTML = `<strong>You:</strong> <span class="transcript-content">${val}</span>`;
+                        transcriptBox.appendChild(div);
+                        transcriptBox.scrollTop = transcriptBox.scrollHeight;
+                    }
+                    textInput.value = '';
                 }
             };
         }
     }
 
-    window.initGeminiLiveModal = initGeminiLiveSession;
-    window.initGeminiLiveSession = initGeminiLiveSession;
+    window.initGeminiLiveModal = initGeminiLiveModal;
 })();
