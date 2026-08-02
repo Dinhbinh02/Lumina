@@ -13,77 +13,99 @@
   </p>
 </div>
 
-
 ## Overview
 
-Lumina is a Chrome Extension built to bring AI assistance directly into your browsing workflow. It helps you chat, summarize, translate, explain, and organize knowledge without leaving the page.
+Lumina is a modern, feature-rich Chrome Extension designed to seamlessly integrate AI assistance into your daily browsing experience. Whether you're researching, writing, studying, or building custom AI agents, Lumina provides an intuitive and elegant workspace right within Google Chrome.
 
-Designed with privacy and speed in mind, Lumina stores data locally in the browser and supports multiple AI providers, shortcut-driven actions, and integrated study tools.
+Built with performance, privacy, and aesthetic excellence in mind, Lumina stores data locally, supports multiple AI providers, offers shortcut-driven text actions, and features custom AI agents (**Sparks**).
 
-## Key Features
+---
 
-- **Multi-provider AI support** — Connect to Google Gemini, Groq, Cerebras, or local models through Ollama.
-- **Side-panel chat** — Open a persistent chat panel anytime with keyboard shortcuts.
-- **Selection tools** — Highlight text to quickly trigger explanation, translation, or grammar correction.
-- **Shortcut automation** — Work faster with configurable shortcuts for common actions.
-- **Custom prompts** — Personalize system prompts and assistant behavior.
-- **Anki integration** — Generate and manage flashcards more efficiently.
-- **Key rotation** — Use multiple API keys to reduce rate-limit interruptions.
-- **Google Drive Sync** — Seamlessly back up and sync settings and history using native Chrome identity.
-- **Privacy-first storage** — Keep API keys and history inside your browser.
+## 🌟 Key Features
 
-## Installation
+### ⚡ AI Provider & Model Ecosystem
+- **Multi-provider Support** — Connect to Google Gemini, OpenAI, Claude, Groq, Cerebras, OpenRouter, and local models via Ollama.
+- **Model Chain & Selector** — Unified model selector dropdown across Topbar and Spark Preview with automatic fallback and prompt support detection.
+- **Key Rotation & Resilience** — Configure multiple API keys per provider to prevent rate-limit interruptions.
+- **Advanced Parameters & Thinking Levels** — Customize temperature, topP, maxTokens, and reasoning/thinking levels (Minimal, Low, Standard, Extended).
 
-1. Download the ZIP from GitHub and extract it.
-2. Open Google Chrome and go to `chrome://extensions/`.
-3. Enable **Developer mode**.
+### 🤖 Sparks System (Custom AI Assistants)
+- **Custom Agent Builder** — Create, edit, and personalize dedicated Sparks with custom avatars, descriptions, and instructions.
+- **Knowledge Attachments** — Upload files (text, code, CSV, PDF, etc.) for Sparks to reference as knowledge context.
+- **Isolated Spark Editor & Interactive Preview** — Resizable modal editor featuring live interactive preview chat with real-time model selection.
+
+### 🌐 Smart Browsing & Context Tools
+- **Selection Action Bar** — Highlight text on any web page to trigger instant explanation, translation, grammar correction, or custom prompts.
+- **Web Page Context Awareness** — Attach web page contents and live tab sources to your chat context.
+- **KaTeX & Code Formatting** — Rich markdown rendering with syntax highlighting, inline LaTeX math equations, and interactive charts.
+- **Web Search & Annotation** — Highlights and text annotation persistence across sessions.
+
+### 🔐 Privacy & Cloud Sync
+- **Privacy-First Architecture** — API keys, local history, and custom Sparks are stored securely in your local browser storage.
+- **Google Drive Auto-Sync** — Seamlessly back up and sync settings, prompts, and chat history using Chrome's native OAuth identity.
+
+---
+
+## 🛠️ Installation & Setup
+
+### Installation
+1. Clone or download the repository ZIP and extract it.
+2. Open Google Chrome and navigate to `chrome://extensions/`.
+3. Enable **Developer mode** (top-right toggle).
 4. Click **Load unpacked**.
-5. Select the `Lumina-main` folder.
+5. Select the `Lumina` project directory.
 
-## Setup
+### Initial Setup
+1. Open Lumina via the Chrome Extension popup or Side Panel.
+2. Open **Settings** (gear icon) -> **Providers** and add your API keys.
+3. (Optional) Under **Sync**, click **Sign in with Google** to enable automatic Google Drive backup.
 
-After loading the extension:
+---
 
-1. Open the Lumina popup or side panel.
-2. Configure your preferred provider and add API keys.
-3. (Optional) To enable sync, go to settings, click **Sign in with Google**, and authorize the extension.
-4. Customize shortcuts and prompts to match your workflow.
+## 📁 Project Structure
 
-## Usage
+```text
+Lumina/
+├── manifest.json            # Manifest V3 extension configuration
+├── build.py                 # Python script to bundle JS/CSS files & KaTeX fonts
+├── PROJECT_SYMBOLS.md       # Auto-generated project symbol index
+├── lib/
+│   ├── core/                # Core modules (auth, chat_history, attachment_db, memory, gemini_live, etc.)
+│   ├── helpers/             # Utility modules (annotation_utils, selection_utils, file_processor, etc.)
+│   ├── parsers/             # Text and dictionary parsers
+│   ├── ui/                  # UI components and common handlers
+│   └── vendor/              # Third-party libraries (Marked, Highlight.js, KaTeX, Chart.js, PDF.js)
+├── pages/
+│   └── lumina/              # Main Lumina workspace (HTML, CSS, JS, Sparks, Search, Settings)
+├── scripts/
+│   └── background.js        # Extension background service worker
+└── assets/                  # Icons, graphics, and static assets
+```
 
-- **Chat** — Start a conversation from the side panel.
-- **Selection actions** — Highlight text on any page and trigger quick actions.
-- **Study workflow** — Use the Anki tools to turn useful content into flashcards.
-- **Keyboard-first control** — Use shortcuts for fast access without relying on the mouse.
+---
 
-## Project Structure
+## 🛠️ Development & Build Workflow
 
-- `manifest.json` — Extension manifest
-- `pages/` — UI pages for options, chat, lumina, Anki, and other surfaces
-- `scripts/` — Background, content, and page scripts
-- `assets/` — Icons, images, and styles
-- `lib/` — Shared libraries and vendor code
-- `docs/` — Project documentation
+Lumina uses a lightweight Python build script (`build.py`) to bundle source JS and CSS files into production-ready distribution bundles.
 
-## Development
+### Running Build Script
+```bash
+python3 build.py
+```
+This command bundles:
+- `JS_FILES` -> `pages/lumina/lumina.bundle.js`
+- `CSS_FILES` -> `pages/lumina/lumina.bundle.css`
+- KaTeX fonts -> `pages/lumina/fonts/`
 
-This project is built as a Chrome Extension Manifest V3 app.
+### Updating Symbol Index
+To update `PROJECT_SYMBOLS.md` after adding or modifying functions:
+```bash
+python3 /path/to/update_symbols.py
+```
 
-To modify or extend the extension:
+---
 
-- update the relevant page or script in `pages/` or `scripts/`
-- adjust permissions and entry points in `manifest.json`
-- keep shared utilities inside `lib/`
+## 📄 License
 
-## Contributing
+This project is licensed under the [MIT License](LICENSE).
 
-Contributions are welcome.
-
-1. Fork the repository.
-2. Create a feature branch.
-3. Make your changes.
-4. Open a pull request.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
