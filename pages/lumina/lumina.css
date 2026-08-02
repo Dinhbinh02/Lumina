@@ -5406,7 +5406,7 @@ b .katex * {
   min-width: 0;
   overflow: hidden;
   position: relative;
-  height: calc(100vh - 46px);
+  height: 100%;
   box-sizing: border-box;
   background: var(--lumina-ui-bg);
   border-bottom-left-radius: inherit;
@@ -5448,9 +5448,9 @@ b .katex * {
   position: absolute;
   top: 0;
   left: 0;
-  height: 2px;
+  height: 1px;
   width: 100%;
-  background: #b0b3b8;
+  background: var(--lumina-primary-color, #007aff);
   z-index: 11;
   opacity: 0;
   transform: scaleX(0);
@@ -8083,128 +8083,6 @@ b .katex * {
   background: #d93025;
 }
 
-.split-container {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  height: 100%;
-  gap: 5px;
-  box-sizing: border-box;
-  padding: 0;
-  background: var(--lumina-sidebar-bg);
-}
-
-.split-container.split-mode {
-  padding: 8px 8px 8px 0px;
-}
-
-.split-container:not(.split-mode) .lumina-pane {
-  border-radius: 0;
-  border: none;
-}
-
-#pane-secondary {
-  display: none;
-}
-
-#pane-secondary.is-blank>*:not(.lumina-settings-overlay) {
-  display: none !important;
-}
-
-#sidebar-toggle-btn-secondary {
-  display: none;
-}
-
-.lumina-pane {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 320px;
-  height: 100%;
-  position: relative;
-  border-radius: 12px;
-  background: var(--lumina-ui-bg);
-  border: 1.5px solid var(--lumina-border-color, #e0e0e0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
-  overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  contain: layout style;
-  will-change: flex-basis;
-}
-
-[data-theme="dark"] .lumina-pane {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.split-mode .lumina-pane {
-  opacity: 1;
-  transition: none;
-}
-
-.split-mode .lumina-pane.active {
-  opacity: 1;
-  border-color: var(--lumina-primary-color) !important;
-  box-shadow: none;
-}
-
-.lumina-resizer {
-  width: 8px;
-  cursor: col-resize;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 100;
-  user-select: none;
-  background: transparent;
-  margin: 0 -4px;
-}
-
-.lumina-resizer-handle {
-  width: 4px;
-  height: 24px;
-  background: var(--lumina-border-color, #d0d0d0);
-  border-radius: 2px;
-  transition: background 0.2s ease, height 0.2s ease, width 0.2s ease;
-}
-
-.lumina-resizer:hover .lumina-resizer-handle,
-.lumina-resizer.dragging .lumina-resizer-handle {
-  background: var(--lumina-primary-color);
-  height: 36px;
-  width: 6px;
-}
-
-body.is-sidepanel .split-toggle-btn {
-  display: none !important;
-}
-
-@media (max-width: 768px) {
-  .split-container {
-    padding: 0 !important;
-  }
-
-  .lumina-pane {
-    border-radius: 0 !important;
-    border: none !important;
-  }
-}
-
-.split-container.split-mode .open-split-btn,
-.split-container.split-mode #topbar-new-chat-btn-secondary {
-  display: none !important;
-}
-
-.split-container:not(.split-mode) .close-split-btn {
-  display: none !important;
-}
-
-#pane-secondary.is-blank .close-split-btn {
-  display: none !important;
-}
-
 .layout.new-chat-homepage {
   display: flex !important;
   flex-direction: column !important;
@@ -8240,6 +8118,8 @@ body.is-sidepanel .split-toggle-btn {
   justify-content: center !important;
   margin-bottom: 32px !important;
   animation: fadeIn 0.4s ease-out;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 .layout.new-chat-homepage .welcome-title {
@@ -8344,8 +8224,15 @@ body.is-sidepanel .split-toggle-btn {
 }
 
 .sidebar-toggle-svg .collapse-chevron {
+  opacity: 0;
   transition: opacity 0.15s ease, transform 0.15s ease;
   transform-origin: center;
+}
+
+.sidebar-toggle-btn:hover .sidebar-toggle-svg .collapse-chevron,
+.topbar__action-btn:hover .sidebar-toggle-svg .collapse-chevron,
+button:hover .sidebar-toggle-svg .collapse-chevron {
+  opacity: 1;
 }
 
 .lumina-sidebar.sidebar-collapsed~.lumina-main-content .collapse-chevron {
@@ -9418,22 +9305,6 @@ h1,
   font-weight: var(--lumina-weight-bold) !important;
 }
 
-/* --- GEMINI LIVE SIDEBAR NAV & OVERLAY MODAL --- */
-#sidebar-gemini-live-btn {
-  background: linear-gradient(135deg, rgba(66, 133, 244, 0.08), rgba(234, 67, 53, 0.08));
-  border: 1px solid rgba(66, 133, 244, 0.15);
-  color: var(--text-color, #1a1a1a);
-  transition: all 0.25s ease;
-}
-#sidebar-gemini-live-btn:hover {
-  background: linear-gradient(135deg, rgba(66, 133, 244, 0.15), rgba(234, 67, 53, 0.15));
-  border-color: rgba(66, 133, 244, 0.4);
-  transform: translateY(-1px);
-}
-#sidebar-gemini-live-btn svg {
-  color: #4285f4;
-}
-
 .lumina-live-modal-overlay {
   position: fixed;
   top: 0;
@@ -9509,6 +9380,7 @@ h1,
   border-radius: 50%;
   transition: all 0.2s;
 }
+
 .lumina-live-close-btn:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.1);
@@ -9559,18 +9431,42 @@ h1,
   animation: wavePulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
-.sphere-wave.wave1 { width: 90px; height: 90px; animation-delay: 0s; }
-.sphere-wave.wave2 { width: 120px; height: 120px; animation-delay: 0.6s; }
+.sphere-wave.wave1 {
+  width: 90px;
+  height: 90px;
+  animation-delay: 0s;
+}
+
+.sphere-wave.wave2 {
+  width: 120px;
+  height: 120px;
+  animation-delay: 0.6s;
+}
 
 @keyframes gradientGlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes wavePulse {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  100% { transform: scale(1.6); opacity: 0; }
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
 }
 
 .lumina-live-transcript-box {
@@ -9595,6 +9491,7 @@ h1,
 .transcript-entry {
   margin-bottom: 8px;
 }
+
 .transcript-entry strong {
   color: #8ab4f8;
 }
@@ -9636,6 +9533,7 @@ h1,
 .live-control-btn.end-btn {
   background: #ea4335;
 }
+
 .live-control-btn.end-btn:hover {
   background: #d93025;
 }
@@ -9650,6 +9548,7 @@ h1,
   outline: none;
   cursor: pointer;
 }
+
 .live-voice-select option {
   background: #181b24;
   color: #fff;

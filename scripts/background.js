@@ -831,6 +831,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
             geminiContents.push({ role: 'user', parts: [{ text: currentQ || '' }] });
         }
         const generationConfig = {
+            maxOutputTokens: 65536,
             ...parsedCustomParams
         };
         const isGemini3 = /gemini-[3-9]/i.test(model);
@@ -1069,8 +1070,17 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
                 return response;
             }
         } catch (err) {
-            if (err.name === 'AbortError' || err.message?.includes('aborted') || err.message === 'signal is aborted without reason') {
+            const errName = err?.name || '';
+            const errMsg = err?.message || '';
+            if (errName === 'AbortError' || errMsg.includes('aborted') || errMsg === 'signal is aborted without reason') {
                 throw err;
+            }
+            const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            const isFetchFailed = errName === 'TypeError' || errMsg.includes('Failed to fetch') || errMsg.includes('fetch failed') || errMsg.includes('network') || errMsg.includes('net::ERR');
+            if (isOffline || isFetchFailed) {
+                const netErr = new Error("Network error: Failed to connect to the AI provider. Please check your internet connection.");
+                netErr.name = 'NetworkError';
+                throw netErr;
             }
             console.error(`[Lumina] Request failed with key ${currentIndex}:`, err);
         }
@@ -2312,7 +2322,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     chrome.storage.local.get(['readWebpage'], (res) => {
                         const isReadWebpageEnabled = res.readWebpage !== false;
                         if (isReadWebpageEnabled) {
-                            chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab });
+                            chrome.runtime.sendMessage({ action: 'pin_web_source', windowId: windowIdManual, source: sourceTab }).catch(() => { });
                         }
                     });
                 }
@@ -2344,7 +2354,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 chrome.storage.local.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData }, () => {
                     chrome.sidePanel.open({ windowId: windowIdQuery }).catch(() => { });
                     if (sidePanelPorts.has(windowIdQuery)) {
-                        chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, ...queryData });
+                        chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, ...queryData }).catch(() => { });
                     }
                 });
             }
@@ -3199,6 +3209,7 @@ Example Output:
                 { role: 'user', parts: [{ text: text }] }
             ];
             const geminiConfig = {
+                maxOutputTokens: 65536,
                 temperature: 0.3,
                 responseMimeType: 'application/json'
             };
@@ -3469,7 +3480,7 @@ async function playAudioOffscreen(url, speed = 1.0) {
         action: 'offscreen_playAudio',
         url: url,
         speed: speed
-    });
+    }).catch(() => { });
 }
 
 async function playEdgeTTSOffscreen(text, speed = 1.0) {
@@ -3490,7 +3501,7 @@ async function playEdgeTTSOffscreen(text, speed = 1.0) {
         text: text,
         voice: voice,
         speed: speed
-    });
+    }).catch(() => { });
 }
 
 async function playBase64AudioOffscreen(base64Data, speed = 1.0) {
@@ -3505,14 +3516,14 @@ async function playBase64AudioOffscreen(base64Data, speed = 1.0) {
         action: 'offscreen_playBase64',
         data: base64Data,
         speed: speed
-    });
+    }).catch(() => { });
 }
 
 async function stopAudioOffscreen() {
     if ((await chrome.offscreen.hasDocument())) {
         return await chrome.runtime.sendMessage({
             action: 'offscreen_stopAudio'
-        });
+        }).catch(() => { });
     }
 }
 
@@ -3520,7 +3531,7 @@ async function stopGoogleAudioOffscreen() {
     if ((await chrome.offscreen.hasDocument())) {
         return await chrome.runtime.sendMessage({
             action: 'offscreen_stopGoogleAudio'
-        });
+        }).catch(() => { });
     }
 }
 

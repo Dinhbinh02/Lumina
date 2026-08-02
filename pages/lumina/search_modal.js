@@ -73,15 +73,9 @@ class LuminaSearchModal {
   }
   static hide() {
     if (this.overlay) {
-      const wasInPane = this.overlay.classList.contains('in-pane');
       this.overlay.style.display = 'none';
       this.overlay.classList.remove('in-pane');
       document.body.appendChild(this.overlay);
-      if (wasInPane && !this.isSelectingChat && typeof isSplitMode !== 'undefined' && isSplitMode) {
-        if (typeof toggleSplitMode === 'function') {
-          toggleSplitMode();
-        }
-      }
     }
   }
   static escapeRegExp(string) {
