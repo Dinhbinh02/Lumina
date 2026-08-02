@@ -177,6 +177,10 @@ let chatUI = null;
 let sharedInputUI = null;
 
 function getHoveredInputEl() {
+    const sparkInput = document.getElementById('sparks-preview-input');
+    if (sparkInput && !sparkInput.disabled && sparkInput.offsetParent !== null) {
+        return sparkInput;
+    }
     return sharedInputUI?.inputEl;
 }
 
@@ -821,7 +825,7 @@ async function handleRemoteSync(changes, areaName) {
             }
         }
     }
-    // Session changes and index changes are now synced via runtime message broadcasts
+
 }
 
 function normalizeTabs() {
@@ -855,9 +859,7 @@ async function ensureTabHistoryLoaded(tab) {
     tab.isLoadingHistory = true;
     tab.loadingPromise = (async () => {
         if (tab.sessionId) {
-            const isSecondary = (typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex !== -1 && tabs[secondaryActiveTabIndex] && tabs[secondaryActiveTabIndex].id === tab.id) || tab.id === 'tab-secondary';
-            const pane = isSecondary ? 'secondary' : 'primary';
-            showTopbarLoading(pane);
+            showTopbarLoading('primary');
             if (tab.historyEl) {
                 tab.historyEl.style.opacity = '0';
                 tab.historyEl.style.transition = 'none';
@@ -892,9 +894,9 @@ async function ensureTabHistoryLoaded(tab) {
                 tab.isLoadingHistory = false;
                 tab.isHistoryLoaded = true;
                 tab.loadingPromise = null;
-                hideTopbarLoading(pane);
+                hideTopbarLoading('primary');
                 if (typeof updateWelcomeScreenState === 'function') {
-                    updateWelcomeScreenState(pane);
+                    updateWelcomeScreenState('primary');
                 }
             }
         } else {
@@ -1073,6 +1075,15 @@ async function initTabs() {
         });
     }
     window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.syncData === 'function') {
+                LuminaSync.syncData(false).catch(err => {
+                    console.error('[Lumina] Manual sync via shortcut failed:', err);
+                });
+            }
+            return;
+        }
         if ((e.metaKey || e.ctrlKey) && e.key === 't') {
             e.preventDefault();
             createTab();
@@ -1149,7 +1160,7 @@ function switchTab(targetIndex, skipScrollRestore = false) {
     }
 }
 
-function syncTabUI(tab, isSecondary = false, skipScrollRestore = false) {
+function syncTabUI(tab, skipScrollRestore = false) {
     if (!tab || !tab.historyEl) return;
     if (tab.scrollTop !== -1) {
         tab.historyEl.scrollTop = tab.scrollTop;
@@ -2354,9 +2365,6 @@ async function init() {
                         KEYS.tabGroups = `${STORAGE_PREFIX}_tab_groups_${newInstId}`;
                         KEYS.activeGroupIndex = `${STORAGE_PREFIX}_active_group_index_${newInstId}`;
                         KEYS.groupCounter = `${STORAGE_PREFIX}_group_counter_${newInstId}`;
-                        KEYS.isSplitMode = `${STORAGE_PREFIX}_is_split_mode_${newInstId}`;
-                        KEYS.secondaryTabIndex = `${STORAGE_PREFIX}_secondary_tab_index_${newInstId}`;
-                        KEYS.splitRatio = `${STORAGE_PREFIX}_split_ratio_${newInstId}`;
                     }
                     sessionStorage.setItem('lumina_tab_id', String(tab.id));
                     resolve();
@@ -2374,9 +2382,6 @@ async function init() {
                                 KEYS.tabGroups = `${STORAGE_PREFIX}_tab_groups_${newInstId}`;
                                 KEYS.activeGroupIndex = `${STORAGE_PREFIX}_active_group_index_${newInstId}`;
                                 KEYS.groupCounter = `${STORAGE_PREFIX}_group_counter_${newInstId}`;
-                                KEYS.isSplitMode = `${STORAGE_PREFIX}_is_split_mode_${newInstId}`;
-                                KEYS.secondaryTabIndex = `${STORAGE_PREFIX}_secondary_tab_index_${newInstId}`;
-                                KEYS.splitRatio = `${STORAGE_PREFIX}_split_ratio_${newInstId}`;
                             }
                             sessionStorage.setItem('lumina_window_id', String(win.id));
                         }
@@ -2599,17 +2604,14 @@ async function init() {
         checkReady();
     }
     document.addEventListener('lumina:model-change', (e) => {
-        const isSecondary = e.target.closest('#pane-secondary') !== null;
-        const targetIndex = isSecondary ? secondaryActiveTabIndex : activeTabIndex;
-        const targetSharedUI = isSecondary ? sharedInputUISecondary : sharedInputUI;
-        const activeTab = tabs[targetIndex];
+        const activeTab = tabs[activeTabIndex];
         if (activeTab && e.detail) {
             activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
             if (activeTab.chatUIInstance) {
                 activeTab.chatUIInstance.activeTabModel = { ...activeTab.selectedModel };
             }
-            if (targetSharedUI) {
-                targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
+            if (sharedInputUI) {
+                sharedInputUI.activeTabModel = { ...activeTab.selectedModel };
             }
             const sidKey = activeTab.sessionId || 'null';
             chrome.storage.local.get(['lumina_session_settings'], (res) => {
@@ -2673,14 +2675,12 @@ async function init() {
                 let updated = false;
                 tabs.forEach((tab, index) => {
                     if (tab.sessionId && deletedIds.includes(tab.sessionId)) {
-                        const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
                         const isActive = (index === activeTabIndex);
-                        if (isActive || isSecondary) {
-                            const ui = isSecondary ? sharedInputUISecondary : sharedInputUI;
-                            if (ui && ui.isGenerating) {
+                        if (isActive) {
+                            if (sharedInputUI && sharedInputUI.isGenerating) {
                                 console.log('[Lumina] Suppressing resetChat on active generation for tab:', tab.sessionId);
                             } else {
-                                resetChat(isSecondary);
+                                resetChat();
                                 updated = true;
                             }
                         } else {
@@ -3152,7 +3152,7 @@ async function renderRecentChatsSidebar() {
     if (recentData.length === 0) {
         html = '<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-sidebar-text-muted); text-align: center;">No recent chats</div>';
     } else {
-        // Ensure the active session is always rendered and not cut off by the limit
+
         let activeIndex = -1;
         if (activeSessionId) {
             activeIndex = recentData.findIndex(s => s.id === activeSessionId);
@@ -3439,8 +3439,7 @@ async function renderRecentChatsSidebar() {
                         await ChatHistoryManager.deleteChat(sid);
                         tabs.forEach((tab, index) => {
                             if (tab.sessionId === sid) {
-                                const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
-                                resetChat(isSecondary);
+                                resetChat();
                             }
                         });
                     }
@@ -3690,10 +3689,8 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         if (currentTab.historyEl) {
             currentTab.historyEl.dataset.sessionId = newSessionId;
         }
-        const isSecondary = isSplitMode && currentTab === tabs[secondaryActiveTabIndex];
-        const targetUI = isSecondary ? chatUISecondary : chatUI;
-        if (targetUI && targetUI.historyEl) {
-            targetUI.historyEl.dataset.sessionId = newSessionId;
+        if (chatUI && chatUI.historyEl) {
+            chatUI.historyEl.dataset.sessionId = newSessionId;
         }
         updateUrlSessionId(newSessionId);
         const currentModel = currentTab.selectedModel;
@@ -3885,7 +3882,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 if (pageContextCache.has(cacheKey)) {
                     return pageContextCache.get(cacheKey);
                 }
-                // Check if it's a Lumina page tab
+
                 if (typeof source.url === 'string' && source.url.startsWith('chrome-extension://') && source.url.includes('?sid=')) {
                     try {
                         const urlObj = new URL(source.url);
@@ -4685,7 +4682,7 @@ function resetChat() {
     if (typeof updateTopbarSparkTitle === 'function') {
         updateTopbarSparkTitle();
     }
-    updateWelcomeScreenState(isSecondary ? 'secondary' : 'primary');
+    updateWelcomeScreenState('primary');
     updateInputPlaceholder();
     const regenBtn = document.getElementById('lumina-regenerate-btn');
     if (regenBtn) regenBtn.style.display = 'none';
@@ -4699,13 +4696,11 @@ function setupRegenerateButtons() {
         newBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const isSecondary = newBtn.closest('#pane-secondary') !== null;
-            const targetUI = isSecondary ? chatUISecondary : chatUI;
             if (newBtn.classList.contains('loading')) {
-                if (targetUI && targetUI.onStop) targetUI.onStop();
-                if (targetUI) targetUI.hideStopButton();
+                if (chatUI && chatUI.onStop) chatUI.onStop();
+                if (chatUI) chatUI.hideStopButton();
             } else {
-                triggerRegenerate(targetUI);
+                triggerRegenerate(chatUI);
             }
         });
     });
@@ -5455,12 +5450,10 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
-async function renderDropdownMenu(pane = 'primary') {
-    const isSec = (pane === 'secondary');
-    const dropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
+async function renderDropdownMenu() {
+    const dropdown = document.getElementById('topbar-dropdown-menu');
     if (!dropdown) return;
-    const targetIdx = isSec ? secondaryActiveTabIndex : activeTabIndex;
-    const activeTab = tabs[targetIdx];
+    const activeTab = tabs[activeTabIndex];
     const sessionId = activeTab?.sessionId || null;
     let sessionMeta = null;
     if (sessionId) {
@@ -5670,8 +5663,7 @@ async function renderDropdownMenu(pane = 'primary') {
             await ChatHistoryManager.deleteChat(sessionId);
             tabs.forEach((tab, index) => {
                 if (tab.sessionId === sessionId) {
-                    const isSecondary = (typeof isSplitMode !== 'undefined' && isSplitMode && index === secondaryActiveTabIndex);
-                    resetChat(isSecondary);
+                    resetChat();
                 }
             });
         }
@@ -5693,27 +5685,16 @@ async function renderDropdownMenu(pane = 'primary') {
     });
 }
 
-function initTopbarModelSelector(pane = 'primary') {
-    const isSec = (pane === 'secondary');
-    const selectorId = isSec ? 'topbar-model-selector-secondary' : 'topbar-model-selector';
-    const btnId = isSec ? 'topbar-model-btn-secondary' : 'topbar-model-btn';
-    const labelId = isSec ? 'topbar-model-label-secondary' : 'topbar-model-label';
-    const dropdownId = isSec ? 'topbar-model-dropdown-secondary' : 'topbar-model-dropdown';
-    const selector = document.getElementById(selectorId);
+function initTopbarModelSelector() {
+    const selector = document.getElementById('topbar-model-selector');
     if (!selector) return;
-    const btn = document.getElementById(btnId);
-    const label = document.getElementById(labelId);
-    const dropdown = document.getElementById(dropdownId);
+    const btn = document.getElementById('topbar-model-btn');
+    const label = document.getElementById('topbar-model-label');
+    const dropdown = document.getElementById('topbar-model-dropdown');
     if (!btn || !dropdown) return;
     if (btn.dataset.initializedModelSelector) {
-        if (isSec) {
-            if (window.updateTopbarModelSelectorSecondary) {
-                window.updateTopbarModelSelectorSecondary();
-            }
-        } else {
-            if (window.updateTopbarModelSelector) {
-                window.updateTopbarModelSelector();
-            }
+        if (window.updateTopbarModelSelector) {
+            window.updateTopbarModelSelector();
         }
         return;
     }
@@ -5721,9 +5702,7 @@ function initTopbarModelSelector(pane = 'primary') {
     const render = (data) => {
         const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
         const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
-        const activeTab = isSec
-            ? tabs[secondaryActiveTabIndex]
-            : tabs[activeTabIndex];
+        const activeTab = tabs[activeTabIndex];
         let currentModel = activeTab?.selectedModel?.model;
         let currentProviderId = activeTab?.selectedModel?.providerId;
         const lastUsed = data.lastUsedModel;
@@ -5737,12 +5716,11 @@ function initTopbarModelSelector(pane = 'primary') {
         }
         if (activeTab && currentModel) {
             activeTab.selectedModel = { model: currentModel, providerId: currentProviderId };
-            const targetSharedUI = isSec ? sharedInputUISecondary : sharedInputUI;
-            if (targetSharedUI) {
-                targetSharedUI.activeTabModel = { ...activeTab.selectedModel };
-                targetSharedUI.thinkingLevel = activeTab.thinkingLevel || null;
-                if (typeof targetSharedUI.refreshReasoningSelector === 'function') {
-                    targetSharedUI.refreshReasoningSelector();
+            if (sharedInputUI) {
+                sharedInputUI.activeTabModel = { ...activeTab.selectedModel };
+                sharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
+                if (typeof sharedInputUI.refreshReasoningSelector === 'function') {
+                    sharedInputUI.refreshReasoningSelector();
                 }
             }
         }
@@ -5774,26 +5752,16 @@ function initTopbarModelSelector(pane = 'primary') {
                 dropdown.classList.remove('active');
                 dropdown.querySelectorAll('.lumina-model-item').forEach(b => b.classList.remove('active'));
                 el.classList.add('active');
-                const currentActiveTab = isSec
-                    ? tabs[secondaryActiveTabIndex]
-                    : tabs[activeTabIndex];
-                const otherTab = isSec
-                    ? (activeTabIndex >= 0 ? tabs[activeTabIndex] : null)
-                    : (typeof isSplitMode !== 'undefined' && isSplitMode && secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null);
+                const currentActiveTab = tabs[activeTabIndex];
                 const tabsToUpdate = [currentActiveTab];
-                if (otherTab && otherTab.sessionId === currentActiveTab.sessionId) {
-                    tabsToUpdate.push(otherTab);
-                }
                 tabsToUpdate.forEach(tab => {
-                    const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
-                    const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
                     tab.selectedModel = { model: item.model, providerId: item.providerId };
-                    setPaneActiveModel(tabIsSec ? 'secondary' : 'primary', tab.selectedModel);
+                    setPaneActiveModel('primary', tab.selectedModel);
                     if (tab.chatUIInstance) {
                         tab.chatUIInstance.activeTabModel = { ...tab.selectedModel };
                     }
-                    if (targetSharedUI) {
-                        targetSharedUI.activeTabModel = { ...tab.selectedModel };
+                    if (sharedInputUI) {
+                        sharedInputUI.activeTabModel = { ...tab.selectedModel };
                     }
                 });
                 if (currentActiveTab) {
@@ -5808,16 +5776,14 @@ function initTopbarModelSelector(pane = 'primary') {
                         const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
                         const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
                         tabsToUpdate.forEach(tab => {
-                            const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
-                            const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
                             tab.thinkingLevel = newThinkingLevel;
-                            setPaneActiveThinking(tabIsSec ? 'secondary' : 'primary', newThinkingLevel);
+                            setPaneActiveThinking('primary', newThinkingLevel);
                             settings[sidKey].thinkingLevel = newThinkingLevel;
                             if (tab.chatUIInstance) {
                                 tab.chatUIInstance.thinkingLevel = newThinkingLevel;
                             }
-                            if (targetSharedUI) {
-                                targetSharedUI.thinkingLevel = newThinkingLevel;
+                            if (sharedInputUI) {
+                                sharedInputUI.thinkingLevel = newThinkingLevel;
                             }
                         });
                         chrome.storage.local.set({ lumina_session_settings: settings }, () => {
@@ -5825,10 +5791,8 @@ function initTopbarModelSelector(pane = 'primary') {
                                 window.LuminaChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, { model: item.model, providerId: item.providerId }, newThinkingLevel);
                             }
                             tabsToUpdate.forEach(tab => {
-                                const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
-                                const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-                                if (targetSharedUI && typeof targetSharedUI.refreshReasoningSelector === 'function') {
-                                    targetSharedUI.refreshReasoningSelector();
+                                if (sharedInputUI && typeof sharedInputUI.refreshReasoningSelector === 'function') {
+                                    sharedInputUI.refreshReasoningSelector();
                                 }
                             });
                             if (typeof saveTabsState === 'function') {
@@ -5836,9 +5800,6 @@ function initTopbarModelSelector(pane = 'primary') {
                             }
                             if (typeof window.updateTopbarModelSelector === 'function') {
                                 window.updateTopbarModelSelector();
-                            }
-                            if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
-                                window.updateTopbarModelSelectorSecondary();
                             }
                         });
                     });
@@ -5895,26 +5856,16 @@ function initTopbarModelSelector(pane = 'primary') {
             `;
             optEl.onclick = (e) => {
                 e.stopPropagation();
-                const currentActiveTab = isSec
-                    ? tabs[secondaryActiveTabIndex]
-                    : tabs[activeTabIndex];
-                const otherTab = isSec
-                    ? (activeTabIndex >= 0 ? tabs[activeTabIndex] : null)
-                    : (typeof isSplitMode !== 'undefined' && isSplitMode && secondaryActiveTabIndex >= 0 ? tabs[secondaryActiveTabIndex] : null);
+                const currentActiveTab = tabs[activeTabIndex];
                 const tabsToUpdate = [currentActiveTab];
-                if (otherTab && otherTab.sessionId === currentActiveTab.sessionId) {
-                    tabsToUpdate.push(otherTab);
-                }
                 tabsToUpdate.forEach(tab => {
-                    const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
-                    const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
                     tab.thinkingLevel = opt.value;
-                    setPaneActiveThinking(tabIsSec ? 'secondary' : 'primary', opt.value);
+                    setPaneActiveThinking('primary', opt.value);
                     if (tab.chatUIInstance) {
                         tab.chatUIInstance.thinkingLevel = opt.value;
                     }
-                    if (targetSharedUI) {
-                        targetSharedUI.thinkingLevel = opt.value;
+                    if (sharedInputUI) {
+                        sharedInputUI.thinkingLevel = opt.value;
                     }
                 });
                 if (currentActiveTab) {
@@ -5928,18 +5879,13 @@ function initTopbarModelSelector(pane = 'primary') {
                                 window.LuminaChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, undefined, opt.value);
                             }
                             tabsToUpdate.forEach(tab => {
-                                const tabIsSec = (typeof isSplitMode !== 'undefined' && isSplitMode && tab === tabs[secondaryActiveTabIndex]);
-                                const targetSharedUI = tabIsSec ? sharedInputUISecondary : sharedInputUI;
-                                if (targetSharedUI && typeof targetSharedUI.refreshSystemTokens === 'function') {
-                                    targetSharedUI.refreshSystemTokens();
+                                if (sharedInputUI && typeof sharedInputUI.refreshSystemTokens === 'function') {
+                                    sharedInputUI.refreshSystemTokens();
                                 }
                             });
                             dropdown.classList.remove('active');
                             if (typeof window.updateTopbarModelSelector === 'function') {
                                 window.updateTopbarModelSelector();
-                            }
-                            if (typeof window.updateTopbarModelSelectorSecondary === 'function') {
-                                window.updateTopbarModelSelectorSecondary();
                             }
                         });
                     });
@@ -5951,9 +5897,7 @@ function initTopbarModelSelector(pane = 'primary') {
         dropdown.appendChild(thinkingItem);
     };
     const fetchAndRender = () => {
-        const activeTab = isSec
-            ? tabs[secondaryActiveTabIndex]
-            : tabs[activeTabIndex];
+        const activeTab = tabs[activeTabIndex];
         const sidKey = activeTab?.sessionId || 'null';
         chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
             if (typeof window.getPromptApiSupport === 'function') {
@@ -5988,7 +5932,7 @@ function initTopbarModelSelector(pane = 'primary') {
         if (dropdown.classList.contains('active')) {
             dropdown.classList.remove('active');
         } else {
-            const moreDropdown = document.getElementById(isSec ? 'topbar-dropdown-menu-secondary' : 'topbar-dropdown-menu');
+            const moreDropdown = document.getElementById('topbar-dropdown-menu');
             if (moreDropdown) moreDropdown.style.display = 'none';
             fetchAndRender();
             dropdown.classList.add('active');
@@ -6026,6 +5970,7 @@ window.updateInputPlaceholder = updateInputPlaceholder;
 function updateSidebarUserProfile(isAuthenticated, user) {
     const avatarEl = document.querySelector('.user-profile .user-avatar');
     const nameEl = document.querySelector('.user-profile .user-name');
+    const lastSyncEl = document.getElementById('user-last-sync');
     if (!avatarEl || !nameEl) return;
     if (isAuthenticated && user) {
         nameEl.textContent = user.name || "User";
@@ -6042,6 +5987,41 @@ function updateSidebarUserProfile(isAuthenticated, user) {
     const profileEl = document.querySelector('.user-profile');
     if (profileEl) {
         profileEl.style.visibility = 'visible';
+    }
+
+    if (lastSyncEl && typeof LuminaSync !== 'undefined') {
+        const updateSyncDisplay = (status, lastSyncTime) => {
+            if (lastSyncTime) {
+                const timeStr = new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastSyncEl.textContent = `Last synced: ${timeStr}`;
+            } else {
+                LuminaSync.getLastSyncTime().then(time => {
+                    if (time && time !== 'Never') {
+                        const parsedDate = new Date(time);
+                        const timeStr = isNaN(parsedDate.getTime()) ? time : parsedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        lastSyncEl.textContent = `Last synced: ${timeStr}`;
+                    } else {
+                        lastSyncEl.textContent = 'Not synced';
+                    }
+                }).catch(() => {
+                    lastSyncEl.textContent = '';
+                });
+            }
+        };
+        updateSyncDisplay();
+        if (!window.__luminaUserLastSyncListenerBound) {
+            window.__luminaUserLastSyncListenerBound = true;
+            LuminaSync.addListener((status, lastSync) => {
+                updateSyncDisplay(status, lastSync);
+            });
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+                chrome.storage.onChanged.addListener((changes, area) => {
+                    if (area === 'local' && changes.last_sync_time) {
+                        updateSyncDisplay(null, changes.last_sync_time.newValue);
+                    }
+                });
+            }
+        }
     }
 }
 
@@ -6370,9 +6350,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             }
         },
         showCanvas() {
-            if (!isSplitMode) {
-                toggleSplitMode();
-            }
             const paneSecondary = document.getElementById('pane-secondary');
             if (paneSecondary) {
                 paneSecondary.classList.add('canvas-active');
@@ -6382,9 +6359,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             const paneSecondary = document.getElementById('pane-secondary');
             if (paneSecondary) {
                 paneSecondary.classList.remove('canvas-active');
-            }
-            if (isSplitMode) {
-                toggleSplitMode();
             }
         },
         setDocument(name, type, content) {

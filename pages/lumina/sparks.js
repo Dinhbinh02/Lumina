@@ -413,26 +413,18 @@ async function sparksOpenEditor(sparkId = null) {
     const welcomeBgStyle = spark?.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
     overlay.innerHTML = `
         <div class="sparks-editor">
-            <!-- Left: Form -->
-            <div class="sparks-editor__form">
-                <div class="sparks-editor__topbar">
-                    <button class="sparks-editor__back" id="sparks-editor-back">
+            
+            <div class="sparks-editor-form">
+                <div class="sparks-editor-topbar">
+                    <button class="sparks-editor-back" id="sparks-editor-back">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
                     </button>
-                    <div class="sparks-editor__title-row">
-                        <div class="sparks-editor__icon">
-                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <rect x="4" y="6" width="6" height="4" rx="2"/>
-                                <rect x="14" y="6" width="6" height="8" rx="3"/>
-                                <rect x="4" y="14" width="6" height="6" rx="3"/>
-                                <rect x="14" y="18" width="6" height="4" rx="2"/>
-                            </svg>
-                        </div>
+                    <div class="sparks-editor-title-row">
                         <span>${spark ? escapeHtml(spark.name || 'Untitled Spark') : 'New Spark'}</span>
                     </div>
-                    <button class="sparks-editor__save" id="sparks-editor-save">Save</button>
+                    <button class="sparks-editor-save" id="sparks-editor-save">Save</button>
                 </div>
-                <div class="sparks-editor__fields">
+                <div class="sparks-editor-fields">
                     <div class="spark-avatar-editor">
                         <div class="spark-avatar-preview" id="spark-avatar-preview">
                             ${spark?.avatar ? `<img src="${spark.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />` : `<span class="spark-avatar-letter">${(spark?.name || '?')[0].toUpperCase()}</span>`}
@@ -440,7 +432,7 @@ async function sparksOpenEditor(sparkId = null) {
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                             </div>
                         </div>
-                        <input type="file" id="spark-avatar-file" accept="image/*" style="display: none;">
+                        <input type="file" id="spark-avatar-file" accept="image/*" style="display:none">
                     </div>
                     <div class="sparks-field">
                         <label class="sparks-label">Name</label>
@@ -481,24 +473,33 @@ async function sparksOpenEditor(sparkId = null) {
                     </div>
                 </div>
             </div>
-            <!-- Resizer -->
-            <div class="sparks-editor__resizer" id="sparks-editor-resizer">
-                <div class="sparks-editor__resizer-handle"></div>
-            </div>
-            <!-- Right: Preview -->
-            <div class="sparks-editor__preview">
-                <div class="sparks-preview__header">Preview</div>
-                <div class="sparks-preview__chat" id="sparks-preview-chat">
-                    <div class="sparks-preview__empty" id="sparks-preview-empty">
+            
+            <div class="sparks-editor-preview">
+                <div class="sparks-editor-resizer" id="sparks-editor-resizer">
+                    <div class="sparks-editor-resizer-handle"></div>
+                </div>
+                <div class="sparks-preview-header">
+                    <div class="lumina-model-selector" id="sparks-preview-model-selector">
+                        <button class="lumina-model-btn" id="sparks-preview-model-btn">
+                            <span class="lumina-current-model" id="sparks-preview-model-label">Loading...</span>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="lumina-model-dropdown" id="sparks-preview-model-dropdown"></div>
+                    </div>
+                </div>
+                <div class="sparks-preview-chat" id="sparks-preview-chat">
+                    <div class="sparks-preview-empty" id="sparks-preview-empty">
                         <div class="spark-welcome">
                             <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
                             <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || 'New Spark')}</h1>
                             <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? 'block' : 'none'};">${escapeHtml(spark?.description || '')}</p>
                         </div>
                     </div>
-                    <div class="sparks-preview__messages" id="sparks-preview-messages"></div>
+                    <div class="lumina-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
                 </div>
-                <div class="lumina-chat-input-wrapper sparks-preview__input-area">
+                <div class="lumina-chat-input-wrapper sparks-preview-input-area">
                     <div class="lumina-input-container">
                         <div class="lumina-input-bar">
                             <div class="lumina-left-actions">
@@ -506,13 +507,13 @@ async function sparksOpenEditor(sparkId = null) {
                                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                  </button>
                             </div>
-                            <textarea class="lumina-chat-input sparks-preview__input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
+                            <textarea class="lumina-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
                             <div class="lumina-trailing-group">
                                 <button class="lumina-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
                                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                                 </button>
-                                <button class="lumina-action-btn sparks-preview__send" id="sparks-preview-send" disabled title="Send Message" style="display: flex; align-items: center; justify-content: center;">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                <button class="lumina-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                                 </button>
                             </div>
                         </div>
@@ -528,8 +529,8 @@ async function sparksOpenEditor(sparkId = null) {
         document.body.appendChild(overlay);
     }
     const sparksResizer = overlay.querySelector('#sparks-editor-resizer');
-    const formPane = overlay.querySelector('.sparks-editor__form');
-    const previewPane = overlay.querySelector('.sparks-editor__preview');
+    const formPane = overlay.querySelector('.sparks-editor-form');
+    const previewPane = overlay.querySelector('.sparks-editor-preview');
     const editorContainer = overlay.querySelector('.sparks-editor');
     if (sparksResizer && formPane && previewPane && editorContainer) {
         let isDragging = false;
@@ -605,7 +606,7 @@ async function sparksOpenEditor(sparkId = null) {
         overlay.remove();
     });
     const nameInput = overlay.querySelector('#spark-name-input');
-    const titleLabel = overlay.querySelector('.sparks-editor__title-row span');
+    const titleLabel = overlay.querySelector('.sparks-editor-title-row span');
     const previewEmpty = overlay.querySelector('#sparks-preview-empty');
     const previewInput = overlay.querySelector('#sparks-preview-input');
     const previewSend = overlay.querySelector('#sparks-preview-send');
@@ -629,6 +630,15 @@ async function sparksOpenEditor(sparkId = null) {
             previewEmpty.style.display = 'none';
         } else {
             previewEmpty.style.display = 'flex';
+        }
+        if (hasName) {
+            setTimeout(() => {
+                try {
+                    previewInput.focus();
+                    const len = previewInput.value.length;
+                    previewInput.setSelectionRange(len, len);
+                } catch (e) {}
+            }, 50);
         }
     };
     const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
@@ -756,13 +766,94 @@ async function sparksOpenEditor(sparkId = null) {
         return sys;
     }
     function appendPreviewMessage(role, text) {
-        const div = document.createElement('div');
-        div.className = `sparks-msg sparks-msg--${role}`;
-        div.textContent = text;
-        messagesEl.appendChild(div);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        return div;
+        if (role === 'user') {
+            const row = document.createElement('div');
+            row.className = 'lumina-question-row';
+            const qDiv = document.createElement('div');
+            qDiv.className = 'lumina-chat-question';
+            qDiv.textContent = text;
+            row.appendChild(qDiv);
+            messagesEl.appendChild(row);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return qDiv;
+        } else {
+            const aDiv = document.createElement('div');
+            aDiv.className = 'lumina-chat-answer';
+            aDiv.textContent = text;
+            messagesEl.appendChild(aDiv);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return aDiv;
+        }
     }
+    let sparkSelectedModel = null;
+    async function initSparkPreviewModelSelector() {
+        const btn = overlay.querySelector('#sparks-preview-model-btn');
+        const label = overlay.querySelector('#sparks-preview-model-label');
+        const dropdown = overlay.querySelector('#sparks-preview-model-dropdown');
+        if (!btn || !dropdown || !label) return;
+
+        const data = await chrome.storage.local.get(['providers', 'advancedParamsByModel', 'lastUsedModel', 'promptSupport']);
+        const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
+        const chain = window.LuminaModelHelper ? window.LuminaModelHelper.buildModelChain(data, promptSupport) : [];
+
+        let currentModel = data.lastUsedModel?.model;
+        let currentProviderId = data.lastUsedModel?.providerId;
+        if (!currentModel && chain.length > 0) {
+            currentModel = chain[0].model;
+            currentProviderId = chain[0].providerId;
+        }
+
+        if (currentModel) {
+            sparkSelectedModel = { model: currentModel, providerId: currentProviderId };
+            const foundItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain[0];
+            label.textContent = foundItem ? foundItem.displayName : currentModel;
+        }
+
+        const renderDropdown = () => {
+            dropdown.innerHTML = chain.map(item => {
+                const isSelected = sparkSelectedModel && sparkSelectedModel.model === item.model && sparkSelectedModel.providerId === item.providerId;
+                return `
+                    <div class="lumina-model-item ${isSelected ? 'active' : ''}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
+                        <div class="lumina-model-item-info">
+                            <div class="lumina-model-name">${escapeHtml(item.displayName)}</div>
+                            <div class="lumina-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            dropdown.querySelectorAll('.lumina-model-item').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const m = el.dataset.model;
+                    const p = el.dataset.providerId;
+                    sparkSelectedModel = { model: m, providerId: p };
+                    const foundItem = chain.find(c => c.model === m && c.providerId === p);
+                    label.textContent = foundItem ? foundItem.displayName : m;
+                    dropdown.classList.remove('active');
+                });
+            });
+        };
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = dropdown.classList.contains('active');
+            document.querySelectorAll('.lumina-model-dropdown.active').forEach(d => d.classList.remove('active'));
+            if (!isActive) {
+                renderDropdown();
+                dropdown.classList.add('active');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+
+    initSparkPreviewModelSelector();
+
     async function sendPreviewMessage() {
         if (previewStreaming) return;
         const input = overlay.querySelector('#sparks-preview-input');
@@ -780,16 +871,23 @@ async function sparksOpenEditor(sparkId = null) {
         previewStreaming = true;
         previewSend.disabled = true;
         try {
-            let model = 'gemini-2.0-flash';
-            let providerId = 'google';
-            if (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && tabs[activeTabIndex]?.selectedModel) {
-                model = tabs[activeTabIndex].selectedModel.model || model;
-                providerId = tabs[activeTabIndex].selectedModel.providerId || providerId;
-            } else {
-                const storageData = await chrome.storage.local.get(['lastUsedModel']);
-                if (storageData?.lastUsedModel) {
-                    model = storageData.lastUsedModel.model || model;
-                    providerId = storageData.lastUsedModel.providerId || providerId;
+            let model = sparkSelectedModel?.model;
+            let providerId = sparkSelectedModel?.providerId;
+            if (!model || !providerId) {
+                const storageData = await chrome.storage.local.get(['lastUsedModel', 'providers']);
+                if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
+                    model = storageData.lastUsedModel.model;
+                    providerId = storageData.lastUsedModel.providerId;
+                } else if (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && tabs[activeTabIndex]?.selectedModel) {
+                    model = tabs[activeTabIndex].selectedModel.model;
+                    providerId = tabs[activeTabIndex].selectedModel.providerId;
+                }
+                if (!providerId && storageData?.providers && storageData.providers.length > 0) {
+                    const activeProv = storageData.providers.find(p => p.enabled !== false && p.apiKey);
+                    if (activeProv) {
+                        providerId = activeProv.id;
+                        model = activeProv.model || 'gemini-2.0-flash';
+                    }
                 }
             }
             const messages = [
@@ -1296,9 +1394,6 @@ function openAvatarCropper(imageSrc, callback) {
         canvas.width = 150;
         canvas.height = 150;
         const ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.arc(75, 75, 75, 0, Math.PI * 2);
-        ctx.clip();
         const drawScale = 150 / 250;
         ctx.drawImage(img, posX * drawScale, posY * drawScale, imgWidth * scale * drawScale, imgHeight * scale * drawScale);
         const dataUrl = canvas.toDataURL('image/png');

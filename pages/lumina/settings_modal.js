@@ -30,7 +30,7 @@ class LuminaSettingsModal {
     this.bindKeyboardTab();
     this.bindAccountTab();
 
-    // Toggle API Key visibility in Lumina settings
+
     const toggleLuminaKeyBtn = document.getElementById('toggle-lumina-key-visibility');
     const luminaApiKeyInput = document.getElementById('lumina-provider-form-apikey');
     const luminaEyeOpen = document.getElementById('lumina-eye-open-icon');
@@ -2150,7 +2150,7 @@ class LuminaSettingsModal {
         const sizeBytes = valueStr ? valueStr.length : 0;
 
         if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('lumina_history_')) {
-          return; // Skip legacy/moved storage keys
+          return;
         } else if (key.startsWith('spotlight_history_') || key === 'audio_cache' || key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('yt_transcript_')) {
           cacheSize += sizeBytes;
         } else {
@@ -2205,7 +2205,7 @@ class LuminaSettingsModal {
             const sessionMessages = await LuminaChatDB.getMessages(sessionId);
             const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : '';
             const metaStr = JSON.stringify(meta);
-            // Match getStorageUsage() which counts key + value length × 2 (UTF-16)
+
             const messagesKeyStr = JSON.stringify(sessionId + '_messages');
             const metaKeyStr = JSON.stringify(sessionId);
             const dbBytes = (messagesKeyStr.length + messagesStr.length + metaKeyStr.length + metaStr.length) * 2;
@@ -2219,7 +2219,7 @@ class LuminaSettingsModal {
             sessionList.push({
               id: sessionId,
               title: meta.title || 'Untitled Chat',
-              timestamp: meta.timestamp || Date.now(),
+              timestamp: meta.updatedAt || meta.createdAt || meta.timestamp || Date.now(),
               size: totalSessionBytes
             });
           }
@@ -2277,8 +2277,7 @@ class LuminaSettingsModal {
                         const tabsList = scope.getTabs();
                         const activeIdx = scope.getActiveTabIndex();
                         if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                          const isSecondary = tabsList[activeIdx].chatUIInstance && tabsList[activeIdx].chatUIInstance.historyEl && tabsList[activeIdx].chatUIInstance.historyEl.id === 'chat-history-secondary';
-                          scope.resetChat(isSecondary);
+                          scope.resetChat();
                         }
                       }
                     }
@@ -2294,8 +2293,7 @@ class LuminaSettingsModal {
                         const tabsList = scope.getTabs();
                         const activeIdx = scope.getActiveTabIndex();
                         if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                          const isSecondary = tabsList[activeIdx].chatUIInstance && tabsList[activeIdx].chatUIInstance.historyEl && tabsList[activeIdx].chatUIInstance.historyEl.id === 'chat-history-secondary';
-                          scope.resetChat(isSecondary);
+                          scope.resetChat();
                         }
                       }
                     }
