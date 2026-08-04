@@ -346,9 +346,13 @@ function sparksClosePage() {
 
 async function sparksRenderList() {
     const body = document.getElementById('sparks-page-body');
-    if (!body) return;
     const sparks = await sparksLoad();
-    const list = Object.values(sparks).sort((a, b) => b.updatedAt - a.updatedAt);
+    const list = Object.values(sparks).sort((a, b) => {
+        const orderA = a.order !== undefined ? a.order : 99999;
+        const orderB = b.order !== undefined ? b.order : 99999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+    });
     if (list.length === 0) {
         body.innerHTML = `
             <div class="sparks-empty">
@@ -751,16 +755,27 @@ async function sparksOpenEditor(sparkId = null) {
             return;
         }
         const sparks = await sparksLoad();
+        const isNew = !sparkId || !sparks[sparkId];
         const id = sparkId || sparksNewId();
+        const existingSpark = sparks[id];
+        if (isNew) {
+            Object.values(sparks).forEach(s => {
+                if (s.order !== undefined) {
+                    s.order += 1;
+                }
+            });
+        }
         sparks[id] = {
+            ...existingSpark,
             id,
             name,
             description: overlay.querySelector('#spark-description-input').value.trim(),
             instructions: overlay.querySelector('#spark-instructions-input').value.trim(),
             knowledgeFiles: currentFiles,
             avatar: currentAvatar,
-            createdAt: sparks[id]?.createdAt || Date.now(),
-            updatedAt: Date.now()
+            createdAt: isNew ? Date.now() : (existingSpark?.createdAt || Date.now()),
+            updatedAt: Date.now(),
+            order: isNew ? 0 : existingSpark?.order
         };
         await sparksSave(sparks);
         overlay.remove();
@@ -820,8 +835,8 @@ async function sparksOpenEditor(sparkId = null) {
 
         if (currentModel) {
             sparkSelectedModel = { model: currentModel, providerId: currentProviderId };
-            const foundItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain[0];
-            label.textContent = foundItem ? foundItem.displayName : currentModel;
+            const foundItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
+            label.textContent = foundItem ? (foundItem.displayName || foundItem.model) : currentModel;
         }
 
         const renderDropdown = () => {
@@ -843,8 +858,8 @@ async function sparksOpenEditor(sparkId = null) {
                     const m = el.dataset.model;
                     const p = el.dataset.providerId;
                     sparkSelectedModel = { model: m, providerId: p };
-                    const foundItem = chain.find(c => c.model === m && c.providerId === p);
-                    label.textContent = foundItem ? foundItem.displayName : m;
+                    const foundItem = chain.find(c => c.model === m && c.providerId === p) || chain.find(c => c.model === m);
+                    label.textContent = foundItem ? (foundItem.displayName || foundItem.model) : m;
                     dropdown.classList.remove('active');
                 });
             });
@@ -972,7 +987,7 @@ async function sidebarSparksRenderList() {
         const orderA = a.order !== undefined ? a.order : 99999;
         const orderB = b.order !== undefined ? b.order : 99999;
         if (orderA !== orderB) return orderA - orderB;
-        return b.updatedAt - a.updatedAt;
+        return (b.createdAt || 0) - (a.createdAt || 0);
     });
     let html = '';
     const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
@@ -1082,7 +1097,7 @@ function showSparkContextMenu(btn, sparkId) {
         ctxMenu.style.display = 'none';
         ctxMenu.innerHTML = `
             <div class="sidebar-ctx-item" data-action="edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 <span>Edit</span>
             </div>
             <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="delete">

@@ -568,11 +568,6 @@ body {
   mask-image: url("../../assets/icons/lumina/copy-alt.svg");
 }
 
-.lumina-icon-file-edit {
-  -webkit-mask-image: url("../../assets/icons/lumina/file-edit.svg");
-  mask-image: url("../../assets/icons/lumina/file-edit.svg");
-}
-
 .lumina-icon-plus {
   -webkit-mask-image: url("../../assets/icons/lumina/plus.svg");
   mask-image: url("../../assets/icons/lumina/plus.svg");
@@ -3981,14 +3976,8 @@ body {
   }
 }
 
-.katex,
-.katex *:not(strong *):not(b *) {
-  font-family: 'STIX Two Math', serif !important;
-  font-weight: 400 !important;
-}
-
 .lumina-chat-answer .katex {
-  font-size: calc(var(--lumina-fontSize, 13px) + 0.5px) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) + 1px) !important;
   text-rendering: optimizeLegibility;
   padding-left: 0.05em !important;
   padding-right: 0.15em !important;
@@ -6260,7 +6249,7 @@ b .katex * {
   flex-direction: column;
   font-size: 13px !important;
   padding: 0 6px 6px 6px;
-  gap: 8px;
+  gap: 0;
   transition: width 0.18s cubic-bezier(0.25, 1, 0.5, 1), transform 0.18s cubic-bezier(0.25, 1, 0.5, 1);
   z-index: 1000;
   box-sizing: border-box;
@@ -6441,7 +6430,7 @@ b .katex * {
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   padding-right: 2px;
 }
 
@@ -6459,6 +6448,7 @@ b .katex * {
   flex-direction: column;
   font-size: 13px;
   gap: 4px;
+  margin-top: 8px;
 }
 
 .sidebar-sparks-list {
@@ -6472,6 +6462,7 @@ b .katex * {
   flex-direction: column;
   font-size: 13px;
   gap: 4px;
+  margin-top: 8px;
 }
 
 .sidebar-section-title {
@@ -8766,7 +8757,7 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
 
 @media (max-width: 768px) {
   .lumina-preview-window {
-    
+
     width: 96vw;
     max-width: 700px;
     height: 74vh;
@@ -9246,7 +9237,7 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
 .lumina-preview-sheets-table {
   border-collapse: collapse;
   width: max-content;
-  
+
   min-width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 13px;

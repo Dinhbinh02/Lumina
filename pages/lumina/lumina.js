@@ -3107,7 +3107,8 @@ function initSidebar() {
 function updateRecentChatsActiveState() {
     const activeTab = (typeof tabs !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
     const activeSessionId = activeTab ? activeTab.sessionId : null;
-    document.querySelectorAll('#sidebar-recent-chats .recent-chat-item').forEach(item => {
+
+    document.querySelectorAll('#sidebar-recent-chats .recent-chat-item, #sidebar-archived-chats .recent-chat-item').forEach(item => {
         const sid = item.dataset.sessionId;
         if (activeSessionId && sid === activeSessionId) {
             item.classList.add('active');
@@ -3115,6 +3116,8 @@ function updateRecentChatsActiveState() {
             item.classList.remove('active');
         }
     });
+
+    document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
 }
 
 function updateSidebarSparksActiveState() {
@@ -3172,7 +3175,7 @@ async function renderRecentChatsSidebar() {
             const isActive = session.id === activeSessionId ? ' active' : '';
             const pinHTML = session.pinned ? `
                 <span class="recent-chat-item__pin-icon" title="Pinned">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>
                 </span>
             ` : '';
             html += `
@@ -3222,7 +3225,7 @@ async function renderRecentChatsSidebar() {
                 const isActive = session.id === activeSessionId ? ' active' : '';
                 const pinHTML = session.pinned ? `
                     <span class="recent-chat-item__pin-icon" title="Pinned">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>
                     </span>
                 ` : '';
                 archiveHtml += `
@@ -3275,11 +3278,10 @@ async function renderRecentChatsSidebar() {
         ctxMenu.className = 'sidebar-chat-context-menu';
         ctxMenu.style.display = 'none';
         ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
-            { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>' },
-            { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>' },
+            { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>' },
+            { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' },
             { action: 'generate_title', label: 'Generate title', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>' },
-            { action: 'duplicate', label: 'Duplicate', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
-            { action: 'archive', label: 'Archive', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
+            { action: 'archive', label: 'Archive', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>' },
             { type: 'divider' },
             { action: 'delete', label: 'Delete', danger: true, icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' }
         ]);
@@ -3393,8 +3395,6 @@ async function renderRecentChatsSidebar() {
                             if (typeof LuminaToast !== 'undefined') LuminaToast.show('Failed to generate title: ' + (res?.error || 'Unknown error'), 'error');
                         }
                     });
-                } else if (action === 'duplicate') {
-                    await ChatHistoryManager.duplicateChat(sid);
                 } else if (action === 'archive') {
                     const meta = await LuminaChatDB.getSession(sid);
                     if (meta) {
@@ -3468,11 +3468,11 @@ async function renderRecentChatsSidebar() {
                         const svgContainer = pinItem.querySelector('svg');
                         if (svgContainer) {
                             if (isPinned) {
-                                svgContainer.setAttribute('stroke-width', '1.8');
-                                svgContainer.innerHTML = `<path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" />`;
+                                svgContainer.setAttribute('stroke-width', '2.0');
+                                svgContainer.innerHTML = `<path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/><line x1="4" y1="4" x2="20" y2="20"/>`;
                             } else {
                                 svgContainer.setAttribute('stroke-width', '2.0');
-                                svgContainer.innerHTML = `<path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" />`;
+                                svgContainer.innerHTML = `<path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/>`;
                             }
                         }
                     });
@@ -3487,9 +3487,9 @@ async function renderRecentChatsSidebar() {
                         const svgContainer = archiveItem.querySelector('svg');
                         if (svgContainer) {
                             if (isArchived) {
-                                svgContainer.innerHTML = `<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/><polyline points="10 9 12 7 14 9"/><line x1="12" y1="7" x2="12" y2="13"/>`;
+                                svgContainer.innerHTML = `<rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v6"/>`;
                             } else {
-                                svgContainer.innerHTML = `<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/>`;
+                                svgContainer.innerHTML = `<rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/>`;
                             }
                         }
                     });
@@ -4630,13 +4630,13 @@ function resetChat() {
             if (port && activeTab.sessionId) {
                 port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
             }
+            const currentModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : (chatUI?.activeTabModel ? { ...chatUI.activeTabModel } : null);
+            const currentThinking = activeTab.thinkingLevel || chatUI?.thinkingLevel || null;
+
             activeTab.title = 'New Tab';
             activeTab.sessionId = null;
-            const targetUI = chatUI;
-            const inheritedModel = activeTab.selectedModel || targetUI?.activeTabModel || sessionSettings['null']?.selectedModel || null;
-            const inheritedThinking = activeTab.thinkingLevel || targetUI?.thinkingLevel || sessionSettings['null']?.thinkingLevel || null;
-            activeTab.selectedModel = inheritedModel ? { ...inheritedModel } : null;
-            activeTab.thinkingLevel = inheritedThinking || null;
+            activeTab.selectedModel = currentModel;
+            activeTab.thinkingLevel = currentThinking;
             activeTab.isHistoryLoaded = false;
             if (activeTab.historyEl) {
                 activeTab.historyEl.removeAttribute('data-session-id');
@@ -4645,6 +4645,25 @@ function resetChat() {
             if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = null;
             activeTab.scrollTop = -1;
             updateUrlSessionId(null);
+
+            if (currentModel) {
+                const sidKey = 'null';
+                sessionSettings[sidKey] = {
+                    ...(sessionSettings[sidKey] || {}),
+                    selectedModel: currentModel,
+                    thinkingLevel: currentThinking
+                };
+                chrome.storage.local.get(['lumina_session_settings'], (res) => {
+                    const settings = res.lumina_session_settings || {};
+                    settings[sidKey] = {
+                        ...(settings[sidKey] || {}),
+                        selectedModel: currentModel,
+                        thinkingLevel: currentThinking
+                    };
+                    chrome.storage.local.set({ lumina_session_settings: settings });
+                });
+            }
+
             if (typeof sidebarSparksRenderList === 'function') {
                 sidebarSparksRenderList();
             }
@@ -5310,7 +5329,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     activeTab.title = displayTitle;
     const sidKey = historySessionId || 'null';
     const savedSettings = sessionSettings[sidKey] || {};
-    activeTab.selectedModel = savedSettings.selectedModel || meta.selectedModel || activeTab.selectedModel || null;
+    activeTab.selectedModel = meta.selectedModel || savedSettings.selectedModel || activeTab.selectedModel || null;
     if (savedSettings.thinkingLevel || meta.thinkingLevel) {
         activeTab.thinkingLevel = savedSettings.thinkingLevel || meta.thinkingLevel;
     } else {
@@ -5462,11 +5481,11 @@ async function renderDropdownMenu() {
     const isPinned = sessionMeta?.pinned || false;
     const isArchived = sessionMeta?.archived || false;
     const pinSVG = isPinned
-        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V10 C15 12 17 12 17 14 A2 2 0 0 1 15 16 H9 A2 2 0 0 1 7 14 C7 12 9 12 9 10 Z" /><path d="M12 16 V22" /><path d="M4 4 L20 20" /></svg>`
-        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9 4 H15 V9 C15 11 17 11 17 13 A1.5 1.5 0 0 1 15.5 14.5 H8.5 A1.5 1.5 0 0 1 7 13 C7 11 9 11 9 9 Z" /><path d="M12 14.5 V21" /></svg>`;
+        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/><line x1="4" y1="4" x2="20" y2="20"/></svg>`
+        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`;
     const archiveSVG = isArchived
-        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/><polyline points="10 9 12 7 14 9"/><line x1="12" y1="7" x2="12" y2="13"/></svg>`
-        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
+        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v6"/></svg>`
+        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`;
     const html = `
         <div class="dropdown-section-title">This chat</div>
         <div class="dropdown-item action-item" id="dropdown-pin-btn">
@@ -5478,15 +5497,11 @@ async function renderDropdownMenu() {
             <span class="item-text">${isArchived ? 'Unarchive' : 'Archive'}</span>
         </div>
         <div class="dropdown-item action-item" id="dropdown-rename-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             <span class="item-text">Rename</span>
         </div>
-        <div class="dropdown-item action-item" id="dropdown-duplicate-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span class="item-text">Duplicate</span>
-        </div>
         <div class="dropdown-item action-item" id="dropdown-copy-chat-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
             <span class="item-text">Copy Chat</span>
         </div>
         <div class="dropdown-divider"></div>
@@ -5588,11 +5603,6 @@ async function renderDropdownMenu() {
         if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
             await ChatHistoryManager.renameChat(sessionId, newTitle.trim());
         }
-        hide();
-    });
-    dropdown.querySelector('#dropdown-duplicate-btn')?.addEventListener('click', async () => {
-        if (!sessionId) return;
-        await ChatHistoryManager.duplicateChat(sessionId);
         hide();
     });
     dropdown.querySelector('#dropdown-copy-chat-btn')?.addEventListener('click', async () => {
@@ -5724,7 +5734,7 @@ function initTopbarModelSelector() {
                 }
             }
         }
-        const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId);
+        const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
         if (label) {
             if (activeChainItem) {
                 label.textContent = activeChainItem.displayName || activeChainItem.model;
@@ -5907,7 +5917,7 @@ function initTopbarModelSelector() {
             }
             const settings = data.lumina_session_settings || {};
             const saved = settings[sidKey] || {};
-            if (activeTab && saved.selectedModel) {
+            if (activeTab && !activeTab.selectedModel && saved.selectedModel) {
                 activeTab.selectedModel = { ...saved.selectedModel };
             }
             if (activeTab) {
