@@ -2848,27 +2848,6 @@ chrome.runtime.onConnect.addListener((port) => {
                     sessionPorts.get(sid).delete(port);
                     if (sessionPorts.get(sid).size === 0) {
                         sessionPorts.delete(sid);
-                        const timeoutId = setTimeout(() => {
-                            if (!sessionPorts.has(sid)) {
-                                const controller = sessionControllers.get(sid);
-                                if (controller) {
-                                    console.log(`[Lumina BG] Aborting session ${sid} due to port disconnect timeout`);
-                                    controller.abort();
-                                    sessionControllers.delete(sid);
-                                }
-                                if (globalThis.keepAliveResponses && globalThis.keepAliveResponses.has(sid)) {
-                                    const pendingSendResponse = globalThis.keepAliveResponses.get(sid);
-                                    try {
-                                        pendingSendResponse({ success: true, aborted: true });
-                                    } catch (e) { }
-                                    globalThis.keepAliveResponses.delete(sid);
-                                }
-                            }
-                        }, 5000);
-                        if (!globalThis.sessionAbortTimeouts) {
-                            globalThis.sessionAbortTimeouts = new Map();
-                        }
-                        globalThis.sessionAbortTimeouts.set(sid, timeoutId);
                     }
                 }
             }
@@ -2885,10 +2864,6 @@ chrome.runtime.onConnect.addListener((port) => {
                     registeredSessions.add(sid);
                     if (!sessionPorts.has(sid)) sessionPorts.set(sid, new Set());
                     sessionPorts.get(sid).add(port);
-                    if (globalThis.sessionAbortTimeouts && globalThis.sessionAbortTimeouts.has(sid)) {
-                        clearTimeout(globalThis.sessionAbortTimeouts.get(sid));
-                        globalThis.sessionAbortTimeouts.delete(sid);
-                    }
                 });
                 return;
             }
@@ -2906,10 +2881,6 @@ chrome.runtime.onConnect.addListener((port) => {
                 registeredSessions.add(msg.sessionId);
                 if (!sessionPorts.has(msg.sessionId)) sessionPorts.set(msg.sessionId, new Set());
                 sessionPorts.get(msg.sessionId).add(port);
-                if (globalThis.sessionAbortTimeouts && globalThis.sessionAbortTimeouts.has(msg.sessionId)) {
-                    clearTimeout(globalThis.sessionAbortTimeouts.get(msg.sessionId));
-                    globalThis.sessionAbortTimeouts.delete(msg.sessionId);
-                }
             }
             if (msg.action === 'chat_stream' || msg.action === 'proofread' || msg.action === 'dict_stream') {
                 try {

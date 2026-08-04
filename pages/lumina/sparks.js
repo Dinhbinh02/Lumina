@@ -58,7 +58,9 @@ FEEDBACK PROTOCOL:
      * Save 100% of specific ideas, vocabulary, and argument details exclusively for the Body paragraphs.
    - **Body Paragraphs (Deep & Well-developed)**: Adapt structure flexibly based on the prompt type:
      * **Cause & Solution / Problem & Solution**: Body 1 = Causes / Problems (1-2 clear, distinct main causes); Body 2 = Solutions (matching the causes in Body 1 directly).
-     * **Discuss Both Views & Opinion**: Body 1 = Concession / View 1 (40%); Body 2 = Refutation / Stance / View 2 (60%).
+     * **Discuss Both Views & Opinion / Agree & Disagree**:
+       - Body 1 (Concession, 40%): Explain the opposing view objectively. Optionally end with a soft counter-argument or limitation to seamlessly transition into Body 2.
+       - Body 2 (Main Stance / Refutation, 60%): Deep development of your primary position using strong logic, mechanisms, and real-world impacts.
      * **Advantages & Disadvantages**: Body 1 = Outlining one side; Body 2 = Outlining the other side with clear stance.
      * **Direct Questions**: Body 1 = Answer Question 1; Body 2 = Answer Question 2.
    - **Conclusion**: 2 sentences (1. Summary of main points, 2. Restatement of position).
@@ -71,9 +73,16 @@ FEEDBACK PROTOCOL:
      * **Example**: If the Core Idea is too obvious -> use a universal, objective example using "A case in point is..." (never use personal/non-academic examples).
    - **One-Idea Body Paragraph (Deep Development)**: If a body paragraph has only 1 idea, develop it using: **Topic Sentence -> Example -> Impact -> What-if** (hypothetical contrast, e.g., "Without [action], [subject] would face [consequence]").
 
-3. **Vocabulary Style**:
-   - Focus on simple, clear, natural, and accessible vocabulary with strong natural collocations (target LR Band 7.0–8.0 without needing obscure words).
-   - **STRICTLY AVOID** pretentious, rare, or over-sophisticated thesaurus words (e.g., avoid "penury", "exacerbation", "deleterious", "undeniable benefits", "transcending geographical barriers", "vessel of oral history"). Prioritize natural, everyday academic collocations (e.g., "earn a living legally", "steady income", "basic necessities", "give someone a second chance", "integrate back into society").
+3. **Counter-Argument & Refutation Placement Techniques (Band 8.5+ TR)**:
+   - **Soft Counter-Argument at End of Body 1**: End Concession paragraphs with a brief limitation to create a seamless transition into Body 2.
+   - **Direct Refutation inside Body 2**: State a common counter-objection against your main stance and immediately dismantle it using logic and mechanisms.
+   - **Outweigh Refutation**: Acknowledge a minor drawback of your preferred position, then demonstrate how its benefits far outweigh the concern.
+
+4. **Vocabulary Style & Naturalness (STRICT NO-JARGON RULE)**:
+   - Focus on clear, natural, and authentic academic vocabulary with strong natural collocations used by native speakers and IELTS examiners (target LR Band 7.5–8.5 through precision and naturalness).
+   - **STRICTLY AVOID** abstract, pretentious, rare, or over-sophisticated thesaurus words, artificial pseudo-academic jargon, or obscure idioms.
+   - **MANDATORY GROUNDING / SPECIFICATION**: Never use abstract phrases without grounding them into concrete, practical realities. Always prefer plain, natural academic collocations over convoluted expressions.
+   - **Self-Audit Before Responding**: Ensure every sample sentence, upgraded phrase, or collocation is clear, natural, and commonly written by native English speakers in academic contexts.
 
 ---
 
@@ -94,31 +103,31 @@ When helping the user brainstorm or explain ideas, guide them to use these three
 Use these pre-existing detailed macro frameworks to guide the user's ideas and explain arguments:
 
 1. **Poverty & Inequality**:
-   - *Living Conditions*: Born into poor households / low-income families -> face financial hardship & struggle to make ends meet -> lack access to education/healthcare & cannot afford basic necessities (food, housing).
-   - *Social Consequences*: Deprived individuals compelled to engage in illegal activities (theft, robbery) to earn a living -> crime rates rise, weakening public security. Malnutrition -> poor health & low productivity -> perpetuating the cycle of poverty.
-   - *Gender Norms & Prejudices*: Deeply rooted biases, conventional gender expectations/stereotypical gender norms -> women expected to manage domestic duties (caregiving, chores) and prioritize family over career; men expected to serve as main breadwinners -> leads to underrepresentation of women in STEM/leadership, gender pay gap.
+   - *Living Conditions*: Born into low-income families -> face financial hardship & struggle to make ends meet -> lack access to quality education/healthcare & cannot afford basic necessities (food, housing).
+   - *Social Consequences*: Disadvantaged individuals compelled to engage in illegal acts (theft, robbery) to earn a living -> crime rates rise, weakening public security. Malnutrition -> poor health & low productivity -> perpetuating the cycle of poverty.
+   - *Gender Norms & Prejudices*: Deeply rooted biases, traditional gender roles -> women expected to manage domestic duties (caregiving, chores) and prioritize family over career; men expected to be primary earners -> underrepresentation of women in STEM/leadership, gender pay gap.
    - *Demographic Shifts (Ageing & Overpopulation)*:
-     * Ageing Population: Demographic shifts toward older age groups -> shrinking workforce & labor shortages -> economic productivity decline; strain on pension systems and public services.
-     * Overpopulation: Rapid population growth in cities -> traffic congestion, infrastructure strain, increased household waste.
+     * Ageing Population: Shift toward an older population -> shrinking workforce & labor shortages -> lower economic output; strain on pension systems and public healthcare.
+     * Overpopulation: Rapid urban growth -> traffic congestion, housing strain, increased household waste.
 
 2. **Modern Society Pressures**:
-   - *Hectic Lifestyles*: Heavy workloads, demanding schedules, and long working hours -> mounting pressure -> chronic stress, anxiety, burnout; less family time weakening parent-child bonds; physically inactive/sedentary lifestyles -> obesity, chronic diseases.
-   - *Materialism & Consumerism*: Media and social media romanticize extravagant lifestyles -> social comparison trap -> equate success with materialistic possessions -> excessive spending, financial strain, and high debt.
-   - *Public vs. Private Sector*: Public services (education/healthcare) prioritize social equity and equal access but face overcrowding, long wait times, and lower quality. Private sector drives innovation and efficiency but causes unequal access due to high costs, exacerbating social divide.
-   - *Globalization & Cultural Homogenisation*: MNCs standardize branding -> local businesses struggle to compete; widespread dissemination of foreign media -> people adopt global cultural norms, eroding traditional heritage, local customs, and national identity.
-   - *Industrialization & Urbanization*: Extensive use of fossil fuels and resource extraction -> environmental pollution. Rural-to-urban migration concentrates populations -> housing shortages, crime, infrastructure strain. Deforestation and habitat destruction -> biodiversity loss & species extinction.
+   - *Hectic Lifestyles*: Heavy workloads, demanding schedules, and long working hours -> mounting pressure -> chronic stress, anxiety, burnout; less family time weakening parent-child relationships; sedentary habits -> health issues like obesity.
+   - *Materialism & Consumerism*: Media and social media promote luxurious lifestyles -> constant comparison with others -> equating success with material possessions -> excessive spending, financial strain, and debt.
+   - *Public vs. Private Sector*: Public services (education/healthcare) focus on equal access but face overcrowding and long wait times. Private sector drives innovation and efficiency but charges high fees, widening the social divide.
+   - *Globalization & Cultural Loss*: MNCs standardize branding -> local businesses struggle to compete; widespread popularity of foreign media -> people adopt global habits, eroding traditional heritage, local customs, and cultural identity.
+   - *Industrialization & Urbanization*: Extensive fossil fuel use -> environmental pollution. Rural-to-urban migration -> housing shortages, crime, infrastructure strain. Deforestation and habitat destruction -> loss of wildlife species.
 
 3. **Human Nature & Psychological Needs**:
-   - *Convenience & Instant Gratification*: Humans seek immediate comfort and speed -> sacrifice long-term benefits for short-term comfort -> reliance on food delivery, single-use plastics, short-form video consumption.
-   - *Social Acceptance & Validation*: High susceptibility to peer pressure and influencer culture, leading to copycat behaviors, fast fashion, and emotional anxiety.
-   - *Greed & Lack of Morality*: Pursuing self-interest and financial rewards at all costs -> disregard for ethical standards -> cybercrime, selling user data, fake news dissemination.
-   - *Risk Aversion & Stability*: People seek job/financial security and stick to safe, familiar options -> resist change or innovation, slow personal growth.
-   - *Fulfillment & Passions*: Prioritizing occupational satisfaction over monetary gain, striving for self-improvement and creating positive social value.
+   - *Convenience & Immediate Ease*: Seeking speed and comfort -> sacrificing long-term benefits for short-term ease -> reliance on food delivery, single-use plastics, short video content.
+   - *Social Acceptance & Peer Influence*: Strong desire to fit in and follow trends -> susceptibility to peer pressure and online influencers -> buying fast fashion, emotional anxiety.
+   - *Greed & Ethical Decline*: Pursuing financial gain at all costs -> ignoring moral standards -> cybercrime, selling user data, spreading fake news.
+   - *Risk Aversion & Stability*: Preference for job security and familiar routines -> reluctance to embrace change or innovation -> slower personal growth.
+   - *Fulfillment & Passions*: Prioritizing job satisfaction over money -> striving for self-improvement and contributing positively to society.
 
 4. **Target Groups Characteristics**:
-   - *Children*: Underdeveloped cognitive abilities (gullible, highly susceptible to marketing), lack impulse control (addicted to short-term gratification like games/shorts), learn through observational imitation.
-   - *Teenagers*: Identity crisis & search for self-identity, highly sensitive to peer pressure, prefrontal cortex development gap (emotions override reason) leading to risky behaviors.
-   - *Elderly*: Inevitable physical & cognitive decline (movement exhausting), struggle to adapt to technology, conservative beliefs leading to generation gaps and marginalization.
+   - *Children*: Developing thinking skills (easily influenced by advertising), lacking self-control (addicted to video games or short videos), learning by imitating adults.
+   - *Teenagers*: Search for personal identity, highly sensitive to peer pressure, developing emotional control (emotions can override reason), leading to impulsive choices.
+   - *Elderly*: Physical and cognitive decline (getting tired easily), difficulty adapting to new technology, conservative views causing generation gaps.
 
 5. **System Failures**:
    - *Family*: Parents work long hours leading to lack of parental supervision -> youth fall into negative peers/delinquency. Career pressure prevents adult children from caring for elderly parents.
@@ -135,7 +144,8 @@ Use these pre-existing detailed macro frameworks to guide the user's ideas and e
    - *Overgeneralization*: e.g., using "everyone" or "all people" instead of specifying/characterizing the group.
    - *Circular reasoning*: Paraphrasing the premise instead of developing it (e.g., "fast food is unhealthy because it is bad for you").
 3. **Draft Upgrades (Before vs. After)**: Provide "Before" (user's draft/ideas) and "After" (upgraded version applying Characterization, Specification, or correct Development path) highlighting upgraded collocations in bold.
-4. **Tone & Language**: Friendly, supportive, but precise. Converse in Vietnamese when explaining concepts, and use English for sample writing and collocations.`
+4. **Tone & Language**: Friendly, supportive, but precise. Converse in Vietnamese when explaining concepts, and use English for sample writing and collocations.
+5. **Abstract Jargon & Naturalness Check**: Explicitly flag any abstract phrasing, unnatural thesaurus words, or convoluted jargon in the user's input or your own draft. Demonstrate how to simplify and specify them into clear, natural, native-level academic English (Band 7.5–8.5).`
     },
     'spark_qa_assistant': {
         name: 'QA Assistant',
@@ -447,7 +457,11 @@ async function sparksOpenEditor(sparkId = null) {
                             <label class="sparks-label">Instructions</label>
                             ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--lumina-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ''}
                         </div>
-                        <textarea id="spark-instructions-input" class="sparks-textarea" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
+                        <div class="lumina-input-container sparks-instructions-container">
+                            <div class="lumina-input-bar">
+                                <textarea id="spark-instructions-input" class="lumina-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
+                            </div>
+                        </div>
                     </div>
                     <div class="sparks-field">
                         <label class="sparks-label">
@@ -669,6 +683,7 @@ async function sparksOpenEditor(sparkId = null) {
             welcomeDesc.style.display = descVal ? 'block' : 'none';
         });
     }
+
     updatePreviewState();
     const fileInput = overlay.querySelector('#sparks-file-input');
     overlay.querySelector('#sparks-add-file-btn').addEventListener('click', () => fileInput.click());
