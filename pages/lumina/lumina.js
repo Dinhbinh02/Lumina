@@ -914,7 +914,11 @@ async function ensureTabHistoryLoaded(tab) {
 async function initTabs() {
     const topBar = document.getElementById('lumina-topbar');
     if (topBar) {
-        topBar.style.display = 'flex';
+        if (typeof LuminaViewManager !== 'undefined' && LuminaViewManager.currentView !== 'chat') {
+            topBar.style.setProperty('display', 'none', 'important');
+        } else {
+            topBar.style.display = 'flex';
+        }
     }
     const mainContainer = document.querySelector('.lumina-chat-container') || container;
     if (mainContainer) {
@@ -2937,7 +2941,16 @@ function initSidebar() {
     }
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
+            if (typeof window.notesClosePage === 'function') window.notesClosePage();
             resetChat(null);
+            closeMobileSidebar();
+        });
+    }
+    const notesBtn = document.getElementById('sidebar-notes-btn');
+    if (notesBtn) {
+        notesBtn.addEventListener('click', () => {
+            if (typeof window.sparksClosePage === 'function') window.sparksClosePage();
+            if (typeof window.notesOpenPage === 'function') window.notesOpenPage();
             closeMobileSidebar();
         });
     }
@@ -2957,6 +2970,9 @@ function initSidebar() {
         brandBtn.style.cursor = 'pointer';
         brandBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (typeof window.notesClosePage === 'function') {
+                window.notesClosePage();
+            }
             if (typeof sparksClosePage === 'function') {
                 sparksClosePage();
             }
@@ -3105,6 +3121,14 @@ function initSidebar() {
 }
 
 function updateRecentChatsActiveState() {
+    if (typeof LuminaViewManager !== 'undefined' && LuminaViewManager.currentView !== 'chat') {
+        document.querySelectorAll('#sidebar-recent-chats .recent-chat-item, #sidebar-archived-chats .recent-chat-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
+        return;
+    }
+
     const activeTab = (typeof tabs !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
     const activeSessionId = activeTab ? activeTab.sessionId : null;
 
@@ -3517,6 +3541,27 @@ async function renderRecentChatsSidebar() {
                 document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
                 item.classList.add('active');
                 const sid = item.dataset.sessionId;
+
+                const activeTab = (typeof tabs !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
+                if (activeTab) {
+                    activeTab.sessionId = sid;
+                    activeTab.isLoadingHistory = true;
+                    if (activeTab.historyEl) activeTab.historyEl.innerHTML = '';
+                }
+                if (chatUI && chatUI.historyEl) {
+                    chatUI.historyEl.innerHTML = '';
+                }
+
+                const chatLayout = document.getElementById('chat-layout');
+                if (chatLayout) {
+                    chatLayout.classList.remove('new-chat-homepage');
+                    chatLayout.querySelector('.lumina-homepage-welcome')?.remove();
+                }
+
+                if (window.LuminaViewManager) {
+                    window.LuminaViewManager.switchView('chat', { sid });
+                }
+
                 const messages = await ChatHistoryManager.getSessionMessages(sid);
                 const meta = sessions[sid] || { id: sid };
                 window.loadHistoryIntoNewTab(messages, meta, sid);
@@ -4623,6 +4668,8 @@ function setupGlobalListeners() {
 }
 
 function resetChat() {
+    if (typeof window.notesClosePage === 'function') window.notesClosePage();
+    if (typeof window.sparksClosePage === 'function') window.sparksClosePage();
     stopSpotlightAudio();
     if (activeTabIndex !== -1) {
         const activeTab = tabs[activeTabIndex];
@@ -5306,10 +5353,18 @@ async function handleYouTubeTrigger(triggerInfo) {
 }
 
 window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null) {
+    if (typeof window.notesClosePage === 'function') window.notesClosePage();
+    if (typeof window.sparksClosePage === 'function') window.sparksClosePage();
     if (tabs.length === 0) return;
     const targetIdx = activeTabIndex;
     const activeTab = tabs[targetIdx];
     if (!activeTab) return;
+    if (activeTab.historyEl) {
+        activeTab.historyEl.innerHTML = '';
+    }
+    if (chatUI && chatUI.historyEl) {
+        chatUI.historyEl.innerHTML = '';
+    }
     activeTab.sessionId = historySessionId;
     updateUrlSessionId(historySessionId);
     updatePaneBlankState();
@@ -6860,4 +6915,176 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
     }
 
     window.initGeminiLiveModal = initGeminiLiveModal;
+
+    // --- Centralized View Manager (Declarative SPA Router) ---
+    let luminaNotesPanelInstance = null;
+
+    const LuminaViewManager = {
+        currentView: 'chat',
+
+        views: {
+            chat: {
+                el: '#chat-layout',
+                hasTopbar: true,
+                displayType: '',
+                onOpen: () => {
+                    document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+                }
+            },
+            notes: {
+                el: '#notes-page',
+                hasTopbar: false,
+                displayType: 'flex',
+                onOpen: (params) => {
+                    document.getElementById('sidebar-notes-btn')?.classList.add('active');
+                    document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
+                    document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+
+                    if (!luminaNotesPanelInstance && typeof NotesPanel !== 'undefined') {
+                        luminaNotesPanelInstance = new NotesPanel();
+                    }
+                    if (luminaNotesPanelInstance) {
+                        luminaNotesPanelInstance.init(params?.noteId);
+                    }
+                }
+            },
+            sparks: {
+                el: '#sparks-page',
+                hasTopbar: false,
+                displayType: 'flex',
+                onOpen: (params) => {
+                    document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+                    document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
+                    document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+
+                    if (params && params.sparkId && typeof window.sparksLoadSpark === 'function') {
+                        window.sparksLoadSpark(params.sparkId);
+                    }
+                }
+            }
+        },
+
+        switchView(targetView, params = {}) {
+            if (!this.views[targetView]) return;
+            this.currentView = targetView;
+
+            // Remove head pre-render style override if present
+            const initStyle = document.getElementById('view-init-style');
+            if (initStyle) initStyle.remove();
+
+            // 1. Hide ALL views automatically except the active target view
+            Object.keys(this.views).forEach(viewName => {
+                const config = this.views[viewName];
+                const domEl = document.querySelector(config.el);
+                if (domEl) {
+                    if (viewName === targetView) {
+                        if (config.displayType) {
+                            domEl.style.display = config.displayType;
+                        } else {
+                            domEl.style.removeProperty('display');
+                        }
+                    } else {
+                        if (viewName === 'chat') {
+                            domEl.style.setProperty('display', 'none', 'important');
+                        } else {
+                            domEl.style.display = 'none';
+                        }
+                    }
+                }
+            });
+
+            // 2. Toggle Topbar
+            const topbar = document.getElementById('lumina-topbar');
+            if (topbar) {
+                if (this.views[targetView].hasTopbar) {
+                    topbar.style.removeProperty('display');
+                    topbar.style.display = 'flex';
+                } else {
+                    topbar.style.setProperty('display', 'none', 'important');
+                }
+            }
+
+            // 3. Update URL
+            this.updateUrl(targetView, params);
+
+            // 4. Trigger lifecycle hook
+            if (this.views[targetView].onOpen) {
+                this.views[targetView].onOpen(params);
+            }
+        },
+
+        updateUrl(viewName, params = {}) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (viewName === 'notes') {
+                urlParams.delete('sid');
+                urlParams.delete('sparkId');
+                urlParams.set('view', 'notes');
+                if (params.noteId) {
+                    urlParams.set('noteId', params.noteId);
+                } else {
+                    urlParams.delete('noteId');
+                }
+            } else if (viewName === 'sparks') {
+                urlParams.delete('sid');
+                urlParams.delete('noteId');
+                urlParams.set('view', 'sparks');
+                if (params.sparkId) {
+                    urlParams.set('sparkId', params.sparkId);
+                } else {
+                    urlParams.delete('sparkId');
+                }
+            } else {
+                urlParams.delete('view');
+                urlParams.delete('noteId');
+                urlParams.delete('sparkId');
+                const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+                const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : '');
+                if (sidVal) {
+                    urlParams.set('sid', sidVal);
+                } else {
+                    urlParams.delete('sid');
+                }
+            }
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.pushState({ view: viewName, ...params }, '', newUrl);
+        }
+    };
+
+    function updateNotesUrl(noteId) {
+        LuminaViewManager.updateUrl('notes', { noteId });
+    }
+
+    function notesOpenPage(noteIdToLoad) {
+        LuminaViewManager.switchView('notes', { noteId: noteIdToLoad });
+    }
+
+    function notesClosePage() {
+        LuminaViewManager.switchView('chat');
+    }
+
+    function sparksOpenPage(sparkId) {
+        LuminaViewManager.switchView('sparks', { sparkId });
+    }
+
+    function sparksClosePage() {
+        LuminaViewManager.switchView('chat');
+    }
+
+    window.LuminaViewManager = LuminaViewManager;
+    window.updateNotesUrl = updateNotesUrl;
+    window.notesOpenPage = notesOpenPage;
+    window.notesClosePage = notesClosePage;
+    window.sparksOpenPage = sparksOpenPage;
+    window.sparksClosePage = sparksClosePage;
+
+    // Restore view from URL parameters on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const view = urlParams.get('view');
+        if (view === 'notes') {
+            LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId') });
+        } else if (view === 'sparks') {
+            LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
+        }
+    });
 })();

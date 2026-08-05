@@ -61,9 +61,21 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 3H8.5A5.5 5.5 0 0 0 3 8.5v7A5.5 5.5 0 0 0 8.5 21h7A5.5 5.5 0 0 0 21 15.5V12" />
-                        <path d="M18.4 2.6a2.12 2.12 0 0 1 3 3L13.8 13.2a2 2 0 0 1-.85.51l-2.3.67a.45.45 0 0 1-.57-.57l.67-2.3a2 2 0 0 1 .51-.85Z" />
+                        <path
+                            d="M18.4 2.6a2.12 2.12 0 0 1 3 3L13.8 13.2a2 2 0 0 1-.85.51l-2.3.67a.45.45 0 0 1-.57-.57l.67-2.3a2 2 0 0 1 .51-.85Z" />
                     </svg>
                     <span class="nav-text">New chat</span>
+                </button>
+                <button class="sidebar-nav-item" id="sidebar-notes-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <line x1="10" y1="9" x2="8" y2="9" />
+                    </svg>
+                    <span class="nav-text">Notes</span>
                 </button>
                 <button class="sidebar-nav-item" id="sidebar-live-btn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
@@ -131,22 +143,6 @@
         </aside>
 
         <div class="lumina-main-content">
-            <div class="sparks-page" id="sparks-page">
-                <div class="sparks-page__header">
-                    <span class="sparks-page__title">My Sparks</span>
-                    <button class="sparks-page__new" id="sparks-new-btn">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        New Spark
-                    </button>
-                </div>
-                <div class="sparks-page__body" id="sparks-page-body">
-                </div>
-            </div>
-
             <header class="topbar" id="lumina-topbar">
                 <button class="topbar__action-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
                     <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
@@ -172,7 +168,8 @@
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 3H8.5A5.5 5.5 0 0 0 3 8.5v7A5.5 5.5 0 0 0 8.5 21h7A5.5 5.5 0 0 0 21 15.5V12" />
-                            <path d="M18.4 2.6a2.12 2.12 0 0 1 3 3L13.8 13.2a2 2 0 0 1-.85.51l-2.3.67a.45.45 0 0 1-.57-.57l.67-2.3a2 2 0 0 1 .51-.85Z" />
+                            <path
+                                d="M18.4 2.6a2.12 2.12 0 0 1 3 3L13.8 13.2a2 2 0 0 1-.85.51l-2.3.67a.45.45 0 0 1-.57-.57l.67-2.3a2 2 0 0 1 .51-.85Z" />
                         </svg>
                     </button>
                     <div class="topbar__menu-container">
@@ -189,6 +186,253 @@
                 </div>
                 <div class="topbar-progress" id="topbar-progress"></div>
             </header>
+            <div class="sparks-page" id="sparks-page">
+                <div class="sparks-page__header">
+                    <span class="sparks-page__title">My Sparks</span>
+                    <button class="sparks-page__new" id="sparks-new-btn">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        New Spark
+                    </button>
+                </div>
+                <div class="sparks-page__body" id="sparks-page-body">
+                </div>
+            </div>
+
+            <!-- Notes Page (Semantic 2-Column Workspace) -->
+            <section class="notes-page" id="notes-page" style="display: none;" aria-label="Notes Workspace">
+                <!-- Left Pane: Collection & Notes Explorer -->
+                <aside class="notes-sidebar-pane">
+                    <header class="notes-pane-header">
+                        <h2 class="notes-pane-title">Notes</h2>
+                        <div class="notes-pane-actions">
+                            <button class="notes-primary-btn" id="notes-new-note-btn" title="New Note"
+                                aria-label="New Note">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Note</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="notes-pane-body">
+                        <div class="notes-search-wrapper">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" id="notes-search-input" placeholder="Search notes..."
+                                aria-label="Search notes">
+                        </div>
+
+                        <div class="notes-collections-section">
+                            <div class="notes-section-header">
+                                <span class="notes-section-title">Collections</span>
+                            </div>
+                            <button class="notes-new-col-btn" id="notes-new-collection-btn">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>New collection</span>
+                            </button>
+                            <nav class="notes-collections-list" id="notes-collections-list"
+                                aria-label="Collections list">
+                            </nav>
+                        </div>
+
+                        <div class="notes-list-section">
+                            <div class="notes-sort-bar">
+                                <span class="notes-sort-label">Notes</span>
+                                <div class="notes-sort-controls" id="notes-sort-controls">
+                                    <button class="notes-sort-btn active" data-sort="modified" title="Sort by last modified">Modified</button>
+                                    <button class="notes-sort-btn" data-sort="created" title="Sort by created date">Created</button>
+                                    <button class="notes-sort-btn" data-sort="az" title="Sort alphabetically">A–Z</button>
+                                </div>
+                            </div>
+                            <div class="notes-list" id="notes-list" role="list">
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Right Pane: Editor Canvas -->
+                <main class="notes-editor-pane" id="notes-editor-pane">
+                    <div class="notes-resizer" id="notes-resizer" role="separator" aria-orientation="vertical"
+                        aria-label="Resize panels">
+                        <div class="notes-resizer-handle"></div>
+                    </div>
+                    <header class="notes-editor-header">
+                        <!-- Collection Selector Pill -->
+                        <div class="notes-col-picker-wrapper" id="notes-col-picker-wrapper">
+                            <button type="button" class="notes-col-picker-pill" id="notes-col-picker-pill">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <span id="notes-col-picker-label">General</span>
+                                <svg class="notes-col-picker-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div class="notes-col-picker-dropdown" id="notes-col-picker-dropdown"></div>
+                        </div>
+
+                        <!-- Apple Notes Style Right Quick Toolbar -->
+                        <div class="notes-toolbar-right">
+                            <button type="button" class="notes-tb-btn" id="note-tb-h1" title="Heading 1">
+                                <span class="notes-tb-text-icon">H1</span>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-h2" title="Heading 2">
+                                <span class="notes-tb-text-icon">H2</span>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-h3" title="Heading 3">
+                                <span class="notes-tb-text-icon">H3</span>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-checklist" title="Checklist">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 11l3 3L22 4"></path>
+                                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-bullet" title="Bullet List">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="9" y1="6" x2="20" y2="6"></line>
+                                    <line x1="9" y1="12" x2="20" y2="12"></line>
+                                    <line x1="9" y1="18" x2="20" y2="18"></line>
+                                    <circle cx="4" cy="6" r="1.5" fill="currentColor"></circle>
+                                    <circle cx="4" cy="12" r="1.5" fill="currentColor"></circle>
+                                    <circle cx="4" cy="18" r="1.5" fill="currentColor"></circle>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-number" title="Numbered List">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="10" y1="6" x2="21" y2="6"></line>
+                                    <line x1="10" y1="12" x2="21" y2="12"></line>
+                                    <line x1="10" y1="18" x2="21" y2="18"></line>
+                                    <path d="M4 6h1v4"></path>
+                                    <path d="M4 10h2"></path>
+                                    <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-table" title="Table">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-image" title="Image">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-undo" title="Undo (Cmd+Z)">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 7v6h6"></path>
+                                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                                </svg>
+                            </button>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-redo" title="Redo (Cmd+Shift+Z)">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 7v6h-6"></path>
+                                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+                                </svg>
+                            </button>
+
+                            <div class="notes-tb-divider"></div>
+
+                            <button type="button" class="notes-tb-btn" id="note-tb-copy" title="Copy Markdown">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"></path>
+                                    <polyline points="16 6 12 2 8 6"></polyline>
+                                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                                </svg>
+                            </button>
+
+                            <!-- More Actions Menu Dropdown -->
+                            <div class="notes-custom-dropdown" id="notes-more-dropdown">
+                                <button type="button" class="notes-tb-btn" id="note-tb-more" title="More Actions">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="1"></circle>
+                                        <circle cx="19" cy="12" r="1"></circle>
+                                        <circle cx="5" cy="12" r="1"></circle>
+                                    </svg>
+                                </button>
+                                <div class="notes-dropdown-menu notes-more-menu" id="notes-more-menu"
+                                    style="display: none;">
+                                    <button type="button" class="notes-dropdown-item" id="note-action-export-md">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        <span>Export Markdown</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item danger" id="note-action-delete">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path
+                                                d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2">
+                                            </path>
+                                        </svg>
+                                        <span>Delete Note</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="notes-editor-body">
+                        <input type="text" class="note-title-input" id="note-title-input" placeholder=""
+                            spellcheck="false" aria-label="Note title">
+                        <div id="editorjs" class="editorjs-container"></div>
+                    </div>
+                    <div class="notes-word-count-bar" id="notes-word-count-bar">
+                        <span id="notes-word-count">0 words</span>
+                    </div>
+                </main>
+
+                <div class="notes-empty-state" id="notes-empty-state" style="display: none;">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span>Select a note or create a new one</span>
+                </div>
+            </section>
 
             <div class="layout" id="chat-layout">
                 <div class="lumina-chat-container">
@@ -237,8 +481,12 @@
                         <div class="lumina-search-icon-wrapper">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 3H8.5A5.5 5.5 0 0 0 3 8.5v7A5.5 5.5 0 0 0 8.5 21h7A5.5 5.5 0 0 0 21 15.5V12"></path>
-                                <path d="M18.4 2.6a2.12 2.12 0 0 1 3 3L13.8 13.2a2 2 0 0 1-.85.51l-2.3.67a.45.45 0 0 1-.57-.57l.67-2.3a2 2 0 0 1 .51-.85Z"></path>
+                                <path
+                                    d="M12 3H8.5A5.5 5.5 0 0 0 3 8.5v7A5.5 5.5 0 0 0 8.5 21h7A5.5 5.5 0 0 0 21 15.5V12">
+                                </path>
+                                <path
+                                    d="M18.4 2.6a2.12 2.12 0 0 1 3 3L13.8 13.2a2 2 0 0 1-.85.51l-2.3.67a.45.45 0 0 1-.57-.57l.67-2.3a2 2 0 0 1 .51-.85Z">
+                                </path>
                             </svg>
                         </div>
                         <span class="nav-text">New chat</span>
@@ -1384,7 +1632,7 @@
         </div>
     </template>
 
-    
+
     <div class="lumina-live-modal-overlay" id="lumina-live-modal" style="display: none;">
         <div class="lumina-live-modal-content">
             <header class="lumina-live-header">

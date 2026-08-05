@@ -5,5 +5,13 @@
   "scripts": {
     "build": "powershell -ExecutionPolicy Bypass -File build.ps1",
     "dev": "powershell -ExecutionPolicy Bypass -File build.ps1 --watch"
+  },
+  "dependencies": {
+    "@blocknote/core": "^0.52.1",
+    "@blocknote/mantine": "^0.52.1",
+    "@blocknote/react": "^0.52.1",
+    "esbuild": "^0.28.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }

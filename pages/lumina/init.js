@@ -68,4 +68,28 @@
         `;
         document.documentElement.appendChild(style);
     }
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    if (viewParam === 'notes' || viewParam === 'sparks') {
+        const viewStyle = document.createElement('style');
+        viewStyle.id = 'view-init-style';
+        if (viewParam === 'notes') {
+            const savedNotesWidth = localStorage.getItem('lumina_notes_sidebar_width');
+            const notesWidth = savedNotesWidth ? parseInt(savedNotesWidth, 10) : 260;
+            viewStyle.innerHTML = `
+                #chat-layout, #lumina-topbar, #sparks-page { display: none !important; }
+                #notes-page { display: flex !important; }
+                .notes-sidebar-pane {
+                    width: ${notesWidth}px !important;
+                    flex: 0 0 ${notesWidth}px !important;
+                }
+            `;
+        } else if (viewParam === 'sparks') {
+            viewStyle.innerHTML = `
+                #chat-layout, #lumina-topbar, #notes-page { display: none !important; }
+                #sparks-page { display: flex !important; }
+            `;
+        }
+        document.documentElement.appendChild(viewStyle);
+    }
 })();

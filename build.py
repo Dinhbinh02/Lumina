@@ -14,7 +14,6 @@ JS_FILES = [
     'lib/vendor/katex/katex.min.js',
     'lib/vendor/katex/auto-render.min.js',
     'lib/vendor/chart.min.js',
-    'lib/vendor/pdf.min.js',
     'lib/helpers/file_processor.js',
     'lib/ui/common.js',
     'lib/core/auth.js',
@@ -26,6 +25,8 @@ JS_FILES = [
     'lib/core/token_utils.js',
     'lib/core/memory.js',
     'lib/core/gemini_live.js',
+    'lib/core/notes_manager.js',
+    'lib/ui/notes_panel.js',
     'pages/lumina/settings_modal.js',
     'pages/lumina/search_modal.js',
     'pages/lumina/lumina.js',
@@ -42,8 +43,22 @@ CSS_FILES = [
 JS_BUNDLE = 'pages/lumina/lumina.bundle.js'
 CSS_BUNDLE = 'pages/lumina/lumina.bundle.css'
 
+import subprocess
+
 def build():
     print("Building bundles...")
+    if os.path.exists('scratch/blocknote_entry.jsx'):
+        try:
+            print("Compiling scratch/blocknote_entry.jsx with esbuild...")
+            subprocess.run([
+                'npx', 'esbuild', 'scratch/blocknote_entry.jsx',
+                '--bundle', '--outfile=lib/vendor/blocknote.js',
+                '--loader:.js=jsx', '--loader:.jsx=jsx', '--conditions=style',
+                '--define:process.env.NODE_ENV="production"'
+            ], check=True)
+        except Exception as e:
+            print("Warning: esbuild compilation skipped or failed:", e)
+
     # Bundle JS
     js_content = ""
     for f in JS_FILES:
