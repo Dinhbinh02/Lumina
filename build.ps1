@@ -13,7 +13,6 @@ $JS_FILES = @(
     'lib/vendor/katex/katex.min.js',
     'lib/vendor/katex/auto-render.min.js',
     'lib/vendor/chart.min.js',
-    'lib/vendor/pdf.min.js',
     'lib/helpers/file_processor.js',
     'lib/ui/common.js',
     'lib/core/auth.js',
@@ -25,6 +24,8 @@ $JS_FILES = @(
     'lib/core/token_utils.js',
     'lib/core/memory.js',
     'lib/core/gemini_live.js',
+    'lib/core/notes_manager.js',
+    'lib/ui/notes_panel.js',
     'pages/lumina/settings_modal.js',
     'pages/lumina/search_modal.js',
     'pages/lumina/lumina.js',
@@ -42,7 +43,17 @@ $JS_BUNDLE = Join-Path $ScriptDir "pages/lumina/lumina.bundle.js"
 $CSS_BUNDLE = Join-Path $ScriptDir "pages/lumina/lumina.bundle.css"
 
 function Invoke-LuminaBuild {
-    Write-Host "Building bundles to $JS_BUNDLE..."
+    Write-Host "Building bundles..."
+
+    $entryPath = Join-Path $ScriptDir "scratch/blocknote_entry.jsx"
+    if (Test-Path $entryPath) {
+        try {
+            Write-Host "Compiling scratch/blocknote_entry.jsx with esbuild..."
+            & npx esbuild scratch/blocknote_entry.jsx --bundle --outfile=lib/vendor/blocknote.js --loader:.js=jsx --loader:.jsx=jsx --conditions=style '--define:process.env.NODE_ENV="production"'
+        } catch {
+            Write-Warning "esbuild compilation skipped or failed: $_"
+        }
+    }
     
     # Bundle JS
     $js_content = ""
