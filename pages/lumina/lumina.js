@@ -2711,6 +2711,11 @@ async function init() {
             if (typeof renderRecentChatsSidebar === 'function') {
                 renderRecentChatsSidebar();
             }
+        } else if (request.action === 'lumina_notes_updated') {
+            if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
+                if (typeof luminaNotesPanelInstance.renderSidebar === 'function') luminaNotesPanelInstance.renderSidebar();
+                if (typeof luminaNotesPanelInstance.renderNotesList === 'function') luminaNotesPanelInstance.renderNotesList();
+            }
         } else if (request.action === 'settings_updated') {
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
             if (size) applyFontSize(size);

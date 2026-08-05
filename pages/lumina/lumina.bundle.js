@@ -11484,6 +11484,7 @@ class SyncManager {
 
         try {
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
+            chrome.runtime.sendMessage({ action: 'lumina_notes_updated' });
         } catch (e) {}
 
         return { allAttachments, isAttachmentActive };
@@ -21311,6 +21312,11 @@ async function init() {
         } else if (request.action === 'lumina_sessions_index_updated') {
             if (typeof renderRecentChatsSidebar === 'function') {
                 renderRecentChatsSidebar();
+            }
+        } else if (request.action === 'lumina_notes_updated') {
+            if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
+                if (typeof luminaNotesPanelInstance.renderCollections === 'function') luminaNotesPanelInstance.renderCollections();
+                if (typeof luminaNotesPanelInstance.renderNotesList === 'function') luminaNotesPanelInstance.renderNotesList();
             }
         } else if (request.action === 'settings_updated') {
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
