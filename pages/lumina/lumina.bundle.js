@@ -11053,7 +11053,7 @@ class SyncManager {
                 const keys = Object.keys(changes);
                 const excludedKeys = [
                     'google_oauth_token', 'google_oauth_token_time',
-                    'google_user_info', 'last_sync_time', 'last_sync_hash',
+                    'google_user_info', 'last_sync_time', 'last_sync_hash', 'last_sync_md5',
                     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
                     'sidepanel_active_tab_index', 'sidepanel_active_group_index',
                     'lumina_active_tab_index', 'lumina_active_group_index'
@@ -11065,9 +11065,6 @@ class SyncManager {
                 );
                 if (hasSettingsKeys) {
                     chrome.storage.local.set({ settings_last_updated: Date.now() });
-                }
-                if (!changes.last_sync_time && !changes.settings_last_updated) {
-                    this.checkAutoSync();
                 }
             });
         }
@@ -11420,32 +11417,32 @@ class SyncManager {
                 if (Array.isArray(mergedCollections)) {
                     const activeColIds = new Set(mergedCollections.map(c => c && c.id).filter(Boolean));
                     const currentCols = await NotesManager.getCollections().catch(() => []);
+                    const txCol = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
+                    const storeCol = txCol.objectStore(NotesManager.STORE_COLLECTIONS);
                     for (const c of currentCols) {
                         if (c && c.id && !activeColIds.has(c.id)) {
-                            const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
-                            tx.objectStore(NotesManager.STORE_COLLECTIONS).delete(c.id);
+                            storeCol.delete(c.id);
                         }
                     }
                     for (const col of mergedCollections) {
                         if (col && col.id) {
-                            const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
-                            tx.objectStore(NotesManager.STORE_COLLECTIONS).put(col);
+                            storeCol.put(col);
                         }
                     }
                 }
                 if (Array.isArray(mergedNotes)) {
                     const activeNoteIds = new Set(mergedNotes.map(n => n && n.id).filter(Boolean));
                     const currentNotes = await NotesManager.getNotes().catch(() => []);
+                    const txNote = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
+                    const storeNote = txNote.objectStore(NotesManager.STORE_NOTES);
                     for (const n of currentNotes) {
                         if (n && n.id && !activeNoteIds.has(n.id)) {
-                            const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
-                            tx.objectStore(NotesManager.STORE_NOTES).delete(n.id);
+                            storeNote.delete(n.id);
                         }
                     }
                     for (const note of mergedNotes) {
                         if (note && note.id) {
-                            const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
-                            tx.objectStore(NotesManager.STORE_NOTES).put(note);
+                            storeNote.put(note);
                         }
                     }
                 }
@@ -11485,6 +11482,7 @@ class SyncManager {
         try {
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             chrome.runtime.sendMessage({ action: 'lumina_notes_updated' });
+            chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' });
         } catch (e) {}
 
         return { allAttachments, isAttachmentActive };
@@ -11546,7 +11544,8 @@ class SyncManager {
             return now;
         } catch (error) {
             console.error('[Sync] Sync failed:', error);
-            if (!isAuto) this.notifyListeners('Sync failed', null);
+            await chrome.storage.local.remove(['last_sync_hash']).catch(() => {});
+            if (!isAuto) this.notifyListeners('Sync failure', null);
             throw error;
         } finally {
             this.isSyncing = false;
@@ -21317,6 +21316,10 @@ async function init() {
             if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
                 if (typeof luminaNotesPanelInstance.renderCollections === 'function') luminaNotesPanelInstance.renderCollections();
                 if (typeof luminaNotesPanelInstance.renderNotesList === 'function') luminaNotesPanelInstance.renderNotesList();
+            }
+        } else if (request.action === 'lumina_highlights_updated') {
+            if (typeof window.LuminaAnnotationUI !== 'undefined' && typeof window.LuminaAnnotationUI.reload === 'function') {
+                window.LuminaAnnotationUI.reload();
             }
         } else if (request.action === 'settings_updated') {
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
