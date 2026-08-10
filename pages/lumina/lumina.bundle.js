@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -11537,6 +11537,8 @@ class SyncManager {
                 : await this.createBackupFile(token, JSON.stringify(payload));
 
             await chrome.storage.local.set({
+                last_sync_time: now,
+                last_sync_hash: newHash,
                 last_sync_md5: newUploadedMd5
             });
 
