@@ -16452,6 +16452,7 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-dict-model', 'lumina-dict-model-list');
     this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
     this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
+    this.setupDropdownInputs('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list');
 
     const clearCacheBtn = document.getElementById('lumina-clear-cache-btn');
     if (clearCacheBtn) {
@@ -16824,6 +16825,8 @@ class LuminaSettingsModal {
       providerInput.dataset.value = item.providerId;
       modelInput.value = item.modelName;
       customNameInput.value = item.displayName || '';
+      const tokenVal = item.maxTokens || 8192;
+      this.setDropdownValue('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
       this.loadModelsForProvider(item.providerId);
     } else {
       indexInput.value = '';
@@ -16831,6 +16834,7 @@ class LuminaSettingsModal {
       providerInput.dataset.value = '';
       modelInput.value = '';
       customNameInput.value = '';
+      this.setDropdownValue('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list', '8192', '8,192 tokens (Default)');
     }
     this.updateModelPopupFieldsState();
   }
@@ -16838,6 +16842,7 @@ class LuminaSettingsModal {
     const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
     const modelInput = document.getElementById('lumina-text-chain-model');
     const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
+    const maxTokensInput = document.getElementById('lumina-text-chain-max-tokens');
     const shouldDisable = !provider;
     if (modelInput) {
       modelInput.disabled = shouldDisable;
@@ -16857,6 +16862,16 @@ class LuminaSettingsModal {
       } else {
         customNameInput.style.opacity = '1';
         customNameInput.style.cursor = 'text';
+      }
+    }
+    if (maxTokensInput) {
+      maxTokensInput.disabled = shouldDisable;
+      if (shouldDisable) {
+        maxTokensInput.style.opacity = '0.6';
+        maxTokensInput.style.cursor = 'not-allowed';
+      } else {
+        maxTokensInput.style.opacity = '1';
+        maxTokensInput.style.cursor = 'pointer';
       }
     }
   }
@@ -17104,6 +17119,8 @@ class LuminaSettingsModal {
     const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
     const model = document.getElementById('lumina-text-chain-model').value.trim();
     const customName = document.getElementById('lumina-text-chain-model-name-custom').value.trim();
+    const maxTokensInput = document.getElementById('lumina-text-chain-max-tokens');
+    const maxTokens = parseInt(maxTokensInput?.dataset?.value || '8192', 10);
     if (!provider || !model) {
       alert('Provider and Model are required.');
       return;
@@ -17112,7 +17129,8 @@ class LuminaSettingsModal {
       providerId: provider,
       modelName: model,
       model: model,
-      displayName: customName || model
+      displayName: customName || model,
+      maxTokens: maxTokens || 8192
     };
     if (indexStr !== '') {
       const idx = parseInt(indexStr);
@@ -17158,7 +17176,8 @@ class LuminaSettingsModal {
         clone.querySelector('.chain-title').textContent = item.displayName || item.modelName;
         const prov = this.providers.find(p => p.id === item.providerId);
         const providerName = prov ? prov.name : item.providerId;
-        clone.querySelector('.chain-subtitle').textContent = providerName;
+        const tokenLabel = item.maxTokens ? ` • ${Number(item.maxTokens).toLocaleString()} tokens` : ' • 8,192 tokens';
+        clone.querySelector('.chain-subtitle').textContent = `${providerName}${tokenLabel}`;
         clone.querySelector('.edit').addEventListener('click', () => {
           this.showModelForm(index);
         });

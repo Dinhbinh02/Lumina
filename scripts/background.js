@@ -830,8 +830,9 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         } else {
             geminiContents.push({ role: 'user', parts: [{ text: currentQ || '' }] });
         }
+        const maxOutputTokensVal = (Number.isFinite(maxTokens) && maxTokens > 0) ? parseInt(maxTokens, 10) : 8192;
         const generationConfig = {
-            maxOutputTokens: 65536,
+            maxOutputTokens: maxOutputTokensVal,
             ...parsedCustomParams
         };
         const isGemini3 = /gemini-[3-9]/i.test(model);
@@ -955,7 +956,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         if (Number.isFinite(maxTokens) && maxTokens > 0) {
             openaiBody.max_tokens = maxTokens;
         } else {
-            openaiBody.max_tokens = 4096;
+            openaiBody.max_tokens = 8192;
         }
     }
     if (normalizedThinkingLevel) {
@@ -1001,7 +1002,12 @@ async function getModelChain(type = 'text', preferredModel = null) {
             const preferred = chain.splice(idx, 1)[0];
             chain.unshift(preferred);
         } else if (idx === -1 && actModel) {
-            chain.unshift({ providerId: actPId || '', model: actModel });
+            const matchingChainItem = data.modelChains?.text?.find(item => item.model === actModel);
+            chain.unshift({
+                providerId: actPId || '',
+                model: actModel,
+                maxTokens: activeModel.maxTokens || matchingChainItem?.maxTokens || 8192
+            });
         }
     }
     const hydratedChain = chain.map(config => {
@@ -1246,7 +1252,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     const modelParams = (providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!providerId ? (advancedParamsByModel[model] || {}) : {});
     const temperature = requestOptions.temperature ?? modelParams.temperature ?? 1.0;
     const topP = modelParams.topP ?? 1.0;
-    const maxTokens = requestOptions.maxTokens ?? modelParams.maxTokens ?? null;
+    const maxTokens = requestOptions.maxTokens ?? config.maxTokens ?? null;
     const thinkingLevel = requestOptions.thinkingLevel ?? modelParams.thinkingLevel ?? null;
     const customParams = modelParams.customParams || {};
     const responseLanguage = globalSettings.responseLanguage;
