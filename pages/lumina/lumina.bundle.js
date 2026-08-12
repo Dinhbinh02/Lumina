@@ -10769,6 +10769,54 @@ function mergeEntities(localCollection, remoteCollection, options = {}) {
     }
 }
 
+const WEB_OAUTH_CONFIG = {
+    clientId: "824888142961-mlpoj5jeqbo1lv2d61mho7cnnde9aicv.apps.googleusercontent.com",
+    scopes: [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/drive.appdata"
+    ]
+};
+
+function launchGoogleWebAuthFlow(interactive) {
+    return new Promise((resolve, reject) => {
+        const redirectUri = chrome.identity.getRedirectURL();
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `client_id=${encodeURIComponent(WEB_OAUTH_CONFIG.clientId)}&` +
+            `response_type=token&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `scope=${encodeURIComponent(WEB_OAUTH_CONFIG.scopes.join(' '))}`;
+
+        chrome.identity.launchWebAuthFlow({
+            url: authUrl,
+            interactive: interactive
+        }, (redirectUrl) => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else if (redirectUrl) {
+                try {
+                    const url = new URL(redirectUrl);
+                    const hashParams = new URLSearchParams(url.hash.substring(1));
+                    const token = hashParams.get('access_token');
+                    if (token) {
+                        chrome.storage.local.set({
+                            google_oauth_token: token,
+                            google_oauth_token_time: Date.now()
+                        });
+                        resolve(token);
+                    } else {
+                        reject(new Error("No access token found in redirect URL"));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            } else {
+                reject(new Error("Authentication flow cancelled or failed"));
+            }
+        });
+    });
+}
+
 class AuthService {
     constructor() {
         this.user = null;
@@ -10831,6 +10879,7 @@ class AuthService {
             !/Edg/i.test(navigator.userAgent) &&
             !/OPR/i.test(navigator.userAgent) &&
             !(navigator.brave && typeof navigator.brave.isBrave === 'function');
+
         if (!isChrome) {
             if (forceRefresh) {
                 this._cachedToken = null;
@@ -10849,49 +10898,11 @@ class AuthService {
                     }
                 } catch (e) { }
             }
-            return new Promise((resolve, reject) => {
-                const clientId = "824888142961-cmsfdrk950sa3jq238ugno4hf50clnqv.apps.googleusercontent.com";
-                const redirectUri = chrome.identity.getRedirectURL();
-                const scopes = [
-                    "https://www.googleapis.com/auth/userinfo.email",
-                    "https://www.googleapis.com/auth/userinfo.profile",
-                    "https://www.googleapis.com/auth/drive.appdata"
-                ];
-                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-                    `client_id=${encodeURIComponent(clientId)}&` +
-                    `response_type=token&` +
-                    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                    `scope=${encodeURIComponent(scopes.join(' '))}`;
-                chrome.identity.launchWebAuthFlow({
-                    url: authUrl,
-                    interactive: interactive
-                }, (redirectUrl) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else if (redirectUrl) {
-                        try {
-                            const url = new URL(redirectUrl);
-                            const hashParams = new URLSearchParams(url.hash.substring(1));
-                            const token = hashParams.get('access_token');
-                            if (token) {
-                                this._cachedToken = token;
-                                chrome.storage.local.set({
-                                    google_oauth_token: token,
-                                    google_oauth_token_time: Date.now()
-                                });
-                                resolve(token);
-                            } else {
-                                reject(new Error("No access token found in redirect URL"));
-                            }
-                        } catch (err) {
-                            reject(err);
-                        }
-                    } else {
-                        reject(new Error("Authentication flow cancelled or failed"));
-                    }
-                });
-            });
+            const token = await launchGoogleWebAuthFlow(interactive);
+            this._cachedToken = token;
+            return token;
         }
+
         return new Promise((resolve, reject) => {
             if (typeof chrome === "undefined" || !chrome.identity || !chrome.identity.getAuthToken) {
                 reject(new Error("Chrome Identity API is not available"));
@@ -10902,46 +10913,12 @@ class AuthService {
                     if (chrome.runtime.lastError) {
                         const errMsg = chrome.runtime.lastError.message;
                         if (errMsg.includes("not supported") || errMsg.includes("not available")) {
-                            const clientId = "824888142961-cmsfdrk950sa3jq238ugno4hf50clnqv.apps.googleusercontent.com";
-                            const redirectUri = chrome.identity.getRedirectURL();
-                            const scopes = [
-                                "https://www.googleapis.com/auth/userinfo.email",
-                                "https://www.googleapis.com/auth/userinfo.profile",
-                                "https://www.googleapis.com/auth/drive.appdata"
-                            ];
-                            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-                                `client_id=${encodeURIComponent(clientId)}&` +
-                                `response_type=token&` +
-                                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                                `scope=${encodeURIComponent(scopes.join(' '))}`;
-                            chrome.identity.launchWebAuthFlow({
-                                url: authUrl,
-                                interactive: interactive
-                            }, (redirectUrl) => {
-                                if (chrome.runtime.lastError) {
-                                    reject(new Error(chrome.runtime.lastError.message));
-                                } else if (redirectUrl) {
-                                    try {
-                                        const url = new URL(redirectUrl);
-                                        const hashParams = new URLSearchParams(url.hash.substring(1));
-                                        const token = hashParams.get('access_token');
-                                        if (token) {
-                                            this._cachedToken = token;
-                                            chrome.storage.local.set({
-                                                google_oauth_token: token,
-                                                google_oauth_token_time: Date.now()
-                                            });
-                                            resolve(token);
-                                        } else {
-                                            reject(new Error("No access token found in redirect URL"));
-                                        }
-                                    } catch (err) {
-                                        reject(err);
-                                    }
-                                } else {
-                                    reject(new Error("Authentication flow cancelled or failed"));
-                                }
-                            });
+                            launchGoogleWebAuthFlow(interactive)
+                                .then((t) => {
+                                    this._cachedToken = t;
+                                    resolve(t);
+                                })
+                                .catch(reject);
                         } else {
                             reject(new Error(errMsg));
                         }
@@ -11029,9 +11006,12 @@ class AuthService {
                 name: data.name,
                 picture: data.picture
             };
+            const wasAuth = this.isAuthenticated;
             this.isAuthenticated = true;
             chrome.storage.local.set({ google_user_info: this.user });
-            this.notifyListeners();
+            if (!wasAuth) {
+                this.notifyListeners();
+            }
         } catch (e) {
             console.error('Fetch user info error:', e);
             throw e;
@@ -11048,8 +11028,6 @@ class AuthService {
     }
 }
 
-const AUTO_SYNC_INTERVAL = 5 * 60 * 1000;
-
 class SyncManager {
     constructor(authService) {
         this.authService = authService || new AuthService();
@@ -11057,39 +11035,24 @@ class SyncManager {
         this.listeners = [];
         this.isSyncing = false;
         
-        // Initial auto sync check
-        this.checkAutoSync();
+        // Trigger auto sync whenever authentication is ready/initialized
+        if (this.authService.isAuthenticated) {
+            this.checkAutoSync(true);
+        }
+        this.authService.addListener((isAuthenticated) => {
+            if (isAuthenticated) {
+                this.checkAutoSync(true);
+            }
+        });
 
         const isBackground = typeof window === 'undefined';
-        if (isBackground && typeof chrome !== 'undefined' && chrome.alarms) {
-            chrome.alarms.get('luminaAutoSync', (alarm) => {
-                if (!alarm) {
-                    chrome.alarms.create('luminaAutoSync', { periodInMinutes: 5 });
-                }
-            });
-            chrome.alarms.onAlarm.addListener((alarm) => {
-                if (alarm.name === 'luminaAutoSync') {
-                    this.checkAutoSync();
-                }
-            });
-
-            // Extension startup event trigger
+        if (isBackground && typeof chrome !== 'undefined') {
             if (chrome.runtime && chrome.runtime.onStartup) {
                 chrome.runtime.onStartup.addListener(() => {
                     this.checkAutoSync(true);
                 });
             }
-        } else if (typeof window !== 'undefined') {
-            // Instant Sync-on-Focus / Tab Visibility Change
-            window.addEventListener('focus', () => this.checkAutoSync(true));
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') {
-                    this.checkAutoSync(true);
-                }
-            });
         }
-
-        setInterval(() => this.checkAutoSync(), 5 * 60 * 1000);
 
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
             chrome.storage.onChanged.addListener((changes, area) => {
@@ -11114,6 +11077,15 @@ class SyncManager {
             });
         }
     }
+
+    triggerDebouncedSync(delayMs = 2000) {
+        if (!this.authService.isAuthenticated) return;
+        if (this._debounceTimer) clearTimeout(this._debounceTimer);
+        this._debounceTimer = setTimeout(() => {
+            this._debounceTimer = null;
+            this.syncData(true).catch(err => console.error('[Sync] Debounced sync failed:', err));
+        }, delayMs);
+    }
     addListener(callback) {
         this.listeners.push(callback);
     }
@@ -11122,17 +11094,10 @@ class SyncManager {
     }
     async checkAutoSync(forceCheck = false) {
         if (!this.authService.isAuthenticated) return;
-        const result = await chrome.storage.local.get(['last_sync_time']);
-        const lastSync = result.last_sync_time || 0;
-        const now = Date.now();
-        
-        // If forceCheck is true (e.g., Focus/Startup), trigger lightweight sync regardless of 5-min timer
-        if (forceCheck || (now - lastSync > AUTO_SYNC_INTERVAL)) {
-            try {
-                await this.syncData(true);
-            } catch (e) {
-                console.error('[Sync] Auto-sync failed:', e);
-            }
+        try {
+            await this.syncData(true);
+        } catch (e) {
+            console.error('[Sync] Auto-sync failed:', e);
         }
     }
     async getLastSyncTime() {
@@ -11165,7 +11130,7 @@ class SyncManager {
     }
     async findBackupFile(token) {
         const q = `name = '${this.FILENAME}' and 'appDataFolder' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=appDataFolder&fields=files(id, name, md5Checksum, modifiedTime)`;
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=appDataFolder&fields=files(id, name, md5Checksum, modifiedTime, size)`;
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -11186,7 +11151,7 @@ class SyncManager {
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         form.append('file', new Blob([compressed], { type: 'application/octet-stream' }));
-        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum', {
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum,size', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: form
@@ -11194,7 +11159,7 @@ class SyncManager {
         if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
         if (!response.ok) throw new Error('Failed to create file');
         const resData = await response.json();
-        return resData.md5Checksum;
+        return resData;
     }
     async updateBackupFile(token, fileId, content) {
         const metadata = {
@@ -11204,7 +11169,7 @@ class SyncManager {
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         form.append('file', new Blob([compressed], { type: 'application/octet-stream' }));
-        const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id,name,md5Checksum`, {
+        const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id,name,md5Checksum,size`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}` },
             body: form
@@ -11212,7 +11177,7 @@ class SyncManager {
         if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
         if (!response.ok) throw new Error('Failed to update file');
         const resData = await response.json();
-        return resData.md5Checksum;
+        return resData;
     }
     async fetchRemoteBackup(token, isAuto = false) {
         let activeToken = token;
@@ -11521,6 +11486,9 @@ class SyncManager {
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
             chrome.runtime.sendMessage({ action: 'lumina_notes_updated' });
             chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' });
+            for (const sid of Object.keys(mergedSessions)) {
+                chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: sid }).catch(() => {});
+            }
         } catch (e) {}
 
         return { allAttachments, isAttachmentActive };
@@ -11542,25 +11510,37 @@ class SyncManager {
 
             const localData = await this.gatherLocalData();
             const { mergedData, mergedSessions, localKeysToRemove } = this.mergeSyncData(localData, remoteData);
-            const { allAttachments } = await this.persistMergedData(mergedData, mergedSessions, localKeysToRemove, remoteAttachments);
 
-            const dataToHash = {
-                ...mergedData,
-                attachments: allAttachments
-            };
+            // Construct payload to upload BEFORE persistMergedData mutates/deletes chat keys from mergedData
+            const dataToUpload = { ...mergedData };
+
+            let allAttachments = localData.attachments || {};
+            if (remoteBackup !== null) {
+                const persisted = await this.persistMergedData(mergedData, mergedSessions, localKeysToRemove, remoteAttachments);
+                allAttachments = persisted.allAttachments;
+            }
+
+            dataToUpload.attachments = allAttachments;
             
             // Enterprise SHA-256 Hashing
-            const newHash = await sha256Hash(JSON.stringify(dataToHash));
+            const newHash = await sha256Hash(JSON.stringify(dataToUpload));
             const stored = await chrome.storage.local.get(["last_sync_hash", "last_sync_md5"]);
             const now = Date.now();
             mergedData.last_sync_time = now;
             mergedData.last_sync_hash = newHash;
 
-            if (stored.last_sync_hash === newHash && fileId) {
+            // If local data hash is unchanged and remote file was unchanged (or merged with no new diffs), skip upload!
+            const isLocalUnchanged = (stored.last_sync_hash === newHash);
+            const isRemoteUnchanged = (remoteBackup === null);
+
+            if (fileId && isLocalUnchanged && (isRemoteUnchanged || remoteFile)) {
                 const finalMd5 = remoteFile ? remoteFile.md5Checksum : lastSyncMd5;
+                const finalSize = remoteFile ? remoteFile.size : null;
                 await chrome.storage.local.set({
                     last_sync_time: now,
-                    last_sync_md5: finalMd5
+                    last_sync_hash: newHash,
+                    last_sync_md5: finalMd5,
+                    last_sync_size: finalSize
                 });
                 if (!isAuto) this.notifyListeners('Synced just now', now);
                 return now;
@@ -11581,17 +11561,21 @@ class SyncManager {
             const payload = {
                 timestamp: new Date().toISOString(),
                 version: chrome.runtime.getManifest().version,
-                data: dataToHash
+                data: dataToUpload
             };
 
-            const newUploadedMd5 = fileId
+            const uploadRes = fileId
                 ? await this.updateBackupFile(token, fileId, JSON.stringify(payload))
                 : await this.createBackupFile(token, JSON.stringify(payload));
+
+            const newUploadedMd5 = (uploadRes && typeof uploadRes === 'object') ? uploadRes.md5Checksum : uploadRes;
+            const newUploadedSize = (uploadRes && typeof uploadRes === 'object') ? uploadRes.size : null;
 
             await chrome.storage.local.set({
                 last_sync_time: now,
                 last_sync_hash: newHash,
-                last_sync_md5: newUploadedMd5
+                last_sync_md5: newUploadedMd5,
+                last_sync_size: newUploadedSize
             });
 
             if (!isAuto) this.notifyListeners('Synced just now', now);
@@ -16453,39 +16437,7 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
     this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
     this.setupDropdownInputs('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list');
-
-    const clearCacheBtn = document.getElementById('lumina-clear-cache-btn');
-    if (clearCacheBtn) {
-      clearCacheBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear all cached images, audio, and search history? This will free up storage space.')) {
-          chrome.storage.local.get(null, (items) => {
-            const keysToRemove = [];
-            Object.keys(items).forEach(key => {
-              if (key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('spotlight_history_')) {
-                keysToRemove.push(key);
-              }
-            });
-
-            if (keysToRemove.length > 0) {
-              chrome.storage.local.remove(keysToRemove);
-            }
-
-            if (typeof LuminaImageCacheDB !== 'undefined' && LuminaImageCacheDB.clear) {
-              LuminaImageCacheDB.clear().catch(err => console.error('Failed to clear LuminaImageCacheDB:', err));
-            }
-
-            if (typeof LuminaAudioCacheDB !== 'undefined' && LuminaAudioCacheDB.clear) {
-              LuminaAudioCacheDB.clear().catch(err => console.error('Failed to clear LuminaAudioCacheDB:', err));
-            }
-
-            chrome.storage.local.remove(['audio_cache'], () => {
-              alert('Cache cleared successfully!');
-              this.updateStorageUsage();
-            });
-          });
-        }
-      });
-    }
+    this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
   }
   static getDefaultProviders() {
     return [
@@ -16535,50 +16487,94 @@ class LuminaSettingsModal {
     return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
   }
   static renderProviders() {
-    const list = document.getElementById('lumina-provider-list');
-    if (!list) return;
-    list.innerHTML = '';
-    const temp = document.getElementById('lumina-providerItemTemplate');
-    this.providers.forEach(p => {
-      const clone = temp.content.cloneNode(true);
-      const card = clone.querySelector('.provider-item');
-      card.querySelector('.provider-item-name').textContent = p.name;
-      const logoContainer = card.querySelector('.provider-logo-container');
-      if (logoContainer) {
-        logoContainer.innerHTML = this.getProviderLogoSvg(p.id);
-      }
-      const badge = card.querySelector('.provider-badge');
-      const hasKey = p.apiKey && p.apiKey.trim().length > 0;
-      badge.textContent = hasKey ? 'Active' : 'Configure';
-      badge.className = 'provider-badge ' + (hasKey ? 'active' : 'inactive');
-      card.addEventListener('click', () => this.editProvider(p.id));
-      list.appendChild(clone);
-    });
-    const addCard = document.createElement('div');
-    addCard.className = 'lumina-settings-provider-card provider-item add-provider-card';
-    addCard.id = 'lumina-add-provider-btn';
-    addCard.innerHTML = `
-      <div class="provider-item-content add-mode">
-        <div class="provider-logo-container">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </div>
-        <span class="provider-title font-semibold">Add Provider</span>
-      </div>
-    `;
-    addCard.addEventListener('click', () => this.showProviderForm());
-    list.appendChild(addCard);
+    const menu = document.getElementById('lumina-setup-provider-menu');
+    if (!menu) return;
+    menu.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
+    
+    const input = document.getElementById('lumina-setup-provider-input');
+    let currentId = input?.dataset.value;
+    if (!currentId || !this.providers.some(p => p.id === currentId)) {
+      currentId = this.providers[0]?.id || 'openai-default';
+    }
+    this.selectProviderSetup(currentId);
   }
+
+  static selectProviderSetup(providerId) {
+    const input = document.getElementById('lumina-setup-provider-input');
+    const keyInput = document.getElementById('lumina-setup-provider-key');
+    const badge = document.getElementById('lumina-setup-provider-badge');
+    const endpointRow = document.getElementById('lumina-setup-endpoint-row');
+    const endpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    if (!input) return;
+
+    const p = this.providers.find(prov => prov.id === providerId) || this.providers[0];
+    if (!p) return;
+
+    input.value = p.name;
+    input.dataset.value = p.id;
+
+    if (keyInput) {
+      keyInput.value = p.apiKey || '';
+    }
+
+    const hasKey = p.apiKey && p.apiKey.trim().length > 0;
+    if (badge) {
+      badge.textContent = hasKey ? 'Configured' : 'Not Configured';
+      badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
+    }
+
+    if (endpointRow && endpointInput) {
+      if (p.id.includes('custom') || p.id.includes('ollama')) {
+        endpointRow.style.display = 'block';
+        endpointInput.value = p.endpoint || '';
+      } else {
+        endpointRow.style.display = 'none';
+      }
+    }
+  }
+
+  static saveSelectedProviderKey() {
+    const input = document.getElementById('lumina-setup-provider-input');
+    const keyInput = document.getElementById('lumina-setup-provider-key');
+    const endpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    const providerId = input?.dataset.value;
+    if (!providerId) return;
+
+    const p = this.providers.find(prov => prov.id === providerId);
+    if (!p) return;
+
+    p.apiKey = keyInput ? keyInput.value.trim() : '';
+    if (endpointInput && endpointInput.parentElement.style.display !== 'none') {
+      p.endpoint = endpointInput.value.trim() || p.endpoint;
+    }
+
+    chrome.storage.local.set({ providers: this.providers }, () => {
+      const badge = document.getElementById('lumina-setup-provider-badge');
+      const hasKey = p.apiKey.length > 0;
+      if (badge) {
+        badge.textContent = hasKey ? 'Configured' : 'Not Configured';
+        badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
+      }
+      this.populateProviderDropdowns();
+    });
+  }
+
   static populateProviderDropdowns() {
     const dictProvList = document.getElementById('lumina-dict-provider-list');
     const chainProvList = document.getElementById('lumina-text-chain-provider-list');
+    
+    // Configured providers (has API key or is Ollama)
+    const configuredProviders = this.providers.filter(p => (p.apiKey && p.apiKey.trim().length > 0) || p.id.includes('ollama'));
+
     if (dictProvList) {
       dictProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
     }
     if (chainProvList) {
-      chainProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
+      if (configuredProviders.length > 0) {
+        chainProvList.innerHTML = configuredProviders.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
+      } else {
+        chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
+      }
     }
     const retentionMenu = document.getElementById('lumina-history-retention-menu');
     if (retentionMenu) {
@@ -16635,6 +16631,9 @@ class LuminaSettingsModal {
         input.value = e.target.textContent;
         input.dataset.value = e.target.dataset.val || e.target.textContent;
         menu.style.display = 'none';
+        if (inputId === 'lumina-setup-provider-input') {
+          this.selectProviderSetup(input.dataset.value);
+        }
         if (inputId === 'lumina-settings-base-tone-input') {
           this.adjustInputWidthToContent(input);
         }
@@ -18050,6 +18049,7 @@ class LuminaSettingsModal {
         if (authLoggedOut) authLoggedOut.classList.remove('hidden');
         if (authLoggedIn) authLoggedIn.classList.add('hidden');
       }
+      LuminaSettingsModal.updateCloudSyncDashboard();
     }
     if (typeof LuminaAuth !== 'undefined') {
       LuminaAuth.addListener(updateAuthUI);
@@ -18059,7 +18059,7 @@ class LuminaSettingsModal {
     }
     if (typeof LuminaSync !== 'undefined') {
       LuminaSync.addListener((status, timestamp) => {
-        if (syncStatus) {
+        if (syncStatus && status) {
           if (timestamp) {
             const timeStr = new Date(timestamp).toLocaleString();
             syncStatus.textContent = `Last synced: ${timeStr}`;
@@ -18067,6 +18067,7 @@ class LuminaSettingsModal {
             syncStatus.textContent = status;
           }
         }
+        LuminaSettingsModal.updateCloudSyncDashboard();
       });
       if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated) {
         LuminaSync.getLastSyncTime().then(time => {
@@ -18353,6 +18354,90 @@ class LuminaSettingsModal {
           }
         }
       });
+    });
+    this.updateCloudSyncDashboard();
+  }
+
+  static updateCloudSyncDashboard() {
+    const sizeEl = document.getElementById('lumina-cloud-stat-size');
+    const timeEl = document.getElementById('lumina-cloud-stat-time');
+    const relativeEl = document.getElementById('lumina-cloud-stat-relative');
+    const itemsEl = document.getElementById('lumina-cloud-stat-items');
+    const badgeEl = document.getElementById('lumina-cloud-sync-badge');
+    const statusTextEl = document.getElementById('lumina-cloud-sync-status-text');
+
+    if (!sizeEl) return;
+
+    if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
+      if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge offline';
+      if (statusTextEl) statusTextEl.textContent = 'Not Connected';
+      sizeEl.textContent = '—';
+      timeEl.textContent = 'Not signed in';
+      if (relativeEl) relativeEl.textContent = 'Sign in to sync';
+      if (itemsEl) itemsEl.textContent = '—';
+      return;
+    }
+
+    if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge';
+    if (statusTextEl) statusTextEl.textContent = 'Connected';
+
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5'], async (res) => {
+      // 1. Format Size
+      if (res.last_sync_size) {
+        const bytes = parseInt(res.last_sync_size, 10);
+        if (!isNaN(bytes)) {
+          if (bytes < 1024) sizeEl.textContent = `${bytes} B`;
+          else if (bytes < 1024 * 1024) sizeEl.textContent = `${(bytes / 1024).toFixed(1)} KB`;
+          else sizeEl.textContent = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        } else {
+          sizeEl.textContent = '—';
+        }
+      } else {
+        sizeEl.textContent = '—';
+      }
+
+      // 2. Format Last Sync Time
+      if (res.last_sync_time) {
+        const date = new Date(res.last_sync_time);
+        timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (relativeEl) {
+          const diffMin = Math.floor((Date.now() - res.last_sync_time) / 60000);
+          if (diffMin < 1) relativeEl.textContent = 'Just now';
+          else if (diffMin < 60) relativeEl.textContent = `${diffMin}m ago`;
+          else if (diffMin < 1440) relativeEl.textContent = `${Math.floor(diffMin / 60)}h ago`;
+          else relativeEl.textContent = date.toLocaleDateString();
+        }
+      } else {
+        timeEl.textContent = 'Never';
+        if (relativeEl) relativeEl.textContent = 'No backup yet';
+      }
+
+      // 3. Count Items (Sessions, Notes, Highlights)
+      try {
+        let sessionCount = 0;
+        let noteCount = 0;
+        let highlightCount = 0;
+
+        if (typeof LuminaChatDB !== 'undefined') {
+          const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+          sessionCount = Object.keys(sessions || {}).length;
+        }
+
+        if (typeof NotesManager !== 'undefined') {
+          const notes = await NotesManager.getNotes().catch(() => []);
+          noteCount = notes.length;
+        }
+
+        if (itemsEl) {
+          itemsEl.textContent = `${sessionCount} chats`;
+        }
+        const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
+        if (breakdownEl) {
+          breakdownEl.textContent = `${noteCount} notes`;
+        }
+      } catch (e) {
+        if (itemsEl) itemsEl.textContent = 'Active';
+      }
     });
   }
 }
@@ -21913,7 +21998,17 @@ async function renderRecentChatsSidebar() {
             });
         }
     }
-    listContainer.innerHTML = html;
+    
+    const savedScrollTop = listContainer.scrollTop;
+    if (listContainer.innerHTML !== html) {
+        listContainer.innerHTML = html;
+        if (savedScrollTop) {
+            listContainer.scrollTop = savedScrollTop;
+            requestAnimationFrame(() => {
+                listContainer.scrollTop = savedScrollTop;
+            });
+        }
+    }
 
     const archiveSectionEl = document.getElementById('sidebar-archive-section');
     const archivedContainer = document.getElementById('sidebar-archived-chats');
@@ -21946,10 +22041,14 @@ async function renderRecentChatsSidebar() {
                     </div>
                 `;
             });
-            archivedContainer.innerHTML = archiveHtml;
+            if (archivedContainer.innerHTML !== archiveHtml) {
+                archivedContainer.innerHTML = archiveHtml;
+            }
         } else {
             archiveSectionEl.style.display = 'none';
-            archivedContainer.innerHTML = '';
+            if (archivedContainer.innerHTML !== '') {
+                archivedContainer.innerHTML = '';
+            }
         }
     }
 

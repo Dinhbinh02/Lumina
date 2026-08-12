@@ -253,9 +253,12 @@
                             <div class="notes-sort-bar">
                                 <span class="notes-sort-label">Notes</span>
                                 <div class="notes-sort-controls" id="notes-sort-controls">
-                                    <button class="notes-sort-btn active" data-sort="modified" title="Sort by last modified">Modified</button>
-                                    <button class="notes-sort-btn" data-sort="created" title="Sort by created date">Created</button>
-                                    <button class="notes-sort-btn" data-sort="az" title="Sort alphabetically">A–Z</button>
+                                    <button class="notes-sort-btn active" data-sort="modified"
+                                        title="Sort by last modified">Modified</button>
+                                    <button class="notes-sort-btn" data-sort="created"
+                                        title="Sort by created date">Created</button>
+                                    <button class="notes-sort-btn" data-sort="az"
+                                        title="Sort alphabetically">A–Z</button>
                                 </div>
                             </div>
                             <div class="notes-list" id="notes-list" role="list">
@@ -274,11 +277,15 @@
                         <!-- Collection Selector Pill -->
                         <div class="notes-col-picker-wrapper" id="notes-col-picker-wrapper">
                             <button type="button" class="notes-col-picker-pill" id="notes-col-picker-pill">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                    </path>
                                 </svg>
                                 <span id="notes-col-picker-label">General</span>
-                                <svg class="notes-col-picker-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg class="notes-col-picker-arrow" viewBox="0 0 24 24" width="12" height="12"
+                                    fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="6 9 12 15 18 9"></polyline>
                                 </svg>
                             </button>
@@ -588,24 +595,42 @@
 
                         <div class="lumina-settings-card">
                             <div class="lumina-settings-card-header">
-                                <h3>AI Providers</h3>
+                                <h3>AI Providers &amp; Models</h3>
                             </div>
-                            <div class="lumina-settings-card-body">
-                                <div class="lumina-settings-provider-grid" id="lumina-provider-list"></div>
-                                <div class="lumina-settings-provider-form-container"
-                                    id="lumina-provider-form-container"></div>
+                            <div class="lumina-settings-card-body lumina-provider-model-combined-body">
+                                <!-- Part 1: Provider Setup -->
+                                <div class="lumina-provider-setup-container">
+                                    <div class="lumina-provider-setup-header">
+                                        <span class="lumina-provider-section-title">Provider Setup</span>
+                                        <span id="lumina-setup-provider-badge" class="lumina-provider-status-badge inactive">Not Configured</span>
+                                    </div>
+                                    <div class="lumina-provider-setup-row">
+                                        <div class="lumina-settings-dropdown-wrapper lumina-provider-dropdown-wrap">
+                                            <input type="text" id="lumina-setup-provider-input" readonly value="OpenAI" data-value="openai-default">
+                                            <div id="lumina-setup-provider-menu" class="lumina-settings-dropdown-menu"></div>
+                                        </div>
+                                        <div class="lumina-provider-key-wrap">
+                                            <input type="password" id="lumina-setup-provider-key" placeholder="API Key">
+                                            <button type="button" id="lumina-setup-key-toggle" class="lumina-key-toggle-btn" title="Toggle visibility">
+                                                <svg id="lumina-setup-eye-open" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                <svg id="lumina-setup-eye-closed" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                            </button>
+                                        </div>
+                                        <button type="button" id="lumina-setup-provider-save-btn" class="lumina-settings-btn primary lumina-save-key-btn">Save</button>
+                                    </div>
+                                    <div id="lumina-setup-endpoint-row" class="lumina-provider-endpoint-row" style="display: none;">
+                                        <input type="text" id="lumina-setup-provider-endpoint" placeholder="API Base Endpoint URL (e.g. https://api.openai.com/v1)">
+                                    </div>
+                                </div>
 
-                            </div>
-                        </div>
-
-                        <div class="lumina-settings-card">
-                            <div class="lumina-settings-card-header">
-                                <h3>Model Management</h3>
-                            </div>
-                            <div class="lumina-settings-card-body">
-                                <div id="lumina-text-chain-list" class="lumina-settings-chain-list">
-                                    <div class="lumina-settings-empty-state">No models added yet. Click "Add Model"
-                                        below to start.</div>
+                                <!-- Part 2: Model Setup -->
+                                <div class="lumina-model-setup-container">
+                                    <div class="lumina-model-setup-header">
+                                        <span class="lumina-provider-section-title">Model Setup</span>
+                                    </div>
+                                    <div id="lumina-text-chain-list" class="lumina-settings-chain-list">
+                                        <div class="lumina-settings-empty-state">No models added yet. Click "Add Model" below to start.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1209,20 +1234,44 @@
                                     </div>
                                 </div>
 
-                                <div id="lumina-auth-logged-in" class="lumina-settings-auth-container hidden">
+                                <div id="lumina-auth-logged-in" class="lumina-settings-auth-container">
                                     <div class="lumina-settings-profile-row">
                                         <img id="lumina-user-avatar" src="" alt="Avatar" class="lumina-settings-avatar">
                                         <div class="profile-meta">
-                                            <span id="lumina-user-name" class="font-semibold">User Profile</span>
+                                            <div class="profile-name-row">
+                                                <span id="lumina-user-name" class="font-semibold">User Profile</span>
+                                                <span class="lumina-cloud-sync-badge" id="lumina-cloud-sync-badge">
+                                                    <span class="lumina-cloud-sync-dot"></span> <span
+                                                        id="lumina-cloud-sync-status-text">Connected</span>
+                                                </span>
+                                            </div>
                                             <span id="lumina-user-email" class="desc-small">user@example.com</span>
-                                            <span id="lumina-sync-status" class="desc-small highlight"></span>
+                                        </div>
+                                        <div class="lumina-profile-actions">
+                                            <button type="button" id="lumina-sync-btn"
+                                                class="lumina-settings-btn secondary sm">Sync Now</button>
+                                            <button type="button" id="lumina-google-logout-btn"
+                                                class="lumina-settings-btn danger sm">Sign Out</button>
                                         </div>
                                     </div>
-                                    <div class="lumina-settings-actions-row mt-16">
-                                        <button type="button" id="lumina-sync-btn"
-                                            class="lumina-settings-btn secondary flex-grow">Sync Now</button>
-                                        <button type="button" id="lumina-google-logout-btn"
-                                            class="lumina-settings-btn danger flex-grow">Sign Out</button>
+
+                                    <div class="lumina-cloud-sync-stats-grid mt-12">
+                                        <div class="lumina-cloud-stat-card">
+                                            <span class="stat-label">Cloud Size</span>
+                                            <span class="stat-value" id="lumina-cloud-stat-size">0 KB</span>
+                                            <span class="stat-sub">Gzip Compressed</span>
+                                        </div>
+                                        <div class="lumina-cloud-stat-card">
+                                            <span class="stat-label">Last Sync</span>
+                                            <span class="stat-value" id="lumina-cloud-stat-time">Never</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-relative">No backup yet</span>
+                                        </div>
+                                        <div class="lumina-cloud-stat-card">
+                                            <span class="stat-label">Synced Items</span>
+                                            <span class="stat-value" id="lumina-cloud-stat-items">0 chats</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">Chats &amp;
+                                                Notes</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1243,8 +1292,8 @@
 
                                 <div class="lumina-settings-row">
                                     <div class="lumina-settings-row-info">
-                                        <span class="title">History Retention Period</span>
-                                        <span class="desc">Automatically purge old chat history.</span>
+                                        <span class="title">Auto-Delete History</span>
+                                        <span class="desc">Automatically delete chats older than selected period</span>
                                     </div>
                                     <div class="lumina-settings-control">
                                         <div class="lumina-settings-dropdown-wrapper">
@@ -1278,68 +1327,36 @@
                                         <div class="lumina-storage-bar-segment seg-cache" id="lumina-storage-bar-cache"
                                             style="width: 0%"></div>
                                     </div>
-                                    <div class="lumina-storage-bar-legend">
-                                        <span class="lumina-storage-legend-item"><i class="dot seg-db"></i>Chat
-                                            History</span>
-                                        <span class="lumina-storage-legend-item"><i class="dot seg-config"></i>Settings
-                                            &amp; Config</span>
-                                        <span class="lumina-storage-legend-item"><i
-                                                class="dot seg-cache"></i>Cache</span>
+                                    <div class="lumina-storage-compact-grid">
+                                        <div class="lumina-storage-compact-item">
+                                            <span class="dot seg-db"></span>
+                                            <span class="compact-name">Chat History</span>
+                                            <span class="compact-size" id="lumina-storage-db-size">—</span>
+                                        </div>
+                                        <div class="lumina-storage-compact-item">
+                                            <span class="dot seg-config"></span>
+                                            <span class="compact-name">Settings</span>
+                                            <span class="compact-size" id="lumina-storage-config-size">—</span>
+                                        </div>
+                                        <div class="lumina-storage-compact-item">
+                                            <span class="dot seg-cache"></span>
+                                            <span class="compact-name">Cache</span>
+                                            <span class="compact-size" id="lumina-storage-cache-size">—</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="lumina-storage-category-list">
-                                    <div class="lumina-storage-category-item">
-                                        <div class="lumina-storage-category-icon icon-db">
-                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                                                stroke="currentColor" stroke-width="1.8">
-                                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-                                            </svg>
+                                <div class="lumina-storage-threads-card">
+                                    <div class="lumina-storage-sessions-header">
+                                        <span>Largest Chat Threads</span>
+                                        <div class="lumina-storage-actions-group" style="display: flex; gap: 8px;">
+                                            <button type="button" id="lumina-delete-all-btn"
+                                                class="lumina-settings-btn danger sm">Delete All</button>
                                         </div>
-                                        <span class="lumina-storage-category-name">Chat History</span>
-                                        <span class="lumina-storage-category-size" id="lumina-storage-db-size">—</span>
                                     </div>
-                                    <div class="lumina-storage-category-item">
-                                        <div class="lumina-storage-category-icon icon-config">
-                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                                                stroke="currentColor" stroke-width="1.8">
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                                <path
-                                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                                                </path>
-                                            </svg>
-                                        </div>
-                                        <span class="lumina-storage-category-name">Settings &amp; Config</span>
-                                        <span class="lumina-storage-category-size"
-                                            id="lumina-storage-config-size">—</span>
-                                    </div>
-                                    <div class="lumina-storage-category-item">
-                                        <div class="lumina-storage-category-icon icon-cache">
-                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                                                stroke="currentColor" stroke-width="1.8">
-                                                <path d="M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10z"></path>
-                                                <polyline points="12 6 12 12 16 14"></polyline>
-                                            </svg>
-                                        </div>
-                                        <span class="lumina-storage-category-name">Cache (Images &amp; Audio)</span>
-                                        <span class="lumina-storage-category-size"
-                                            id="lumina-storage-cache-size">—</span>
-                                    </div>
-                                </div>
+                                    <div class="lumina-storage-sessions-list" id="lumina-storage-sessions-list">
 
-                                <div class="lumina-storage-sessions-header">
-                                    <span>Largest Chat Threads</span>
-                                    <div class="lumina-storage-actions-group" style="display: flex; gap: 8px;">
-                                        <button type="button" id="lumina-clear-cache-btn"
-                                            class="lumina-settings-btn secondary sm">Clear Cache</button>
-                                        <button type="button" id="lumina-delete-all-btn"
-                                            class="lumina-settings-btn danger sm">Delete All</button>
                                     </div>
-                                </div>
-                                <div class="lumina-storage-sessions-list" id="lumina-storage-sessions-list">
-
                                 </div>
                             </div>
                         </div>
@@ -1460,7 +1477,8 @@
                 <div class="lumina-settings-field">
                     <label>Max Output Tokens</label>
                     <div class="lumina-settings-dropdown-wrapper">
-                        <input type="text" id="lumina-text-chain-max-tokens" readonly placeholder="Select Max Tokens..." data-value="8192" value="8,192 tokens (Default)">
+                        <input type="text" id="lumina-text-chain-max-tokens" readonly placeholder="Select Max Tokens..."
+                            data-value="8192" value="8,192 tokens (Default)">
                         <div id="lumina-text-chain-max-tokens-list" class="lumina-settings-dropdown-menu">
                             <div data-val="1024">1,024 tokens</div>
                             <div data-val="2048">2,048 tokens</div>

@@ -424,39 +424,7 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
     this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
     this.setupDropdownInputs('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list');
-
-    const clearCacheBtn = document.getElementById('lumina-clear-cache-btn');
-    if (clearCacheBtn) {
-      clearCacheBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear all cached images, audio, and search history? This will free up storage space.')) {
-          chrome.storage.local.get(null, (items) => {
-            const keysToRemove = [];
-            Object.keys(items).forEach(key => {
-              if (key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('spotlight_history_')) {
-                keysToRemove.push(key);
-              }
-            });
-
-            if (keysToRemove.length > 0) {
-              chrome.storage.local.remove(keysToRemove);
-            }
-
-            if (typeof LuminaImageCacheDB !== 'undefined' && LuminaImageCacheDB.clear) {
-              LuminaImageCacheDB.clear().catch(err => console.error('Failed to clear LuminaImageCacheDB:', err));
-            }
-
-            if (typeof LuminaAudioCacheDB !== 'undefined' && LuminaAudioCacheDB.clear) {
-              LuminaAudioCacheDB.clear().catch(err => console.error('Failed to clear LuminaAudioCacheDB:', err));
-            }
-
-            chrome.storage.local.remove(['audio_cache'], () => {
-              alert('Cache cleared successfully!');
-              this.updateStorageUsage();
-            });
-          });
-        }
-      });
-    }
+    this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
   }
   static getDefaultProviders() {
     return [
@@ -506,50 +474,94 @@ class LuminaSettingsModal {
     return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
   }
   static renderProviders() {
-    const list = document.getElementById('lumina-provider-list');
-    if (!list) return;
-    list.innerHTML = '';
-    const temp = document.getElementById('lumina-providerItemTemplate');
-    this.providers.forEach(p => {
-      const clone = temp.content.cloneNode(true);
-      const card = clone.querySelector('.provider-item');
-      card.querySelector('.provider-item-name').textContent = p.name;
-      const logoContainer = card.querySelector('.provider-logo-container');
-      if (logoContainer) {
-        logoContainer.innerHTML = this.getProviderLogoSvg(p.id);
-      }
-      const badge = card.querySelector('.provider-badge');
-      const hasKey = p.apiKey && p.apiKey.trim().length > 0;
-      badge.textContent = hasKey ? 'Active' : 'Configure';
-      badge.className = 'provider-badge ' + (hasKey ? 'active' : 'inactive');
-      card.addEventListener('click', () => this.editProvider(p.id));
-      list.appendChild(clone);
-    });
-    const addCard = document.createElement('div');
-    addCard.className = 'lumina-settings-provider-card provider-item add-provider-card';
-    addCard.id = 'lumina-add-provider-btn';
-    addCard.innerHTML = `
-      <div class="provider-item-content add-mode">
-        <div class="provider-logo-container">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </div>
-        <span class="provider-title font-semibold">Add Provider</span>
-      </div>
-    `;
-    addCard.addEventListener('click', () => this.showProviderForm());
-    list.appendChild(addCard);
+    const menu = document.getElementById('lumina-setup-provider-menu');
+    if (!menu) return;
+    menu.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
+    
+    const input = document.getElementById('lumina-setup-provider-input');
+    let currentId = input?.dataset.value;
+    if (!currentId || !this.providers.some(p => p.id === currentId)) {
+      currentId = this.providers[0]?.id || 'openai-default';
+    }
+    this.selectProviderSetup(currentId);
   }
+
+  static selectProviderSetup(providerId) {
+    const input = document.getElementById('lumina-setup-provider-input');
+    const keyInput = document.getElementById('lumina-setup-provider-key');
+    const badge = document.getElementById('lumina-setup-provider-badge');
+    const endpointRow = document.getElementById('lumina-setup-endpoint-row');
+    const endpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    if (!input) return;
+
+    const p = this.providers.find(prov => prov.id === providerId) || this.providers[0];
+    if (!p) return;
+
+    input.value = p.name;
+    input.dataset.value = p.id;
+
+    if (keyInput) {
+      keyInput.value = p.apiKey || '';
+    }
+
+    const hasKey = p.apiKey && p.apiKey.trim().length > 0;
+    if (badge) {
+      badge.textContent = hasKey ? 'Configured' : 'Not Configured';
+      badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
+    }
+
+    if (endpointRow && endpointInput) {
+      if (p.id.includes('custom') || p.id.includes('ollama')) {
+        endpointRow.style.display = 'block';
+        endpointInput.value = p.endpoint || '';
+      } else {
+        endpointRow.style.display = 'none';
+      }
+    }
+  }
+
+  static saveSelectedProviderKey() {
+    const input = document.getElementById('lumina-setup-provider-input');
+    const keyInput = document.getElementById('lumina-setup-provider-key');
+    const endpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    const providerId = input?.dataset.value;
+    if (!providerId) return;
+
+    const p = this.providers.find(prov => prov.id === providerId);
+    if (!p) return;
+
+    p.apiKey = keyInput ? keyInput.value.trim() : '';
+    if (endpointInput && endpointInput.parentElement.style.display !== 'none') {
+      p.endpoint = endpointInput.value.trim() || p.endpoint;
+    }
+
+    chrome.storage.local.set({ providers: this.providers }, () => {
+      const badge = document.getElementById('lumina-setup-provider-badge');
+      const hasKey = p.apiKey.length > 0;
+      if (badge) {
+        badge.textContent = hasKey ? 'Configured' : 'Not Configured';
+        badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
+      }
+      this.populateProviderDropdowns();
+    });
+  }
+
   static populateProviderDropdowns() {
     const dictProvList = document.getElementById('lumina-dict-provider-list');
     const chainProvList = document.getElementById('lumina-text-chain-provider-list');
+    
+    // Configured providers (has API key or is Ollama)
+    const configuredProviders = this.providers.filter(p => (p.apiKey && p.apiKey.trim().length > 0) || p.id.includes('ollama'));
+
     if (dictProvList) {
       dictProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
     }
     if (chainProvList) {
-      chainProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
+      if (configuredProviders.length > 0) {
+        chainProvList.innerHTML = configuredProviders.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
+      } else {
+        chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
+      }
     }
     const retentionMenu = document.getElementById('lumina-history-retention-menu');
     if (retentionMenu) {
@@ -606,6 +618,9 @@ class LuminaSettingsModal {
         input.value = e.target.textContent;
         input.dataset.value = e.target.dataset.val || e.target.textContent;
         menu.style.display = 'none';
+        if (inputId === 'lumina-setup-provider-input') {
+          this.selectProviderSetup(input.dataset.value);
+        }
         if (inputId === 'lumina-settings-base-tone-input') {
           this.adjustInputWidthToContent(input);
         }
@@ -2021,6 +2036,7 @@ class LuminaSettingsModal {
         if (authLoggedOut) authLoggedOut.classList.remove('hidden');
         if (authLoggedIn) authLoggedIn.classList.add('hidden');
       }
+      LuminaSettingsModal.updateCloudSyncDashboard();
     }
     if (typeof LuminaAuth !== 'undefined') {
       LuminaAuth.addListener(updateAuthUI);
@@ -2030,7 +2046,7 @@ class LuminaSettingsModal {
     }
     if (typeof LuminaSync !== 'undefined') {
       LuminaSync.addListener((status, timestamp) => {
-        if (syncStatus) {
+        if (syncStatus && status) {
           if (timestamp) {
             const timeStr = new Date(timestamp).toLocaleString();
             syncStatus.textContent = `Last synced: ${timeStr}`;
@@ -2038,6 +2054,7 @@ class LuminaSettingsModal {
             syncStatus.textContent = status;
           }
         }
+        LuminaSettingsModal.updateCloudSyncDashboard();
       });
       if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated) {
         LuminaSync.getLastSyncTime().then(time => {
@@ -2324,6 +2341,90 @@ class LuminaSettingsModal {
           }
         }
       });
+    });
+    this.updateCloudSyncDashboard();
+  }
+
+  static updateCloudSyncDashboard() {
+    const sizeEl = document.getElementById('lumina-cloud-stat-size');
+    const timeEl = document.getElementById('lumina-cloud-stat-time');
+    const relativeEl = document.getElementById('lumina-cloud-stat-relative');
+    const itemsEl = document.getElementById('lumina-cloud-stat-items');
+    const badgeEl = document.getElementById('lumina-cloud-sync-badge');
+    const statusTextEl = document.getElementById('lumina-cloud-sync-status-text');
+
+    if (!sizeEl) return;
+
+    if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
+      if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge offline';
+      if (statusTextEl) statusTextEl.textContent = 'Not Connected';
+      sizeEl.textContent = '—';
+      timeEl.textContent = 'Not signed in';
+      if (relativeEl) relativeEl.textContent = 'Sign in to sync';
+      if (itemsEl) itemsEl.textContent = '—';
+      return;
+    }
+
+    if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge';
+    if (statusTextEl) statusTextEl.textContent = 'Connected';
+
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5'], async (res) => {
+      // 1. Format Size
+      if (res.last_sync_size) {
+        const bytes = parseInt(res.last_sync_size, 10);
+        if (!isNaN(bytes)) {
+          if (bytes < 1024) sizeEl.textContent = `${bytes} B`;
+          else if (bytes < 1024 * 1024) sizeEl.textContent = `${(bytes / 1024).toFixed(1)} KB`;
+          else sizeEl.textContent = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        } else {
+          sizeEl.textContent = '—';
+        }
+      } else {
+        sizeEl.textContent = '—';
+      }
+
+      // 2. Format Last Sync Time
+      if (res.last_sync_time) {
+        const date = new Date(res.last_sync_time);
+        timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (relativeEl) {
+          const diffMin = Math.floor((Date.now() - res.last_sync_time) / 60000);
+          if (diffMin < 1) relativeEl.textContent = 'Just now';
+          else if (diffMin < 60) relativeEl.textContent = `${diffMin}m ago`;
+          else if (diffMin < 1440) relativeEl.textContent = `${Math.floor(diffMin / 60)}h ago`;
+          else relativeEl.textContent = date.toLocaleDateString();
+        }
+      } else {
+        timeEl.textContent = 'Never';
+        if (relativeEl) relativeEl.textContent = 'No backup yet';
+      }
+
+      // 3. Count Items (Sessions, Notes, Highlights)
+      try {
+        let sessionCount = 0;
+        let noteCount = 0;
+        let highlightCount = 0;
+
+        if (typeof LuminaChatDB !== 'undefined') {
+          const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+          sessionCount = Object.keys(sessions || {}).length;
+        }
+
+        if (typeof NotesManager !== 'undefined') {
+          const notes = await NotesManager.getNotes().catch(() => []);
+          noteCount = notes.length;
+        }
+
+        if (itemsEl) {
+          itemsEl.textContent = `${sessionCount} chats`;
+        }
+        const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
+        if (breakdownEl) {
+          breakdownEl.textContent = `${noteCount} notes`;
+        }
+      } catch (e) {
+        if (itemsEl) itemsEl.textContent = 'Active';
+      }
     });
   }
 }

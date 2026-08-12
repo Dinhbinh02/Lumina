@@ -11284,7 +11284,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-title {
   font-size: 18px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary);
 }
 
@@ -11304,7 +11304,7 @@ mark.notes-search-highlight {
   border: none;
   color: #0f0f0f !important;
   font-size: 13.5px;
-  font-weight: var(--lumina-weight-regular) ;
+  font-weight: var(--lumina-weight-regular);
   text-align: left;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -11331,7 +11331,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-nav-item.active {
   background: rgba(0, 0, 0, 0.06) !important;
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
 }
 
 [data-theme="dark"] .lumina-settings-nav-item.active {
@@ -11355,7 +11355,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-section-title {
   font-size: 18px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   margin-top: 0;
   margin-bottom: 18px;
   color: var(--lumina-text-primary);
@@ -11374,13 +11374,19 @@ mark.notes-search-highlight {
   margin-bottom: 14px;
 }
 
+.lumina-settings-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .lumina-settings-card-header {
   margin-bottom: 8px;
 }
 
 .lumina-settings-card-header h3 {
   font-size: 15px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   margin: 0 0 4px 0;
   color: var(--lumina-text-primary);
 }
@@ -11393,7 +11399,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-group-title {
   font-size: 13.5px;
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
   margin: 18px 0 8px 0;
   color: var(--lumina-text-primary);
 }
@@ -11422,8 +11428,8 @@ mark.notes-search-highlight {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  padding: 8px 0;
+  gap: 16px;
+  padding: 4px 0;
 }
 
 [data-theme="dark"] .lumina-settings-row {
@@ -11443,7 +11449,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-row-info .title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular) ;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-text-primary);
 }
 
@@ -11614,7 +11620,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-field label {
   font-size: 13px;
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-secondary);
 }
 
@@ -11703,6 +11709,133 @@ mark.notes-search-highlight {
   height: 14px;
   border-radius: 50%;
   background: var(--lumina-primary-color);
+}
+
+.lumina-provider-model-combined-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px !important;
+  padding: 4px 0 !important;
+}
+
+.lumina-provider-setup-container,
+.lumina-model-setup-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lumina-provider-setup-header,
+.lumina-model-setup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lumina-provider-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lumina-text-primary);
+}
+
+.lumina-provider-status-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  line-height: 1.3;
+}
+
+.lumina-provider-status-badge.active {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.lumina-provider-status-badge.inactive {
+  background: rgba(156, 163, 175, 0.12);
+  color: var(--lumina-text-secondary);
+}
+
+.lumina-provider-setup-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lumina-provider-dropdown-wrap {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.lumina-provider-key-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.lumina-provider-key-wrap input,
+.lumina-provider-endpoint-row input {
+  width: 100%;
+  height: 28px;
+  padding: 4px 30px 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--lumina-border, rgba(0, 0, 0, 0.12));
+  background: var(--lumina-bg-secondary, #ffffff);
+  color: var(--lumina-text-primary, #202124);
+  font-size: 12.5px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .lumina-provider-key-wrap input,
+[data-theme="dark"] .lumina-provider-endpoint-row input {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #202020;
+  color: #e8eaed;
+}
+
+.lumina-provider-key-wrap input:focus,
+.lumina-provider-endpoint-row input:focus {
+  border-color: var(--lumina-primary-color, #3b82f6);
+}
+
+.lumina-key-toggle-btn {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--lumina-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.lumina-key-toggle-btn:hover {
+  color: var(--lumina-text-primary);
+}
+
+.lumina-save-key-btn {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.lumina-provider-endpoint-row {
+  margin-top: 4px;
+}
+
+.lumina-provider-model-divider {
+  height: 1px;
+  background: var(--lumina-border);
+  margin: 4px 0;
 }
 
 [data-theme="dark"] .lumina-settings-control input[type="range"]::-webkit-slider-thumb {
@@ -11814,163 +11947,11 @@ mark.notes-search-highlight {
 }
 
 .font-semibold {
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .text-error {
   color: #ef4444 !important;
-}
-
-.lumina-settings-provider-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.lumina-settings-provider-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  padding: 8px 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-[data-theme="dark"] .lumina-settings-provider-card {
-  background: #202020;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.lumina-settings-provider-card:hover {
-  border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="dark"] .lumina-settings-provider-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.lumina-settings-provider-card:hover .provider-logo-container {
-  transform: scale(1.08);
-}
-
-.lumina-settings-provider-card.add-provider-card {
-  border: 1.5px dashed rgba(0, 0, 0, 0.15) !important;
-  background: transparent !important;
-}
-
-[data-theme="dark"] .lumina-settings-provider-card.add-provider-card {
-  border-color: rgba(255, 255, 255, 0.18) !important;
-}
-
-.lumina-settings-provider-card.add-provider-card:hover {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.3) !important;
-}
-
-[data-theme="dark"] .lumina-settings-provider-card.add-provider-card:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-color: rgba(255, 255, 255, 0.35) !important;
-}
-
-.lumina-settings-provider-card.add-provider-card .provider-item-content.add-mode {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 6px;
-}
-
-.lumina-settings-provider-card.add-provider-card .provider-logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px dashed rgba(0, 0, 0, 0.15) !important;
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-}
-
-[data-theme="dark"] .lumina-settings-provider-card.add-provider-card .provider-logo-container {
-  border-color: rgba(255, 255, 255, 0.18) !important;
-}
-
-.lumina-settings-provider-card.add-provider-card .provider-title {
-  font-size: 12.5px;
-  color: var(--lumina-text-secondary);
-}
-
-.provider-item-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 6px;
-}
-
-.provider-logo-container {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--lumina-ui-bg-light, #f9f9f9);
-  border-radius: 50%;
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.06));
-  transition: all 0.2s ease;
-}
-
-[data-theme="dark"] .provider-logo-container {
-  background-color: #2a2a2a;
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-.provider-logo-container svg {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-.provider-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: center;
-}
-
-.provider-title {
-  font-size: 13px;
-  font-weight: var(--lumina-weight-medium) ;
-}
-
-.provider-badge {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.provider-badge.active {
-  background: #e8f0fe;
-  color: #1557b0;
-  font-weight: var(--lumina-weight-medium) ;
-}
-
-[data-theme="dark"] .provider-badge.active {
-  background: rgba(26, 115, 232, 0.25);
-  color: #8ab4f8;
-  font-weight: var(--lumina-weight-medium) ;
-}
-
-.provider-badge.inactive {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--lumina-text-secondary);
-}
-
-[data-theme="dark"] .provider-badge.inactive {
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .lumina-settings-form {
@@ -12182,7 +12163,7 @@ mark.notes-search-highlight {
 
 .chain-number {
   font-size: 11px;
-  font-weight: var(--lumina-weight-bold) ;
+  font-weight: var(--lumina-weight-bold);
   color: var(--lumina-text-secondary);
   background: rgba(0, 0, 0, 0.04);
   min-width: 20px;
@@ -12210,7 +12191,7 @@ mark.notes-search-highlight {
 
 .chain-title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary);
 }
 
@@ -12309,7 +12290,7 @@ mark.notes-search-highlight {
   padding: 2px 6px;
   border-radius: 5px;
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular) ;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-text-primary);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
   margin: 0 2px;
@@ -12501,6 +12482,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-auth-container {
   padding: 4px 0;
+  gap: 16px;
 }
 
 .lumina-settings-auth-container p.desc {
@@ -12513,6 +12495,13 @@ mark.notes-search-highlight {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.lumina-profile-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .lumina-settings-avatar {
@@ -12528,9 +12517,19 @@ mark.notes-search-highlight {
   gap: 2px;
 }
 
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
 .profile-meta #lumina-user-name {
   font-size: 13.5px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary);
 }
 
@@ -12542,7 +12541,7 @@ mark.notes-search-highlight {
 .profile-meta #lumina-sync-status {
   font-size: 11px;
   color: var(--lumina-text-muted, #757575);
-  font-weight: var(--lumina-weight-regular) ;
+  font-weight: var(--lumina-weight-regular);
   margin-top: 1px;
 }
 
@@ -12565,7 +12564,7 @@ mark.notes-search-highlight {
 
 .lumina-settings-results-title {
   font-size: 12.5px;
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .lumina-settings-api-result-item {
@@ -12623,7 +12622,7 @@ mark.notes-search-highlight {
 
   .lumina-settings-title {
     font-size: 18px;
-    font-weight: var(--lumina-weight-semibold) ;
+    font-weight: var(--lumina-weight-semibold);
     color: var(--lumina-text-primary);
   }
 
@@ -12645,7 +12644,7 @@ mark.notes-search-highlight {
     border-radius: 8px;
     background: transparent !important;
     border: none !important;
-    font-weight: var(--lumina-weight-medium) ;
+    font-weight: var(--lumina-weight-medium);
     color: var(--lumina-text-secondary);
     display: flex;
     align-items: center;
@@ -12784,7 +12783,7 @@ mark.notes-search-highlight {
 
 .lumina-provider-popup-title {
   font-size: 16px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary);
 }
 
@@ -12932,7 +12931,7 @@ mark.notes-search-highlight {
 
 .lumina-variable-tag {
   color: #1a73e8 !important;
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
   display: inline-block;
   user-select: none;
 }
@@ -12954,7 +12953,7 @@ mark.notes-search-highlight {
   color: var(--lumina-text-primary) !important;
   padding: 4px 12px;
   font-size: 12px;
-  font-weight: var(--lumina-weight-regular) ;
+  font-weight: var(--lumina-weight-regular);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -13021,7 +13020,7 @@ mark.notes-search-highlight {
 }
 
 .annotation-shortcut-text {
-  font-weight: var(--lumina-weight-medium) ;
+  font-weight: var(--lumina-weight-medium);
 }
 
 .swatch {
@@ -13065,7 +13064,7 @@ mark.notes-search-highlight {
 }
 
 .lumina-storage-breakdown-item span:not(.label) {
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -13073,7 +13072,7 @@ mark.notes-search-highlight {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   text-transform: uppercase;
   color: var(--lumina-text-muted, #757575);
   margin-bottom: 8px;
@@ -13104,7 +13103,7 @@ mark.notes-search-highlight {
 
 .lumina-storage-session-title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular) ;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-text-primary, #e8eaed);
   white-space: nowrap;
   overflow: hidden;
@@ -13124,7 +13123,7 @@ mark.notes-search-highlight {
 
 .lumina-storage-session-size {
   font-size: 12px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-secondary, #9aa0a6);
 }
 
@@ -13159,7 +13158,7 @@ mark.notes-search-highlight {
 
 .lumina-gdrive-breakdown-title {
   font-size: 12px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   text-transform: uppercase;
   color: var(--lumina-text-secondary, #9aa0a6);
   margin-bottom: 10px;
@@ -13183,7 +13182,7 @@ mark.notes-search-highlight {
 
 .lumina-gdrive-breakdown-card .value {
   font-size: 15px;
-  font-weight: var(--lumina-weight-bold) ;
+  font-weight: var(--lumina-weight-bold);
   color: var(--lumina-ui-primary, #1a73e8);
 }
 
@@ -13229,7 +13228,7 @@ mark.notes-search-highlight {
 
 .lumina-cloud-signin-info .title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -13240,7 +13239,7 @@ mark.notes-search-highlight {
 }
 
 .lumina-storage-dashboard {
-  margin-bottom: 16px;
+  padding: 4px 0;
 }
 
 .lumina-storage-dashboard-header {
@@ -13252,7 +13251,7 @@ mark.notes-search-highlight {
 
 .lumina-storage-dashboard-label {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary, #e8eaed);
 }
 
@@ -13262,14 +13261,14 @@ mark.notes-search-highlight {
 }
 
 .lumina-storage-dashboard-total span {
-  font-weight: var(--lumina-weight-semibold) ;
+  font-weight: var(--lumina-weight-semibold);
   color: var(--lumina-text-primary, #e8eaed);
 }
 
 .lumina-storage-bar-track {
-  height: 16px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
   overflow: hidden;
   display: flex;
   gap: 1px;
@@ -13284,7 +13283,7 @@ mark.notes-search-highlight {
 
 .lumina-storage-bar-segment.seg-db {
   background: linear-gradient(90deg, #ff6b6b, #ff3b30);
-  border-radius: 8px 0 0 8px;
+  border-radius: 4px 0 0 4px;
 }
 
 .lumina-storage-bar-segment.seg-files {
@@ -13299,113 +13298,73 @@ mark.notes-search-highlight {
   background: linear-gradient(90deg, #4da3ff, #007aff);
 }
 
-.lumina-storage-bar-legend {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+/* Compact Storage Grid (Replaces old bloated legend & category list) */
+.lumina-storage-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
 }
 
-.lumina-storage-legend-item {
+.lumina-storage-compact-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--lumina-bg-hover, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--lumina-border, rgba(0, 0, 0, 0.05));
   font-size: 11px;
-  color: var(--lumina-text-secondary, #9aa0a6);
 }
 
-.lumina-storage-legend-item .dot {
-  width: 8px;
-  height: 8px;
+.lumina-storage-compact-item .dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  display: inline-block;
   flex-shrink: 0;
 }
 
-.lumina-storage-legend-item .dot.seg-db {
+.lumina-storage-compact-item .dot.seg-db {
   background: #ff3b30;
 }
 
-.lumina-storage-legend-item .dot.seg-files {
-  background: #ff9500;
-}
-
-.lumina-storage-legend-item .dot.seg-config {
+.lumina-storage-compact-item .dot.seg-config {
   background: #ffcc00;
 }
 
-.lumina-storage-legend-item .dot.seg-cache {
+.lumina-storage-compact-item .dot.seg-cache {
   background: #007aff;
 }
 
-.lumina-storage-category-list {
-  border: 1px solid var(--lumina-border, rgba(255, 255, 255, 0.08));
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.lumina-storage-category-item {
-  display: flex;
-  align-items: center;
-  padding: 4px 0;
-  gap: 8px;
-}
-
-.lumina-storage-category-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.lumina-storage-category-icon.icon-db {
-  background: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
-}
-
-.lumina-storage-category-icon.icon-files {
-  background: rgba(255, 149, 0, 0.15);
-  color: #ff9500;
-}
-
-.lumina-storage-category-icon.icon-config {
-  background: rgba(255, 204, 0, 0.15);
-  color: #ffcc00;
-}
-
-.lumina-storage-category-icon.icon-cache {
-  background: rgba(0, 122, 255, 0.15);
-  color: #007aff;
-}
-
-.lumina-storage-category-name {
-  flex: 1;
-  font-size: 13px;
-  font-weight: var(--lumina-weight-medium) ;
-  color: var(--lumina-text-primary, #e8eaed);
-}
-
-.lumina-storage-category-size {
-  font-size: 13px;
-  font-weight: var(--lumina-weight-medium) ;
-  color: var(--lumina-text-secondary, #9aa0a6);
+.lumina-storage-compact-item .compact-name {
+  color: var(--lumina-text-secondary, #5f6368);
+  font-weight: 500;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.lumina-storage-compact-item .compact-size {
+  font-weight: 600;
+  color: var(--lumina-text-primary, #202124);
+  white-space: nowrap;
+}
+
+.lumina-storage-threads-card {
+  padding: 8px 0;
 }
 
 .lumina-storage-sessions-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
 }
 
 .lumina-storage-sessions-header>span {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold) ;
-  color: var(--lumina-text-secondary, #9aa0a6);
+  font-weight: var(--lumina-weight-semibold);
+  color: var(--lumina-text-primary, #e8eaed);
 }
 
 .lumina-settings-btn.sm {
@@ -13419,6 +13378,74 @@ mark.notes-search-highlight {
   display: flex;
   gap: 12px;
   padding: 4px 0;
+}
+
+/* Cloud Sync Elements (Borderless & Theme-Adapted) */
+.lumina-cloud-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(52, 168, 83, 0.12);
+  color: #1e8e3e;
+  border: 1px solid rgba(52, 168, 83, 0.25);
+}
+
+.lumina-cloud-sync-badge.offline {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--lumina-text-secondary, #5f6368);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.lumina-cloud-sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.lumina-cloud-sync-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.lumina-cloud-stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.lumina-cloud-stat-card .stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--lumina-text-secondary, #5f6368);
+  margin-bottom: 3px;
+}
+
+.lumina-cloud-stat-card .stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lumina-text-primary, #202124);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-cloud-stat-card .stat-sub {
+  font-size: 11px;
+  color: var(--lumina-text-tertiary, #70757a);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- BUNDLED FROM: pages/lumina/search_modal.css --- */

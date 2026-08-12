@@ -3239,7 +3239,17 @@ async function renderRecentChatsSidebar() {
             });
         }
     }
-    listContainer.innerHTML = html;
+    
+    const savedScrollTop = listContainer.scrollTop;
+    if (listContainer.innerHTML !== html) {
+        listContainer.innerHTML = html;
+        if (savedScrollTop) {
+            listContainer.scrollTop = savedScrollTop;
+            requestAnimationFrame(() => {
+                listContainer.scrollTop = savedScrollTop;
+            });
+        }
+    }
 
     const archiveSectionEl = document.getElementById('sidebar-archive-section');
     const archivedContainer = document.getElementById('sidebar-archived-chats');
@@ -3272,10 +3282,14 @@ async function renderRecentChatsSidebar() {
                     </div>
                 `;
             });
-            archivedContainer.innerHTML = archiveHtml;
+            if (archivedContainer.innerHTML !== archiveHtml) {
+                archivedContainer.innerHTML = archiveHtml;
+            }
         } else {
             archiveSectionEl.style.display = 'none';
-            archivedContainer.innerHTML = '';
+            if (archivedContainer.innerHTML !== '') {
+                archivedContainer.innerHTML = '';
+            }
         }
     }
 
