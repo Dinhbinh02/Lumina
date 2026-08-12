@@ -684,6 +684,10 @@ function restoreLatestScrollPosition(tab) {
     const entries = tab.historyEl.querySelectorAll('.lumina-entry');
     if (entries.length === 0) return;
     const latestEntry = entries[entries.length - 1];
+    if (tab.chatUIInstance && typeof tab.chatUIInstance.clearEntryMargins === 'function') {
+        tab.chatUIInstance.clearEntryMargins(latestEntry);
+        tab.chatUIInstance.adjustEntryMargin(latestEntry, 'immediate');
+    }
     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
     tab.historyEl.scrollTop = targetScrollTop;
     tab.scrollTop = targetScrollTop;
@@ -715,7 +719,7 @@ function scheduleScrollRestore(tab) {
         }
         hideTopbarLoading(_ssrPane);
     };
-    setTimeout(performRestore, 40);
+    setTimeout(performRestore, 20);
 }
 
 async function handleRemoteSync(changes, areaName) {
@@ -1033,10 +1037,15 @@ async function initTabs() {
             ensureTabHistoryLoaded(singleTab);
         }, 0);
         activeTabIndex = 0;
-        const modelData = await chrome.storage.local.get(['lastUsedModel']);
+        const modelData = await chrome.storage.local.get(['lastUsedModel', 'lastUsedThinkingLevel']);
         if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
             if (!singleTab.selectedModel) singleTab.selectedModel = { ...modelData.lastUsedModel };
             singleTab.chatUIInstance.activeTabModel = { ...singleTab.selectedModel };
+        }
+        if (modelData.lastUsedThinkingLevel) {
+            if (!singleTab.thinkingLevel) singleTab.thinkingLevel = modelData.lastUsedThinkingLevel;
+            singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel;
+            setPaneActiveThinking(singleTab.thinkingLevel);
         }
         if (data.lumina_youtube_trigger) {
             setTimeout(() => handleYouTubeTrigger(data.lumina_youtube_trigger), 100);
@@ -3698,9 +3707,14 @@ function setupPort() {
                         }
                     });
                 });
-                saveTabsState();
-                streamingTab = null;
-                streamDebugState = null;
+                (async () => {
+                    await saveTabsState(true, true);
+                    streamingTab = null;
+                    streamDebugState = null;
+                    if (typeof LuminaSync !== 'undefined') {
+                        LuminaSync.syncUp(true).catch(err => console.error('[Lumina] Post-answer sync failed:', err));
+                    }
+                })();
             }
         });
         port.onDisconnect.addListener(() => {
@@ -4454,6 +4468,12 @@ function setupGlobalListeners() {
             const isMatch = isShortcutMatchImmediate(event, shortcut);
             if (!isMatch) continue;
             if (isEditing) {
+                // If focus is in BlockNote or rich text editor, do not intercept native editing shortcuts (Cmd+B, Cmd+I, Cmd+U, etc.)
+                const isBlockNoteEditor = activeElement && activeElement.closest('.bn-editor, .blocknote-wrapper');
+                if (isBlockNoteEditor && (event.metaKey || event.ctrlKey)) {
+                    const isRichTextShortcut = ['b', 'i', 'u', 'z', 'y', 'x', 'c', 'v'].includes((event.key || '').toLowerCase());
+                    if (isRichTextShortcut) continue;
+                }
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
                 if (!hasModifier && !isOverridingShortcut) continue;
@@ -5002,12 +5022,10 @@ function isShortcutMatch(event, shortcut) {
     if (!keyMatch) return false;
     const wantsCtrl = !!shortcut.ctrlKey;
     const wantsMeta = !!shortcut.metaKey;
-    const ctrlMatch = wantsCtrl
-        ? (event.ctrlKey || (!wantsMeta && event.metaKey))
-        : !event.ctrlKey;
+    const ctrlMatch = wantsCtrl ? event.ctrlKey : !event.ctrlKey;
+    const metaMatch = wantsMeta ? event.metaKey : !event.metaKey;
     const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
     const altMatch = !!shortcut.altKey === event.altKey;
-    const metaMatch = wantsMeta ? event.metaKey : (!event.metaKey || wantsCtrl);
     if (!shortcut.ctrlKey && !shortcut.shiftKey && !shortcut.altKey && !shortcut.metaKey) {
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
     }
@@ -5065,7 +5083,7 @@ function dispatchConfiguredShortcutAction(action) {
 function cycleActiveModel() {
     const currentActiveTab = tabs[activeTabIndex];
     if (!currentActiveTab) return;
-    chrome.storage.local.get(['providers', 'modelChains'], async (data) => {
+    chrome.storage.local.get(['providers', 'models'], async (data) => {
         let promptSupport;
         if (typeof window.getPromptApiSupport === 'function') {
             promptSupport = await window.getPromptApiSupport();
@@ -5522,6 +5540,10 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 const entries = activeTab.historyEl.querySelectorAll('.lumina-entry');
                 if (entries.length > 0) {
                     const latestEntry = entries[entries.length - 1];
+                    if (activeTab.chatUIInstance && typeof activeTab.chatUIInstance.clearEntryMargins === 'function') {
+                        activeTab.chatUIInstance.clearEntryMargins(latestEntry);
+                        activeTab.chatUIInstance.adjustEntryMargin(latestEntry, 'immediate');
+                    }
                     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, activeTab.historyEl);
                     activeTab.historyEl.scrollTop = targetScrollTop;
                     activeTab.scrollTop = targetScrollTop;
@@ -5533,7 +5555,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 activeTab.historyEl.style.transition = '';
                 hideTopbarLoading('primary');
             };
-            setTimeout(performRestore, 40);
+            performRestore();
         }
     }
 };
@@ -5987,7 +6009,7 @@ function initTopbarModelSelector() {
     const fetchAndRender = () => {
         const activeTab = tabs[activeTabIndex];
         const sidKey = activeTab?.sessionId || 'null';
-        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
+        chrome.storage.local.get(['providers', 'models', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
             if (typeof window.getPromptApiSupport === 'function') {
                 data.promptSupport = await window.getPromptApiSupport();
             } else {
@@ -6059,25 +6081,54 @@ function updateSidebarUserProfile(isAuthenticated, user) {
     const avatarEl = document.querySelector('.user-profile .user-avatar');
     const nameEl = document.querySelector('.user-profile .user-name');
     const lastSyncEl = document.getElementById('user-last-sync');
-    if (!avatarEl || !nameEl) return;
-    if (isAuthenticated && user) {
-        nameEl.textContent = user.name || "User";
-        if (user.picture) {
-            avatarEl.innerHTML = `<img src="${user.picture}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" />`;
-        } else {
-            const initials = (user.name || "U").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
-            avatarEl.textContent = initials;
-        }
-    } else if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isInitialized) {
-        avatarEl.textContent = "LU";
-        nameEl.textContent = "Lumina User";
-    }
     const profileEl = document.querySelector('.user-profile');
-    if (profileEl) {
-        profileEl.style.visibility = 'visible';
+    const loginBtn = document.getElementById('sidebar-login-btn');
+
+    if (isAuthenticated && user) {
+        try {
+            localStorage.setItem('lumina_cached_user', JSON.stringify({ name: user.name, picture: user.picture }));
+        } catch (e) {}
+        if (profileEl) {
+            profileEl.style.display = 'flex';
+            profileEl.style.visibility = 'visible';
+        }
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (nameEl) nameEl.textContent = user.name || "User";
+        if (avatarEl) {
+            if (user.picture) {
+                avatarEl.innerHTML = `<img src="${user.picture}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" />`;
+            } else {
+                const initials = (user.name || "U").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+                avatarEl.textContent = initials;
+            }
+        }
+    } else {
+        try {
+            localStorage.removeItem('lumina_cached_user');
+        } catch (e) {}
+        if (profileEl) profileEl.style.display = 'none';
+        if (loginBtn) {
+            loginBtn.style.display = 'flex';
+            loginBtn.onclick = async () => {
+                try {
+                    loginBtn.disabled = true;
+                    const textEl = loginBtn.querySelector('.gsi-material-button-contents');
+                    if (textEl) textEl.textContent = 'Signing in...';
+                    if (typeof LuminaAuth !== 'undefined' && typeof LuminaAuth.login === 'function') {
+                        await LuminaAuth.login();
+                    }
+                } catch (e) {
+                    console.error('Sign in failed:', e);
+                    alert('Sign in failed: ' + e.message);
+                    loginBtn.disabled = false;
+                    const textEl = loginBtn.querySelector('.gsi-material-button-contents');
+                    if (textEl) textEl.textContent = 'Sign in with Google';
+                }
+            };
+        }
     }
 
-    if (lastSyncEl && typeof LuminaSync !== 'undefined') {
+    if (isAuthenticated && lastSyncEl && typeof LuminaSync !== 'undefined') {
         const updateSyncDisplay = (status, lastSyncTime) => {
             if (lastSyncTime) {
                 const timeStr = new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -6101,11 +6152,19 @@ function updateSidebarUserProfile(isAuthenticated, user) {
             window.__luminaUserLastSyncListenerBound = true;
             LuminaSync.addListener((status, lastSync) => {
                 updateSyncDisplay(status, lastSync);
+                if (status === 'Synced just now' || status === 'Synced' || lastSync) {
+                    if (typeof renderRecentChatsSidebar === 'function') {
+                        renderRecentChatsSidebar();
+                    }
+                }
             });
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
                 chrome.storage.onChanged.addListener((changes, area) => {
                     if (area === 'local' && changes.last_sync_time) {
                         updateSyncDisplay(null, changes.last_sync_time.newValue);
+                        if (typeof renderRecentChatsSidebar === 'function') {
+                            renderRecentChatsSidebar();
+                        }
                     }
                 });
             }
@@ -6233,6 +6292,25 @@ if (typeof LuminaSync !== 'undefined') {
         const wrapper = document.getElementById('user-avatar-wrapper');
         if (wrapper) {
             wrapper.classList.toggle('is-syncing', status === 'Syncing...');
+        }
+    });
+}
+
+// Listen for sync status broadcasts from the Service Worker
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((request) => {
+        if (request.action === 'lumina_sync_status') {
+            const wrapper = document.getElementById('user-avatar-wrapper');
+            if (wrapper) {
+                wrapper.classList.toggle('is-syncing', request.status === 'syncing');
+            }
+            if (typeof LuminaSync !== 'undefined') {
+                if (request.status === 'done') {
+                    LuminaSync.notifyListeners('Synced just now', request.timestamp);
+                } else if (request.status === 'failure') {
+                    LuminaSync.notifyListeners('Sync failure', null);
+                }
+            }
         }
     });
 }

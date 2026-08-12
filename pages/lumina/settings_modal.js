@@ -19,7 +19,7 @@ class LuminaSettingsModal {
       });
     });
     this.providers = [];
-    this.textChain = [];
+    this.models = [];
     this.advancedParamsByModel = {};
     this.questionMappings = [];
     this.annotationShortcuts = [];
@@ -77,13 +77,7 @@ class LuminaSettingsModal {
         </div>
       `,
       'lumina-chainItemTemplate': `
-        <div class="lumina-settings-chain-card chain-item">
-            <div class="chain-drag-handle">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="8" y1="9" x2="16" y2="9"></line>
-                    <line x1="8" y1="15" x2="16" y2="15"></line>
-                </svg>
-            </div>
+        <div class="lumina-settings-chain-card chain-item" draggable="true">
             <span class="chain-number"></span>
             <div class="chain-details">
                 <span class="chain-title"></span>
@@ -221,40 +215,31 @@ class LuminaSettingsModal {
   }
   static async loadSettings() {
     const keys = [
-      'providers', 'modelChains', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
+      'providers', 'models', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
       'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight', 'language', 'dictationEnabled', 'spokenLanguage',
       'voice', 'separateVoiceEnabled', 'baseTone', 'charWarm', 'charEnthusiastic',
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
-      'questionMappings', 'annotationShortcuts', 'dictLanguage',
-      'translateInputEngine', 'translateEngine', 'dictProvider', 'dictModel',
+      'questionMappings', 'annotationShortcuts',
       'historyRetentionMonths', 'shortcuts'
     ];
     chrome.storage.local.get(keys, (items) => {
-      this.providers = (items.providers || this.getDefaultProviders()).filter(p => p.id !== 'grok-default' && p.id !== 'grok');
+      const defaults = this.getDefaultProviders();
+      const savedProviders = items.providers || [];
+      // Always enforce fixed list of default providers, restoring saved API keys
+      this.providers = defaults.map(def => {
+        const saved = savedProviders.find(p => p.id === def.id);
+        return {
+          ...def,
+          apiKey: saved?.apiKey || def.apiKey || '',
+          endpoint: saved?.endpoint || def.endpoint
+        };
+      });
       this.renderProviders();
       this.populateProviderDropdowns();
-      if (items.modelChains) {
-        this.textChain = items.modelChains.text || [];
-      }
+      this.models = items.models || [];
       this.advancedParamsByModel = items.advancedParamsByModel || {};
       this.renderChainList();
-      const dictLang = items.dictLanguage || 'en';
-      const dictRadio = document.querySelector(`input[name="lumina-dictLanguage"][value="${dictLang}"]`);
-      if (dictRadio) dictRadio.checked = true;
-      const translateInputEngine = items.translateInputEngine || 'google';
-      const transInputRadio = document.querySelector(`input[name="lumina-translateInputEngine"][value="${translateInputEngine}"]`);
-      if (transInputRadio) transInputRadio.checked = true;
-      const translateEngine = items.translateEngine || 'google';
-      const transRadio = document.querySelector(`input[name="lumina-translateEngine"][value="${translateEngine}"]`);
-      if (transRadio) transRadio.checked = true;
-      if (items.dictProvider) {
-        const dictProvInput = document.getElementById('lumina-dict-provider');
-        dictProvInput.value = items.dictProvider;
-      }
-      if (items.dictModel) {
-        const dictModelInput = document.getElementById('lumina-dict-model');
-        dictModelInput.value = items.dictModel;
-      }
+
       const themeVal = items.theme || 'auto';
       const contrastVal = items.contrast || 'auto';
       const accentVal = items.accentColor || 'default';
@@ -360,11 +345,6 @@ class LuminaSettingsModal {
       aboutNickname: getVal('lumina-settings-about-nickname').trim(),
       aboutOccupation: getVal('lumina-settings-about-occupation').trim(),
       aboutInterests: getVal('lumina-settings-about-interests').trim(),
-      dictLanguage: document.querySelector('input[name="lumina-dictLanguage"]:checked')?.value || 'en',
-      translateInputEngine: document.querySelector('input[name="lumina-translateInputEngine"]:checked')?.value || 'google',
-      translateEngine: document.querySelector('input[name="lumina-translateEngine"]:checked')?.value || 'google',
-      dictProvider: getVal('lumina-dict-provider'),
-      dictModel: getVal('lumina-dict-model'),
       historyRetentionMonths: parseFloat(document.getElementById('lumina-history-retention-input')?.dataset.value || '3')
     };
     chrome.storage.local.set(settings, () => {
@@ -388,22 +368,15 @@ class LuminaSettingsModal {
     });
   }
   static bindGeneralTab() {
-    const cancelBtn = document.getElementById('lumina-cancel-provider-btn');
-    const saveBtn = document.getElementById('lumina-save-provider-btn');
-    const checkKeysBtn = document.getElementById('lumina-check-apikeys-btn');
-    const resetBtn = document.getElementById('lumina-reset-provider-btn');
-    const closePopupBtn = document.getElementById('lumina-provider-popup-close-btn');
-    const popupOverlay = document.getElementById('lumina-provider-popup-overlay');
-    if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideProviderForm());
-    if (saveBtn) saveBtn.addEventListener('click', () => this.saveProvider());
-    if (resetBtn) resetBtn.addEventListener('click', () => this.resetProvider());
-    if (closePopupBtn) closePopupBtn.addEventListener('click', () => this.hideProviderForm());
-    if (popupOverlay) {
-      popupOverlay.addEventListener('click', (e) => {
-        if (e.target === popupOverlay) this.hideProviderForm();
-      });
+    const setupKeyInput = document.getElementById('lumina-setup-provider-key');
+    const setupEndpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    if (setupKeyInput) {
+      setupKeyInput.addEventListener('input', () => this.saveSelectedProviderKey());
     }
-    if (checkKeysBtn) checkKeysBtn.addEventListener('click', () => this.checkApiKeys());
+    if (setupEndpointInput) {
+      setupEndpointInput.addEventListener('input', () => this.saveSelectedProviderKey());
+    }
+
     const cancelModelBtn = document.getElementById('lumina-cancel-model-btn');
     const saveModelBtn = document.getElementById('lumina-save-model-btn');
     const closeModelPopupBtn = document.getElementById('lumina-model-popup-close-btn');
@@ -416,21 +389,38 @@ class LuminaSettingsModal {
         if (e.target === modelPopupOverlay) this.hideModelForm();
       });
     }
-    document.querySelectorAll('input[name="lumina-dictLanguage"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-    document.querySelectorAll('input[name="lumina-translateInputEngine"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-    document.querySelectorAll('input[name="lumina-translateEngine"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-    this.setupDropdownInputs('lumina-dict-provider', 'lumina-dict-provider-list');
-    this.setupDropdownInputs('lumina-dict-model', 'lumina-dict-model-list');
-    this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
-    this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
-    this.setupDropdownInputs('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list');
+    this.setupDropdownInputs('lumina-model-form-provider', 'lumina-model-form-provider-list');
+    this.setupDropdownInputs('lumina-model-form-model', 'lumina-model-form-model-list');
+    this.setupDropdownInputs('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list');
     this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
   }
   static getDefaultProviders() {
     return [
-      { id: 'openai-default', name: 'OpenAI', type: 'openai', endpoint: 'https://api.openai.com/v1/chat/completions', apiKey: '' },
-      { id: 'gemini-default', name: 'Gemini', type: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models', apiKey: '' },
-      { id: 'deepseek-default', name: 'DeepSeek', type: 'openai', endpoint: 'https://api.deepseek.com/v1', apiKey: '' }
+      { id: 'gemini-default', name: 'Gemini', type: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models', apiKey: '', apiKeyUrl: 'https://aistudio.google.com/app/apikey' },
+      { id: 'openai-default', name: 'OpenAI', type: 'openai', endpoint: 'https://api.openai.com/v1/chat/completions', apiKey: '', apiKeyUrl: 'https://platform.openai.com/api-keys' },
+      { id: 'anthropic-default', name: 'Anthropic (Claude)', type: 'openai', endpoint: 'https://api.anthropic.com/v1', apiKey: '', apiKeyUrl: 'https://console.anthropic.com/settings/keys' },
+      { id: 'deepseek-default', name: 'DeepSeek', type: 'openai', endpoint: 'https://api.deepseek.com/v1', apiKey: '', apiKeyUrl: 'https://platform.deepseek.com/api_keys' },
+      { id: 'grok-default', name: 'xAI (Grok)', type: 'openai', endpoint: 'https://api.x.ai/v1', apiKey: '', apiKeyUrl: 'https://console.x.ai/' },
+      { id: 'perplexity-default', name: 'Perplexity AI', type: 'openai', endpoint: 'https://api.perplexity.ai', apiKey: '', apiKeyUrl: 'https://www.perplexity.ai/settings/api' },
+      { id: 'openrouter-default', name: 'OpenRouter', type: 'openai', endpoint: 'https://openrouter.ai/api/v1', apiKey: '', apiKeyUrl: 'https://openrouter.ai/keys' },
+      { id: 'groq-default', name: 'Groq', type: 'openai', endpoint: 'https://api.groq.com/openai/v1', apiKey: '', apiKeyUrl: 'https://console.groq.com/keys' },
+      { id: 'mistral-default', name: 'Mistral AI', type: 'openai', endpoint: 'https://api.mistral.ai/v1', apiKey: '', apiKeyUrl: 'https://console.mistral.ai/api-keys/' },
+      { id: 'cohere-default', name: 'Cohere', type: 'openai', endpoint: 'https://api.cohere.com/v1', apiKey: '', apiKeyUrl: 'https://dashboard.cohere.com/api-keys' },
+      { id: 'together-default', name: 'Together AI', type: 'openai', endpoint: 'https://api.together.xyz/v1', apiKey: '', apiKeyUrl: 'https://api.together.ai/settings/api-keys' },
+      { id: 'replicate-default', name: 'Replicate', type: 'openai', endpoint: 'https://api.replicate.com/v1', apiKey: '', apiKeyUrl: 'https://replicate.com/account/api-tokens' },
+      { id: 'fireworks-default', name: 'Fireworks AI', type: 'openai', endpoint: 'https://api.fireworks.ai/inference/v1', apiKey: '', apiKeyUrl: 'https://fireworks.ai/account/api-keys' },
+      { id: 'deepinfra-default', name: 'DeepInfra', type: 'openai', endpoint: 'https://api.deepinfra.com/v1/openai', apiKey: '', apiKeyUrl: 'https://deepinfra.com/dash/api_keys' },
+      { id: 'novita-default', name: 'Novita AI', type: 'openai', endpoint: 'https://api.novita.ai/v3/openai', apiKey: '', apiKeyUrl: 'https://novita.ai/dashboard/key-management' },
+      { id: 'huggingface-default', name: 'Hugging Face', type: 'openai', endpoint: 'https://api-inference.huggingface.co/v1', apiKey: '', apiKeyUrl: 'https://huggingface.co/settings/tokens' },
+      { id: 'cerebras-default', name: 'Cerebras', type: 'openai', endpoint: 'https://api.cerebras.ai/v1', apiKey: '', apiKeyUrl: 'https://cloud.cerebras.ai/' },
+      { id: 'alibaba-default', name: 'Alibaba Qwen', type: 'openai', endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1', apiKey: '', apiKeyUrl: 'https://dashscope.console.aliyun.com/' },
+      { id: 'moonshot-default', name: 'Moonshot AI (Kimi)', type: 'openai', endpoint: 'https://api.moonshot.cn/v1', apiKey: '', apiKeyUrl: 'https://platform.moonshot.cn/console/api-keys' },
+      { id: 'minimax-default', name: 'MiniMax', type: 'openai', endpoint: 'https://api.minimax.chat/v1', apiKey: '', apiKeyUrl: 'https://platform.minimaxi.com/' },
+      { id: 'zhipu-default', name: 'Zhipu AI (GLM)', type: 'openai', endpoint: 'https://open.bigmodel.cn/api/paas/v4', apiKey: '', apiKeyUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
+      { id: 'ollama-default', name: 'Ollama (Local)', type: 'openai', endpoint: 'http://localhost:11434/v1', apiKey: '', apiKeyUrl: 'https://ollama.com/' },
+      { id: 'lmstudio-default', name: 'LM Studio (Local)', type: 'openai', endpoint: 'http://localhost:1234/v1', apiKey: '', apiKeyUrl: 'https://lmstudio.ai/' },
+      { id: 'vllm-default', name: 'vLLM (Local)', type: 'openai', endpoint: 'http://localhost:8000/v1', apiKey: '', apiKeyUrl: 'https://github.com/vllm-project/vllm' },
+      { id: 'localai-default', name: 'LocalAI (Local)', type: 'openai', endpoint: 'http://localhost:8080/v1', apiKey: '', apiKeyUrl: 'https://localai.io/' }
     ];
   }
   static getProviderLogoSvg(id) {
@@ -504,14 +494,18 @@ class LuminaSettingsModal {
       keyInput.value = p.apiKey || '';
     }
 
-    const hasKey = p.apiKey && p.apiKey.trim().length > 0;
-    if (badge) {
-      badge.textContent = hasKey ? 'Configured' : 'Not Configured';
-      badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
+    const getKeyLink = document.getElementById('lumina-setup-get-key-link');
+    if (getKeyLink) {
+      if (p.apiKeyUrl) {
+        getKeyLink.href = p.apiKeyUrl;
+        getKeyLink.style.display = 'inline-block';
+      } else {
+        getKeyLink.style.display = 'none';
+      }
     }
 
     if (endpointRow && endpointInput) {
-      if (p.id.includes('custom') || p.id.includes('ollama')) {
+      if (p.id.includes('custom') || p.id.includes('ollama') || p.id.includes('lmstudio') || p.id.includes('vllm') || p.id.includes('localai') || p.id.includes('local')) {
         endpointRow.style.display = 'block';
         endpointInput.value = p.endpoint || '';
       } else {
@@ -536,26 +530,20 @@ class LuminaSettingsModal {
     }
 
     chrome.storage.local.set({ providers: this.providers }, () => {
-      const badge = document.getElementById('lumina-setup-provider-badge');
-      const hasKey = p.apiKey.length > 0;
-      if (badge) {
-        badge.textContent = hasKey ? 'Configured' : 'Not Configured';
-        badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
-      }
       this.populateProviderDropdowns();
     });
   }
 
   static populateProviderDropdowns() {
-    const dictProvList = document.getElementById('lumina-dict-provider-list');
-    const chainProvList = document.getElementById('lumina-text-chain-provider-list');
-    
-    // Configured providers (has API key or is Ollama)
-    const configuredProviders = this.providers.filter(p => (p.apiKey && p.apiKey.trim().length > 0) || p.id.includes('ollama'));
-
-    if (dictProvList) {
-      dictProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
-    }
+    const chainProvList = document.getElementById('lumina-model-form-provider-list');
+    const configuredProviders = this.providers.filter(p => 
+      (p.apiKey && p.apiKey.trim().length > 0) ||
+      p.id.includes('ollama') ||
+      p.id.includes('lmstudio') ||
+      p.id.includes('vllm') ||
+      p.id.includes('localai') ||
+      p.id.includes('local')
+    );
     if (chainProvList) {
       if (configuredProviders.length > 0) {
         chainProvList.innerHTML = configuredProviders.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
@@ -581,14 +569,73 @@ class LuminaSettingsModal {
   static setupDropdownInputs(inputId, menuId) {
     const input = document.getElementById(inputId);
     const menu = document.getElementById(menuId);
-    if (!input || !menu) return;
+    const updateActiveItems = (isSearch = false) => {
+      const items = Array.from(menu.querySelectorAll('div')).filter(d => d.style.display !== 'none');
+      menu.querySelectorAll('div').forEach(d => d.classList.remove('active'));
+      if (items.length === 0) return;
+
+      let matched;
+      if (isSearch) {
+        matched = items[0];
+      } else {
+        const currentVal = input.dataset.value || input.value;
+        matched = items.find(d => (d.dataset.val && d.dataset.val === currentVal) || d.textContent.trim() === input.value.trim());
+        if (!matched && items.length > 0) {
+          matched = items[0];
+        }
+      }
+      if (matched) {
+        matched.classList.add('active');
+      }
+    };
+
+    const triggerSelect = (targetEl) => {
+      if (!targetEl) return;
+      input.value = targetEl.textContent;
+      input.dataset.value = targetEl.dataset.val || targetEl.textContent;
+      menu.style.display = 'none';
+      if (inputId === 'lumina-setup-provider-input') {
+        this.selectProviderSetup(input.dataset.value);
+      }
+      if (inputId === 'lumina-settings-base-tone-input') {
+        this.adjustInputWidthToContent(input);
+      }
+      if (
+        inputId === 'lumina-history-retention-input' ||
+        inputId === 'lumina-settings-base-tone-input' ||
+        inputId === 'lumina-settings-fontsize' ||
+        inputId === 'lumina-settings-theme' ||
+        inputId === 'lumina-settings-contrast' ||
+        inputId === 'lumina-settings-accent' ||
+        inputId === 'lumina-settings-fontfamily' ||
+        inputId === 'lumina-settings-fontweight' ||
+        inputId === 'lumina-settings-language' ||
+        inputId === 'lumina-settings-spoken-lang' ||
+        inputId === 'lumina-settings-voice-select'
+      ) {
+        this.saveOptions();
+      }
+      if (inputId === 'lumina-model-form-provider') {
+        const modelInput = document.getElementById('lumina-model-form-model');
+        if (modelInput) {
+          modelInput.value = '';
+          modelInput.dataset.value = '';
+        }
+        this.loadModelsForProvider(input.dataset.value);
+        this.updateModelPopupFieldsState();
+      }
+    };
+
     input.addEventListener('click', (e) => {
       e.stopPropagation();
       const isCurrentlyOpen = menu.style.display === 'block';
       document.querySelectorAll('.lumina-settings-dropdown-menu').forEach(m => {
         m.style.display = 'none';
       });
-      menu.style.display = isCurrentlyOpen ? 'none' : 'block';
+      if (!isCurrentlyOpen) {
+        menu.style.display = 'block';
+        updateActiveItems(false);
+      }
     });
     document.addEventListener('click', (e) => {
       const wrapper = input.closest('.lumina-settings-dropdown-wrapper');
@@ -596,59 +643,67 @@ class LuminaSettingsModal {
         menu.style.display = 'none';
       }
     });
-    if (inputId === 'lumina-text-chain-model') {
+    const handleKeyDown = (e) => {
+      if (menu.style.display !== 'block') {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          menu.style.display = 'block';
+          updateActiveItems(false);
+        }
+        return;
+      }
+
+      const visibleItems = Array.from(menu.querySelectorAll('div')).filter(d => d.style.display !== 'none');
+      if (visibleItems.length === 0) return;
+
+      let currentIndex = visibleItems.findIndex(d => d.classList.contains('active'));
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        currentIndex = (currentIndex + 1) % visibleItems.length;
+        visibleItems.forEach(d => d.classList.remove('active'));
+        visibleItems[currentIndex].classList.add('active');
+        visibleItems[currentIndex].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        currentIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
+        visibleItems.forEach(d => d.classList.remove('active'));
+        visibleItems[currentIndex].classList.add('active');
+        visibleItems[currentIndex].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const activeItem = visibleItems[currentIndex >= 0 ? currentIndex : 0] || visibleItems[0];
+        if (activeItem) {
+          triggerSelect(activeItem);
+          input.blur();
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        menu.style.display = 'none';
+      }
+    };
+
+    input.addEventListener('keydown', handleKeyDown);
+
+    if (inputId === 'lumina-model-form-model' || inputId === 'lumina-setup-provider-input' || inputId === 'lumina-model-form-provider') {
       input.addEventListener('input', () => {
         const query = input.value.toLowerCase().trim();
         const items = menu.querySelectorAll('div');
-        let hasVisible = false;
         items.forEach(item => {
           const text = item.textContent.toLowerCase();
           if (text.includes(query)) {
             item.style.display = 'block';
-            hasVisible = true;
           } else {
             item.style.display = 'none';
           }
         });
         menu.style.display = 'block';
+        updateActiveItems(true);
       });
     }
     menu.addEventListener('click', (e) => {
       if (e.target.tagName === 'DIV') {
-        input.value = e.target.textContent;
-        input.dataset.value = e.target.dataset.val || e.target.textContent;
-        menu.style.display = 'none';
-        if (inputId === 'lumina-setup-provider-input') {
-          this.selectProviderSetup(input.dataset.value);
-        }
-        if (inputId === 'lumina-settings-base-tone-input') {
-          this.adjustInputWidthToContent(input);
-        }
-        if (
-          inputId.startsWith('lumina-dict-') ||
-          inputId === 'lumina-history-retention-input' ||
-          inputId === 'lumina-settings-base-tone-input' ||
-          inputId === 'lumina-settings-fontsize' ||
-          inputId === 'lumina-settings-theme' ||
-          inputId === 'lumina-settings-contrast' ||
-          inputId === 'lumina-settings-accent' ||
-          inputId === 'lumina-settings-fontfamily' ||
-          inputId === 'lumina-settings-fontweight' ||
-          inputId === 'lumina-settings-language' ||
-          inputId === 'lumina-settings-spoken-lang' ||
-          inputId === 'lumina-settings-voice-select'
-        ) {
-          this.saveOptions();
-        }
-        if (inputId === 'lumina-text-chain-provider') {
-          const modelInput = document.getElementById('lumina-text-chain-model');
-          if (modelInput) {
-            modelInput.value = '';
-            modelInput.dataset.value = '';
-          }
-          this.loadModelsForProvider(input.dataset.value);
-          this.updateModelPopupFieldsState();
-        }
+        triggerSelect(e.target);
       }
     });
   }
@@ -688,7 +743,7 @@ class LuminaSettingsModal {
     el.addEventListener('input', adjust);
   }
   static async loadModelsForProvider(providerId) {
-    const menu = document.getElementById('lumina-text-chain-model-list');
+    const menu = document.getElementById('lumina-model-form-model-list');
     if (!menu) return;
     menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">Loading models...</div>';
     const provider = this.providers.find(p => p.id === providerId);
@@ -746,9 +801,13 @@ class LuminaSettingsModal {
       }
       if (models.length === 0) {
         const fallbackOptions = {
-          'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
           'gemini-default': ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'],
-          'deepseek-default': ['deepseek-chat', 'deepseek-reasoner']
+          'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
+          'deepseek-default': ['deepseek-chat', 'deepseek-reasoner'],
+          'moonshot-default': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+          'alibaba-default': ['qwen-max', 'qwen-plus', 'qwen-turbo'],
+          'minimax-default': ['abab6.5g-chat', 'abab6.5s-chat'],
+          'zhipu-default': ['glm-4', 'glm-4-flash', 'glm-4-air']
         };
         models = fallbackOptions[providerId] || ['custom-model'];
       }
@@ -756,9 +815,13 @@ class LuminaSettingsModal {
     } catch (e) {
       console.error('Failed to fetch models in settings:', e);
       const fallbackOptions = {
-        'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
         'gemini-default': ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'],
-        'deepseek-default': ['deepseek-chat', 'deepseek-reasoner']
+        'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
+        'deepseek-default': ['deepseek-chat', 'deepseek-reasoner'],
+        'moonshot-default': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+        'alibaba-default': ['qwen-max', 'qwen-plus', 'qwen-turbo'],
+        'minimax-default': ['abab6.5g-chat', 'abab6.5s-chat'],
+        'zhipu-default': ['glm-4', 'glm-4-flash', 'glm-4-air']
       };
       const list = fallbackOptions[providerId] || ['custom-model'];
       menu.innerHTML = list.map(m => `<div data-val="${m}">${m}</div>`).join('');
@@ -771,10 +834,10 @@ class LuminaSettingsModal {
     document.getElementById('lumina-provider-form-name').value = '';
     document.getElementById('lumina-provider-form-endpoint').value = '';
     document.getElementById('lumina-provider-form-apikey').value = '';
-    const statusEl = document.getElementById('lumina-provider-popup-status');
+    const statusEl = document.getElementById('lumina-dialog-status');
     if (statusEl) {
       statusEl.innerHTML = '';
-      statusEl.className = 'lumina-provider-popup-status hidden';
+      statusEl.className = 'lumina-dialog-status hidden';
     }
   }
   static editProvider(id) {
@@ -786,10 +849,10 @@ class LuminaSettingsModal {
     document.getElementById('lumina-provider-form-name').value = p.name;
     document.getElementById('lumina-provider-form-endpoint').value = p.endpoint;
     document.getElementById('lumina-provider-form-apikey').value = p.apiKey || '';
-    const statusEl = document.getElementById('lumina-provider-popup-status');
+    const statusEl = document.getElementById('lumina-dialog-status');
     if (statusEl) {
       statusEl.innerHTML = '';
-      statusEl.className = 'lumina-provider-popup-status hidden';
+      statusEl.className = 'lumina-dialog-status hidden';
     }
   }
   static hideProviderForm() {
@@ -800,11 +863,12 @@ class LuminaSettingsModal {
     const overlay = document.getElementById('lumina-model-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
     const indexInput = document.getElementById('lumina-model-form-index');
-    const providerInput = document.getElementById('lumina-text-chain-provider');
-    const modelInput = document.getElementById('lumina-text-chain-model');
-    const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
+    const providerInput = document.getElementById('lumina-model-form-provider');
+    const modelInput = document.getElementById('lumina-model-form-model');
+    const customNameInput = document.getElementById('lumina-model-form-name-custom');
+    this.populateProviderDropdowns();
     if (index !== null && index >= 0) {
-      const item = this.textChain[index];
+      const item = this.models[index];
       indexInput.value = index;
       const prov = this.providers.find(p => p.id === item.providerId);
       providerInput.value = prov ? prov.name : item.providerId;
@@ -812,7 +876,7 @@ class LuminaSettingsModal {
       modelInput.value = item.modelName;
       customNameInput.value = item.displayName || '';
       const tokenVal = item.maxTokens || 8192;
-      this.setDropdownValue('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
+      this.setDropdownValue('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
       this.loadModelsForProvider(item.providerId);
     } else {
       indexInput.value = '';
@@ -820,15 +884,15 @@ class LuminaSettingsModal {
       providerInput.dataset.value = '';
       modelInput.value = '';
       customNameInput.value = '';
-      this.setDropdownValue('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list', '8192', '8,192 tokens (Default)');
+      this.setDropdownValue('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list', '8192', '8,192 tokens (Default)');
     }
     this.updateModelPopupFieldsState();
   }
   static updateModelPopupFieldsState() {
-    const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
-    const modelInput = document.getElementById('lumina-text-chain-model');
-    const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
-    const maxTokensInput = document.getElementById('lumina-text-chain-max-tokens');
+    const provider = document.getElementById('lumina-model-form-provider').dataset.value;
+    const modelInput = document.getElementById('lumina-model-form-model');
+    const customNameInput = document.getElementById('lumina-model-form-name-custom');
+    const maxTokensInput = document.getElementById('lumina-model-form-max-tokens');
     const shouldDisable = !provider;
     if (modelInput) {
       modelInput.disabled = shouldDisable;
@@ -1022,10 +1086,10 @@ class LuminaSettingsModal {
       alert('Endpoint and API Key are required to check status.');
       return;
     }
-    const statusEl = document.getElementById('lumina-provider-popup-status');
+    const statusEl = document.getElementById('lumina-dialog-status');
     if (!statusEl) return;
     statusEl.classList.remove('hidden');
-    statusEl.className = 'lumina-provider-popup-status info';
+    statusEl.className = 'lumina-dialog-status info';
     statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
     const checkBtn = document.getElementById('lumina-check-apikeys-btn');
     const originalText = checkBtn.textContent;
@@ -1033,7 +1097,7 @@ class LuminaSettingsModal {
     checkBtn.disabled = true;
     const keysList = apiKey.split(',').map(k => k.trim()).filter(Boolean);
     if (keysList.length === 0) {
-      statusEl.className = 'lumina-provider-popup-status error';
+      statusEl.className = 'lumina-dialog-status error';
       statusEl.innerHTML = '<strong>Error:</strong> No keys entered.';
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
@@ -1075,7 +1139,7 @@ class LuminaSettingsModal {
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
       const allOk = results.every(r => r.ok);
-      statusEl.className = 'lumina-provider-popup-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
+      statusEl.className = 'lumina-dialog-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
       if (results.length === 1) {
         const res = results[0];
         if (res.ok) {
@@ -1102,10 +1166,10 @@ class LuminaSettingsModal {
   }
   static addModelToChain() {
     const indexStr = document.getElementById('lumina-model-form-index').value;
-    const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
-    const model = document.getElementById('lumina-text-chain-model').value.trim();
-    const customName = document.getElementById('lumina-text-chain-model-name-custom').value.trim();
-    const maxTokensInput = document.getElementById('lumina-text-chain-max-tokens');
+    const provider = document.getElementById('lumina-model-form-provider').dataset.value;
+    const model = document.getElementById('lumina-model-form-model').value.trim();
+    const customName = document.getElementById('lumina-model-form-name-custom').value.trim();
+    const maxTokensInput = document.getElementById('lumina-model-form-max-tokens');
     const maxTokens = parseInt(maxTokensInput?.dataset?.value || '8192', 10);
     if (!provider || !model) {
       alert('Provider and Model are required.');
@@ -1120,56 +1184,79 @@ class LuminaSettingsModal {
     };
     if (indexStr !== '') {
       const idx = parseInt(indexStr);
-      if (idx >= 0 && idx < this.textChain.length) {
-        this.textChain[idx] = item;
+      if (idx >= 0 && idx < this.models.length) {
+        this.models[idx] = item;
       }
     } else {
-      this.textChain.unshift(item);
+      this.models.unshift(item);
     }
-    chrome.storage.local.set({ modelChains: { text: this.textChain } }, () => {
+    chrome.storage.local.set({ models: this.models }, () => {
       this.renderChainList();
       this.hideModelForm();
     });
   }
   static renderChainList() {
-    const list = document.getElementById('lumina-text-chain-list');
+    const list = document.getElementById('lumina-model-list');
     if (!list) return;
     list.innerHTML = '';
-    const addCard = document.createElement('div');
-    addCard.className = 'lumina-settings-chain-card chain-item add-model-card';
-    addCard.id = 'lumina-open-add-model-btn';
-    addCard.innerHTML = `
-      <div class="add-mode">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        <span class="font-semibold">Add Model</span>
-      </div>
-    `;
-    addCard.addEventListener('click', () => this.showModelForm());
-    list.appendChild(addCard);
-    if (this.textChain.length === 0) {
+    const addModelHeaderBtn = document.getElementById('lumina-open-add-model-btn');
+    if (addModelHeaderBtn && !addModelHeaderBtn.dataset.bound) {
+      addModelHeaderBtn.dataset.bound = 'true';
+      addModelHeaderBtn.addEventListener('click', () => this.showModelForm());
+    }
+    if (this.models.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'lumina-settings-empty-state';
-      emptyState.textContent = 'No models added yet. Click "Add Model" above to start.';
+      emptyState.textContent = 'No models added yet. Click "Add model" above to start.';
       list.appendChild(emptyState);
     } else {
       const temp = document.getElementById('lumina-chainItemTemplate');
-      this.textChain.forEach((item, index) => {
+      this.models.forEach((item, index) => {
         const clone = temp.content.cloneNode(true);
+        const cardEl = clone.querySelector('.lumina-settings-chain-card');
+        cardEl.dataset.index = index;
+
         clone.querySelector('.chain-number').textContent = index + 1;
         clone.querySelector('.chain-title').textContent = item.displayName || item.modelName;
         const prov = this.providers.find(p => p.id === item.providerId);
         const providerName = prov ? prov.name : item.providerId;
         const tokenLabel = item.maxTokens ? ` • ${Number(item.maxTokens).toLocaleString()} tokens` : ' • 8,192 tokens';
         clone.querySelector('.chain-subtitle').textContent = `${providerName}${tokenLabel}`;
-        clone.querySelector('.edit').addEventListener('click', () => {
+
+        cardEl.addEventListener('dragstart', (e) => {
+          cardEl.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', index);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        cardEl.addEventListener('dragend', () => {
+          cardEl.classList.remove('dragging');
+        });
+
+        cardEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+
+        cardEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+          const toIndex = index;
+          if (!isNaN(fromIndex) && fromIndex !== toIndex) {
+            const movedItem = this.models.splice(fromIndex, 1)[0];
+            this.models.splice(toIndex, 0, movedItem);
+            chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
+          }
+        });
+
+        clone.querySelector('.edit').addEventListener('click', (e) => {
+          e.stopPropagation();
           this.showModelForm(index);
         });
-        clone.querySelector('.remove').addEventListener('click', () => {
-          this.textChain.splice(index, 1);
-          chrome.storage.local.set({ modelChains: { text: this.textChain } }, () => this.renderChainList());
+        clone.querySelector('.remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.models.splice(index, 1);
+          chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
         });
         list.appendChild(clone);
       });
@@ -2350,23 +2437,16 @@ class LuminaSettingsModal {
     const timeEl = document.getElementById('lumina-cloud-stat-time');
     const relativeEl = document.getElementById('lumina-cloud-stat-relative');
     const itemsEl = document.getElementById('lumina-cloud-stat-items');
-    const badgeEl = document.getElementById('lumina-cloud-sync-badge');
-    const statusTextEl = document.getElementById('lumina-cloud-sync-status-text');
 
     if (!sizeEl) return;
 
     if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
-      if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge offline';
-      if (statusTextEl) statusTextEl.textContent = 'Not Connected';
       sizeEl.textContent = '—';
       timeEl.textContent = 'Not signed in';
       if (relativeEl) relativeEl.textContent = 'Sign in to sync';
       if (itemsEl) itemsEl.textContent = '—';
       return;
     }
-
-    if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge';
-    if (statusTextEl) statusTextEl.textContent = 'Connected';
 
     chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5'], async (res) => {
       // 1. Format Size

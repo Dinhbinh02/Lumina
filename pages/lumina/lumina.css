@@ -27,8 +27,6 @@ body {
   font-size: inherit;
 }
 
-
-
 :root,
 :host {
   --lumina-ui-opacity: 1.0;
@@ -73,6 +71,9 @@ body {
   --lumina-sidebar-text: #202124;
   --lumina-sidebar-text-muted: #5f6368;
   --lumina-question-bg: #f4f4f4;
+  --lumina-badge-bg: rgba(0, 0, 0, 0.05);
+  --lumina-badge-border: rgba(0, 0, 0, 0.08);
+  --lumina-danger-color: #d93025;
   --lumina-scrollbar-thumb: rgba(0, 0, 0, 0.2);
   --lumina-scrollbar-thumb-hover: rgba(0, 0, 0, 0.35);
 }
@@ -102,6 +103,9 @@ body {
   --lumina-sidebar-text: #e8eaed;
   --lumina-sidebar-text-muted: #b0b3b8;
   --lumina-question-bg: rgba(255, 255, 255, 0.08);
+  --lumina-badge-bg: rgba(255, 255, 255, 0.08);
+  --lumina-badge-border: rgba(255, 255, 255, 0.12);
+  --lumina-danger-color: #f28b82;
   --lumina-scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --lumina-scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
 }
@@ -267,8 +271,6 @@ body {
   display: flex !important;
 }
 
-
-
 #lumina-comment-hover-tooltip .lumina-comment-tooltip-card {
   display: flex !important;
   align-items: center !important;
@@ -299,8 +301,6 @@ body {
   line-height: 1.35 !important;
   font-weight: 500 !important;
 }
-
-
 
 .lumina-comment-highlight {
   background-color: #fff9c4 !important;
@@ -1994,91 +1994,6 @@ body {
   pointer-events: auto;
 }
 
-.lumina-input-bar .lumina-reasoning-selector {
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  min-width: 0 !important;
-  position: relative !important;
-  overflow: visible !important;
-}
-
-.lumina-input-bar .lumina-reasoning-btn {
-  display: flex !important;
-  align-items: center !important;
-  width: auto !important;
-  max-width: 100% !important;
-  height: 32px !important;
-  padding: 0 10px !important;
-  background: #f1f3f8 !important;
-  border: none !important;
-  border-radius: 10px !important;
-  overflow: hidden !important;
-  min-width: 0 !important;
-  cursor: pointer;
-  box-shadow: none !important;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  gap: 4px !important;
-  font-size: 0.96em !important;
-}
-
-[data-theme="dark"] .lumina-input-bar .lumina-reasoning-btn {
-  background: rgba(255, 255, 255, 0.08) !important;
-}
-
-.lumina-input-bar .lumina-reasoning-btn:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="dark"] .lumina-input-bar .lumina-reasoning-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.lumina-input-bar .lumina-current-reasoning {
-  color: var(--lumina-text-primary) !important;
-  font-size: 0.96em !important;
-  font-weight: var(--lumina-weight-regular) !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-
-.lumina-input-bar .lumina-reasoning-dropdown {
-  position: absolute !important;
-  bottom: calc(100% + 8px) !important;
-  right: 0 !important;
-  left: auto !important;
-  width: 210px !important;
-  background: var(--lumina-ui-bg, #ffffff) !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1) !important;
-  padding: 5px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(8px);
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s !important;
-  pointer-events: none;
-  z-index: 10000 !important;
-}
-
-[data-theme="dark"] .lumina-input-bar .lumina-reasoning-dropdown {
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
-}
-
-.lumina-input-bar .lumina-reasoning-dropdown.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
 .lumina-reasoning-item {
   display: flex !important;
   align-items: center !important;
@@ -2399,7 +2314,6 @@ body {
   background: #FF3B30 !important;
   cursor: pointer;
 }
-
 
 .lumina-tool-item.active {
   color: var(--lumina-primary) !important;
@@ -3648,8 +3562,6 @@ body {
   line-height: 1.4 !important;
 }
 
-
-
 .lumina-dict-loading-state {
   display: flex !important;
   flex-direction: column !important;
@@ -3980,7 +3892,6 @@ body {
 .katex .msupsub {
   margin-left: 0.08em !important;
 }
-
 
 strong .katex,
 b .katex,
@@ -4632,55 +4543,6 @@ b .katex * {
   50% {
     color: var(--lumina-text-primary);
   }
-}
-
-.lumina-search-stepper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
-  background: rgba(var(--lumina-primary-rgb), 0.05);
-  border-radius: 16px;
-  border: 1px solid rgba(var(--lumina-primary-rgb), 0.1);
-}
-
-.lumina-search-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9em !important;
-  font-weight: var(--lumina-weight-medium) !important;
-  color: #000;
-  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
-}
-
-.lumina-search-step.completed {
-  color: #000;
-  font-weight: var(--lumina-weight-medium) !important;
-}
-
-.lumina-step-icon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.lumina-step-check {
-  color: #34C759;
-}
-
-.lumina-step-label {
-  flex: 1;
-  font-weight: var(--lumina-weight-medium) !important;
-  color: #000;
-}
-
-.lumina-step-query {
-  font-weight: var(--lumina-weight-medium) !important;
-  color: #000;
 }
 
 .lumina-citation {
@@ -5336,88 +5198,6 @@ b .katex * {
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-.lumina-dict-translation-container {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-}
-
-.lumina-dict-translation-header {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  margin-bottom: 8px !important;
-}
-
-.lumina-dict-translation-label {
-  font-size: 0.79em !important;
-  font-weight: var(--lumina-weight-bold) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  color: var(--lumina-text-secondary, rgba(0, 0, 0, 0.5)) !important;
-}
-
-[data-theme="dark"] .lumina-dict-translation-label {
-  color: var(--lumina-text-secondary, rgba(255, 255, 255, 0.5)) !important;
-}
-
-.lumina-dict-original-text {
-  font-size: 1em !important;
-  line-height: 1.5 !important;
-  color: var(--lumina-text-primary, #000) !important;
-  margin-bottom: 16px !important;
-  white-space: pre-wrap !important;
-}
-
-[data-theme="dark"] .lumina-dict-original-text {
-  color: var(--lumina-text-primary, #fff) !important;
-}
-
-.lumina-dict-translation-divider {
-  height: 1px !important;
-  background: var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
-  margin: 16px 0 !important;
-}
-
-[data-theme="dark"] .lumina-dict-translation-divider {
-  background: var(--lumina-ui-border, rgba(255, 255, 255, 0.1)) !important;
-}
-
-.lumina-dict-translated-text {
-  font-size: 1em !important;
-  font-weight: var(--lumina-weight-medium) !important;
-  line-height: 1.5 !important;
-  color: #000000 !important;
-  white-space: pre-wrap !important;
-  font-family: var(--lumina-font-family) !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-}
-
-[data-theme="dark"] .lumina-dict-translated-text {
-  color: #ffffff !important;
-}
-
-.lumina-translation-audio-btn {
-  background: none !important;
-  border: none !important;
-  padding: 4px !important;
-  cursor: pointer !important;
-  color: var(--lumina-text-secondary, rgba(0, 0, 0, 0.5)) !important;
-  border-radius: 4px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: background 0.2s, color 0.2s !important;
-}
-
-[data-theme="dark"] .lumina-translation-audio-btn {
-  color: var(--lumina-text-secondary, rgba(255, 255, 255, 0.5)) !important;
-}
-
-.lumina-translation-audio-btn:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--lumina-primary-color, #007aff) !important;
-}
-
 [data-theme="dark"] .lumina-translation-audio-btn:hover {
   background: rgba(255, 255, 255, 0.08) !important;
 }
@@ -5592,6 +5372,97 @@ b .katex * {
   border-top: 1px solid var(--lumina-ui-border, rgba(255, 255, 255, 0.1));
 }
 
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--lumina-ui-bg, #FFFFFF);
+  background-image: none;
+  border: 1px solid var(--lumina-ui-border, #747775);
+  -webkit-border-radius: 20px;
+  border-radius: 20px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  color: var(--lumina-text-primary, #1f1f1f);
+  cursor: pointer;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  height: 40px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 12px;
+  position: relative;
+  text-align: center;
+  transition: background-color .218s, border-color .218s, box-shadow .218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  -webkit-align-items: center;
+  align-items: center;
+  display: flex;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-flex-wrap: nowrap;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  -webkit-flex-grow: 0;
+  flex-grow: 0;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button .gsi-material-button-state {
+  -webkit-transition: opacity .218s;
+  transition: opacity .218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.gsi-material-button:hover {
+  background-color: var(--lumina-ui-bg-light, #F8F9FA);
+}
+
+.gsi-material-button:disabled {
+  cursor: default;
+  background-color: var(--lumina-ui-bg, #FFFFFF);
+  border-color: var(--lumina-ui-border, #E0E0E0);
+  opacity: 0.6;
+}
+
 .sync-btn {
   display: flex;
   align-items: center;
@@ -5610,18 +5481,8 @@ b .katex * {
   transition: background 0.2s, border-color 0.2s;
 }
 
-[data-theme="dark"] .sync-btn {
-  border: 1px solid var(--lumina-ui-border, rgba(255, 255, 255, 0.1));
-  background: var(--lumina-ui-bg-light, #1c1c1e);
-  color: var(--lumina-text-primary, #ffffff);
-}
-
 .sync-btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="dark"] .sync-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.05));
 }
 
 .sync-btn:disabled {
@@ -6143,65 +6004,7 @@ b .katex * {
   }
 }
 
-.lumina-d2-wrapper {
-  position: relative;
-  width: fit-content;
-  width: -moz-fit-content;
-  width: -webkit-fit-content;
-  max-width: min(100%, 380px);
-  margin: 12px auto;
-}
 
-.lumina-d2-wrapper.is-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: min(100%, 380px);
-}
-
-.lumina-d2-wrapper.lumina-d2-rendered {
-  width: 100%;
-  max-width: 680px;
-  margin: 0 auto 0.5em auto;
-  cursor: pointer;
-}
-
-.lumina-d2-wrapper.is-loading .lumina-d2-skeleton {
-  width: 380px;
-  max-width: 100%;
-  height: 200px;
-  margin: 0 0 12px 0 auto;
-  border-radius: var(--lumina-radius-sm, 12px);
-  display: block;
-}
-
-@keyframes lumina-diagram-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.lumina-d2-svg-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  animation: lumina-diagram-reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.lumina-d2-svg-container svg {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  border-radius: var(--lumina-radius-sm, 12px);
-  overflow: visible;
-}
 
 .lumina-chartjs-container {
   width: 100%;
@@ -6672,46 +6475,17 @@ b .katex * {
   opacity: 0.85;
 }
 
-.sidebar-ctx-item--danger {
-  color: #d93025;
-}
-
-[data-theme="dark"] .sidebar-ctx-item--danger {
-  color: #f28b82;
-}
-
-.sidebar-ctx-item--danger svg {
-  color: #d93025;
-}
-
-[data-theme="dark"] .sidebar-ctx-item--danger svg {
-  color: #f28b82;
+.sidebar-ctx-item--danger,
+.sidebar-ctx-item--danger svg,
+.dropdown-item.action-item--danger,
+.dropdown-item.action-item--danger .item-icon {
+  color: var(--lumina-danger-color);
 }
 
 .sidebar-ctx-divider {
   height: 1px;
-  background: var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  background: var(--lumina-ui-border);
   margin: 4px 0;
-}
-
-[data-theme="dark"] .sidebar-ctx-divider {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.dropdown-item.action-item--danger {
-  color: #d93025;
-}
-
-[data-theme="dark"] .dropdown-item.action-item--danger {
-  color: #f28b82;
-}
-
-.dropdown-item.action-item--danger .item-icon {
-  color: #d93025;
-}
-
-[data-theme="dark"] .dropdown-item.action-item--danger .item-icon {
-  color: #f28b82;
 }
 
 .sidebar-footer {
@@ -6720,6 +6494,7 @@ b .katex * {
   justify-content: space-between;
   margin-top: auto;
   padding: 0 6px;
+  gap: 6px;
   height: 46px;
   transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative !important;
@@ -6731,7 +6506,6 @@ b .katex * {
   gap: 8px;
   overflow: visible;
   white-space: nowrap;
-  visibility: hidden;
 }
 
 .user-avatar-wrapper {
@@ -8289,19 +8063,28 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
 .lumina-sidebar-tooltip {
   position: fixed;
   z-index: 10000;
-  background-color: #000000;
-  color: #ffffff;
-  padding: 8px 12px;
+  background: var(--lumina-tooltip-bg, #1e1e1e);
+  color: var(--lumina-tooltip-text, #ffffff);
+  padding: 6px 12px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: var(--lumina-weight-medium, 500);
   font-family: var(--lumina-font-family), 'Google Sans', system-ui, sans-serif;
   pointer-events: none;
   opacity: 0;
   white-space: normal;
   word-break: break-word;
   max-width: 280px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--lumina-border-subtle, rgba(255, 255, 255, 0.12));
   line-height: 1.4;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+[data-theme="light"] .lumina-sidebar-tooltip {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .lumina-sidebar-tooltip.visible {
@@ -8715,8 +8498,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   color: #a8aab0;
 }
 
-
-
 .lumina-sidebar-tooltip::before {
   content: '';
   position: absolute;
@@ -8731,7 +8512,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
 #file-input {
   display: none !important;
 }
-
 
 .lumina-preview-window {
   position: relative;
@@ -8764,11 +8544,9 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   }
 }
 
-
 .lumina-preview-window.is-video {
   border-color: #000000;
 }
-
 
 .lumina-preview-window.is-audio {
   width: 700px;
@@ -8785,7 +8563,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
     max-height: none;
   }
 }
-
 
 .lumina-preview-window.is-fallback {
   width: 700px;
@@ -8888,7 +8665,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   outline: none;
   display: block;
 }
-
 
 .lumina-preview-audio-wrapper {
   width: 100%;
@@ -9031,7 +8807,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   line-height: 1.5;
 }
 
-
 .lumina-preview-window pre code .hljs-comment,
 .lumina-preview-window pre code .hljs-quote {
   color: #6a737d !important;
@@ -9099,7 +8874,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   background-color: #ffebe9 !important;
 }
 
-
 [data-theme="dark"] .lumina-preview-window pre code .hljs-comment,
 [data-theme="dark"] .lumina-preview-window pre code .hljs-quote {
   color: #6272a4 !important;
@@ -9165,7 +8939,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   color: #ff5555 !important;
 }
 
-
 .lumina-preview-pdf-counter-wrapper {
   position: absolute;
   bottom: 16px;
@@ -9224,7 +8997,6 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-
 
 .lumina-preview-sheets-container {
   width: 100%;
@@ -9304,7 +9076,6 @@ samp,
 [class*="mono"] {
   font-family: var(--lumina-font-family-monospace, monospace) !important;
 }
-
 
 strong,
 b,
@@ -9628,10 +9399,6 @@ h1,
   opacity: 0.95;
 }
 
-/* ==========================================================================
-   NOTES PAGE & EDITORJS STYLES (STRICT INTER FONT)
-   ========================================================================== */
-
 .notes-page,
 .notes-page *,
 .codex-editor,
@@ -9654,7 +9421,6 @@ h1,
   gap: 0;
 }
 
-/* --- Left Sidebar Pane (Collection & Notes List - Matches lumina-sidebar width) --- */
 .notes-sidebar-pane {
   width: 260px;
   flex: 0 0 260px;
@@ -10030,7 +9796,6 @@ h1,
   gap: 6px;
 }
 
-/* Sort bar */
 .notes-sort-bar {
   display: flex;
   align-items: center;
@@ -10086,7 +9851,6 @@ h1,
   color: var(--lumina-sidebar-bg, #0f172a);
 }
 
-/* Group headers */
 .notes-group-header {
   display: flex;
   align-items: center;
@@ -10100,7 +9864,6 @@ h1,
   margin-top: 2px;
 }
 
-/* Notes list */
 .notes-list {
   display: flex;
   flex-direction: column;
@@ -10110,7 +9873,6 @@ h1,
   padding-right: 2px;
 }
 
-/* Note card */
 .notes-item {
   padding: 9px 12px;
   border-radius: 8px;
@@ -10150,7 +9912,6 @@ h1,
   transition: none !important;
 }
 
-/* Note card header row */
 .notes-item-header {
   display: flex;
   align-items: flex-start;
@@ -10169,7 +9930,6 @@ h1,
   min-width: 0;
 }
 
-/* Quick action buttons (hidden until hover) */
 .notes-item-quick-actions {
   display: flex;
   align-items: center;
@@ -10236,7 +9996,6 @@ h1,
   gap: 4px;
 }
 
-/* Context menu */
 .notes-context-menu {
   position: fixed;
   z-index: 9999;
@@ -10324,7 +10083,6 @@ h1,
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* --- Right Editor Pane (Clean Frameless Notion Style) --- */
 .notes-editor-pane {
   flex: 2;
   height: 100%;
@@ -10349,7 +10107,6 @@ h1,
   box-shadow: none !important;
 }
 
-/* --- BlockNote Seamless Transparent Overrides --- */
 .blocknote-wrapper,
 .bn-container,
 .bn-editor,
@@ -10372,84 +10129,119 @@ h1,
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
-.bn-editor :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not([data-content-type="heading"]) > .bn-inline-content,
+.bn-editor :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not([data-content-type="heading"])>.bn-inline-content,
 .bn-editor p,
 .bn-editor li {
   font-size: var(--lumina-fontSize, 13px) !important;
+  font-weight: 400 !important;
   line-height: 1.6 !important;
 }
 
-/* Headings margin and size adjustments based on var(--lumina-fontSize) */
+/* Ensure strong bold contrast only for regular text paragraphs in BlockNote */
+.bn-editor p strong,
+.bn-editor p b,
+.bn-editor li strong,
+.bn-editor li b,
+.bn-editor :not([data-content-type="heading"])>strong,
+.bn-editor :not([data-content-type="heading"])>b {
+  font-weight: 600 !important;
+  color: var(--lumina-text-primary, #0f172a) !important;
+}
+
+.bn-editor .bn-block-content[data-content-type="heading"],
+.bn-editor [data-content-type="heading"],
+.bn-editor [data-level="1"],
+.bn-editor h1 {
+  --level: calc(var(--lumina-fontSize, 13px) * 1.6) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) * 1.6) !important;
+  padding-top: 0px !important;
+  margin-top: 0px !important;
+  margin: 0 !important;
+}
+
+.bn-editor .bn-block-content[data-content-type="heading"][data-level="2"],
+.bn-editor [data-level="2"],
+.bn-editor h2 {
+  --level: calc(var(--lumina-fontSize, 13px) * 1.32) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) * 1.32) !important;
+  padding-top: 0px !important;
+  margin-top: 0px !important;
+  margin: 0 !important;
+}
+
+.bn-editor .bn-block-content[data-content-type="heading"][data-level="3"],
+.bn-editor [data-level="3"],
+.bn-editor h3 {
+  --level: calc(var(--lumina-fontSize, 13px) * 1.15) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) * 1.15) !important;
+  padding-top: 0px !important;
+  margin-top: 0px !important;
+  margin: 0 !important;
+}
+
+.bn-editor .bn-block-content[data-content-type="heading"][data-level="4"],
+.bn-editor [data-level="4"],
+.bn-editor h4 {
+  --level: calc(var(--lumina-fontSize, 13px) * 1.08) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) * 1.08) !important;
+  padding-top: 0px !important;
+  margin-top: 0px !important;
+  margin: 0 !important;
+}
+
+.bn-editor .bn-block-content[data-content-type="heading"][data-level="5"],
+.bn-editor [data-level="5"],
+.bn-editor h5 {
+  --level: calc(var(--lumina-fontSize, 13px) * 1.02) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) * 1.02) !important;
+  padding-top: 0px !important;
+  margin-top: 0px !important;
+  margin: 0 !important;
+}
+
+.bn-editor .bn-block-content[data-content-type="heading"][data-level="6"],
+.bn-editor [data-level="6"],
+.bn-editor h6 {
+  --level: calc(var(--lumina-fontSize, 13px) * 0.95) !important;
+  font-size: calc(var(--lumina-fontSize, 13px) * 0.95) !important;
+  padding-top: 0px !important;
+  margin-top: 0px !important;
+  margin: 0 !important;
+}
+
+/* Enforce fixed font-weight and solid dark/white text colors for BlockNote elements */
+.bn-editor,
+.bn-editor .bn-inline-content,
+.bn-editor p,
+.bn-editor li {
+  color: var(--lumina-text-primary, #0f172a) !important;
+}
+
 .bn-editor h1,
-.bn-editor [data-content-type="heading"][data-level="1"],
-.bn-editor h1 *,
-.bn-editor [data-content-type="heading"][data-level="1"] * {
-  font-size: calc(var(--lumina-fontSize, 13px) + 8px) !important;
-  margin-top: 24px !important;
-  margin-bottom: 8px !important;
-  font-weight: 700 !important;
-  line-height: 1.3 !important;
-}
-
 .bn-editor h2,
-.bn-editor [data-content-type="heading"][data-level="2"],
-.bn-editor h2 *,
-.bn-editor [data-content-type="heading"][data-level="2"] * {
-  font-size: calc(var(--lumina-fontSize, 13px) + 5px) !important;
-  margin-top: 20px !important;
-  margin-bottom: 6px !important;
-  font-weight: 600 !important;
-  line-height: 1.35 !important;
-}
-
 .bn-editor h3,
-.bn-editor [data-content-type="heading"][data-level="3"],
-.bn-editor h3 *,
-.bn-editor [data-content-type="heading"][data-level="3"] * {
-  font-size: calc(var(--lumina-fontSize, 13px) + 3px) !important;
-  margin-top: 16px !important;
-  margin-bottom: 6px !important;
-  font-weight: 600 !important;
-  line-height: 1.4 !important;
-}
-
 .bn-editor h4,
-.bn-editor [data-content-type="heading"][data-level="4"],
-.bn-editor h4 *,
-.bn-editor [data-content-type="heading"][data-level="4"] * {
-  font-size: calc(var(--lumina-fontSize, 13px) + 2px) !important;
-  margin-top: 14px !important;
-  margin-bottom: 4px !important;
-  font-weight: 600 !important;
-}
-
 .bn-editor h5,
-.bn-editor [data-content-type="heading"][data-level="5"],
-.bn-editor h5 *,
-.bn-editor [data-content-type="heading"][data-level="5"] * {
-  font-size: calc(var(--lumina-fontSize, 13px) + 1px) !important;
-  margin-top: 12px !important;
-  margin-bottom: 4px !important;
-  font-weight: 600 !important;
-}
-
 .bn-editor h6,
-.bn-editor [data-content-type="heading"][data-level="6"],
-.bn-editor h6 *,
-.bn-editor [data-content-type="heading"][data-level="6"] * {
-  font-size: var(--lumina-fontSize, 13px) !important;
-  margin-top: 12px !important;
-  margin-bottom: 4px !important;
+.bn-editor [data-content-type="heading"],
+.bn-editor [data-content-type="heading"] * {
+  color: var(--lumina-heading-color, #0f172a) !important;
   font-weight: 600 !important;
+  margin: 0 !important;
 }
 
 [data-theme="dark"] .bn-container,
 [data-theme="dark"] .bn-editor,
-[data-theme="dark"] .bn-inline-content {
-  color: var(--lumina-text, #f1f5f9) !important;
+[data-theme="dark"] .bn-editor .bn-inline-content,
+[data-theme="dark"] .bn-editor p,
+[data-theme="dark"] .bn-editor li,
+[data-theme="dark"] .bn-editor h1,
+[data-theme="dark"] .bn-editor h2,
+[data-theme="dark"] .bn-editor h3,
+[data-theme="dark"] .bn-editor [data-content-type="heading"] * {
+  color: var(--lumina-text, #f8fafc) !important;
 }
 
-/* Fix missing icon for Align text left button in BlockNote toolbar */
 .bn-container button[aria-label*="Align text left"],
 .bn-container button[title*="Align text left"],
 .bn-toolbar button[aria-label*="Align text left"],
@@ -10498,7 +10290,6 @@ h1,
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f1f5f9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='21' y1='6' x2='3' y2='6'/%3E%3Cline x1='15' y1='12' x2='3' y2='12'/%3E%3Cline x1='17' y1='18' x2='3' y2='18'/%3E%3C/svg%3E") !important;
 }
 
-/* Hide BlockNote side menu plus (+) button and drag handle (6 dots) */
 .bn-side-menu [data-test="dragHandleAdd"],
 .bn-side-menu .mantine-UnstyledButton-root:has([data-test="dragHandleAdd"]),
 .bn-side-menu .bn-button:has([data-test="dragHandleAdd"]),
@@ -10510,7 +10301,6 @@ h1,
   display: none !important;
 }
 
-/* --- Resizer Bar (Matches sparks-editor-resizer) --- */
 .notes-resizer {
   width: 8px;
   height: 100%;
@@ -10555,7 +10345,6 @@ h1,
   background: var(--lumina-sidebar-bg, #fcfcfc);
 }
 
-/* Collection Selector Pill (Custom UI, non-native) */
 .notes-col-picker-wrapper {
   position: relative;
 }
@@ -10674,7 +10463,6 @@ h1,
   color: #ffffff;
 }
 
-/* Drag & Drop Visual Styles */
 .notes-item.dragging {
   opacity: 0.4;
 }
@@ -10689,7 +10477,6 @@ h1,
   background: rgba(255, 255, 255, 0.15) !important;
   outline-color: #ffffff;
 }
-
 
 .notes-editor-header::after {
   content: "" !important;
@@ -10780,7 +10567,6 @@ h1,
   background: rgba(239, 68, 68, 0.08);
 }
 
-/* --- Custom Collection Dropdown --- */
 .notes-custom-dropdown {
   position: relative;
   display: inline-block;
@@ -10933,7 +10719,6 @@ h1,
   border-width: 2px !important;
 }
 
-/* Word Count Pill — floating overlay bottom-right fixed relative to editor pane */
 .notes-editor-pane {
   position: relative;
 }
@@ -10984,7 +10769,6 @@ h1,
   color: #fbbf24;
 }
 
-/* Full-text search highlight */
 mark.notes-search-highlight {
   background: rgba(251, 191, 36, 0.35);
   color: inherit;
@@ -11001,8 +10785,8 @@ mark.notes-search-highlight {
   width: 100%;
   border: none;
   outline: none;
-  font-size: calc(var(--lumina-fontSize, 13px) * 2.2);
-  font-weight: 800;
+  font-size: calc(var(--lumina-fontSize, 13px) * 2.1) !important;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--lumina-heading-color, #0f172a);
   background: transparent;
@@ -11019,7 +10803,6 @@ mark.notes-search-highlight {
   min-height: 400px;
 }
 
-/* Notion-style EditorJS tweaks */
 .codex-editor__redactor {
   padding-bottom: 200px !important;
 }
@@ -11056,7 +10839,6 @@ mark.notes-search-highlight {
   font-size: 0.95rem;
 }
 
-/* --- BlockNote Divider Vertical Centering & Notion-Style Soft Selection --- */
 .bn-block-content[data-content-type="divider"],
 .bn-block[data-content-type="divider"] {
   display: flex !important;
@@ -11091,7 +10873,6 @@ mark.notes-search-highlight {
   border-top-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Remove ALL default BlockNote/Mantine inner selection outlines, shadows, backgrounds & borders */
 .ProseMirror-selectednode[data-content-type="divider"] *,
 .bn-block-content.ProseMirror-selectednode[data-content-type="divider"] *,
 .bn-block-outer.ProseMirror-selectednode [data-content-type="divider"] *,
@@ -11105,7 +10886,6 @@ mark.notes-search-highlight {
   border-bottom: none !important;
 }
 
-/* Notion-style SINGLE soft light-blue selection pill */
 .ProseMirror-selectednode[data-content-type="divider"],
 .bn-block-content.ProseMirror-selectednode[data-content-type="divider"],
 .bn-block-outer.ProseMirror-selectednode [data-content-type="divider"],
@@ -11124,7 +10904,6 @@ mark.notes-search-highlight {
   background: rgba(45, 170, 219, 0.25) !important;
 }
 
-/* --- Notion-Style Marquee Drag Selection Overlay & Highlight --- */
 .notes-marquee-box {
   position: fixed;
   background: rgba(35, 131, 226, 0.14) !important;
@@ -11148,7 +10927,13 @@ mark.notes-search-highlight {
 }
 
 [data-theme="dark"] .bn-block-outer.lumina-marquee-selected,
-[data-theme="dark"] .bn-block-content.lumina-marquee-selected,
 [data-theme="dark"] .bn-block.lumina-marquee-selected {
   background: rgba(45, 170, 219, 0.2) !important;
 }
+
+/* Fix BlockNote Placeholder font-style to normal (straight text) */
+.bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
+  font-style: normal !important;
+}
+
+/* Show all Heading options in Slash Menu & Toolbar Dropdown Menu */

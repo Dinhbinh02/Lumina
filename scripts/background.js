@@ -290,67 +290,10 @@ Use LaTeX ONLY for formal/complex math or science (equations, formulas, complex 
 Strictly Avoid LaTeX for: simple formatting (use Markdown instead), non-technical contexts and regular prose (resumes, letters, essays, cooking, weather, etc.), or simple units/numbers (render **180°C** or **10%** as plain text, not LaTeX).
 [Response Guiding Principles]
 Provide clear, natural, and well-structured responses. Use formatting tools (headings, bullet points, bolding, tables) only when appropriate to enhance readability, without forcing a rigid structure or unnecessary length. Adapt your layout naturally to the context and style preferences.
-[Diagram Syntax — D2 & Chart.js]
-- A single response CAN contain multiple diagrams (D2 and/or Chart.js charts) if multiple aspects of the topic benefit from visual explanation.
-- Use D2 as the primary choice for structural diagrams: Flowcharts, Sequence diagrams, Database ERDs, UML Class diagrams, and Grid layouts. Prioritize horizontal layouts ('direction: right' or square). Keep text clean.
+[Diagram Syntax — Chart.js]
+- A single response CAN contain multiple Chart.js charts if multiple aspects of the topic benefit from visual explanation.
 - Use Chart.js JSON config (chartjs code blocks) for all statistical charts and data visualizations: bar charts, line charts, pie/doughnut charts, scatter plots, radar charts, etc.
-- EVERY diagram or chart (both D2 and Chart.js) MUST ALWAYS have a clear, descriptive title to make it self-explanatory.
-CRITICAL D2 SYNTAX RULES:
-1. Valid shapes ONLY: rectangle, square, document, cylinder, queue, package, step, callout, stored_data, person, diamond, oval, circle, hexagon, cloud. STRICTLY FORBIDDEN: Do NOT use "browser", "folder", "star", "triangle", "card", "rounded_square", "rounded-rectangle". (Use shape: rectangle instead of "browser").
-2. NEVER use 'style.fill: none'. For transparent background, use 'style.fill: transparent' or omit style.fill. Valid fills are valid named colors (e.g. "orange"), hex codes (e.g. "#f0ff3a"), "transparent", or gradients.
-3. Nested nodes MUST use full path from outside (e.g., 'Nucleus.mRNA -> Cytoplasm.Ribosome'). Plain 'mRNA -> Ribosome' is a syntax error.
-4. Text labels with spaces/special characters MUST be quoted in double quotes. E.g. A: "Label text"
-5. Color Styling & Padding: Set theme-id (3: Grape Soda, 4: Mixed Berry, 5: Sunset Glow, 6: Forest, 7: Cool Classics) and ALWAYS specify a border padding in vars.d2-config (on separate lines, NO semicolons) to leave comfortable empty space around all 4 sides of the diagram. E.g., 'vars: { d2-config: { theme-id: 5 \\n pad: 30 } }'.
-6. Node identifiers (keys) MUST be ASCII-only, without spaces, special characters, or non-ASCII/accented letters (e.g. use 'Nen' or 'Compressor' instead of 'Nén'). Accents, spaces, and Unicode are ONLY allowed inside the double-quoted label string value (e.g. Nen: "Nén").
-PREMIUM DIAGRAM GUIDELINES (Make them beautiful!):
-- Use styling classes ('classes: { classname: { style.fill: "#hex"; style.stroke: "#hex" } }') to define reusable styles.
-- Enhance key boxes with 3D/Shadow: 'style.3d: true' or 'style.shadow: true'.
-- Make connections dynamic: use 'style.animated: true' for active/important data flows (in cycles, pipelines, or feedback loops, animate ALL connections in the path to show the flow clearly).
-- ALWAYS add titles or legends using positioning inside a block: e.g., 'title: { label: "My Diagram" \\n style.bold: true \\n style.font-size: 16 \\n style.stroke-width: 0 \\n style.fill: transparent }'.
-- Leave clean margins by specifying border padding inside vars.d2-config.
-D2 Example (Beautiful):
-\`\`\`d2
-vars: {
-  d2-config: {
-    theme-id: 5
-    pad: 30
-  }
-}
-classes: {
-  core: {
-    style.fill: "#ff79c6"
-    style.stroke: "#bd93f9"
-    style.3d: true
-  }
-}
-direction: right
-title: {
-  label: "Data Pipeline"
-  style.bold: true
-  style.font-size: 16
-  style.stroke-width: 0
-  style.fill: transparent
-}
-Start: "Ingestion" {
-  class: core
-}
-Queue: "Kafka Queue" {
-  shape: queue
-  style.shadow: true
-}
-Processor: "Worker Node" {
-  shape: cylinder
-  style.3d: true
-}
-Start -> Queue: "stream" { style.animated: true }
-Queue -> Processor: "batch write" { style.animated: true }
-A: "Start" -> B: "End" { style.animated: true }
-\`\`\`
-D2 Features Syntax:
-- Sequence Diagram: 'seq: { shape: sequence_diagram; alice -> bob: "hello" }'
-- SQL Table: 'users: { shape: sql_table; id: int {constraint: primary_key} }'
-- UML Class: 'parser: { shape: class; +read(): string; -buffer: string }'
-- Grid Layout: 'grid: { grid-rows: 2; grid-columns: 2; cell1; cell2 }'
+- EVERY chart MUST ALWAYS have a clear, descriptive title to make it self-explanatory.
 Chart.js Chart Rule:
 - Format code blocks EXACTLY with \`chartjs\` language identifier.
 - The content MUST be a valid JSON object following Chart.js v3 API structure.
@@ -969,25 +912,22 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
 }
 
 async function getModelChain(type = 'text', preferredModel = null) {
-    const data = await chrome.storage.local.get(['modelChains', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
+    const data = await chrome.storage.local.get(['models', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
     let chain = [];
-    if (data.modelChains && data.modelChains[type] && data.modelChains[type].length > 0) {
-        chain = [...data.modelChains[type]];
+    const storedModels = data.models || [];
+    if (storedModels.length > 0) {
+        chain = [...storedModels];
     } else if (type === 'dictionary' && data.dictProvider && data.dictModel) {
         chain = [{ providerId: data.dictProvider, model: data.dictModel }];
     } else {
-        if (data.modelChains && data.modelChains['text'] && data.modelChains['text'].length > 0) {
-            chain = [...data.modelChains['text']];
-        } else {
-            chain = [{ providerId: data.provider, model: data.model }];
-        }
+        chain = [{ providerId: data.provider, model: data.model }];
     }
     const activeModel = preferredModel || (type === 'text' ? data.lastUsedModel : null);
     if (activeModel && activeModel.model) {
         let actPId = activeModel.providerId;
         const actModel = activeModel.model;
         if (!actPId || !data.providers?.some(p => p.id === actPId)) {
-            const matchingChainItem = data.modelChains?.text?.find(item => item.model === actModel);
+            const matchingChainItem = storedModels.find(item => item.model === actModel);
             if (matchingChainItem) {
                 actPId = matchingChainItem.providerId;
             } else {
@@ -1734,6 +1674,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         return false;
     }
+    if (request.action === 'lumina_drive_sync') {
+        const isAuto = !!request.isAuto;
+        if (typeof LuminaSync !== 'undefined') {
+            // Skip if a sync just completed within the last 5 seconds (prevents double-sync on startup)
+            const now = Date.now();
+            const lastSyncAt = globalThis._lastDriveSyncAt || 0;
+            if (isAuto && (now - lastSyncAt) < 5000 && !LuminaSync.isSyncing) {
+                try { sendResponse({ success: true, skipped: true }); } catch (e) {}
+                return true;
+            }
+            LuminaSync.syncData(isAuto)
+                .then(result => {
+                    globalThis._lastDriveSyncAt = Date.now();
+                    try { sendResponse({ success: true, result }); } catch (e) {}
+                })
+                .catch(err => { try { sendResponse({ success: false, error: err.message }); } catch (e) {} });
+        } else {
+            sendResponse({ success: false, error: 'LuminaSync not available' });
+        }
+        return true; // Keep channel open for async response
+    }
     switch (request.action) {
         case 'generate_chat_title': {
             const { modelObj, question, images, files, history } = request;
@@ -2431,9 +2392,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     const chatHistory = data.chat_history || [];
                     if (chatHistory.length === 0) { sendResponse({ success: false, error: 'No chat history available' }); return; }
                     const callAIForConsolidation = async (prompt) => {
-                        const data = await chrome.storage.local.get(['providers', 'modelChains']);
+                        const data = await chrome.storage.local.get(['providers', 'models']);
                         const providers = data.providers || [];
-                        const textChain = data.modelChains?.text || [];
+                        const textChain = data.models || [];
                         const activeModelConfig = textChain.length > 0 ? textChain[0] : null;
                         let targetModel = activeModelConfig ? activeModelConfig.model : 'gemini-flash-latest';
                         const orderedProviders = [];

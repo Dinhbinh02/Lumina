@@ -119,7 +119,22 @@
             </div>
 
             <div class="sidebar-footer">
-                <div class="user-profile">
+                <button class="gsi-material-button" id="sidebar-login-btn" type="button" style="display: none;">
+                    <div class="gsi-material-button-state"></div>
+                    <div class="gsi-material-button-content-wrapper">
+                        <div class="gsi-material-button-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                        </div>
+                        <span class="gsi-material-button-contents">Sign in with Google</span>
+                    </div>
+                </button>
+
+                <div class="user-profile" style="display: none;">
                     <div class="user-avatar-wrapper" id="user-avatar-wrapper">
                         <div class="user-avatar-ring"></div>
                         <div class="user-avatar"></div>
@@ -602,11 +617,11 @@
                                 <div class="lumina-provider-setup-container">
                                     <div class="lumina-provider-setup-header">
                                         <span class="lumina-provider-section-title">Provider Setup</span>
-                                        <span id="lumina-setup-provider-badge" class="lumina-provider-status-badge inactive">Not Configured</span>
+                                        <a id="lumina-setup-get-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="lumina-get-key-link" style="font-size: 11.5px; color: var(--lumina-primary-color); text-decoration: none; font-weight: 500;">Get API Key ↗</a>
                                     </div>
                                     <div class="lumina-provider-setup-row">
                                         <div class="lumina-settings-dropdown-wrapper lumina-provider-dropdown-wrap">
-                                            <input type="text" id="lumina-setup-provider-input" readonly value="OpenAI" data-value="openai-default">
+                                            <input type="text" id="lumina-setup-provider-input" value="Gemini" data-value="gemini-default" placeholder="Select Provider...">
                                             <div id="lumina-setup-provider-menu" class="lumina-settings-dropdown-menu"></div>
                                         </div>
                                         <div class="lumina-provider-key-wrap">
@@ -616,7 +631,6 @@
                                                 <svg id="lumina-setup-eye-closed" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                                             </button>
                                         </div>
-                                        <button type="button" id="lumina-setup-provider-save-btn" class="lumina-settings-btn primary lumina-save-key-btn">Save</button>
                                     </div>
                                     <div id="lumina-setup-endpoint-row" class="lumina-provider-endpoint-row" style="display: none;">
                                         <input type="text" id="lumina-setup-provider-endpoint" placeholder="API Base Endpoint URL (e.g. https://api.openai.com/v1)">
@@ -627,91 +641,10 @@
                                 <div class="lumina-model-setup-container">
                                     <div class="lumina-model-setup-header">
                                         <span class="lumina-provider-section-title">Model Setup</span>
+                                        <button type="button" id="lumina-open-add-model-btn" class="lumina-settings-btn secondary" style="padding: 2px 8px; font-size: 11.5px;">Add model</button>
                                     </div>
-                                    <div id="lumina-text-chain-list" class="lumina-settings-chain-list">
-                                        <div class="lumina-settings-empty-state">No models added yet. Click "Add Model" below to start.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="lumina-settings-card">
-                            <div class="lumina-settings-card-header">
-                                <h3>Intelligent Features</h3>
-                            </div>
-                            <div class="lumina-settings-card-body">
-                                <div class="lumina-settings-row">
-                                    <div class="lumina-settings-row-info">
-                                        <span class="title">Definition Language</span>
-                                        <span class="desc">Output language used for dictionary definitions</span>
-                                    </div>
-                                    <div class="lumina-settings-segmented">
-                                        <label>
-                                            <input type="radio" name="lumina-dictLanguage" value="en" checked>
-                                            <span>English</span>
-                                        </label>
-                                        <label>
-                                            <input type="radio" name="lumina-dictLanguage" value="vi">
-                                            <span>Vietnamese</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="lumina-settings-row">
-                                    <div class="lumina-settings-row-info">
-                                        <span class="title">Translate Input Shortcut Engine</span>
-                                        <span class="desc">Choose engine used to translate input field text</span>
-                                    </div>
-                                    <div class="lumina-settings-segmented">
-                                        <label>
-                                            <input type="radio" name="lumina-translateInputEngine" value="google"
-                                                checked>
-                                            <span>Google</span>
-                                        </label>
-                                        <label>
-                                            <input type="radio" name="lumina-translateInputEngine" value="ai">
-                                            <span>AI Model</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="lumina-settings-row">
-                                    <div class="lumina-settings-row-info">
-                                        <span class="title">General Translation Engine</span>
-                                        <span class="desc">Choose engine used for selection & sidebar
-                                            translations</span>
-                                    </div>
-                                    <div class="lumina-settings-segmented">
-                                        <label>
-                                            <input type="radio" name="lumina-translateEngine" value="google" checked>
-                                            <span>Google</span>
-                                        </label>
-                                        <label>
-                                            <input type="radio" name="lumina-translateEngine" value="ai">
-                                            <span>AI Model</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <h4 class="lumina-settings-group-title">Dictionary Lookup Model</h4>
-                                <div class="lumina-settings-row-split">
-                                    <div class="lumina-settings-field">
-                                        <label for="lumina-dict-provider">Provider</label>
-                                        <div class="lumina-settings-dropdown-wrapper">
-                                            <input type="text" id="lumina-dict-provider" readonly
-                                                placeholder="Select Provider...">
-                                            <div id="lumina-dict-provider-list" class="lumina-settings-dropdown-menu">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="lumina-settings-field">
-                                        <label for="lumina-dict-model">Model</label>
-                                        <div class="lumina-settings-dropdown-wrapper">
-                                            <input type="text" id="lumina-dict-model"
-                                                placeholder="Select or type Model...">
-                                            <div id="lumina-dict-model-list" class="lumina-settings-dropdown-menu">
-                                            </div>
-                                        </div>
+                                    <div id="lumina-model-list" class="lumina-settings-chain-list">
+                                        <div class="lumina-settings-empty-state">No models added yet. Click "Add model" above to start.</div>
                                     </div>
                                 </div>
                             </div>
@@ -1234,16 +1167,12 @@
                                     </div>
                                 </div>
 
-                                <div id="lumina-auth-logged-in" class="lumina-settings-auth-container">
+                                <div id="lumina-auth-logged-in" class="lumina-settings-auth-container lumina-account-card">
                                     <div class="lumina-settings-profile-row">
                                         <img id="lumina-user-avatar" src="" alt="Avatar" class="lumina-settings-avatar">
                                         <div class="profile-meta">
                                             <div class="profile-name-row">
                                                 <span id="lumina-user-name" class="font-semibold">User Profile</span>
-                                                <span class="lumina-cloud-sync-badge" id="lumina-cloud-sync-badge">
-                                                    <span class="lumina-cloud-sync-dot"></span> <span
-                                                        id="lumina-cloud-sync-status-text">Connected</span>
-                                                </span>
                                             </div>
                                             <span id="lumina-user-email" class="desc-small">user@example.com</span>
                                         </div>
@@ -1255,7 +1184,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="lumina-cloud-sync-stats-grid mt-12">
+                                    <div class="lumina-cloud-sync-stats-grid">
                                         <div class="lumina-cloud-stat-card">
                                             <span class="stat-label">Cloud Size</span>
                                             <span class="stat-value" id="lumina-cloud-stat-size">0 KB</span>
@@ -1269,8 +1198,7 @@
                                         <div class="lumina-cloud-stat-card">
                                             <span class="stat-label">Synced Items</span>
                                             <span class="stat-value" id="lumina-cloud-stat-items">0 chats</span>
-                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">Chats &amp;
-                                                Notes</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">Chats &amp; Notes</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1367,81 +1295,13 @@
         </div>
     </div>
 
-    <div class="lumina-settings-overlay" id="lumina-provider-popup-overlay">
-        <div class="lumina-provider-popup-dialog">
-            <div class="lumina-provider-popup-header">
-                <span class="lumina-provider-popup-title">Provider</span>
-                <button type="button" class="lumina-provider-popup-close-btn" id="lumina-provider-popup-close-btn"
-                    aria-label="Close Provider Form">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="lumina-provider-popup-body">
-                <input type="hidden" id="lumina-provider-form-id">
-                <input type="hidden" id="lumina-provider-form-type" value="openai">
 
-                <div class="lumina-settings-field">
-                    <label for="lumina-provider-form-name">Name *</label>
-                    <input type="text" id="lumina-provider-form-name" placeholder="e.g. Gemini, DeepSeek, Local LLM">
-                </div>
-                <div class="lumina-settings-field">
-                    <label for="lumina-provider-form-endpoint">Endpoint URL *</label>
-                    <input type="text" id="lumina-provider-form-endpoint"
-                        placeholder="e.g. https://api.groq.com/openai/v1">
-                </div>
-                <div class="lumina-settings-field">
-                    <div class="lumina-settings-field-header">
-                        <label for="lumina-provider-form-apikey">API Key</label>
-                        <a id="lumina-provider-apikey-link" href="#" target="_blank" class="hidden">Get API Key</a>
-                    </div>
-                    <div style="position: relative; display: flex; align-items: center; width: 100%;">
-                        <input type="password" id="lumina-provider-form-apikey" placeholder="Enter API Key"
-                            style="width: 100%; padding-right: 36px;">
-                        <button type="button" id="toggle-lumina-key-visibility"
-                            style="position: absolute; right: 8px; background: transparent; border: none; color: var(--text-muted, #707070); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
-                            <svg id="lumina-eye-open-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                            <svg id="lumina-eye-closed-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                style="display: none;">
-                                <path
-                                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                                </path>
-                                <line x1="1" y1="1" x2="23" y2="23"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <p class="lumina-settings-helper">Multiple keys separated by commas.
-                        Auto-switches on rate limit.</p>
-                </div>
-                <div id="lumina-provider-popup-status" class="lumina-provider-popup-status hidden"></div>
-            </div>
-            <div class="lumina-provider-popup-footer">
-                <button type="button" id="lumina-reset-provider-btn"
-                    class="lumina-settings-btn secondary danger">Reset</button>
-                <div class="lumina-provider-popup-footer-right">
-                    <button type="button" id="lumina-cancel-provider-btn"
-                        class="lumina-settings-btn secondary">Cancel</button>
-                    <button type="button" id="lumina-check-apikeys-btn"
-                        class="lumina-settings-btn secondary">Check</button>
-                    <button type="button" id="lumina-save-provider-btn"
-                        class="lumina-settings-btn primary">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="lumina-settings-overlay" id="lumina-model-popup-overlay">
-        <div class="lumina-provider-popup-dialog">
-            <div class="lumina-provider-popup-header">
-                <span class="lumina-provider-popup-title">Add Model</span>
-                <button type="button" class="lumina-provider-popup-close-btn" id="lumina-model-popup-close-btn"
+        <div class="lumina-dialog">
+            <div class="lumina-dialog-header">
+                <span class="lumina-dialog-title">Add Model</span>
+                <button type="button" class="lumina-dialog-close-btn" id="lumina-model-popup-close-btn"
                     aria-label="Close Model Form">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1449,37 +1309,39 @@
                     </svg>
                 </button>
             </div>
-            <div class="lumina-provider-popup-body">
+            <div class="lumina-dialog-body">
                 <input type="hidden" id="lumina-model-form-index" value="">
-                <div class="lumina-settings-field">
-                    <label>Provider</label>
-                    <div class="lumina-settings-dropdown-wrapper">
-                        <input type="text" id="lumina-text-chain-provider" readonly placeholder="Select Provider...">
-                        <div id="lumina-text-chain-provider-list" class="lumina-settings-dropdown-menu">
-                            <div data-val="openai-default">OpenAI</div>
-                            <div data-val="gemini-default">Gemini</div>
-                            <div data-val="deepseek-default">DeepSeek</div>
+                <div class="lumina-dialog-grid-row">
+                    <div class="lumina-settings-field">
+                        <label>Provider</label>
+                        <div class="lumina-settings-dropdown-wrapper">
+                            <input type="text" id="lumina-model-form-provider" placeholder="Select or type Provider...">
+                            <div id="lumina-model-form-provider-list" class="lumina-settings-dropdown-menu">
+                                <div data-val="openai-default">OpenAI</div>
+                                <div data-val="gemini-default">Gemini</div>
+                                <div data-val="deepseek-default">DeepSeek</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lumina-settings-field">
+                        <label>Model *</label>
+                        <div class="lumina-settings-dropdown-wrapper">
+                            <input type="text" id="lumina-model-form-model" placeholder="Select or type Model...">
+                            <div id="lumina-model-form-model-list" class="lumina-settings-dropdown-menu"></div>
                         </div>
                     </div>
                 </div>
                 <div class="lumina-settings-field">
-                    <label>Model *</label>
-                    <div class="lumina-settings-dropdown-wrapper">
-                        <input type="text" id="lumina-text-chain-model" placeholder="Select or type Model...">
-                        <div id="lumina-text-chain-model-list" class="lumina-settings-dropdown-menu"></div>
-                    </div>
-                </div>
-                <div class="lumina-settings-field">
-                    <label for="lumina-text-chain-model-name-custom">Custom Name (Optional)</label>
-                    <input type="text" id="lumina-text-chain-model-name-custom"
+                    <label for="lumina-model-form-name-custom">Custom Name (Optional)</label>
+                    <input type="text" id="lumina-model-form-name-custom"
                         placeholder="e.g. My Favorite GPT, Coding Assistant">
                 </div>
                 <div class="lumina-settings-field">
                     <label>Max Output Tokens</label>
                     <div class="lumina-settings-dropdown-wrapper">
-                        <input type="text" id="lumina-text-chain-max-tokens" readonly placeholder="Select Max Tokens..."
+                        <input type="text" id="lumina-model-form-max-tokens" readonly placeholder="Select Max Tokens..."
                             data-value="8192" value="8,192 tokens (Default)">
-                        <div id="lumina-text-chain-max-tokens-list" class="lumina-settings-dropdown-menu">
+                        <div id="lumina-model-form-max-tokens-list" class="lumina-settings-dropdown-menu">
                             <div data-val="1024">1,024 tokens</div>
                             <div data-val="2048">2,048 tokens</div>
                             <div data-val="4096">4,096 tokens</div>
@@ -1492,8 +1354,8 @@
                     </div>
                 </div>
             </div>
-            <div class="lumina-provider-popup-footer">
-                <div class="lumina-provider-popup-footer-right">
+            <div class="lumina-dialog-footer">
+                <div class="lumina-dialog-footer-right">
                     <button type="button" id="lumina-cancel-model-btn"
                         class="lumina-settings-btn secondary">Cancel</button>
                     <button type="button" id="lumina-save-model-btn" class="lumina-settings-btn primary">Save</button>
@@ -1503,11 +1365,11 @@
     </div>
 
     <div class="lumina-settings-overlay" id="lumina-instruction-popup-overlay">
-        <div class="lumina-provider-popup-dialog">
-            <div class="lumina-provider-popup-header">
-                <span class="lumina-provider-popup-title" id="lumina-instruction-popup-title">Add Custom
+        <div class="lumina-dialog">
+            <div class="lumina-dialog-header">
+                <span class="lumina-dialog-title" id="lumina-instruction-popup-title">Add Custom
                     Instruction</span>
-                <button type="button" class="lumina-provider-popup-close-btn" id="lumina-instruction-popup-close-btn"
+                <button type="button" class="lumina-dialog-close-btn" id="lumina-instruction-popup-close-btn"
                     aria-label="Close Instruction Form">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1515,7 +1377,7 @@
                     </svg>
                 </button>
             </div>
-            <div class="lumina-provider-popup-body">
+            <div class="lumina-dialog-body">
                 <input type="hidden" id="lumina-instruction-popup-index" value="">
                 <div class="lumina-settings-field">
                     <label for="lumina-instruction-popup-content">Instruction *</label>
@@ -1523,8 +1385,8 @@
                         placeholder="e.g. Always write answers in a professional, concise tone."></textarea>
                 </div>
             </div>
-            <div class="lumina-provider-popup-footer">
-                <div class="lumina-provider-popup-footer-right">
+            <div class="lumina-dialog-footer">
+                <div class="lumina-dialog-footer-right">
                     <button type="button" id="lumina-cancel-instruction-popup-btn"
                         class="lumina-settings-btn secondary">Cancel</button>
                     <button type="button" id="lumina-save-instruction-popup-btn"
@@ -1535,10 +1397,10 @@
     </div>
 
     <div class="lumina-settings-overlay" id="lumina-mapping-popup-overlay">
-        <div class="lumina-provider-popup-dialog">
-            <div class="lumina-provider-popup-header">
-                <span class="lumina-provider-popup-title" id="lumina-mapping-popup-title">Add Mapping</span>
-                <button type="button" class="lumina-provider-popup-close-btn" id="lumina-mapping-popup-close-btn"
+        <div class="lumina-dialog">
+            <div class="lumina-dialog-header">
+                <span class="lumina-dialog-title" id="lumina-mapping-popup-title">Add Mapping</span>
+                <button type="button" class="lumina-dialog-close-btn" id="lumina-mapping-popup-close-btn"
                     aria-label="Close Mapping Form">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1546,7 +1408,7 @@
                     </svg>
                 </button>
             </div>
-            <div class="lumina-provider-popup-body">
+            <div class="lumina-dialog-body">
                 <input type="hidden" id="lumina-mapping-form-index" value="">
                 <div class="lumina-settings-field">
                     <label for="lumina-mapping-popup-name">Rule Name *</label>
@@ -1580,8 +1442,8 @@
                     </div>
                 </div>
             </div>
-            <div class="lumina-provider-popup-footer">
-                <div class="lumina-provider-popup-footer-right">
+            <div class="lumina-dialog-footer">
+                <div class="lumina-dialog-footer-right">
                     <button type="button" id="lumina-cancel-mapping-btn"
                         class="lumina-settings-btn secondary">Cancel</button>
                     <button type="button" id="lumina-save-mapping-btn" class="lumina-settings-btn primary">Save</button>
@@ -1591,11 +1453,11 @@
     </div>
 
     <div class="lumina-settings-overlay" id="lumina-annotation-popup-overlay">
-        <div class="lumina-provider-popup-dialog">
-            <div class="lumina-provider-popup-header">
-                <span class="lumina-provider-popup-title" id="lumina-annotation-popup-title">Add Annotation
+        <div class="lumina-dialog">
+            <div class="lumina-dialog-header">
+                <span class="lumina-dialog-title" id="lumina-annotation-popup-title">Add Annotation
                     Shortcut</span>
-                <button type="button" class="lumina-provider-popup-close-btn" id="lumina-annotation-popup-close-btn"
+                <button type="button" class="lumina-dialog-close-btn" id="lumina-annotation-popup-close-btn"
                     aria-label="Close Annotation Form">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1603,7 +1465,7 @@
                     </svg>
                 </button>
             </div>
-            <div class="lumina-provider-popup-body">
+            <div class="lumina-dialog-body">
                 <input type="hidden" id="lumina-annotation-form-index" value="">
 
                 <div class="lumina-settings-field">
@@ -1619,8 +1481,8 @@
                     </div>
                 </div>
             </div>
-            <div class="lumina-provider-popup-footer">
-                <div class="lumina-provider-popup-footer-right">
+            <div class="lumina-dialog-footer">
+                <div class="lumina-dialog-footer-right">
                     <button type="button" id="lumina-cancel-annotation-btn"
                         class="lumina-settings-btn secondary">Cancel</button>
                     <button type="button" id="lumina-save-annotation-btn"

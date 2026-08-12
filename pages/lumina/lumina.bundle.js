@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -5169,7 +5169,7 @@ function _renderChartJSWrapper(wrapper) {
             wrapper.innerHTML = '';
             wrapper.appendChild(container);
             wrapper.classList.remove('is-loading');
-            wrapper.classList.add('lumina-d2-rendered');
+            wrapper.classList.add('lumina-chart-rendered');
             new Chart(canvas, config);
         } catch (err) {
             console.error('[Lumina Chart.js] Render error:', err);
@@ -5180,168 +5180,27 @@ function _renderChartJSWrapper(wrapper) {
     });
 }
 
-async function _getKrokiUrl(source) {
-    try {
-        const data = new TextEncoder().encode(source);
-        const stream = new Response(data).body.pipeThrough(new CompressionStream('deflate'));
-        const buffer = await new Response(stream).arrayBuffer();
-        const uint8 = new Uint8Array(buffer);
-        let binaryString = '';
-        const chunkSize = 65536;
-        for (let i = 0; i < uint8.length; i += chunkSize) {
-            binaryString += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
-        }
-        const base64 = btoa(binaryString);
-        const urlSafeBase64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        return `https://kroki.io/d2/svg/${urlSafeBase64}?sketch=true`;
-    } catch (e) {
-        console.warn('[Lumina D2] Compression error, fallback to POST:', e);
-        return null;
-    }
-}
-
-async function _renderD2Wrapper(wrapper) {
-    if (wrapper.classList.contains('lumina-chartjs-wrapper')) {
-        _renderChartJSWrapper(wrapper);
-        return;
-    }
-    const chatAnswer = wrapper.closest('.lumina-chat-answer');
-    if (chatAnswer && chatAnswer.classList.contains('streaming')) return;
-    const sourceEl = wrapper.querySelector('.lumina-d2-source, script[type="text/d2"]');
-    const source = (sourceEl ? sourceEl.textContent : (wrapper.getAttribute('data-d2') || ''))
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>');
-    if (!source.trim()) {
-        wrapper.classList.remove('is-loading');
-        return;
-    }
-    if (wrapper.getAttribute('data-last-rendered-source') === source) {
-        return;
-    }
-    if (wrapper.renderTimeout) {
-        clearTimeout(wrapper.renderTimeout);
-    }
-    wrapper.renderTimeout = setTimeout(async () => {
-        const currentSourceEl = wrapper.querySelector('.lumina-d2-source, script[type="text/d2"]');
-        const currentSource = (currentSourceEl ? currentSourceEl.textContent : (wrapper.getAttribute('data-d2') || ''))
-            .replace(/&amp;/g, '&')
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>');
-        if (currentSource !== source) return;
-        wrapper.setAttribute('data-last-rendered-source', source);
-        wrapper.classList.add('is-loading-started');
-        wrapper.classList.add('is-loading');
-        wrapper.classList.remove('lumina-d2-rendered');
-        try {
-            let response = await fetch('https://kroki.io/d2/svg', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    diagram_source: source,
-                    diagram_options: {
-                        sketch: 'true'
-                    }
-                })
-            });
-            if (!response.ok) {
-                // Try fallback without sketch option
-                response = await fetch('https://kroki.io/d2/svg', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ diagram_source: source })
-                });
-            }
-            if (!response.ok) throw new Error('Kroki response error');
-            const svg = await response.text();
-            if (wrapper.getAttribute('data-last-rendered-source') === source) {
-                const sourceHtml = sourceEl ? sourceEl.outerHTML : '';
-                wrapper.innerHTML = `${sourceHtml}<div class="lumina-d2-svg-container">${svg}</div>`;
-                wrapper.classList.remove('is-loading');
-                wrapper.classList.add('lumina-d2-rendered');
-            }
-        } catch (err) {
-            console.warn('[Lumina D2] Render error:', err);
-            wrapper.removeAttribute('data-last-rendered-source');
-            wrapper.classList.remove('is-loading-started');
-            wrapper.classList.remove('is-loading');
-        }
-    }, 600);
-}
-
-function _isElementLocallyVisible(el) {
-    const rect = el.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return false;
-    let parent = el.parentElement;
-    while (parent) {
-        if (parent === document.body || parent === document.documentElement) break;
-        const style = window.getComputedStyle(parent);
-        const overflowY = style.overflowY || style.overflow || '';
-        const isScrollable = (parent.scrollHeight > parent.clientHeight) &&
-            (overflowY.includes('auto') || overflowY.includes('scroll'));
-        if (isScrollable) {
-            const parentRect = parent.getBoundingClientRect();
-            const margin = 120;
-            if (rect.bottom < parentRect.top - margin || rect.top > parentRect.bottom + margin) {
-                return false;
-            }
-        }
-        parent = parent.parentElement;
-    }
-    return true;
-}
-
-const _luminaD2IntersectionObserver = (typeof IntersectionObserver !== 'undefined')
-    ? new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-            if (entry.isIntersecting) {
-                if (!_isElementLocallyVisible(entry.target)) {
-                    continue;
-                }
-                _luminaD2IntersectionObserver.unobserve(entry.target);
-                _renderD2Wrapper(entry.target);
-            }
-        }
-    }, { threshold: 0.05, rootMargin: '120px 0px' })
-    : null;
-
-function processLuminaD2Elements(rootNode) {
+function processLuminaChartElements(rootNode) {
     if (!rootNode) return;
     const found = [];
-    if (rootNode.classList && rootNode.classList.contains('lumina-d2-wrapper')) {
+    if (rootNode.classList && rootNode.classList.contains('lumina-chartjs-wrapper')) {
         found.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-        rootNode.querySelectorAll('.lumina-d2-wrapper').forEach(el => found.push(el));
+        rootNode.querySelectorAll('.lumina-chartjs-wrapper').forEach(el => found.push(el));
     }
     for (const wrapper of found) {
-        if (wrapper.classList.contains('lumina-chartjs-wrapper')) {
-            _renderChartJSWrapper(wrapper);
-        } else if (_luminaD2IntersectionObserver) {
-            _luminaD2IntersectionObserver.observe(wrapper);
-        } else {
-            _renderD2Wrapper(wrapper);
-        }
+        _renderChartJSWrapper(wrapper);
     }
 }
 
 const luminaImageObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
-        const d2Wrapper = mutation.target.closest ? mutation.target.closest('.lumina-d2-wrapper') : null;
-        if (d2Wrapper) {
-            _renderD2Wrapper(d2Wrapper);
-        }
         for (const node of mutation.addedNodes) {
             if (node.nodeType !== Node.ELEMENT_NODE) continue;
             processLuminaDynamicImageElements(node);
             processLuminaDynamicYoutubeElements(node);
-            processLuminaD2Elements(node);
+            processLuminaChartElements(node);
         }
     }
 });
@@ -5349,7 +5208,7 @@ luminaImageObserver.observe(document.documentElement, { childList: true, subtree
 
 processLuminaDynamicImageElements(document.body);
 processLuminaDynamicYoutubeElements(document.body);
-processLuminaD2Elements(document.body);
+processLuminaChartElements(document.body);
 
 const LuminaModelHelper = {
     async getPromptSupport() {
@@ -5360,17 +5219,16 @@ const LuminaModelHelper = {
     },
     buildModelChain(data, promptSupport) {
         const chain = [];
-        if (data.modelChains?.text) {
-            data.modelChains.text.forEach(item => {
-                const modelVal = item.model || item.modelName;
-                if (modelVal && modelVal !== 'Gemini Nano (Built-in)' && item.providerId !== 'builtin') {
-                    chain.push({
-                        ...item,
-                        model: modelVal
-                    });
-                }
-            });
-        }
+        const modelsList = data.models || [];
+        modelsList.forEach(item => {
+            const modelVal = item.model || item.modelName;
+            if (modelVal && modelVal !== 'Gemini Nano (Built-in)' && item.providerId !== 'builtin') {
+                chain.push({
+                    ...item,
+                    model: modelVal
+                });
+            }
+        });
         return chain;
     },
     getThinkingOptions(currentModel, currentProviderId, providers = []) {
@@ -9680,7 +9538,7 @@ class LuminaChatUI {
         await yieldToMain();
         processLuminaDynamicImageElements(container);
         processLuminaDynamicYoutubeElements(container);
-        processLuminaD2Elements(container);
+        processLuminaChartElements(container);
     }
     static async injectCopyButtons(container) {
         if (!container) return;
@@ -10850,7 +10708,9 @@ class AuthService {
         }
         this.isInitialized = true;
         this.notifyListeners();
-        this.checkAuthStatus();
+        if (this.isAuthenticated && typeof LuminaSync !== 'undefined') {
+            LuminaSync.checkAutoSync(true);
+        }
     }
     async _refreshTokenIfNeeded() {
         if (!this.isAuthenticated) return;
@@ -11029,21 +10889,31 @@ class AuthService {
 }
 
 class SyncManager {
+    _isPageContext() {
+        return typeof window !== 'undefined';
+    }
+    _delegateSyncToBackground(isAuto = false) {
+        return new Promise((resolve) => {
+            try {
+                chrome.runtime.sendMessage({ action: 'lumina_drive_sync', isAuto }, (res) => {
+                    if (chrome.runtime.lastError) {
+                        console.warn('[Sync] SW delegate failed:', chrome.runtime.lastError.message);
+                    }
+                    resolve(res);
+                });
+            } catch (e) {
+                console.warn('[Sync] SW delegate error:', e);
+                resolve(null);
+            }
+        });
+    }
     constructor(authService) {
         this.authService = authService || new AuthService();
         this.FILENAME = 'lumina_backup.json';
         this.listeners = [];
         this.isSyncing = false;
-        
-        // Trigger auto sync whenever authentication is ready/initialized
-        if (this.authService.isAuthenticated) {
-            this.checkAutoSync(true);
-        }
-        this.authService.addListener((isAuthenticated) => {
-            if (isAuthenticated) {
-                this.checkAutoSync(true);
-            }
-        });
+
+        // Auto sync is managed upon AuthService init completion
 
         const isBackground = typeof window === 'undefined';
         if (isBackground && typeof chrome !== 'undefined') {
@@ -11061,7 +10931,7 @@ class SyncManager {
                 const keys = Object.keys(changes);
                 const excludedKeys = [
                     'google_oauth_token', 'google_oauth_token_time',
-                    'google_user_info', 'last_sync_time', 'last_sync_hash', 'last_sync_md5',
+                    'google_user_info', 'lumina_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5',
                     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
                     'sidepanel_active_tab_index', 'sidepanel_active_group_index',
                     'lumina_active_tab_index', 'lumina_active_group_index'
@@ -11094,6 +10964,11 @@ class SyncManager {
     }
     async checkAutoSync(forceCheck = false) {
         if (!this.authService.isAuthenticated) return;
+        // In page context, delegate to Service Worker to avoid duplicate Drive requests
+        if (this._isPageContext()) {
+            await this._delegateSyncToBackground(true);
+            return;
+        }
         try {
             await this.syncData(true);
         } catch (e) {
@@ -11108,9 +10983,11 @@ class SyncManager {
         return await this.authService.getAuthToken(interactive);
     }
     async syncUp(isAuto = false) {
+        if (this._isPageContext()) return await this._delegateSyncToBackground(isAuto);
         return await this.syncData(isAuto);
     }
     async syncDown() {
+        if (this._isPageContext()) return await this._delegateSyncToBackground(false);
         return await this.syncData(false);
     }
     async downloadBackup(token, fileId) {
@@ -11495,12 +11372,15 @@ class SyncManager {
     }
 
     async syncData(isAuto = false, retryCount = 0) {
+        // In page context, always delegate Drive calls to the Service Worker
+        if (this._isPageContext()) {
+            return await this._delegateSyncToBackground(isAuto);
+        }
         if (this.isSyncing) return;
         this.isSyncing = true;
         try {
             let initialToken = await this.getToken(!isAuto);
             if (!initialToken) throw new Error('Not authenticated');
-            if (!isAuto) this.notifyListeners('Syncing...', null);
 
             const { token, remoteFile, remoteBackup, fileId, lastSyncMd5 } = await this.fetchRemoteBackup(initialToken, isAuto);
 
@@ -11521,9 +11401,16 @@ class SyncManager {
             }
 
             dataToUpload.attachments = allAttachments;
-            
-            // Enterprise SHA-256 Hashing
-            const newHash = await sha256Hash(JSON.stringify(dataToUpload));
+
+            // Compute hash AFTER allAttachments is finalized (exclude volatile sync-meta keys from hash)
+            const dataForHash = { ...dataToUpload };
+            delete dataForHash.last_sync_time;
+            delete dataForHash.last_sync_hash;
+            delete dataForHash.last_sync_md5;
+            delete dataForHash.last_sync_size;
+            delete dataForHash.settings_last_updated; // volatile: can change after sync due to storage.onChanged
+            delete dataForHash.lumina_chat_sessions;  // index-only: session data is in lumina_session_* keys
+            const newHash = await sha256Hash(JSON.stringify(dataForHash));
             const stored = await chrome.storage.local.get(["last_sync_hash", "last_sync_md5"]);
             const now = Date.now();
             mergedData.last_sync_time = now;
@@ -11542,21 +11429,14 @@ class SyncManager {
                     last_sync_md5: finalMd5,
                     last_sync_size: finalSize
                 });
-                if (!isAuto) this.notifyListeners('Synced just now', now);
+                if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
+                this.notifyListeners('Synced just now', now);
                 return now;
             }
 
-            // Optimistic Concurrency Control (Atomic MD5 Check before Upload)
-            if (fileId) {
-                const currentRemote = await this.findBackupFile(token);
-                if (currentRemote && remoteFile && currentRemote.md5Checksum !== remoteFile.md5Checksum) {
-                    if (retryCount < 2) {
-                        console.warn('[Sync] Concurrency collision detected on Drive. Retrying merge loop...');
-                        this.isSyncing = false;
-                        return await this.syncData(isAuto, retryCount + 1);
-                    }
-                }
-            }
+            // Notify ring only when actually uploading
+            this.notifyListeners('Syncing...', null);
+            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
 
             const payload = {
                 timestamp: new Date().toISOString(),
@@ -11578,12 +11458,16 @@ class SyncManager {
                 last_sync_size: newUploadedSize
             });
 
-            if (!isAuto) this.notifyListeners('Synced just now', now);
+            if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
+            this.notifyListeners('Synced just now', now);
+            // Broadcast sync-done status to all extension pages
+            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
             return now;
         } catch (error) {
             console.error('[Sync] Sync failed:', error);
             await chrome.storage.local.remove(['last_sync_hash']).catch(() => {});
-            if (!isAuto) this.notifyListeners('Sync failure', null);
+            this.notifyListeners('Sync failure', null);
+            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
             throw error;
         } finally {
             this.isSyncing = false;
@@ -13341,98 +13225,7 @@ class LuminaHistory {
                 this.hideContextMenu();
             }
         });
-        this.syncProfileContainer = document.getElementById('sidebar-footer') || document.getElementById('lumina-history-sync-profile');
-        if (this.syncProfileContainer && typeof LuminaAuth !== 'undefined' && typeof LuminaSync !== 'undefined') {
-            const renderSyncUI = (isAuthenticated, user) => {
-                if (!isAuthenticated) {
-                    this.syncProfileContainer.innerHTML = `
-                        <button class="sync-btn sync-btn--login" id="sidebar-login-btn" style="width: 100%;">
-                            <svg class="google-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 8px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/></svg>
-                            Sign in with Google
-                        </button>
-                    `;
-                    const loginBtn = document.getElementById('sidebar-login-btn');
-                    if (loginBtn) {
-                        loginBtn.onclick = async () => {
-                            try {
-                                loginBtn.disabled = true;
-                                loginBtn.textContent = 'Signing in...';
-                                await LuminaAuth.login();
-                            } catch (e) {
-                                console.error('Sign in failed:', e);
-                                alert('Sign in failed: ' + e.message);
-                                renderSyncUI(false, null);
-                            }
-                        };
-                    }
-                } else {
-                    const avatarUrl = user?.picture || '../../assets/default-avatar.png';
-                    const userName = user?.name || 'User Profile';
-                    this.syncProfileContainer.innerHTML = `
-                        <div class="sync-profile">
-                            <img class="sync-profile__avatar" src="${avatarUrl}" alt="Avatar" referrerpolicy="no-referrer">
-                            <div class="sync-profile__info">
-                                <span class="sync-profile__name">${userName}</span>
-                                <span class="sync-profile__status" id="sidebar-sync-status">Checking sync...</span>
-                            </div>
-                            <button id="sidebar-sync-now-btn" class="sync-icon-btn" title="Sync Now">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l6.07-5.19"/></svg>
-                            </button>
-                            <button id="sidebar-logout-btn" class="sync-icon-btn sync-icon-btn--logout" title="Sign Out">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                            </button>
-                        </div>
-                    `;
-                    const syncBtn = document.getElementById('sidebar-sync-now-btn');
-                    const logoutBtn = document.getElementById('sidebar-logout-btn');
-                    const statusText = document.getElementById('sidebar-sync-status');
-                    const updateSyncStatus = (status, lastSync) => {
-                        if (statusText) {
-                            if (lastSync) {
-                                const timeStr = new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                statusText.textContent = `Synced at ${timeStr}`;
-                            } else {
-                                statusText.textContent = status;
-                            }
-                        }
-                    };
-                    LuminaSync.getLastSyncTime().then(time => {
-                        if (time && time !== 'Never') {
-                            statusText.textContent = `Synced`;
-                        } else {
-                            statusText.textContent = 'Not synced';
-                        }
-                    });
-                    if (syncBtn) {
-                        syncBtn.onclick = async () => {
-                            syncBtn.style.transform = 'rotate(360deg)';
-                            syncBtn.style.transition = 'transform 0.5s ease';
-                            try {
-                                syncBtn.disabled = true;
-                                if (statusText) statusText.textContent = 'Syncing...';
-                                await LuminaSync.syncUp();
-                            } catch (e) {
-                                console.error('Sync failed:', e);
-                            } finally {
-                                syncBtn.disabled = false;
-                                syncBtn.style.transform = 'none';
-                                syncBtn.style.transition = 'none';
-                            }
-                        };
-                    }
-                    if (logoutBtn) {
-                        logoutBtn.onclick = async () => {
-                            if (confirm('Are you sure you want to sign out?')) {
-                                await LuminaAuth.logout();
-                            }
-                        };
-                    }
-                    LuminaSync.addListener(updateSyncStatus);
-                }
-            };
-            LuminaAuth.addListener(renderSyncUI);
-            renderSyncUI(LuminaAuth.isAuthenticated, LuminaAuth.user);
-        }
+        // Handled exclusively by updateSidebarUserProfile in lumina.js
     }
     async togglePanel() {
         this.isOpen = !this.isOpen;
@@ -14894,26 +14687,25 @@ class NotesPanel {
             });
         }
 
-        // Helper to insert or convert block at active cursor position
-        const insertOrUpdateBlock = (ed, blockSpec) => {
+        // Helper to convert active block at cursor position to specified block type while preserving text content
+        const updateActiveBlockType = (ed, blockSpec) => {
             if (!ed) return;
             try {
                 const cursorPosition = ed.getTextCursorPosition();
                 const currentBlock = cursorPosition?.block;
 
-                const isEmpty = !currentBlock || 
-                    !currentBlock.content || 
-                    currentBlock.content.length === 0 || 
-                    (currentBlock.content.length === 1 && !currentBlock.content[0].text);
-
-                if (currentBlock && isEmpty) {
-                    ed.updateBlock(currentBlock, blockSpec);
+                if (currentBlock) {
+                    // Update block type while keeping existing content text intact
+                    ed.updateBlock(currentBlock, {
+                        type: blockSpec.type,
+                        props: blockSpec.props || {}
+                    });
                 } else {
-                    ed.insertBlocks([blockSpec], currentBlock || undefined, 'after');
+                    ed.insertBlocks([blockSpec], undefined, 'after');
                 }
                 ed.focus();
             } catch (e) {
-                console.warn('Failed to insert/update block:', e);
+                console.warn('Failed to update block type:', e);
             }
         };
 
@@ -14921,10 +14713,9 @@ class NotesPanel {
         if (this.tbH1) {
             this.tbH1.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
-                insertOrUpdateBlock(ed, {
+                updateActiveBlockType(ed, {
                     type: 'heading',
-                    props: { level: 1 },
-                    content: [{ type: 'text', text: '', styles: {} }]
+                    props: { level: 1 }
                 });
             });
         }
@@ -14932,10 +14723,9 @@ class NotesPanel {
         if (this.tbH2) {
             this.tbH2.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
-                insertOrUpdateBlock(ed, {
+                updateActiveBlockType(ed, {
                     type: 'heading',
-                    props: { level: 2 },
-                    content: [{ type: 'text', text: '', styles: {} }]
+                    props: { level: 2 }
                 });
             });
         }
@@ -14943,10 +14733,9 @@ class NotesPanel {
         if (this.tbH3) {
             this.tbH3.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
-                insertOrUpdateBlock(ed, {
+                updateActiveBlockType(ed, {
                     type: 'heading',
-                    props: { level: 3 },
-                    content: [{ type: 'text', text: '', styles: {} }]
+                    props: { level: 3 }
                 });
             });
         }
@@ -16032,7 +15821,7 @@ class LuminaSettingsModal {
       });
     });
     this.providers = [];
-    this.textChain = [];
+    this.models = [];
     this.advancedParamsByModel = {};
     this.questionMappings = [];
     this.annotationShortcuts = [];
@@ -16090,13 +15879,7 @@ class LuminaSettingsModal {
         </div>
       `,
       'lumina-chainItemTemplate': `
-        <div class="lumina-settings-chain-card chain-item">
-            <div class="chain-drag-handle">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="8" y1="9" x2="16" y2="9"></line>
-                    <line x1="8" y1="15" x2="16" y2="15"></line>
-                </svg>
-            </div>
+        <div class="lumina-settings-chain-card chain-item" draggable="true">
             <span class="chain-number"></span>
             <div class="chain-details">
                 <span class="chain-title"></span>
@@ -16234,40 +16017,31 @@ class LuminaSettingsModal {
   }
   static async loadSettings() {
     const keys = [
-      'providers', 'modelChains', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
+      'providers', 'models', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
       'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight', 'language', 'dictationEnabled', 'spokenLanguage',
       'voice', 'separateVoiceEnabled', 'baseTone', 'charWarm', 'charEnthusiastic',
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
-      'questionMappings', 'annotationShortcuts', 'dictLanguage',
-      'translateInputEngine', 'translateEngine', 'dictProvider', 'dictModel',
+      'questionMappings', 'annotationShortcuts',
       'historyRetentionMonths', 'shortcuts'
     ];
     chrome.storage.local.get(keys, (items) => {
-      this.providers = (items.providers || this.getDefaultProviders()).filter(p => p.id !== 'grok-default' && p.id !== 'grok');
+      const defaults = this.getDefaultProviders();
+      const savedProviders = items.providers || [];
+      // Always enforce fixed list of default providers, restoring saved API keys
+      this.providers = defaults.map(def => {
+        const saved = savedProviders.find(p => p.id === def.id);
+        return {
+          ...def,
+          apiKey: saved?.apiKey || def.apiKey || '',
+          endpoint: saved?.endpoint || def.endpoint
+        };
+      });
       this.renderProviders();
       this.populateProviderDropdowns();
-      if (items.modelChains) {
-        this.textChain = items.modelChains.text || [];
-      }
+      this.models = items.models || [];
       this.advancedParamsByModel = items.advancedParamsByModel || {};
       this.renderChainList();
-      const dictLang = items.dictLanguage || 'en';
-      const dictRadio = document.querySelector(`input[name="lumina-dictLanguage"][value="${dictLang}"]`);
-      if (dictRadio) dictRadio.checked = true;
-      const translateInputEngine = items.translateInputEngine || 'google';
-      const transInputRadio = document.querySelector(`input[name="lumina-translateInputEngine"][value="${translateInputEngine}"]`);
-      if (transInputRadio) transInputRadio.checked = true;
-      const translateEngine = items.translateEngine || 'google';
-      const transRadio = document.querySelector(`input[name="lumina-translateEngine"][value="${translateEngine}"]`);
-      if (transRadio) transRadio.checked = true;
-      if (items.dictProvider) {
-        const dictProvInput = document.getElementById('lumina-dict-provider');
-        dictProvInput.value = items.dictProvider;
-      }
-      if (items.dictModel) {
-        const dictModelInput = document.getElementById('lumina-dict-model');
-        dictModelInput.value = items.dictModel;
-      }
+
       const themeVal = items.theme || 'auto';
       const contrastVal = items.contrast || 'auto';
       const accentVal = items.accentColor || 'default';
@@ -16373,11 +16147,6 @@ class LuminaSettingsModal {
       aboutNickname: getVal('lumina-settings-about-nickname').trim(),
       aboutOccupation: getVal('lumina-settings-about-occupation').trim(),
       aboutInterests: getVal('lumina-settings-about-interests').trim(),
-      dictLanguage: document.querySelector('input[name="lumina-dictLanguage"]:checked')?.value || 'en',
-      translateInputEngine: document.querySelector('input[name="lumina-translateInputEngine"]:checked')?.value || 'google',
-      translateEngine: document.querySelector('input[name="lumina-translateEngine"]:checked')?.value || 'google',
-      dictProvider: getVal('lumina-dict-provider'),
-      dictModel: getVal('lumina-dict-model'),
       historyRetentionMonths: parseFloat(document.getElementById('lumina-history-retention-input')?.dataset.value || '3')
     };
     chrome.storage.local.set(settings, () => {
@@ -16401,22 +16170,15 @@ class LuminaSettingsModal {
     });
   }
   static bindGeneralTab() {
-    const cancelBtn = document.getElementById('lumina-cancel-provider-btn');
-    const saveBtn = document.getElementById('lumina-save-provider-btn');
-    const checkKeysBtn = document.getElementById('lumina-check-apikeys-btn');
-    const resetBtn = document.getElementById('lumina-reset-provider-btn');
-    const closePopupBtn = document.getElementById('lumina-provider-popup-close-btn');
-    const popupOverlay = document.getElementById('lumina-provider-popup-overlay');
-    if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideProviderForm());
-    if (saveBtn) saveBtn.addEventListener('click', () => this.saveProvider());
-    if (resetBtn) resetBtn.addEventListener('click', () => this.resetProvider());
-    if (closePopupBtn) closePopupBtn.addEventListener('click', () => this.hideProviderForm());
-    if (popupOverlay) {
-      popupOverlay.addEventListener('click', (e) => {
-        if (e.target === popupOverlay) this.hideProviderForm();
-      });
+    const setupKeyInput = document.getElementById('lumina-setup-provider-key');
+    const setupEndpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    if (setupKeyInput) {
+      setupKeyInput.addEventListener('input', () => this.saveSelectedProviderKey());
     }
-    if (checkKeysBtn) checkKeysBtn.addEventListener('click', () => this.checkApiKeys());
+    if (setupEndpointInput) {
+      setupEndpointInput.addEventListener('input', () => this.saveSelectedProviderKey());
+    }
+
     const cancelModelBtn = document.getElementById('lumina-cancel-model-btn');
     const saveModelBtn = document.getElementById('lumina-save-model-btn');
     const closeModelPopupBtn = document.getElementById('lumina-model-popup-close-btn');
@@ -16429,21 +16191,38 @@ class LuminaSettingsModal {
         if (e.target === modelPopupOverlay) this.hideModelForm();
       });
     }
-    document.querySelectorAll('input[name="lumina-dictLanguage"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-    document.querySelectorAll('input[name="lumina-translateInputEngine"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-    document.querySelectorAll('input[name="lumina-translateEngine"]').forEach(r => r.addEventListener('change', () => this.saveOptions()));
-    this.setupDropdownInputs('lumina-dict-provider', 'lumina-dict-provider-list');
-    this.setupDropdownInputs('lumina-dict-model', 'lumina-dict-model-list');
-    this.setupDropdownInputs('lumina-text-chain-provider', 'lumina-text-chain-provider-list');
-    this.setupDropdownInputs('lumina-text-chain-model', 'lumina-text-chain-model-list');
-    this.setupDropdownInputs('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list');
+    this.setupDropdownInputs('lumina-model-form-provider', 'lumina-model-form-provider-list');
+    this.setupDropdownInputs('lumina-model-form-model', 'lumina-model-form-model-list');
+    this.setupDropdownInputs('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list');
     this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
   }
   static getDefaultProviders() {
     return [
-      { id: 'openai-default', name: 'OpenAI', type: 'openai', endpoint: 'https://api.openai.com/v1/chat/completions', apiKey: '' },
-      { id: 'gemini-default', name: 'Gemini', type: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models', apiKey: '' },
-      { id: 'deepseek-default', name: 'DeepSeek', type: 'openai', endpoint: 'https://api.deepseek.com/v1', apiKey: '' }
+      { id: 'gemini-default', name: 'Gemini', type: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models', apiKey: '', apiKeyUrl: 'https://aistudio.google.com/app/apikey' },
+      { id: 'openai-default', name: 'OpenAI', type: 'openai', endpoint: 'https://api.openai.com/v1/chat/completions', apiKey: '', apiKeyUrl: 'https://platform.openai.com/api-keys' },
+      { id: 'anthropic-default', name: 'Anthropic (Claude)', type: 'openai', endpoint: 'https://api.anthropic.com/v1', apiKey: '', apiKeyUrl: 'https://console.anthropic.com/settings/keys' },
+      { id: 'deepseek-default', name: 'DeepSeek', type: 'openai', endpoint: 'https://api.deepseek.com/v1', apiKey: '', apiKeyUrl: 'https://platform.deepseek.com/api_keys' },
+      { id: 'grok-default', name: 'xAI (Grok)', type: 'openai', endpoint: 'https://api.x.ai/v1', apiKey: '', apiKeyUrl: 'https://console.x.ai/' },
+      { id: 'perplexity-default', name: 'Perplexity AI', type: 'openai', endpoint: 'https://api.perplexity.ai', apiKey: '', apiKeyUrl: 'https://www.perplexity.ai/settings/api' },
+      { id: 'openrouter-default', name: 'OpenRouter', type: 'openai', endpoint: 'https://openrouter.ai/api/v1', apiKey: '', apiKeyUrl: 'https://openrouter.ai/keys' },
+      { id: 'groq-default', name: 'Groq', type: 'openai', endpoint: 'https://api.groq.com/openai/v1', apiKey: '', apiKeyUrl: 'https://console.groq.com/keys' },
+      { id: 'mistral-default', name: 'Mistral AI', type: 'openai', endpoint: 'https://api.mistral.ai/v1', apiKey: '', apiKeyUrl: 'https://console.mistral.ai/api-keys/' },
+      { id: 'cohere-default', name: 'Cohere', type: 'openai', endpoint: 'https://api.cohere.com/v1', apiKey: '', apiKeyUrl: 'https://dashboard.cohere.com/api-keys' },
+      { id: 'together-default', name: 'Together AI', type: 'openai', endpoint: 'https://api.together.xyz/v1', apiKey: '', apiKeyUrl: 'https://api.together.ai/settings/api-keys' },
+      { id: 'replicate-default', name: 'Replicate', type: 'openai', endpoint: 'https://api.replicate.com/v1', apiKey: '', apiKeyUrl: 'https://replicate.com/account/api-tokens' },
+      { id: 'fireworks-default', name: 'Fireworks AI', type: 'openai', endpoint: 'https://api.fireworks.ai/inference/v1', apiKey: '', apiKeyUrl: 'https://fireworks.ai/account/api-keys' },
+      { id: 'deepinfra-default', name: 'DeepInfra', type: 'openai', endpoint: 'https://api.deepinfra.com/v1/openai', apiKey: '', apiKeyUrl: 'https://deepinfra.com/dash/api_keys' },
+      { id: 'novita-default', name: 'Novita AI', type: 'openai', endpoint: 'https://api.novita.ai/v3/openai', apiKey: '', apiKeyUrl: 'https://novita.ai/dashboard/key-management' },
+      { id: 'huggingface-default', name: 'Hugging Face', type: 'openai', endpoint: 'https://api-inference.huggingface.co/v1', apiKey: '', apiKeyUrl: 'https://huggingface.co/settings/tokens' },
+      { id: 'cerebras-default', name: 'Cerebras', type: 'openai', endpoint: 'https://api.cerebras.ai/v1', apiKey: '', apiKeyUrl: 'https://cloud.cerebras.ai/' },
+      { id: 'alibaba-default', name: 'Alibaba Qwen', type: 'openai', endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1', apiKey: '', apiKeyUrl: 'https://dashscope.console.aliyun.com/' },
+      { id: 'moonshot-default', name: 'Moonshot AI (Kimi)', type: 'openai', endpoint: 'https://api.moonshot.cn/v1', apiKey: '', apiKeyUrl: 'https://platform.moonshot.cn/console/api-keys' },
+      { id: 'minimax-default', name: 'MiniMax', type: 'openai', endpoint: 'https://api.minimax.chat/v1', apiKey: '', apiKeyUrl: 'https://platform.minimaxi.com/' },
+      { id: 'zhipu-default', name: 'Zhipu AI (GLM)', type: 'openai', endpoint: 'https://open.bigmodel.cn/api/paas/v4', apiKey: '', apiKeyUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
+      { id: 'ollama-default', name: 'Ollama (Local)', type: 'openai', endpoint: 'http://localhost:11434/v1', apiKey: '', apiKeyUrl: 'https://ollama.com/' },
+      { id: 'lmstudio-default', name: 'LM Studio (Local)', type: 'openai', endpoint: 'http://localhost:1234/v1', apiKey: '', apiKeyUrl: 'https://lmstudio.ai/' },
+      { id: 'vllm-default', name: 'vLLM (Local)', type: 'openai', endpoint: 'http://localhost:8000/v1', apiKey: '', apiKeyUrl: 'https://github.com/vllm-project/vllm' },
+      { id: 'localai-default', name: 'LocalAI (Local)', type: 'openai', endpoint: 'http://localhost:8080/v1', apiKey: '', apiKeyUrl: 'https://localai.io/' }
     ];
   }
   static getProviderLogoSvg(id) {
@@ -16517,14 +16296,18 @@ class LuminaSettingsModal {
       keyInput.value = p.apiKey || '';
     }
 
-    const hasKey = p.apiKey && p.apiKey.trim().length > 0;
-    if (badge) {
-      badge.textContent = hasKey ? 'Configured' : 'Not Configured';
-      badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
+    const getKeyLink = document.getElementById('lumina-setup-get-key-link');
+    if (getKeyLink) {
+      if (p.apiKeyUrl) {
+        getKeyLink.href = p.apiKeyUrl;
+        getKeyLink.style.display = 'inline-block';
+      } else {
+        getKeyLink.style.display = 'none';
+      }
     }
 
     if (endpointRow && endpointInput) {
-      if (p.id.includes('custom') || p.id.includes('ollama')) {
+      if (p.id.includes('custom') || p.id.includes('ollama') || p.id.includes('lmstudio') || p.id.includes('vllm') || p.id.includes('localai') || p.id.includes('local')) {
         endpointRow.style.display = 'block';
         endpointInput.value = p.endpoint || '';
       } else {
@@ -16549,26 +16332,20 @@ class LuminaSettingsModal {
     }
 
     chrome.storage.local.set({ providers: this.providers }, () => {
-      const badge = document.getElementById('lumina-setup-provider-badge');
-      const hasKey = p.apiKey.length > 0;
-      if (badge) {
-        badge.textContent = hasKey ? 'Configured' : 'Not Configured';
-        badge.className = 'lumina-provider-status-badge ' + (hasKey ? 'active' : 'inactive');
-      }
       this.populateProviderDropdowns();
     });
   }
 
   static populateProviderDropdowns() {
-    const dictProvList = document.getElementById('lumina-dict-provider-list');
-    const chainProvList = document.getElementById('lumina-text-chain-provider-list');
-    
-    // Configured providers (has API key or is Ollama)
-    const configuredProviders = this.providers.filter(p => (p.apiKey && p.apiKey.trim().length > 0) || p.id.includes('ollama'));
-
-    if (dictProvList) {
-      dictProvList.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
-    }
+    const chainProvList = document.getElementById('lumina-model-form-provider-list');
+    const configuredProviders = this.providers.filter(p => 
+      (p.apiKey && p.apiKey.trim().length > 0) ||
+      p.id.includes('ollama') ||
+      p.id.includes('lmstudio') ||
+      p.id.includes('vllm') ||
+      p.id.includes('localai') ||
+      p.id.includes('local')
+    );
     if (chainProvList) {
       if (configuredProviders.length > 0) {
         chainProvList.innerHTML = configuredProviders.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
@@ -16594,14 +16371,73 @@ class LuminaSettingsModal {
   static setupDropdownInputs(inputId, menuId) {
     const input = document.getElementById(inputId);
     const menu = document.getElementById(menuId);
-    if (!input || !menu) return;
+    const updateActiveItems = (isSearch = false) => {
+      const items = Array.from(menu.querySelectorAll('div')).filter(d => d.style.display !== 'none');
+      menu.querySelectorAll('div').forEach(d => d.classList.remove('active'));
+      if (items.length === 0) return;
+
+      let matched;
+      if (isSearch) {
+        matched = items[0];
+      } else {
+        const currentVal = input.dataset.value || input.value;
+        matched = items.find(d => (d.dataset.val && d.dataset.val === currentVal) || d.textContent.trim() === input.value.trim());
+        if (!matched && items.length > 0) {
+          matched = items[0];
+        }
+      }
+      if (matched) {
+        matched.classList.add('active');
+      }
+    };
+
+    const triggerSelect = (targetEl) => {
+      if (!targetEl) return;
+      input.value = targetEl.textContent;
+      input.dataset.value = targetEl.dataset.val || targetEl.textContent;
+      menu.style.display = 'none';
+      if (inputId === 'lumina-setup-provider-input') {
+        this.selectProviderSetup(input.dataset.value);
+      }
+      if (inputId === 'lumina-settings-base-tone-input') {
+        this.adjustInputWidthToContent(input);
+      }
+      if (
+        inputId === 'lumina-history-retention-input' ||
+        inputId === 'lumina-settings-base-tone-input' ||
+        inputId === 'lumina-settings-fontsize' ||
+        inputId === 'lumina-settings-theme' ||
+        inputId === 'lumina-settings-contrast' ||
+        inputId === 'lumina-settings-accent' ||
+        inputId === 'lumina-settings-fontfamily' ||
+        inputId === 'lumina-settings-fontweight' ||
+        inputId === 'lumina-settings-language' ||
+        inputId === 'lumina-settings-spoken-lang' ||
+        inputId === 'lumina-settings-voice-select'
+      ) {
+        this.saveOptions();
+      }
+      if (inputId === 'lumina-model-form-provider') {
+        const modelInput = document.getElementById('lumina-model-form-model');
+        if (modelInput) {
+          modelInput.value = '';
+          modelInput.dataset.value = '';
+        }
+        this.loadModelsForProvider(input.dataset.value);
+        this.updateModelPopupFieldsState();
+      }
+    };
+
     input.addEventListener('click', (e) => {
       e.stopPropagation();
       const isCurrentlyOpen = menu.style.display === 'block';
       document.querySelectorAll('.lumina-settings-dropdown-menu').forEach(m => {
         m.style.display = 'none';
       });
-      menu.style.display = isCurrentlyOpen ? 'none' : 'block';
+      if (!isCurrentlyOpen) {
+        menu.style.display = 'block';
+        updateActiveItems(false);
+      }
     });
     document.addEventListener('click', (e) => {
       const wrapper = input.closest('.lumina-settings-dropdown-wrapper');
@@ -16609,59 +16445,67 @@ class LuminaSettingsModal {
         menu.style.display = 'none';
       }
     });
-    if (inputId === 'lumina-text-chain-model') {
+    const handleKeyDown = (e) => {
+      if (menu.style.display !== 'block') {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          menu.style.display = 'block';
+          updateActiveItems(false);
+        }
+        return;
+      }
+
+      const visibleItems = Array.from(menu.querySelectorAll('div')).filter(d => d.style.display !== 'none');
+      if (visibleItems.length === 0) return;
+
+      let currentIndex = visibleItems.findIndex(d => d.classList.contains('active'));
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        currentIndex = (currentIndex + 1) % visibleItems.length;
+        visibleItems.forEach(d => d.classList.remove('active'));
+        visibleItems[currentIndex].classList.add('active');
+        visibleItems[currentIndex].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        currentIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
+        visibleItems.forEach(d => d.classList.remove('active'));
+        visibleItems[currentIndex].classList.add('active');
+        visibleItems[currentIndex].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const activeItem = visibleItems[currentIndex >= 0 ? currentIndex : 0] || visibleItems[0];
+        if (activeItem) {
+          triggerSelect(activeItem);
+          input.blur();
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        menu.style.display = 'none';
+      }
+    };
+
+    input.addEventListener('keydown', handleKeyDown);
+
+    if (inputId === 'lumina-model-form-model' || inputId === 'lumina-setup-provider-input' || inputId === 'lumina-model-form-provider') {
       input.addEventListener('input', () => {
         const query = input.value.toLowerCase().trim();
         const items = menu.querySelectorAll('div');
-        let hasVisible = false;
         items.forEach(item => {
           const text = item.textContent.toLowerCase();
           if (text.includes(query)) {
             item.style.display = 'block';
-            hasVisible = true;
           } else {
             item.style.display = 'none';
           }
         });
         menu.style.display = 'block';
+        updateActiveItems(true);
       });
     }
     menu.addEventListener('click', (e) => {
       if (e.target.tagName === 'DIV') {
-        input.value = e.target.textContent;
-        input.dataset.value = e.target.dataset.val || e.target.textContent;
-        menu.style.display = 'none';
-        if (inputId === 'lumina-setup-provider-input') {
-          this.selectProviderSetup(input.dataset.value);
-        }
-        if (inputId === 'lumina-settings-base-tone-input') {
-          this.adjustInputWidthToContent(input);
-        }
-        if (
-          inputId.startsWith('lumina-dict-') ||
-          inputId === 'lumina-history-retention-input' ||
-          inputId === 'lumina-settings-base-tone-input' ||
-          inputId === 'lumina-settings-fontsize' ||
-          inputId === 'lumina-settings-theme' ||
-          inputId === 'lumina-settings-contrast' ||
-          inputId === 'lumina-settings-accent' ||
-          inputId === 'lumina-settings-fontfamily' ||
-          inputId === 'lumina-settings-fontweight' ||
-          inputId === 'lumina-settings-language' ||
-          inputId === 'lumina-settings-spoken-lang' ||
-          inputId === 'lumina-settings-voice-select'
-        ) {
-          this.saveOptions();
-        }
-        if (inputId === 'lumina-text-chain-provider') {
-          const modelInput = document.getElementById('lumina-text-chain-model');
-          if (modelInput) {
-            modelInput.value = '';
-            modelInput.dataset.value = '';
-          }
-          this.loadModelsForProvider(input.dataset.value);
-          this.updateModelPopupFieldsState();
-        }
+        triggerSelect(e.target);
       }
     });
   }
@@ -16701,7 +16545,7 @@ class LuminaSettingsModal {
     el.addEventListener('input', adjust);
   }
   static async loadModelsForProvider(providerId) {
-    const menu = document.getElementById('lumina-text-chain-model-list');
+    const menu = document.getElementById('lumina-model-form-model-list');
     if (!menu) return;
     menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">Loading models...</div>';
     const provider = this.providers.find(p => p.id === providerId);
@@ -16759,9 +16603,13 @@ class LuminaSettingsModal {
       }
       if (models.length === 0) {
         const fallbackOptions = {
-          'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
           'gemini-default': ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'],
-          'deepseek-default': ['deepseek-chat', 'deepseek-reasoner']
+          'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
+          'deepseek-default': ['deepseek-chat', 'deepseek-reasoner'],
+          'moonshot-default': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+          'alibaba-default': ['qwen-max', 'qwen-plus', 'qwen-turbo'],
+          'minimax-default': ['abab6.5g-chat', 'abab6.5s-chat'],
+          'zhipu-default': ['glm-4', 'glm-4-flash', 'glm-4-air']
         };
         models = fallbackOptions[providerId] || ['custom-model'];
       }
@@ -16769,9 +16617,13 @@ class LuminaSettingsModal {
     } catch (e) {
       console.error('Failed to fetch models in settings:', e);
       const fallbackOptions = {
-        'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
         'gemini-default': ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'],
-        'deepseek-default': ['deepseek-chat', 'deepseek-reasoner']
+        'openai-default': ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o1-preview'],
+        'deepseek-default': ['deepseek-chat', 'deepseek-reasoner'],
+        'moonshot-default': ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+        'alibaba-default': ['qwen-max', 'qwen-plus', 'qwen-turbo'],
+        'minimax-default': ['abab6.5g-chat', 'abab6.5s-chat'],
+        'zhipu-default': ['glm-4', 'glm-4-flash', 'glm-4-air']
       };
       const list = fallbackOptions[providerId] || ['custom-model'];
       menu.innerHTML = list.map(m => `<div data-val="${m}">${m}</div>`).join('');
@@ -16784,10 +16636,10 @@ class LuminaSettingsModal {
     document.getElementById('lumina-provider-form-name').value = '';
     document.getElementById('lumina-provider-form-endpoint').value = '';
     document.getElementById('lumina-provider-form-apikey').value = '';
-    const statusEl = document.getElementById('lumina-provider-popup-status');
+    const statusEl = document.getElementById('lumina-dialog-status');
     if (statusEl) {
       statusEl.innerHTML = '';
-      statusEl.className = 'lumina-provider-popup-status hidden';
+      statusEl.className = 'lumina-dialog-status hidden';
     }
   }
   static editProvider(id) {
@@ -16799,10 +16651,10 @@ class LuminaSettingsModal {
     document.getElementById('lumina-provider-form-name').value = p.name;
     document.getElementById('lumina-provider-form-endpoint').value = p.endpoint;
     document.getElementById('lumina-provider-form-apikey').value = p.apiKey || '';
-    const statusEl = document.getElementById('lumina-provider-popup-status');
+    const statusEl = document.getElementById('lumina-dialog-status');
     if (statusEl) {
       statusEl.innerHTML = '';
-      statusEl.className = 'lumina-provider-popup-status hidden';
+      statusEl.className = 'lumina-dialog-status hidden';
     }
   }
   static hideProviderForm() {
@@ -16813,11 +16665,12 @@ class LuminaSettingsModal {
     const overlay = document.getElementById('lumina-model-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
     const indexInput = document.getElementById('lumina-model-form-index');
-    const providerInput = document.getElementById('lumina-text-chain-provider');
-    const modelInput = document.getElementById('lumina-text-chain-model');
-    const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
+    const providerInput = document.getElementById('lumina-model-form-provider');
+    const modelInput = document.getElementById('lumina-model-form-model');
+    const customNameInput = document.getElementById('lumina-model-form-name-custom');
+    this.populateProviderDropdowns();
     if (index !== null && index >= 0) {
-      const item = this.textChain[index];
+      const item = this.models[index];
       indexInput.value = index;
       const prov = this.providers.find(p => p.id === item.providerId);
       providerInput.value = prov ? prov.name : item.providerId;
@@ -16825,7 +16678,7 @@ class LuminaSettingsModal {
       modelInput.value = item.modelName;
       customNameInput.value = item.displayName || '';
       const tokenVal = item.maxTokens || 8192;
-      this.setDropdownValue('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
+      this.setDropdownValue('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
       this.loadModelsForProvider(item.providerId);
     } else {
       indexInput.value = '';
@@ -16833,15 +16686,15 @@ class LuminaSettingsModal {
       providerInput.dataset.value = '';
       modelInput.value = '';
       customNameInput.value = '';
-      this.setDropdownValue('lumina-text-chain-max-tokens', 'lumina-text-chain-max-tokens-list', '8192', '8,192 tokens (Default)');
+      this.setDropdownValue('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list', '8192', '8,192 tokens (Default)');
     }
     this.updateModelPopupFieldsState();
   }
   static updateModelPopupFieldsState() {
-    const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
-    const modelInput = document.getElementById('lumina-text-chain-model');
-    const customNameInput = document.getElementById('lumina-text-chain-model-name-custom');
-    const maxTokensInput = document.getElementById('lumina-text-chain-max-tokens');
+    const provider = document.getElementById('lumina-model-form-provider').dataset.value;
+    const modelInput = document.getElementById('lumina-model-form-model');
+    const customNameInput = document.getElementById('lumina-model-form-name-custom');
+    const maxTokensInput = document.getElementById('lumina-model-form-max-tokens');
     const shouldDisable = !provider;
     if (modelInput) {
       modelInput.disabled = shouldDisable;
@@ -17035,10 +16888,10 @@ class LuminaSettingsModal {
       alert('Endpoint and API Key are required to check status.');
       return;
     }
-    const statusEl = document.getElementById('lumina-provider-popup-status');
+    const statusEl = document.getElementById('lumina-dialog-status');
     if (!statusEl) return;
     statusEl.classList.remove('hidden');
-    statusEl.className = 'lumina-provider-popup-status info';
+    statusEl.className = 'lumina-dialog-status info';
     statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
     const checkBtn = document.getElementById('lumina-check-apikeys-btn');
     const originalText = checkBtn.textContent;
@@ -17046,7 +16899,7 @@ class LuminaSettingsModal {
     checkBtn.disabled = true;
     const keysList = apiKey.split(',').map(k => k.trim()).filter(Boolean);
     if (keysList.length === 0) {
-      statusEl.className = 'lumina-provider-popup-status error';
+      statusEl.className = 'lumina-dialog-status error';
       statusEl.innerHTML = '<strong>Error:</strong> No keys entered.';
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
@@ -17088,7 +16941,7 @@ class LuminaSettingsModal {
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
       const allOk = results.every(r => r.ok);
-      statusEl.className = 'lumina-provider-popup-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
+      statusEl.className = 'lumina-dialog-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
       if (results.length === 1) {
         const res = results[0];
         if (res.ok) {
@@ -17115,10 +16968,10 @@ class LuminaSettingsModal {
   }
   static addModelToChain() {
     const indexStr = document.getElementById('lumina-model-form-index').value;
-    const provider = document.getElementById('lumina-text-chain-provider').dataset.value;
-    const model = document.getElementById('lumina-text-chain-model').value.trim();
-    const customName = document.getElementById('lumina-text-chain-model-name-custom').value.trim();
-    const maxTokensInput = document.getElementById('lumina-text-chain-max-tokens');
+    const provider = document.getElementById('lumina-model-form-provider').dataset.value;
+    const model = document.getElementById('lumina-model-form-model').value.trim();
+    const customName = document.getElementById('lumina-model-form-name-custom').value.trim();
+    const maxTokensInput = document.getElementById('lumina-model-form-max-tokens');
     const maxTokens = parseInt(maxTokensInput?.dataset?.value || '8192', 10);
     if (!provider || !model) {
       alert('Provider and Model are required.');
@@ -17133,56 +16986,79 @@ class LuminaSettingsModal {
     };
     if (indexStr !== '') {
       const idx = parseInt(indexStr);
-      if (idx >= 0 && idx < this.textChain.length) {
-        this.textChain[idx] = item;
+      if (idx >= 0 && idx < this.models.length) {
+        this.models[idx] = item;
       }
     } else {
-      this.textChain.unshift(item);
+      this.models.unshift(item);
     }
-    chrome.storage.local.set({ modelChains: { text: this.textChain } }, () => {
+    chrome.storage.local.set({ models: this.models }, () => {
       this.renderChainList();
       this.hideModelForm();
     });
   }
   static renderChainList() {
-    const list = document.getElementById('lumina-text-chain-list');
+    const list = document.getElementById('lumina-model-list');
     if (!list) return;
     list.innerHTML = '';
-    const addCard = document.createElement('div');
-    addCard.className = 'lumina-settings-chain-card chain-item add-model-card';
-    addCard.id = 'lumina-open-add-model-btn';
-    addCard.innerHTML = `
-      <div class="add-mode">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        <span class="font-semibold">Add Model</span>
-      </div>
-    `;
-    addCard.addEventListener('click', () => this.showModelForm());
-    list.appendChild(addCard);
-    if (this.textChain.length === 0) {
+    const addModelHeaderBtn = document.getElementById('lumina-open-add-model-btn');
+    if (addModelHeaderBtn && !addModelHeaderBtn.dataset.bound) {
+      addModelHeaderBtn.dataset.bound = 'true';
+      addModelHeaderBtn.addEventListener('click', () => this.showModelForm());
+    }
+    if (this.models.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'lumina-settings-empty-state';
-      emptyState.textContent = 'No models added yet. Click "Add Model" above to start.';
+      emptyState.textContent = 'No models added yet. Click "Add model" above to start.';
       list.appendChild(emptyState);
     } else {
       const temp = document.getElementById('lumina-chainItemTemplate');
-      this.textChain.forEach((item, index) => {
+      this.models.forEach((item, index) => {
         const clone = temp.content.cloneNode(true);
+        const cardEl = clone.querySelector('.lumina-settings-chain-card');
+        cardEl.dataset.index = index;
+
         clone.querySelector('.chain-number').textContent = index + 1;
         clone.querySelector('.chain-title').textContent = item.displayName || item.modelName;
         const prov = this.providers.find(p => p.id === item.providerId);
         const providerName = prov ? prov.name : item.providerId;
         const tokenLabel = item.maxTokens ? ` • ${Number(item.maxTokens).toLocaleString()} tokens` : ' • 8,192 tokens';
         clone.querySelector('.chain-subtitle').textContent = `${providerName}${tokenLabel}`;
-        clone.querySelector('.edit').addEventListener('click', () => {
+
+        cardEl.addEventListener('dragstart', (e) => {
+          cardEl.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', index);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        cardEl.addEventListener('dragend', () => {
+          cardEl.classList.remove('dragging');
+        });
+
+        cardEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+
+        cardEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+          const toIndex = index;
+          if (!isNaN(fromIndex) && fromIndex !== toIndex) {
+            const movedItem = this.models.splice(fromIndex, 1)[0];
+            this.models.splice(toIndex, 0, movedItem);
+            chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
+          }
+        });
+
+        clone.querySelector('.edit').addEventListener('click', (e) => {
+          e.stopPropagation();
           this.showModelForm(index);
         });
-        clone.querySelector('.remove').addEventListener('click', () => {
-          this.textChain.splice(index, 1);
-          chrome.storage.local.set({ modelChains: { text: this.textChain } }, () => this.renderChainList());
+        clone.querySelector('.remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.models.splice(index, 1);
+          chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
         });
         list.appendChild(clone);
       });
@@ -18363,23 +18239,16 @@ class LuminaSettingsModal {
     const timeEl = document.getElementById('lumina-cloud-stat-time');
     const relativeEl = document.getElementById('lumina-cloud-stat-relative');
     const itemsEl = document.getElementById('lumina-cloud-stat-items');
-    const badgeEl = document.getElementById('lumina-cloud-sync-badge');
-    const statusTextEl = document.getElementById('lumina-cloud-sync-status-text');
 
     if (!sizeEl) return;
 
     if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
-      if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge offline';
-      if (statusTextEl) statusTextEl.textContent = 'Not Connected';
       sizeEl.textContent = '—';
       timeEl.textContent = 'Not signed in';
       if (relativeEl) relativeEl.textContent = 'Sign in to sync';
       if (itemsEl) itemsEl.textContent = '—';
       return;
     }
-
-    if (badgeEl) badgeEl.className = 'lumina-cloud-sync-badge';
-    if (statusTextEl) statusTextEl.textContent = 'Connected';
 
     chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5'], async (res) => {
       // 1. Format Size
@@ -19443,6 +19312,10 @@ function restoreLatestScrollPosition(tab) {
     const entries = tab.historyEl.querySelectorAll('.lumina-entry');
     if (entries.length === 0) return;
     const latestEntry = entries[entries.length - 1];
+    if (tab.chatUIInstance && typeof tab.chatUIInstance.clearEntryMargins === 'function') {
+        tab.chatUIInstance.clearEntryMargins(latestEntry);
+        tab.chatUIInstance.adjustEntryMargin(latestEntry, 'immediate');
+    }
     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
     tab.historyEl.scrollTop = targetScrollTop;
     tab.scrollTop = targetScrollTop;
@@ -19474,7 +19347,7 @@ function scheduleScrollRestore(tab) {
         }
         hideTopbarLoading(_ssrPane);
     };
-    setTimeout(performRestore, 40);
+    setTimeout(performRestore, 20);
 }
 
 async function handleRemoteSync(changes, areaName) {
@@ -19792,10 +19665,15 @@ async function initTabs() {
             ensureTabHistoryLoaded(singleTab);
         }, 0);
         activeTabIndex = 0;
-        const modelData = await chrome.storage.local.get(['lastUsedModel']);
+        const modelData = await chrome.storage.local.get(['lastUsedModel', 'lastUsedThinkingLevel']);
         if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
             if (!singleTab.selectedModel) singleTab.selectedModel = { ...modelData.lastUsedModel };
             singleTab.chatUIInstance.activeTabModel = { ...singleTab.selectedModel };
+        }
+        if (modelData.lastUsedThinkingLevel) {
+            if (!singleTab.thinkingLevel) singleTab.thinkingLevel = modelData.lastUsedThinkingLevel;
+            singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel;
+            setPaneActiveThinking(singleTab.thinkingLevel);
         }
         if (data.lumina_youtube_trigger) {
             setTimeout(() => handleYouTubeTrigger(data.lumina_youtube_trigger), 100);
@@ -22457,9 +22335,14 @@ function setupPort() {
                         }
                     });
                 });
-                saveTabsState();
-                streamingTab = null;
-                streamDebugState = null;
+                (async () => {
+                    await saveTabsState(true, true);
+                    streamingTab = null;
+                    streamDebugState = null;
+                    if (typeof LuminaSync !== 'undefined') {
+                        LuminaSync.syncUp(true).catch(err => console.error('[Lumina] Post-answer sync failed:', err));
+                    }
+                })();
             }
         });
         port.onDisconnect.addListener(() => {
@@ -23213,6 +23096,12 @@ function setupGlobalListeners() {
             const isMatch = isShortcutMatchImmediate(event, shortcut);
             if (!isMatch) continue;
             if (isEditing) {
+                // If focus is in BlockNote or rich text editor, do not intercept native editing shortcuts (Cmd+B, Cmd+I, Cmd+U, etc.)
+                const isBlockNoteEditor = activeElement && activeElement.closest('.bn-editor, .blocknote-wrapper');
+                if (isBlockNoteEditor && (event.metaKey || event.ctrlKey)) {
+                    const isRichTextShortcut = ['b', 'i', 'u', 'z', 'y', 'x', 'c', 'v'].includes((event.key || '').toLowerCase());
+                    if (isRichTextShortcut) continue;
+                }
                 const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
                 const isOverridingShortcut = action === 'micToggle' || action === 'audio';
                 if (!hasModifier && !isOverridingShortcut) continue;
@@ -23761,12 +23650,10 @@ function isShortcutMatch(event, shortcut) {
     if (!keyMatch) return false;
     const wantsCtrl = !!shortcut.ctrlKey;
     const wantsMeta = !!shortcut.metaKey;
-    const ctrlMatch = wantsCtrl
-        ? (event.ctrlKey || (!wantsMeta && event.metaKey))
-        : !event.ctrlKey;
+    const ctrlMatch = wantsCtrl ? event.ctrlKey : !event.ctrlKey;
+    const metaMatch = wantsMeta ? event.metaKey : !event.metaKey;
     const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
     const altMatch = !!shortcut.altKey === event.altKey;
-    const metaMatch = wantsMeta ? event.metaKey : (!event.metaKey || wantsCtrl);
     if (!shortcut.ctrlKey && !shortcut.shiftKey && !shortcut.altKey && !shortcut.metaKey) {
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
     }
@@ -23824,7 +23711,7 @@ function dispatchConfiguredShortcutAction(action) {
 function cycleActiveModel() {
     const currentActiveTab = tabs[activeTabIndex];
     if (!currentActiveTab) return;
-    chrome.storage.local.get(['providers', 'modelChains'], async (data) => {
+    chrome.storage.local.get(['providers', 'models'], async (data) => {
         let promptSupport;
         if (typeof window.getPromptApiSupport === 'function') {
             promptSupport = await window.getPromptApiSupport();
@@ -24281,6 +24168,10 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 const entries = activeTab.historyEl.querySelectorAll('.lumina-entry');
                 if (entries.length > 0) {
                     const latestEntry = entries[entries.length - 1];
+                    if (activeTab.chatUIInstance && typeof activeTab.chatUIInstance.clearEntryMargins === 'function') {
+                        activeTab.chatUIInstance.clearEntryMargins(latestEntry);
+                        activeTab.chatUIInstance.adjustEntryMargin(latestEntry, 'immediate');
+                    }
                     const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, activeTab.historyEl);
                     activeTab.historyEl.scrollTop = targetScrollTop;
                     activeTab.scrollTop = targetScrollTop;
@@ -24292,7 +24183,7 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
                 activeTab.historyEl.style.transition = '';
                 hideTopbarLoading('primary');
             };
-            setTimeout(performRestore, 40);
+            performRestore();
         }
     }
 };
@@ -24746,7 +24637,7 @@ function initTopbarModelSelector() {
     const fetchAndRender = () => {
         const activeTab = tabs[activeTabIndex];
         const sidKey = activeTab?.sessionId || 'null';
-        chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
+        chrome.storage.local.get(['providers', 'models', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
             if (typeof window.getPromptApiSupport === 'function') {
                 data.promptSupport = await window.getPromptApiSupport();
             } else {
@@ -24818,25 +24709,54 @@ function updateSidebarUserProfile(isAuthenticated, user) {
     const avatarEl = document.querySelector('.user-profile .user-avatar');
     const nameEl = document.querySelector('.user-profile .user-name');
     const lastSyncEl = document.getElementById('user-last-sync');
-    if (!avatarEl || !nameEl) return;
-    if (isAuthenticated && user) {
-        nameEl.textContent = user.name || "User";
-        if (user.picture) {
-            avatarEl.innerHTML = `<img src="${user.picture}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" />`;
-        } else {
-            const initials = (user.name || "U").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
-            avatarEl.textContent = initials;
-        }
-    } else if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isInitialized) {
-        avatarEl.textContent = "LU";
-        nameEl.textContent = "Lumina User";
-    }
     const profileEl = document.querySelector('.user-profile');
-    if (profileEl) {
-        profileEl.style.visibility = 'visible';
+    const loginBtn = document.getElementById('sidebar-login-btn');
+
+    if (isAuthenticated && user) {
+        try {
+            localStorage.setItem('lumina_cached_user', JSON.stringify({ name: user.name, picture: user.picture }));
+        } catch (e) {}
+        if (profileEl) {
+            profileEl.style.display = 'flex';
+            profileEl.style.visibility = 'visible';
+        }
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (nameEl) nameEl.textContent = user.name || "User";
+        if (avatarEl) {
+            if (user.picture) {
+                avatarEl.innerHTML = `<img src="${user.picture}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" />`;
+            } else {
+                const initials = (user.name || "U").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+                avatarEl.textContent = initials;
+            }
+        }
+    } else {
+        try {
+            localStorage.removeItem('lumina_cached_user');
+        } catch (e) {}
+        if (profileEl) profileEl.style.display = 'none';
+        if (loginBtn) {
+            loginBtn.style.display = 'flex';
+            loginBtn.onclick = async () => {
+                try {
+                    loginBtn.disabled = true;
+                    const textEl = loginBtn.querySelector('.gsi-material-button-contents');
+                    if (textEl) textEl.textContent = 'Signing in...';
+                    if (typeof LuminaAuth !== 'undefined' && typeof LuminaAuth.login === 'function') {
+                        await LuminaAuth.login();
+                    }
+                } catch (e) {
+                    console.error('Sign in failed:', e);
+                    alert('Sign in failed: ' + e.message);
+                    loginBtn.disabled = false;
+                    const textEl = loginBtn.querySelector('.gsi-material-button-contents');
+                    if (textEl) textEl.textContent = 'Sign in with Google';
+                }
+            };
+        }
     }
 
-    if (lastSyncEl && typeof LuminaSync !== 'undefined') {
+    if (isAuthenticated && lastSyncEl && typeof LuminaSync !== 'undefined') {
         const updateSyncDisplay = (status, lastSyncTime) => {
             if (lastSyncTime) {
                 const timeStr = new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -24860,11 +24780,19 @@ function updateSidebarUserProfile(isAuthenticated, user) {
             window.__luminaUserLastSyncListenerBound = true;
             LuminaSync.addListener((status, lastSync) => {
                 updateSyncDisplay(status, lastSync);
+                if (status === 'Synced just now' || status === 'Synced' || lastSync) {
+                    if (typeof renderRecentChatsSidebar === 'function') {
+                        renderRecentChatsSidebar();
+                    }
+                }
             });
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
                 chrome.storage.onChanged.addListener((changes, area) => {
                     if (area === 'local' && changes.last_sync_time) {
                         updateSyncDisplay(null, changes.last_sync_time.newValue);
+                        if (typeof renderRecentChatsSidebar === 'function') {
+                            renderRecentChatsSidebar();
+                        }
                     }
                 });
             }
@@ -24992,6 +24920,25 @@ if (typeof LuminaSync !== 'undefined') {
         const wrapper = document.getElementById('user-avatar-wrapper');
         if (wrapper) {
             wrapper.classList.toggle('is-syncing', status === 'Syncing...');
+        }
+    });
+}
+
+// Listen for sync status broadcasts from the Service Worker
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((request) => {
+        if (request.action === 'lumina_sync_status') {
+            const wrapper = document.getElementById('user-avatar-wrapper');
+            if (wrapper) {
+                wrapper.classList.toggle('is-syncing', request.status === 'syncing');
+            }
+            if (typeof LuminaSync !== 'undefined') {
+                if (request.status === 'done') {
+                    LuminaSync.notifyListeners('Synced just now', request.timestamp);
+                } else if (request.status === 'failure') {
+                    LuminaSync.notifyListeners('Sync failure', null);
+                }
+            }
         }
     });
 }
