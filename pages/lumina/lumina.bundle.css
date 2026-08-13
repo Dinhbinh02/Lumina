@@ -6562,15 +6562,15 @@ b .katex * {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--lumina-primary-color);
-  color: #fff;
+  background: var(--lumina-sidebar-bg, #fcfcfc);
+  color: var(--lumina-sidebar-text, #202124);
+  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1));
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: var(--lumina-weight-bold);
   font-size: 0.86em;
   flex-shrink: 0;
-  border: none;
   box-sizing: border-box;
   z-index: 2;
   overflow: hidden;
@@ -6831,6 +6831,13 @@ b .katex * {
   height: 46px;
   min-height: 46px;
   margin-bottom: 16px;
+}
+
+.sparks-page__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .sparks-page__title {
@@ -9461,6 +9468,31 @@ h1,
   flex-shrink: 0;
 }
 
+.notes-pane-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.notes-sidebar-toggle-btn,
+.sparks-sidebar-toggle-btn {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+
+  .notes-sidebar-toggle-btn,
+  .sparks-sidebar-toggle-btn {
+    display: inline-flex !important;
+  }
+}
+
+.is-sidepanel .notes-sidebar-toggle-btn,
+.is-sidepanel .sparks-sidebar-toggle-btn {
+  display: inline-flex !important;
+}
+
 [data-theme="dark"] .notes-pane-header {
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
@@ -10307,37 +10339,6 @@ h1,
   display: none !important;
 }
 
-.notes-resizer {
-  width: 8px;
-  height: 100%;
-  cursor: col-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 100;
-  user-select: none;
-  background: transparent;
-}
-
-.notes-resizer-handle {
-  width: 2px;
-  height: 20px;
-  background: var(--lumina-sidebar-text-muted, #8e8e93);
-  border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.2s ease, background 0.2s ease, height 0.2s ease;
-}
-
-.notes-resizer:hover .notes-resizer-handle,
-.notes-resizer.dragging .notes-resizer-handle {
-  opacity: 1;
-  background: var(--lumina-sidebar-text-muted, #8e8e93);
-  height: 32px;
-  width: 3px;
-}
 
 .notes-editor-header {
   height: 46px;
@@ -10353,6 +10354,8 @@ h1,
 
 .notes-col-picker-wrapper {
   position: relative;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .notes-col-picker-pill {
@@ -10369,6 +10372,16 @@ h1,
   font-family: inherit;
   cursor: pointer;
   transition: all 0.12s ease;
+  max-width: 140px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.notes-col-picker-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .notes-col-picker-pill:hover {
@@ -10563,6 +10576,117 @@ h1,
   right: 0 !important;
   left: auto !important;
   min-width: 180px !important;
+}
+
+/* --- Notes Responsive Toolbar Overflow into More Dropdown --- */
+.notes-overflow-item {
+  display: none !important;
+}
+
+.notes-overflow-divider {
+  display: none !important;
+  height: 1px;
+  background: var(--lumina-border, #e2e8f0);
+  margin: 4px 0;
+}
+
+[data-theme="dark"] .notes-overflow-divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Step 1: Hide Table (~960px) */
+/* Dynamic Toolbar Overflow is automatically controlled via JS Collision Observer */
+.notes-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.notes-editor-header {
+  height: 46px;
+  min-height: 46px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 10;
+  background: var(--lumina-sidebar-bg, #fcfcfc);
+  overflow: visible;
+}
+
+.notes-editor-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.notes-table-picker-menu {
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  padding: 6px 8px !important;
+  min-width: auto !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90vw;
+  box-shadow: none !important;
+}
+
+.notes-table-grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+.notes-table-grid {
+  display: grid;
+  gap: 2.5px;
+  padding: 2px;
+}
+
+.notes-table-grid-cell {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 2px;
+  background-color: rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 0.06s ease, border-color 0.06s ease;
+}
+
+.notes-table-grid-cell.highlighted {
+  border-color: var(--lumina-primary-color, #3b82f6) !important;
+  background-color: rgba(59, 130, 246, 0.22) !important;
+}
+
+[data-theme="dark"] .notes-table-grid-cell {
+  border-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .notes-table-grid-cell.highlighted {
+  border-color: #60a5fa !important;
+  background-color: rgba(96, 165, 250, 0.3) !important;
+}
+
+.notes-table-grid-label {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lumina-text-primary, #1e293b);
+  text-align: center;
+  min-height: 16px;
+}
+
+[data-theme="dark"] .notes-table-grid-label {
+  color: var(--lumina-text, #f8fafc);
 }
 
 .notes-dropdown-item.danger {
@@ -10937,12 +11061,178 @@ mark.notes-search-highlight {
   background: rgba(45, 170, 219, 0.2) !important;
 }
 
-/* Fix BlockNote Placeholder font-style to normal (straight text) */
-.bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
-  font-style: normal !important;
+/* Fix BlockNote Block Height Inconsistency between empty unfocused vs focused placeholder state */
+.bn-editor .bn-block-outer,
+.bn-editor .bn-block,
+.bn-editor .bn-block-content {
+  transition: none !important;
 }
 
-/* Show all Heading options in Slash Menu & Toolbar Dropdown Menu */
+.bn-editor .bn-block-content {
+  line-height: 1.5 !important;
+  min-height: calc(1.5em + 6px) !important;
+}
+
+.bn-editor .bn-inline-content {
+  line-height: 1.5 !important;
+  min-height: 1.5em !important;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.bn-editor p {
+  margin: 0 !important;
+  line-height: 1.5 !important;
+  min-height: 1.5em !important;
+}
+
+.bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
+  font-style: normal !important;
+  line-height: 1.5 !important;
+  min-height: 1.5em !important;
+  vertical-align: top;
+}
+
+/* Align TableWrapper padding with standard bn-block-content */
+.bn-editor [data-content-type="table"] .tableWrapper {
+  padding: 3px 0 12px 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix Table Extend / Add (+) buttons cursor to pointer instead of resizer */
+.bn-mantine .bn-extend-button,
+.bn-mantine .bn-extend-button-add-remove-columns,
+.bn-mantine .bn-extend-button-add-remove-rows,
+.bn-extend-button,
+.bn-extend-button-add-remove-columns,
+.bn-extend-button-add-remove-rows,
+[class*="bn-extend-button"] {
+  cursor: pointer !important;
+}
+
+.notes-editor-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.notes-back-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--lumina-text-secondary, #70757a);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.notes-back-btn:hover {
+  background: var(--lumina-hover-bg, #efefef);
+  color: var(--lumina-text-primary, #1f1f1f);
+}
+
+[data-theme="dark"] .notes-back-btn {
+  color: var(--lumina-sidebar-text-muted, #b0b3b8);
+}
+
+[data-theme="dark"] .notes-back-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--lumina-text-primary, #ffffff);
+}
+
+/* Responsive Narrow / Sidepanel Mode for Notes */
+@media (max-width: 880px) {
+  .notes-page {
+    padding: 0 !important;
+  }
+
+  /* Default on narrow screen: show sidebar/list full width, hide editor */
+  .notes-sidebar-pane {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex !important;
+  }
+
+  .notes-editor-pane {
+    display: none !important;
+  }
+
+  /* When a note is active / editing in narrow screen: show editor full width, hide list */
+  .notes-page.show-editor .notes-sidebar-pane {
+    display: none !important;
+  }
+
+  .notes-page.show-editor .notes-editor-pane {
+    display: flex !important;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  .notes-back-btn {
+    display: inline-flex !important;
+  }
+
+  .notes-editor-header {
+    padding: 0 10px !important;
+    gap: 6px !important;
+  }
+
+  .notes-editor-body {
+    padding: 10px 14px 20px 14px !important;
+  }
+
+  .note-title-input {
+    font-size: calc(var(--lumina-fontSize, 13px) * 1.65) !important;
+  }
+}
+
+/* Sidepanel specific */
+.is-sidepanel .notes-page {
+  padding: 0 !important;
+}
+
+.is-sidepanel .notes-sidebar-pane {
+  width: 100% !important;
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+}
+
+.is-sidepanel .notes-editor-pane {
+  display: none !important;
+}
+
+.is-sidepanel .notes-page.show-editor .notes-sidebar-pane {
+  display: none !important;
+}
+
+.is-sidepanel .notes-page.show-editor .notes-editor-pane {
+  display: flex !important;
+  width: 100% !important;
+  flex: 1 1 100% !important;
+}
+
+.is-sidepanel .notes-back-btn {
+  display: inline-flex !important;
+}
 
 /* --- BUNDLED FROM: pages/lumina/settings_modal.css --- */
 @keyframes lumina-settings-fade-in {
@@ -11570,13 +11860,35 @@ mark.notes-search-highlight {
   background: #dc2626;
 }
 
-.lumina-settings-btn.text {
-  background: transparent;
-  color: var(--lumina-text-secondary);
+.lumina-settings-btn.sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
-.lumina-settings-btn.text:hover {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.03));
+.lumina-settings-btn.xs {
+  padding: 2px 8px;
+  font-size: 11.5px;
+  border-radius: 6px;
+}
+
+.lumina-get-key-link {
+  font-size: 11.5px;
+  color: var(--lumina-primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.lumina-get-key-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.lumina-storage-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .lumina-settings-actions-row {

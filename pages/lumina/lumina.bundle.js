@@ -14210,13 +14210,6 @@ class NotesManager {
     static STORE_NOTES = 'notes';
     static _db = null;
 
-    static DEFAULT_COLLECTION = {
-        id: 'col_default',
-        name: 'General',
-        icon: 'folder',
-        createdAt: Date.now()
-    };
-
     /**
      * Initialize IndexedDB database connection
      */
@@ -14261,17 +14254,7 @@ class NotesManager {
         });
     }
 
-    /**
-     * Ensure default collection exists when database is newly created
-     */
-    static async ensureDefaultSeed() {
-        const collections = await NotesManager.getCollections();
-        if (collections.length === 0) {
-            const db = NotesManager._db;
-            const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
-            tx.objectStore(NotesManager.STORE_COLLECTIONS).put({ ...NotesManager.DEFAULT_COLLECTION });
-        }
-    }
+    static async ensureDefaultSeed() {}
 
     // --- COLLECTION API ---
 
@@ -14310,17 +14293,6 @@ class NotesManager {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_COLLECTIONS);
-            
-            // If renaming col_default but it doesn't exist in DB, create it first
-            if (collectionId === 'col_default') {
-                const getReq = store.get('col_default');
-                getReq.onsuccess = () => {
-                    const col = getReq.result || { id: 'col_default', name: 'General', createdAt: Date.now() };
-                    col.name = newName.trim() || 'General';
-                    store.put(col).onsuccess = () => resolve(col);
-                };
-                return;
-            }
 
             const getReq = store.get(collectionId);
             getReq.onsuccess = () => {
@@ -14338,7 +14310,7 @@ class NotesManager {
     static async deleteCollection(collectionId) {
         const db = await NotesManager.getDB();
 
-        // Delete collection and move its notes to col_default (if deleting col_default, we can just delete it, and any notes in it will go to col_default which is recreated as needed, or we delete the notes. Best practice: if deleting col_default, its notes are deleted or moved. Let's move them to col_default but since col_default is deleted, they'll remain in col_default if it is auto-recreated, or we delete them. Let's just delete the notes inside col_default if we delete col_default, or delete the folder. Let's move to col_default, but if it is col_default, delete all notes in it.)
+        // Delete collection and unassign its notes (set collectionId = null)
         return new Promise((resolve, reject) => {
             const tx = db.transaction([NotesManager.STORE_COLLECTIONS, NotesManager.STORE_NOTES], 'readwrite');
             const colStore = tx.objectStore(NotesManager.STORE_COLLECTIONS);
@@ -14352,15 +14324,9 @@ class NotesManager {
             req.onsuccess = (e) => {
                 const cursor = e.target.result;
                 if (cursor) {
-                    if (collectionId === 'col_default') {
-                        // Deleting default collection -> delete its notes
-                        cursor.delete();
-                    } else {
-                        // Deleting other collection -> move notes to col_default
-                        const note = cursor.value;
-                        note.collectionId = 'col_default';
-                        cursor.update(note);
-                    }
+                    const note = cursor.value;
+                    note.collectionId = null;
+                    cursor.update(note);
                     cursor.continue();
                 }
             };
@@ -14406,7 +14372,8 @@ class NotesManager {
         });
     }
 
-    static async createNote(collectionId = 'col_default', title = 'Untitled Note') {
+    static async createNote(collectionId = null, title = 'Untitled Note') {
+        if (collectionId === 'all' || collectionId === 'col_default') collectionId = null;
         const db = await NotesManager.getDB();
         const now = Date.now();
         const newNote = {
@@ -14521,7 +14488,7 @@ class NotesPanel {
         this._contextMenu = null;
     }
 
-    async init(targetNoteId) {
+    async init(targetNoteId, targetColId) {
         this.cacheElements();
         if (!this.isInitialized) {
             this.bindEvents();
@@ -14529,6 +14496,20 @@ class NotesPanel {
             this.initCollectionPickerPill();
             this.isInitialized = true;
         }
+
+        // Determine initial activeCollectionId from URL or localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const colFromUrl = targetColId || urlParams.get('colId');
+        const savedCol = localStorage.getItem('lumina_active_collection_id');
+
+        if (colFromUrl) {
+            this.activeCollectionId = colFromUrl;
+        } else if (savedCol) {
+            this.activeCollectionId = savedCol;
+        } else {
+            this.activeCollectionId = 'all';
+        }
+
         if (targetNoteId) {
             this.activeNoteId = targetNoteId;
             // Pre-set title directly from DB to prevent "Untitled Note" flashing
@@ -14537,12 +14518,54 @@ class NotesPanel {
                 if (note && this.noteTitleInput) {
                     this.noteTitleInput.value = note.title || '';
                 }
+                if (note && note.collectionId && !colFromUrl && !savedCol) {
+                    this.activeCollectionId = note.collectionId;
+                }
             } catch (e) {
                 console.warn('Pre-fetch title error:', e);
             }
+            this.showEditorView();
+        } else if (window.innerWidth <= 680) {
+            this.showListView();
         }
+
+        localStorage.setItem('lumina_active_collection_id', this.activeCollectionId);
+        this.updateUrlParams();
+
         await this.renderCollections();
         await this.renderNotesList('', targetNoteId);
+    }
+
+    showEditorView() {
+        if (!this.container) return;
+        this.container.classList.add('show-editor');
+        this.container.classList.remove('show-list');
+    }
+
+    showListView() {
+        if (!this.container) return;
+        this.container.classList.remove('show-editor');
+        this.container.classList.add('show-list');
+    }
+
+    updateUrlParams() {
+        if (typeof window.updateNotesUrl === 'function') {
+            window.updateNotesUrl(this.activeNoteId, this.activeCollectionId);
+        } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('view') === 'notes') {
+                if (this.activeNoteId) urlParams.set('noteId', this.activeNoteId);
+                else urlParams.delete('noteId');
+
+                if (this.activeCollectionId && this.activeCollectionId !== 'all') {
+                    urlParams.set('colId', this.activeCollectionId);
+                } else {
+                    urlParams.delete('colId');
+                }
+                const newUrl = window.location.pathname + '?' + urlParams.toString();
+                window.history.replaceState(null, '', newUrl);
+            }
+        }
     }
 
     bindSortBar() {
@@ -14584,10 +14607,10 @@ class NotesPanel {
         this.notesEmptyState = document.getElementById('notes-empty-state');
         this.notesEditorPane = document.getElementById('notes-editor-pane');
 
-        // Immediately restore saved sidebar width to prevent width jump/flash on reload
+        // Immediately restore saved sidebar width to prevent width jump/flash on reload (only on desktop)
         const leftPane = document.querySelector('.notes-sidebar-pane');
         const rightPane = document.querySelector('.notes-editor-pane');
-        if (leftPane) {
+        if (leftPane && window.innerWidth > 680) {
             const savedWidth = localStorage.getItem('lumina_notes_sidebar_width');
             const width = savedWidth ? parseInt(savedWidth, 10) : 260;
             leftPane.style.width = `${width}px`;
@@ -14596,6 +14619,7 @@ class NotesPanel {
         }
 
         // Apple Notes Toolbar Elements
+        this.backBtn = document.getElementById('notes-back-btn');
         this.tbH1 = document.getElementById('note-tb-h1');
         this.tbH2 = document.getElementById('note-tb-h2');
         this.tbH3 = document.getElementById('note-tb-h3');
@@ -14603,6 +14627,9 @@ class NotesPanel {
         this.tbBullet = document.getElementById('note-tb-bullet');
         this.tbNumber = document.getElementById('note-tb-number');
         this.tbTable = document.getElementById('note-tb-table');
+        this.tablePickerMenu = document.getElementById('notes-table-picker-menu');
+        this.tableGrid = document.getElementById('notes-table-grid');
+        this.tableGridLabel = document.getElementById('notes-table-grid-label');
         this.tbImage = document.getElementById('note-tb-image');
         this.tbUndo = document.getElementById('note-tb-undo');
         this.tbRedo = document.getElementById('note-tb-redo');
@@ -14623,6 +14650,12 @@ class NotesPanel {
     }
 
     bindEvents() {
+        if (this.backBtn) {
+            this.backBtn.addEventListener('click', () => {
+                this.showListView();
+            });
+        }
+
         if (this.newCollectionBtn) {
             this.newCollectionBtn.addEventListener('click', () => this.handleCreateCollection());
         }
@@ -14687,6 +14720,414 @@ class NotesPanel {
             });
         }
 
+        let lastCmdATime = 0;
+        let lastCmdAText = '';
+
+        // Handle Table & Editor Shortcuts: Cmd+A Select All, Enter, Tab, Backspace/Delete
+        const handleTableKeydown = (e) => {
+            const ed = this.blocknoteInstance?.editor;
+            if (!ed) return;
+
+            // Handle Cmd+A / Ctrl+A:
+            // 1st press: Select current block / cell text
+            // 2nd press: Select ALL blocks across the entire document
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A') && !e.shiftKey && !e.altKey) {
+                try {
+                    const now = Date.now();
+                    const winSel = window.getSelection();
+                    const currentSelectedText = winSel ? winSel.toString() : '';
+
+                    // If user already has text selected AND presses Cmd+A again within 1.8s (or if text was already selected):
+                    const isSecondPress = (now - lastCmdATime < 1800 && lastCmdATime > 0) || (currentSelectedText.length > 0 && currentSelectedText === lastCmdAText);
+
+                    if (isSecondPress) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        lastCmdATime = 0;
+                        lastCmdAText = '';
+
+                        if (ed.document && ed.document.length > 1) {
+                            try {
+                                const firstBlock = ed.document[0];
+                                const lastBlock = ed.document[ed.document.length - 1];
+                                ed.setSelection(firstBlock, lastBlock);
+                            } catch (_) {}
+                        }
+
+                        const editorEl = document.querySelector('.bn-editor');
+                        if (editorEl) {
+                            const range = document.createRange();
+                            range.selectNodeContents(editorEl);
+                            if (winSel) {
+                                winSel.removeAllRanges();
+                                winSel.addRange(range);
+                            }
+                        }
+                        return;
+                    }
+
+                    lastCmdATime = now;
+                    lastCmdAText = currentSelectedText;
+                } catch (err) {
+                    console.warn('Error handling Cmd+A select all:', err);
+                }
+            }
+
+            // 0. Enter at last cell of table (or Cmd/Ctrl+Enter anywhere in table) -> Navigate to or create paragraph below table
+            if (e.key === 'Enter' && !e.shiftKey) {
+                try {
+                    const tiptap = ed._tiptapEditor;
+                    const state = tiptap?.state;
+                    if (!state) return;
+
+                    const sel = state.selection;
+                    const $pos = sel.$from;
+                    let cellDepth = -1;
+                    for (let d = $pos.depth; d > 0; d--) {
+                        const name = $pos.node(d).type?.name;
+                        if (name === 'tableCell' || name === 'tableHeader') {
+                            cellDepth = d;
+                            break;
+                        }
+                    }
+
+                    if (cellDepth > 0) {
+                        const isInsideRow = $pos.node(cellDepth - 1).type?.name === 'tableRow';
+                        const tableNode = isInsideRow ? $pos.node(cellDepth - 2) : $pos.node(cellDepth - 1);
+                        const rowNode = $pos.node(cellDepth - 1);
+
+                        if (tableNode && rowNode && tableNode.type?.name === 'table') {
+                            const rowIndex = isInsideRow ? $pos.index(cellDepth - 2) : 0;
+                            const colIndex = $pos.index(cellDepth - 1);
+                            const isLastRow = rowIndex === tableNode.childCount - 1;
+                            const isLastCell = colIndex === rowNode.childCount - 1;
+                            const isCmdEnter = e.metaKey || e.ctrlKey;
+
+                            if ((isLastRow && isLastCell) || isCmdEnter) {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                let tableBlock = null;
+                                const curBlock = ed.getTextCursorPosition()?.block;
+                                if (curBlock && curBlock.type === 'table') {
+                                    tableBlock = curBlock;
+                                } else if (ed.document) {
+                                    const tableEl = document.querySelector('.bn-editor table:has(.ProseMirror-focused), .bn-editor table') ||
+                                                    document.activeElement?.closest('table');
+                                    if (tableEl) {
+                                        const blockId = tableEl.closest('.bn-block-outer')?.getAttribute('data-id');
+                                        if (blockId) tableBlock = ed.getBlock(blockId);
+                                    }
+                                    if (!tableBlock) tableBlock = ed.document.find(b => b.type === 'table');
+                                }
+
+                                if (tableBlock) {
+                                    const nextBlock = ed.getNextBlock(tableBlock);
+                                    if (nextBlock) {
+                                        ed.setTextCursorPosition(nextBlock, 'start');
+                                    } else {
+                                        const newBlocks = ed.insertBlocks([{ type: 'paragraph' }], tableBlock, 'after');
+                                        if (newBlocks && newBlocks[0]) {
+                                            ed.setTextCursorPosition(newBlocks[0], 'start');
+                                        }
+                                    }
+                                    ed.focus();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Error handling Enter in table:', err);
+                }
+            }
+
+            // 1. Tab at last cell of table -> Add new row below and move cursor into it
+            if (e.key === 'Tab' && !e.shiftKey) {
+                try {
+                    const tiptap = ed._tiptapEditor;
+                    const state = tiptap?.state;
+                    if (!state) return;
+
+                    const sel = state.selection;
+                    const $pos = sel.$from;
+                    let cellDepth = -1;
+                    for (let d = $pos.depth; d > 0; d--) {
+                        const name = $pos.node(d).type?.name;
+                        if (name === 'tableCell' || name === 'tableHeader') {
+                            cellDepth = d;
+                            break;
+                        }
+                    }
+
+                    if (cellDepth > 0) {
+                        const isInsideRow = $pos.node(cellDepth - 1).type?.name === 'tableRow';
+                        const tableNode = isInsideRow ? $pos.node(cellDepth - 2) : $pos.node(cellDepth - 1);
+                        const rowNode = $pos.node(cellDepth - 1);
+
+                        if (tableNode && rowNode && tableNode.type?.name === 'table') {
+                            const rowIndex = isInsideRow ? $pos.index(cellDepth - 2) : 0;
+                            const colIndex = $pos.index(cellDepth - 1);
+                            const isLastRow = rowIndex === tableNode.childCount - 1;
+                            const isLastCell = colIndex === rowNode.childCount - 1;
+
+                            if (isLastRow && isLastCell) {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                // Find the table block in BlockNote document
+                                let tableBlock = null;
+                                const curBlock = ed.getTextCursorPosition()?.block;
+                                if (curBlock && curBlock.type === 'table') {
+                                    tableBlock = curBlock;
+                                } else if (ed.document) {
+                                    const tableEl = document.querySelector('.bn-editor table:has(.ProseMirror-focused), .bn-editor table') ||
+                                                    document.activeElement?.closest('table');
+                                    if (tableEl) {
+                                        const blockId = tableEl.closest('.bn-block-outer')?.getAttribute('data-id');
+                                        if (blockId) tableBlock = ed.getBlock(blockId);
+                                    }
+                                    if (!tableBlock) tableBlock = ed.document.find(b => b.type === 'table');
+                                }
+
+                                if (tableBlock && tableBlock.content?.rows) {
+                                    const rows = tableBlock.content.rows;
+                                    const numCols = rows[0]?.cells?.length || rowNode.childCount || 2;
+                                    const newEmptyCells = Array.from({ length: numCols }, () => [{ type: 'text', text: '', styles: {} }]);
+                                    const newRows = [...rows, { cells: newEmptyCells }];
+                                    ed.updateBlock(tableBlock, {
+                                        type: 'table',
+                                        content: {
+                                            type: 'tableContent',
+                                            rows: newRows
+                                        }
+                                    });
+
+                                    setTimeout(() => {
+                                        try {
+                                            const curTiptap = this.blocknoteInstance?.editor?._tiptapEditor;
+                                            if (curTiptap) {
+                                                let lastCellPos = null;
+                                                curTiptap.state.doc.descendants((node, pos) => {
+                                                    if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
+                                                        lastCellPos = pos + 1;
+                                                    }
+                                                });
+                                                if (lastCellPos !== null && curTiptap.commands?.setTextSelection) {
+                                                    curTiptap.commands.setTextSelection(lastCellPos);
+                                                    curTiptap.commands.focus();
+                                                }
+                                            }
+                                        } catch (_) {}
+                                    }, 10);
+                                }
+                                return;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Error handling Tab key in table:', err);
+                }
+            }
+
+            // 2. Backspace / Delete
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                // If entire document is selected via DOM range -> reset to single empty paragraph
+                const winSel = window.getSelection();
+                const editorEl = document.querySelector('.bn-editor');
+                if (editorEl && winSel && !winSel.isCollapsed && ed.document && ed.document.length > 1) {
+                    const selStr = winSel.toString().trim();
+                    const edStr = (editorEl.innerText || '').trim();
+                    if (selStr.length > 0 && edStr.length > 0 && selStr.length >= edStr.length * 0.7) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const newBlocks = ed.replaceBlocks(ed.document, [{ type: 'paragraph' }]);
+                        if (newBlocks && newBlocks[0]) {
+                            ed.setTextCursorPosition(newBlocks[0], 'start');
+                        }
+                        ed.focus();
+                        return;
+                    }
+                }
+
+                // 2.1 Backspace / Delete when table cells/rows/columns are selected -> Clear cell contents (keep rows/cols intact)
+                try {
+                    const tiptap = ed._tiptapEditor;
+                    const state = tiptap?.state;
+                    const sel = state?.selection;
+                    if (!sel) return;
+
+                    const isCellSel = sel.constructor?.name === 'CellSelection' ||
+                                      typeof sel.forEachCell === 'function' ||
+                                      !!sel.$anchorCell;
+                    if (!isCellSel) return;
+
+                    // Find table block in BlockNote document
+                    let tableBlock = null;
+                    const selectedBlocks = ed.getSelection()?.blocks || [];
+                    tableBlock = selectedBlocks.find(b => b.type === 'table');
+                    if (!tableBlock && ed.document) {
+                        const tableEl = document.querySelector('.bn-editor table:has(.ProseMirror-selectednode)') ||
+                                        document.querySelector('.bn-editor .tableWrapper:has(.ProseMirror-selectednode)') ||
+                                        document.activeElement?.closest('table');
+                        if (tableEl) {
+                            const blockOuter = tableEl.closest('.bn-block-outer');
+                            const blockId = blockOuter?.getAttribute('data-id');
+                            if (blockId) tableBlock = ed.getBlock(blockId);
+                        }
+                        if (!tableBlock) {
+                            tableBlock = ed.document.find(b => b.type === 'table');
+                        }
+                    }
+
+                    // Check extension table handles
+                    const tableExt = ed.getExtension ? (ed.getExtension('tableHandles') || Object.values(ed.extensions || {}).find(x => x?.removeRowOrColumn)) : null;
+                    const cellSel = tableExt?.getCellSelection ? tableExt.getCellSelection() : null;
+
+                    let fromRow = cellSel?.from?.row;
+                    let toRow = cellSel?.to?.row;
+                    let fromCol = cellSel?.from?.col;
+                    let toCol = cellSel?.to?.col;
+
+                    if (fromRow === undefined && typeof sel.isRowSelection === 'function' && sel.isRowSelection()) {
+                        const totalRows = tableBlock?.content?.rows?.length || 0;
+                        const totalCols = tableBlock?.content?.rows?.[0]?.cells?.length || 0;
+                        fromCol = 0;
+                        toCol = totalCols - 1;
+                        let minR = totalRows, maxR = -1;
+                        sel.forEachCell((_cell, pos) => {
+                            const resolved = state.doc.resolve(pos);
+                            const rowNode = resolved.parent;
+                            if (rowNode && rowNode.type?.name === 'tableRow') {
+                                const tableNode = state.doc.resolve(resolved.before()).parent;
+                                if (tableNode && tableNode.type?.name === 'table') {
+                                    let rIdx = 0;
+                                    tableNode.forEach((child, _offset, index) => {
+                                        if (child === rowNode) rIdx = index;
+                                    });
+                                    minR = Math.min(minR, rIdx);
+                                    maxR = Math.max(maxR, rIdx);
+                                }
+                            }
+                        });
+                        if (maxR >= 0) {
+                            fromRow = minR;
+                            toRow = maxR;
+                        }
+                    }
+
+                    if (tableBlock && tableBlock.content?.rows && fromRow !== undefined && toRow !== undefined && fromCol !== undefined && toCol !== undefined) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const rows = tableBlock.content.rows;
+                        const newRows = rows.map((r, rIdx) => ({
+                            ...r,
+                            cells: r.cells.map((cell, cIdx) => {
+                                if (rIdx >= fromRow && rIdx <= toRow && cIdx >= fromCol && cIdx <= toCol) {
+                                    return [{ type: 'text', text: '', styles: {} }];
+                                }
+                                return cell;
+                            })
+                        }));
+
+                        ed.updateBlock(tableBlock, {
+                            type: 'table',
+                            content: {
+                                type: 'tableContent',
+                                rows: newRows
+                            }
+                        });
+                        ed.focus();
+                        return;
+                    }
+                } catch (err) {
+                    console.warn('Error handling table backspace:', err);
+                }
+            }
+        };
+
+        // Double-click on EMPTY SPACE in a table cell -> Select all text in that cell (ready for Copy Cmd+C)
+        // Double-click on TEXT -> Keep normal browser word selection
+        const handleTableDblClick = (e) => {
+            const cellEl = e.target.closest('td, th');
+            if (!cellEl) return;
+
+            // If user double-clicked directly on a word/text character, let the browser perform normal word selection
+            if (document.caretRangeFromPoint) {
+                const r = document.caretRangeFromPoint(e.clientX, e.clientY);
+                if (r && r.startContainer && r.startContainer.nodeType === Node.TEXT_NODE) {
+                    const rects = r.getClientRects();
+                    for (let i = 0; i < rects.length; i++) {
+                        const rect = rects[i];
+                        if (e.clientX >= rect.left - 3 && e.clientX <= rect.right + 3 &&
+                            e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                            return;
+                        }
+                    }
+                }
+            }
+
+            const ed = this.blocknoteInstance?.editor;
+            if (!ed) return;
+
+            try {
+                const tiptap = ed._tiptapEditor;
+                if (!tiptap) return;
+
+                const view = tiptap.view;
+                const pos = view.posAtDOM ? view.posAtDOM(cellEl, 0) : undefined;
+                if (pos !== undefined) {
+                    const $pos = tiptap.state.doc.resolve(pos);
+                    let cellDepth = -1;
+                    for (let d = $pos.depth; d > 0; d--) {
+                        const name = $pos.node(d).type?.name;
+                        if (name === 'tableCell' || name === 'tableHeader') {
+                            cellDepth = d;
+                            break;
+                        }
+                    }
+
+                    if (cellDepth > 0) {
+                        const cellNode = $pos.node(cellDepth);
+                        const cellStart = $pos.start(cellDepth);
+                        if (cellNode && cellNode.content.size > 0) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const from = cellStart + 1;
+                            const to = cellStart + cellNode.content.size - 1;
+
+                            if (to >= from && tiptap.commands?.setTextSelection) {
+                                tiptap.commands.setTextSelection({ from, to });
+                                tiptap.commands.focus();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback to DOM Range selection
+                const inlineEl = cellEl.querySelector('.bn-inline-content') || cellEl.querySelector('p') || cellEl;
+                const selection = window.getSelection();
+                if (selection) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const range = document.createRange();
+                    range.selectNodeContents(inlineEl);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            } catch (err) {
+                console.warn('Error handling table cell double-click:', err);
+            }
+        };
+
+        if (this.editorContainer) {
+            this.editorContainer.addEventListener('keydown', handleTableKeydown, true);
+            this.editorContainer.addEventListener('dblclick', handleTableDblClick, true);
+        }
+
         // Helper to convert active block at cursor position to specified block type while preserving text content
         const updateActiveBlockType = (ed, blockSpec) => {
             if (!ed) return;
@@ -14706,6 +15147,90 @@ class NotesPanel {
                 ed.focus();
             } catch (e) {
                 console.warn('Failed to update block type:', e);
+            }
+        };
+
+        // Helper to insert or convert block for toolbar items
+        const insertOrUpdateBlock = (ed, blockSpec) => {
+            if (!ed) return;
+            try {
+                let cursorPosition = null;
+                try {
+                    cursorPosition = ed.getTextCursorPosition();
+                } catch (_) {}
+                let currentBlock = cursorPosition?.block;
+
+                if (!currentBlock && ed.document && ed.document.length > 0) {
+                    const first = ed.document[0];
+                    const isFirstEmpty = (!first.content || first.content.length === 0 ||
+                                         (first.content.length === 1 && !first.content[0].text));
+                    if (isFirstEmpty) {
+                        currentBlock = first;
+                    }
+                }
+
+                const isEmptyParagraph = currentBlock &&
+                    currentBlock.type === 'paragraph' &&
+                    (!currentBlock.content || currentBlock.content.length === 0 ||
+                     (currentBlock.content.length === 1 && !currentBlock.content[0].text));
+
+                let targetBlock = null;
+                if (isEmptyParagraph) {
+                    if (blockSpec.type === 'table') {
+                        const newBlocks = ed.replaceBlocks([currentBlock], [blockSpec]);
+                        targetBlock = newBlocks && newBlocks[0];
+                    } else {
+                        ed.updateBlock(currentBlock, {
+                            type: blockSpec.type,
+                            props: blockSpec.props || {}
+                        });
+                        targetBlock = currentBlock;
+                    }
+                } else {
+                    const newBlocks = ed.insertBlocks([blockSpec], currentBlock || undefined, 'after');
+                    targetBlock = newBlocks && newBlocks[0];
+                }
+
+                if (targetBlock) {
+                    const targetPos = blockSpec.type === 'table' ? 'start' : 'end';
+                    ed.setTextCursorPosition(targetBlock, targetPos);
+                }
+                ed.focus();
+
+                if (blockSpec.type === 'table') {
+                    setTimeout(() => {
+                        try {
+                            const tiptap = ed._tiptapEditor;
+                            if (tiptap) {
+                                let firstCellPos = null;
+                                const tableEl = document.querySelector('.bn-editor table:has(.ProseMirror-focused), .bn-editor table') ||
+                                                document.activeElement?.closest('table');
+                                if (tableEl) {
+                                    const firstTd = tableEl.querySelector('td, th');
+                                    if (firstTd) {
+                                        const pmPos = tiptap.view?.posAtDOM ? tiptap.view.posAtDOM(firstTd, 0) : undefined;
+                                        if (pmPos !== undefined) {
+                                            firstCellPos = pmPos + 1;
+                                        }
+                                    }
+                                }
+                                if (firstCellPos === null) {
+                                    tiptap.state.doc.descendants((node, pos) => {
+                                        if (firstCellPos === null && (node.type.name === 'tableCell' || node.type.name === 'tableHeader')) {
+                                            firstCellPos = pos + 1;
+                                        }
+                                    });
+                                }
+                                if (firstCellPos !== null && tiptap.commands?.setTextSelection) {
+                                    tiptap.commands.setTextSelection(firstCellPos);
+                                }
+                                tiptap.commands?.focus?.();
+                            }
+                        } catch (_) {}
+                    }, 15);
+                }
+            } catch (e) {
+                console.warn('Failed to insert or update block:', e);
             }
         };
 
@@ -14744,8 +15269,7 @@ class NotesPanel {
             this.tbChecklist.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
                 insertOrUpdateBlock(ed, {
-                    type: 'checkListItem',
-                    content: [{ type: 'text', text: '', styles: {} }]
+                    type: 'checkListItem'
                 });
             });
         }
@@ -14754,8 +15278,7 @@ class NotesPanel {
             this.tbBullet.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
                 insertOrUpdateBlock(ed, {
-                    type: 'bulletListItem',
-                    content: [{ type: 'text', text: '', styles: {} }]
+                    type: 'bulletListItem'
                 });
             });
         }
@@ -14764,58 +15287,227 @@ class NotesPanel {
             this.tbNumber.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
                 insertOrUpdateBlock(ed, {
-                    type: 'numberedListItem',
-                    content: [{ type: 'text', text: '', styles: {} }]
+                    type: 'numberedListItem'
                 });
             });
         }
 
-        if (this.tbTable) {
-            this.tbTable.addEventListener('click', () => {
-                const ed = this.blocknoteInstance?.editor;
-                insertOrUpdateBlock(ed, {
-                    type: 'table',
-                    content: {
-                        type: 'tableContent',
-                        rows: [
-                            {
-                                cells: [
-                                    [{ type: 'text', text: '', styles: {} }],
-                                    [{ type: 'text', text: '', styles: {} }]
-                                ]
-                            },
-                            {
-                                cells: [
-                                    [{ type: 'text', text: '', styles: {} }],
-                                    [{ type: 'text', text: '', styles: {} }]
-                                ]
+        // Setup Google Docs-style Dynamic Auto-Expanding Table Grid Picker (Anchored Top-Right, expanding Left & Down)
+        if (this.tableGrid && this.tableGridLabel) {
+            const DEFAULT_ROWS = 6;
+            const DEFAULT_COLS = 10;
+            const MAX_ROWS = 20;
+            const MAX_COLS = 20;
+
+            let visibleRows = DEFAULT_ROWS;
+            let visibleCols = DEFAULT_COLS;
+            let currentSelRows = 0;
+            let currentSelCols = 0;
+
+            const buildGridDOM = (selRows = 0, selCols = 0) => {
+                currentSelRows = selRows;
+                currentSelCols = selCols;
+
+                this.tableGrid.style.gridTemplateColumns = `repeat(${visibleCols}, 13px)`;
+                this.tableGrid.style.gridTemplateRows = `repeat(${visibleRows}, 13px)`;
+                this.tableGrid.innerHTML = '';
+
+                if (this.tableGridLabel) {
+                    this.tableGridLabel.textContent = (selRows > 0 && selCols > 0)
+                        ? `${selCols} x ${selRows}`
+                        : '0 x 0';
+                }
+
+                for (let r = 1; r <= visibleRows; r++) {
+                    for (let c = 1; c <= visibleCols; c++) {
+                        const colFromRight = visibleCols - c + 1;
+                        const isHighlighted = (selRows > 0 && selCols > 0 && r <= selRows && colFromRight <= selCols);
+
+                        const cell = document.createElement('div');
+                        cell.className = 'notes-table-grid-cell' + (isHighlighted ? ' highlighted' : '');
+                        cell.dataset.row = String(r);
+                        cell.dataset.col = String(colFromRight);
+
+                        cell.addEventListener('mouseenter', () => {
+                            handleCellHover(r, colFromRight);
+                        });
+
+                        cell.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (this.tablePickerMenu) this.tablePickerMenu.style.display = 'none';
+
+                            const ed = this.blocknoteInstance?.editor;
+                            if (!ed) return;
+
+                            const insertRows = r;
+                            const insertCols = colFromRight;
+                            const rows = [];
+                            for (let i = 0; i < insertRows; i++) {
+                                const rowCells = [];
+                                for (let j = 0; j < insertCols; j++) {
+                                    rowCells.push([{ type: 'text', text: '', styles: {} }]);
+                                }
+                                rows.push({ cells: rowCells });
                             }
-                        ]
+
+                            insertOrUpdateBlock(ed, {
+                                type: 'table',
+                                content: {
+                                    type: 'tableContent',
+                                    rows: rows
+                                }
+                            });
+                        });
+
+                        this.tableGrid.appendChild(cell);
                     }
+                }
+            };
+
+            const updateHighlightOnly = (selRows, selCols) => {
+                currentSelRows = selRows;
+                currentSelCols = selCols;
+
+                if (this.tableGridLabel) {
+                    this.tableGridLabel.textContent = (selRows > 0 && selCols > 0)
+                        ? `${selCols} x ${selRows}`
+                        : '0 x 0';
+                }
+
+                const cells = this.tableGrid.children;
+                for (let i = 0; i < cells.length; i++) {
+                    const cell = cells[i];
+                    const r = Number(cell.dataset.row);
+                    const colFromRight = Number(cell.dataset.col);
+                    if (selRows > 0 && selCols > 0 && r <= selRows && colFromRight <= selCols) {
+                        cell.classList.add('highlighted');
+                    } else {
+                        cell.classList.remove('highlighted');
+                    }
+                }
+            };
+
+            const handleCellHover = (targetRow, targetColFromRight) => {
+                const targetRows = Math.min(MAX_ROWS, Math.max(DEFAULT_ROWS, targetRow + 1));
+                const targetCols = Math.min(MAX_COLS, Math.max(DEFAULT_COLS, targetColFromRight + 1));
+
+                if (targetRows !== visibleRows || targetCols !== visibleCols) {
+                    visibleRows = targetRows;
+                    visibleCols = targetCols;
+                    buildGridDOM(targetRow, targetColFromRight);
+                } else {
+                    updateHighlightOnly(targetRow, targetColFromRight);
+                }
+            };
+
+            const computeIndex = (dist, maxLimit) => {
+                if (dist <= 0) return 1;
+                const cellW = 13;
+                const pitch = 15.5; // 13px cell + 2.5px gap
+                let idx = 1;
+                if (dist > cellW) {
+                    idx = Math.floor((dist - cellW) / pitch) + 2;
+                }
+                return Math.max(1, Math.min(maxLimit, idx));
+            };
+
+            const handleMouseMove = (e) => {
+                const rect = this.tableGrid.getBoundingClientRect();
+                if (!rect.width || !rect.height) return;
+
+                const relY = e.clientY - rect.top;
+                const distFromRight = rect.right - e.clientX;
+
+                const colFromRight = computeIndex(distFromRight, MAX_COLS);
+                const rowFromTop = computeIndex(relY, MAX_ROWS);
+
+                handleCellHover(rowFromTop, colFromRight);
+            };
+
+            this.tableGrid.addEventListener('mousemove', handleMouseMove);
+
+            const resetGrid = () => {
+                visibleRows = DEFAULT_ROWS;
+                visibleCols = DEFAULT_COLS;
+                buildGridDOM(0, 0);
+            };
+
+            this.tableGrid.addEventListener('mouseleave', () => {
+                resetGrid();
+            });
+
+            this.resetTableGrid = resetGrid;
+            resetGrid();
+        }
+
+        if (this.tbTable && this.tablePickerMenu) {
+            const toggleTablePicker = (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const isHidden = !this.tablePickerMenu.style.display || this.tablePickerMenu.style.display === 'none' || window.getComputedStyle(this.tablePickerMenu).display === 'none';
+                this.tablePickerMenu.style.display = isHidden ? 'flex' : 'none';
+                if (isHidden && typeof this.resetTableGrid === 'function') {
+                    this.resetTableGrid();
+                }
+            };
+
+            this.tbTable.addEventListener('click', toggleTablePicker);
+
+            const tableDropdownEl = document.getElementById('notes-table-dropdown');
+            if (tableDropdownEl) {
+                tableDropdownEl.addEventListener('click', (e) => {
+                    if (e.target.closest('#notes-table-picker-menu')) return;
+                    if (e.target === this.tbTable || this.tbTable.contains(e.target)) return;
+                    toggleTablePicker(e);
                 });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (this.tablePickerMenu && !e.target.closest('#notes-table-dropdown')) {
+                    this.tablePickerMenu.style.display = 'none';
+                }
             });
         }
 
         if (this.tbImage) {
-            this.tbImage.addEventListener('click', () => {
+            this.tbImage.addEventListener('click', async () => {
                 const ed = this.blocknoteInstance?.editor;
-                insertOrUpdateBlock(ed, {
-                    type: 'image',
-                    props: {
-                        url: '',
-                        caption: '',
-                        name: ''
-                    }
-                });
+                if (!ed) return;
+                let url = null;
+                if (typeof window.showCustomPrompt === 'function') {
+                    url = await window.showCustomPrompt({
+                        title: 'Insert Image',
+                        message: 'Enter image URL:',
+                        placeholder: 'https://example.com/image.png',
+                        confirmLabel: 'Insert'
+                    });
+                } else {
+                    url = prompt('Enter image URL:');
+                }
+                if (url && url.trim()) {
+                    insertOrUpdateBlock(ed, {
+                        type: 'image',
+                        props: {
+                            url: url.trim()
+                        }
+                    });
+                }
             });
         }
 
         if (this.tbUndo) {
             this.tbUndo.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
-                if (ed?._tiptapEditor) {
-                    ed._tiptapEditor.commands.undo();
+                if (!ed) return;
+                try {
+                    if (typeof ed.undo === 'function') {
+                        ed.undo();
+                    } else if (ed._tiptapEditor && typeof ed._tiptapEditor.commands?.undo === 'function') {
+                        ed._tiptapEditor.commands.undo();
+                    }
                     ed.focus();
+                } catch (e) {
+                    console.warn('Undo failed:', e);
                 }
             });
         }
@@ -14823,9 +15515,16 @@ class NotesPanel {
         if (this.tbRedo) {
             this.tbRedo.addEventListener('click', () => {
                 const ed = this.blocknoteInstance?.editor;
-                if (ed?._tiptapEditor) {
-                    ed._tiptapEditor.commands.redo();
+                if (!ed) return;
+                try {
+                    if (typeof ed.redo === 'function') {
+                        ed.redo();
+                    } else if (ed._tiptapEditor && typeof ed._tiptapEditor.commands?.redo === 'function') {
+                        ed._tiptapEditor.commands.redo();
+                    }
                     ed.focus();
+                } catch (e) {
+                    console.warn('Redo failed:', e);
                 }
             });
         }
@@ -14888,74 +15587,192 @@ class NotesPanel {
             });
         }
 
-        // Bind Resizer Dragging
-        this.bindResizer();
-    }
+        // Responsive Overflow Toolbar Items inside More Actions Menu
+        const moreChecklist = document.getElementById('note-more-checklist');
+        const moreBullet = document.getElementById('note-more-bullet');
+        const moreNumber = document.getElementById('note-more-number');
+        const moreTable = document.getElementById('note-more-table');
 
-    bindResizer() {
-        const resizer = document.getElementById('notes-resizer');
-        const leftPane = document.querySelector('.notes-sidebar-pane');
-        const rightPane = document.querySelector('.notes-editor-pane');
-        const notesContainer = document.getElementById('notes-page');
-
-        if (resizer && leftPane && rightPane && notesContainer) {
-            let isDragging = false;
-            let animationFrameId = null;
-
-            // Load saved width or default to 260px (matching Lumina main sidebar)
-            const savedWidth = localStorage.getItem('lumina_notes_sidebar_width');
-            const initialWidth = savedWidth ? parseInt(savedWidth, 10) : 260;
-            leftPane.style.width = `${initialWidth}px`;
-            leftPane.style.flex = `0 0 ${initialWidth}px`;
-            rightPane.style.flex = `1 1 0%`;
-
-            resizer.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                isDragging = true;
-                resizer.classList.add('dragging');
-                notesContainer.classList.add('dragging');
-                document.body.style.cursor = 'col-resize';
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                if (animationFrameId) {
-                    cancelAnimationFrame(animationFrameId);
-                }
-                animationFrameId = requestAnimationFrame(() => {
-                    const containerRect = notesContainer.getBoundingClientRect();
-                    let relativeX = e.clientX - containerRect.left;
-
-                    // Boundaries: min 180px, max 450px
-                    if (relativeX < 180) relativeX = 180;
-                    if (relativeX > 450) relativeX = 450;
-
-                    // Snap to 260px if close
-                    if (Math.abs(relativeX - 260) < 6) {
-                        relativeX = 260;
-                    }
-
-                    leftPane.style.width = `${relativeX}px`;
-                    leftPane.style.flex = `0 0 ${relativeX}px`;
-                    rightPane.style.flex = `1 1 0%`;
-
-                    localStorage.setItem('lumina_notes_sidebar_width', relativeX.toString());
-                });
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    resizer.classList.remove('dragging');
-                    notesContainer.classList.remove('dragging');
-                    document.body.style.cursor = '';
-                    if (animationFrameId) {
-                        cancelAnimationFrame(animationFrameId);
-                        animationFrameId = null;
-                    }
-                }
+        if (moreChecklist) {
+            moreChecklist.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                insertOrUpdateBlock(ed, { type: 'checkListItem' });
             });
         }
+
+        if (moreBullet) {
+            moreBullet.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                insertOrUpdateBlock(ed, { type: 'bulletListItem' });
+            });
+        }
+
+        if (moreNumber) {
+            moreNumber.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                insertOrUpdateBlock(ed, { type: 'numberedListItem' });
+            });
+        }
+
+        if (moreTable) {
+            moreTable.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                if (!ed) return;
+                insertOrUpdateBlock(ed, {
+                    type: 'table',
+                    content: {
+                        type: 'tableContent',
+                        rows: [
+                            { cells: [[{ type: 'text', text: '', styles: {} }], [{ type: 'text', text: '', styles: {} }]] },
+                            { cells: [[{ type: 'text', text: '', styles: {} }], [{ type: 'text', text: '', styles: {} }]] }
+                        ]
+                    }
+                });
+            });
+        }
+
+        const moreH1 = document.getElementById('note-more-h1');
+        const moreH2 = document.getElementById('note-more-h2');
+        const moreH3 = document.getElementById('note-more-h3');
+        const moreUndo = document.getElementById('note-more-undo');
+        const moreRedo = document.getElementById('note-more-redo');
+
+        if (moreH1) {
+            moreH1.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                updateActiveBlockType(ed, { type: 'heading', props: { level: 1 } });
+            });
+        }
+
+        if (moreH2) {
+            moreH2.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                updateActiveBlockType(ed, { type: 'heading', props: { level: 2 } });
+            });
+        }
+
+        if (moreH3) {
+            moreH3.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                updateActiveBlockType(ed, { type: 'heading', props: { level: 3 } });
+            });
+        }
+
+        if (moreUndo) {
+            moreUndo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                if (!ed) return;
+                try {
+                    if (typeof ed.undo === 'function') ed.undo();
+                    else if (ed._tiptapEditor?.commands?.undo) ed._tiptapEditor.commands.undo();
+                    ed.focus();
+                } catch (_) {}
+            });
+        }
+
+        if (moreRedo) {
+            moreRedo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.moreMenu) this.moreMenu.style.display = 'none';
+                const ed = this.blocknoteInstance?.editor;
+                if (!ed) return;
+                try {
+                    if (typeof ed.redo === 'function') ed.redo();
+                    else if (ed._tiptapEditor?.commands?.redo) ed._tiptapEditor.commands.redo();
+                    ed.focus();
+                } catch (_) {}
+            });
+        }
+
+        // Setup Dynamic Collision-Based Toolbar Overflow Observer
+        this.setupToolbarOverflowObserver();
+    }
+
+    setupToolbarOverflowObserver() {
+        const header = document.querySelector('.notes-editor-header');
+        const headerLeft = document.querySelector('.notes-editor-header-left');
+        const toolbarRight = document.querySelector('.notes-toolbar-right');
+        const overflowDivider = document.querySelector('.notes-overflow-divider');
+        if (!header || !headerLeft || !toolbarRight) return;
+
+        const COLLAPSIBLE_ITEMS = [
+            { tbId: 'notes-table-dropdown', moreId: 'note-more-table' },
+            { tbId: 'note-tb-number', moreId: 'note-more-number' },
+            { tbId: 'note-tb-bullet', moreId: 'note-more-bullet' },
+            { tbId: 'note-tb-checklist', moreId: 'note-more-checklist' },
+            { tbId: 'note-tb-redo', moreId: 'note-more-redo' },
+            { tbId: 'note-tb-undo', moreId: 'note-more-undo' },
+            { tbId: 'note-tb-h3', moreId: 'note-more-h3' },
+            { tbId: 'note-tb-h2', moreId: 'note-more-h2' },
+            { tbId: 'note-tb-h1', moreId: 'note-more-h1' }
+        ];
+
+        const updateOverflow = () => {
+            // First reset all to visible to measure natural layout
+            COLLAPSIBLE_ITEMS.forEach(item => {
+                const tbEl = document.getElementById(item.tbId);
+                const moreEl = document.getElementById(item.moreId);
+                if (tbEl) tbEl.style.display = '';
+                if (moreEl) moreEl.style.display = 'none';
+            });
+            if (overflowDivider) overflowDivider.style.display = 'none';
+
+            // Iteratively collapse items if toolbar collides with left header or overflows
+            let hasOverflow = false;
+            for (let i = 0; i < COLLAPSIBLE_ITEMS.length; i++) {
+                const leftRect = headerLeft.getBoundingClientRect();
+                const rightRect = toolbarRight.getBoundingClientRect();
+                const headerRect = header.getBoundingClientRect();
+
+                // If no bounding rect yet (e.g. hidden), skip
+                if (headerRect.width === 0) break;
+
+                const isColliding = (rightRect.left < leftRect.right + 8) || (rightRect.right > headerRect.right - 6);
+                if (!isColliding) {
+                    break;
+                }
+
+                const item = COLLAPSIBLE_ITEMS[i];
+                const tbEl = document.getElementById(item.tbId);
+                const moreEl = document.getElementById(item.moreId);
+                if (tbEl) tbEl.style.display = 'none';
+                if (moreEl) moreEl.style.display = 'flex';
+                hasOverflow = true;
+            }
+
+            if (overflowDivider) {
+                overflowDivider.style.display = hasOverflow ? 'block' : 'none';
+            }
+        };
+
+        // Run on next frame
+        requestAnimationFrame(updateOverflow);
+
+        // Observe size changes of header and left column pill
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(() => {
+                requestAnimationFrame(updateOverflow);
+            });
+            ro.observe(header);
+            ro.observe(headerLeft);
+        }
+        window.addEventListener('resize', updateOverflow);
     }
 
     async renderCollections() {
@@ -15005,6 +15822,8 @@ class NotesPanel {
 
             btn.addEventListener('click', (e) => {
                 this.activeCollectionId = colId;
+                localStorage.setItem('lumina_active_collection_id', colId);
+                this.updateUrlParams();
                 this.renderCollections();
                 this.renderNotesList();
             });
@@ -15026,7 +15845,7 @@ class NotesPanel {
                 const noteId = e.dataTransfer.getData('text/plain');
                 if (!noteId || !colId) return;
 
-                const targetColId = colId === 'all' ? 'col_default' : colId;
+                const targetColId = (colId === 'all' || colId === 'col_default') ? null : colId;
                 await NotesManager.moveNote(noteId, targetColId);
                 await this.renderCollections();
                 await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
@@ -15047,23 +15866,9 @@ class NotesPanel {
         this.closeContextMenu();
 
         const collections = await NotesManager.getCollections();
-        // Handle default collection info manually since it's not always in db collection list
-        let colName = 'General';
-        if (colId !== 'col_default') {
-            const found = collections.find(c => c.id === colId);
-            if (found) colName = found.name;
-        } else {
-            // Get current name of col_default from DB or memory if renamed
-            const db = await NotesManager.getDB();
-            const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readonly');
-            const store = tx.objectStore(NotesManager.STORE_COLLECTIONS);
-            const res = await new Promise(r => {
-                const req = store.get('col_default');
-                req.onsuccess = () => r(req.result);
-                req.onerror = () => r(null);
-            });
-            if (res) colName = res.name;
-        }
+        let colName = 'Collection';
+        const found = collections.find(c => c.id === colId);
+        if (found) colName = found.name;
 
         const menu = document.createElement('div');
         menu.className = 'notes-context-menu';
@@ -15105,20 +15910,18 @@ class NotesPanel {
         menu.querySelector('#ctx-col-rename').addEventListener('click', async () => {
             this.closeContextMenu();
             let newName = null;
-            if (typeof window.showCustomPopup === 'function') {
-                newName = await window.showCustomPopup({
+            if (typeof window.showCustomPrompt === 'function') {
+                newName = await window.showCustomPrompt({
                     title: 'Rename Collection',
-                    body: `Enter new name for "${colName}":`,
-                    isInput: true,
-                    placeholder: 'Collection Name',
-                    value: colName,
+                    message: 'Enter new collection name:',
+                    defaultValue: colName,
                     confirmLabel: 'Save'
                 });
             } else {
-                newName = prompt(`Rename collection "${colName}" to:`, colName);
+                newName = prompt('Enter new collection name:', colName);
             }
 
-            if (newName && typeof newName === 'string' && newName.trim() && newName.trim() !== colName) {
+            if (newName && newName.trim()) {
                 await NotesManager.renameCollection(colId, newName.trim());
                 await this.renderCollections();
                 if (this.activeNoteId) {
@@ -15132,9 +15935,7 @@ class NotesPanel {
         menu.querySelector('#ctx-col-delete').addEventListener('click', async () => {
             this.closeContextMenu();
             let confirmed = false;
-            const bodyMsg = colId === 'col_default' 
-                ? 'Are you sure you want to delete the default collection? This will ALSO delete all notes inside it.'
-                : 'Are you sure you want to delete this collection? Notes inside will be moved to the default collection.';
+            const bodyMsg = 'Are you sure you want to delete this collection? Notes inside will be unassigned.';
             
             if (typeof window.showCustomPopup === 'function') {
                 confirmed = await window.showCustomPopup({
@@ -15412,13 +16213,15 @@ class NotesPanel {
         if (name && typeof name === 'string' && name.trim()) {
             const newCol = await NotesManager.createCollection(name.trim());
             this.activeCollectionId = newCol.id;
+            localStorage.setItem('lumina_active_collection_id', newCol.id);
+            this.updateUrlParams();
             await this.renderCollections();
-            await this.handleCreateNote();
+            await this.renderNotesList();
         }
     }
 
     async handleCreateNote() {
-        const colId = this.activeCollectionId === 'all' ? 'col_default' : this.activeCollectionId;
+        const colId = (this.activeCollectionId === 'all' || this.activeCollectionId === 'col_default') ? null : this.activeCollectionId;
         const newNote = await NotesManager.createNote(colId, 'Untitled Note');
 
         // Immediately update active note ID & clear active status from previous note
@@ -15427,6 +16230,7 @@ class NotesPanel {
             this.notesList.querySelectorAll('.notes-item.active').forEach(el => el.classList.remove('active'));
         }
 
+        this.showEditorView();
         await this.renderCollections();
         await this.renderNotesList('', newNote.id);
         if (this.noteTitleInput) {
@@ -15453,6 +16257,10 @@ class NotesPanel {
         if (confirmed) {
             await NotesManager.deleteNote(this.activeNoteId);
             this.activeNoteId = null;
+            this.updateUrlParams();
+            if (window.innerWidth <= 680) {
+                this.showListView();
+            }
             await this.renderCollections();
             await this.renderNotesList();
         }
@@ -15466,12 +16274,11 @@ class NotesPanel {
             return;
         }
 
-        if (typeof window.updateNotesUrl === 'function') {
-            window.updateNotesUrl(noteId);
-        }
+        this.showEditorView();
+        this.updateUrlParams();
 
         if (this.notesEditorPane) {
-            this.notesEditorPane.style.display = 'flex';
+            this.notesEditorPane.style.display = '';
         }
         if (this.notesEmptyState) {
             this.notesEmptyState.style.display = 'none';
@@ -15504,7 +16311,10 @@ class NotesPanel {
 
     showEmptyEditorState() {
         document.title = 'Lumina';
-        if (this.notesEditorPane) {
+        if (window.innerWidth <= 680) {
+            this.showListView();
+        }
+        if (this.notesEditorPane && window.innerWidth > 680) {
             this.notesEditorPane.style.display = 'none';
         }
         if (this.notesEmptyState) {
@@ -21537,21 +22347,22 @@ function initSidebar() {
     if (initStyle) {
         initStyle.remove();
     }
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (isSidePanel || window.innerWidth <= 768) {
-                if (sidebar.classList.contains('active')) {
-                    closeMobileSidebar();
+    const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn');
+    if (toggleBtns.length > 0 && sidebar) {
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isSidePanel || window.innerWidth <= 768) {
+                    if (sidebar.classList.contains('active')) {
+                        closeMobileSidebar();
+                    } else {
+                        openMobileSidebar();
+                    }
                 } else {
-                    sidebar.classList.add('active');
-                    backdrop.classList.add('active');
-                    document.body.classList.add('sidebar-open');
+                    sidebar.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('lumina_sidebar_collapsed', sidebar.classList.contains('sidebar-collapsed'));
                 }
-            } else {
-                sidebar.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('lumina_sidebar_collapsed', sidebar.classList.contains('sidebar-collapsed'));
-            }
+            });
         });
     }
     if (sidebar) {
@@ -21566,11 +22377,32 @@ function initSidebar() {
             }
         });
     }
+    const openMobileSidebar = () => {
+        if (sidebar && !sidebar.classList.contains('active')) {
+            sidebar.classList.add('active');
+            if (backdrop) backdrop.classList.add('active');
+            document.body.classList.add('sidebar-open');
+        }
+    };
     const closeMobileSidebar = () => {
         if (sidebar) sidebar.classList.remove('active');
         if (backdrop) backdrop.classList.remove('active');
         document.body.classList.remove('sidebar-open');
     };
+
+    const mobileMediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleMobileBreakpoint = (e) => {
+        if (e.matches) {
+            openMobileSidebar();
+        } else {
+            closeMobileSidebar();
+        }
+    };
+    if (typeof mobileMediaQuery.addEventListener === 'function') {
+        mobileMediaQuery.addEventListener('change', handleMobileBreakpoint);
+    } else if (typeof mobileMediaQuery.addListener === 'function') {
+        mobileMediaQuery.addListener(handleMobileBreakpoint);
+    }
     if (closeBtn) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -25673,7 +26505,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                         luminaNotesPanelInstance = new NotesPanel();
                     }
                     if (luminaNotesPanelInstance) {
-                        luminaNotesPanelInstance.init(params?.noteId);
+                        luminaNotesPanelInstance.init(params?.noteId, params?.colId);
                     }
                 }
             },
@@ -25753,9 +26585,15 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 } else {
                     urlParams.delete('noteId');
                 }
+                if (params.colId && params.colId !== 'all') {
+                    urlParams.set('colId', params.colId);
+                } else {
+                    urlParams.delete('colId');
+                }
             } else if (viewName === 'sparks') {
                 urlParams.delete('sid');
                 urlParams.delete('noteId');
+                urlParams.delete('colId');
                 urlParams.set('view', 'sparks');
                 if (params.sparkId) {
                     urlParams.set('sparkId', params.sparkId);
@@ -25765,6 +26603,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             } else {
                 urlParams.delete('view');
                 urlParams.delete('noteId');
+                urlParams.delete('colId');
                 urlParams.delete('sparkId');
                 const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
                 const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : '');
@@ -25779,12 +26618,12 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     };
 
-    function updateNotesUrl(noteId) {
-        LuminaViewManager.updateUrl('notes', { noteId });
+    function updateNotesUrl(noteId, colId) {
+        LuminaViewManager.updateUrl('notes', { noteId, colId });
     }
 
-    function notesOpenPage(noteIdToLoad) {
-        LuminaViewManager.switchView('notes', { noteId: noteIdToLoad });
+    function notesOpenPage(noteIdToLoad, colIdToLoad) {
+        LuminaViewManager.switchView('notes', { noteId: noteIdToLoad, colId: colIdToLoad });
     }
 
     function notesClosePage() {
@@ -25811,7 +26650,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         const urlParams = new URLSearchParams(window.location.search);
         const view = urlParams.get('view');
         if (view === 'notes') {
-            LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId') });
+            LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId'), colId: urlParams.get('colId') });
         } else if (view === 'sparks') {
             LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
         }

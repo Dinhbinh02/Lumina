@@ -71,7 +71,9 @@
             injectStyle('view-init-style', `
                 #chat-layout, #lumina-topbar, #sparks-page { display: none !important; }
                 #notes-page { display: flex !important; }
-                .notes-sidebar-pane { width: ${savedWidth}px !important; flex: 0 0 ${savedWidth}px !important; }
+                @media (min-width: 681px) {
+                    .notes-sidebar-pane { width: ${savedWidth}px !important; flex: 0 0 ${savedWidth}px !important; }
+                }
             `);
         } else if (viewParam === 'sparks') {
             injectStyle('view-init-style', `

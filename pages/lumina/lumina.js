@@ -2909,21 +2909,22 @@ function initSidebar() {
     if (initStyle) {
         initStyle.remove();
     }
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (isSidePanel || window.innerWidth <= 768) {
-                if (sidebar.classList.contains('active')) {
-                    closeMobileSidebar();
+    const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn');
+    if (toggleBtns.length > 0 && sidebar) {
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isSidePanel || window.innerWidth <= 768) {
+                    if (sidebar.classList.contains('active')) {
+                        closeMobileSidebar();
+                    } else {
+                        openMobileSidebar();
+                    }
                 } else {
-                    sidebar.classList.add('active');
-                    backdrop.classList.add('active');
-                    document.body.classList.add('sidebar-open');
+                    sidebar.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('lumina_sidebar_collapsed', sidebar.classList.contains('sidebar-collapsed'));
                 }
-            } else {
-                sidebar.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('lumina_sidebar_collapsed', sidebar.classList.contains('sidebar-collapsed'));
-            }
+            });
         });
     }
     if (sidebar) {
@@ -2938,11 +2939,32 @@ function initSidebar() {
             }
         });
     }
+    const openMobileSidebar = () => {
+        if (sidebar && !sidebar.classList.contains('active')) {
+            sidebar.classList.add('active');
+            if (backdrop) backdrop.classList.add('active');
+            document.body.classList.add('sidebar-open');
+        }
+    };
     const closeMobileSidebar = () => {
         if (sidebar) sidebar.classList.remove('active');
         if (backdrop) backdrop.classList.remove('active');
         document.body.classList.remove('sidebar-open');
     };
+
+    const mobileMediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleMobileBreakpoint = (e) => {
+        if (e.matches) {
+            openMobileSidebar();
+        } else {
+            closeMobileSidebar();
+        }
+    };
+    if (typeof mobileMediaQuery.addEventListener === 'function') {
+        mobileMediaQuery.addEventListener('change', handleMobileBreakpoint);
+    } else if (typeof mobileMediaQuery.addListener === 'function') {
+        mobileMediaQuery.addListener(handleMobileBreakpoint);
+    }
     if (closeBtn) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -7045,7 +7067,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                         luminaNotesPanelInstance = new NotesPanel();
                     }
                     if (luminaNotesPanelInstance) {
-                        luminaNotesPanelInstance.init(params?.noteId);
+                        luminaNotesPanelInstance.init(params?.noteId, params?.colId);
                     }
                 }
             },
@@ -7125,9 +7147,15 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 } else {
                     urlParams.delete('noteId');
                 }
+                if (params.colId && params.colId !== 'all') {
+                    urlParams.set('colId', params.colId);
+                } else {
+                    urlParams.delete('colId');
+                }
             } else if (viewName === 'sparks') {
                 urlParams.delete('sid');
                 urlParams.delete('noteId');
+                urlParams.delete('colId');
                 urlParams.set('view', 'sparks');
                 if (params.sparkId) {
                     urlParams.set('sparkId', params.sparkId);
@@ -7137,6 +7165,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             } else {
                 urlParams.delete('view');
                 urlParams.delete('noteId');
+                urlParams.delete('colId');
                 urlParams.delete('sparkId');
                 const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
                 const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : '');
@@ -7151,12 +7180,12 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     };
 
-    function updateNotesUrl(noteId) {
-        LuminaViewManager.updateUrl('notes', { noteId });
+    function updateNotesUrl(noteId, colId) {
+        LuminaViewManager.updateUrl('notes', { noteId, colId });
     }
 
-    function notesOpenPage(noteIdToLoad) {
-        LuminaViewManager.switchView('notes', { noteId: noteIdToLoad });
+    function notesOpenPage(noteIdToLoad, colIdToLoad) {
+        LuminaViewManager.switchView('notes', { noteId: noteIdToLoad, colId: colIdToLoad });
     }
 
     function notesClosePage() {
@@ -7183,7 +7212,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         const urlParams = new URLSearchParams(window.location.search);
         const view = urlParams.get('view');
         if (view === 'notes') {
-            LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId') });
+            LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId'), colId: urlParams.get('colId') });
         } else if (view === 'sparks') {
             LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
         }

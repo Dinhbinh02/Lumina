@@ -623,13 +623,35 @@
   background: #dc2626;
 }
 
-.lumina-settings-btn.text {
-  background: transparent;
-  color: var(--lumina-text-secondary);
+.lumina-settings-btn.sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
-.lumina-settings-btn.text:hover {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.03));
+.lumina-settings-btn.xs {
+  padding: 2px 8px;
+  font-size: 11.5px;
+  border-radius: 6px;
+}
+
+.lumina-get-key-link {
+  font-size: 11.5px;
+  color: var(--lumina-primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.lumina-get-key-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.lumina-storage-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .lumina-settings-actions-row {

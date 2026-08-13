@@ -159,7 +159,7 @@
 
         <div class="lumina-main-content">
             <header class="topbar" id="lumina-topbar">
-                <button class="topbar__action-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
+                <button class="topbar__action-btn sidebar-toggle-btn" id="sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
                     <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="5"></rect>
@@ -203,7 +203,17 @@
             </header>
             <div class="sparks-page" id="sparks-page">
                 <div class="sparks-page__header">
-                    <span class="sparks-page__title">My Sparks</span>
+                    <div class="sparks-page__header-left">
+                        <button class="topbar__action-btn sidebar-toggle-btn sparks-sidebar-toggle-btn" id="sparks-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                            <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                                <path d="M9 7v10"></path>
+                                <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
+                            </svg>
+                        </button>
+                        <span class="sparks-page__title">My Sparks</span>
+                    </div>
                     <button class="sparks-page__new" id="sparks-new-btn">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
                             stroke-width="2.5">
@@ -222,7 +232,17 @@
                 <!-- Left Pane: Collection & Notes Explorer -->
                 <aside class="notes-sidebar-pane">
                     <header class="notes-pane-header">
-                        <h2 class="notes-pane-title">Notes</h2>
+                        <div class="notes-pane-header-left">
+                            <button class="topbar__action-btn sidebar-toggle-btn notes-sidebar-toggle-btn" id="notes-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                                <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                                    <path d="M9 7v10"></path>
+                                    <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
+                                </svg>
+                            </button>
+                            <h2 class="notes-pane-title">Notes</h2>
+                        </div>
                         <div class="notes-pane-actions">
                             <button class="notes-primary-btn" id="notes-new-note-btn" title="New Note"
                                 aria-label="New Note">
@@ -284,27 +304,32 @@
 
                 <!-- Right Pane: Editor Canvas -->
                 <main class="notes-editor-pane" id="notes-editor-pane">
-                    <div class="notes-resizer" id="notes-resizer" role="separator" aria-orientation="vertical"
-                        aria-label="Resize panels">
-                        <div class="notes-resizer-handle"></div>
-                    </div>
                     <header class="notes-editor-header">
-                        <!-- Collection Selector Pill -->
-                        <div class="notes-col-picker-wrapper" id="notes-col-picker-wrapper">
-                            <button type="button" class="notes-col-picker-pill" id="notes-col-picker-pill">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path
-                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
-                                    </path>
-                                </svg>
-                                <span id="notes-col-picker-label">General</span>
-                                <svg class="notes-col-picker-arrow" viewBox="0 0 24 24" width="12" height="12"
-                                    fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
+                        <div class="notes-editor-header-left">
+                            <button type="button" class="notes-back-btn" id="notes-back-btn" title="Back to Notes"
+                                aria-label="Back to Notes">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 18l-6-6 6-6"></path>
                                 </svg>
                             </button>
-                            <div class="notes-col-picker-dropdown" id="notes-col-picker-dropdown"></div>
+                            <!-- Collection Selector Pill -->
+                            <div class="notes-col-picker-wrapper" id="notes-col-picker-wrapper">
+                                <button type="button" class="notes-col-picker-pill" id="notes-col-picker-pill">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                        </path>
+                                    </svg>
+                                    <span id="notes-col-picker-label">No collection</span>
+                                    <svg class="notes-col-picker-arrow" viewBox="0 0 24 24" width="12" height="12"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="notes-col-picker-dropdown" id="notes-col-picker-dropdown"></div>
+                            </div>
                         </div>
 
                         <!-- Apple Notes Style Right Quick Toolbar -->
@@ -353,25 +378,25 @@
                                 </svg>
                             </button>
 
-                            <button type="button" class="notes-tb-btn" id="note-tb-table" title="Table">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                                    <line x1="3" y1="15" x2="21" y2="15"></line>
-                                    <line x1="9" y1="3" x2="9" y2="21"></line>
-                                    <line x1="15" y1="3" x2="15" y2="21"></line>
-                                </svg>
-                            </button>
-
-                            <button type="button" class="notes-tb-btn" id="note-tb-image" title="Image">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                            </button>
+                            <!-- Table Grid Picker Dropdown -->
+                            <div class="notes-custom-dropdown" id="notes-table-dropdown">
+                                <button type="button" class="notes-tb-btn" id="note-tb-table" title="Insert Table">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                                    </svg>
+                                </button>
+                                <div class="notes-dropdown-menu notes-table-picker-menu" id="notes-table-picker-menu" style="display: none;">
+                                    <div class="notes-table-grid-wrapper">
+                                        <div class="notes-table-grid" id="notes-table-grid"></div>
+                                        <div class="notes-table-grid-label" id="notes-table-grid-label">0 x 0</div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <button type="button" class="notes-tb-btn" id="note-tb-undo" title="Undo (Cmd+Z)">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
@@ -389,17 +414,6 @@
                                 </svg>
                             </button>
 
-                            <div class="notes-tb-divider"></div>
-
-                            <button type="button" class="notes-tb-btn" id="note-tb-copy" title="Copy Markdown">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"></path>
-                                    <polyline points="16 6 12 2 8 6"></polyline>
-                                    <line x1="12" y1="2" x2="12" y2="15"></line>
-                                </svg>
-                            </button>
-
                             <!-- More Actions Menu Dropdown -->
                             <div class="notes-custom-dropdown" id="notes-more-dropdown">
                                 <button type="button" class="notes-tb-btn" id="note-tb-more" title="More Actions">
@@ -412,6 +426,80 @@
                                 </button>
                                 <div class="notes-dropdown-menu notes-more-menu" id="notes-more-menu"
                                     style="display: none;">
+                                    <!-- Responsive Overflow Toolbar Items -->
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-h1">
+                                        <span class="notes-tb-text-icon" style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H1</span>
+                                        <span>Heading 1</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-h2">
+                                        <span class="notes-tb-text-icon" style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H2</span>
+                                        <span>Heading 2</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-h3">
+                                        <span class="notes-tb-text-icon" style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H3</span>
+                                        <span>Heading 3</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-checklist">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 11l3 3L22 4"></path>
+                                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                                        </svg>
+                                        <span>Checklist</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-bullet">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="9" y1="6" x2="20" y2="6"></line>
+                                            <line x1="9" y1="12" x2="20" y2="12"></line>
+                                            <line x1="9" y1="18" x2="20" y2="18"></line>
+                                            <circle cx="4" cy="6" r="1.5" fill="currentColor"></circle>
+                                            <circle cx="4" cy="12" r="1.5" fill="currentColor"></circle>
+                                            <circle cx="4" cy="18" r="1.5" fill="currentColor"></circle>
+                                        </svg>
+                                        <span>Bullet List</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-number">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="10" y1="6" x2="21" y2="6"></line>
+                                            <line x1="10" y1="12" x2="21" y2="12"></line>
+                                            <line x1="10" y1="18" x2="21" y2="18"></line>
+                                            <path d="M4 6h1v4"></path>
+                                            <path d="M4 10h2"></path>
+                                            <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
+                                        </svg>
+                                        <span>Numbered List</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-table">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                                            <line x1="3" y1="15" x2="21" y2="15"></line>
+                                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                                            <line x1="15" y1="3" x2="15" y2="21"></line>
+                                        </svg>
+                                        <span>Table</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-undo">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 7v6h6"></path>
+                                            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                                        </svg>
+                                        <span>Undo</span>
+                                    </button>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-redo">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 7v6h-6"></path>
+                                            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+                                        </svg>
+                                        <span>Redo</span>
+                                    </button>
+                                    <div class="notes-more-divider notes-overflow-divider"></div>
+
                                     <button type="button" class="notes-dropdown-item" id="note-action-export-md">
                                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
                                             stroke="currentColor" stroke-width="2">
@@ -617,7 +705,7 @@
                                 <div class="lumina-provider-setup-container">
                                     <div class="lumina-provider-setup-header">
                                         <span class="lumina-provider-section-title">Provider Setup</span>
-                                        <a id="lumina-setup-get-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="lumina-get-key-link" style="font-size: 11.5px; color: var(--lumina-primary-color); text-decoration: none; font-weight: 500;">Get API Key ↗</a>
+                                        <a id="lumina-setup-get-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="lumina-get-key-link">Get API Key ↗</a>
                                     </div>
                                     <div class="lumina-provider-setup-row">
                                         <div class="lumina-settings-dropdown-wrapper lumina-provider-dropdown-wrap">
@@ -641,7 +729,7 @@
                                 <div class="lumina-model-setup-container">
                                     <div class="lumina-model-setup-header">
                                         <span class="lumina-provider-section-title">Model Setup</span>
-                                        <button type="button" id="lumina-open-add-model-btn" class="lumina-settings-btn secondary" style="padding: 2px 8px; font-size: 11.5px;">Add model</button>
+                                        <button type="button" id="lumina-open-add-model-btn" class="lumina-settings-btn secondary xs">Add model</button>
                                     </div>
                                     <div id="lumina-model-list" class="lumina-settings-chain-list">
                                         <div class="lumina-settings-empty-state">No models added yet. Click "Add model" above to start.</div>
@@ -1277,7 +1365,7 @@
                                 <div class="lumina-storage-threads-card">
                                     <div class="lumina-storage-sessions-header">
                                         <span>Largest Chat Threads</span>
-                                        <div class="lumina-storage-actions-group" style="display: flex; gap: 8px;">
+                                        <div class="lumina-storage-actions-group">
                                             <button type="button" id="lumina-delete-all-btn"
                                                 class="lumina-settings-btn danger sm">Delete All</button>
                                         </div>
