@@ -370,6 +370,23 @@ class LuminaSettingsModal {
   static bindGeneralTab() {
     const setupKeyInput = document.getElementById('lumina-setup-provider-key');
     const setupEndpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    const keyToggleBtn = document.getElementById('lumina-setup-key-toggle');
+    const eyeOpen = document.getElementById('lumina-setup-eye-open');
+    const eyeClosed = document.getElementById('lumina-setup-eye-closed');
+
+    if (keyToggleBtn && setupKeyInput) {
+      keyToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isPassword = setupKeyInput.type === 'password';
+        setupKeyInput.type = isPassword ? 'text' : 'password';
+        if (eyeOpen && eyeClosed) {
+          eyeOpen.style.display = isPassword ? 'none' : 'block';
+          eyeClosed.style.display = isPassword ? 'block' : 'none';
+        }
+      });
+    }
+
     if (setupKeyInput) {
       setupKeyInput.addEventListener('input', () => this.saveSelectedProviderKey());
     }

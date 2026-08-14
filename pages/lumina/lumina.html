@@ -136,10 +136,14 @@
                     <div class="gsi-material-button-content-wrapper">
                         <div class="gsi-material-button-icon">
                             <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                <path fill="#4285F4"
+                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                <path fill="#34A853"
+                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                <path fill="#FBBC05"
+                                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                                <path fill="#EA4335"
+                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                             </svg>
                         </div>
                         <span class="gsi-material-button-contents">Sign in with Google</span>
@@ -171,7 +175,8 @@
 
         <div class="lumina-main-content">
             <header class="topbar" id="lumina-topbar">
-                <button class="topbar__action-btn sidebar-toggle-btn" id="sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                <button class="topbar__action-btn sidebar-toggle-btn" id="sidebar-toggle-btn" title="Toggle Sidebar"
+                    aria-label="Toggle Sidebar">
                     <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="5"></rect>
@@ -216,7 +221,8 @@
             <div class="sparks-page" id="sparks-page">
                 <div class="sparks-page__header">
                     <div class="sparks-page__header-left">
-                        <button class="topbar__action-btn sidebar-toggle-btn sparks-sidebar-toggle-btn" id="sparks-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                        <button class="topbar__action-btn sidebar-toggle-btn sparks-sidebar-toggle-btn"
+                            id="sparks-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
                             <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="3" width="18" height="18" rx="5"></rect>
@@ -239,185 +245,382 @@
                 </div>
             </div>
 
-            <!-- TTS Studio Page -->
+            <!-- TTS Studio Page (2-Pane Workspace matching Notes / Sparks) -->
             <section class="tts-page" id="tts-page" style="display: none;" aria-label="TTS Studio Workspace">
-                <!-- Header -->
-                <header class="tts-page__header">
-                    <div class="tts-page__header-left">
-                        <button class="topbar__action-btn sidebar-toggle-btn tts-sidebar-toggle-btn" id="tts-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
-                            <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="5"></rect>
-                                <path d="M9 7v10"></path>
-                                <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
+                <!-- Left Pane: TTS Library & History Explorer -->
+                <aside class="tts-sidebar-pane">
+                    <header class="tts-pane-header">
+                        <div class="tts-pane-header-left">
+                            <button class="topbar__action-btn sidebar-toggle-btn tts-sidebar-toggle-btn"
+                                id="tts-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                                <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                                    <path d="M9 7v10"></path>
+                                    <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
+                                </svg>
+                            </button>
+                            <h2 class="tts-pane-title">TTS Studio</h2>
+                        </div>
+                        <div class="tts-pane-actions">
+                            <button class="notes-primary-btn" id="tts-new-audio-btn" title="New Audio Recording"
+                                aria-label="New Audio">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Audio</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="tts-pane-body">
+                        <!-- Search Box -->
+                        <div class="notes-search-wrapper">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
-                        </button>
-                        <h2 class="tts-page__title">TTS Studio</h2>
-                        <span class="tts-model-badge">Gemini 3.1 Flash TTS</span>
-                    </div>
-
-                    <div class="tts-page__header-actions">
-                        <div class="tts-mode-switcher">
-                            <button type="button" class="tts-mode-btn active" data-mode="single">Single Speaker</button>
-                            <button type="button" class="tts-mode-btn" data-mode="multi">Multi-Speaker (2 Voices)</button>
+                            <input type="text" id="tts-search-input" placeholder="Search audio or transcripts..."
+                                aria-label="Search recordings">
                         </div>
-                    </div>
-                </header>
 
-                <!-- Body Layout (2 Columns) -->
-                <div class="tts-page__body">
-                    <!-- Left Column: Script Editor & Tags -->
-                    <div class="tts-editor-card">
-                        <div class="tts-card-header">
-                            <div class="tts-card-title-group">
-                                <span class="tts-card-title">Script & Transcript</span>
-                                <span class="tts-card-subtitle">Natural language with audio control tags</span>
+                        <!-- Presets / Quick Templates Section -->
+                        <div class="tts-presets-section">
+                            <div class="notes-section-header">
+                                <span class="notes-section-title">QUICK PRESETS</span>
                             </div>
-                            <div class="tts-preset-group">
-                                <span class="tts-preset-label">Presets:</span>
-                                <button type="button" class="tts-preset-chip" data-preset="podcast">Podcast</button>
-                                <button type="button" class="tts-preset-chip" data-preset="story">Storyteller</button>
-                                <button type="button" class="tts-preset-chip" data-preset="news">News</button>
-                                <button type="button" class="tts-preset-chip" data-preset="influencer">Influencer</button>
-                            </div>
-                        </div>
-
-                        <!-- Audio Tags Quick Toolbar -->
-                        <div class="tts-tags-toolbar">
-                            <span class="tts-tags-label">Quick Tags:</span>
-                            <button type="button" class="tts-tag-chip" data-tag="[whispers]" title="Whisper tone">[whispers]</button>
-                            <button type="button" class="tts-tag-chip" data-tag="[excitedly]" title="Excited delivery">[excitedly]</button>
-                            <button type="button" class="tts-tag-chip" data-tag="[laughs]" title="Laughter">[laughs]</button>
-                            <button type="button" class="tts-tag-chip" data-tag="[sighs]" title="Sighing sound">[sighs]</button>
-                            <button type="button" class="tts-tag-chip" data-tag="[shouting]" title="Shout / loud projection">[shouting]</button>
-                            <button type="button" class="tts-tag-chip" data-tag="[gasp]" title="Gasping">[gasp]</button>
-                            <button type="button" class="tts-tag-chip" data-tag="[short pause]" title="Short dramatic pause">[short pause]</button>
-                        </div>
-
-                        <!-- Textarea -->
-                        <div class="tts-textarea-wrapper">
-                            <textarea id="tts-script-input" class="tts-textarea" placeholder="Type or paste your transcript here... You can use inline tags like [whispers] or [excitedly]. For multi-speaker, format as Joe: ... Jane: ..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Voice Talent & Director's Notes -->
-                    <div class="tts-controls-card">
-                        <div class="tts-card-header">
-                            <div class="tts-card-title-group">
-                                <span class="tts-card-title">Director's Notes & Voice</span>
-                                <span class="tts-card-subtitle">Fine-tune tone, pacing and accent</span>
+                            <div class="tts-presets-grid">
+                                <button type="button" class="tts-preset-quick-chip" data-preset="podcast">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                                    </svg>
+                                    <span>Podcast (2-Voice)</span>
+                                </button>
+                                <button type="button" class="tts-preset-quick-chip" data-preset="story">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                    <span>Storyteller</span>
+                                </button>
+                                <button type="button" class="tts-preset-quick-chip" data-preset="news">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                    </svg>
+                                    <span>News Anchor</span>
+                                </button>
+                                <button type="button" class="tts-preset-quick-chip" data-preset="influencer">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                                    </svg>
+                                    <span>Influencer</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div class="tts-controls-form">
-                            <!-- Multi-speaker names (Hidden by default) -->
-                            <div class="tts-form-row" id="tts-speaker-names-group" style="display: none;">
-                                <div class="tts-form-field">
-                                    <label class="tts-form-label">Speaker 1 Name</label>
-                                    <input type="text" id="tts-speaker-1-name" class="tts-input" value="Joe" placeholder="e.g. Joe" />
-                                </div>
-                                <div class="tts-form-field">
-                                    <label class="tts-form-label">Speaker 2 Name</label>
-                                    <input type="text" id="tts-speaker-2-name" class="tts-input" value="Jane" placeholder="e.g. Jane" />
+                        <!-- Recordings List Section -->
+                        <div class="tts-list-section">
+                            <div class="notes-sort-bar">
+                                <span class="notes-sort-label" id="tts-count-label">Recordings (0)</span>
+                                <div class="notes-sort-controls" id="tts-filter-controls">
+                                    <button class="notes-sort-btn active" data-filter="all">All</button>
+                                    <button class="notes-sort-btn" data-filter="starred">Starred</button>
                                 </div>
                             </div>
+                            <div class="tts-recordings-list" id="tts-recordings-list" role="list">
+                            </div>
+                        </div>
+                    </div>
+                </aside>
 
-                            <!-- Voice 1 -->
-                            <div class="tts-form-field">
-                                <label class="tts-form-label" id="tts-voice-1-label">Voice Selection (Speaker 1)</label>
-                                <select id="tts-voice-1-select" class="tts-select"></select>
+                <!-- Right Pane: Studio Canvas & Detail Player -->
+                <main class="tts-studio-pane" id="tts-studio-pane">
+                    <!-- Top Toolbar (Pure Borderless, Seamless) -->
+                    <header class="tts-studio-header">
+                        <div class="tts-studio-header-left">
+                            <button type="button" class="notes-back-btn" id="tts-back-btn" title="Back to Recordings"
+                                aria-label="Back to Recordings">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 18l-6-6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            <!-- Single/Multi Mode Switcher (Visible in Compose Mode) -->
+                            <div class="tts-mode-switcher" id="tts-mode-switcher">
+                                <button type="button" class="tts-mode-btn active" data-mode="single">Single
+                                    Speaker</button>
+                                <button type="button" class="tts-mode-btn" data-mode="multi">Multi-Speaker</button>
                             </div>
 
-                            <!-- Voice 2 (Multi-Speaker) -->
-                            <div class="tts-form-field" id="tts-voice-2-group" style="display: none;">
-                                <label class="tts-form-label">Voice Selection (Speaker 2)</label>
-                                <select id="tts-voice-2-select" class="tts-select"></select>
+                            <!-- View Mode Recording Info Badge -->
+                            <div class="tts-view-info-badge" id="tts-view-info-badge" style="display: none;">
+                                <span class="tts-view-badge-voice" id="tts-view-badge-voice">Achernar</span>
+                                <span class="tts-view-badge-dot">•</span>
+                                <span class="tts-view-badge-mode" id="tts-view-badge-mode">Single Speaker</span>
+                                <span class="tts-view-badge-dot">•</span>
+                                <span class="tts-view-badge-date" id="tts-view-badge-date">Just now</span>
+                            </div>
+                        </div>
+
+                        <div class="tts-studio-header-right">
+                            <!-- Status Message (Clean inline text) -->
+                            <span class="tts-status-text" id="tts-status-text"></span>
+
+                            <!-- Voice Selector Pill Button (Compose Mode) -->
+                            <div class="tts-voice-picker-wrapper" id="tts-voice-picker-wrapper">
+                                <button type="button" class="tts-voice-picker-pill" id="tts-voice-picker-pill"
+                                    title="Choose Voice & Settings">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    </svg>
+                                    <span id="tts-active-voice-label">Voice: Kore</span>
+                                    <svg class="tts-dropdown-arrow" viewBox="0 0 24 24" width="12" height="12"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+
+                                <!-- Compact Floating Voice Popover -->
+                                <div class="tts-voice-settings-popover" id="tts-voice-settings-popover">
+                                    <!-- Multi-speaker switch tabs -->
+                                    <div class="tts-popover-speaker-switch" id="tts-speaker-tab-switch"
+                                        style="display: none;">
+                                        <button type="button" class="tts-speaker-tab-btn active"
+                                            data-target-speaker="1">Speaker 1: <strong
+                                                id="tts-s1-badge">Kore</strong></button>
+                                        <button type="button" class="tts-speaker-tab-btn"
+                                            data-target-speaker="2">Speaker 2: <strong
+                                                id="tts-s2-badge">Puck</strong></button>
+                                    </div>
+
+                                    <!-- Multi-speaker names inputs -->
+                                    <div class="tts-popover-names-row" id="tts-speaker-names-group"
+                                        style="display: none;">
+                                        <input type="text" id="tts-speaker-1-name" class="tts-mini-input" value="Joe"
+                                            placeholder="Speaker 1 name" />
+                                        <input type="text" id="tts-speaker-2-name" class="tts-mini-input" value="Jane"
+                                            placeholder="Speaker 2 name" />
+                                    </div>
+
+                                    <!-- Voice Search & Multi-trait filter -->
+                                    <div class="tts-popover-search-row">
+                                        <div class="tts-voice-search-wrapper">
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                            <input type="text" id="tts-voice-search-input"
+                                                placeholder="Search voices..." aria-label="Search voices">
+                                        </div>
+                                        <div class="tts-voice-filter-wrapper">
+                                            <button type="button" class="tts-voice-filter-btn" id="tts-voice-filter-btn"
+                                                title="Filter traits" aria-label="Filter traits">
+                                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+                                                    stroke="currentColor" stroke-width="2">
+                                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3">
+                                                    </polygon>
+                                                </svg>
+                                            </button>
+                                            <div class="tts-voice-filter-menu" id="tts-voice-filter-menu"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 30 Voice Cards List -->
+                                    <div class="tts-voice-list" id="tts-voice-cards-container" role="listbox"></div>
+                                </div>
                             </div>
 
-                            <!-- Style -->
-                            <div class="tts-form-field">
-                                <div class="tts-form-label-row">
-                                    <label class="tts-form-label">Style</label>
-                                    <div class="tts-suggestions">
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-style-input" data-val="Enthusiastic and upbeat radio host with bright energy">Radio Host</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-style-input" data-val="Whispering, intimate storyteller with cinematic suspense">Storyteller</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-style-input" data-val="Professional, articulate and confident educator">Professional</button>
+                            <!-- Generate Speech Button (Compose Mode) -->
+                            <button type="button" class="notes-primary-btn tts-generate-btn" id="tts-generate-btn"
+                                title="Generate Speech Audio">
+                                <span class="tts-spinner" id="tts-generate-spinner" style="display: none;"></span>
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                <span id="tts-generate-btn-text">Generate</span>
+                            </button>
+
+                            <!-- View Mode Action Buttons (Download, Delete) -->
+                            <div class="tts-view-actions" id="tts-view-actions" style="display: none;">
+                                <button type="button" class="tts-download-btn" id="tts-download-mp3-btn"
+                                    title="Download Audio">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    <span>Download</span>
+                                </button>
+                                <button type="button" class="notes-icon-btn danger" id="tts-delete-current-btn"
+                                    title="Delete Recording">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Studio Body -->
+                    <div class="tts-studio-body" id="tts-studio-body">
+                        <!-- VIEW MODE: Premium Minimalist Audio Player & Read-only Content -->
+                        <div class="tts-view-container" id="tts-view-container" style="display: none;">
+                            <!-- Premium Audio Player Bar -->
+                            <div class="tts-view-player-bar">
+                                <button type="button" class="tts-player-step-btn" id="tts-rewind-5s-btn"
+                                    title="Rewind 5s">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 4v6h6"></path>
+                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                        <text x="12" y="14.5" font-size="7" font-weight="700" text-anchor="middle"
+                                            fill="currentColor" stroke="none">5</text>
+                                    </svg>
+                                </button>
+                                <button type="button" class="tts-hero-play-btn" id="tts-play-pause-btn"
+                                    title="Play / Pause">
+                                    <svg id="tts-play-icon" viewBox="0 0 24 24" width="15" height="15"
+                                        fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    <svg id="tts-pause-icon" viewBox="0 0 24 24" width="15" height="15"
+                                        fill="currentColor" style="display: none;">
+                                        <rect x="6" y="4" width="4" height="16"></rect>
+                                        <rect x="14" y="4" width="4" height="16"></rect>
+                                    </svg>
+                                </button>
+                                <button type="button" class="tts-player-step-btn" id="tts-forward-5s-btn"
+                                    title="Forward 5s">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M23 4v6h-6"></path>
+                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                        <text x="12" y="14.5" font-size="7" font-weight="700" text-anchor="middle"
+                                            fill="currentColor" stroke="none">5</text>
+                                    </svg>
+                                </button>
+                                <div class="tts-player-progress-wrapper">
+                                    <input type="range" class="tts-player-slider" id="tts-progress-bar" min="0"
+                                        max="100" value="0" />
+                                    <div class="tts-player-times">
+                                        <span id="tts-current-time">0:00</span> / <span
+                                            id="tts-duration-time">0:00</span>
                                     </div>
                                 </div>
-                                <input type="text" id="tts-style-input" class="tts-input" placeholder="e.g. Enthusiastic radio host, calm audiobook reader..." />
+                                <button type="button" class="tts-speed-btn" id="tts-speed-btn"
+                                    title="Playback Speed">1x</button>
                             </div>
 
-                            <!-- Pace -->
-                            <div class="tts-form-field">
-                                <div class="tts-form-label-row">
-                                    <label class="tts-form-label">Pacing</label>
-                                    <div class="tts-suggestions">
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-pace-input" data-val="Fast-paced, energetic delivery with punchy transitions">Fast & Punchy</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-pace-input" data-val="Slow, relaxed and liquid drift with dramatic pauses">Slow & Dramatic</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-pace-input" data-val="Steady, well-measured conversational pace">Natural</button>
+                            <!-- Read-only Script Viewer with Editable Title -->
+                            <div class="tts-view-content-wrapper">
+                                <input type="text" class="tts-view-title-input" id="tts-hero-title"
+                                    placeholder="Untitled Audio" aria-label="Audio Title" />
+                                <div class="tts-view-script-body" id="tts-view-script-body"></div>
+                            </div>
+                        </div>
+
+                        <!-- COMPOSE/EDIT MODE: Creator Canvas -->
+                        <div class="tts-compose-container" id="tts-compose-container">
+                            <!-- Compact Director Tone Bar (Style, Pace, Accent, Profile) -->
+                            <div class="tts-director-compact-bar" id="tts-director-compact-bar">
+                                <div class="tts-compact-chips-row">
+                                    <!-- Style Chip -->
+                                    <div class="tts-attribute-chip-wrapper" id="tts-style-chip-wrapper">
+                                        <button type="button" class="tts-attribute-chip" id="tts-style-chip">
+                                            <span id="tts-style-chip-label">Style: Default</span>
+                                            <svg class="tts-dropdown-arrow" viewBox="0 0 24 24" width="10" height="10"
+                                                fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div class="tts-attribute-dropdown" id="tts-style-dropdown"></div>
+                                    </div>
+
+                                    <!-- Pace Chip -->
+                                    <div class="tts-attribute-chip-wrapper" id="tts-pace-chip-wrapper">
+                                        <button type="button" class="tts-attribute-chip" id="tts-pace-chip">
+                                            <span id="tts-pace-chip-label">Pace: Default</span>
+                                            <svg class="tts-dropdown-arrow" viewBox="0 0 24 24" width="10" height="10"
+                                                fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div class="tts-attribute-dropdown" id="tts-pace-dropdown"></div>
+                                    </div>
+
+                                    <!-- Accent Chip -->
+                                    <div class="tts-attribute-chip-wrapper" id="tts-accent-chip-wrapper">
+                                        <button type="button" class="tts-attribute-chip" id="tts-accent-chip">
+                                            <span id="tts-accent-chip-label">Accent: Default</span>
+                                            <svg class="tts-dropdown-arrow" viewBox="0 0 24 24" width="10" height="10"
+                                                fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div class="tts-attribute-dropdown" id="tts-accent-dropdown"></div>
                                     </div>
                                 </div>
-                                <input type="text" id="tts-pace-input" class="tts-input" placeholder="e.g. Speaks at a fast energetic pace, slow and liquid tempo..." />
+
+                                <!-- Audio Profile inline minimal input -->
+                                <div class="tts-profile-compact-wrapper">
+                                    <input type="text" id="tts-profile-input" class="tts-profile-compact-input"
+                                        placeholder="Voice persona description (optional)..."
+                                        aria-label="Audio Profile">
+                                </div>
                             </div>
 
-                            <!-- Accent -->
-                            <div class="tts-form-field">
-                                <div class="tts-form-label-row">
-                                    <label class="tts-form-label">Accent</label>
-                                    <div class="tts-suggestions">
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="Standard English">Standard EN</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="British London accent">British</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="Vietnamese native natural accent">Vietnamese</button>
-                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="American Southern California casual">American</button>
-                                    </div>
+                            <!-- Main Transcript Canvas (Borderless, Clean, Focus On Content) -->
+                            <div class="tts-canvas-main">
+                                <!-- Quick Tags Inline Row -->
+                                <div class="tts-tags-toolbar">
+                                    <span class="tts-tags-label">Tags:</span>
+                                    <button type="button" class="tts-tag-chip" data-tag="[whispers]"
+                                        title="Whisper tone">[whispers]</button>
+                                    <button type="button" class="tts-tag-chip" data-tag="[excitedly]"
+                                        title="Excited delivery">[excitedly]</button>
+                                    <button type="button" class="tts-tag-chip" data-tag="[laughs]"
+                                        title="Laughter">[laughs]</button>
+                                    <button type="button" class="tts-tag-chip" data-tag="[sighs]"
+                                        title="Sighing sound">[sighs]</button>
+                                    <button type="button" class="tts-tag-chip" data-tag="[shouting]"
+                                        title="Shout">[shouting]</button>
+                                    <button type="button" class="tts-tag-chip" data-tag="[gasp]"
+                                        title="Gasping">[gasp]</button>
+                                    <button type="button" class="tts-tag-chip" data-tag="[short pause]"
+                                        title="Short dramatic pause">[short pause]</button>
                                 </div>
-                                <input type="text" id="tts-accent-input" class="tts-input" placeholder="e.g. British London, Vietnamese natural, American..." />
+
+                                <!-- Full-Canvas Borderless Textarea -->
+                                <div class="tts-canvas-textarea-wrapper">
+                                    <textarea id="tts-script-input" class="tts-canvas-textarea"
+                                        placeholder="Type or paste your transcript here...&#10;&#10;Examples:&#10;Single Speaker: Hello! [excitedly] Welcome to Lumina TTS Studio.&#10;Multi Speaker:&#10;Joe: [laughs] Did you check the latest models?&#10;Jane: Yes Joe! The quality is amazing."></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Footer Action & Player Bar -->
-                <footer class="tts-page__footer">
-                    <div class="tts-footer-left">
-                        <button type="button" class="notes-primary-btn tts-generate-btn" id="tts-generate-btn">
-                            <span class="tts-spinner" id="tts-generate-spinner" style="display: none;"></span>
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                            <span id="tts-generate-btn-text">Generate Speech</span>
-                        </button>
-                        <span class="tts-status-text" id="tts-status-text"></span>
-                    </div>
-
-                    <!-- Audio Player Bar (Appears after speech generated) -->
-                    <div class="tts-player-container" id="tts-player-container" style="display: none;">
-                        <button type="button" class="tts-player-btn" id="tts-play-pause-btn" title="Play / Pause">
-                            <svg id="tts-play-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                            <svg id="tts-pause-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: none;">
-                                <rect x="6" y="4" width="4" height="16"></rect>
-                                <rect x="14" y="4" width="4" height="16"></rect>
-                            </svg>
-                        </button>
-                        <div class="tts-player-progress-wrapper">
-                            <input type="range" class="tts-player-slider" id="tts-progress-bar" min="0" max="100" value="0" />
-                            <div class="tts-player-times">
-                                <span id="tts-current-time">0:00</span> / <span id="tts-duration-time">0:00</span>
-                            </div>
-                        </div>
-                        <button type="button" class="tts-speed-btn" id="tts-speed-btn" title="Playback Speed">1x</button>
-                        <button type="button" class="tts-download-btn" id="tts-download-btn" title="Download WAV Audio (24kHz)">
-                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            <span>Download .WAV</span>
-                        </button>
-                    </div>
-                </footer>
+                </main>
             </section>
 
             <!-- Notes Page (Semantic 2-Column Workspace) -->
@@ -426,9 +629,11 @@
                 <aside class="notes-sidebar-pane">
                     <header class="notes-pane-header">
                         <div class="notes-pane-header-left">
-                            <button class="topbar__action-btn sidebar-toggle-btn notes-sidebar-toggle-btn" id="notes-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                            <button class="topbar__action-btn sidebar-toggle-btn notes-sidebar-toggle-btn"
+                                id="notes-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
                                 <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <rect x="3" y="3" width="18" height="18" rx="5"></rect>
                                     <path d="M9 7v10"></path>
                                     <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
@@ -583,7 +788,8 @@
                                         <line x1="15" y1="3" x2="15" y2="21"></line>
                                     </svg>
                                 </button>
-                                <div class="notes-dropdown-menu notes-table-picker-menu" id="notes-table-picker-menu" style="display: none;">
+                                <div class="notes-dropdown-menu notes-table-picker-menu" id="notes-table-picker-menu"
+                                    style="display: none;">
                                     <div class="notes-table-grid-wrapper">
                                         <div class="notes-table-grid" id="notes-table-grid"></div>
                                         <div class="notes-table-grid-label" id="notes-table-grid-label">0 x 0</div>
@@ -620,29 +826,39 @@
                                 <div class="notes-dropdown-menu notes-more-menu" id="notes-more-menu"
                                     style="display: none;">
                                     <!-- Responsive Overflow Toolbar Items -->
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-h1">
-                                        <span class="notes-tb-text-icon" style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H1</span>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-h1">
+                                        <span class="notes-tb-text-icon"
+                                            style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H1</span>
                                         <span>Heading 1</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-h2">
-                                        <span class="notes-tb-text-icon" style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H2</span>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-h2">
+                                        <span class="notes-tb-text-icon"
+                                            style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H2</span>
                                         <span>Heading 2</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-h3">
-                                        <span class="notes-tb-text-icon" style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H3</span>
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-h3">
+                                        <span class="notes-tb-text-icon"
+                                            style="width: 14px; text-align: center; font-size: 11px; font-weight: 700;">H3</span>
                                         <span>Heading 3</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-checklist">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-checklist">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <path d="M9 11l3 3L22 4"></path>
                                             <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
                                         </svg>
                                         <span>Checklist</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-bullet">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-bullet">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <line x1="9" y1="6" x2="20" y2="6"></line>
                                             <line x1="9" y1="12" x2="20" y2="12"></line>
                                             <line x1="9" y1="18" x2="20" y2="18"></line>
@@ -652,9 +868,11 @@
                                         </svg>
                                         <span>Bullet List</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-number">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-number">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <line x1="10" y1="6" x2="21" y2="6"></line>
                                             <line x1="10" y1="12" x2="21" y2="12"></line>
                                             <line x1="10" y1="18" x2="21" y2="18"></line>
@@ -664,9 +882,11 @@
                                         </svg>
                                         <span>Numbered List</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-table">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-table">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                             <line x1="3" y1="9" x2="21" y2="9"></line>
                                             <line x1="3" y1="15" x2="21" y2="15"></line>
@@ -675,17 +895,21 @@
                                         </svg>
                                         <span>Table</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-undo">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-undo">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <path d="M3 7v6h6"></path>
                                             <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
                                         </svg>
                                         <span>Undo</span>
                                     </button>
-                                    <button type="button" class="notes-dropdown-item notes-overflow-item" id="note-more-redo">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="notes-dropdown-item notes-overflow-item"
+                                        id="note-more-redo">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <path d="M21 7v6h-6"></path>
                                             <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
                                         </svg>
@@ -898,23 +1122,39 @@
                                 <div class="lumina-provider-setup-container">
                                     <div class="lumina-provider-setup-header">
                                         <span class="lumina-provider-section-title">Provider Setup</span>
-                                        <a id="lumina-setup-get-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" class="lumina-get-key-link">Get API Key ↗</a>
+                                        <a id="lumina-setup-get-key-link" href="https://aistudio.google.com/app/apikey"
+                                            target="_blank" class="lumina-get-key-link">Get API Key ↗</a>
                                     </div>
                                     <div class="lumina-provider-setup-row">
                                         <div class="lumina-settings-dropdown-wrapper lumina-provider-dropdown-wrap">
-                                            <input type="text" id="lumina-setup-provider-input" value="Gemini" data-value="gemini-default" placeholder="Select Provider...">
-                                            <div id="lumina-setup-provider-menu" class="lumina-settings-dropdown-menu"></div>
+                                            <input type="text" id="lumina-setup-provider-input" value="Gemini"
+                                                data-value="gemini-default" placeholder="Select Provider...">
+                                            <div id="lumina-setup-provider-menu" class="lumina-settings-dropdown-menu">
+                                            </div>
                                         </div>
                                         <div class="lumina-provider-key-wrap">
                                             <input type="password" id="lumina-setup-provider-key" placeholder="API Key">
-                                            <button type="button" id="lumina-setup-key-toggle" class="lumina-key-toggle-btn" title="Toggle visibility">
-                                                <svg id="lumina-setup-eye-open" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                                <svg id="lumina-setup-eye-closed" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                            <button type="button" id="lumina-setup-key-toggle"
+                                                class="lumina-key-toggle-btn" title="Toggle visibility">
+                                                <svg id="lumina-setup-eye-open" viewBox="0 0 24 24" width="15"
+                                                    height="15" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
+                                                <svg id="lumina-setup-eye-closed" viewBox="0 0 24 24" width="15"
+                                                    height="15" fill="none" stroke="currentColor" stroke-width="2"
+                                                    style="display:none;">
+                                                    <path
+                                                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                                    <line x1="1" y1="1" x2="23" y2="23" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </div>
-                                    <div id="lumina-setup-endpoint-row" class="lumina-provider-endpoint-row" style="display: none;">
-                                        <input type="text" id="lumina-setup-provider-endpoint" placeholder="API Base Endpoint URL (e.g. https://api.openai.com/v1)">
+                                    <div id="lumina-setup-endpoint-row" class="lumina-provider-endpoint-row"
+                                        style="display: none;">
+                                        <input type="text" id="lumina-setup-provider-endpoint"
+                                            placeholder="API Base Endpoint URL (e.g. https://api.openai.com/v1)">
                                     </div>
                                 </div>
 
@@ -922,10 +1162,12 @@
                                 <div class="lumina-model-setup-container">
                                     <div class="lumina-model-setup-header">
                                         <span class="lumina-provider-section-title">Model Setup</span>
-                                        <button type="button" id="lumina-open-add-model-btn" class="lumina-settings-btn secondary xs">Add model</button>
+                                        <button type="button" id="lumina-open-add-model-btn"
+                                            class="lumina-settings-btn secondary xs">Add model</button>
                                     </div>
                                     <div id="lumina-model-list" class="lumina-settings-chain-list">
-                                        <div class="lumina-settings-empty-state">No models added yet. Click "Add model" above to start.</div>
+                                        <div class="lumina-settings-empty-state">No models added yet. Click "Add model"
+                                            above to start.</div>
                                     </div>
                                 </div>
                             </div>
@@ -1448,7 +1690,8 @@
                                     </div>
                                 </div>
 
-                                <div id="lumina-auth-logged-in" class="lumina-settings-auth-container lumina-account-card">
+                                <div id="lumina-auth-logged-in"
+                                    class="lumina-settings-auth-container lumina-account-card">
                                     <div class="lumina-settings-profile-row">
                                         <img id="lumina-user-avatar" src="" alt="Avatar" class="lumina-settings-avatar">
                                         <div class="profile-meta">
@@ -1479,7 +1722,8 @@
                                         <div class="lumina-cloud-stat-card">
                                             <span class="stat-label">Synced Items</span>
                                             <span class="stat-value" id="lumina-cloud-stat-items">0 chats</span>
-                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">Chats &amp; Notes</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">Chats &amp;
+                                                Notes</span>
                                         </div>
                                     </div>
                                 </div>

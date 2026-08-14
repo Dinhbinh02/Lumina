@@ -1,4 +1,4 @@
-
+﻿
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -16610,56 +16610,258 @@ if (typeof window !== 'undefined') {
 
 
 // --- BUNDLED FROM: lib/core/tts_manager.js ---
-/**
- * TTSManager - Core service for Gemini 3.1 Flash Text-to-Speech Generation
- * Handles Single & Multi-speaker audio synthesis, Director's Notes prompt generation,
- * raw PCM to WAV conversion, and audio playback.
- */
+class TTSDB {
+    static DB_NAME = 'LuminaTTSDB';
+    static DB_VERSION = 1;
+    static STORE_RECORDINGS = 'recordings';
+    static _db = null;
+
+    static async getDB() {
+        if (TTSDB._db) return TTSDB._db;
+
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(TTSDB.DB_NAME, TTSDB.DB_VERSION);
+
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(TTSDB.STORE_RECORDINGS)) {
+                    const store = db.createObjectStore(TTSDB.STORE_RECORDINGS, { keyPath: 'id' });
+                    store.createIndex('createdAt', 'createdAt', { unique: false });
+                    store.createIndex('starred', 'starred', { unique: false });
+                    store.createIndex('mode', 'mode', { unique: false });
+                }
+            };
+
+            request.onsuccess = (e) => {
+                TTSDB._db = e.target.result;
+                TTSDB._db.onclose = () => { TTSDB._db = null; };
+                TTSDB._db.onversionchange = () => {
+                    if (TTSDB._db) {
+                        TTSDB._db.close();
+                        TTSDB._db = null;
+                    }
+                };
+                resolve(TTSDB._db);
+            };
+
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async getAllRecordings() {
+        const db = await TTSDB.getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readonly');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const index = store.index('createdAt');
+            const request = index.getAll();
+            request.onsuccess = () => {
+                const list = (request.result || []).reverse();
+                resolve(list);
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async getRecording(id) {
+        if (!id) return null;
+        const db = await TTSDB.getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readonly');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const request = store.get(id);
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async saveRecording(recData) {
+        const db = await TTSDB.getDB();
+        const now = Date.now();
+        const item = {
+            id: recData.id || ('tts_' + now + '_' + Math.random().toString(36).substr(2, 6)),
+            title: (recData.title || '').trim() || (recData.script ? recData.script.slice(0, 50).trim() + '...' : 'Untitled Audio'),
+            script: recData.script || '',
+            mode: recData.mode || 'single',
+            voice: recData.voice || 'Kore',
+            voice2: recData.voice2 || 'Puck',
+            speaker1: recData.speaker1 || 'Joe',
+            speaker2: recData.speaker2 || 'Jane',
+            audioProfile: recData.audioProfile || '',
+            style: recData.style || '',
+            pace: recData.pace || '',
+            accent: recData.accent || '',
+            durationSeconds: recData.durationSeconds || 0,
+            audioBlob: recData.audioBlob,
+            starred: recData.starred ? 1 : 0,
+            createdAt: recData.createdAt || now,
+            updatedAt: now
+        };
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const request = store.put(item);
+            request.onsuccess = () => resolve(item);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async toggleStar(id) {
+        const item = await TTSDB.getRecording(id);
+        if (!item) return null;
+        item.starred = item.starred ? 0 : 1;
+        item.updatedAt = Date.now();
+
+        const db = await TTSDB.getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const request = store.put(item);
+            request.onsuccess = () => resolve(item);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async updateRecordingTitle(id, newTitle) {
+        const item = await TTSDB.getRecording(id);
+        if (!item) return null;
+        item.title = (newTitle || '').trim() || 'Untitled Audio';
+        item.updatedAt = Date.now();
+
+        const db = await TTSDB.getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const request = store.put(item);
+            request.onsuccess = () => resolve(item);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async deleteRecording(id) {
+        const db = await TTSDB.getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const request = store.delete(id);
+            request.onsuccess = () => resolve(true);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+}
+
 class TTSManager {
     static MODEL = 'gemini-3.1-flash-tts-preview';
     static API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-    // 30 Gemini Output Voices with their characteristics
     static VOICES = [
-        { name: 'Kore', gender: 'Female', tone: 'Firm', description: 'Firm, confident & authoritative' },
-        { name: 'Puck', gender: 'Male', tone: 'Upbeat', description: 'Upbeat, energetic & lively' },
-        { name: 'Zephyr', gender: 'Female', tone: 'Bright', description: 'Bright, crisp & engaging' },
-        { name: 'Fenrir', gender: 'Male', tone: 'Excitable', description: 'Excitable, dynamic & spirited' },
-        { name: 'Leda', gender: 'Female', tone: 'Youthful', description: 'Youthful, fresh & pleasant' },
-        { name: 'Aoede', gender: 'Female', tone: 'Breezy', description: 'Breezy, natural & relaxed' },
-        { name: 'Enceladus', gender: 'Male', tone: 'Breathy', description: 'Breathy, deep & expressive' },
-        { name: 'Algieba', gender: 'Male', tone: 'Smooth', description: 'Smooth, polished & calm' },
-        { name: 'Despina', gender: 'Female', tone: 'Smooth', description: 'Smooth, elegant & melodious' },
-        { name: 'Orus', gender: 'Male', tone: 'Firm', description: 'Firm, steady & commanding' },
-        { name: 'Charon', gender: 'Male', tone: 'Informative', description: 'Informative, balanced & clear' },
-        { name: 'Callirrhoe', gender: 'Female', tone: 'Easy-going', description: 'Easy-going, friendly & casual' },
-        { name: 'Autonoe', gender: 'Female', tone: 'Bright', description: 'Bright, clear & vibrant' },
-        { name: 'Iapetus', gender: 'Male', tone: 'Clear', description: 'Clear, articulated & neutral' },
-        { name: 'Umbriel', gender: 'Male', tone: 'Easy-going', description: 'Easy-going, conversational & mild' },
-        { name: 'Erinome', gender: 'Female', tone: 'Clear', description: 'Clear, crisp & articulate' },
-        { name: 'Algenib', gender: 'Male', tone: 'Gravelly', description: 'Gravelly, textured & mature' },
-        { name: 'Rasalgethi', gender: 'Male', tone: 'Informative', description: 'Informative, documentary-style' },
-        { name: 'Laomedeia', gender: 'Female', tone: 'Upbeat', description: 'Upbeat, cheerful & positive' },
-        { name: 'Achernar', gender: 'Female', tone: 'Soft', description: 'Soft, gentle & comforting' },
-        { name: 'Alnilam', gender: 'Male', tone: 'Firm', description: 'Firm, grounded & resonant' },
-        { name: 'Schedar', gender: 'Male', tone: 'Even', description: 'Even, steady & measured' },
-        { name: 'Gacrux', gender: 'Male', tone: 'Mature', description: 'Mature, seasoned & warm' },
-        { name: 'Pulcherrima', gender: 'Female', tone: 'Forward', description: 'Forward, direct & expressive' },
-        { name: 'Achird', gender: 'Male', tone: 'Friendly', description: 'Friendly, warm & approachable' },
-        { name: 'Zubenelgenubi', gender: 'Male', tone: 'Casual', description: 'Casual, relaxed & informal' },
-        { name: 'Vindemiatrix', gender: 'Female', tone: 'Gentle', description: 'Gentle, soft & soothing' },
-        { name: 'Sadachbia', gender: 'Female', tone: 'Lively', description: 'Lively, animated & enthusiastic' },
-        { name: 'Sadaltager', gender: 'Male', tone: 'Knowledgeable', description: 'Knowledgeable, educational & wise' },
-        { name: 'Sulafat', gender: 'Female', tone: 'Warm', description: 'Warm, empathetic & welcoming' }
+        { name: 'Achernar', tone: 'Soft', pitch: 'Higher pitch', gender: 'Female' },
+        { name: 'Achird', tone: 'Friendly', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Algenib', tone: 'Gravelly', pitch: 'Lower pitch', gender: 'Male' },
+        { name: 'Algieba', tone: 'Smooth', pitch: 'Lower pitch', gender: 'Male' },
+        { name: 'Alnilam', tone: 'Firm', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Aoede', tone: 'Breezy', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Autonoe', tone: 'Bright', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Callirrhoe', tone: 'Easy-going', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Charon', tone: 'Informative', pitch: 'Lower pitch', gender: 'Male' },
+        { name: 'Despina', tone: 'Smooth', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Enceladus', tone: 'Breathy', pitch: 'Lower pitch', gender: 'Male' },
+        { name: 'Erinome', tone: 'Clear', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Fenrir', tone: 'Excitable', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Gacrux', tone: 'Mature', pitch: 'Middle pitch', gender: 'Male' },
+        { name: 'Iapetus', tone: 'Clear', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Kore', tone: 'Firm', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Laomedeia', tone: 'Upbeat', pitch: 'Higher pitch', gender: 'Female' },
+        { name: 'Leda', tone: 'Youthful', pitch: 'Higher pitch', gender: 'Female' },
+        { name: 'Orus', tone: 'Firm', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Puck', tone: 'Upbeat', pitch: 'Middle pitch', gender: 'Male' },
+        { name: 'Pulcherrima', tone: 'Forward', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Rasalgethi', tone: 'Informative', pitch: 'Middle pitch', gender: 'Male' },
+        { name: 'Sadachbia', tone: 'Lively', pitch: 'Lower pitch', gender: 'Female' },
+        { name: 'Sadaltager', tone: 'Knowledgeable', pitch: 'Middle pitch', gender: 'Male' },
+        { name: 'Schedar', tone: 'Even', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Sulafat', tone: 'Warm', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Umbriel', tone: 'Easy-going', pitch: 'Lower middle pitch', gender: 'Male' },
+        { name: 'Vindemiatrix', tone: 'Gentle', pitch: 'Middle pitch', gender: 'Female' },
+        { name: 'Zephyr', tone: 'Bright', pitch: 'Higher pitch', gender: 'Female' },
+        { name: 'Zubenelgenubi', tone: 'Casual', pitch: 'Lower middle pitch', gender: 'Male' }
     ];
 
-    /**
-     * Get all configured Gemini API keys from storage, providers, ProfileManager, or localStorage
-     */
+    static VOICE_TRAITS = [
+        'All',
+        'Soft',
+        'Friendly',
+        'Gravelly',
+        'Smooth',
+        'Firm',
+        'Breezy',
+        'Bright',
+        'Easy-going',
+        'Informative',
+        'Breathy',
+        'Clear',
+        'Excitable',
+        'Mature',
+        'Upbeat',
+        'Youthful',
+        'Forward',
+        'Lively',
+        'Knowledgeable',
+        'Even',
+        'Warm',
+        'Gentle',
+        'Casual',
+        'Female',
+        'Male',
+        'Higher pitch',
+        'Middle pitch',
+        'Lower middle pitch',
+        'Lower pitch'
+    ];
+
+    static STYLE_OPTIONS = [
+        { label: 'Enthusiastic', value: 'Enthusiastic and energetic' },
+        { label: 'Casual / Natural', value: 'Casual, relaxed, and conversational' },
+        { label: 'Professional / Informative', value: 'Authoritative, clear, and informative' },
+        { label: 'Storyteller / Suspense', value: 'Mysterious, cinematic, intimate storyteller' },
+        { label: 'Cheerful / Upbeat', value: 'Bright, cheerful, and sunny with a vocal smile' },
+        { label: 'Calm / Gentle', value: 'Soft, gentle, calm, and soothing' },
+        { label: 'Tired / Bored', value: 'Slow, tired, and unenthusiastic' }
+    ];
+
+    static PACE_OPTIONS = [
+        { label: 'Natural / Steady', value: 'Steady, conversational pace' },
+        { label: 'Fast & Punchy', value: 'Fast-paced, rapid energetic delivery' },
+        { label: 'Very Fast', value: 'Speak as fast as possible' },
+        { label: 'Slow & Dramatic', value: 'Slow tempo with dramatic pauses' },
+        { label: 'Very Slow', value: 'Very slow, measured delivery' }
+    ];
+
+    static ACCENT_OPTIONS = [
+        { label: 'Standard English', value: 'Standard English' },
+        { label: 'British (London)', value: 'British English accent as heard in London' },
+        { label: 'British (Received Pronunciation)', value: 'Classic British RP accent' },
+        { label: 'British (Scottish)', value: 'Scottish English accent' },
+        { label: 'American (General)', value: 'General American accent' },
+        { label: 'American (Southern)', value: 'Southern American drawl accent' },
+        { label: 'American (New York)', value: 'New York American accent' },
+        { label: 'Vietnamese (Native Natural)', value: 'Natural native Vietnamese accent' },
+        { label: 'Vietnamese (Southern/Saigon)', value: 'Southern Vietnamese Saigon accent' },
+        { label: 'Vietnamese (Northern/Hanoi)', value: 'Northern Vietnamese Hanoi accent' },
+        { label: 'Australian', value: 'Australian English accent' },
+        { label: 'Canadian', value: 'Canadian English accent' },
+        { label: 'Irish', value: 'Irish English accent' },
+        { label: 'Indian English', value: 'Indian English accent' },
+        { label: 'Japanese Accent English', value: 'Japanese accented English' },
+        { label: 'French Accent English', value: 'French accented English' },
+        { label: 'German Accent English', value: 'German accented English' },
+        { label: 'Spanish Accent English', value: 'Spanish accented English' }
+    ];
+
     static async getAllApiKeys() {
         const keysSet = new Set();
 
-        // 1. Primary: chrome.storage.local (used by Lumina Settings Modal)
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
             try {
                 const res = await new Promise(resolve => chrome.storage.local.get(null, resolve));
@@ -16675,8 +16877,8 @@ class TTSManager {
                     if (Array.isArray(providers)) {
                         providers.forEach(p => {
                             const isGemini = p.id === 'gemini' || p.id === 'gemini-default' || p.type === 'gemini' ||
-                                            (typeof p.endpoint === 'string' && p.endpoint.includes('generativelanguage.googleapis.com')) ||
-                                            (p.name?.toLowerCase().includes('gemini') || p.id?.toLowerCase().includes('gemini'));
+                                (typeof p.endpoint === 'string' && p.endpoint.includes('generativelanguage.googleapis.com')) ||
+                                (p.name?.toLowerCase().includes('gemini') || p.id?.toLowerCase().includes('gemini'));
                             if (isGemini && p.apiKey && typeof p.apiKey === 'string') {
                                 p.apiKey.split(',').forEach(k => {
                                     const trimmed = k.trim();
@@ -16691,7 +16893,6 @@ class TTSManager {
             }
         }
 
-        // 2. ProfileManager if available
         if (typeof ProfileManager !== 'undefined' && typeof ProfileManager.getApiKey === 'function') {
             try {
                 const key = ProfileManager.getApiKey();
@@ -16704,7 +16905,6 @@ class TTSManager {
             } catch (_) {}
         }
 
-        // 3. Fallback to localStorage / window cache
         ['lumina_gemini_api_key', 'gemini_api_key', 'geminiApiKey'].forEach(storageKey => {
             const val = localStorage.getItem(storageKey);
             if (val && typeof val === 'string') {
@@ -16725,17 +16925,11 @@ class TTSManager {
         return Array.from(keysSet);
     }
 
-    /**
-     * Get today string for rotation key tracking
-     */
     static getTodayString() {
         const now = new Date();
         return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
     }
 
-    /**
-     * Fetch with automatic key rotation and retry across multiple keys
-     */
     static async fetchWithRotation(keys, requestFn) {
         if (!keys || keys.length === 0) {
             throw new Error('Gemini API key not found. Please configure your API key in Settings.');
@@ -16764,7 +16958,6 @@ class TTSManager {
             try {
                 const result = await requestFn(currentKey);
 
-                // Save working key index
                 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
                     try {
                         await chrome.storage.local.set({
@@ -16776,9 +16969,8 @@ class TTSManager {
                 return result;
             } catch (err) {
                 lastError = err;
-                console.warn(`[TTS] Key index ${currentIndex} failed: ${err.message}. Rotating to next key if available...`);
+                console.warn(`[TTS] Key index ${currentIndex} failed: ${err.message}. Rotating to next key...`);
 
-                // If error is prompt validation / empty input (not API key / rate limit / network), don't keep rotating
                 if (err.message && (err.message.includes('Please enter text') || err.message.includes('prompt classifier'))) {
                     throw err;
                 }
@@ -16788,39 +16980,45 @@ class TTSManager {
         throw lastError || new Error('All Gemini API keys failed.');
     }
 
-    /**
-     * Build prompt with Director's Notes (Style, Pace, Accent) & Transcript
-     */
-    static buildPrompt({ mode, script, style, pace, accent, speaker1Name = 'Speaker 1', speaker2Name = 'Speaker 2' }) {
-        const hasNotes = Boolean((style && style.trim()) || (pace && pace.trim()) || (accent && accent.trim()));
+    static buildPrompt({ mode, script, audioProfile, style, pace, accent, speaker1Name = 'Speaker 1', speaker2Name = 'Speaker 2' }) {
+        let prompt = '';
 
-        if (!hasNotes) {
-            if (mode === 'multi') {
-                return `TTS the following conversation between ${speaker1Name} and ${speaker2Name}:\n${script}`;
-            }
-            return script;
+        if (audioProfile && audioProfile.trim()) {
+            prompt += `# AUDIO PROFILE\n${audioProfile.trim()}\n\n`;
         }
 
-        let prompt = '';
-        prompt += `### DIRECTOR'S NOTES\n`;
-        if (style && style.trim()) prompt += `Style: ${style.trim()}\n`;
-        if (pace && pace.trim()) prompt += `Pacing: ${pace.trim()}\n`;
-        if (accent && accent.trim()) prompt += `Accent: ${accent.trim()}\n`;
-        prompt += `\n### TRANSCRIPT\n${script}`;
+        const hasNotes = Boolean((style && style.trim()) || (pace && pace.trim()) || (accent && accent.trim()));
+        if (hasNotes) {
+            prompt += `### DIRECTOR'S NOTES\n`;
+            if (style && style.trim()) prompt += `Style: ${style.trim()}\n`;
+            if (pace && pace.trim()) prompt += `Pacing: ${pace.trim()}\n`;
+            if (accent && accent.trim()) prompt += `Accent: ${accent.trim()}\n`;
+            prompt += `\n`;
+        }
+
+        if (mode === 'multi') {
+            if (!prompt) {
+                return `TTS the following conversation between ${speaker1Name} and ${speaker2Name}:\n${script}`;
+            }
+            prompt += `#### TRANSCRIPT\nTTS the following conversation between ${speaker1Name} and ${speaker2Name}:\n${script}`;
+        } else {
+            if (!prompt) {
+                return script;
+            }
+            prompt += `#### TRANSCRIPT\n${script}`;
+        }
 
         return prompt;
     }
 
-    /**
-     * Generate speech from Gemini TTS API (with automatic key rotation)
-     */
     static async generateSpeech({
-        mode = 'single', // 'single' | 'multi'
+        mode = 'single',
         script = '',
         voice = 'Kore',
         voice2 = 'Puck',
         speaker1 = 'Speaker 1',
         speaker2 = 'Speaker 2',
+        audioProfile = '',
         style = '',
         pace = '',
         accent = '',
@@ -16844,6 +17042,7 @@ class TTSManager {
         const promptText = this.buildPrompt({
             mode,
             script,
+            audioProfile,
             style,
             pace,
             accent,
@@ -16927,30 +17126,27 @@ class TTSManager {
             const base64Audio = part?.inlineData?.data;
 
             if (!base64Audio) {
-                // Check if model returned text instead (false rejection/retry)
                 if (part?.text) {
                     throw new Error(`The model returned text instead of audio: "${part.text.substring(0, 100)}...". Please try again.`);
                 }
                 throw new Error('No audio data received in response.');
             }
 
-            // Convert base64 PCM 24kHz 16-bit Mono into playable WAV Blob
             const pcmBytes = this.base64ToUint8Array(base64Audio);
+            const durationSeconds = pcmBytes.length / (24000 * 2);
             const wavBlob = this.pcmToWav(pcmBytes, 1, 24000, 16);
             const audioUrl = URL.createObjectURL(wavBlob);
 
             return {
                 blob: wavBlob,
+                wavBlob: wavBlob,
                 audioUrl: audioUrl,
                 sampleRate: 24000,
-                durationSeconds: pcmBytes.length / (24000 * 2)
+                durationSeconds: durationSeconds
             };
         });
     }
 
-    /**
-     * Convert Base64 string to Uint8Array
-     */
     static base64ToUint8Array(base64) {
         const binaryString = window.atob(base64);
         const len = binaryString.length;
@@ -16961,9 +17157,63 @@ class TTSManager {
         return bytes;
     }
 
-    /**
-     * Convert raw PCM (16-bit LE, 24kHz mono) to standard RIFF WAV Blob
-     */
+    static async pcmToWebmBlob(pcmBytes, sampleRate = 24000) {
+        const numSamples = pcmBytes.length / 2;
+        const int16 = new Int16Array(pcmBytes.buffer, pcmBytes.byteOffset, numSamples);
+        const float32 = new Float32Array(numSamples);
+        for (let i = 0; i < numSamples; i++) {
+            float32[i] = int16[i] / 32768.0;
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
+        const audioBuffer = audioCtx.createBuffer(1, numSamples, sampleRate);
+        audioBuffer.copyToChannel(float32, 0);
+
+        const dest = audioCtx.createMediaStreamDestination();
+        const source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(dest);
+
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '');
+
+        return new Promise((resolve, reject) => {
+            try {
+                const recorder = mimeType ? new MediaRecorder(dest.stream, { mimeType }) : new MediaRecorder(dest.stream);
+                const chunks = [];
+
+                recorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) chunks.push(e.data);
+                };
+
+                recorder.onstop = () => {
+                    const finalBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+                    audioCtx.close().catch(() => {});
+                    resolve(finalBlob);
+                };
+
+                recorder.onerror = (e) => {
+                    audioCtx.close().catch(() => {});
+                    reject(e.error || new Error('MediaRecorder error'));
+                };
+
+                recorder.start(10);
+                source.start(0);
+
+                const durationMs = (numSamples / sampleRate) * 1000;
+                setTimeout(() => {
+                    if (recorder.state !== 'inactive') {
+                        recorder.stop();
+                    }
+                }, durationMs + 80);
+            } catch (err) {
+                audioCtx.close().catch(() => {});
+                reject(err);
+            }
+        });
+    }
+
     static pcmToWav(pcmData, numChannels = 1, sampleRate = 24000, bitsPerSample = 16) {
         const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
         const blockAlign = (numChannels * bitsPerSample) / 8;
@@ -16972,43 +17222,84 @@ class TTSManager {
         const buffer = new ArrayBuffer(bufferLength);
         const view = new DataView(buffer);
 
-        // Helper to write ASCII strings
         const writeString = (offset, string) => {
             for (let i = 0; i < string.length; i++) {
                 view.setUint8(offset + i, string.charCodeAt(i));
             }
         };
 
-        // RIFF header
         writeString(0, 'RIFF');
-        view.setUint32(4, 36 + dataLength, true); // File size - 8
+        view.setUint32(4, 36 + dataLength, true);
         writeString(8, 'WAVE');
 
-        // "fmt " sub-chunk
         writeString(12, 'fmt ');
-        view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
-        view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
         view.setUint16(22, numChannels, true);
         view.setUint32(24, sampleRate, true);
         view.setUint32(28, byteRate, true);
         view.setUint16(32, blockAlign, true);
         view.setUint16(34, bitsPerSample, true);
 
-        // "data" sub-chunk
         writeString(36, 'data');
         view.setUint32(40, dataLength, true);
 
-        // Copy raw PCM samples
         const uint8View = new Uint8Array(buffer, 44);
         uint8View.set(pcmData);
 
         return new Blob([buffer], { type: 'audio/wav' });
     }
 
-    /**
-     * Trigger browser download for WAV file
-     */
+    static _sampleCache = new Map();
+
+    static async previewVoiceSample(voiceName) {
+        if (!this._sampleCache) {
+            this._sampleCache = new Map();
+        }
+
+        if (this._sampleCache.has(voiceName)) {
+            return this._sampleCache.get(voiceName);
+        }
+
+        try {
+            const assetUrl = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL
+                ? chrome.runtime.getURL(`assets/audio/samples/${voiceName}.wav`)
+                : `../../assets/audio/samples/${voiceName}.wav`;
+
+            const checkRes = await fetch(assetUrl, { method: 'HEAD' });
+            if (checkRes.ok) {
+                const resObj = { audioUrl: assetUrl };
+                this._sampleCache.set(voiceName, resObj);
+                return resObj;
+            }
+        } catch (_) {}
+
+        const sampleText = `Hello, I'm ${voiceName}. How can I help you today?`;
+        const result = await this.generateSpeech({
+            script: sampleText,
+            voice: voiceName,
+            mode: 'single'
+        });
+
+        this._sampleCache.set(voiceName, result);
+        return result;
+    }
+
     static downloadWav(blob, filename = 'speech.wav') {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
+
+    static downloadMp3(blob, filename = 'speech.mp3') {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -17024,67 +17315,138 @@ class TTSManager {
 }
 
 if (typeof window !== 'undefined') {
+    window.TTSDB = TTSDB;
     window.TTSManager = TTSManager;
 }
 
 
 // --- BUNDLED FROM: lib/ui/tts_panel.js ---
 /**
- * TTSPanel - UI Controller for Lumina TTS Studio
- * Manages Single/Multi-speaker views, Director's Notes controls,
- * audio tag insertions, speech generation, and playback.
+ * TTSPanel - UI Controller for Lumina TTS Studio (AI Studio Speaker Settings Architecture)
+ * Manages Audio Profile, Director's Note (Style, Pace, Accent drop chips),
+ * 30 AI Studio Voice Cards with traits, trait filter menu, audio preview samples, and 2-Pane history.
  */
 class TTSPanel {
     constructor() {
-        this.currentMode = 'single'; // 'single' | 'multi'
+        this.currentMode = 'single';
         this.audioElement = new Audio();
+        this.sampleAudioElement = new Audio();
+        this.currentRecordingId = null;
         this.currentAudioBlob = null;
+        this.currentWavBlob = null;
+        this.recordings = [];
+        this.activeFilter = 'all';
+        this.searchQuery = '';
+        this.voiceSearchQuery = '';
+        this.selectedVoiceTraits = new Set();
         this.isPlaying = false;
         this.isGenerating = false;
+        this.activeSpeakerTarget = '1';
+
+        this.selectedVoice1 = 'Kore';
+        this.selectedVoice2 = 'Puck';
+        this.selectedStyle = '';
+        this.selectedPace = '';
+        this.selectedAccent = '';
+        this.audioProfile = '';
 
         this.initDOMElements();
         this.bindEvents();
-        this.populateVoiceSelects();
+        this.renderDirectorDropdowns();
+        this.renderVoiceFilterMenu();
+        this.renderVoiceCards();
+    }
+
+    async init(recordingId = null) {
+        this.initDOMElements();
+        this.renderDirectorDropdowns();
+        this.renderVoiceFilterMenu();
+        this.renderVoiceCards();
+        await this.loadRecordings();
+        if (recordingId) {
+            await this.selectRecording(recordingId);
+        }
     }
 
     initDOMElements() {
         this.page = document.getElementById('tts-page');
         this.sidebarToggleBtn = document.getElementById('tts-sidebar-toggle-btn');
+        this.backBtn = document.getElementById('tts-back-btn');
+        this.newAudioBtn = document.getElementById('tts-new-audio-btn');
+        this.searchInput = document.getElementById('tts-search-input');
+        this.recordingsListEl = document.getElementById('tts-recordings-list');
+        this.countLabel = document.getElementById('tts-count-label');
+        this.filterBtns = document.querySelectorAll('#tts-filter-controls .notes-sort-btn');
+        this.presetQuickChips = document.querySelectorAll('.tts-preset-quick-chip');
+
         this.modeBtns = document.querySelectorAll('.tts-mode-btn');
+        this.duplicateBtn = document.getElementById('tts-duplicate-btn');
+        this.deleteCurrentBtn = document.getElementById('tts-delete-current-btn');
+
+        this.viewContainer = document.getElementById('tts-view-container');
+        this.composeContainer = document.getElementById('tts-compose-container');
+        this.modeSwitcher = document.getElementById('tts-mode-switcher');
+        this.viewInfoBadge = document.getElementById('tts-view-info-badge');
+        this.viewBadgeVoice = document.getElementById('tts-view-badge-voice');
+        this.viewBadgeMode = document.getElementById('tts-view-badge-mode');
+        this.viewBadgeDate = document.getElementById('tts-view-badge-date');
+        this.viewActions = document.getElementById('tts-view-actions');
+        this.viewScriptBody = document.getElementById('tts-view-script-body');
+
+        this.heroTitle = document.getElementById('tts-hero-title');
+        this.downloadMp3Btn = document.getElementById('tts-download-mp3-btn');
+
         this.scriptInput = document.getElementById('tts-script-input');
         this.tagChips = document.querySelectorAll('.tts-tag-chip');
-        this.presetChips = document.querySelectorAll('.tts-preset-chip');
 
-        // Director's Notes elements
-        this.voice1Select = document.getElementById('tts-voice-1-select');
-        this.voice2Select = document.getElementById('tts-voice-2-select');
-        this.voice2Group = document.getElementById('tts-voice-2-group');
-        this.styleInput = document.getElementById('tts-style-input');
-        this.paceInput = document.getElementById('tts-pace-input');
-        this.accentInput = document.getElementById('tts-accent-input');
+        this.voicePickerWrapper = document.getElementById('tts-voice-picker-wrapper');
+        this.voicePickerPill = document.getElementById('tts-voice-picker-pill');
+        this.voiceSettingsPopover = document.getElementById('tts-voice-settings-popover');
+        this.activeVoiceLabel = document.getElementById('tts-active-voice-label');
+
+        this.profileInput = document.getElementById('tts-profile-input');
+        this.styleChip = document.getElementById('tts-style-chip');
+        this.styleChipLabel = document.getElementById('tts-style-chip-label');
+        this.styleDropdown = document.getElementById('tts-style-dropdown');
+
+        this.paceChip = document.getElementById('tts-pace-chip');
+        this.paceChipLabel = document.getElementById('tts-pace-chip-label');
+        this.paceDropdown = document.getElementById('tts-pace-dropdown');
+
+        this.accentChip = document.getElementById('tts-accent-chip');
+        this.accentChipLabel = document.getElementById('tts-accent-chip-label');
+        this.accentDropdown = document.getElementById('tts-accent-dropdown');
+
+        this.speakerTabSwitch = document.getElementById('tts-speaker-tab-switch');
+        this.speakerNamesGroup = document.getElementById('tts-speaker-names-group');
         this.speaker1Input = document.getElementById('tts-speaker-1-name');
         this.speaker2Input = document.getElementById('tts-speaker-2-name');
-        this.speakerNamesGroup = document.getElementById('tts-speaker-names-group');
+        this.speakerTabBtns = document.querySelectorAll('.tts-speaker-tab-btn');
+        this.s1Badge = document.getElementById('tts-s1-badge');
+        this.s2Badge = document.getElementById('tts-s2-badge');
 
-        // Action & Player elements
+        this.voiceSearchInput = document.getElementById('tts-voice-search-input');
+        this.voiceFilterBtn = document.getElementById('tts-voice-filter-btn');
+        this.voiceFilterMenu = document.getElementById('tts-voice-filter-menu');
+        this.voiceCardsContainer = document.getElementById('tts-voice-cards-container');
+
         this.generateBtn = document.getElementById('tts-generate-btn');
         this.generateBtnText = document.getElementById('tts-generate-btn-text');
         this.generateSpinner = document.getElementById('tts-generate-spinner');
         this.statusText = document.getElementById('tts-status-text');
 
-        this.playerContainer = document.getElementById('tts-player-container');
         this.playPauseBtn = document.getElementById('tts-play-pause-btn');
+        this.rewind5sBtn = document.getElementById('tts-rewind-5s-btn');
+        this.forward5sBtn = document.getElementById('tts-forward-5s-btn');
         this.playIcon = document.getElementById('tts-play-icon');
         this.pauseIcon = document.getElementById('tts-pause-icon');
         this.progressBar = document.getElementById('tts-progress-bar');
         this.currentTimeEl = document.getElementById('tts-current-time');
         this.durationTimeEl = document.getElementById('tts-duration-time');
         this.speedBtn = document.getElementById('tts-speed-btn');
-        this.downloadBtn = document.getElementById('tts-download-btn');
     }
 
     bindEvents() {
-        // Toggle Sidebar
         if (this.sidebarToggleBtn) {
             this.sidebarToggleBtn.addEventListener('click', () => {
                 if (typeof window.toggleSidebar === 'function') {
@@ -17095,7 +17457,44 @@ class TTSPanel {
             });
         }
 
-        // Mode Switching (Single / Multi-Speaker)
+        if (this.backBtn) {
+            this.backBtn.addEventListener('click', () => {
+                if (this.page) {
+                    this.page.classList.remove('show-studio');
+                }
+            });
+        }
+
+        if (this.newAudioBtn) {
+            this.newAudioBtn.addEventListener('click', () => this.resetStudioForNew());
+        }
+
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value.toLowerCase().trim();
+                this.renderRecordingsList();
+            });
+        }
+
+        this.filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.activeFilter = btn.dataset.filter || 'all';
+                this.renderRecordingsList();
+            });
+        });
+
+        this.presetQuickChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const presetKey = chip.dataset.preset;
+                this.applyPreset(presetKey);
+                if (this.page) {
+                    this.page.classList.add('show-studio');
+                }
+            });
+        });
+
         this.modeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const mode = btn.dataset.mode;
@@ -17103,7 +17502,18 @@ class TTSPanel {
             });
         });
 
-        // Quick Tag Inserters
+        if (this.duplicateBtn) {
+            this.duplicateBtn.addEventListener('click', () => this.duplicateCurrent());
+        }
+
+        if (this.deleteCurrentBtn) {
+            this.deleteCurrentBtn.addEventListener('click', () => {
+                if (this.currentRecordingId) {
+                    this.deleteRecording(this.currentRecordingId);
+                }
+            });
+        }
+
         this.tagChips.forEach(chip => {
             chip.addEventListener('click', () => {
                 const tag = chip.dataset.tag;
@@ -17111,43 +17521,116 @@ class TTSPanel {
             });
         });
 
-        // Sample Presets
-        this.presetChips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                const presetKey = chip.dataset.preset;
-                this.applyPreset(presetKey);
+        if (this.profileInput) {
+            this.profileInput.addEventListener('input', (e) => {
+                this.audioProfile = e.target.value;
             });
-        });
+        }
 
-        // Suggestion chips for Style, Pace, Accent
-        document.querySelectorAll('.tts-suggestion-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const targetId = chip.dataset.target;
-                const value = chip.dataset.val;
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) {
-                    targetEl.value = value;
+        // Setup Voice Picker Pill Popover
+        if (this.voicePickerPill && this.voiceSettingsPopover) {
+            this.voicePickerPill.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = this.voiceSettingsPopover.classList.contains('show');
+                document.querySelectorAll('.tts-attribute-dropdown, .tts-voice-filter-menu').forEach(d => d.classList.remove('show'));
+                if (!isOpen) {
+                    this.voiceSettingsPopover.classList.add('show');
+                } else {
+                    this.voiceSettingsPopover.classList.remove('show');
                 }
             });
+        }
+
+        // Setup Dropdown toggle for Style, Pace, Accent chips
+        this.setupDropdown(this.styleChip, this.styleDropdown);
+        this.setupDropdown(this.paceChip, this.paceDropdown);
+        this.setupDropdown(this.accentChip, this.accentDropdown);
+
+        if (this.voiceFilterBtn && this.voiceFilterMenu) {
+            this.voiceFilterBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = this.voiceFilterMenu.classList.contains('show');
+                document.querySelectorAll('.tts-attribute-dropdown, .tts-voice-filter-menu').forEach(d => d.classList.remove('show'));
+                if (!isOpen) {
+                    this.voiceFilterMenu.classList.add('show');
+                    this.voiceFilterBtn.classList.add('active');
+                } else {
+                    this.voiceFilterBtn.classList.remove('active');
+                }
+            });
+        }
+
+        // Close dropdowns & popovers when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.tts-voice-picker-wrapper')) {
+                if (this.voiceSettingsPopover) this.voiceSettingsPopover.classList.remove('show');
+                if (this.voiceFilterMenu) this.voiceFilterMenu.classList.remove('show');
+                if (this.voiceFilterBtn) this.voiceFilterBtn.classList.remove('active');
+            }
+            if (!e.target.closest('.tts-attribute-chip-wrapper')) {
+                document.querySelectorAll('.tts-attribute-dropdown').forEach(d => d.classList.remove('show'));
+            }
         });
 
-        // Generate button
+        // Speaker tab switcher in multi-speaker mode
+        this.speakerTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.speakerTabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.activeSpeakerTarget = btn.dataset.targetSpeaker || '1';
+                this.renderVoiceCards();
+            });
+        });
+
+        if (this.voiceSearchInput) {
+            this.voiceSearchInput.addEventListener('input', (e) => {
+                this.voiceSearchQuery = e.target.value.toLowerCase().trim();
+                this.renderVoiceCards();
+            });
+        }
+
         if (this.generateBtn) {
             this.generateBtn.addEventListener('click', () => this.handleGenerate());
         }
 
-        // Player Controls
         if (this.playPauseBtn) {
             this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
         }
 
-        if (this.progressBar) {
-            this.progressBar.addEventListener('input', (e) => {
-                if (this.audioElement.duration) {
-                    const targetTime = (e.target.value / 100) * this.audioElement.duration;
-                    this.audioElement.currentTime = targetTime;
-                }
+        if (this.rewind5sBtn) {
+            this.rewind5sBtn.addEventListener('click', () => {
+                const newTime = Math.max(0, (this.audioElement.currentTime || 0) - 5);
+                this.audioElement.currentTime = newTime;
+                if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(newTime);
             });
+        }
+
+        if (this.forward5sBtn) {
+            this.forward5sBtn.addEventListener('click', () => {
+                const dur = (this.audioElement.duration && isFinite(this.audioElement.duration)) 
+                    ? this.audioElement.duration 
+                    : (this.currentRecordingDuration || 0);
+                const newTime = dur > 0 
+                    ? Math.min(dur, (this.audioElement.currentTime || 0) + 5)
+                    : (this.audioElement.currentTime || 0) + 5;
+                this.audioElement.currentTime = newTime;
+                if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(newTime);
+            });
+        }
+
+        if (this.progressBar) {
+            const handleSeek = (e) => {
+                const dur = (this.audioElement.duration && isFinite(this.audioElement.duration)) 
+                    ? this.audioElement.duration 
+                    : this.currentRecordingDuration;
+                if (dur && dur > 0) {
+                    const targetTime = (parseFloat(e.target.value) / 100) * dur;
+                    this.audioElement.currentTime = targetTime;
+                    if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(targetTime);
+                }
+            };
+            this.progressBar.addEventListener('input', handleSeek);
+            this.progressBar.addEventListener('change', handleSeek);
         }
 
         if (this.speedBtn) {
@@ -17161,26 +17644,69 @@ class TTSPanel {
             });
         }
 
-        if (this.downloadBtn) {
-            this.downloadBtn.addEventListener('click', () => {
-                if (this.currentAudioBlob) {
-                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                    TTSManager.downloadWav(this.currentAudioBlob, `lumina-speech-${timestamp}.wav`);
+        if (this.heroTitle) {
+            this.heroTitle.addEventListener('change', async () => {
+                if (this.currentRecordingId) {
+                    const newTitle = this.heroTitle.value.trim() || 'Untitled Audio';
+                    await TTSDB.updateRecordingTitle(this.currentRecordingId, newTitle);
+                    await this.loadRecordings();
+                }
+            });
+            this.heroTitle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.heroTitle.blur();
                 }
             });
         }
 
-        // Audio element events
+        if (this.downloadMp3Btn) {
+            this.downloadMp3Btn.addEventListener('click', () => {
+                if (this.currentAudioBlob) {
+                    const title = (this.heroTitle ? this.heroTitle.value : 'audio')
+                        .toLowerCase().replace(/[^a-z0-9]/gi, '-').slice(0, 30);
+                    TTSManager.downloadMp3(this.currentAudioBlob, `${title || 'speech'}.mp3`);
+                }
+            });
+        }
+
+        if (this.downloadWavBtn) {
+            this.downloadWavBtn.addEventListener('click', () => {
+                const blob = this.currentWavBlob || this.currentAudioBlob;
+                if (blob) {
+                    const title = (this.heroTitle ? this.heroTitle.textContent : 'audio')
+                        .toLowerCase().replace(/[^a-z0-9]/gi, '-').slice(0, 30);
+                    TTSManager.downloadWav(blob, `${title || 'speech'}.wav`);
+                }
+            });
+        }
+
+        const updateAudioDuration = () => {
+            const dur = this.audioElement.duration;
+            if (dur && isFinite(dur) && !isNaN(dur) && dur > 0) {
+                if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(dur);
+            } else if (this.currentRecordingDuration) {
+                if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(this.currentRecordingDuration);
+            }
+        };
+
         this.audioElement.addEventListener('timeupdate', () => {
-            if (!this.audioElement.duration) return;
-            const progress = (this.audioElement.currentTime / this.audioElement.duration) * 100;
-            if (this.progressBar) this.progressBar.value = progress;
+            const dur = (this.audioElement.duration && isFinite(this.audioElement.duration)) 
+                ? this.audioElement.duration 
+                : this.currentRecordingDuration;
+
+            if (dur && dur > 0) {
+                const progress = (this.audioElement.currentTime / dur) * 100;
+                if (this.progressBar) this.progressBar.value = Math.min(100, Math.max(0, progress));
+                if (this.durationTimeEl && (!this.durationTimeEl.textContent || this.durationTimeEl.textContent === '0:00' || this.durationTimeEl.textContent.includes('NaN'))) {
+                    this.durationTimeEl.textContent = this.formatTime(dur);
+                }
+            }
             if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(this.audioElement.currentTime);
         });
 
-        this.audioElement.addEventListener('loadedmetadata', () => {
-            if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(this.audioElement.duration);
-        });
+        this.audioElement.addEventListener('loadedmetadata', updateAudioDuration);
+        this.audioElement.addEventListener('durationchange', updateAudioDuration);
+        this.audioElement.addEventListener('canplay', updateAudioDuration);
 
         this.audioElement.addEventListener('ended', () => {
             this.isPlaying = false;
@@ -17196,19 +17722,543 @@ class TTSPanel {
             this.isPlaying = true;
             this.updatePlayerUI();
         });
+
+        this.sampleAudioElement.addEventListener('ended', () => {
+            document.querySelectorAll('.tts-voice-play-sample-btn').forEach(b => b.classList.remove('playing'));
+        });
     }
 
-    populateVoiceSelects() {
-        const voices = TTSManager.VOICES;
-        const createOptions = (selectedName) => {
-            return voices.map(v => {
-                const isSelected = v.name === selectedName ? 'selected' : '';
-                return `<option value="${v.name}" ${isSelected}>${v.name} (${v.gender}, ${v.tone}) - ${v.description}</option>`;
-            }).join('');
-        };
+    setupDropdown(chipEl, dropdownEl) {
+        if (!chipEl || !dropdownEl) return;
+        chipEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdownEl.classList.contains('show');
+            document.querySelectorAll('.tts-attribute-dropdown, .tts-voice-filter-menu').forEach(d => d.classList.remove('show'));
+            if (!isOpen) {
+                dropdownEl.classList.add('show');
+            }
+        });
+    }
 
-        if (this.voice1Select) this.voice1Select.innerHTML = createOptions('Kore');
-        if (this.voice2Select) this.voice2Select.innerHTML = createOptions('Puck');
+    renderDirectorDropdowns() {
+        if (this.styleDropdown) {
+            this.styleDropdown.innerHTML = `
+                <div class="tts-dropdown-item ${!this.selectedStyle ? 'selected' : ''}" data-val="">None (Default)</div>
+                ${TTSManager.STYLE_OPTIONS.map(opt => `
+                    <div class="tts-dropdown-item ${this.selectedStyle === opt.value ? 'selected' : ''}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
+                `).join('')}
+            `;
+            this.styleDropdown.querySelectorAll('.tts-dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.selectedStyle = item.dataset.val;
+                    this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
+                    this.styleDropdown.classList.remove('show');
+                    this.renderDirectorDropdowns();
+                });
+            });
+        }
+
+        if (this.paceDropdown) {
+            this.paceDropdown.innerHTML = `
+                <div class="tts-dropdown-item ${!this.selectedPace ? 'selected' : ''}" data-val="">None (Default)</div>
+                ${TTSManager.PACE_OPTIONS.map(opt => `
+                    <div class="tts-dropdown-item ${this.selectedPace === opt.value ? 'selected' : ''}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
+                `).join('')}
+            `;
+            this.paceDropdown.querySelectorAll('.tts-dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.selectedPace = item.dataset.val;
+                    this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
+                    this.paceDropdown.classList.remove('show');
+                    this.renderDirectorDropdowns();
+                });
+            });
+        }
+
+        if (this.accentDropdown) {
+            this.accentDropdown.innerHTML = `
+                <div class="tts-dropdown-item ${!this.selectedAccent ? 'selected' : ''}" data-val="">None (Default)</div>
+                ${TTSManager.ACCENT_OPTIONS.map(opt => `
+                    <div class="tts-dropdown-item ${this.selectedAccent === opt.value ? 'selected' : ''}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
+                `).join('')}
+            `;
+            this.accentDropdown.querySelectorAll('.tts-dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.selectedAccent = item.dataset.val;
+                    this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
+                    this.accentDropdown.classList.remove('show');
+                    this.renderDirectorDropdowns();
+                });
+            });
+        }
+    }
+
+    renderVoiceFilterMenu() {
+        if (!this.voiceFilterMenu) return;
+        const availableTraits = TTSManager.VOICE_TRAITS.filter(t => t !== 'All');
+
+        this.voiceFilterMenu.innerHTML = `
+            <div class="tts-filter-menu-header">
+                <span>Filter Traits (${this.selectedVoiceTraits.size})</span>
+                ${this.selectedVoiceTraits.size > 0 ? '<button type="button" class="tts-filter-reset-btn" id="tts-filter-reset-btn">Clear all</button>' : ''}
+            </div>
+            ${availableTraits.map(trait => {
+                const isChecked = this.selectedVoiceTraits.has(trait);
+                return `
+                    <label class="tts-filter-item-checkbox">
+                        <input type="checkbox" data-trait="${trait}" ${isChecked ? 'checked' : ''} />
+                        <span>${trait}</span>
+                    </label>
+                `;
+            }).join('')}
+        `;
+
+        const resetBtn = this.voiceFilterMenu.querySelector('#tts-filter-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectedVoiceTraits.clear();
+                if (this.voiceFilterBtn) this.voiceFilterBtn.classList.remove('active');
+                this.renderVoiceFilterMenu();
+                this.renderVoiceCards();
+            });
+        }
+
+        this.voiceFilterMenu.querySelectorAll('input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                e.stopPropagation();
+                const trait = input.dataset.trait;
+                if (input.checked) {
+                    this.selectedVoiceTraits.add(trait);
+                } else {
+                    this.selectedVoiceTraits.delete(trait);
+                }
+
+                if (this.voiceFilterBtn) {
+                    if (this.selectedVoiceTraits.size > 0) {
+                        this.voiceFilterBtn.classList.add('active');
+                    } else {
+                        this.voiceFilterBtn.classList.remove('active');
+                    }
+                }
+                this.renderVoiceFilterMenu();
+                this.renderVoiceCards();
+            });
+        });
+    }
+
+    updateChipLabel(chipEl, labelEl, defaultText, currentValue) {
+        if (!chipEl || !labelEl) return;
+        if (currentValue) {
+            chipEl.classList.add('active-value');
+            const foundLabel = this.findOptionLabel(defaultText, currentValue);
+            labelEl.textContent = `${defaultText}: ${foundLabel}`;
+        } else {
+            chipEl.classList.remove('active-value');
+            labelEl.textContent = defaultText;
+        }
+    }
+
+    findOptionLabel(type, val) {
+        let list = [];
+        if (type === 'Style') list = TTSManager.STYLE_OPTIONS;
+        else if (type === 'Pace') list = TTSManager.PACE_OPTIONS;
+        else if (type === 'Accent') list = TTSManager.ACCENT_OPTIONS;
+        const item = list.find(o => o.value === val);
+        return item ? item.label : val.slice(0, 14);
+    }
+
+    renderVoiceCards() {
+        if (!this.voiceCardsContainer) return;
+
+        const currentSelected = this.activeSpeakerTarget === '2' ? this.selectedVoice2 : this.selectedVoice1;
+        let voices = TTSManager.VOICES;
+
+        if (this.selectedVoiceTraits.size > 0) {
+            const traitsArr = Array.from(this.selectedVoiceTraits).map(t => t.toLowerCase());
+            voices = voices.filter(v => {
+                return traitsArr.every(trait =>
+                    v.tone.toLowerCase().includes(trait) ||
+                    v.pitch.toLowerCase().includes(trait) ||
+                    v.gender.toLowerCase() === trait
+                );
+            });
+        }
+
+        if (this.voiceSearchQuery) {
+            voices = voices.filter(v =>
+                v.name.toLowerCase().includes(this.voiceSearchQuery) ||
+                v.tone.toLowerCase().includes(this.voiceSearchQuery) ||
+                v.pitch.toLowerCase().includes(this.voiceSearchQuery) ||
+                v.gender.toLowerCase().includes(this.voiceSearchQuery)
+            );
+        }
+
+        if (voices.length === 0) {
+            this.voiceCardsContainer.innerHTML = `
+                <div style="padding: 16px; text-align: center; color: var(--lumina-text-muted, #94a3b8); font-size: 0.8rem;">
+                    No voices matching the selected filters.
+                </div>
+            `;
+            return;
+        }
+
+        this.voiceCardsContainer.innerHTML = voices.map(v => {
+            const isSelected = v.name === currentSelected;
+            return `
+                <div class="tts-voice-card ${isSelected ? 'selected' : ''}" data-voice-name="${v.name}">
+                    <button type="button" class="tts-voice-card-content" aria-label="${v.name}">
+                        <div class="tts-voice-row-primary">
+                            <span class="tts-voice-name">${v.name}</span>
+                            ${isSelected ? '<span class="tts-voice-current-badge">Current</span>' : ''}
+                        </div>
+                        <div class="tts-voice-traits">
+                            <span class="tts-trait-chip">${v.tone}</span>
+                            <span class="tts-trait-chip">${v.pitch}</span>
+                            <span class="tts-trait-chip">${v.gender}</span>
+                        </div>
+                    </button>
+                    <button type="button" class="tts-voice-play-sample-btn" data-voice-name="${v.name}" title="Play voice sample">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        this.voiceCardsContainer.querySelectorAll('.tts-voice-card-content').forEach(card => {
+            card.addEventListener('click', () => {
+                const voiceName = card.closest('.tts-voice-card').dataset.voiceName;
+                if (this.activeSpeakerTarget === '2') {
+                    this.selectedVoice2 = voiceName;
+                    if (this.s2Badge) this.s2Badge.textContent = voiceName;
+                } else {
+                    this.selectedVoice1 = voiceName;
+                    if (this.s1Badge) this.s1Badge.textContent = voiceName;
+                }
+                this.updateActiveVoiceHeaderLabel();
+                this.renderVoiceCards();
+            });
+        });
+
+        this.voiceCardsContainer.querySelectorAll('.tts-voice-play-sample-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const voiceName = btn.dataset.voiceName;
+                await this.playVoiceSample(voiceName, btn);
+            });
+        });
+    }
+
+    updateActiveVoiceHeaderLabel() {
+        if (!this.activeVoiceLabel) return;
+        if (this.currentMode === 'multi') {
+            this.activeVoiceLabel.textContent = `Voice: ${this.selectedVoice1} & ${this.selectedVoice2}`;
+        } else {
+            this.activeVoiceLabel.textContent = `Voice: ${this.selectedVoice1}`;
+        }
+    }
+
+    async playVoiceSample(voiceName, btnEl) {
+        try {
+            document.querySelectorAll('.tts-voice-play-sample-btn').forEach(b => b.classList.remove('playing'));
+            btnEl.classList.add('playing');
+            this.showStatus(`Loading sample for ${voiceName}...`, false);
+
+            const result = await TTSManager.previewVoiceSample(voiceName);
+            this.sampleAudioElement.src = result.audioUrl;
+            this.sampleAudioElement.load();
+            await this.sampleAudioElement.play();
+            this.showStatus(`Playing sample for ${voiceName}`, false);
+        } catch (err) {
+            btnEl.classList.remove('playing');
+            this.showStatus(`Could not preview ${voiceName}: ${err.message}`, true);
+        }
+    }
+
+    async loadRecordings() {
+        try {
+            this.recordings = await TTSDB.getAllRecordings();
+            this.renderRecordingsList();
+        } catch (err) {
+            console.error('Failed to load recordings from TTSDB:', err);
+        }
+    }
+
+    renderRecordingsList() {
+        if (!this.recordingsListEl) return;
+
+        let filtered = this.recordings;
+        if (this.activeFilter === 'starred') {
+            filtered = filtered.filter(r => r.starred);
+        }
+        if (this.searchQuery) {
+            filtered = filtered.filter(r =>
+                (r.title && r.title.toLowerCase().includes(this.searchQuery)) ||
+                (r.script && r.script.toLowerCase().includes(this.searchQuery)) ||
+                (r.voice && r.voice.toLowerCase().includes(this.searchQuery))
+            );
+        }
+
+        if (this.countLabel) {
+            this.countLabel.textContent = `Recordings (${filtered.length})`;
+        }
+
+        if (filtered.length === 0) {
+            this.recordingsListEl.innerHTML = `
+                <div class="notes-list-empty">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.4; margin-bottom: 4px;">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    </svg>
+                    <span>${this.searchQuery ? 'No audio matching search.' : 'No audio recordings yet.'}</span>
+                </div>
+            `;
+            return;
+        }
+
+        this.recordingsListEl.innerHTML = filtered.map(rec => {
+            const isActive = rec.id === this.currentRecordingId ? 'active' : '';
+            const starColor = rec.starred ? '#f59e0b' : 'currentColor';
+            const voiceLabel = rec.mode === 'multi' ? `${rec.voice} + ${rec.voice2}` : rec.voice;
+            const timeAgo = this.formatRelativeTime(rec.createdAt);
+            const durationStr = this.formatTime(rec.durationSeconds || 0);
+
+            return `
+                <div class="tts-recording-item ${isActive}" data-id="${rec.id}">
+                    <div class="tts-rec-header">
+                        <span class="tts-rec-title" title="${this.escapeHtml(rec.title)}">${this.escapeHtml(rec.title)}</span>
+                        <div class="tts-rec-quick-actions">
+                            <button type="button" class="notes-qa-btn tts-item-star-btn" data-id="${rec.id}" title="${rec.starred ? 'Unstar' : 'Star'}">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="${rec.starred ? '#f59e0b' : 'none'}" stroke="${starColor}" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </button>
+                            <button type="button" class="notes-qa-btn tts-item-delete-btn" data-id="${rec.id}" title="Delete">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="tts-rec-snippet">${this.escapeHtml(rec.script || '')}</div>
+                    <div class="tts-rec-meta">
+                        <span class="tts-rec-voice-tag">${this.escapeHtml(voiceLabel)}</span>
+                        <span class="tts-rec-duration">${durationStr}</span>
+                        <span class="tts-rec-time">${timeAgo}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        this.recordingsListEl.querySelectorAll('.tts-recording-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.tts-rec-quick-actions')) return;
+                const id = el.dataset.id;
+                this.selectRecording(id);
+                if (this.page) {
+                    this.page.classList.add('show-studio');
+                }
+            });
+        });
+
+        this.recordingsListEl.querySelectorAll('.tts-item-star-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                await TTSDB.toggleStar(id);
+                await this.loadRecordings();
+            });
+        });
+
+        this.recordingsListEl.querySelectorAll('.tts-item-delete-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                await this.deleteRecording(id);
+            });
+        });
+    }
+
+    renderScriptViewer(script, mode, speaker1, speaker2) {
+        if (!this.viewScriptBody) return;
+        const text = script || '';
+        
+        if (mode === 'multi') {
+            const lines = text.split('\n');
+            const html = lines.map(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return '';
+                
+                const match = trimmed.match(/^([^:]+):\s*(.*)$/);
+                if (match) {
+                    const spk = this.escapeHtml(match[1].trim());
+                    let content = this.escapeHtml(match[2]);
+                    content = content.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+                    return `<div class="tts-view-dialogue-line"><span class="tts-view-speaker-name">${spk}:</span>${content}</div>`;
+                } else {
+                    let content = this.escapeHtml(trimmed);
+                    content = content.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+                    return `<div class="tts-view-dialogue-line">${content}</div>`;
+                }
+            }).filter(Boolean).join('');
+            this.viewScriptBody.innerHTML = html || '<div class="tts-view-dialogue-line">No transcript content.</div>';
+        } else {
+            let content = this.escapeHtml(text);
+            content = content.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+            this.viewScriptBody.innerHTML = `<div class="tts-view-dialogue-line">${content}</div>`;
+        }
+    }
+
+    async selectRecording(recOrId) {
+        if (!recOrId) return;
+
+        let rec = recOrId;
+        if (typeof recOrId === 'string') {
+            rec = await TTSDB.getRecording(recOrId);
+        }
+        if (!rec) return;
+
+        this.currentRecordingId = rec.id;
+        this.currentAudioBlob = rec.audioBlob || null;
+        this.currentWavBlob = rec.audioBlob || null;
+        this.currentMode = rec.mode || 'single';
+
+        if (this.modeSwitcher) this.modeSwitcher.style.display = 'none';
+        if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = 'none';
+        if (this.generateBtn) this.generateBtn.style.display = 'none';
+
+        if (this.viewInfoBadge) this.viewInfoBadge.style.display = 'flex';
+        if (this.viewActions) this.viewActions.style.display = 'flex';
+        if (this.viewContainer) this.viewContainer.style.display = 'flex';
+        if (this.composeContainer) this.composeContainer.style.display = 'none';
+
+        if (this.viewBadgeVoice) {
+            this.viewBadgeVoice.textContent = rec.mode === 'multi' ? `${rec.voice} & ${rec.voice2}` : (rec.voice || 'Achernar');
+        }
+        if (this.viewBadgeMode) {
+            this.viewBadgeMode.textContent = rec.mode === 'multi' ? 'Multi-Speaker' : 'Single Speaker';
+        }
+        if (this.viewBadgeDate) {
+            this.viewBadgeDate.textContent = this.formatRelativeTime(rec.createdAt);
+        }
+
+        if (this.heroTitle) this.heroTitle.value = rec.title || 'Untitled Audio';
+
+        this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2);
+
+        if (rec.audioBlob) {
+            this.currentRecordingDuration = rec.durationSeconds || 0;
+            if (this.durationTimeEl) {
+                this.durationTimeEl.textContent = this.formatTime(this.currentRecordingDuration);
+            }
+            const url = URL.createObjectURL(rec.audioBlob);
+            this.audioElement.src = url;
+            this.audioElement.load();
+        }
+
+        this.showStatus('', false);
+        this.renderRecordingsList();
+
+        if (typeof LuminaViewManager !== 'undefined' && typeof LuminaViewManager.updateUrl === 'function') {
+            LuminaViewManager.updateUrl('tts', { recordingId: rec.id });
+        }
+
+        if (this.page) {
+            this.page.classList.add('show-studio');
+        }
+    }
+
+    resetStudioForNew() {
+        this.currentRecordingId = null;
+        this.currentAudioBlob = null;
+        this.currentWavBlob = null;
+        this.audioElement.pause();
+        this.audioElement.src = '';
+
+        if (typeof LuminaViewManager !== 'undefined' && typeof LuminaViewManager.updateUrl === 'function') {
+            LuminaViewManager.updateUrl('tts', {});
+        }
+
+        if (this.modeSwitcher) this.modeSwitcher.style.display = 'flex';
+        if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = 'block';
+        if (this.generateBtn) this.generateBtn.style.display = 'inline-flex';
+
+        if (this.viewInfoBadge) this.viewInfoBadge.style.display = 'none';
+        if (this.viewActions) this.viewActions.style.display = 'none';
+        if (this.viewContainer) this.viewContainer.style.display = 'none';
+        if (this.composeContainer) this.composeContainer.style.display = 'flex';
+
+        if (this.scriptInput) {
+            this.scriptInput.value = '';
+            this.scriptInput.focus();
+        }
+        if (this.profileInput) this.profileInput.value = '';
+        this.audioProfile = '';
+        this.selectedStyle = '';
+        this.selectedPace = '';
+        this.selectedAccent = '';
+
+        this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', '');
+        this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', '');
+        this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', '');
+        this.updateActiveVoiceHeaderLabel();
+
+        this.renderDirectorDropdowns();
+        this.renderVoiceCards();
+
+        this.showStatus('Ready to compose new audio speech.', false);
+        this.renderRecordingsList();
+
+        if (this.page) {
+            this.page.classList.add('show-studio');
+        }
+    }
+
+    duplicateCurrent() {
+        if (!this.currentRecordingId) return;
+
+        TTSDB.getRecording(this.currentRecordingId).then(rec => {
+            if (!rec) return;
+            this.resetStudioForNew();
+
+            this.currentMode = rec.mode || 'single';
+            this.modeBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === this.currentMode);
+            });
+            this.updateModeUI();
+
+            this.selectedVoice1 = rec.voice || 'Kore';
+            this.selectedVoice2 = rec.voice2 || 'Puck';
+            this.selectedStyle = rec.style || '';
+            this.selectedPace = rec.pace || '';
+            this.selectedAccent = rec.accent || '';
+            this.audioProfile = rec.audioProfile || '';
+
+            if (this.scriptInput) this.scriptInput.value = rec.script || '';
+            if (this.profileInput) this.profileInput.value = rec.audioProfile || '';
+            if (this.speaker1Input) this.speaker1Input.value = rec.speaker1 || 'Joe';
+            if (this.speaker2Input) this.speaker2Input.value = rec.speaker2 || 'Jane';
+
+            this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
+            this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
+            this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
+            this.updateActiveVoiceHeaderLabel();
+
+            this.renderDirectorDropdowns();
+            this.renderVoiceCards();
+            this.showStatus('Loaded as new editable draft.', false);
+        });
+    }
+
+    async deleteRecording(id) {
+        await TTSDB.deleteRecording(id);
+        if (this.currentRecordingId === id) {
+            this.resetStudioForNew();
+        }
+        await this.loadRecordings();
     }
 
     setMode(mode) {
@@ -17222,12 +18272,15 @@ class TTSPanel {
         });
 
         if (mode === 'multi') {
-            if (this.voice2Group) this.voice2Group.style.display = 'flex';
-            if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = 'flex';
+            if (this.speakerTabSwitch) this.speakerTabSwitch.style.display = 'flex';
+            if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = 'grid';
         } else {
-            if (this.voice2Group) this.voice2Group.style.display = 'none';
+            if (this.speakerTabSwitch) this.speakerTabSwitch.style.display = 'none';
             if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = 'none';
+            this.activeSpeakerTarget = '1';
         }
+        this.updateActiveVoiceHeaderLabel();
+        this.renderVoiceCards();
     }
 
     insertTagAtCursor(tag) {
@@ -17251,47 +18304,57 @@ class TTSPanel {
                 this.setMode('multi');
                 if (this.speaker1Input) this.speaker1Input.value = 'Joe';
                 if (this.speaker2Input) this.speaker2Input.value = 'Jane';
-                if (this.voice1Select) this.voice1Select.value = 'Kore';
-                if (this.voice2Select) this.voice2Select.value = 'Puck';
-                if (this.styleInput) this.styleInput.value = 'Engaging tech podcast hosts sharing cutting-edge AI insights with genuine enthusiasm.';
-                if (this.paceInput) this.paceInput.value = 'Natural conversational rhythm with fluid banter.';
-                if (this.accentInput) this.accentInput.value = 'Standard English';
-                this.scriptInput.value = `Joe: [excitedly] Welcome back to the show, everyone! Jane, did you see the new speech synthesis update today?
-Jane: [laughs] I certainly did Joe! [amazed] The natural emotional inflections and control tags are genuinely impressive.
-Joe: Exactly. It completely changes how we produce audiobooks and podcasts!`;
+                this.selectedVoice1 = 'Kore';
+                this.selectedVoice2 = 'Puck';
+                if (this.s1Badge) this.s1Badge.textContent = 'Kore';
+                if (this.s2Badge) this.s2Badge.textContent = 'Puck';
+                this.audioProfile = 'Engaging tech podcast hosts sharing cutting-edge AI insights with genuine enthusiasm.';
+                this.selectedStyle = 'Enthusiastic and energetic';
+                this.selectedPace = 'Steady, conversational pace';
+                this.selectedAccent = 'Standard English';
+                this.scriptInput.value = `Joe: [excitedly] Welcome back to the show, everyone! Jane, did you see the new speech synthesis update today?\nJane: [laughs] I certainly did Joe! [amazed] The natural emotional inflections and control tags are genuinely impressive.\nJoe: Exactly. It completely changes how we produce audiobooks and podcasts!`;
                 break;
 
             case 'story':
                 this.setMode('single');
-                if (this.voice1Select) this.voice1Select.value = 'Enceladus';
-                if (this.styleInput) this.styleInput.value = 'Mysterious, atmospheric storyteller around a crackling campfire.';
-                if (this.paceInput) this.paceInput.value = 'Slow, dramatic pauses and whispered intimacy.';
-                if (this.accentInput) this.accentInput.value = 'British London';
-                this.scriptInput.value = `[whispers] Listen closely... [short pause]
-The old grandfather clock in the hallway struck midnight, its hollow chimes echoing through the empty corridors.
-[gasp] Then, from behind the sealed oak door, a quiet footsteps sounded...`;
+                this.selectedVoice1 = 'Enceladus';
+                if (this.s1Badge) this.s1Badge.textContent = 'Enceladus';
+                this.audioProfile = 'Mysterious, atmospheric storyteller around a crackling campfire.';
+                this.selectedStyle = 'Mysterious, cinematic, intimate storyteller';
+                this.selectedPace = 'Slow tempo with dramatic pauses';
+                this.selectedAccent = 'British English accent as heard in London';
+                this.scriptInput.value = `[whispers] Listen closely... [short pause]\nThe old grandfather clock in the hallway struck midnight, its hollow chimes echoing through the empty corridors.\n[gasp] Then, from behind the sealed oak door, quiet footsteps sounded...`;
                 break;
 
             case 'news':
                 this.setMode('single');
-                if (this.voice1Select) this.voice1Select.value = 'Charon';
-                if (this.styleInput) this.styleInput.value = 'Authoritative, clear and professional morning news anchor.';
-                if (this.paceInput) this.paceInput.value = 'Steady, well-articulated and informative cadence.';
-                if (this.accentInput) this.accentInput.value = 'Standard English';
-                this.scriptInput.value = `Good morning. Here are the top headlines for today.
-Markets reached historic highs this morning following breakthroughs in artificial intelligence technology and renewable energy adoption.`;
+                this.selectedVoice1 = 'Charon';
+                if (this.s1Badge) this.s1Badge.textContent = 'Charon';
+                this.audioProfile = 'Authoritative, clear and professional morning news anchor.';
+                this.selectedStyle = 'Authoritative, clear, and informative';
+                this.selectedPace = 'Steady, conversational pace';
+                this.selectedAccent = 'Standard English';
+                this.scriptInput.value = `Good morning. Here are the top headlines for today.\nMarkets reached historic highs this morning following breakthroughs in artificial intelligence technology and renewable energy adoption.`;
                 break;
 
             case 'influencer':
                 this.setMode('single');
-                if (this.voice1Select) this.voice1Select.value = 'Zephyr';
-                if (this.styleInput) this.styleInput.value = 'High-energy, charismatic tech influencer with contagious optimism.';
-                if (this.paceInput) this.paceInput.value = 'Fast-paced, vibrant with punchy consonants.';
-                if (this.accentInput) this.accentInput.value = 'American Casual';
-                this.scriptInput.value = `[excitedly] What is up, everyone! You will NOT believe what just dropped today!
-[laughs] Drop a like, subscribe, and let's dive right into the demo!`;
+                this.selectedVoice1 = 'Zephyr';
+                if (this.s1Badge) this.s1Badge.textContent = 'Zephyr';
+                this.audioProfile = 'High-energy, charismatic tech influencer with contagious optimism.';
+                this.selectedStyle = 'Bright, cheerful, and sunny with a vocal smile';
+                this.selectedPace = 'Fast-paced, rapid energetic delivery';
+                this.selectedAccent = 'General American accent';
+                this.scriptInput.value = `[excitedly] What is up, everyone! You will NOT believe what just dropped today!\n[laughs] Drop a like, subscribe, and let's dive right into the demo!`;
                 break;
         }
+
+        if (this.profileInput) this.profileInput.value = this.audioProfile;
+        this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
+        this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
+        this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
+        this.renderDirectorDropdowns();
+        this.renderVoiceCards();
     }
 
     async handleGenerate() {
@@ -17309,13 +18372,11 @@ Markets reached historic highs this morning following breakthroughs in artificia
         this.showStatus('Synthesizing speech with Gemini 3.1 Flash TTS...', false);
 
         try {
-            const voice1 = this.voice1Select ? this.voice1Select.value : 'Kore';
-            const voice2 = this.voice2Select ? this.voice2Select.value : 'Puck';
-            const speaker1 = this.speaker1Input ? this.speaker1Input.value : 'Speaker 1';
-            const speaker2 = this.speaker2Input ? this.speaker2Input.value : 'Speaker 2';
-            const style = this.styleInput ? this.styleInput.value : '';
-            const pace = this.paceInput ? this.paceInput.value : '';
-            const accent = this.accentInput ? this.accentInput.value : '';
+            const voice1 = this.selectedVoice1 || 'Kore';
+            const voice2 = this.selectedVoice2 || 'Puck';
+            const speaker1 = this.speaker1Input ? this.speaker1Input.value : 'Joe';
+            const speaker2 = this.speaker2Input ? this.speaker2Input.value : 'Jane';
+            const audioProfile = this.profileInput ? this.profileInput.value : this.audioProfile;
 
             const result = await TTSManager.generateSpeech({
                 mode: this.currentMode,
@@ -17324,22 +18385,43 @@ Markets reached historic highs this morning following breakthroughs in artificia
                 voice2: voice2,
                 speaker1: speaker1,
                 speaker2: speaker2,
-                style: style,
-                pace: pace,
-                accent: accent
+                audioProfile: audioProfile,
+                style: this.selectedStyle,
+                pace: this.selectedPace,
+                accent: this.selectedAccent
             });
 
             this.currentAudioBlob = result.blob;
+            this.currentWavBlob = result.wavBlob;
+            this.currentRecordingDuration = result.durationSeconds;
             this.audioElement.src = result.audioUrl;
             this.audioElement.load();
-
-            if (this.playerContainer) {
-                this.playerContainer.style.display = 'flex';
+            if (this.durationTimeEl) {
+                this.durationTimeEl.textContent = this.formatTime(result.durationSeconds);
             }
 
-            this.showStatus(`Speech generated successfully (${result.durationSeconds.toFixed(1)}s)`, false);
+            const savedItem = await TTSDB.saveRecording({
+                title: script.split('\n')[0].replace(/\[.*?\]/g, '').trim().slice(0, 45) || 'Audio Recording',
+                script: script,
+                mode: this.currentMode,
+                voice: voice1,
+                voice2: voice2,
+                speaker1: speaker1,
+                speaker2: speaker2,
+                audioProfile: audioProfile,
+                style: this.selectedStyle,
+                pace: this.selectedPace,
+                accent: this.selectedAccent,
+                durationSeconds: result.durationSeconds,
+                audioBlob: result.blob
+            });
 
-            // Auto play the generated audio
+            this.currentRecordingId = savedItem.id;
+            await this.loadRecordings();
+            await this.selectRecording(savedItem);
+
+            this.showStatus(`Speech generated & saved (${result.durationSeconds.toFixed(1)}s)`, false);
+
             try {
                 await this.audioElement.play();
             } catch (_) {}
@@ -17382,14 +18464,19 @@ Markets reached historic highs this morning following breakthroughs in artificia
             this.generateSpinner.style.display = loading ? 'inline-block' : 'none';
         }
         if (this.generateBtnText) {
-            this.generateBtnText.textContent = loading ? 'Generating...' : 'Generate Speech';
+            this.generateBtnText.textContent = loading ? 'Generating...' : 'Generate';
         }
     }
 
     showStatus(msg, isError = false) {
         if (this.statusText) {
             this.statusText.textContent = msg;
-            this.statusText.style.color = isError ? '#ef4444' : 'var(--lumina-text-secondary, #64748b)';
+            this.statusText.className = 'tts-status-text';
+            if (isError) {
+                this.statusText.classList.add('error');
+            } else if (msg) {
+                this.statusText.classList.add('success');
+            }
         }
     }
 
@@ -17398,6 +18485,31 @@ Markets reached historic highs this morning following breakthroughs in artificia
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    formatRelativeTime(timestamp) {
+        if (!timestamp) return '';
+        const now = Date.now();
+        const diff = now - timestamp;
+        const seconds = Math.floor(diff / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return new Date(timestamp).toLocaleDateString();
+    }
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 }
 
@@ -17779,6 +18891,23 @@ class LuminaSettingsModal {
   static bindGeneralTab() {
     const setupKeyInput = document.getElementById('lumina-setup-provider-key');
     const setupEndpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    const keyToggleBtn = document.getElementById('lumina-setup-key-toggle');
+    const eyeOpen = document.getElementById('lumina-setup-eye-open');
+    const eyeClosed = document.getElementById('lumina-setup-eye-closed');
+
+    if (keyToggleBtn && setupKeyInput) {
+      keyToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isPassword = setupKeyInput.type === 'password';
+        setupKeyInput.type = isPassword ? 'text' : 'password';
+        if (eyeOpen && eyeClosed) {
+          eyeOpen.style.display = isPassword ? 'none' : 'block';
+          eyeClosed.style.display = isPassword ? 'block' : 'none';
+        }
+      });
+    }
+
     if (setupKeyInput) {
       setupKeyInput.addEventListener('input', () => this.saveSelectedProviderKey());
     }
@@ -27324,7 +28453,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 el: '#tts-page',
                 hasTopbar: false,
                 displayType: 'flex',
-                onOpen: () => {
+                onOpen: (params) => {
                     document.getElementById('sidebar-tts-btn')?.classList.add('active');
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                     document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
@@ -27332,6 +28461,9 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
                     if (!luminaTTSPanelInstance && typeof TTSPanel !== 'undefined') {
                         luminaTTSPanelInstance = new TTSPanel();
+                    }
+                    if (luminaTTSPanelInstance && typeof luminaTTSPanelInstance.init === 'function') {
+                        luminaTTSPanelInstance.init(params?.recordingId);
                     }
                 }
             },
@@ -27392,7 +28524,17 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             }
 
-            // 3. Update URL
+            // 3. Update Title & URL
+            if (targetView === 'tts') {
+                document.title = 'TTS Studio';
+            } else if (targetView === 'notes') {
+                document.title = 'Notes';
+            } else if (targetView === 'sparks') {
+                document.title = 'Sparks';
+            } else {
+                document.title = 'Lumina';
+            }
+
             this.updateUrl(targetView, params);
 
             // 4. Trigger lifecycle hook
@@ -27406,6 +28548,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             if (viewName === 'notes') {
                 urlParams.delete('sid');
                 urlParams.delete('sparkId');
+                urlParams.delete('recordingId');
                 urlParams.set('view', 'notes');
                 if (params.noteId) {
                     urlParams.set('noteId', params.noteId);
@@ -27421,17 +28564,30 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 urlParams.delete('sid');
                 urlParams.delete('noteId');
                 urlParams.delete('colId');
+                urlParams.delete('recordingId');
                 urlParams.set('view', 'sparks');
                 if (params.sparkId) {
                     urlParams.set('sparkId', params.sparkId);
                 } else {
                     urlParams.delete('sparkId');
                 }
+            } else if (viewName === 'tts') {
+                urlParams.delete('sid');
+                urlParams.delete('noteId');
+                urlParams.delete('colId');
+                urlParams.delete('sparkId');
+                urlParams.set('view', 'tts');
+                if (params.recordingId) {
+                    urlParams.set('recordingId', params.recordingId);
+                } else {
+                    urlParams.delete('recordingId');
+                }
             } else {
                 urlParams.delete('view');
                 urlParams.delete('noteId');
                 urlParams.delete('colId');
                 urlParams.delete('sparkId');
+                urlParams.delete('recordingId');
                 const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
                 const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : '');
                 if (sidVal) {
@@ -27491,7 +28647,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         } else if (view === 'sparks') {
             LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
         } else if (view === 'tts') {
-            LuminaViewManager.switchView('tts');
+            LuminaViewManager.switchView('tts', { recordingId: urlParams.get('recordingId') });
         }
     });
 })();

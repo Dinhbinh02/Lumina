@@ -92,6 +92,8 @@
         "lib/helpers/*",
         "lib/helpers/proxy.html",
         "assets/*",
+        "assets/audio/*",
+        "assets/audio/samples/*",
         "assets/styles/*",
         "lib/vendor/katex/*",
         "lib/vendor/katex/fonts/*",

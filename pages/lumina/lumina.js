@@ -7089,7 +7089,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 el: '#tts-page',
                 hasTopbar: false,
                 displayType: 'flex',
-                onOpen: () => {
+                onOpen: (params) => {
                     document.getElementById('sidebar-tts-btn')?.classList.add('active');
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                     document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
@@ -7097,6 +7097,9 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
                     if (!luminaTTSPanelInstance && typeof TTSPanel !== 'undefined') {
                         luminaTTSPanelInstance = new TTSPanel();
+                    }
+                    if (luminaTTSPanelInstance && typeof luminaTTSPanelInstance.init === 'function') {
+                        luminaTTSPanelInstance.init(params?.recordingId);
                     }
                 }
             },
@@ -7157,7 +7160,17 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             }
 
-            // 3. Update URL
+            // 3. Update Title & URL
+            if (targetView === 'tts') {
+                document.title = 'TTS Studio';
+            } else if (targetView === 'notes') {
+                document.title = 'Notes';
+            } else if (targetView === 'sparks') {
+                document.title = 'Sparks';
+            } else {
+                document.title = 'Lumina';
+            }
+
             this.updateUrl(targetView, params);
 
             // 4. Trigger lifecycle hook
@@ -7171,6 +7184,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             if (viewName === 'notes') {
                 urlParams.delete('sid');
                 urlParams.delete('sparkId');
+                urlParams.delete('recordingId');
                 urlParams.set('view', 'notes');
                 if (params.noteId) {
                     urlParams.set('noteId', params.noteId);
@@ -7186,17 +7200,30 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 urlParams.delete('sid');
                 urlParams.delete('noteId');
                 urlParams.delete('colId');
+                urlParams.delete('recordingId');
                 urlParams.set('view', 'sparks');
                 if (params.sparkId) {
                     urlParams.set('sparkId', params.sparkId);
                 } else {
                     urlParams.delete('sparkId');
                 }
+            } else if (viewName === 'tts') {
+                urlParams.delete('sid');
+                urlParams.delete('noteId');
+                urlParams.delete('colId');
+                urlParams.delete('sparkId');
+                urlParams.set('view', 'tts');
+                if (params.recordingId) {
+                    urlParams.set('recordingId', params.recordingId);
+                } else {
+                    urlParams.delete('recordingId');
+                }
             } else {
                 urlParams.delete('view');
                 urlParams.delete('noteId');
                 urlParams.delete('colId');
                 urlParams.delete('sparkId');
+                urlParams.delete('recordingId');
                 const primaryTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
                 const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : '');
                 if (sidVal) {
@@ -7256,7 +7283,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         } else if (view === 'sparks') {
             LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
         } else if (view === 'tts') {
-            LuminaViewManager.switchView('tts');
+            LuminaViewManager.switchView('tts', { recordingId: urlParams.get('recordingId') });
         }
     });
 })();
