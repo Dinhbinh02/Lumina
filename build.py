@@ -27,6 +27,8 @@ JS_FILES = [
     'lib/core/gemini_live.js',
     'lib/core/notes_manager.js',
     'lib/ui/notes_panel.js',
+    'lib/core/tts_manager.js',
+    'lib/ui/tts_panel.js',
     'pages/lumina/settings_modal.js',
     'pages/lumina/search_modal.js',
     'pages/lumina/lumina.js',

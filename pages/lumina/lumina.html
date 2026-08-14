@@ -86,6 +86,18 @@
                     </svg>
                     <span class="nav-text">Live</span>
                 </button>
+                <button class="sidebar-nav-item" id="sidebar-tts-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 10v4" />
+                        <path d="M6 7v10" />
+                        <path d="M10 4v16" />
+                        <path d="M14 7v10" />
+                        <path d="M18 10v4" />
+                        <path d="M22 12v0" />
+                    </svg>
+                    <span class="nav-text">TTS Studio</span>
+                </button>
             </div>
 
             <div class="sidebar-scrollable-wrapper">
@@ -226,6 +238,187 @@
                 <div class="sparks-page__body" id="sparks-page-body">
                 </div>
             </div>
+
+            <!-- TTS Studio Page -->
+            <section class="tts-page" id="tts-page" style="display: none;" aria-label="TTS Studio Workspace">
+                <!-- Header -->
+                <header class="tts-page__header">
+                    <div class="tts-page__header-left">
+                        <button class="topbar__action-btn sidebar-toggle-btn tts-sidebar-toggle-btn" id="tts-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                            <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                                <path d="M9 7v10"></path>
+                                <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
+                            </svg>
+                        </button>
+                        <h2 class="tts-page__title">TTS Studio</h2>
+                        <span class="tts-model-badge">Gemini 3.1 Flash TTS</span>
+                    </div>
+
+                    <div class="tts-page__header-actions">
+                        <div class="tts-mode-switcher">
+                            <button type="button" class="tts-mode-btn active" data-mode="single">Single Speaker</button>
+                            <button type="button" class="tts-mode-btn" data-mode="multi">Multi-Speaker (2 Voices)</button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Body Layout (2 Columns) -->
+                <div class="tts-page__body">
+                    <!-- Left Column: Script Editor & Tags -->
+                    <div class="tts-editor-card">
+                        <div class="tts-card-header">
+                            <div class="tts-card-title-group">
+                                <span class="tts-card-title">Script & Transcript</span>
+                                <span class="tts-card-subtitle">Natural language with audio control tags</span>
+                            </div>
+                            <div class="tts-preset-group">
+                                <span class="tts-preset-label">Presets:</span>
+                                <button type="button" class="tts-preset-chip" data-preset="podcast">Podcast</button>
+                                <button type="button" class="tts-preset-chip" data-preset="story">Storyteller</button>
+                                <button type="button" class="tts-preset-chip" data-preset="news">News</button>
+                                <button type="button" class="tts-preset-chip" data-preset="influencer">Influencer</button>
+                            </div>
+                        </div>
+
+                        <!-- Audio Tags Quick Toolbar -->
+                        <div class="tts-tags-toolbar">
+                            <span class="tts-tags-label">Quick Tags:</span>
+                            <button type="button" class="tts-tag-chip" data-tag="[whispers]" title="Whisper tone">[whispers]</button>
+                            <button type="button" class="tts-tag-chip" data-tag="[excitedly]" title="Excited delivery">[excitedly]</button>
+                            <button type="button" class="tts-tag-chip" data-tag="[laughs]" title="Laughter">[laughs]</button>
+                            <button type="button" class="tts-tag-chip" data-tag="[sighs]" title="Sighing sound">[sighs]</button>
+                            <button type="button" class="tts-tag-chip" data-tag="[shouting]" title="Shout / loud projection">[shouting]</button>
+                            <button type="button" class="tts-tag-chip" data-tag="[gasp]" title="Gasping">[gasp]</button>
+                            <button type="button" class="tts-tag-chip" data-tag="[short pause]" title="Short dramatic pause">[short pause]</button>
+                        </div>
+
+                        <!-- Textarea -->
+                        <div class="tts-textarea-wrapper">
+                            <textarea id="tts-script-input" class="tts-textarea" placeholder="Type or paste your transcript here... You can use inline tags like [whispers] or [excitedly]. For multi-speaker, format as Joe: ... Jane: ..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Voice Talent & Director's Notes -->
+                    <div class="tts-controls-card">
+                        <div class="tts-card-header">
+                            <div class="tts-card-title-group">
+                                <span class="tts-card-title">Director's Notes & Voice</span>
+                                <span class="tts-card-subtitle">Fine-tune tone, pacing and accent</span>
+                            </div>
+                        </div>
+
+                        <div class="tts-controls-form">
+                            <!-- Multi-speaker names (Hidden by default) -->
+                            <div class="tts-form-row" id="tts-speaker-names-group" style="display: none;">
+                                <div class="tts-form-field">
+                                    <label class="tts-form-label">Speaker 1 Name</label>
+                                    <input type="text" id="tts-speaker-1-name" class="tts-input" value="Joe" placeholder="e.g. Joe" />
+                                </div>
+                                <div class="tts-form-field">
+                                    <label class="tts-form-label">Speaker 2 Name</label>
+                                    <input type="text" id="tts-speaker-2-name" class="tts-input" value="Jane" placeholder="e.g. Jane" />
+                                </div>
+                            </div>
+
+                            <!-- Voice 1 -->
+                            <div class="tts-form-field">
+                                <label class="tts-form-label" id="tts-voice-1-label">Voice Selection (Speaker 1)</label>
+                                <select id="tts-voice-1-select" class="tts-select"></select>
+                            </div>
+
+                            <!-- Voice 2 (Multi-Speaker) -->
+                            <div class="tts-form-field" id="tts-voice-2-group" style="display: none;">
+                                <label class="tts-form-label">Voice Selection (Speaker 2)</label>
+                                <select id="tts-voice-2-select" class="tts-select"></select>
+                            </div>
+
+                            <!-- Style -->
+                            <div class="tts-form-field">
+                                <div class="tts-form-label-row">
+                                    <label class="tts-form-label">Style</label>
+                                    <div class="tts-suggestions">
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-style-input" data-val="Enthusiastic and upbeat radio host with bright energy">Radio Host</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-style-input" data-val="Whispering, intimate storyteller with cinematic suspense">Storyteller</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-style-input" data-val="Professional, articulate and confident educator">Professional</button>
+                                    </div>
+                                </div>
+                                <input type="text" id="tts-style-input" class="tts-input" placeholder="e.g. Enthusiastic radio host, calm audiobook reader..." />
+                            </div>
+
+                            <!-- Pace -->
+                            <div class="tts-form-field">
+                                <div class="tts-form-label-row">
+                                    <label class="tts-form-label">Pacing</label>
+                                    <div class="tts-suggestions">
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-pace-input" data-val="Fast-paced, energetic delivery with punchy transitions">Fast & Punchy</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-pace-input" data-val="Slow, relaxed and liquid drift with dramatic pauses">Slow & Dramatic</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-pace-input" data-val="Steady, well-measured conversational pace">Natural</button>
+                                    </div>
+                                </div>
+                                <input type="text" id="tts-pace-input" class="tts-input" placeholder="e.g. Speaks at a fast energetic pace, slow and liquid tempo..." />
+                            </div>
+
+                            <!-- Accent -->
+                            <div class="tts-form-field">
+                                <div class="tts-form-label-row">
+                                    <label class="tts-form-label">Accent</label>
+                                    <div class="tts-suggestions">
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="Standard English">Standard EN</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="British London accent">British</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="Vietnamese native natural accent">Vietnamese</button>
+                                        <button type="button" class="tts-suggestion-chip" data-target="tts-accent-input" data-val="American Southern California casual">American</button>
+                                    </div>
+                                </div>
+                                <input type="text" id="tts-accent-input" class="tts-input" placeholder="e.g. British London, Vietnamese natural, American..." />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Action & Player Bar -->
+                <footer class="tts-page__footer">
+                    <div class="tts-footer-left">
+                        <button type="button" class="notes-primary-btn tts-generate-btn" id="tts-generate-btn">
+                            <span class="tts-spinner" id="tts-generate-spinner" style="display: none;"></span>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <span id="tts-generate-btn-text">Generate Speech</span>
+                        </button>
+                        <span class="tts-status-text" id="tts-status-text"></span>
+                    </div>
+
+                    <!-- Audio Player Bar (Appears after speech generated) -->
+                    <div class="tts-player-container" id="tts-player-container" style="display: none;">
+                        <button type="button" class="tts-player-btn" id="tts-play-pause-btn" title="Play / Pause">
+                            <svg id="tts-play-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <svg id="tts-pause-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: none;">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                        </button>
+                        <div class="tts-player-progress-wrapper">
+                            <input type="range" class="tts-player-slider" id="tts-progress-bar" min="0" max="100" value="0" />
+                            <div class="tts-player-times">
+                                <span id="tts-current-time">0:00</span> / <span id="tts-duration-time">0:00</span>
+                            </div>
+                        </div>
+                        <button type="button" class="tts-speed-btn" id="tts-speed-btn" title="Playback Speed">1x</button>
+                        <button type="button" class="tts-download-btn" id="tts-download-btn" title="Download WAV Audio (24kHz)">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Download .WAV</span>
+                        </button>
+                    </div>
+                </footer>
+            </section>
 
             <!-- Notes Page (Semantic 2-Column Workspace) -->
             <section class="notes-page" id="notes-page" style="display: none;" aria-label="Notes Workspace">

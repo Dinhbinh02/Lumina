@@ -2994,6 +2994,17 @@ function initSidebar() {
             closeMobileSidebar();
         });
     }
+    const ttsBtn = document.getElementById('sidebar-tts-btn');
+    if (ttsBtn) {
+        ttsBtn.addEventListener('click', () => {
+            if (typeof window.ttsOpenPage === 'function') {
+                window.ttsOpenPage();
+            } else if (typeof viewManager !== 'undefined') {
+                viewManager.switchView('tts');
+            }
+            closeMobileSidebar();
+        });
+    }
     const liveBtn = document.getElementById('sidebar-live-btn');
     if (liveBtn) {
         liveBtn.addEventListener('click', () => {
@@ -7041,6 +7052,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
     // --- Centralized View Manager (Declarative SPA Router) ---
     let luminaNotesPanelInstance = null;
+    let luminaTTSPanelInstance = null;
 
     const LuminaViewManager = {
         currentView: 'chat',
@@ -7052,6 +7064,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 displayType: '',
                 onOpen: () => {
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+                    document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                 }
             },
             notes: {
@@ -7060,6 +7073,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 displayType: 'flex',
                 onOpen: (params) => {
                     document.getElementById('sidebar-notes-btn')?.classList.add('active');
+                    document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                     document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
 
@@ -7071,12 +7085,28 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     }
                 }
             },
+            tts: {
+                el: '#tts-page',
+                hasTopbar: false,
+                displayType: 'flex',
+                onOpen: () => {
+                    document.getElementById('sidebar-tts-btn')?.classList.add('active');
+                    document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+                    document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
+                    document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+
+                    if (!luminaTTSPanelInstance && typeof TTSPanel !== 'undefined') {
+                        luminaTTSPanelInstance = new TTSPanel();
+                    }
+                }
+            },
             sparks: {
                 el: '#sparks-page',
                 hasTopbar: false,
                 displayType: 'flex',
                 onOpen: (params) => {
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+                    document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                     document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
 
@@ -7200,12 +7230,22 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         LuminaViewManager.switchView('chat');
     }
 
+    function ttsOpenPage() {
+        LuminaViewManager.switchView('tts');
+    }
+
+    function ttsClosePage() {
+        LuminaViewManager.switchView('chat');
+    }
+
     window.LuminaViewManager = LuminaViewManager;
     window.updateNotesUrl = updateNotesUrl;
     window.notesOpenPage = notesOpenPage;
     window.notesClosePage = notesClosePage;
     window.sparksOpenPage = sparksOpenPage;
     window.sparksClosePage = sparksClosePage;
+    window.ttsOpenPage = ttsOpenPage;
+    window.ttsClosePage = ttsClosePage;
 
     // Restore view from URL parameters on page load
     document.addEventListener('DOMContentLoaded', () => {
@@ -7215,6 +7255,8 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId'), colId: urlParams.get('colId') });
         } else if (view === 'sparks') {
             LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
+        } else if (view === 'tts') {
+            LuminaViewManager.switchView('tts');
         }
     });
 })();
