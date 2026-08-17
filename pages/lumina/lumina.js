@@ -1,3 +1,4 @@
+window._luminaWindowInstanceId = window._luminaWindowInstanceId || 'win_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
 function getPaneActiveModel() {
     const model = sessionStorage.getItem('lumina_active_model');
@@ -2639,9 +2640,12 @@ async function init() {
     chrome.runtime.onMessage.addListener((request) => {
         if (request.action === 'lumina_session_updated') {
             const sid = request.sessionId;
+            if (request.senderInstanceId && request.senderInstanceId === window._luminaWindowInstanceId) {
+                return;
+            }
             const affected = tabs.filter(t => t.sessionId === sid);
             if (affected.length > 0) {
-                const isRecentLocalSave = window._localSavedSessions?.[sid] && (Date.now() - window._localSavedSessions[sid] < 1000);
+                const isRecentLocalSave = window._localSavedSessions?.[sid] && (Date.now() - window._localSavedSessions[sid] < 3000);
                 if (!isRecentLocalSave) {
                     const isGeneratingLocally = (
                         (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid) ||
@@ -2660,10 +2664,12 @@ async function init() {
                                     timestamp: meta?.createdAt || meta?.updatedAt
                                 };
                                 affected.forEach(async (tab) => {
-                                    if (isRecentLocalSave && window._lastSavingHistoryEl === tab.historyEl) {
-                                        return;
-                                    }
                                     if (tab.historyEl) {
+                                        const currentEntries = tab.historyEl.querySelectorAll('.lumina-entry');
+                                        const expectedQuestions = messages.filter(m => m.type === 'question');
+                                        if (isRecentLocalSave && currentEntries.length === expectedQuestions.length) {
+                                            return;
+                                        }
                                         const savedScrollTop = tab.historyEl.scrollTop;
                                         await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                                         normalizeRestoredHistory(tab.historyEl);
@@ -2724,6 +2730,10 @@ async function init() {
             if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
                 if (typeof luminaNotesPanelInstance.renderCollections === 'function') luminaNotesPanelInstance.renderCollections();
                 if (typeof luminaNotesPanelInstance.renderNotesList === 'function') luminaNotesPanelInstance.renderNotesList();
+            }
+        } else if (request.action === 'lumina_tts_updated') {
+            if (typeof luminaTTSPanelInstance !== 'undefined' && luminaTTSPanelInstance) {
+                if (typeof luminaTTSPanelInstance.loadRecordings === 'function') luminaTTSPanelInstance.loadRecordings();
             }
         } else if (request.action === 'lumina_highlights_updated') {
             if (typeof window.LuminaAnnotationUI !== 'undefined' && typeof window.LuminaAnnotationUI.reload === 'function') {

@@ -47,11 +47,11 @@ $CSS_BUNDLE = Join-Path $ScriptDir "pages/lumina/lumina.bundle.css"
 function Invoke-LuminaBuild {
     Write-Host "Building bundles..."
 
-    $entryPath = Join-Path $ScriptDir "scratch/blocknote_entry.jsx"
+    $entryPath = Join-Path $ScriptDir "tools/blocknote_entry.jsx"
     if (Test-Path $entryPath) {
         try {
-            Write-Host "Compiling scratch/blocknote_entry.jsx with esbuild..."
-            & npx esbuild scratch/blocknote_entry.jsx --bundle --outfile=lib/vendor/blocknote.js --loader:.js=jsx --loader:.jsx=jsx --conditions=style '--define:process.env.NODE_ENV="production"'
+            Write-Host "Compiling tools/blocknote_entry.jsx with esbuild..."
+            & npx esbuild tools/blocknote_entry.jsx --bundle --outfile=lib/vendor/blocknote.js --loader:.js=jsx --loader:.jsx=jsx --conditions=style '--define:process.env.NODE_ENV="production"'
         } catch {
             Write-Warning "esbuild compilation skipped or failed: $_"
         }

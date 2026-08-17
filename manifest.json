@@ -86,19 +86,15 @@
       "resources": [
         "lib/core/*",
         "lib/vendor/*",
-        "lib/vendor/pyodide/*",
         "lib/ui/*",
         "lib/parsers/*",
         "lib/helpers/*",
         "lib/helpers/proxy.html",
         "assets/*",
         "assets/audio/*",
-        "assets/audio/samples/*",
         "assets/styles/*",
         "lib/vendor/katex/*",
-        "lib/vendor/katex/fonts/*",
-        "lib/fonts/*",
-        "lib/edge-tts/*"
+        "lib/vendor/katex/fonts/*"
       ],
       "matches": [
         "<all_urls>"

@@ -217,7 +217,7 @@ class LuminaSettingsModal {
     const keys = [
       'providers', 'models', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
       'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight', 'language', 'dictationEnabled', 'spokenLanguage',
-      'voice', 'separateVoiceEnabled', 'baseTone', 'charWarm', 'charEnthusiastic',
+      'voice', 'separateVoiceEnabled', 'ttsModel', 'sttModel', 'baseTone', 'charWarm', 'charEnthusiastic',
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
       'questionMappings', 'annotationShortcuts',
       'historyRetentionMonths', 'shortcuts'
@@ -266,6 +266,8 @@ class LuminaSettingsModal {
       this.setDropdownValue('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu', items.spokenLanguage || 'auto', 'Auto-detect');
       this.setDropdownValue('lumina-settings-voice-select', 'lumina-settings-voice-select-menu', items.voice || 'sol', 'Sol');
       document.getElementById('lumina-settings-separate-voice').checked = items.separateVoiceEnabled === true;
+      this.setDropdownValue('lumina-settings-tts-model', 'lumina-settings-tts-model-menu', items.ttsModel || 'gemini-2.5-flash', 'Gemini 2.5 Flash');
+      this.setDropdownValue('lumina-settings-stt-model', 'lumina-settings-stt-model-menu', items.sttModel || 'whisper-large-v3-turbo', 'Whisper Large V3 Turbo (Fastest)');
       const fsVal = items.fontSize || 14;
       const fsInput = document.getElementById('lumina-settings-fontsize');
       if (fsInput) fsInput.value = fsVal;
@@ -337,6 +339,8 @@ class LuminaSettingsModal {
       spokenLanguage: getDropdownVal('lumina-settings-spoken-lang', 'auto'),
       voice: getDropdownVal('lumina-settings-voice-select', 'sol'),
       separateVoiceEnabled: getChecked('lumina-settings-separate-voice'),
+      ttsModel: getDropdownVal('lumina-settings-tts-model', 'gemini-2.5-flash'),
+      sttModel: getDropdownVal('lumina-settings-stt-model', 'whisper-large-v3-turbo'),
       baseTone: document.getElementById('lumina-settings-base-tone-input')?.dataset.value || 'default',
       charWarm: getInt('lumina-settings-char-warm', 3),
       charEnthusiastic: getInt('lumina-settings-char-enthusiastic', 3),
@@ -410,6 +414,8 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-model-form-model', 'lumina-model-form-model-list');
     this.setupDropdownInputs('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list');
     this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
+    this.setupDropdownInputs('lumina-settings-tts-model', 'lumina-settings-tts-model-menu');
+    this.setupDropdownInputs('lumina-settings-stt-model', 'lumina-settings-stt-model-menu');
   }
   static getDefaultProviders() {
     return [
@@ -582,6 +588,9 @@ class LuminaSettingsModal {
       ];
       retentionMenu.innerHTML = opts.map(o => `<div data-val="${o.value}">${o.label}</div>`).join('');
     }
+
+    this.loadTtsModels();
+    this.loadSttModels();
   }
   static setupDropdownInputs(inputId, menuId) {
     const input = document.getElementById(inputId);
@@ -628,7 +637,9 @@ class LuminaSettingsModal {
         inputId === 'lumina-settings-fontweight' ||
         inputId === 'lumina-settings-language' ||
         inputId === 'lumina-settings-spoken-lang' ||
-        inputId === 'lumina-settings-voice-select'
+        inputId === 'lumina-settings-voice-select' ||
+        inputId === 'lumina-settings-tts-model' ||
+        inputId === 'lumina-settings-stt-model'
       ) {
         this.saveOptions();
       }
@@ -650,6 +661,11 @@ class LuminaSettingsModal {
         m.style.display = 'none';
       });
       if (!isCurrentlyOpen) {
+        if (inputId === 'lumina-settings-tts-model') {
+          this.loadTtsModels().then(() => updateActiveItems(false));
+        } else if (inputId === 'lumina-settings-stt-model') {
+          this.loadSttModels().then(() => updateActiveItems(false));
+        }
         menu.style.display = 'block';
         updateActiveItems(false);
       }
@@ -842,6 +858,78 @@ class LuminaSettingsModal {
       };
       const list = fallbackOptions[providerId] || ['custom-model'];
       menu.innerHTML = list.map(m => `<div data-val="${m}">${m}</div>`).join('');
+    }
+  }
+
+  static async loadTtsModels() {
+    const menu = document.getElementById('lumina-settings-tts-model-menu');
+    if (!menu) return;
+    const geminiProv = this.providers.find(p => p.id === 'gemini-default' || p.id.includes('gemini'));
+    const apiKey = geminiProv?.apiKey?.trim() || '';
+
+    try {
+      let models = [];
+      if (apiKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.split(',')[0].trim()}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.models && Array.isArray(data.models)) {
+            models = data.models
+              .map(m => m.name.replace('models/', ''))
+              .filter(m => m.toLowerCase().includes('tts'));
+          }
+        }
+      }
+
+      if (models.length === 0) {
+        models = [
+          'gemini-2.5-flash',
+          'gemini-2.5-pro'
+        ];
+      }
+
+      menu.innerHTML = models.map(m => `<div data-val="${m}">${m}</div>`).join('');
+    } catch (err) {
+      console.warn('Failed to fetch Gemini TTS models:', err);
+    }
+  }
+
+  static async loadSttModels() {
+    const menu = document.getElementById('lumina-settings-stt-model-menu');
+    if (!menu) return;
+    const groqProv = this.providers.find(p => p.id === 'groq-default' || p.id.includes('groq'));
+    const apiKey = groqProv?.apiKey?.trim() || '';
+
+    try {
+      let models = [];
+      if (apiKey) {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey.split(',')[0].trim()}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.data && Array.isArray(data.data)) {
+            models = data.data
+              .map(m => m.id)
+              .filter(m => m.toLowerCase().includes('whisper'));
+          }
+        }
+      }
+
+      if (models.length === 0) {
+        models = [
+          'whisper-large-v3-turbo',
+          'whisper-large-v3',
+          'distil-whisper-large-v3-en'
+        ];
+      }
+
+      menu.innerHTML = models.map(m => `<div data-val="${m}">${m}</div>`).join('');
+    } catch (err) {
+      console.warn('Failed to fetch Groq Whisper models:', err);
     }
   }
   static showProviderForm() {
@@ -2398,48 +2486,86 @@ class LuminaSettingsModal {
                 </div>
               `;
               const deleteBtn = itemEl.querySelector('.lumina-storage-session-delete');
-              deleteBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (typeof window.showCustomPopup === 'function') {
-                  const confirmed = await window.showCustomPopup({
-                    title: 'Delete Chat',
-                    body: `Are you sure you want to delete the chat thread "${session.title}"?`,
-                    confirmLabel: 'Delete',
-                    isDanger: true
-                  });
-                  if (confirmed) {
-                    if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
-                      await ChatHistoryManager.deleteChat(session.id);
-                      LuminaSettingsModal.updateStorageUsage();
-                      const scope = window.LuminaSelectionScope;
-                      if (scope) {
-                        scope.renderRecentChatsSidebar();
-                        const tabsList = scope.getTabs();
-                        const activeIdx = scope.getActiveTabIndex();
-                        if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                          scope.resetChat();
+              if (deleteBtn) {
+                deleteBtn.addEventListener('click', async (e) => {
+                  e.stopPropagation();
+                  if (typeof window.showCustomPopup === 'function') {
+                    const confirmed = await window.showCustomPopup({
+                      title: 'Delete Chat',
+                      body: `Are you sure you want to delete the chat thread "${session.title}"?`,
+                      confirmLabel: 'Delete',
+                      isDanger: true
+                    });
+                    if (confirmed) {
+                      if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
+                        await ChatHistoryManager.deleteChat(session.id);
+                        LuminaSettingsModal.updateStorageUsage();
+                        const scope = window.LuminaSelectionScope;
+                        if (scope) {
+                          scope.renderRecentChatsSidebar();
+                          const tabsList = scope.getTabs();
+                          const activeIdx = scope.getActiveTabIndex();
+                          if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
+                            scope.resetChat();
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
+                      if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
+                        await ChatHistoryManager.deleteChat(session.id);
+                        LuminaSettingsModal.updateStorageUsage();
+                        const scope = window.LuminaSelectionScope;
+                        if (scope) {
+                          scope.renderRecentChatsSidebar();
+                          const tabsList = scope.getTabs();
+                          const activeIdx = scope.getActiveTabIndex();
+                          if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
+                            scope.resetChat();
+                          }
                         }
                       }
                     }
                   }
-                } else {
-                  if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
-                    if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
-                      await ChatHistoryManager.deleteChat(session.id);
-                      LuminaSettingsModal.updateStorageUsage();
-                      const scope = window.LuminaSelectionScope;
-                      if (scope) {
-                        scope.renderRecentChatsSidebar();
-                        const tabsList = scope.getTabs();
-                        const activeIdx = scope.getActiveTabIndex();
-                        if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                          scope.resetChat();
-                        }
-                      }
-                    }
+                });
+              }
+
+              // Click to open the chat thread
+              itemEl.addEventListener('click', async () => {
+                const sid = session.id;
+                LuminaSettingsModal.hide();
+                if (window.LuminaViewManager) {
+                  window.LuminaViewManager.switchView('chat', { sid });
+                }
+                const messages = (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.getSessionMessages)
+                  ? await ChatHistoryManager.getSessionMessages(sid)
+                  : (await LuminaChatDB.getMessages(sid));
+                const allSessions = (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.getAllHistories)
+                  ? await ChatHistoryManager.getAllHistories()
+                  : (await LuminaChatDB.getAllSessions());
+                const meta = allSessions[sid] || { id: sid, title: session.title };
+
+                const listContainer = document.getElementById('sidebar-recent-chats');
+                if (listContainer) {
+                  listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+                  document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
+                  const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                  if (targetSidebarItem) {
+                    targetSidebarItem.classList.add('active');
                   }
                 }
+
+                if (typeof window.loadHistoryIntoNewTab === 'function') {
+                  window.loadHistoryIntoNewTab(messages, meta, sid);
+                }
+                const sidebar = document.getElementById('lumina-sidebar');
+                const backdrop = document.querySelector('.sidebar-backdrop');
+                if (sidebar) sidebar.classList.remove('active');
+                if (backdrop) backdrop.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
               });
+
               sessionsListEl.appendChild(itemEl);
             });
           }

@@ -1474,7 +1474,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--lumina-transition-fast, 0.15s ease);
+}
+
+.lumina-storage-session-item:hover {
+  background: var(--lumina-bg-hover, rgba(255, 255, 255, 0.06));
 }
 
 .lumina-storage-session-info {

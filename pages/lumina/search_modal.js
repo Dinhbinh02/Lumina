@@ -191,9 +191,22 @@ class LuminaSearchModal {
           displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
         }
         if (!displayTitle) displayTitle = "Untitled Chat";
+
+        let matched = false;
+        if (displayTitle && regex.test(displayTitle)) {
+          results.push({
+            sessionId: session.id,
+            title: displayTitle,
+            snippet: displayTitle,
+            messageIndex: null,
+            timestamp: session.updatedAt
+          });
+          matched = true;
+        }
+
         if (session.questions && session.questions.length > 0) {
           session.questions.forEach(q => {
-            if (regex.test(q.text)) {
+            if (q.text && regex.test(q.text) && !(matched && q.text === displayTitle)) {
               results.push({
                 sessionId: session.id,
                 title: displayTitle,
@@ -202,14 +215,6 @@ class LuminaSearchModal {
                 timestamp: q.timestamp || session.updatedAt
               });
             }
-          });
-        } else if (session.title && regex.test(session.title)) {
-          results.push({
-            sessionId: session.id,
-            title: displayTitle,
-            snippet: session.title,
-            messageIndex: null,
-            timestamp: session.updatedAt
           });
         }
         if (results.length >= 20) break;

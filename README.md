@@ -67,40 +67,46 @@ Built with performance, privacy, and aesthetic excellence in mind, Lumina stores
 ```text
 Lumina/
 ├── manifest.json            # Manifest V3 extension configuration
-├── build.py                 # Python script to bundle JS/CSS files & KaTeX fonts
-├── PROJECT_SYMBOLS.md       # Auto-generated project symbol index
+├── build.py                 # Python build & bundle script (use --watch for dev)
+├── build.ps1                # PowerShell build script for Windows
+├── PROJECT_SYMBOLS.md       # Auto-generated index of classes, functions, and symbols
 ├── lib/
-│   ├── core/                # Core modules (auth, chat_history, attachment_db, memory, gemini_live, etc.)
-│   ├── helpers/             # Utility modules (annotation_utils, selection_utils, file_processor, etc.)
-│   ├── parsers/             # Text and dictionary parsers
-│   ├── ui/                  # UI components and common handlers
-│   └── vendor/              # Third-party libraries (Marked, Highlight.js, KaTeX, Chart.js, PDF.js)
+│   ├── core/                # Core engines (auth/sync, chat_db, notes_manager, tts_manager, memory, etc.)
+│   ├── helpers/             # Utility modules (selection_utils, annotation_utils, file_processor, etc.)
+│   ├── parsers/             # Dictionary & text parsers
+│   ├── ui/                  # UI panels (notes_panel, tts_panel, history_panel, dictionary_popup)
+│   └── vendor/              # Third-party libraries (BlockNote, Marked, KaTeX, Highlight.js, etc.)
 ├── pages/
-│   └── lumina/              # Main Lumina workspace (HTML, CSS, JS, Sparks, Search, Settings)
+│   ├── lumina/              # Main Lumina application (Chat, Notes, Sparks, Settings, Search)
+│   ├── popup/               # Extension popup launcher
+│   └── offscreen/           # Offscreen document for audio processing
 ├── scripts/
-│   └── background.js        # Extension background service worker
-└── assets/                  # Icons, graphics, and static assets
+│   ├── background.js        # Background Service Worker
+│   └── content.js           # Web page content script for selection toolbar & annotations
+├── tools/                   # Developer & compilation tools (blocknote build, symbol generator)
+└── assets/                  # Icons, fonts, and audio assets
 ```
 
 ---
 
 ## 🛠️ Development & Build Workflow
 
-Lumina uses a lightweight Python build script (`build.py`) to bundle source JS and CSS files into production-ready distribution bundles.
+Lumina uses a lightweight build script (`build.py`) to bundle source JS/CSS files into `lumina.bundle.js` and `lumina.bundle.css`.
 
-### Running Build Script
+### Development Mode (Auto-rebuild on file change)
+```bash
+python3 build.py --watch
+```
+
+### Production Build
 ```bash
 python3 build.py
 ```
-This command bundles:
-- `JS_FILES` -> `pages/lumina/lumina.bundle.js`
-- `CSS_FILES` -> `pages/lumina/lumina.bundle.css`
-- KaTeX fonts -> `pages/lumina/fonts/`
 
 ### Updating Symbol Index
-To update `PROJECT_SYMBOLS.md` after adding or modifying functions:
+To regenerate `PROJECT_SYMBOLS.md` after adding or changing functions:
 ```bash
-python3 /path/to/update_symbols.py
+node tools/generate_symbols.js
 ```
 
 ---

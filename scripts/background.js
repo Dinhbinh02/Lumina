@@ -4,6 +4,8 @@ importScripts('../lib/core/memory.js');
 importScripts('../lib/core/attachment_db.js');
 importScripts('../lib/core/highlight_db.js');
 importScripts('../lib/core/chat_db.js');
+importScripts('../lib/core/notes_manager.js');
+importScripts('../lib/core/tts_manager.js');
 importScripts('../lib/core/auth.js');
 importScripts('../lib/core/token_utils.js');
 
@@ -11,10 +13,19 @@ const DEFAULTS = LUMINA_DEFAULTS;
 
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => { });
 
-// Clean up zombie instance state keys and legacy highlights from previous sessions on startup
+// Clean up zombie instance state keys, legacy highlights, and deprecated Anki keys on startup
 chrome.storage.local.get(null, (allData) => {
     if (chrome.runtime.lastError) return;
-    const keysToRemove = Object.keys(allData).filter(key => key.includes('_inst_') || key.startsWith('highlights_'));
+    const ankiLegacyKeys = new Set([
+        'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
+        'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent', 'attachments'
+    ]);
+    const keysToRemove = Object.keys(allData).filter(key => 
+        key.includes('_inst_') || 
+        key.startsWith('highlights_') || 
+        key.startsWith('rot_') || 
+        ankiLegacyKeys.has(key)
+    );
     if (keysToRemove.length > 0) {
         chrome.storage.local.remove(keysToRemove, () => {});
     }

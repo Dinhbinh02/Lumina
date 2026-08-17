@@ -329,6 +329,8 @@
                                     <span>Influencer</span>
                                 </button>
                             </div>
+                            <!-- Custom User Saved Presets Grid -->
+                            <div class="tts-custom-presets-grid" id="tts-custom-presets-grid" style="display: none;"></div>
                         </div>
 
                         <!-- Recordings List Section -->
@@ -361,8 +363,7 @@
 
                             <!-- Single/Multi Mode Switcher (Visible in Compose Mode) -->
                             <div class="tts-mode-switcher" id="tts-mode-switcher">
-                                <button type="button" class="tts-mode-btn active" data-mode="single">Single
-                                    Speaker</button>
+                                <button type="button" class="tts-mode-btn active" data-mode="single">Single Speaker</button>
                                 <button type="button" class="tts-mode-btn" data-mode="multi">Multi-Speaker</button>
                             </div>
 
@@ -377,9 +378,6 @@
                         </div>
 
                         <div class="tts-studio-header-right">
-                            <!-- Status Message (Clean inline text) -->
-                            <span class="tts-status-text" id="tts-status-text"></span>
-
                             <!-- Voice Selector Pill Button (Compose Mode) -->
                             <div class="tts-voice-picker-wrapper" id="tts-voice-picker-wrapper">
                                 <button type="button" class="tts-voice-picker-pill" id="tts-voice-picker-pill"
@@ -457,8 +455,17 @@
                                 <span id="tts-generate-btn-text">Generate</span>
                             </button>
 
-                            <!-- View Mode Action Buttons (Download, Delete) -->
+                            <!-- View Mode Action Buttons (Edit/Regenerate, Download, Delete) -->
                             <div class="tts-view-actions" id="tts-view-actions" style="display: none;">
+                                <button type="button" class="tts-edit-btn" id="tts-edit-current-btn"
+                                    title="Edit & Regenerate Audio">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    <span>Edit</span>
+                                </button>
                                 <button type="button" class="tts-download-btn" id="tts-download-mp3-btn"
                                     title="Download Audio">
                                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
@@ -531,6 +538,15 @@
                                 </div>
                                 <button type="button" class="tts-speed-btn" id="tts-speed-btn"
                                     title="Playback Speed">1x</button>
+                                <button type="button" class="tts-practice-mode-btn" id="tts-practice-mode-btn"
+                                    title="Practice Mode (Pause after each sentence to practice reading)">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                                    </svg>
+                                    <span>Repeat / Stop</span>
+                                </button>
                             </div>
 
                             <!-- Read-only Script Viewer with Editable Title -->
@@ -589,6 +605,18 @@
                                         placeholder="Voice persona description (optional)..."
                                         aria-label="Audio Profile">
                                 </div>
+
+                                <!-- Save As Preset Action Button -->
+                                <button type="button" class="tts-save-preset-btn" id="tts-save-preset-btn"
+                                    title="Save current voice settings as a Preset">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                        <polyline points="7 3 7 8 15 8"></polyline>
+                                    </svg>
+                                    <span>Save Preset</span>
+                                </button>
                             </div>
 
                             <!-- Main Transcript Canvas (Borderless, Clean, Focus On Content) -->
@@ -1168,6 +1196,46 @@
                                     <div id="lumina-model-list" class="lumina-settings-chain-list">
                                         <div class="lumina-settings-empty-state">No models added yet. Click "Add model"
                                             above to start.</div>
+                                    </div>
+                                </div>
+
+                                <!-- Part 3: Audio Speech & Transcription Models (TTS / STT) -->
+                                <div class="lumina-audio-models-container" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lumina-border, #e2e8f0);">
+                                    <span class="lumina-provider-section-title" style="display: block; margin-bottom: 10px; font-weight: 600;">Speech &amp; Transcription Models</span>
+                                    
+                                    <div class="lumina-settings-row" style="padding: 6px 0;">
+                                        <div class="lumina-settings-row-info">
+                                            <span class="title">TTS Model (Text-to-Speech)</span>
+                                            <span class="desc">Gemini Audio generation engine for speech studio</span>
+                                        </div>
+                                        <div class="lumina-settings-control">
+                                            <div class="lumina-settings-dropdown-wrapper">
+                                                <input type="text" id="lumina-settings-tts-model" readonly value="Gemini 2.5 Flash"
+                                                    data-value="gemini-2.5-flash">
+                                                <div id="lumina-settings-tts-model-menu" class="lumina-settings-dropdown-menu">
+                                                    <div data-val="gemini-2.5-flash">Gemini 2.5 Flash</div>
+                                                    <div data-val="gemini-2.5-pro">Gemini 2.5 Pro</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="lumina-settings-row" style="padding: 6px 0;">
+                                        <div class="lumina-settings-row-info">
+                                            <span class="title">STT Model (Groq Speech-to-Text)</span>
+                                            <span class="desc">Fast transcription &amp; alignment engine powered by Groq</span>
+                                        </div>
+                                        <div class="lumina-settings-control">
+                                            <div class="lumina-settings-dropdown-wrapper">
+                                                <input type="text" id="lumina-settings-stt-model" readonly value="Whisper Large V3 Turbo"
+                                                    data-value="whisper-large-v3-turbo">
+                                                <div id="lumina-settings-stt-model-menu" class="lumina-settings-dropdown-menu">
+                                                    <div data-val="whisper-large-v3-turbo">Whisper Large V3 Turbo (Fastest)</div>
+                                                    <div data-val="whisper-large-v3">Whisper Large V3</div>
+                                                    <div data-val="distil-whisper-large-v3-en">Distil-Whisper English</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

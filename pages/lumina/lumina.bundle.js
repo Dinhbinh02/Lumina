@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -10559,6 +10559,8 @@ function getEntityTime(item) {
  */
 function mergeEntities(localCollection, remoteCollection, options = {}) {
     const isArrayFormat = Array.isArray(localCollection) || Array.isArray(remoteCollection);
+    const tombstoneRetentionMs = options.tombstoneRetentionMs || (30 * 24 * 60 * 60 * 1000); // 30 days
+    const now = Date.now();
     
     // Normalize to Maps indexed by entity ID
     const localMap = new Map();
@@ -10587,31 +10589,26 @@ function mergeEntities(localCollection, remoteCollection, options = {}) {
         const localItem = localMap.get(id);
         const remoteItem = remoteMap.get(id);
 
+        let chosen = null;
         if (localItem && remoteItem) {
-            // Handle soft delete tombstones
-            if (localItem.isDeleted || remoteItem.isDeleted) {
-                const localTime = getEntityTime(localItem);
-                const remoteTime = getEntityTime(remoteItem);
-                const newest = localTime >= remoteTime ? localItem : remoteItem;
-                if (!newest.isDeleted) {
-                    mergedMap.set(id, newest);
+            const localTime = getEntityTime(localItem);
+            const remoteTime = getEntityTime(remoteItem);
+            chosen = localTime >= remoteTime ? localItem : remoteItem;
+        } else if (localItem) {
+            chosen = localItem;
+        } else if (remoteItem) {
+            chosen = remoteItem;
+        }
+
+        if (chosen) {
+            if (chosen.isDeleted) {
+                const itemTime = getEntityTime(chosen);
+                // Prune tombstones older than retention window (30 days)
+                if (now - itemTime < tombstoneRetentionMs) {
+                    mergedMap.set(id, chosen);
                 }
             } else {
-                const localTime = getEntityTime(localItem);
-                const remoteTime = getEntityTime(remoteItem);
-                if (localTime >= remoteTime) {
-                    mergedMap.set(id, localItem);
-                } else {
-                    mergedMap.set(id, remoteItem);
-                }
-            }
-        } else if (localItem) {
-            if (!localItem.isDeleted) {
-                mergedMap.set(id, localItem);
-            }
-        } else if (remoteItem) {
-            if (!remoteItem.isDeleted) {
-                mergedMap.set(id, remoteItem);
+                mergedMap.set(id, chosen);
             }
         }
     }
@@ -11005,19 +11002,58 @@ class SyncManager {
         const jsonStr = new TextDecoder().decode(buffer);
         return JSON.parse(jsonStr);
     }
-    async findBackupFile(token) {
-        const q = `name = '${this.FILENAME}' and 'appDataFolder' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=appDataFolder&fields=files(id, name, md5Checksum, modifiedTime, size)`;
+    async listAppDataFiles(token) {
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'appDataFolder' in parents and trashed = false")}&spaces=appDataFolder&fields=files(id, name, md5Checksum, modifiedTime, size)&pageSize=1000`;
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
-        if (!response.ok) throw new Error('Failed to list files');
+        if (!response.ok) throw new Error('Failed to list appData files');
         const data = await response.json();
-        if (data.files && data.files.length > 0) {
-            return data.files[0];
+        return data.files || [];
+    }
+    async uploadBlobFile(token, filename, blob, existingFileId = null) {
+        const mimeType = (blob && blob.type) ? blob.type : 'application/octet-stream';
+        const metadata = {
+            name: filename,
+            ...(existingFileId ? {} : { parents: ['appDataFolder'] })
+        };
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', blob, filename);
+
+        const url = existingFileId
+            ? `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart&fields=id,name,md5Checksum,size`
+            : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum,size`;
+
+        const response = await fetch(url, {
+            method: existingFileId ? 'PATCH' : 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form
+        });
+        if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
+        if (!response.ok) throw new Error(`Failed to upload blob ${filename}`);
+        return await response.json();
+    }
+    async downloadBlobFile(token, fileId) {
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
+        if (!response.ok) throw new Error(`Failed to download blob ${fileId}`);
+        return await response.blob();
+    }
+    async deleteDriveFile(token, fileId) {
+        try {
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return response.ok;
+        } catch (e) {
+            console.warn(`[Sync] Failed to delete drive file ${fileId}:`, e);
+            return false;
         }
-        return null;
     }
     async createBackupFile(token, content) {
         const metadata = {
@@ -11058,21 +11094,23 @@ class SyncManager {
     }
     async fetchRemoteBackup(token, isAuto = false) {
         let activeToken = token;
-        let remoteFile = null;
+        let driveFiles = [];
         try {
-            remoteFile = await this.findBackupFile(activeToken);
+            driveFiles = await this.listAppDataFiles(activeToken);
         } catch (err) {
             if (err.message === 'UNAUTHORIZED') {
                 await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
                 activeToken = await this.authService.getAuthToken(!isAuto, true);
-                remoteFile = await this.findBackupFile(activeToken);
+                driveFiles = await this.listAppDataFiles(activeToken);
             } else {
                 throw err;
             }
         }
 
+        const remoteFile = driveFiles.find(f => f.name === this.FILENAME) || null;
+
         if (!remoteFile) {
-            return { token: activeToken, remoteFile: null, remoteBackup: null, fileId: null };
+            return { token: activeToken, remoteFile: null, remoteBackup: null, fileId: null, driveFiles };
         }
 
         const fileId = remoteFile.id;
@@ -11080,23 +11118,42 @@ class SyncManager {
         const lastSyncMd5 = syncMeta.last_sync_md5;
 
         if (lastSyncMd5 && remoteFile.md5Checksum === lastSyncMd5) {
-            return { token: activeToken, remoteFile, remoteBackup: null, fileId, lastSyncMd5 };
+            return { token: activeToken, remoteFile, remoteBackup: null, fileId, lastSyncMd5, driveFiles };
         }
 
         const remoteBackup = await this.downloadBackup(activeToken, fileId);
-        return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5 };
+        return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5, driveFiles };
     }
 
     async gatherLocalData() {
         const localData = await chrome.storage.local.get(null);
 
-        // Gather Notes & Collections from NotesManager / IndexedDB
+        // Gather Notes & Collections from NotesManager / IndexedDB (including tombstones)
         if (typeof NotesManager !== 'undefined') {
             try {
-                localData.lumina_notes_collections = await NotesManager.getCollections();
-                localData.lumina_notes_items = await NotesManager.getNotes();
+                localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === 'function'
+                    ? await NotesManager.getAllCollectionsRaw()
+                    : await NotesManager.getCollections(true);
+                localData.lumina_notes_items = typeof NotesManager.getAllNotesRaw === 'function'
+                    ? await NotesManager.getAllNotesRaw()
+                    : await NotesManager.getNotes(null, true);
             } catch (err) {
                 console.error('[Sync] Failed to gather notes for sync:', err);
+            }
+        }
+
+        // Gather TTS recordings (Metadata only for JSON, blob handled separately, including tombstones)
+        if (typeof TTSDB !== 'undefined') {
+            try {
+                const recordings = typeof TTSDB.getAllRecordingsRaw === 'function'
+                    ? await TTSDB.getAllRecordingsRaw()
+                    : await TTSDB.getAllRecordings(true);
+                localData.lumina_tts_recordings = recordings.map(rec => {
+                    const { audioBlob, ...meta } = rec;
+                    return meta;
+                });
+            } catch (err) {
+                console.error('[Sync] Failed to gather TTS recordings for sync:', err);
             }
         }
 
@@ -11110,15 +11167,19 @@ class SyncManager {
             }
         }
 
-        // Load chat history from IndexedDB
+        // Load chat history from IndexedDB (including tombstones)
         if (typeof LuminaChatDB !== 'undefined') {
             try {
-                const sessions = await LuminaChatDB.getAllSessions();
+                const sessions = typeof LuminaChatDB.getAllSessionsRaw === 'function'
+                    ? await LuminaChatDB.getAllSessionsRaw()
+                    : await LuminaChatDB.getAllSessions(true);
                 const sessionsObj = {};
                 for (const s of Object.values(sessions)) {
                     if (s && s.id) {
                         sessionsObj[s.id] = s;
-                        localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
+                        if (!s.isDeleted) {
+                            localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
+                        }
                     }
                 }
                 localData.lumina_chat_sessions = sessionsObj;
@@ -11159,7 +11220,7 @@ class SyncManager {
 
             if (key === 'providers') {
                 mergedData[key] = mergeProviders(localData[key], remoteData[key], useLocalSettings);
-            } else if (key === 'lumina_sparks' || key === 'lumina_notes_collections' || key === 'lumina_notes_items') {
+            } else if (key === 'lumina_sparks' || key === 'lumina_notes_collections' || key === 'lumina_notes_items' || key === 'lumina_tts_recordings') {
                 mergedData[key] = mergeEntities(localData[key], remoteData[key]);
             } else if (key in localData && key in remoteData) {
                 mergedData[key] = useLocalSettings ? localData[key] : remoteData[key];
@@ -11174,6 +11235,7 @@ class SyncManager {
         const localSessions = localData.lumina_chat_sessions || {};
         const remoteSessions = remoteData.lumina_chat_sessions || {};
         const mergedSessions = mergeEntities(localSessions, remoteSessions);
+        const updatedRemoteSessionIds = new Set();
 
         for (const sid of Object.keys(mergedSessions)) {
             const chosenSession = mergedSessions[sid];
@@ -11185,12 +11247,18 @@ class SyncManager {
                 if (localTime >= remoteTime) {
                     if (sessionKey in localData) mergedData[sessionKey] = localData[sessionKey];
                 } else {
-                    if (sessionKey in remoteData) mergedData[sessionKey] = remoteData[sessionKey];
+                    if (sessionKey in remoteData) {
+                        mergedData[sessionKey] = remoteData[sessionKey];
+                        updatedRemoteSessionIds.add(sid);
+                    }
                 }
             } else if (localSessions[sid]) {
                 if (sessionKey in localData) mergedData[sessionKey] = localData[sessionKey];
             } else if (remoteSessions[sid]) {
-                if (sessionKey in remoteData) mergedData[sessionKey] = remoteData[sessionKey];
+                if (sessionKey in remoteData) {
+                    mergedData[sessionKey] = remoteData[sessionKey];
+                    updatedRemoteSessionIds.add(sid);
+                }
             }
         }
 
@@ -11206,17 +11274,18 @@ class SyncManager {
 
         mergedData.settings_last_updated = useLocalSettings ? (localSettingsTime || Date.now()) : remoteSettingsTime;
 
-        return { mergedData, mergedSessions, localKeysToRemove };
+        return { mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds };
     }
 
-    async persistMergedData(mergedData, mergedSessions, localKeysToRemove, remoteAttachments) {
+    async persistMergedData(mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds = new Set()) {
         if (localKeysToRemove.length > 0) {
             await chrome.storage.local.remove(localKeysToRemove);
         }
 
         // Active attachments filter
         const activeAttachmentIds = new Set();
-        for (const sid of Object.keys(mergedSessions)) {
+        for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
+            if (sessionMeta && sessionMeta.isDeleted) continue;
             const sessionKey = `lumina_session_${sid}`;
             const sessionMsgs = mergedData[sessionKey];
             if (Array.isArray(sessionMsgs)) {
@@ -11234,21 +11303,12 @@ class SyncManager {
 
         const isAttachmentActive = (key) => {
             if (activeAttachmentIds.has(key)) return true;
-            for (const sid of Object.keys(mergedSessions)) {
+            for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
+                if (sessionMeta && sessionMeta.isDeleted) continue;
                 if (key.includes(sid)) return true;
             }
             return false;
         };
-
-        let allAttachments = {};
-        if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAll) {
-            const rawAttachments = await LuminaAttachmentDB.getAll().catch(() => ({}));
-            for (const [id, dataUrl] of Object.entries(rawAttachments)) {
-                if (isAttachmentActive(id)) {
-                    allAttachments[id] = dataUrl;
-                }
-            }
-        }
 
         // Save highlights to IndexedDB
         if (typeof LuminaAnnotationDB !== 'undefined') {
@@ -11276,12 +11336,16 @@ class SyncManager {
                 }
                 for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
                     await LuminaChatDB.putSession(sessionMeta).catch(() => {});
-                    const sessionKey = `lumina_session_${sid}`;
-                    const messages = mergedData[sessionKey];
-                    if (Array.isArray(messages)) {
-                        await LuminaChatDB.putMessages(sid, messages).catch(() => {});
+                    if (sessionMeta && sessionMeta.isDeleted) {
+                        await LuminaChatDB.deleteMessages(sid).catch(() => {});
+                    } else {
+                        const sessionKey = `lumina_session_${sid}`;
+                        const messages = mergedData[sessionKey];
+                        if (Array.isArray(messages)) {
+                            await LuminaChatDB.putMessages(sid, messages).catch(() => {});
+                        }
                     }
-                    delete mergedData[sessionKey];
+                    delete mergedData[`lumina_session_${sid}`];
                 }
             } catch (err) {
                 console.error('[Sync] Failed to save chat history to IndexedDB:', err);
@@ -11331,20 +11395,41 @@ class SyncManager {
             }
         }
 
-        delete mergedData.lumina_chat_sessions;
-        await chrome.storage.local.set(mergedData);
+        // Save TTS Recordings Metadata & Remove deleted items from TTSDB
+        let ttsUpdated = false;
+        if (typeof TTSDB !== 'undefined' && Array.isArray(mergedData.lumina_tts_recordings)) {
+            try {
+                const mergedRecs = mergedData.lumina_tts_recordings;
+                const activeRecIds = new Set(mergedRecs.map(r => r && r.id).filter(Boolean));
+                const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+                const currentMap = new Map(currentRecs.map(r => [r.id, r]));
 
-        // Sync Attachments to IndexedDB
-        if (typeof LuminaAttachmentDB !== 'undefined' && remoteAttachments) {
-            for (const [id, dataUrl] of Object.entries(remoteAttachments)) {
-                if (dataUrl && isAttachmentActive(id)) {
-                    const blob = LuminaAttachmentDB.dataURLtoBlob(dataUrl);
-                    if (blob) {
-                        await LuminaAttachmentDB.put(id, blob).catch(() => {});
+                for (const r of currentRecs) {
+                    if (r && r.id && !activeRecIds.has(r.id)) {
+                        await TTSDB.deleteRecording(r.id).catch(() => {});
+                        ttsUpdated = true;
                     }
                 }
+
+                for (const recMeta of mergedRecs) {
+                    if (recMeta && recMeta.id) {
+                        const localRec = currentMap.get(recMeta.id);
+                        // Preserve existing audioBlob if not updated or until blob sync pulls new one
+                        const existingBlob = localRec ? localRec.audioBlob : null;
+                        await TTSDB.saveRecording({
+                            ...recMeta,
+                            audioBlob: existingBlob
+                        }).catch(() => {});
+                        ttsUpdated = true;
+                    }
+                }
+            } catch (err) {
+                console.error('[Sync] Failed to persist merged TTS records:', err);
             }
         }
+
+        delete mergedData.lumina_chat_sessions;
+        await chrome.storage.local.set(mergedData);
 
         if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
             try {
@@ -11360,15 +11445,144 @@ class SyncManager {
         }
 
         try {
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' });
-            chrome.runtime.sendMessage({ action: 'lumina_notes_updated' });
-            chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' });
-            for (const sid of Object.keys(mergedSessions)) {
-                chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: sid }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'lumina_notes_updated' }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' }).catch(() => {});
+            if (ttsUpdated) {
+                chrome.runtime.sendMessage({ action: 'lumina_tts_updated' }).catch(() => {});
+            }
+            if (updatedRemoteSessionIds && updatedRemoteSessionIds.size > 0) {
+                for (const sid of updatedRemoteSessionIds) {
+                    chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: sid, source: 'drive_sync' }).catch(() => {});
+                }
             }
         } catch (e) {}
 
-        return { allAttachments, isAttachmentActive };
+        return { isAttachmentActive };
+    }
+
+    async syncBlobs(token, activeAttachmentIds, activeTtsRecMap, existingDriveFiles = null) {
+        if (!token) return;
+        try {
+            const driveFiles = existingDriveFiles || (await this.listAppDataFiles(token));
+            const driveFileMap = new Map(driveFiles.map(f => [f.name, f]));
+
+            // 1. Sync Chat Attachments (att_{key}.bin)
+            if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.init) {
+                const db = await LuminaAttachmentDB.init();
+                const localAttachments = await new Promise((resolve) => {
+                    const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, 'readonly');
+                    const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
+                    const req = store.openCursor();
+                    const map = new Map();
+                    req.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            if (cursor.value instanceof Blob) {
+                                map.set(cursor.key, cursor.value);
+                            }
+                            cursor.continue();
+                        } else {
+                            resolve(map);
+                        }
+                    };
+                    req.onerror = () => resolve(map);
+                });
+
+                // Upload missing local attachments
+                for (const [key, blob] of localAttachments.entries()) {
+                    if (!activeAttachmentIds.has(key)) continue;
+                    const filename = `att_${key}.bin`;
+                    if (!driveFileMap.has(filename) && blob) {
+                        try {
+                            const res = await this.uploadBlobFile(token, filename, blob);
+                            if (res) driveFileMap.set(filename, res);
+                        } catch (err) {
+                            console.warn(`[Sync] Failed to upload attachment ${key}:`, err);
+                        }
+                    }
+                }
+
+                // Download remote attachments missing locally
+                for (const [filename, fileObj] of driveFileMap.entries()) {
+                    if (filename.startsWith('att_') && filename.endsWith('.bin')) {
+                        const key = filename.slice(4, -4);
+                        if (activeAttachmentIds.has(key) && !localAttachments.has(key)) {
+                            try {
+                                const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
+                                if (downloadedBlob) {
+                                    await LuminaAttachmentDB.put(key, downloadedBlob);
+                                }
+                            } catch (err) {
+                                console.warn(`[Sync] Failed to download attachment ${key}:`, err);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Sync TTS Audio Blobs (tts_{id}.bin)
+            if (typeof TTSDB !== 'undefined') {
+                const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+                const localRecMap = new Map(currentRecs.map(r => [r.id, r]));
+
+                // Upload missing local TTS audio blobs
+                for (const [id, rec] of localRecMap.entries()) {
+                    if (!activeTtsRecMap.has(id)) continue;
+                    const filename = `tts_${id}.bin`;
+                    if (rec.audioBlob instanceof Blob && !driveFileMap.has(filename)) {
+                        try {
+                            const res = await this.uploadBlobFile(token, filename, rec.audioBlob);
+                            if (res) driveFileMap.set(filename, res);
+                        } catch (err) {
+                            console.warn(`[Sync] Failed to upload TTS audio ${id}:`, err);
+                        }
+                    }
+                }
+
+                // Download remote TTS audio blobs missing locally
+                let ttsAudioDownloaded = false;
+                for (const [filename, fileObj] of driveFileMap.entries()) {
+                    if (filename.startsWith('tts_') && filename.endsWith('.bin')) {
+                        const id = filename.slice(4, -4);
+                        const localRec = localRecMap.get(id);
+                        if (activeTtsRecMap.has(id) && localRec && !localRec.audioBlob) {
+                            try {
+                                const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
+                                if (downloadedBlob) {
+                                    localRec.audioBlob = downloadedBlob;
+                                    await TTSDB.saveRecording(localRec);
+                                    ttsAudioDownloaded = true;
+                                }
+                            } catch (err) {
+                                console.warn(`[Sync] Failed to download TTS audio ${id}:`, err);
+                            }
+                        }
+                    }
+                }
+
+                if (ttsAudioDownloaded) {
+                    try { chrome.runtime.sendMessage({ action: 'lumina_tts_updated' }); } catch (e) {}
+                }
+            }
+
+            // 3. Clean up orphaned remote blobs on Drive
+            for (const [filename, fileObj] of driveFileMap.entries()) {
+                if (filename.startsWith('att_') && filename.endsWith('.bin')) {
+                    const key = filename.slice(4, -4);
+                    if (!activeAttachmentIds.has(key)) {
+                        await this.deleteDriveFile(token, fileObj.id);
+                    }
+                } else if (filename.startsWith('tts_') && filename.endsWith('.bin')) {
+                    const id = filename.slice(4, -4);
+                    if (!activeTtsRecMap.has(id)) {
+                        await this.deleteDriveFile(token, fileObj.id);
+                    }
+                }
+            }
+        } catch (blobErr) {
+            console.error('[Sync] syncBlobs error:', blobErr);
+        }
     }
 
     async syncData(isAuto = false, retryCount = 0) {
@@ -11382,27 +11596,22 @@ class SyncManager {
             let initialToken = await this.getToken(!isAuto);
             if (!initialToken) throw new Error('Not authenticated');
 
-            const { token, remoteFile, remoteBackup, fileId, lastSyncMd5 } = await this.fetchRemoteBackup(initialToken, isAuto);
+            const { token, remoteFile, remoteBackup, fileId, lastSyncMd5, driveFiles } = await this.fetchRemoteBackup(initialToken, isAuto);
 
             const remoteData = (remoteBackup && remoteBackup.data) ? remoteBackup.data : {};
-            const remoteAttachments = remoteData.attachments || {};
-            delete remoteData.attachments;
+            delete remoteData.attachments; // Backward compatibility cleanup
 
             const localData = await this.gatherLocalData();
-            const { mergedData, mergedSessions, localKeysToRemove } = this.mergeSyncData(localData, remoteData);
+            const { mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds } = this.mergeSyncData(localData, remoteData);
 
             // Construct payload to upload BEFORE persistMergedData mutates/deletes chat keys from mergedData
             const dataToUpload = { ...mergedData };
 
-            let allAttachments = localData.attachments || {};
             if (remoteBackup !== null) {
-                const persisted = await this.persistMergedData(mergedData, mergedSessions, localKeysToRemove, remoteAttachments);
-                allAttachments = persisted.allAttachments;
+                await this.persistMergedData(mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds);
             }
 
-            dataToUpload.attachments = allAttachments;
-
-            // Compute hash AFTER allAttachments is finalized (exclude volatile sync-meta keys from hash)
+            // Compute hash (exclude volatile sync-meta keys from hash)
             const dataForHash = { ...dataToUpload };
             delete dataForHash.last_sync_time;
             delete dataForHash.last_sync_hash;
@@ -11416,7 +11625,33 @@ class SyncManager {
             mergedData.last_sync_time = now;
             mergedData.last_sync_hash = newHash;
 
-            // If local data hash is unchanged and remote file was unchanged (or merged with no new diffs), skip upload!
+            // Gather active attachment IDs & active TTS IDs for blob sync
+            const activeAttachmentIds = new Set();
+            for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
+                if (sessionMeta && sessionMeta.isDeleted) continue;
+                const sessionKey = `lumina_session_${sid}`;
+                const sessionMsgs = dataToUpload[sessionKey];
+                if (Array.isArray(sessionMsgs)) {
+                    for (const msg of sessionMsgs) {
+                        if (msg && Array.isArray(msg.images)) {
+                            for (const img of msg.images) {
+                                if (img && typeof img === 'object' && img.attachmentId) {
+                                    activeAttachmentIds.add(img.attachmentId);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const activeTtsRecMap = new Map();
+            if (Array.isArray(dataToUpload.lumina_tts_recordings)) {
+                dataToUpload.lumina_tts_recordings.forEach(r => {
+                    if (r && r.id && !r.isDeleted) activeTtsRecMap.set(r.id, r);
+                });
+            }
+
+            // If local data hash is unchanged and remote file was unchanged (or merged with no new diffs), skip metadata upload
             const isLocalUnchanged = (stored.last_sync_hash === newHash);
             const isRemoteUnchanged = (remoteBackup === null);
 
@@ -11430,6 +11665,12 @@ class SyncManager {
                     last_sync_size: finalSize
                 });
                 if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
+                
+                // Still synchronize delta Blobs asynchronously using pre-fetched driveFiles
+                this.syncBlobs(token, activeAttachmentIds, activeTtsRecMap, driveFiles).catch(err => {
+                    console.error('[Sync] Background syncBlobs error:', err);
+                });
+
                 this.notifyListeners('Synced just now', now);
                 return now;
             }
@@ -11459,6 +11700,10 @@ class SyncManager {
             });
 
             if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
+
+            // Sync Blobs independently using pre-fetched driveFiles
+            await this.syncBlobs(token, activeAttachmentIds, activeTtsRecMap, driveFiles);
+
             this.notifyListeners('Synced just now', now);
             // Broadcast sync-done status to all extension pages
             try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
@@ -11485,6 +11730,7 @@ if (typeof window !== 'undefined') {
     globalThis.LuminaAuth = LuminaAuth;
     globalThis.LuminaSync = LuminaSync;
 }
+
 
 
 // --- BUNDLED FROM: lib/core/highlight_db.js ---
@@ -11610,13 +11856,18 @@ const LuminaChatDB = {
         });
     },
 
-    async getSession(sessionId) {
+    async getSession(sessionId, includeDeleted = false) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(this.SESSIONS_STORE, 'readonly');
             const store = tx.objectStore(this.SESSIONS_STORE);
             const request = store.get(sessionId);
-            request.onsuccess = () => resolve(request.result || null);
+            request.onsuccess = () => {
+                const s = request.result || null;
+                if (!s) return resolve(null);
+                if (s.isDeleted && !includeDeleted) return resolve(null);
+                resolve(s);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     },
@@ -11636,6 +11887,24 @@ const LuminaChatDB = {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], 'readwrite');
+            const sessionStore = tx.objectStore(this.SESSIONS_STORE);
+            const getReq = sessionStore.get(sessionId);
+            getReq.onsuccess = () => {
+                const s = getReq.result || { id: sessionId, createdAt: Date.now() };
+                s.isDeleted = true;
+                s.updatedAt = Date.now();
+                sessionStore.put(s);
+            };
+            tx.objectStore(this.MESSAGES_STORE).delete(sessionId);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = (e) => reject(e.target.error);
+        });
+    },
+
+    async deleteSessionHard(sessionId) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], 'readwrite');
             tx.objectStore(this.SESSIONS_STORE).delete(sessionId);
             tx.objectStore(this.MESSAGES_STORE).delete(sessionId);
             tx.oncomplete = () => resolve(true);
@@ -11643,7 +11912,7 @@ const LuminaChatDB = {
         });
     },
 
-    async getAllSessions() {
+    async getAllSessions(includeDeleted = false) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(this.SESSIONS_STORE, 'readonly');
@@ -11654,13 +11923,19 @@ const LuminaChatDB = {
                 const list = request.result || [];
                 list.forEach(s => {
                     if (s && s.id) {
-                        sessionsMap[s.id] = s;
+                        if (includeDeleted || !s.isDeleted) {
+                            sessionsMap[s.id] = s;
+                        }
                     }
                 });
                 resolve(sessionsMap);
             };
             request.onerror = (e) => reject(e.target.error);
         });
+    },
+
+    async getAllSessionsRaw() {
+        return this.getAllSessions(true);
     },
 
     async getMessages(sessionId) {
@@ -12257,15 +12532,14 @@ const ChatHistoryManager = {
             const allSessions = await LuminaChatDB.getAllSessions();
             let sortedIds = Object.keys(allSessions)
                 .sort((a, b) => (allSessions[b].updatedAt || 0) - (allSessions[a].updatedAt || 0));
-            if (sortedIds.length > this.MAX_HISTORIES) {
-                const deletedIds = sortedIds.slice(this.MAX_HISTORIES);
-                for (const id of deletedIds) {
-                    await this.deleteSessionWithAttachments(id);
-                }
+            if (typeof window !== 'undefined') {
+                window._localSavedSessions = window._localSavedSessions || {};
+                window._localSavedSessions[activeSessionId] = Date.now();
             }
             
-            chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: activeSessionId }).catch(() => {});
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            const senderInstanceId = (typeof window !== 'undefined' && window._luminaWindowInstanceId) ? window._luminaWindowInstanceId : null;
+            chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: activeSessionId, source: 'local_save', senderInstanceId }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated', senderInstanceId }).catch(() => {});
         } catch (error) {
             console.error('Failed to save chat history:', error);
         }
@@ -14258,15 +14532,22 @@ class NotesManager {
 
     // --- COLLECTION API ---
 
-    static async getCollections() {
+    static async getCollections(includeDeleted = false) {
         const db = await NotesManager.getDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readonly');
             const store = tx.objectStore(NotesManager.STORE_COLLECTIONS);
             const request = store.getAll();
-            request.onsuccess = () => resolve(request.result || []);
+            request.onsuccess = () => {
+                const list = request.result || [];
+                resolve(includeDeleted ? list : list.filter(c => c && !c.isDeleted));
+            };
             request.onerror = (e) => reject(e.target.error);
         });
+    }
+
+    static async getAllCollectionsRaw() {
+        return NotesManager.getCollections(true);
     }
 
     static async createCollection(name, icon = 'folder') {
@@ -14275,14 +14556,20 @@ class NotesManager {
             id: 'col_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
             name: name.trim() || 'Untitled Collection',
             icon: icon,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            updatedAt: Date.now()
         };
 
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_COLLECTIONS);
             const request = store.put(newCol);
-            request.onsuccess = () => resolve(newCol);
+            request.onsuccess = () => {
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+                resolve(newCol);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     }
@@ -14297,10 +14584,16 @@ class NotesManager {
             const getReq = store.get(collectionId);
             getReq.onsuccess = () => {
                 const col = getReq.result;
-                if (!col) return resolve(false);
+                if (!col || col.isDeleted) return resolve(false);
                 col.name = newName.trim() || 'Untitled Collection';
+                col.updatedAt = Date.now();
                 const putReq = store.put(col);
-                putReq.onsuccess = () => resolve(col);
+                putReq.onsuccess = () => {
+                    if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                        LuminaSync.triggerDebouncedSync();
+                    }
+                    resolve(col);
+                };
                 putReq.onerror = (e) => reject(e.target.error);
             };
             getReq.onerror = (e) => reject(e.target.error);
@@ -14310,13 +14603,19 @@ class NotesManager {
     static async deleteCollection(collectionId) {
         const db = await NotesManager.getDB();
 
-        // Delete collection and unassign its notes (set collectionId = null)
+        // Mark collection as deleted (tombstone) and unassign its notes (set collectionId = null)
         return new Promise((resolve, reject) => {
             const tx = db.transaction([NotesManager.STORE_COLLECTIONS, NotesManager.STORE_NOTES], 'readwrite');
             const colStore = tx.objectStore(NotesManager.STORE_COLLECTIONS);
             const noteStore = tx.objectStore(NotesManager.STORE_NOTES);
 
-            colStore.delete(collectionId);
+            const getReq = colStore.get(collectionId);
+            getReq.onsuccess = () => {
+                const col = getReq.result || { id: collectionId, createdAt: Date.now() };
+                col.isDeleted = true;
+                col.updatedAt = Date.now();
+                colStore.put(col);
+            };
 
             const index = noteStore.index('collectionId');
             const req = index.openCursor(IDBKeyRange.only(collectionId));
@@ -14326,19 +14625,25 @@ class NotesManager {
                 if (cursor) {
                     const note = cursor.value;
                     note.collectionId = null;
+                    note.updatedAt = Date.now();
                     cursor.update(note);
                     cursor.continue();
                 }
             };
 
-            tx.oncomplete = () => resolve(true);
+            tx.oncomplete = () => {
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+                resolve(true);
+            };
             tx.onerror = (e) => reject(e.target.error);
         });
     }
 
     // --- NOTES API ---
 
-    static async getNotes(collectionId = null) {
+    static async getNotes(collectionId = null, includeDeleted = false) {
         const db = await NotesManager.getDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readonly');
@@ -14353,7 +14658,10 @@ class NotesManager {
             }
 
             request.onsuccess = () => {
-                const notes = request.result || [];
+                let notes = request.result || [];
+                if (!includeDeleted) {
+                    notes = notes.filter(n => n && !n.isDeleted);
+                }
                 notes.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
                 resolve(notes);
             };
@@ -14361,13 +14669,22 @@ class NotesManager {
         });
     }
 
-    static async getNote(noteId) {
+    static async getAllNotesRaw() {
+        return NotesManager.getNotes(null, true);
+    }
+
+    static async getNote(noteId, includeDeleted = false) {
         const db = await NotesManager.getDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readonly');
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.get(noteId);
-            request.onsuccess = () => resolve(request.result || null);
+            request.onsuccess = () => {
+                const note = request.result || null;
+                if (!note) return resolve(null);
+                if (note.isDeleted && !includeDeleted) return resolve(null);
+                resolve(note);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     }
@@ -14394,7 +14711,12 @@ class NotesManager {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.put(newNote);
-            request.onsuccess = () => resolve(newNote);
+            request.onsuccess = () => {
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+                resolve(newNote);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     }
@@ -14414,7 +14736,12 @@ class NotesManager {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.put(updatedNote);
-            request.onsuccess = () => resolve(updatedNote);
+            request.onsuccess = () => {
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+                resolve(updatedNote);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     }
@@ -14428,30 +14755,24 @@ class NotesManager {
         const note = await NotesManager.getNote(noteId);
         if (!note) return null;
         note.collectionId = newCollectionId;
+        note.updatedAt = Date.now();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.put(note);
-            request.onsuccess = () => resolve(note);
+            request.onsuccess = () => {
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+                resolve(note);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     }
 
     static async getNoteCount(collectionId) {
-        const db = await NotesManager.getDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(NotesManager.STORE_NOTES, 'readonly');
-            const store = tx.objectStore(NotesManager.STORE_NOTES);
-            let request;
-            if (collectionId && collectionId !== 'all') {
-                const index = store.index('collectionId');
-                request = index.count(IDBKeyRange.only(collectionId));
-            } else {
-                request = store.count();
-            }
-            request.onsuccess = () => resolve(request.result || 0);
-            request.onerror = (e) => reject(e.target.error);
-        });
+        const notes = await NotesManager.getNotes(collectionId, false);
+        return notes.length;
     }
 
     static async deleteNote(noteId) {
@@ -14459,15 +14780,30 @@ class NotesManager {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_NOTES);
-            const request = store.delete(noteId);
-            request.onsuccess = () => resolve(true);
-            request.onerror = (e) => reject(e.target.error);
+            const getReq = store.get(noteId);
+            getReq.onsuccess = () => {
+                const note = getReq.result || { id: noteId, createdAt: Date.now() };
+                note.isDeleted = true;
+                note.updatedAt = Date.now();
+                const putReq = store.put(note);
+                putReq.onsuccess = () => {
+                    if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                        LuminaSync.triggerDebouncedSync();
+                    }
+                    resolve(true);
+                };
+                putReq.onerror = (e) => reject(e.target.error);
+            };
+            getReq.onerror = (e) => reject(e.target.error);
         });
     }
 }
 
 if (typeof window !== 'undefined') {
     window.NotesManager = NotesManager;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.NotesManager = NotesManager;
 }
 
 
@@ -16648,7 +16984,7 @@ class TTSDB {
         });
     }
 
-    static async getAllRecordings() {
+    static async getAllRecordings(includeDeleted = false) {
         const db = await TTSDB.getDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readonly');
@@ -16656,21 +16992,33 @@ class TTSDB {
             const index = store.index('createdAt');
             const request = index.getAll();
             request.onsuccess = () => {
-                const list = (request.result || []).reverse();
+                let list = (request.result || []).reverse();
+                if (!includeDeleted) {
+                    list = list.filter(r => r && !r.isDeleted);
+                }
                 resolve(list);
             };
             request.onerror = (e) => reject(e.target.error);
         });
     }
 
-    static async getRecording(id) {
+    static async getAllRecordingsRaw() {
+        return TTSDB.getAllRecordings(true);
+    }
+
+    static async getRecording(id, includeDeleted = false) {
         if (!id) return null;
         const db = await TTSDB.getDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readonly');
             const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
             const request = store.get(id);
-            request.onsuccess = () => resolve(request.result || null);
+            request.onsuccess = () => {
+                const item = request.result || null;
+                if (!item) return resolve(null);
+                if (item.isDeleted && !includeDeleted) return resolve(null);
+                resolve(item);
+            };
             request.onerror = (e) => reject(e.target.error);
         });
     }
@@ -16693,9 +17041,11 @@ class TTSDB {
             accent: recData.accent || '',
             durationSeconds: recData.durationSeconds || 0,
             audioBlob: recData.audioBlob,
+            alignment: recData.alignment || null,
             starred: recData.starred ? 1 : 0,
+            isDeleted: !!recData.isDeleted,
             createdAt: recData.createdAt || now,
-            updatedAt: now
+            updatedAt: recData.updatedAt || now
         };
 
         return new Promise((resolve, reject) => {
@@ -16740,6 +17090,25 @@ class TTSDB {
     }
 
     static async deleteRecording(id) {
+        const db = await TTSDB.getDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
+            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
+            const getReq = store.get(id);
+            getReq.onsuccess = () => {
+                const rec = getReq.result || { id: id, createdAt: Date.now() };
+                rec.isDeleted = true;
+                rec.audioBlob = null;
+                rec.updatedAt = Date.now();
+                const putReq = store.put(rec);
+                putReq.onsuccess = () => resolve(true);
+                putReq.onerror = (e) => reject(e.target.error);
+            };
+            getReq.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    static async deleteRecordingHard(id) {
         const db = await TTSDB.getDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
@@ -17079,6 +17448,9 @@ class TTSManager {
             };
         }
 
+        const selectedModel = await this.getSelectedTtsModel();
+        const modelName = selectedModel || this.MODEL;
+
         const payload = {
             contents: [
                 {
@@ -17091,11 +17463,11 @@ class TTSManager {
                 responseModalities: ['AUDIO'],
                 speechConfig: speechConfig
             },
-            model: this.MODEL
+            model: modelName
         };
 
         return await this.fetchWithRotation(keys, async (currentKey) => {
-            const url = `${this.API_ENDPOINT}/${this.MODEL}:generateContent?key=${encodeURIComponent(currentKey)}`;
+            const url = `${this.API_ENDPOINT}/${modelName}:generateContent?key=${encodeURIComponent(currentKey)}`;
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -17285,6 +17657,16 @@ class TTSManager {
         return result;
     }
 
+    static async getSelectedTtsModel() {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            try {
+                const res = await new Promise(resolve => chrome.storage.local.get(['ttsModel'], resolve));
+                if (res && res.ttsModel) return res.ttsModel;
+            } catch (_) {}
+        }
+        return 'gemini-2.5-flash';
+    }
+
     static downloadWav(blob, filename = 'speech.wav') {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -17314,9 +17696,129 @@ class TTSManager {
     }
 }
 
+class GroqAligner {
+    static async getGroqApiKey() {
+        const keysSet = new Set();
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            try {
+                const res = await new Promise(resolve => chrome.storage.local.get(null, resolve));
+                if (res) {
+                    if (res.groqApiKey && typeof res.groqApiKey === 'string') {
+                        res.groqApiKey.split(',').forEach(k => {
+                            const trimmed = k.trim();
+                            if (trimmed) keysSet.add(trimmed);
+                        });
+                    }
+                    const providers = res.providers || [];
+                    if (Array.isArray(providers)) {
+                        providers.forEach(p => {
+                            const isGroq = p.id === 'groq' || p.id === 'groq-default' ||
+                                (typeof p.endpoint === 'string' && p.endpoint.includes('groq.com')) ||
+                                (p.name?.toLowerCase().includes('groq') || p.id?.toLowerCase().includes('groq'));
+                            if (isGroq && p.apiKey && typeof p.apiKey === 'string') {
+                                p.apiKey.split(',').forEach(k => {
+                                    const trimmed = k.trim();
+                                    if (trimmed) keysSet.add(trimmed);
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (_) {}
+        }
+        ['lumina_groq_api_key', 'groq_api_key', 'groqApiKey'].forEach(storageKey => {
+            const val = localStorage.getItem(storageKey);
+            if (val && typeof val === 'string') {
+                val.split(',').forEach(k => {
+                    const trimmed = k.trim();
+                    if (trimmed) keysSet.add(trimmed);
+                });
+            }
+        });
+        const keys = Array.from(keysSet);
+        return keys.length > 0 ? keys[0] : '';
+    }
+
+    static async getSelectedSttModel() {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            try {
+                const res = await new Promise(resolve => chrome.storage.local.get(['sttModel'], resolve));
+                if (res && res.sttModel) return res.sttModel;
+            } catch (_) {}
+        }
+        return 'whisper-large-v3-turbo';
+    }
+
+    static async align(blob, originalScript = '') {
+        try {
+            const apiKey = await this.getGroqApiKey();
+            if (!apiKey) {
+                console.warn('[GroqAligner] No Groq API key found in settings. Skipping automatic transcription alignment.');
+                return null;
+            }
+
+            const model = await this.getSelectedSttModel();
+            const formData = new FormData();
+            const audioFile = new File([blob], 'audio.mp3', { type: blob.type || 'audio/mp3' });
+            formData.append('file', audioFile);
+            formData.append('model', model);
+            formData.append('response_format', 'verbose_json');
+            formData.append('timestamp_granularities[]', 'segment');
+            formData.append('timestamp_granularities[]', 'word');
+            formData.append('language', 'en');
+
+            const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.warn(`[GroqAligner] Groq STT failed (${response.status}):`, errText);
+                return null;
+            }
+
+            const data = await response.json();
+            const rawSegments = data.segments || [];
+            const rawWords = data.words || [];
+
+            const segments = rawSegments.map((s, idx) => ({
+                id: idx,
+                text: (s.text || '').trim(),
+                start: typeof s.start === 'number' ? s.start : 0,
+                end: typeof s.end === 'number' ? s.end : 0
+            })).filter(s => s.text.length > 0);
+
+            const words = rawWords.map(w => ({
+                word: (w.word || '').trim(),
+                start: typeof w.start === 'number' ? w.start : 0,
+                end: typeof w.end === 'number' ? w.end : 0
+            })).filter(w => w.word.length > 0);
+
+            return {
+                text: data.text || '',
+                segments: segments,
+                words: words
+            };
+        } catch (err) {
+            console.warn('[GroqAligner] Error during Groq transcription:', err);
+            return null;
+        }
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.TTSDB = TTSDB;
     window.TTSManager = TTSManager;
+    window.GroqAligner = GroqAligner;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.TTSDB = TTSDB;
+    globalThis.TTSManager = TTSManager;
+    globalThis.GroqAligner = GroqAligner;
 }
 
 
@@ -17341,6 +17843,8 @@ class TTSPanel {
         this.selectedVoiceTraits = new Set();
         this.isPlaying = false;
         this.isGenerating = false;
+        this.isPracticeMode = false;
+        this.currentActiveSentenceEnd = null;
         this.activeSpeakerTarget = '1';
 
         this.selectedVoice1 = 'Kore';
@@ -17350,11 +17854,46 @@ class TTSPanel {
         this.selectedAccent = '';
         this.audioProfile = '';
 
+        this.loadLastVoiceSettings();
         this.initDOMElements();
         this.bindEvents();
         this.renderDirectorDropdowns();
         this.renderVoiceFilterMenu();
         this.renderVoiceCards();
+        this.renderCustomPresets();
+    }
+
+    loadLastVoiceSettings() {
+        try {
+            const raw = localStorage.getItem('lumina_tts_last_settings');
+            if (raw) {
+                const settings = JSON.parse(raw);
+                if (settings.mode) this.currentMode = settings.mode;
+                if (settings.voice1) this.selectedVoice1 = settings.voice1;
+                if (settings.voice2) this.selectedVoice2 = settings.voice2;
+                if (settings.style !== undefined) this.selectedStyle = settings.style;
+                if (settings.pace !== undefined) this.selectedPace = settings.pace;
+                if (settings.accent !== undefined) this.selectedAccent = settings.accent;
+                if (settings.audioProfile !== undefined) this.audioProfile = settings.audioProfile;
+            }
+        } catch (_) {}
+    }
+
+    saveLastVoiceSettings() {
+        try {
+            const settings = {
+                mode: this.currentMode,
+                voice1: this.selectedVoice1,
+                voice2: this.selectedVoice2,
+                speaker1: this.speaker1Input ? this.speaker1Input.value : 'Joe',
+                speaker2: this.speaker2Input ? this.speaker2Input.value : 'Jane',
+                style: this.selectedStyle,
+                pace: this.selectedPace,
+                accent: this.selectedAccent,
+                audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile
+            };
+            localStorage.setItem('lumina_tts_last_settings', JSON.stringify(settings));
+        } catch (_) {}
     }
 
     async init(recordingId = null) {
@@ -17362,6 +17901,7 @@ class TTSPanel {
         this.renderDirectorDropdowns();
         this.renderVoiceFilterMenu();
         this.renderVoiceCards();
+        this.renderCustomPresets();
         await this.loadRecordings();
         if (recordingId) {
             await this.selectRecording(recordingId);
@@ -17378,6 +17918,8 @@ class TTSPanel {
         this.countLabel = document.getElementById('tts-count-label');
         this.filterBtns = document.querySelectorAll('#tts-filter-controls .notes-sort-btn');
         this.presetQuickChips = document.querySelectorAll('.tts-preset-quick-chip');
+        this.customPresetsGrid = document.getElementById('tts-custom-presets-grid');
+        this.savePresetBtn = document.getElementById('tts-save-preset-btn');
 
         this.modeBtns = document.querySelectorAll('.tts-mode-btn');
         this.duplicateBtn = document.getElementById('tts-duplicate-btn');
@@ -17394,6 +17936,7 @@ class TTSPanel {
         this.viewScriptBody = document.getElementById('tts-view-script-body');
 
         this.heroTitle = document.getElementById('tts-hero-title');
+        this.editCurrentBtn = document.getElementById('tts-edit-current-btn');
         this.downloadMp3Btn = document.getElementById('tts-download-mp3-btn');
 
         this.scriptInput = document.getElementById('tts-script-input');
@@ -17444,6 +17987,7 @@ class TTSPanel {
         this.currentTimeEl = document.getElementById('tts-current-time');
         this.durationTimeEl = document.getElementById('tts-duration-time');
         this.speedBtn = document.getElementById('tts-speed-btn');
+        this.practiceModeBtn = document.getElementById('tts-practice-mode-btn');
     }
 
     bindEvents() {
@@ -17499,11 +18043,16 @@ class TTSPanel {
             btn.addEventListener('click', () => {
                 const mode = btn.dataset.mode;
                 this.setMode(mode);
+                this.saveLastVoiceSettings();
             });
         });
 
         if (this.duplicateBtn) {
             this.duplicateBtn.addEventListener('click', () => this.duplicateCurrent());
+        }
+
+        if (this.editCurrentBtn) {
+            this.editCurrentBtn.addEventListener('click', () => this.duplicateCurrent());
         }
 
         if (this.deleteCurrentBtn) {
@@ -17524,7 +18073,19 @@ class TTSPanel {
         if (this.profileInput) {
             this.profileInput.addEventListener('input', (e) => {
                 this.audioProfile = e.target.value;
+                this.saveLastVoiceSettings();
             });
+        }
+
+        if (this.speaker1Input) {
+            this.speaker1Input.addEventListener('input', () => this.saveLastVoiceSettings());
+        }
+        if (this.speaker2Input) {
+            this.speaker2Input.addEventListener('input', () => this.saveLastVoiceSettings());
+        }
+
+        if (this.savePresetBtn) {
+            this.savePresetBtn.addEventListener('click', () => this.handleSaveAsPreset());
         }
 
         // Setup Voice Picker Pill Popover
@@ -17644,12 +18205,27 @@ class TTSPanel {
             });
         }
 
+        if (this.practiceModeBtn) {
+            this.practiceModeBtn.addEventListener('click', () => {
+                this.isPracticeMode = !this.isPracticeMode;
+                this.practiceModeBtn.classList.toggle('active', this.isPracticeMode);
+                if (this.isPracticeMode) {
+                    this.showStatus('Practice Mode ON: Audio will pause after each sentence.', false);
+                } else {
+                    this.showStatus('Practice Mode OFF: Continuous playback.', false);
+                }
+            });
+        }
+
         if (this.heroTitle) {
             this.heroTitle.addEventListener('change', async () => {
                 if (this.currentRecordingId) {
                     const newTitle = this.heroTitle.value.trim() || 'Untitled Audio';
                     await TTSDB.updateRecordingTitle(this.currentRecordingId, newTitle);
                     await this.loadRecordings();
+                    if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                        LuminaSync.triggerDebouncedSync();
+                    }
                 }
             });
             this.heroTitle.addEventListener('keydown', (e) => {
@@ -17702,6 +18278,7 @@ class TTSPanel {
                 }
             }
             if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(this.audioElement.currentTime);
+            this.highlightActiveSentence(this.audioElement.currentTime);
         });
 
         this.audioElement.addEventListener('loadedmetadata', updateAudioDuration);
@@ -17754,6 +18331,7 @@ class TTSPanel {
                     this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
                     this.styleDropdown.classList.remove('show');
                     this.renderDirectorDropdowns();
+                    this.saveLastVoiceSettings();
                 });
             });
         }
@@ -17771,6 +18349,7 @@ class TTSPanel {
                     this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
                     this.paceDropdown.classList.remove('show');
                     this.renderDirectorDropdowns();
+                    this.saveLastVoiceSettings();
                 });
             });
         }
@@ -17788,6 +18367,7 @@ class TTSPanel {
                     this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
                     this.accentDropdown.classList.remove('show');
                     this.renderDirectorDropdowns();
+                    this.saveLastVoiceSettings();
                 });
             });
         }
@@ -17939,6 +18519,7 @@ class TTSPanel {
                 }
                 this.updateActiveVoiceHeaderLabel();
                 this.renderVoiceCards();
+                this.saveLastVoiceSettings();
             });
         });
 
@@ -18070,6 +18651,9 @@ class TTSPanel {
                 const id = btn.dataset.id;
                 await TTSDB.toggleStar(id);
                 await this.loadRecordings();
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
             });
         });
 
@@ -18082,33 +18666,202 @@ class TTSPanel {
         });
     }
 
-    renderScriptViewer(script, mode, speaker1, speaker2) {
+    renderScriptViewer(script, mode, speaker1, speaker2, alignment = null) {
         if (!this.viewScriptBody) return;
         const text = script || '';
-        
+        this.currentAlignment = alignment;
+
+        // Luôn sử dụng kịch bản gốc người dùng nhập để hiển thị đầy đủ dấu câu, dấu ngoặc kép & hoa thường
         if (mode === 'multi') {
             const lines = text.split('\n');
             const html = lines.map(line => {
                 const trimmed = line.trim();
                 if (!trimmed) return '';
-                
                 const match = trimmed.match(/^([^:]+):\s*(.*)$/);
                 if (match) {
                     const spk = this.escapeHtml(match[1].trim());
-                    let content = this.escapeHtml(match[2]);
-                    content = content.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-                    return `<div class="tts-view-dialogue-line"><span class="tts-view-speaker-name">${spk}:</span>${content}</div>`;
+                    const rawContent = match[2];
+                    const contentHtml = this.formatScriptWithSentences(rawContent, alignment);
+                    return `<div class="tts-view-dialogue-line"><span class="tts-view-speaker-name">${spk}:</span>${contentHtml}</div>`;
                 } else {
-                    let content = this.escapeHtml(trimmed);
-                    content = content.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-                    return `<div class="tts-view-dialogue-line">${content}</div>`;
+                    const contentHtml = this.formatScriptWithSentences(trimmed, alignment);
+                    return `<div class="tts-view-dialogue-line">${contentHtml}</div>`;
                 }
             }).filter(Boolean).join('');
             this.viewScriptBody.innerHTML = html || '<div class="tts-view-dialogue-line">No transcript content.</div>';
         } else {
-            let content = this.escapeHtml(text);
-            content = content.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-            this.viewScriptBody.innerHTML = `<div class="tts-view-dialogue-line">${content}</div>`;
+            const contentHtml = this.formatScriptWithSentences(text, alignment);
+            this.viewScriptBody.innerHTML = `<div class="tts-view-dialogue-line">${contentHtml}</div>`;
+        }
+
+        this.bindSentenceClickEvents();
+    }
+
+    formatScriptWithSentences(rawText, alignment = null) {
+        if (!rawText) return '';
+        
+        // Tách câu thông minh: Bảo vệ các từ viết tắt phổ biến như p.m., a.m., Dr., Mr., v.v.
+        // Chỉ tách câu khi kết thúc bằng (. ! ? : \n) và theo sau là khoảng trắng + chữ hoa hoặc hết dòng
+        let processedText = rawText
+            .replace(/\b(p|a)\.m\./gi, '$1_m_dot_')
+            .replace(/\b(e\.g|i\.e|vs|etc|mr|mrs|ms|dr|prof)\./gi, '$1_dot_')
+            .replace(/(\d+)\.(\d+)/g, '$1_numdot_$2');
+
+        const sentenceRegex = /[^.!?:\n]+[.!?:]+["'”’]?|[^.!?:\n]+$/g;
+        const rawMatches = processedText.match(sentenceRegex) || [processedText];
+        
+        const sentences = rawMatches.map(s => {
+            return s
+                .replace(/_m_dot_/gi, '.m.')
+                .replace(/_dot_/gi, '.')
+                .replace(/_numdot_/g, '.')
+                .trim();
+        }).filter(Boolean);
+
+        const segments = (alignment && Array.isArray(alignment.segments)) ? alignment.segments : [];
+        const words = (alignment && Array.isArray(alignment.words)) ? alignment.words : [];
+
+        // 1. Nếu có word timestamps chi tiết từ Groq: khớp chính xác từng từ của mỗi câu
+        if (words.length > 0) {
+            let wordCursor = 0;
+            return sentences.map((sent, sIdx) => {
+                const cleanWords = sent.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+                let start = 0;
+                let end = 0;
+
+                if (cleanWords.length > 0 && wordCursor < words.length) {
+                    start = words[wordCursor].start || 0;
+                    const lastWord = cleanWords[cleanWords.length - 1];
+
+                    // Tìm từ kết thúc câu trong mảng words từ vị trí wordCursor trở đi
+                    let foundEndIdx = -1;
+                    const searchLimit = Math.min(words.length, wordCursor + cleanWords.length + 5);
+                    for (let i = wordCursor; i < searchLimit; i++) {
+                        const wClean = (words[i].word || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (wClean === lastWord) {
+                            foundEndIdx = i;
+                        }
+                    }
+
+                    if (foundEndIdx !== -1) {
+                        end = words[foundEndIdx].end || (start + 1);
+                        wordCursor = foundEndIdx + 1;
+                    } else {
+                        const fallbackIdx = Math.min(words.length - 1, wordCursor + cleanWords.length - 1);
+                        end = words[fallbackIdx].end || (start + 1.5);
+                        wordCursor = fallbackIdx + 1;
+                    }
+                } else if (segments.length > 0) {
+                    end = segments[segments.length - 1].end || 0;
+                }
+
+                // Với câu cuối cùng, lấy mốc kết thúc của từ cuối cùng hoặc audio duration
+                if (sIdx === sentences.length - 1 && words.length > 0) {
+                    end = Math.max(end, words[words.length - 1].end || end);
+                }
+
+                let escapedSent = this.escapeHtml(sent);
+                escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+                return `<span class="tts-sentence-segment" data-start="${start}" data-end="${end}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
+            }).join(' ');
+        }
+
+        // 2. Nếu có segments từ Groq
+        if (segments.length > 0) {
+            // Khi segments được chia thành nhiều đoạn
+            if (segments.length > 1 && sentences.length === segments.length) {
+                return sentences.map((sent, idx) => {
+                    const seg = segments[idx];
+                    const start = typeof seg.start === 'number' ? seg.start : 0;
+                    const end = typeof seg.end === 'number' ? seg.end : (start + 1);
+
+                    let escapedSent = this.escapeHtml(sent);
+                    escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+                    return `<span class="tts-sentence-segment" data-start="${start}" data-end="${end}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
+                }).join(' ');
+            }
+
+            // Nếu Groq chỉ trả về 1 segment bao trùm cả bài (0s -> 25s) hoặc số segments không khớp:
+            // Phân bổ thời gian chính xác theo độ dài ký tự của từng câu
+            const totalDuration = segments[segments.length - 1].end || 0;
+            const totalChars = sentences.reduce((sum, s) => sum + s.length, 0) || 1;
+            let currentAccumTime = 0;
+
+            return sentences.map((sent, idx) => {
+                const ratio = sent.length / totalChars;
+                const start = currentAccumTime;
+                const end = (idx === sentences.length - 1) ? totalDuration : (start + ratio * totalDuration);
+                currentAccumTime = end;
+
+                let escapedSent = this.escapeHtml(sent);
+                escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+                return `<span class="tts-sentence-segment" data-start="${start.toFixed(2)}" data-end="${end.toFixed(2)}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
+            }).join(' ');
+        }
+
+        // Fallback khi chưa có Groq alignment
+        return sentences.map(sent => {
+            let escapedSent = this.escapeHtml(sent);
+            escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+            return `<span class="tts-sentence-segment" data-start="0" data-end="0">${escapedSent}</span>`;
+        }).join(' ');
+    }
+
+    bindSentenceClickEvents() {
+        if (!this.viewScriptBody) return;
+        this.viewScriptBody.querySelectorAll('.tts-sentence-segment').forEach(seg => {
+            seg.addEventListener('click', (e) => {
+                const startTime = parseFloat(seg.dataset.start || 0);
+                const endTime = parseFloat(seg.dataset.end || 0);
+                if (!isNaN(startTime) && this.audioElement) {
+                    this.currentActiveSentenceEnd = endTime > startTime ? endTime : null;
+                    this.audioElement.currentTime = Math.max(0, startTime);
+                    this.audioElement.play().catch(() => {});
+                    this.highlightActiveSentence(startTime);
+                }
+            });
+        });
+    }
+
+    highlightActiveSentence(currentTime) {
+        if (!this.viewScriptBody) return;
+        const segments = this.viewScriptBody.querySelectorAll('.tts-sentence-segment');
+        let currentActiveSeg = null;
+        let matchedSegEl = null;
+
+        segments.forEach(seg => {
+            const start = parseFloat(seg.dataset.start || 0);
+            const end = parseFloat(seg.dataset.end || 0);
+            if (end > start) {
+                // Kiểm tra nếu thời gian nằm trong segment (hoặc vừa chạm mốc kết thúc của segment trong practice mode)
+                const isWithin = (currentTime >= start && currentTime < end);
+                const isJustEnded = (this.isPracticeMode && Math.abs(currentTime - end) <= 0.25);
+
+                if (isWithin || isJustEnded) {
+                    seg.classList.add('active');
+                    currentActiveSeg = { start, end };
+                    matchedSegEl = seg;
+                } else {
+                    seg.classList.remove('active');
+                }
+            } else {
+                seg.classList.remove('active');
+            }
+        });
+
+        // Xử lý chế độ Practice Mode: Tự động dừng lại sau khi nói hết 1 câu
+        if (this.isPracticeMode && this.isPlaying && this.audioElement && !this.audioElement.paused) {
+            if (currentActiveSeg) {
+                this.currentActiveSentenceEnd = currentActiveSeg.end;
+            }
+            if (this.currentActiveSentenceEnd && currentTime >= (this.currentActiveSentenceEnd - 0.05)) {
+                this.audioElement.pause();
+                // Đảm bảo segment vừa phát xong vẫn luôn giữ active sau khi pause
+                if (matchedSegEl) {
+                    matchedSegEl.classList.add('active');
+                }
+                this.currentActiveSentenceEnd = null;
+            }
         }
     }
 
@@ -18147,7 +18900,7 @@ class TTSPanel {
 
         if (this.heroTitle) this.heroTitle.value = rec.title || 'Untitled Audio';
 
-        this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2);
+        this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2, rec.alignment);
 
         if (rec.audioBlob) {
             this.currentRecordingDuration = rec.durationSeconds || 0;
@@ -18157,6 +18910,11 @@ class TTSPanel {
             const url = URL.createObjectURL(rec.audioBlob);
             this.audioElement.src = url;
             this.audioElement.load();
+
+            // Background Groq STT Auto-Alignment if not aligned yet
+            if (!rec.alignment && typeof GroqAligner !== 'undefined') {
+                this.triggerBackgroundGroqAlign(rec);
+            }
         }
 
         this.showStatus('', false);
@@ -18168,6 +18926,25 @@ class TTSPanel {
 
         if (this.page) {
             this.page.classList.add('show-studio');
+        }
+    }
+
+    async triggerBackgroundGroqAlign(rec) {
+        if (!rec || !rec.audioBlob || rec._isAligning) return;
+        rec._isAligning = true;
+        try {
+            const alignment = await GroqAligner.align(rec.audioBlob, rec.script);
+            if (alignment && alignment.segments && alignment.segments.length > 0) {
+                rec.alignment = alignment;
+                await TTSDB.saveRecording(rec);
+                if (this.currentRecordingId === rec.id) {
+                    this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2, alignment);
+                }
+            }
+        } catch (err) {
+            console.warn('Groq STT alignment background task failed:', err);
+        } finally {
+            rec._isAligning = false;
         }
     }
 
@@ -18195,21 +18972,27 @@ class TTSPanel {
             this.scriptInput.value = '';
             this.scriptInput.focus();
         }
-        if (this.profileInput) this.profileInput.value = '';
-        this.audioProfile = '';
-        this.selectedStyle = '';
-        this.selectedPace = '';
-        this.selectedAccent = '';
 
-        this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', '');
-        this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', '');
-        this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', '');
+        // Tải lại các lựa chọn giọng nói, tone, pace, style, accent cuối cùng mà người dùng đã chọn
+        this.loadLastVoiceSettings();
+
+        // Cập nhật mode buttons
+        this.modeBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === this.currentMode);
+        });
+        this.updateModeUI();
+
+        if (this.profileInput) this.profileInput.value = this.audioProfile || '';
+        this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
+        this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
+        this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
         this.updateActiveVoiceHeaderLabel();
 
         this.renderDirectorDropdowns();
         this.renderVoiceCards();
 
-        this.showStatus('Ready to compose new audio speech.', false);
+        // Luôn đảm bảo nút Generate sẵn sàng cho bài mới
+        this.updateGenerateButtonUI(false);
         this.renderRecordingsList();
 
         if (this.page) {
@@ -18218,30 +19001,47 @@ class TTSPanel {
     }
 
     duplicateCurrent() {
-        if (!this.currentRecordingId) return;
+        const recId = this.currentRecordingId;
+        if (!recId) return;
 
-        TTSDB.getRecording(this.currentRecordingId).then(rec => {
+        TTSDB.getRecording(recId).then(rec => {
             if (!rec) return;
-            this.resetStudioForNew();
 
+            // Dừng audio
+            this.audioElement.pause();
+            this.audioElement.src = '';
+
+            // Chuyển giao diện sang Compose Editor
+            if (this.modeSwitcher) this.modeSwitcher.style.display = 'flex';
+            if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = 'block';
+            if (this.generateBtn) this.generateBtn.style.display = 'inline-flex';
+
+            if (this.viewInfoBadge) this.viewInfoBadge.style.display = 'none';
+            if (this.viewActions) this.viewActions.style.display = 'none';
+            if (this.viewContainer) this.viewContainer.style.display = 'none';
+            if (this.composeContainer) this.composeContainer.style.display = 'flex';
+
+            // Nạp toàn bộ dữ liệu cấu hình của bản ghi
             this.currentMode = rec.mode || 'single';
-            this.modeBtns.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.mode === this.currentMode);
-            });
-            this.updateModeUI();
-
             this.selectedVoice1 = rec.voice || 'Kore';
             this.selectedVoice2 = rec.voice2 || 'Puck';
+            if (this.s1Badge) this.s1Badge.textContent = this.selectedVoice1;
+            if (this.s2Badge) this.s2Badge.textContent = this.selectedVoice2;
+
             this.selectedStyle = rec.style || '';
             this.selectedPace = rec.pace || '';
             this.selectedAccent = rec.accent || '';
             this.audioProfile = rec.audioProfile || '';
 
-            if (this.scriptInput) this.scriptInput.value = rec.script || '';
-            if (this.profileInput) this.profileInput.value = rec.audioProfile || '';
+            if (this.scriptInput) {
+                this.scriptInput.value = rec.script || '';
+                this.scriptInput.focus();
+            }
+            if (this.profileInput) this.profileInput.value = this.audioProfile;
             if (this.speaker1Input) this.speaker1Input.value = rec.speaker1 || 'Joe';
             if (this.speaker2Input) this.speaker2Input.value = rec.speaker2 || 'Jane';
 
+            this.setMode(this.currentMode);
             this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
             this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
             this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
@@ -18249,7 +19049,11 @@ class TTSPanel {
 
             this.renderDirectorDropdowns();
             this.renderVoiceCards();
-            this.showStatus('Loaded as new editable draft.', false);
+            this.saveLastVoiceSettings();
+
+            if (this.page) {
+                this.page.classList.add('show-studio');
+            }
         });
     }
 
@@ -18259,6 +19063,9 @@ class TTSPanel {
             this.resetStudioForNew();
         }
         await this.loadRecordings();
+        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+            LuminaSync.triggerDebouncedSync();
+        }
     }
 
     setMode(mode) {
@@ -18355,84 +19162,217 @@ class TTSPanel {
         this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
         this.renderDirectorDropdowns();
         this.renderVoiceCards();
+        this.saveLastVoiceSettings();
+    }
+
+    async getCustomPresets() {
+        try {
+            const raw = localStorage.getItem('lumina_tts_custom_presets');
+            return raw ? JSON.parse(raw) : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    async saveCustomPresets(presets) {
+        try {
+            localStorage.setItem('lumina_tts_custom_presets', JSON.stringify(presets));
+            this.renderCustomPresets();
+        } catch (_) {}
+    }
+
+    async renderCustomPresets() {
+        if (!this.customPresetsGrid) return;
+        const presets = await this.getCustomPresets();
+        if (presets.length === 0) {
+            this.customPresetsGrid.style.display = 'none';
+            this.customPresetsGrid.innerHTML = '';
+            return;
+        }
+
+        this.customPresetsGrid.style.display = 'flex';
+        this.customPresetsGrid.innerHTML = presets.map((p, idx) => `
+            <div class="tts-custom-preset-chip" data-index="${idx}">
+                <div class="tts-custom-preset-name" title="${this.escapeHtml(p.name)} (${p.mode === 'multi' ? `${p.voice1} & ${p.voice2}` : p.voice1})">
+                    ⭐ ${this.escapeHtml(p.name)}
+                </div>
+                <button type="button" class="tts-custom-preset-delete" data-index="${idx}" title="Delete Preset">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `).join('');
+
+        this.customPresetsGrid.querySelectorAll('.tts-custom-preset-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                if (e.target.closest('.tts-custom-preset-delete')) return;
+                const idx = parseInt(chip.dataset.index, 10);
+                this.applyCustomPreset(presets[idx]);
+                if (this.page) {
+                    this.page.classList.add('show-studio');
+                }
+            });
+        });
+
+        this.customPresetsGrid.querySelectorAll('.tts-custom-preset-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.dataset.index, 10);
+                this.deleteCustomPreset(idx);
+            });
+        });
+    }
+
+    async handleSaveAsPreset() {
+        const defaultName = this.currentMode === 'multi' 
+            ? `${this.selectedVoice1} & ${this.selectedVoice2} (${this.selectedStyle || 'Default'})`
+            : `${this.selectedVoice1} (${this.selectedStyle || 'Preset'})`;
+
+        const name = prompt('Enter a name for this preset:', defaultName);
+        if (!name || !name.trim()) return;
+
+        const newPreset = {
+            id: 'preset_' + Date.now(),
+            name: name.trim(),
+            mode: this.currentMode,
+            voice1: this.selectedVoice1,
+            voice2: this.selectedVoice2,
+            speaker1: this.speaker1Input ? this.speaker1Input.value : 'Joe',
+            speaker2: this.speaker2Input ? this.speaker2Input.value : 'Jane',
+            style: this.selectedStyle,
+            pace: this.selectedPace,
+            accent: this.selectedAccent,
+            audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile,
+            createdAt: Date.now()
+        };
+
+        const presets = await this.getCustomPresets();
+        presets.unshift(newPreset);
+        await this.saveCustomPresets(presets);
+        this.showStatus(`Preset "${name.trim()}" saved successfully!`, false);
+    }
+
+    applyCustomPreset(preset) {
+        if (!preset) return;
+        this.setMode(preset.mode || 'single');
+        this.selectedVoice1 = preset.voice1 || 'Kore';
+        this.selectedVoice2 = preset.voice2 || 'Puck';
+        if (this.s1Badge) this.s1Badge.textContent = this.selectedVoice1;
+        if (this.s2Badge) this.s2Badge.textContent = this.selectedVoice2;
+        if (this.speaker1Input && preset.speaker1) this.speaker1Input.value = preset.speaker1;
+        if (this.speaker2Input && preset.speaker2) this.speaker2Input.value = preset.speaker2;
+
+        this.selectedStyle = preset.style || '';
+        this.selectedPace = preset.pace || '';
+        this.selectedAccent = preset.accent || '';
+        this.audioProfile = preset.audioProfile || '';
+
+        if (this.profileInput) this.profileInput.value = this.audioProfile;
+        this.updateChipLabel(this.styleChip, this.styleChipLabel, 'Style', this.selectedStyle);
+        this.updateChipLabel(this.paceChip, this.paceChipLabel, 'Pace', this.selectedPace);
+        this.updateChipLabel(this.accentChip, this.accentChipLabel, 'Accent', this.selectedAccent);
+        this.updateActiveVoiceHeaderLabel();
+        this.renderDirectorDropdowns();
+        this.renderVoiceCards();
+        this.saveLastVoiceSettings();
+        this.showStatus(`Applied preset: ${preset.name}`, false);
+    }
+
+    async deleteCustomPreset(idx) {
+        const presets = await this.getCustomPresets();
+        if (idx >= 0 && idx < presets.length) {
+            const removed = presets.splice(idx, 1);
+            await this.saveCustomPresets(presets);
+            this.showStatus(`Deleted preset "${removed[0]?.name || ''}"`, false);
+        }
     }
 
     async handleGenerate() {
-        if (this.isGenerating) return;
-
         const script = this.scriptInput ? this.scriptInput.value.trim() : '';
         if (!script) {
-            this.showStatus('Please enter text or a transcript to generate speech.', true);
             if (this.scriptInput) this.scriptInput.focus();
             return;
         }
 
-        this.isGenerating = true;
+        // Snapshot toàn bộ thông số cho task này
+        const taskPayload = {
+            mode: this.currentMode,
+            script: script,
+            voice1: this.selectedVoice1 || 'Kore',
+            voice2: this.selectedVoice2 || 'Puck',
+            speaker1: this.speaker1Input ? this.speaker1Input.value : 'Joe',
+            speaker2: this.speaker2Input ? this.speaker2Input.value : 'Jane',
+            audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile,
+            style: this.selectedStyle,
+            pace: this.selectedPace,
+            accent: this.selectedAccent
+        };
+
         this.updateGenerateButtonUI(true);
-        this.showStatus('Synthesizing speech with Gemini 3.1 Flash TTS...', false);
 
-        try {
-            const voice1 = this.selectedVoice1 || 'Kore';
-            const voice2 = this.selectedVoice2 || 'Puck';
-            const speaker1 = this.speaker1Input ? this.speaker1Input.value : 'Joe';
-            const speaker2 = this.speaker2Input ? this.speaker2Input.value : 'Jane';
-            const audioProfile = this.profileInput ? this.profileInput.value : this.audioProfile;
-
-            const result = await TTSManager.generateSpeech({
-                mode: this.currentMode,
-                script: script,
-                voice: voice1,
-                voice2: voice2,
-                speaker1: speaker1,
-                speaker2: speaker2,
-                audioProfile: audioProfile,
-                style: this.selectedStyle,
-                pace: this.selectedPace,
-                accent: this.selectedAccent
-            });
-
-            this.currentAudioBlob = result.blob;
-            this.currentWavBlob = result.wavBlob;
-            this.currentRecordingDuration = result.durationSeconds;
-            this.audioElement.src = result.audioUrl;
-            this.audioElement.load();
-            if (this.durationTimeEl) {
-                this.durationTimeEl.textContent = this.formatTime(result.durationSeconds);
-            }
-
-            const savedItem = await TTSDB.saveRecording({
-                title: script.split('\n')[0].replace(/\[.*?\]/g, '').trim().slice(0, 45) || 'Audio Recording',
-                script: script,
-                mode: this.currentMode,
-                voice: voice1,
-                voice2: voice2,
-                speaker1: speaker1,
-                speaker2: speaker2,
-                audioProfile: audioProfile,
-                style: this.selectedStyle,
-                pace: this.selectedPace,
-                accent: this.selectedAccent,
-                durationSeconds: result.durationSeconds,
-                audioBlob: result.blob
-            });
-
-            this.currentRecordingId = savedItem.id;
-            await this.loadRecordings();
-            await this.selectRecording(savedItem);
-
-            this.showStatus(`Speech generated & saved (${result.durationSeconds.toFixed(1)}s)`, false);
-
+        // Chạy task background hoàn toàn độc lập với view hiện tại
+        (async () => {
             try {
-                await this.audioElement.play();
-            } catch (_) {}
+                const result = await TTSManager.generateSpeech({
+                    mode: taskPayload.mode,
+                    script: taskPayload.script,
+                    voice: taskPayload.voice1,
+                    voice2: taskPayload.voice2,
+                    speaker1: taskPayload.speaker1,
+                    speaker2: taskPayload.speaker2,
+                    audioProfile: taskPayload.audioProfile,
+                    style: taskPayload.style,
+                    pace: taskPayload.pace,
+                    accent: taskPayload.accent
+                });
 
-        } catch (error) {
-            console.error('TTS generation failed:', error);
-            this.showStatus(`Error: ${error.message || 'Failed to generate audio'}`, true);
-        } finally {
-            this.isGenerating = false;
-            this.updateGenerateButtonUI(false);
-        }
+                // Lưu bản ghi vào TTSDB IndexedDB ngay lập tức
+                const savedItem = await TTSDB.saveRecording({
+                    title: taskPayload.script.split('\n')[0].replace(/\[.*?\]/g, '').trim().slice(0, 45) || 'Audio Recording',
+                    script: taskPayload.script,
+                    mode: taskPayload.mode,
+                    voice: taskPayload.voice1,
+                    voice2: taskPayload.voice2,
+                    speaker1: taskPayload.speaker1,
+                    speaker2: taskPayload.speaker2,
+                    audioProfile: taskPayload.audioProfile,
+                    style: taskPayload.style,
+                    pace: taskPayload.pace,
+                    accent: taskPayload.accent,
+                    durationSeconds: result.durationSeconds,
+                    audioBlob: result.blob
+                });
+
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+
+                // Chạy Groq Whisper alignment ngầm
+                if (typeof GroqAligner !== 'undefined') {
+                    this.triggerBackgroundGroqAlign(savedItem);
+                }
+
+                // Cập nhật danh sách recordings trong RAM
+                await this.loadRecordings();
+
+                // Nếu người dùng đang ở compose và đang soạn bài khác (scriptInput có text hoặc đã gõ gì đó), không cướp màn hình
+                const isWritingNew = this.composeContainer && this.composeContainer.style.display !== 'none' && this.scriptInput && this.scriptInput.value.trim().length > 0;
+                
+                if (!isWritingNew) {
+                    await this.selectRecording(savedItem);
+                    try {
+                        await this.audioElement.play();
+                    } catch (_) {}
+                }
+
+            } catch (error) {
+                console.error('TTS background generation failed:', error);
+            } finally {
+                this.updateGenerateButtonUI(false);
+            }
+        })();
     }
 
     togglePlayPause() {
@@ -18738,7 +19678,7 @@ class LuminaSettingsModal {
     const keys = [
       'providers', 'models', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
       'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight', 'language', 'dictationEnabled', 'spokenLanguage',
-      'voice', 'separateVoiceEnabled', 'baseTone', 'charWarm', 'charEnthusiastic',
+      'voice', 'separateVoiceEnabled', 'ttsModel', 'sttModel', 'baseTone', 'charWarm', 'charEnthusiastic',
       'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
       'questionMappings', 'annotationShortcuts',
       'historyRetentionMonths', 'shortcuts'
@@ -18787,6 +19727,8 @@ class LuminaSettingsModal {
       this.setDropdownValue('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu', items.spokenLanguage || 'auto', 'Auto-detect');
       this.setDropdownValue('lumina-settings-voice-select', 'lumina-settings-voice-select-menu', items.voice || 'sol', 'Sol');
       document.getElementById('lumina-settings-separate-voice').checked = items.separateVoiceEnabled === true;
+      this.setDropdownValue('lumina-settings-tts-model', 'lumina-settings-tts-model-menu', items.ttsModel || 'gemini-2.5-flash', 'Gemini 2.5 Flash');
+      this.setDropdownValue('lumina-settings-stt-model', 'lumina-settings-stt-model-menu', items.sttModel || 'whisper-large-v3-turbo', 'Whisper Large V3 Turbo (Fastest)');
       const fsVal = items.fontSize || 14;
       const fsInput = document.getElementById('lumina-settings-fontsize');
       if (fsInput) fsInput.value = fsVal;
@@ -18858,6 +19800,8 @@ class LuminaSettingsModal {
       spokenLanguage: getDropdownVal('lumina-settings-spoken-lang', 'auto'),
       voice: getDropdownVal('lumina-settings-voice-select', 'sol'),
       separateVoiceEnabled: getChecked('lumina-settings-separate-voice'),
+      ttsModel: getDropdownVal('lumina-settings-tts-model', 'gemini-2.5-flash'),
+      sttModel: getDropdownVal('lumina-settings-stt-model', 'whisper-large-v3-turbo'),
       baseTone: document.getElementById('lumina-settings-base-tone-input')?.dataset.value || 'default',
       charWarm: getInt('lumina-settings-char-warm', 3),
       charEnthusiastic: getInt('lumina-settings-char-enthusiastic', 3),
@@ -18931,6 +19875,8 @@ class LuminaSettingsModal {
     this.setupDropdownInputs('lumina-model-form-model', 'lumina-model-form-model-list');
     this.setupDropdownInputs('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list');
     this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
+    this.setupDropdownInputs('lumina-settings-tts-model', 'lumina-settings-tts-model-menu');
+    this.setupDropdownInputs('lumina-settings-stt-model', 'lumina-settings-stt-model-menu');
   }
   static getDefaultProviders() {
     return [
@@ -19103,6 +20049,9 @@ class LuminaSettingsModal {
       ];
       retentionMenu.innerHTML = opts.map(o => `<div data-val="${o.value}">${o.label}</div>`).join('');
     }
+
+    this.loadTtsModels();
+    this.loadSttModels();
   }
   static setupDropdownInputs(inputId, menuId) {
     const input = document.getElementById(inputId);
@@ -19149,7 +20098,9 @@ class LuminaSettingsModal {
         inputId === 'lumina-settings-fontweight' ||
         inputId === 'lumina-settings-language' ||
         inputId === 'lumina-settings-spoken-lang' ||
-        inputId === 'lumina-settings-voice-select'
+        inputId === 'lumina-settings-voice-select' ||
+        inputId === 'lumina-settings-tts-model' ||
+        inputId === 'lumina-settings-stt-model'
       ) {
         this.saveOptions();
       }
@@ -19171,6 +20122,11 @@ class LuminaSettingsModal {
         m.style.display = 'none';
       });
       if (!isCurrentlyOpen) {
+        if (inputId === 'lumina-settings-tts-model') {
+          this.loadTtsModels().then(() => updateActiveItems(false));
+        } else if (inputId === 'lumina-settings-stt-model') {
+          this.loadSttModels().then(() => updateActiveItems(false));
+        }
         menu.style.display = 'block';
         updateActiveItems(false);
       }
@@ -19363,6 +20319,78 @@ class LuminaSettingsModal {
       };
       const list = fallbackOptions[providerId] || ['custom-model'];
       menu.innerHTML = list.map(m => `<div data-val="${m}">${m}</div>`).join('');
+    }
+  }
+
+  static async loadTtsModels() {
+    const menu = document.getElementById('lumina-settings-tts-model-menu');
+    if (!menu) return;
+    const geminiProv = this.providers.find(p => p.id === 'gemini-default' || p.id.includes('gemini'));
+    const apiKey = geminiProv?.apiKey?.trim() || '';
+
+    try {
+      let models = [];
+      if (apiKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.split(',')[0].trim()}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.models && Array.isArray(data.models)) {
+            models = data.models
+              .map(m => m.name.replace('models/', ''))
+              .filter(m => m.toLowerCase().includes('tts'));
+          }
+        }
+      }
+
+      if (models.length === 0) {
+        models = [
+          'gemini-2.5-flash',
+          'gemini-2.5-pro'
+        ];
+      }
+
+      menu.innerHTML = models.map(m => `<div data-val="${m}">${m}</div>`).join('');
+    } catch (err) {
+      console.warn('Failed to fetch Gemini TTS models:', err);
+    }
+  }
+
+  static async loadSttModels() {
+    const menu = document.getElementById('lumina-settings-stt-model-menu');
+    if (!menu) return;
+    const groqProv = this.providers.find(p => p.id === 'groq-default' || p.id.includes('groq'));
+    const apiKey = groqProv?.apiKey?.trim() || '';
+
+    try {
+      let models = [];
+      if (apiKey) {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey.split(',')[0].trim()}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.data && Array.isArray(data.data)) {
+            models = data.data
+              .map(m => m.id)
+              .filter(m => m.toLowerCase().includes('whisper'));
+          }
+        }
+      }
+
+      if (models.length === 0) {
+        models = [
+          'whisper-large-v3-turbo',
+          'whisper-large-v3',
+          'distil-whisper-large-v3-en'
+        ];
+      }
+
+      menu.innerHTML = models.map(m => `<div data-val="${m}">${m}</div>`).join('');
+    } catch (err) {
+      console.warn('Failed to fetch Groq Whisper models:', err);
     }
   }
   static showProviderForm() {
@@ -20919,48 +21947,86 @@ class LuminaSettingsModal {
                 </div>
               `;
               const deleteBtn = itemEl.querySelector('.lumina-storage-session-delete');
-              deleteBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (typeof window.showCustomPopup === 'function') {
-                  const confirmed = await window.showCustomPopup({
-                    title: 'Delete Chat',
-                    body: `Are you sure you want to delete the chat thread "${session.title}"?`,
-                    confirmLabel: 'Delete',
-                    isDanger: true
-                  });
-                  if (confirmed) {
-                    if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
-                      await ChatHistoryManager.deleteChat(session.id);
-                      LuminaSettingsModal.updateStorageUsage();
-                      const scope = window.LuminaSelectionScope;
-                      if (scope) {
-                        scope.renderRecentChatsSidebar();
-                        const tabsList = scope.getTabs();
-                        const activeIdx = scope.getActiveTabIndex();
-                        if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                          scope.resetChat();
+              if (deleteBtn) {
+                deleteBtn.addEventListener('click', async (e) => {
+                  e.stopPropagation();
+                  if (typeof window.showCustomPopup === 'function') {
+                    const confirmed = await window.showCustomPopup({
+                      title: 'Delete Chat',
+                      body: `Are you sure you want to delete the chat thread "${session.title}"?`,
+                      confirmLabel: 'Delete',
+                      isDanger: true
+                    });
+                    if (confirmed) {
+                      if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
+                        await ChatHistoryManager.deleteChat(session.id);
+                        LuminaSettingsModal.updateStorageUsage();
+                        const scope = window.LuminaSelectionScope;
+                        if (scope) {
+                          scope.renderRecentChatsSidebar();
+                          const tabsList = scope.getTabs();
+                          const activeIdx = scope.getActiveTabIndex();
+                          if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
+                            scope.resetChat();
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
+                      if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
+                        await ChatHistoryManager.deleteChat(session.id);
+                        LuminaSettingsModal.updateStorageUsage();
+                        const scope = window.LuminaSelectionScope;
+                        if (scope) {
+                          scope.renderRecentChatsSidebar();
+                          const tabsList = scope.getTabs();
+                          const activeIdx = scope.getActiveTabIndex();
+                          if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
+                            scope.resetChat();
+                          }
                         }
                       }
                     }
                   }
-                } else {
-                  if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
-                    if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
-                      await ChatHistoryManager.deleteChat(session.id);
-                      LuminaSettingsModal.updateStorageUsage();
-                      const scope = window.LuminaSelectionScope;
-                      if (scope) {
-                        scope.renderRecentChatsSidebar();
-                        const tabsList = scope.getTabs();
-                        const activeIdx = scope.getActiveTabIndex();
-                        if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                          scope.resetChat();
-                        }
-                      }
-                    }
+                });
+              }
+
+              // Click to open the chat thread
+              itemEl.addEventListener('click', async () => {
+                const sid = session.id;
+                LuminaSettingsModal.hide();
+                if (window.LuminaViewManager) {
+                  window.LuminaViewManager.switchView('chat', { sid });
+                }
+                const messages = (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.getSessionMessages)
+                  ? await ChatHistoryManager.getSessionMessages(sid)
+                  : (await LuminaChatDB.getMessages(sid));
+                const allSessions = (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.getAllHistories)
+                  ? await ChatHistoryManager.getAllHistories()
+                  : (await LuminaChatDB.getAllSessions());
+                const meta = allSessions[sid] || { id: sid, title: session.title };
+
+                const listContainer = document.getElementById('sidebar-recent-chats');
+                if (listContainer) {
+                  listContainer.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+                  document.querySelectorAll('#sidebar-sparks-list .sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
+                  const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                  if (targetSidebarItem) {
+                    targetSidebarItem.classList.add('active');
                   }
                 }
+
+                if (typeof window.loadHistoryIntoNewTab === 'function') {
+                  window.loadHistoryIntoNewTab(messages, meta, sid);
+                }
+                const sidebar = document.getElementById('lumina-sidebar');
+                const backdrop = document.querySelector('.sidebar-backdrop');
+                if (sidebar) sidebar.classList.remove('active');
+                if (backdrop) backdrop.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
               });
+
               sessionsListEl.appendChild(itemEl);
             });
           }
@@ -21246,9 +22312,22 @@ class LuminaSearchModal {
           displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
         }
         if (!displayTitle) displayTitle = "Untitled Chat";
+
+        let matched = false;
+        if (displayTitle && regex.test(displayTitle)) {
+          results.push({
+            sessionId: session.id,
+            title: displayTitle,
+            snippet: displayTitle,
+            messageIndex: null,
+            timestamp: session.updatedAt
+          });
+          matched = true;
+        }
+
         if (session.questions && session.questions.length > 0) {
           session.questions.forEach(q => {
-            if (regex.test(q.text)) {
+            if (q.text && regex.test(q.text) && !(matched && q.text === displayTitle)) {
               results.push({
                 sessionId: session.id,
                 title: displayTitle,
@@ -21257,14 +22336,6 @@ class LuminaSearchModal {
                 timestamp: q.timestamp || session.updatedAt
               });
             }
-          });
-        } else if (session.title && regex.test(session.title)) {
-          results.push({
-            sessionId: session.id,
-            title: displayTitle,
-            snippet: session.title,
-            messageIndex: null,
-            timestamp: session.updatedAt
           });
         }
         if (results.length >= 20) break;
@@ -21362,6 +22433,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- BUNDLED FROM: pages/lumina/lumina.js ---
+window._luminaWindowInstanceId = window._luminaWindowInstanceId || 'win_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
 function getPaneActiveModel() {
     const model = sessionStorage.getItem('lumina_active_model');
@@ -24003,9 +25075,12 @@ async function init() {
     chrome.runtime.onMessage.addListener((request) => {
         if (request.action === 'lumina_session_updated') {
             const sid = request.sessionId;
+            if (request.senderInstanceId && request.senderInstanceId === window._luminaWindowInstanceId) {
+                return;
+            }
             const affected = tabs.filter(t => t.sessionId === sid);
             if (affected.length > 0) {
-                const isRecentLocalSave = window._localSavedSessions?.[sid] && (Date.now() - window._localSavedSessions[sid] < 1000);
+                const isRecentLocalSave = window._localSavedSessions?.[sid] && (Date.now() - window._localSavedSessions[sid] < 3000);
                 if (!isRecentLocalSave) {
                     const isGeneratingLocally = (
                         (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid) ||
@@ -24024,10 +25099,12 @@ async function init() {
                                     timestamp: meta?.createdAt || meta?.updatedAt
                                 };
                                 affected.forEach(async (tab) => {
-                                    if (isRecentLocalSave && window._lastSavingHistoryEl === tab.historyEl) {
-                                        return;
-                                    }
                                     if (tab.historyEl) {
+                                        const currentEntries = tab.historyEl.querySelectorAll('.lumina-entry');
+                                        const expectedQuestions = messages.filter(m => m.type === 'question');
+                                        if (isRecentLocalSave && currentEntries.length === expectedQuestions.length) {
+                                            return;
+                                        }
                                         const savedScrollTop = tab.historyEl.scrollTop;
                                         await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                                         normalizeRestoredHistory(tab.historyEl);
@@ -24088,6 +25165,10 @@ async function init() {
             if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
                 if (typeof luminaNotesPanelInstance.renderCollections === 'function') luminaNotesPanelInstance.renderCollections();
                 if (typeof luminaNotesPanelInstance.renderNotesList === 'function') luminaNotesPanelInstance.renderNotesList();
+            }
+        } else if (request.action === 'lumina_tts_updated') {
+            if (typeof luminaTTSPanelInstance !== 'undefined' && luminaTTSPanelInstance) {
+                if (typeof luminaTTSPanelInstance.loadRecordings === 'function') luminaTTSPanelInstance.loadRecordings();
             }
         } else if (request.action === 'lumina_highlights_updated') {
             if (typeof window.LuminaAnnotationUI !== 'undefined' && typeof window.LuminaAnnotationUI.reload === 'function') {
@@ -28700,171 +29781,89 @@ FEEDBACK PROTOCOL:
     },
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
-        description: 'Guided by U-Pass Logical Framework & Characterization methodology.',
-        instructions: `You are a highly supportive, expert IELTS Writing Task 2 Tutor. Your mission is to teach, guide, and evaluate the user's essays strictly based on their teachers' "Logical Framework" (U-Pass) and "Characterization" methodologies.
-
-### I. CORE METHODOLOGY & ESSAY STRUCTURE (LOGICAL FRAMEWORK)
-1. **Strict 4-Paragraph Layout**:
-   - **Introduction**: 2 sentences (1. Paraphrase, 2. Thesis statement).
-     * **STRICTLY ULTRA-GENERIC (ZERO ARGUMENT PREVIEW)**: The thesis statement MUST NOT contain or hint at any specific reasons, causes, solutions, or arguments. It must ONLY state the general task purpose/scope in a completely neutral, high-level way.
-     * **Mandatory Thesis Patterns**:
-       - For Cause/Problem & Solution: *"In this essay, I will explore the underlying reasons behind this issue before proposing viable solutions."*
-       - For Opinion / Agree & Disagree: *"While this trend has some merits, I disagree with the idea that [S+V] altogether."* or *"In this essay, I will evaluate both perspectives before explaining why I believe [general stance]."*
-       - For Direct Questions: *"This essay will discuss the primary factors driving this development and evaluate potential remedies."*
-     * Save 100% of specific ideas, vocabulary, and argument details exclusively for the Body paragraphs.
-   - **Body Paragraphs (Deep & Well-developed)**: Adapt structure flexibly based on the prompt type:
-     * **Cause & Solution / Problem & Solution**: Body 1 = Causes / Problems (1-2 clear, distinct main causes); Body 2 = Solutions (matching the causes in Body 1 directly).
-     * **Discuss Both Views & Opinion / Agree & Disagree**:
-       - Body 1 (Concession, 40%): Explain the opposing view objectively. Optionally end with a soft counter-argument or limitation to seamlessly transition into Body 2.
-       - Body 2 (Main Stance / Refutation, 60%): Deep development of your primary position using strong logic, mechanisms, and real-world impacts.
-     * **Advantages & Disadvantages**: Body 1 = Outlining one side; Body 2 = Outlining the other side with clear stance.
-     * **Direct Questions**: Body 1 = Answer Question 1; Body 2 = Answer Question 2.
-   - **Conclusion**: 2 sentences (1. Summary of main points, 2. Restatement of position).
-
-2. **Supporting Idea Formula**:
-   - Every supporting idea MUST follow: \`Core Idea + Development = Supporting Idea\`.
-   - Select the Development pathway based on Core Idea clarity:
-     * **Impact**: If the Core Idea is not clear about benefit/harm -> extend the cause-and-effect chain of consequences.
-     * **Reason (Mechanism)**: If the Core Idea is already clear -> explain the mechanism/reason using "This is because...".
-     * **Example**: If the Core Idea is too obvious -> use a universal, objective example using "A case in point is..." (never use personal/non-academic examples).
-   - **One-Idea Body Paragraph (Deep Development)**: If a body paragraph has only 1 idea, develop it using: **Topic Sentence -> Example -> Impact -> What-if** (hypothetical contrast, e.g., "Without [action], [subject] would face [consequence]").
-
-3. **Counter-Argument & Refutation Placement Techniques (Band 8.5+ TR)**:
-   - **Soft Counter-Argument at End of Body 1**: End Concession paragraphs with a brief limitation to create a seamless transition into Body 2.
-   - **Direct Refutation inside Body 2**: State a common counter-objection against your main stance and immediately dismantle it using logic and mechanisms.
-   - **Outweigh Refutation**: Acknowledge a minor drawback of your preferred position, then demonstrate how its benefits far outweigh the concern.
-
-4. **Vocabulary Style & Naturalness (STRICT NO-JARGON RULE)**:
-   - Focus on clear, natural, and authentic academic vocabulary with strong natural collocations used by native speakers and IELTS examiners (target LR Band 7.5–8.5 through precision and naturalness).
-   - **STRICTLY AVOID** abstract, pretentious, rare, or over-sophisticated thesaurus words, artificial pseudo-academic jargon, or obscure idioms.
-   - **MANDATORY GROUNDING / SPECIFICATION**: Never use abstract phrases without grounding them into concrete, practical realities. Always prefer plain, natural academic collocations over convoluted expressions.
-   - **Self-Audit Before Responding**: Ensure every sample sentence, upgraded phrase, or collocation is clear, natural, and commonly written by native English speakers in academic contexts.
+        description: 'Academic Essay Tutor focused on Task Response (TR), practical logic, and natural, accessible English.',
+        instructions: `You are a highly supportive, expert Writing Tutor specializing in IELTS Writing Task 2 and Academic/TOEIC Essays. Your mission is to teach, guide, brainstorm, and evaluate essays focusing strictly on **Task Response (TR), clear logical progression (CC), and natural, accessible English** (Band 8.0–8.5 Examiner Standards).
 
 ---
 
-### II. BRAINSTORMING & IDEA DEVELOPMENT METHODS
-When helping the user brainstorm or explain ideas, guide them to use these three methods:
-1. **Characterization (HOW)**:
-   - Instead of general statements, describe the features, qualities, needs, or requirements of a subject (Human, Object, or Action).
-   - Formula: Mention Subject A -> Describe its characteristics (using verbs like "offer", "contain", "require", "demand", or structures like "especially/particularly [sub-group] who [characteristics]") -> Explain consequence / link to B.
-   - Example: Instead of "Social media makes people waste time", write "Social media platforms, filled with short, fast-paced videos and personalized recommendations, make it hard for users, especially teenagers who lack self-control, to control their screen time, leading to addiction and distraction from studies."
-2. **Specification (WHAT)**:
-   - Specify and clarify general nouns in the next sentence instead of just paraphrasing. For example, instead of "study better", specify "improve teacher training and provide free textbooks or scholarships, ensuring equal access for students from low-income families."
-3. **Contextualization (WHEN/WHERE)**:
-   - Ground the argument in real-world scenarios or geographical contexts (e.g., Venice, developing countries, low-income families).
+### I. CORE PHILOSOPHY: LOGIC & TASK RESPONSE OVER COMPLICATED VOCABULARY
+High IELTS band scores (Band 8.0–8.5) come from **clear explanations, deep logical thinking, and relatable real-world mechanisms**, NOT from memorizing difficult GRE/SAT words. 
+- Prioritize **clarity, natural collocations, and persuasive reasoning**.
+- **STRICT BAN ON PRETENTIOUS JARGON**: NEVER use heavy, convoluted, or unnatural buzzwords.
+  * ❌ *Jargon to avoid*: \`escalating deficit\`, \`bureaucratic inertia\`, \`plague public-sector projects\`, \`administrative bottlenecks\`, \`private capital infusions\`, \`transit-oriented suburban developments\`, \`agility\`.
+  * ✅ *Natural, clear alternatives*: \`housing shortage\`, \`slow government procedures\`, \`tight municipal budgets\`, \`private investment\`, \`apartments near bus and train lines\`, \`speed and efficiency\`, \`solving the housing crisis\`.
 
 ---
 
-### III. CORE MACRO CATEGORIES
-Use these pre-existing detailed macro frameworks to guide the user's ideas and explain arguments:
+### II. ESSAY ARCHITECTURE & WORD TARGET (MUST REACH 320–360 WORDS)
+To ensure essays naturally exceed 300+ words without fluff, **each Body Paragraph MUST contain 135–155 words (270–300 words combined)**:
 
-1. **Poverty & Inequality**:
-   - *Living Conditions*: Born into low-income families -> face financial hardship & struggle to make ends meet -> lack access to quality education/healthcare & cannot afford basic necessities (food, housing).
-   - *Social Consequences*: Disadvantaged individuals compelled to engage in illegal acts (theft, robbery) to earn a living -> crime rates rise, weakening public security. Malnutrition -> poor health & low productivity -> perpetuating the cycle of poverty.
-   - *Gender Norms & Prejudices*: Deeply rooted biases, traditional gender roles -> women expected to manage domestic duties (caregiving, chores) and prioritize family over career; men expected to be primary earners -> underrepresentation of women in STEM/leadership, gender pay gap.
-   - *Demographic Shifts (Ageing & Overpopulation)*:
-     * Ageing Population: Shift toward an older population -> shrinking workforce & labor shortages -> lower economic output; strain on pension systems and public healthcare.
-     * Overpopulation: Rapid urban growth -> traffic congestion, housing strain, increased household waste.
-
-2. **Modern Society Pressures**:
-   - *Hectic Lifestyles*: Heavy workloads, demanding schedules, and long working hours -> mounting pressure -> chronic stress, anxiety, burnout; less family time weakening parent-child relationships; sedentary habits -> health issues like obesity.
-   - *Materialism & Consumerism*: Media and social media promote luxurious lifestyles -> constant comparison with others -> equating success with material possessions -> excessive spending, financial strain, and debt.
-   - *Public vs. Private Sector*: Public services (education/healthcare) focus on equal access but face overcrowding and long wait times. Private sector drives innovation and efficiency but charges high fees, widening the social divide.
-   - *Globalization & Cultural Loss*: MNCs standardize branding -> local businesses struggle to compete; widespread popularity of foreign media -> people adopt global habits, eroding traditional heritage, local customs, and cultural identity.
-   - *Industrialization & Urbanization*: Extensive fossil fuel use -> environmental pollution. Rural-to-urban migration -> housing shortages, crime, infrastructure strain. Deforestation and habitat destruction -> loss of wildlife species.
-
-3. **Human Nature & Psychological Needs**:
-   - *Convenience & Immediate Ease*: Seeking speed and comfort -> sacrificing long-term benefits for short-term ease -> reliance on food delivery, single-use plastics, short video content.
-   - *Social Acceptance & Peer Influence*: Strong desire to fit in and follow trends -> susceptibility to peer pressure and online influencers -> buying fast fashion, emotional anxiety.
-   - *Greed & Ethical Decline*: Pursuing financial gain at all costs -> ignoring moral standards -> cybercrime, selling user data, spreading fake news.
-   - *Risk Aversion & Stability*: Preference for job security and familiar routines -> reluctance to embrace change or innovation -> slower personal growth.
-   - *Fulfillment & Passions*: Prioritizing job satisfaction over money -> striving for self-improvement and contributing positively to society.
-
-4. **Target Groups Characteristics**:
-   - *Children*: Developing thinking skills (easily influenced by advertising), lacking self-control (addicted to video games or short videos), learning by imitating adults.
-   - *Teenagers*: Search for personal identity, highly sensitive to peer pressure, developing emotional control (emotions can override reason), leading to impulsive choices.
-   - *Elderly*: Physical and cognitive decline (getting tired easily), difficulty adapting to new technology, conservative views causing generation gaps.
-
-5. **System Failures**:
-   - *Family*: Parents work long hours leading to lack of parental supervision -> youth fall into negative peers/delinquency. Career pressure prevents adult children from caring for elderly parents.
-   - *School*: Overemphasis on theoretical knowledge and rote memorization -> stifle critical thinking and creativity; one-size-fits-all approach (fixed teaching pace) fails to cater to different learning curves; mismatch between curriculum and labor market demands.
-   - *Corporations*: Focus solely on profit maximization, aggressive advertising targeting vulnerable groups, neglecting CSR.
-   - *Government*: Poor governance, failure to enforce regulations/laws, corruption, and poor resource allocation.
+- **Introduction (2 sentences | ~40 words)**:
+  * S1: Natural paraphrase of the prompt using clean, direct English.
+  * S2: **ULTRA-GENERIC THESIS**: State the overall stance clearly without listing specific arguments (e.g., *"While virtual communication offers certain conveniences, I believe that its disadvantages far outweigh the benefits."*).
+- **Body Paragraph Structure (Each idea MUST have a 3-step development | 135–155 words per body)**:
+  * **Topic Sentence (1 sentence | ~15–20 words)**: Clear overarching point of the paragraph.
+  * **Supporting Point 1 (Full 3-step development | ~55–65 words)**:
+    1. *Mechanism / Characterization*: Explain the nature of the subject or historical shift (\`This is because...\` or \`In the past... Nowadays...\`).
+    2. *Relatable Real-world Scenario & Scope Limiting*: Describe a specific group and situation (\`especially [subgroup] who [specific trait]...\` e.g., *busy office workers working overtime, students studying abroad*).
+    3. *Direct Result / Impact*: Explain the immediate outcome (\`This allows them to... without having to...\`).
+  * **Supporting Point 2 (Full 3-step development | ~55–65 words)**:
+    1. *Claim / Reality Check*: State the second key aspect or systemic limitation (\`Moreover, ... / However, this thinking fails to take into account...\`).
+    2. *Specific Manifestation*: Concrete details or operational friction in everyday life.
+    3. *Chained / Long-term Consequence*: The broader social, financial, or psychological impact (\`As a result, ..., leaving [subgroup] unable to..., which in turn...\`).
+- **Conclusion (1–2 sentences | ~30–35 words)**: Concise summary of the main stance and key takeaways. Keep it crisp and direct.
+- **NO WORD COUNT MENTIONS**: **NEVER output word counts, section breakdowns, or "TECHNICAL AUDIT" headers** in your responses unless the user explicitly asks for them.
 
 ---
 
-### IV. AUDITING & TUTORING FLOW
-1. **Direct Answer First**: Always answer the user's questions or requests directly and concisely. Do NOT include word count counts/annotations in sample essays or feedback unless explicitly asked.
-2. **Identify logical gaps**: Check and point out:
-   - *Jumping logic*: Jumping to a conclusion without explaining the mechanism/how it works.
-   - *Overgeneralization*: e.g., using "everyone" or "all people" instead of specifying/characterizing the group.
-   - *Circular reasoning*: Paraphrasing the premise instead of developing it (e.g., "fast food is unhealthy because it is bad for you").
-3. **Draft Upgrades (Before vs. After)**: Provide "Before" (user's draft/ideas) and "After" (upgraded version applying Characterization, Specification, or correct Development path) highlighting upgraded collocations in bold.
-4. **Tone & Language**: Friendly, supportive, but precise. Converse in Vietnamese when explaining concepts, and use English for sample writing and collocations.
-5. **Abstract Jargon & Naturalness Check**: Explicitly flag any abstract phrasing, unnatural thesaurus words, or convoluted jargon in the user's input or your own draft. Demonstrate how to simplify and specify them into clear, natural, native-level academic English (Band 7.5–8.5).`
+### III. IDEA GENERATION & ELABORATION TOOLKIT (CHARACTERIZATION & MACRO ROOTS)
+
+#### 1. Characterization (Answering HOW / WHY deeply):
+Break down the subject (Person, Object, Action, or Trend) by its intrinsic traits and operational requirements:
+- **Linking Verbs for Inherent Nature**: \`require\`, \`demand\`, \`offer\`, \`contain\`, \`rely heavily on\`, \`characterized by\`.
+- **Scope Limiting (Target Group Precision)**: Replace vague words like "people" or "users" with targeted subgroups:
+  * \`especially [subgroup] who [specific trait]\`
+  * *Examples*: *"...especially young professionals who face intense career competition..."*, *"...particularly low-income households that have limited savings..."*, *"...especially teenagers who lack self-control and emotional maturity..."*.
+
+#### 2. Macro A-B-C Root Framework (Diverse Angles for Any Topic):
+Use these universal socio-economic angles to explain root causes, impacts, and solutions:
+
+- **Macro A: Universal Root Causes (Why problems happen)**:
+  * *Poverty & Inequality*: Low disposable income, financial vulnerability, lack of safety nets.
+  * *Modern Lifestyle Pressures*: Hectic work schedules, long commuting times, intense academic competition.
+  * *Human Psychology & Consumerism*: Craving for instant gratification, social comparison (peer pressure/vanity), fear of missing out (FOMO).
+  * *Public vs. Private Tradeoffs*: Limited municipal budgets and slow bureaucracy vs. private profit-driven incentives.
+  * *Technological Acceleration*: Addictive algorithms, convenience displacing physical effort.
+
+- **Macro B: Multi-tiered Impacts (Tracer of Consequences)**:
+  * *Individual Level*: Physical health (sedentary habits, obesity), mental health (burnout, loneliness, anxiety), soft skills (empathy, active listening).
+  * *Community & Family Level*: Weaker family bonding, office productivity, workplace morale, social isolation.
+  * *Macro / Societal Level*: Public healthcare costs, government debt burdens, environmental damage, talent retention.
+
+- **Macro C: Actionable Power Levers (How to solve problems)**:
+  * *Legal & Regulatory Lever*: Enforce zoning laws, mandate safety standards, impose fines, set quotas.
+  * *Financial & Incentive Lever*: Subsidies, tax discounts, low-interest loans, targeted funding for public transit and infrastructure.
+  * *Educational & Collaborative Lever*: Public-Private Partnerships (PPP), school curriculum integration, community volunteering programs.
+
+#### 3. Relatable, Concrete Noun Triads (Specification):
+Substantiate abstract ideas with 2–3 everyday concrete details:
+- ❌ *"basic amenities"* $\\rightarrow$ ✅ *"grocery stores, local schools, and bus stops"*
+- ❌ *"academic pressure"* $\\rightarrow$ ✅ *"heavy coursework, regular mock tests, and university entrance exams"*
+- ❌ *"digital communication tools"* $\\rightarrow$ ✅ *"instant messaging apps, video calls, and social media updates"*
+
+---
+
+### IV. TUTORING & AUDITING PROTOCOL
+1. **Direct Answer First**: Always start directly with the brainstorm outline, explanation, or essay sample without conversational fluff.
+2. **Brainstorming via Characterization & Macro Roots**: When brainstorming, provide structured ideas utilizing Macro A (root causes), Macro B (impacts), and Macro C (solutions) with targeted Scope Limiting.
+3. **Deep Body Execution**: Ensure every supporting point contains a concrete real-life scenario so that each body paragraph comfortably hits 135–155 words.
+4. **Clear & Accessible Language**: Keep all English models and collocations natural, plain, and easy to understand (accessible Band 8.0 standard).
+5. **Language Protocol**: Match the user's communication language (Vietnamese) for explanations and feedback; generate all sample sentences, outlines, and essays in clear, authentic academic English.`
     },
     'spark_qa_assistant': {
         name: 'QA Assistant',
         description: 'Global E-Commerce & Omnichannel Expert, BA & QA Lead.',
         instructions: '# Global E-Commerce & Omnichannel Expert AI\n**Tone/Format**: Efficient (Concise and plain). Answer directly and as briefly as possible with minimal text. Avoid verbose formatting, unnecessary bold headings, or decorative lists/tables unless absolutely required to answer the query. No greetings, introductions, or conversational fillers; start answering the question immediately. Match the user\'s language (Vietnamese/English).\n\n# 1. Architecture\n- **Layers**: Adobe Experience Manager (AEM) for frontend CMS & DAM via JCR (CRXDE Lite); SAP Commerce Cloud (Hybris) for catalog/OMS via OCC REST APIs; SAP S/4HANA (N-ERP) for financials (FI Documents) and billing.\n- **Integration**: Day CQ Commerce Factory for Hybris via OSGi services (com.adobe.cq.commerce.hybris.impl.HybrisServiceFactory), adapting resources (`Resource.adaptTo()`) using `cq:commerceProvider=hybris`.\n\n# 2. Business Domains & Rules\n- **CMS/PDP**: Unified GNB/SSO. Split Buy/Split Feature PDP (carrier, trade-in, tiered config); Marketing PDP (campaigns, continuous scroll); Standard PDP (Mass/Mainstream SKUs).\n- **Stores**: B2C eStore (Guest/registered); EPP (corporate tiers); F&F (friends/family); B2B SME (domain-matching configurations like `@testsupermarket.com` audited in Hybris Backoffice); EA (Endless Aisle via O2O Cockpit).\n- **PCM**: Staged vs. Online Catalog Versions. Variant Product (`TokoVariant`, variant/SKU) vs. Base Product (`TokoProduct`, parent). Sync types: Full, Incremental, Super. References: `AVAILABLE_SERVICE`, `CONSISTS_OF` (F-Codes), `SELECTION_OF_GIFT`.\n- **Pricing & Promotions**: Tier Price (`modelCode`, `Price`, `Minqtd`, `Price type` = `SPECIAL`). Promotion Splitting: `Item Discount = (Total Promotion Discount / Total Cart Value) * Original Item Price`. Rule Execution: use `Rule Executed` on lower rule targeting higher rule as block. BOGO/FOC selection: `Cheapest` / `Most Expensive` inside `productPromotionRuleGroup`.\n\n# 3. Order Flow & ERP Integration\n- **Journey**: Cart -> SSO/Guest Checkout -> Delivery Address -> Vertex/Cybersource -> Confirmation.\n- **WAIT_FOR_CHECK_EXTERNAL**: Order held awaiting external validation (Fraud, Trade-In, SME approvals, insurance). Released manually via Backoffice Fraud Reports, or bypassed in sandbox via simulated API callbacks (Postman) to proceed to `Waiting For Send Financial`.\n- **N-ERP**: Advances to `Waiting For Transfer` -> S/4HANA. fulfillment via T-codes: `VA03` (Order verification), DO/GI creation, `ZLEZ59040` (capture Serial/IMEI). Hybris sync via `bulkFetchConsignmentUpdateJob` / interface SD10304.\n- **Returns**: RSO allows partial unit reduction via quantity dropdowns. Final `Refund Amount` dynamically deducts vouchers and base store configs like `Refund delivery cost`.\n\n# 4. Smart Ring Journey\n- **Sizing Kit**: AEM order with "Don\'t know size" splits order: drops Ring to pending, ships zero-cost kit (types `YF01`/`YFT1`, item `YF0K` where `Y500 = 0`). Size submission in "My Account" releases stock and ships hardware.\n- **Returns**: Cancellation before size confirmation does not require kit return. Full return after ring delivery requires ring return (subject to `Restocking Fee`), kit remains with user.\n\n# 5. Testing & Environment\n- **BVT**: Pipeline check validating: Home (200 OK) -> SSO -> Solr Search -> PDP -> Cart -> Checkout -> Confirmation. Failure triggers automatic rollback.\n- **Environments**: SIT (OCC, AEM adapter, S/4HANA middleware contracts) and Regression. Production strictly off-limits. Validate on staging instances.\n- **Consultation Mindset**: Use general knowledge of headless microservices, robust async integration, dispatcher/CDN caching, and automation when queries exceed these specs.'
-    },
-    'spark_ielts_speaking_coach': {
-        name: 'IELTS Speaking Coach',
-        description: 'Practice IELTS Speaking Parts 1, 2, and 3 with frameworks and instant feedback.',
-        instructions: `You are a highly supportive, expert IELTS Speaking Coach. Your mission is to teach the user how to answer IELTS Speaking Part 1, 2, and 3 questions using their teacher's exact frameworks, provide them with simple/realistic ideas, and audit their practice.
-
-Your core philosophy is: "Simple, Straightforward, and Keep it Real." 
-Language rule: Converse and provide all instructions, advice, and feedback entirely in English to maintain an immersive learning environment.
-
----
-
-### I. THE SPEAKING FRAMEWORKS
-
-1. PART 1: 5W1H Concrete Details (Focus on: What, Where, Who, When, How - Avoid: Why)
-- Structure: Direct Answer ➔ Elaborate using 2-3 specific details of: What exactly? Where? With whom (Who)? When/How often? OR How?
-- Golden Rule: Do not explain "Why" in the early/learning phase. Focus heavily on descriptive details to train the brain to generate rich content and think quickly.
-
-2. PART 2: Challenge-Solution & Emotional Hook (Personal Experience)
-- Structure: 
-  * Opening: What? When/Where? How did I feel at first? (hesitant, curious, looking forward, blown away).
-  * Challenges: What went wrong/difficulties faced?
-  * Solutions: How was it resolved?
-  * Emotions: Outcome/Rewarding feeling.
-- Golden Rule: Deep-dive into ONE specific characteristic/incident instead of listing everything.
-
-3. PART 3: Concrete Progression & Counter-Balance (Simple & Real)
-- Structure: Direct Answer ➔ Explanation (Because/So) OR Concrete Example (Local/Personal) ➔ Counter-balance using "But yeah..." (Optional).
-- Golden Rule: Focus on "Concrete Specification" (Sentence B must make Sentence A clearer/narrower). If you cannot explain the theory, jump straight to a concrete local example.
-
----
-
-### II. INTERACTIVE FLOW (TEACH ➔ SUGGEST ➔ PRACTICE)
-
-For every new question or topic, you MUST follow this exact 3-step process:
-
-#### STEP 1: TEACH & SUGGEST IDEAS
-Before the user speaks, explain the framework and brainstorm ideas for them:
-1. Explain which Framework to use for this question.
-2. Provide 2-3 "Keep it Real" ideas focusing on the specific framework. 
-*Example for Part 1 "Do you play video games?": Frame with 5W1H (What/Who/When/Where/How) -> Suggest: (Idea 1) Play mobile puzzle games (What) on the bus (Where) alone (Who) to kill time (How); (Idea 2) Play soccer games (What) with high school friends (Who) on weekends (When) at a local gaming center (Where).*
-
-#### STEP 2: PRACTICE (Wait for User's Answer)
-Encourage the user to reply using one of the ideas or their own story.
-
-#### STEP 3: AUDIT & UPGRADE
-After the user replies, provide feedback:
-1. **Framework Audit**: Did they follow the structure? Did they provide concrete details (What, Where, Who, When, How)? Did they rely too much on "Why"?
-2. **Before vs. After**:
-   - *Before*: The user's draft.
-   - *After*: A natural, clean Band 7.5+ version that preserves their simple idea but upgrades phrasing into **natural collocations** (in bold). Do not use robotic academic words.
-
----
-
-### III. ANTI-REPETITION AUDIT (MANDATORY)
-Monitor the user's responses across multiple turns. If they start using the same pattern repeatedly, intervene immediately:
-- **Timeline Overuse Alert**: If they use "In the past... but now..." 2 times in a row, prompt them: "You are repeating the Timeline structure. Try starting your next answer with a concrete example first (Example-First)!"
-- **Template Filler Check**: If they start sentences with "Firstly/Secondly" or "There are many reasons", correct them: "That sounds too mechanical or memorized. Try starting with conversational fillers like 'To be honest' or 'Actually' instead."
-- **Concrete Check**: If their second sentence is just a paraphrase of the first, alert them: "This sentence is circular. Make it more concrete by mentioning a specific item, location, or personal experience to move the idea forward."`
     },
     'spark_ielts_reading_assistant': {
         name: 'IELTS Reading Assistant',
@@ -28907,15 +29906,10 @@ Monitor the user's responses across multiple turns. If they start using the same
 async function sparksLoad() {
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];
-    let needsSave = false;
 
     if (!sparks) {
         sparks = {};
-        needsSave = true;
-    }
-    for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
-        const existing = sparks[id];
-        if (!existing) {
+        for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
             sparks[id] = {
                 id: id,
                 name: defSpark.name,
@@ -28923,23 +29917,10 @@ async function sparksLoad() {
                 instructions: defSpark.instructions,
                 avatar: null,
                 knowledgeFiles: [],
-                createdAt: 0,
-                updatedAt: 0
+                createdAt: Date.now(),
+                updatedAt: Date.now()
             };
-            needsSave = true;
-        } else {
-            if (existing.instructions !== defSpark.instructions) {
-                existing.instructions = defSpark.instructions;
-                existing.updatedAt = Date.now();
-                needsSave = true;
-            }
-            if (existing.description === undefined || existing.description === '') {
-                existing.description = defSpark.description || '';
-                needsSave = true;
-            }
         }
-    }
-    if (needsSave) {
         await sparksSave(sparks);
     }
     return sparks;
@@ -28965,8 +29946,11 @@ async function sparksSaveOrder(orderedIds) {
 
 async function sparksDelete(id) {
     const sparks = await sparksLoad();
-    delete sparks[id];
-    await sparksSave(sparks);
+    if (sparks[id]) {
+        sparks[id].isDeleted = true;
+        sparks[id].updatedAt = Date.now();
+        await sparksSave(sparks);
+    }
 }
 
 function sparksNewId() {
@@ -29003,7 +29987,7 @@ function sparksClosePage() {
 async function sparksRenderList() {
     const body = document.getElementById('sparks-page-body');
     const sparks = await sparksLoad();
-    const list = Object.values(sparks).sort((a, b) => {
+    const list = Object.values(sparks).filter(s => s && !s.isDeleted).sort((a, b) => {
         const orderA = a.order !== undefined ? a.order : 99999;
         const orderB = b.order !== undefined ? b.order : 99999;
         if (orderA !== orderB) return orderA - orderB;
@@ -29304,15 +30288,6 @@ async function sparksOpenEditor(sparkId = null) {
             previewEmpty.style.display = 'none';
         } else {
             previewEmpty.style.display = 'flex';
-        }
-        if (hasName) {
-            setTimeout(() => {
-                try {
-                    previewInput.focus();
-                    const len = previewInput.value.length;
-                    previewInput.setSelectionRange(len, len);
-                } catch (e) {}
-            }, 50);
         }
     };
     const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
@@ -29639,7 +30614,7 @@ async function sidebarSparksRenderList() {
     const container = document.getElementById('sidebar-sparks-list');
     if (!container) return;
     const sparks = await sparksLoad();
-    const list = Object.values(sparks).sort((a, b) => {
+    const list = Object.values(sparks).filter(s => s && !s.isDeleted).sort((a, b) => {
         const orderA = a.order !== undefined ? a.order : 99999;
         const orderB = b.order !== undefined ? b.order : 99999;
         if (orderA !== orderB) return orderA - orderB;

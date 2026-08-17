@@ -49,11 +49,11 @@ import subprocess
 
 def build():
     print("Building bundles...")
-    if not os.path.exists('lib/vendor/blocknote.js') and os.path.exists('scratch/blocknote_entry.jsx'):
+    if not os.path.exists('lib/vendor/blocknote.js') and os.path.exists('tools/blocknote_entry.jsx'):
         try:
-            print("Compiling scratch/blocknote_entry.jsx with esbuild...")
+            print("Compiling tools/blocknote_entry.jsx with esbuild...")
             subprocess.run([
-                'npx', 'esbuild', 'scratch/blocknote_entry.jsx',
+                'npx', 'esbuild', 'tools/blocknote_entry.jsx',
                 '--bundle', '--outfile=lib/vendor/blocknote.js',
                 '--loader:.js=jsx', '--loader:.jsx=jsx', '--conditions=style',
                 '--define:process.env.NODE_ENV="production"'
