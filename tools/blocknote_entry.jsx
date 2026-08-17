@@ -4,6 +4,48 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 
+const MARQUEE_STYLES = `
+.blocknote-wrapper.is-marquee-dragging,
+.blocknote-wrapper.is-marquee-dragging * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  pointer-events: none !important;
+}
+
+.notes-marquee-box {
+  position: fixed !important;
+  background: rgba(35, 131, 226, 0.08) !important;
+  border: 1px solid rgba(35, 131, 226, 0.5) !important;
+  border-radius: 3px !important;
+  pointer-events: none !important;
+  z-index: 999999 !important;
+  box-sizing: border-box !important;
+}
+
+.bn-block-outer {
+  position: relative !important;
+}
+
+.bn-block-outer.lumina-marquee-selected::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 1px 0px !important;
+  background: rgba(35, 131, 226, 0.16) !important;
+  border-radius: 4px !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+[data-theme="dark"] .notes-marquee-box {
+  background: rgba(45, 170, 219, 0.1) !important;
+  border-color: rgba(45, 170, 219, 0.6) !important;
+}
+
+[data-theme="dark"] .bn-block-outer.lumina-marquee-selected::after {
+  background: rgba(45, 170, 219, 0.25) !important;
+}
+`;
+
 function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
     const wrapperRef = useRef(null);
     const [theme, setTheme] = useState(
@@ -13,6 +55,18 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
     const editor = useCreateBlockNote({
         initialContent: (initialBlocks && Array.isArray(initialBlocks) && initialBlocks.length > 0) ? initialBlocks : undefined,
     });
+
+    useEffect(() => {
+        let styleEl = document.getElementById('lumina-marquee-injected-styles');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'lumina-marquee-injected-styles';
+            styleEl.textContent = MARQUEE_STYLES;
+            document.head.appendChild(styleEl);
+        } else {
+            styleEl.textContent = MARQUEE_STYLES;
+        }
+    }, []);
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -105,77 +159,106 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
         return () => containerEl.removeEventListener('keydown', handleKeyDown, true);
     }, [editor]);
 
-    // Notion-style Marquee Drag Selection Handler
+    // Notion-style Block Marquee Selection Handler
     useEffect(() => {
         const wrapper = wrapperRef.current;
         if (!wrapper || !editor) return;
 
+        let isPointerDown = false;
         let isDragging = false;
         let startX = 0;
         let startY = 0;
         let marqueeEl = null;
         let selectedBlockIds = new Set();
 
-        const handleMouseDown = (e) => {
-            if (e.button !== 0) return;
-
-            // Only trigger marquee selection when clicking in empty margin/gutter padding outside blocks
-            const isInsideBlock = e.target.closest('.bn-block, .bn-block-outer, [data-node-type="blockOuter"]');
-            const isInteractive = e.target.closest('button, input, .bn-side-menu, .bn-inline-content');
-
-            if (isInsideBlock || isInteractive) return;
-
-            // Prevent default browser drag scroll when dragging from empty margin space
-            e.preventDefault();
-
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
+        const clearSelection = () => {
             selectedBlockIds.clear();
-
-            // Clear previous marquee highlights
             wrapper.querySelectorAll('.lumina-marquee-selected').forEach(el => {
                 el.classList.remove('lumina-marquee-selected');
             });
-
-            marqueeEl = document.createElement('div');
-            marqueeEl.className = 'notes-marquee-box';
-            marqueeEl.style.left = `${startX}px`;
-            marqueeEl.style.top = `${startY}px`;
-            marqueeEl.style.width = '0px';
-            marqueeEl.style.height = '0px';
-            document.body.appendChild(marqueeEl);
-
-            document.addEventListener('mousemove', handleMouseMove, true);
-            document.addEventListener('mouseup', handleMouseUp, true);
         };
 
-        const handleMouseMove = (e) => {
-            if (!isDragging || !marqueeEl) return;
+        const handleKeyDown = (e) => {
+            if (selectedBlockIds.size === 0) return;
 
-            e.preventDefault();
-            e.stopPropagation();
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                    const idsToRemove = Array.from(selectedBlockIds);
+                    editor.removeBlocks(idsToRemove);
+                } catch (err) {
+                    console.warn('Remove selected blocks error:', err);
+                }
+                clearSelection();
+                return;
+            }
 
-            const currentX = e.clientX;
-            const currentY = e.clientY;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                clearSelection();
+                return;
+            }
 
-            const left = Math.min(startX, currentX);
-            const top = Math.min(startY, currentY);
-            const width = Math.abs(currentX - startX);
-            const height = Math.abs(currentY - startY);
+            // Copy selected blocks
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+                try {
+                    const blocksToCopy = [];
+                    const traverse = (blocks) => {
+                        if (!blocks) return;
+                        for (const b of blocks) {
+                            if (selectedBlockIds.has(b.id)) blocksToCopy.push(b);
+                            if (b.children) traverse(b.children);
+                        }
+                    };
+                    traverse(editor.document);
+                    if (blocksToCopy.length > 0) {
+                        const md = editor.blocksToMarkdownLossy(blocksToCopy);
+                        if (md) navigator.clipboard.writeText(md);
+                    }
+                } catch (err) {
+                    console.warn('Copy blocks error:', err);
+                }
+                return;
+            }
 
-            if (width < 3 && height < 3) return;
+            // Cut selected blocks
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'x') {
+                e.preventDefault();
+                try {
+                    const blocksToCopy = [];
+                    const traverse = (blocks) => {
+                        if (!blocks) return;
+                        for (const b of blocks) {
+                            if (selectedBlockIds.has(b.id)) blocksToCopy.push(b);
+                            if (b.children) traverse(b.children);
+                        }
+                    };
+                    traverse(editor.document);
+                    if (blocksToCopy.length > 0) {
+                        const md = editor.blocksToMarkdownLossy(blocksToCopy);
+                        if (md) navigator.clipboard.writeText(md);
+                    }
+                    const idsToRemove = Array.from(selectedBlockIds);
+                    editor.removeBlocks(idsToRemove);
+                } catch (err) {
+                    console.warn('Cut blocks error:', err);
+                }
+                clearSelection();
+                return;
+            }
+        };
 
-            marqueeEl.style.left = `${left}px`;
-            marqueeEl.style.top = `${top}px`;
-            marqueeEl.style.width = `${width}px`;
-            marqueeEl.style.height = `${height}px`;
+        const updateIntersection = (marqueeRect) => {
+            if (!wrapper || !marqueeRect) return;
+            const blocks = wrapper.querySelectorAll('.bn-block-outer, [data-node-type="blockOuter"]');
 
-            const marqueeRect = { left, top, right: left + width, bottom: top + height };
-            selectedBlockIds.clear();
-
-            const blocks = wrapper.querySelectorAll('[data-id], .bn-block-outer, [data-node-type="blockOuter"]');
             blocks.forEach((blockEl) => {
+                const id = blockEl.getAttribute('data-id') || 
+                           blockEl.querySelector('[data-id]')?.getAttribute('data-id') ||
+                           blockEl.getAttribute('data-node-id');
+                if (!id) return;
+
                 const rect = blockEl.getBoundingClientRect();
                 const intersects = !(
                     rect.right < marqueeRect.left ||
@@ -184,80 +267,127 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
                     rect.top > marqueeRect.bottom
                 );
 
-                if (intersects) {
+                const isSelected = selectedBlockIds.has(id);
+                if (intersects && !isSelected) {
+                    selectedBlockIds.add(id);
                     blockEl.classList.add('lumina-marquee-selected');
-                    const id = blockEl.getAttribute('data-id');
-                    if (id) selectedBlockIds.add(id);
-                } else {
+                } else if (!intersects && isSelected) {
+                    selectedBlockIds.delete(id);
                     blockEl.classList.remove('lumina-marquee-selected');
                 }
             });
         };
 
-        const handleMouseUp = (e) => {
-            if (!isDragging) return;
-            isDragging = false;
+        const handleMouseDown = (e) => {
+            if (e.button !== 0) return;
 
-            const endX = e ? e.clientX : startX;
-            const endY = e ? e.clientY : startY;
-            const dragDistance = Math.hypot(endX - startX, endY - startY);
-            const isSimpleClick = dragDistance < 5;
+            // Prevent drag on interactive buttons/menus
+            const isInteractive = e.target.closest('button, .bn-side-menu, .bn-file-delete-button, input, textarea, a, select, [role="button"]');
+            if (isInteractive) return;
+
+            // Clear previous selection if clicking outside of current selection
+            if (selectedBlockIds.size > 0 && !e.target.closest('.lumina-marquee-selected')) {
+                clearSelection();
+            }
+
+            // Prevent native browser text drag/selection from hijacking mousemove
+            e.preventDefault();
+
+            isPointerDown = true;
+            isDragging = false;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            document.addEventListener('mousemove', handleMouseMove, true);
+            document.addEventListener('mouseup', handleMouseUp, true);
+        };
+
+        const handleMouseMove = (e) => {
+            if (!isPointerDown) return;
+
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            const dragDistance = Math.hypot(currentX - startX, currentY - startY);
+
+            if (!isDragging) {
+                if (dragDistance < 4) return;
+                isDragging = true;
+                wrapper.classList.add('is-marquee-dragging');
+                clearSelection();
+                window.getSelection()?.removeAllRanges();
+
+                try {
+                    editor?._tiptapEditor?.view?.dom?.blur?.();
+                } catch (_) {}
+
+                marqueeEl = document.createElement('div');
+                marqueeEl.className = 'notes-marquee-box';
+                document.body.appendChild(marqueeEl);
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.getSelection()?.removeAllRanges();
+
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+
+            if (marqueeEl) {
+                marqueeEl.style.left = `${left}px`;
+                marqueeEl.style.top = `${top}px`;
+                marqueeEl.style.width = `${width}px`;
+                marqueeEl.style.height = `${height}px`;
+            }
+
+            const marqueeRect = { left, top, right: left + width, bottom: top + height };
+            updateIntersection(marqueeRect);
+        };
+
+        const handleMouseUp = (e) => {
+            document.removeEventListener('mousemove', handleMouseMove, true);
+            document.removeEventListener('mouseup', handleMouseUp, true);
+
+            if (!isPointerDown) return;
+            isPointerDown = false;
+
+            if (wrapper) {
+                wrapper.classList.remove('is-marquee-dragging');
+            }
 
             if (marqueeEl && marqueeEl.parentNode) {
                 marqueeEl.parentNode.removeChild(marqueeEl);
             }
             marqueeEl = null;
 
-            document.removeEventListener('mousemove', handleMouseMove, true);
-            document.removeEventListener('mouseup', handleMouseUp, true);
-
-            // Always clear any visual marquee selection highlights
-            wrapper.querySelectorAll('.lumina-marquee-selected').forEach(el => {
-                el.classList.remove('lumina-marquee-selected');
-            });
-
-            if (isSimpleClick) {
-                // If simple click in empty margin space: clear selection & focus the last block
+            if (isDragging) {
+                isDragging = false;
+                window.getSelection()?.removeAllRanges();
+            } else {
+                clearSelection();
                 try {
-                    const docBlocks = editor.document;
-                    if (docBlocks && docBlocks.length > 0) {
-                        const lastBlock = docBlocks[docBlocks.length - 1];
-                        editor.setTextCursorPosition(lastBlock, 'end');
-                        editor.focus();
-                    }
-                } catch (err) {
-                    console.warn('Focus last block error:', err);
-                }
-            } else if (selectedBlockIds.size > 0 && editor?._tiptapEditor) {
-                // Sync with native TipTap/ProseMirror selection across selected blocks
-                try {
-                    const tiptap = editor._tiptapEditor;
-                    const { state } = tiptap.view;
-                    let minPos = Infinity;
-                    let maxPos = -Infinity;
-
-                    state.doc.descendants((node, pos) => {
-                        if (node.isBlock && node.attrs && node.attrs.id) {
-                            if (selectedBlockIds.has(node.attrs.id)) {
-                                if (pos < minPos) minPos = pos;
-                                const endPos = pos + node.nodeSize;
-                                if (endPos > maxPos) maxPos = endPos;
-                            }
+                    if (editor?._tiptapEditor) {
+                        const view = editor._tiptapEditor.view;
+                        const pos = view.posAtCoords({ left: startX, top: startY });
+                        if (pos && typeof pos.pos === 'number') {
+                            editor._tiptapEditor.commands.setTextSelection(pos.pos);
                         }
-                    });
-
-                    if (minPos !== Infinity && maxPos !== -Infinity) {
-                        tiptap.commands.setTextSelection({ from: minPos, to: maxPos });
+                        editor._tiptapEditor.commands.focus();
                     }
                 } catch (err) {
-                    console.warn('Marquee selection sync error:', err);
+                    console.warn('Click focus error:', err);
                 }
             }
         };
 
         wrapper.addEventListener('mousedown', handleMouseDown, true);
+        window.addEventListener('keydown', handleKeyDown, true);
+
         return () => {
             wrapper.removeEventListener('mousedown', handleMouseDown, true);
+            window.removeEventListener('keydown', handleKeyDown, true);
             document.removeEventListener('mousemove', handleMouseMove, true);
             document.removeEventListener('mouseup', handleMouseUp, true);
             if (marqueeEl && marqueeEl.parentNode) {

@@ -11050,21 +11050,27 @@ mark.notes-search-highlight {
   box-sizing: border-box !important;
 }
 
-.bn-block-outer.lumina-marquee-selected,
-.bn-block-content.lumina-marquee-selected,
-.bn-block.lumina-marquee-selected {
-  background: rgba(35, 131, 226, 0.14) !important;
+.bn-block-outer {
+  position: relative !important;
+}
+
+.bn-block-outer.lumina-marquee-selected::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 1px 0px !important;
+  background: rgba(35, 131, 226, 0.16) !important;
   border-radius: 4px !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
 }
 
 [data-theme="dark"] .notes-marquee-box {
-  background: rgba(45, 170, 219, 0.2) !important;
-  border-color: rgba(45, 170, 219, 0.5) !important;
+  background: rgba(45, 170, 219, 0.1) !important;
+  border-color: rgba(45, 170, 219, 0.6) !important;
 }
 
-[data-theme="dark"] .bn-block-outer.lumina-marquee-selected,
-[data-theme="dark"] .bn-block.lumina-marquee-selected {
-  background: rgba(45, 170, 219, 0.2) !important;
+[data-theme="dark"] .bn-block-outer.lumina-marquee-selected::after {
+  background: rgba(45, 170, 219, 0.25) !important;
 }
 
 /* Fix BlockNote Block Height Inconsistency between empty unfocused vs focused placeholder state */
