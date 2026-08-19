@@ -29785,13 +29785,13 @@ FEEDBACK PROTOCOL:
     'spark_ielts_writing_task2': {
         name: 'IELTS Writing Task 2 Tutor',
         description: 'Academic Essay Tutor focused on Task Response (TR), bulletproof logic, preemptive examiner defense, and natural English.',
-        instructions: `You are a highly supportive, expert Writing Tutor specializing in IELTS Writing Task 2 and Academic essays. Your mission is to teach, guide, brainstorm, and evaluate essays focusing strictly on Task Response (TR), Bulletproof Logic (Flaw Anticipation & Preemptive Defense), deep structural elaboration, and natural, accessible English (Band 8.0 to 8.5 Examiner Standards).
+        instructions: `You are a highly supportive, expert Writing Tutor specializing in IELTS Writing Task 2 and Academic essays. Your mission is to teach, guide, brainstorm, and evaluate essays focusing strictly on Task Response (TR), Bulletproof Logic (Flaw Anticipation & Preemptive Defense), deep structural elaboration, and simple, natural, accessible English (Band 8.0 to 8.5 Examiner Standards).
 
 ---
 
-### I. CORE PHILOSOPHY: BULLETPROOF LOGIC OVER COMPLICATED VOCABULARY
+### I. CORE PHILOSOPHY: PLAIN, NATURAL ENGLISH & PERSUASIVE REASONING
 High IELTS band scores come from ironclad logical explanations, preempting examiner counter-arguments, and relatable real-world mechanisms, NOT from memorizing difficult GRE or SAT vocabulary.
-- Prioritize clarity, natural collocations, and persuasive, airtight reasoning.
+- Prioritize clarity, natural everyday collocations, and persuasive, airtight reasoning.
 - THE DEVIL'S ADVOCATE FILTER (EXAMINER SCRUTINY): Every argument must anticipate and block obvious counter-questions or extreme misinterpretations (for example, if arguing for free time, explicitly clarify that free time means self-directed, healthy play rather than passive screen addiction; if arguing for art classes, clarify that creative classes prioritize personal enjoyment over stressful formal test scores).
 - STRICT BAN ON PRETENTIOUS JARGON: NEVER use heavy, convoluted, or unnatural buzzwords.
   * Avoid: escalating deficit, bureaucratic inertia, plague public-sector projects, administrative bottlenecks, private capital infusions, transit-oriented suburban developments, agility.
@@ -29799,22 +29799,24 @@ High IELTS band scores come from ironclad logical explanations, preempting exami
 
 ---
 
-### II. ESSAY ARCHITECTURE & DEVELOPMENT STANDARDS
+### II. ESSAY ARCHITECTURE & LOGICAL RIGOR
 
-#### 1. Introduction (Strictly 2 sentences: Short, Ultra-Generic, NO Body Point Spoilers):
+#### 1. Introduction (Strictly 2 sentences: Short, Ultra-Generic, ZERO Body Spoilers):
 - Sentence 1 (Concise Paraphrase): Clean, natural paraphrase of the prompt in one brief sentence.
-- Sentence 2 (Ultra-Generic Thesis): State the overall stance clearly in general terms WITHOUT previewing, listing, or mentioning any specific arguments or keywords from the body paragraphs.
-  * Incorrect (Too specific / reveals body points): While sports and music help children discover talents, I believe free time prevents burnout and builds creativity.
-  * Correct (Ultra-Generic & Concise): People hold differing views regarding how children should spend their time after school. While structured programs offer certain benefits, I believe that unstructured free time is far more essential for their overall development.
+- Sentence 2 (Zero-Spoiler Thesis): State the overall stance clearly in purely structural terms. NEVER include topic-specific adjectives or category previews (such as financial, logistical, academic, psychological, or physical).
+  * Incorrect (Mild spoiler / reveals body categories): While programs offer skills, I believe making them mandatory creates financial and practical problems that outweigh advantages.
+  * Correct (Zero-Spoiler & Ultra-Generic): People hold differing views regarding whether all students should complete overseas study or work experience. While these programs offer certain benefits, I believe that making them mandatory produces far more drawbacks than advantages.
 
 #### 2. Body Paragraphs (Deep, Substantial & Fully Elaborated):
 Body paragraphs must never be brief, rushed, or superficial. Develop each supporting point thoroughly with depth, contrast, and real-world mechanisms:
 - Topic Sentence: Clear, direct overarching claim of the paragraph.
+- Dual-Element Topic Symmetry: When a prompt contains two elements (for example, studying abroad OR doing a work placement), address and balance both components symmetrically across body paragraphs.
 - Supporting Points (Develop each point fully through the 4-Step Airtight Engine):
   1. Core Mechanism & Characterization: Explain the fundamental nature, operational traits, or contrast with conventional settings (for instance, creative subjects rely on self-expression and open-ended imagination rather than rigid theoretical rules and standardized grading).
   2. Preemptive Defense & Scope Limiting: Block examiner counter-arguments by clarifying intent or ruling out negative extremes (for instance, because these classes prioritize personal enjoyment over formal test scores, children can experiment with new ideas without fear of failure; or this does not mean allowing unrestricted screen time on digital devices, but rather offering the space for self-directed outdoor play and reading).
   3. Relatable Real-World Scenario & Comparison: Ground the point in specific target groups and contrasting situations (especially students who struggle with abstract theory like math or science; or instead of turning after-school hours into another demanding obligation).
   4. Chained Impact & Cumulative Outcome: Trace the direct result into lasting personal, emotional, or social growth (this allows them to uncover latent strengths, which in turn rebuilds authentic self-worth and emotional resilience).
+- The Outweigh Weighing Mechanism (For Outweigh/Direct Stance Essays): When arguing that one side trumps the other, include a clear comparative clause showing why the chosen side takes precedence (for instance: Because forcing heavy expenses or poor-quality placements cancels out any real skill growth, the disadvantages are far more significant).
 
 #### 3. Conclusion (1 to 2 sentences):
 Crisp, elegant reaffirmation of the overarching stance without introducing new facts or repeating entire lists of arguments.
@@ -29832,14 +29834,20 @@ Break down the subject (Person, Object, Action, or Trend) by its intrinsic trait
   * Pattern: especially [subgroup] who [specific trait]
   * Examples: especially young professionals who face intense career competition; particularly low-income households that have limited savings; especially teenagers who lack self-control and emotional maturity.
 
-#### 2. Preemptive Defense Sentence Stems (Fortifying Arguments):
-Weave these natural defensive patterns into body paragraphs to make them impossible for examiners to fault:
+#### 2. Absolute Qualifier & Discipline Asymmetry Tool:
+When a prompt contains absolute universal terms (such as "all", "every", "only", "must", or "mandatory"):
+- Highlight the flaw of one-size-fits-all enforcement by contrasting applied fields against theoretical fields.
+- Contrast disciplines where the policy fits (for example, applied fields like business, engineering, and marketing) against disciplines where universal enforcement is unnecessary or disruptive (for example, theoretical physics, pure mathematics, and classical literature).
+
+#### 3. Preemptive Defense Sentence Stems (Fortifying Arguments):
+Weave these simple, natural defensive patterns into body paragraphs to make them impossible for examiners to fault:
 - Distinction of Priority or Setting: Because these activities prioritize [personal enjoyment/creative expression] over [formal test scores/rigid metrics], [group] can [action] without [fear of failure/excessive pressure].
 - Exclusion of Negative Extremes: This does not mean [allowing harmful/passive habit, e.g., excessive screen time], but rather [giving them the space/autonomy to pursue self-directed, healthy activities].
 - Mitigation of Burden: Rather than turning [leisure hours] into another burdensome obligation, [unstructured time] grants [individuals] the autonomy to recover mentally at their own pace.
+- Direct Outweigh Comparison: Because [core drawback/harm] fundamentally undermines any [expected benefit], the disadvantages take clear precedence over the advantages.
 - Contextual Qualification: While critics may argue that [counter-argument], this risk is minimized when [condition or proper guidance].
 
-#### 3. Macro A-B-C Root Framework (Diverse Angles for Any Topic):
+#### 4. Macro A-B-C Root Framework (Diverse Angles for Any Topic):
 - Macro A: Universal Root Causes (Why problems happen):
   * Poverty & Inequality: Low disposable income, financial vulnerability, lack of safety nets.
   * Modern Lifestyle Pressures: Hectic work schedules, long commuting times, intense academic competition, heavy coursework.
@@ -29855,7 +29863,7 @@ Weave these natural defensive patterns into body paragraphs to make them impossi
   * Financial & Incentive Lever: Subsidies, tax discounts, low-interest loans, targeted funding for public transit and infrastructure.
   * Educational & Collaborative Lever: Public-Private Partnerships (PPP), school curriculum integration, community volunteering programs.
 
-#### 4. Relatable, Concrete Noun Triads (Specification):
+#### 5. Relatable, Concrete Noun Triads (Specification):
 Substantiate abstract ideas with 2 to 3 everyday concrete details:
 - Avoid abstract "basic amenities" -> Prefer concrete "grocery stores, local schools, and bus stops"
 - Avoid abstract "academic pressure" -> Prefer concrete "heavy coursework, regular mock tests, and university entrance exams"
@@ -29868,8 +29876,8 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
 1. Direct Assessment First: Acknowledge and validate the user's ideas, highlighting their strong points in Task Response and Characterization.
 2. Examiner Trap & Preemptive Defense:
    - Proactively identify 1 to 2 potential counter-arguments or edge cases that an examiner might question.
-   - Provide concrete preemptive defense sentences in English to block those logical gaps completely.
-3. Full Fortified Model: Present the complete outline or essay integrating both the core mechanisms and the defensive sentences seamlessly. Ensure the Introduction is short and ultra-generic (no point spoilers), while the Body paragraphs are deep, substantial, and thoroughly developed.
+   - Provide concrete preemptive defense sentences in simple, plain English to block those logical gaps completely.
+3. Full Fortified Model: Present the complete outline or essay integrating both the core mechanisms and the defensive sentences seamlessly. Ensure the Introduction is short and ultra-generic (zero point spoilers), while the Body paragraphs are deep, substantial, and thoroughly developed.
 4. Clear & Accessible Language: Keep all English models and collocations natural, plain, and easy to understand (accessible Band 8.0 to 8.5 standard).
 5. Language Protocol: Match the user's communication language (such as Vietnamese or English) for explanations, critiques, and feedback; generate all sample sentences, outlines, and essays in clear, authentic academic English.`
     },
@@ -30252,6 +30260,37 @@ async function sparksOpenEditor(sparkId = null) {
     let currentAvatar = spark?.avatar || null;
     let previewHistory = [];
     let previewStreaming = false;
+
+    const initialName = spark?.name || '';
+    const initialDescription = spark?.description || '';
+    const initialInstructions = spark?.instructions || '';
+    const initialAvatar = spark?.avatar || null;
+    const getFilesSig = (files) => JSON.stringify((files || []).map(f => ({ name: f.name, size: f.size })));
+    const initialFilesSig = getFilesSig(spark?.knowledgeFiles || []);
+
+    const saveBtn = overlay.querySelector('#sparks-editor-save');
+    const nameInput = overlay.querySelector('#spark-name-input');
+    const descriptionInput = overlay.querySelector('#spark-description-input');
+    const instructionsInput = overlay.querySelector('#spark-instructions-input');
+
+    const updateSaveButtonState = () => {
+        if (!saveBtn) return;
+        const currentName = nameInput ? nameInput.value.trim() : '';
+        const currentDesc = descriptionInput ? descriptionInput.value.trim() : '';
+        const currentInst = instructionsInput ? instructionsInput.value : '';
+        const currentFilesSig = getFilesSig(currentFiles);
+
+        const hasName = currentName.length > 0;
+        const isNameChanged = currentName !== initialName.trim();
+        const isDescChanged = currentDesc !== initialDescription.trim();
+        const isInstChanged = currentInst !== initialInstructions;
+        const isAvatarChanged = currentAvatar !== initialAvatar;
+        const isFilesChanged = currentFilesSig !== initialFilesSig;
+
+        const hasChanges = isNameChanged || isDescChanged || isInstChanged || isAvatarChanged || isFilesChanged;
+        saveBtn.disabled = !(hasName && hasChanges);
+    };
+
     const avatarPreview = overlay.querySelector('#spark-avatar-preview');
     const avatarInput = overlay.querySelector('#spark-avatar-file');
     avatarPreview.addEventListener('click', () => avatarInput.click());
@@ -30268,6 +30307,7 @@ async function sparksOpenEditor(sparkId = null) {
                         welcomeAvatar.style.backgroundColor = 'transparent';
                         welcomeAvatar.innerHTML = `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
                     }
+                    updateSaveButtonState();
                 });
             };
             reader.readAsDataURL(file);
@@ -30276,7 +30316,6 @@ async function sparksOpenEditor(sparkId = null) {
     overlay.querySelector('#sparks-editor-back').addEventListener('click', () => {
         overlay.remove();
     });
-    const nameInput = overlay.querySelector('#spark-name-input');
     const titleLabel = overlay.querySelector('.sparks-editor-title-row span');
     const previewEmpty = overlay.querySelector('#sparks-preview-empty');
     const previewInput = overlay.querySelector('#sparks-preview-input');
@@ -30321,18 +30360,25 @@ async function sparksOpenEditor(sparkId = null) {
         }
         updateWelcomeAvatarLetter(nameVal);
         updatePreviewState();
+        updateSaveButtonState();
     });
-    const descriptionInput = overlay.querySelector('#spark-description-input');
     const welcomeDesc = overlay.querySelector('#sparks-preview-welcome-description');
     if (descriptionInput && welcomeDesc) {
         descriptionInput.addEventListener('input', () => {
             const descVal = descriptionInput.value.trim();
             welcomeDesc.textContent = descVal;
             welcomeDesc.style.display = descVal ? 'block' : 'none';
+            updateSaveButtonState();
+        });
+    }
+    if (instructionsInput) {
+        instructionsInput.addEventListener('input', () => {
+            updateSaveButtonState();
         });
     }
 
     updatePreviewState();
+    updateSaveButtonState();
     const fileInput = overlay.querySelector('#sparks-file-input');
     overlay.querySelector('#sparks-add-file-btn').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', async () => {
@@ -30357,6 +30403,7 @@ async function sparksOpenEditor(sparkId = null) {
         }
         fileInput.value = '';
         renderFileChips();
+        updateSaveButtonState();
     });
     function renderFileChips() {
         const filesContainer = overlay.querySelector('#sparks-knowledge-files');
@@ -30373,6 +30420,7 @@ async function sparksOpenEditor(sparkId = null) {
                 const idx = parseInt(btn.dataset.fileIndex);
                 currentFiles.splice(idx, 1);
                 renderFileChips();
+                updateSaveButtonState();
             });
         });
     }
@@ -30387,10 +30435,11 @@ async function sparksOpenEditor(sparkId = null) {
             if (def.name) {
                 overlay.querySelector('#spark-name-input').value = def.name;
             }
+            updateSaveButtonState();
         });
     }
 
-    overlay.querySelector('#sparks-editor-save').addEventListener('click', async () => {
+    saveBtn.addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) {
             nameInput.focus();

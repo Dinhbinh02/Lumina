@@ -7094,18 +7094,33 @@ b .katex * {
 }
 
 .sparks-editor-save {
-  background: var(--lumina-primary-color, #007aff);
-  color: #fff;
+  background: var(--lumina-primary-color) !important;
+  color: #ffffff !important;
   border: none;
   border-radius: 6px;
   padding: 6px 14px;
   font-size: 0.93em;
   font-weight: var(--lumina-weight-medium);
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.sparks-editor-save:hover {
-  opacity: 0.9;
+.sparks-editor-save:hover:not(:disabled) {
+  filter: brightness(0.9) !important;
+}
+
+.sparks-editor-save:disabled {
+  background: #dedddd !important;
+  color: #8e8e8e !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .sparks-editor-save:disabled {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #8e8e93 !important;
 }
 
 .sparks-editor-fields {
