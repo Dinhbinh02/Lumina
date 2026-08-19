@@ -810,7 +810,7 @@
 .lumina-settings-dropdown-menu div.active {
   background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.06));
   font-weight: var(--lumina-weight-medium, 600);
-  color: var(--lumina-primary-color, #2563eb);
+  color: var(--lumina-text-primary);
 }
 
 .lumina-settings-chain-list {

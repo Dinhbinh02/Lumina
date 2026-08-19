@@ -2256,15 +2256,25 @@ class LuminaSettingsModal {
         });
       }
     }
-    document.getElementById('lumina-export-settings-btn').addEventListener('click', () => {
-      chrome.storage.local.get(null, (data) => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    document.getElementById('lumina-export-settings-btn').addEventListener('click', async () => {
+      try {
+        let exportData;
+        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.gatherLocalData === 'function') {
+          exportData = await LuminaSync.gatherLocalData();
+        } else {
+          exportData = await new Promise(resolve => chrome.storage.local.get(null, resolve));
+        }
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `lumina_backup_${Date.now()}.json`;
         a.click();
-      });
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Export failed:', err);
+        alert('Failed to export data.');
+      }
     });
     const fileInput = document.getElementById('lumina-import-settings-file');
     document.getElementById('lumina-import-settings-btn').addEventListener('click', () => fileInput.click());
@@ -2272,17 +2282,33 @@ class LuminaSettingsModal {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
           const data = JSON.parse(evt.target.result);
-          chrome.storage.local.clear(() => {
-            chrome.storage.local.set(data, () => {
-              alert('Settings successfully imported!');
-              this.loadSettings();
+          if (!data || typeof data !== 'object') throw new Error('Invalid format');
+          
+          if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.persistMergedData === 'function') {
+            const sessionsObj = data.lumina_chat_sessions || {};
+            await LuminaSync.persistMergedData(data, sessionsObj, []);
+          } else {
+            await new Promise(resolve => {
+              chrome.storage.local.clear(() => {
+                chrome.storage.local.set(data, resolve);
+              });
             });
-          });
+          }
+          alert('Backup data successfully imported!');
+          this.loadSettings();
+          LuminaSettingsModal.updateStorageUsage();
+          const scope = window.LuminaSelectionScope;
+          if (scope) {
+            scope.renderRecentChatsSidebar();
+          }
         } catch (err) {
+          console.error('Import failed:', err);
           alert('Invalid JSON backup file.');
+        } finally {
+          fileInput.value = '';
         }
       };
       reader.readAsText(file);

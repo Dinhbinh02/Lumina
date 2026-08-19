@@ -2221,7 +2221,7 @@ function createWebChipElement(source, selectedSources, luminaTabId) {
     titleSpan.textContent = displayName || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
     chip.addEventListener('click', (event) => {
         event.stopPropagation();
-        const container = chip.closest('.lumina-web-chips-group');
+        const container = chip.closest('.lumina-web-chips');
         if (container) container.dataset.muteTooltips = 'true';
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
             try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
@@ -2248,7 +2248,7 @@ function updateWebChips() {
     if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
         try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
     }
-    const containers = document.querySelectorAll('.lumina-web-chips-group');
+    const containers = document.querySelectorAll('.lumina-web-chips');
     containers.forEach(container => {
         const luminaTabId = getLuminaTabIdForPane(container);
         if (!luminaTabId) {
@@ -2725,6 +2725,23 @@ async function init() {
         } else if (request.action === 'lumina_sessions_index_updated') {
             if (typeof renderRecentChatsSidebar === 'function') {
                 renderRecentChatsSidebar();
+            }
+            if (typeof LuminaChatDB !== 'undefined' && Array.isArray(tabs)) {
+                let tabsUpdated = false;
+                Promise.all(tabs.map(async (tab) => {
+                    if (tab && tab.sessionId) {
+                        const meta = await LuminaChatDB.getSession(tab.sessionId).catch(() => null);
+                        if (meta && (meta.isRenamed || meta.autoNamed) && meta.title && tab.title !== meta.title) {
+                            tab.title = meta.title;
+                            tabsUpdated = true;
+                        }
+                    }
+                })).then(() => {
+                    if (tabsUpdated) {
+                        renderTabs();
+                        if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
+                    }
+                });
             }
         } else if (request.action === 'lumina_notes_updated') {
             if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
@@ -3423,8 +3440,12 @@ async function renderRecentChatsSidebar() {
                         } else {
                             session.pinned = false;
                         }
+                        session.updatedAt = Date.now();
                         await LuminaChatDB.putSession(session);
                         chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                            LuminaSync.triggerDebouncedSync();
+                        }
                         if (session.isRenamed) {
                             const activeTab = tabs[activeTabIndex];
                             if (activeTab && activeTab.sessionId === sid) {
@@ -3485,7 +3506,11 @@ async function renderRecentChatsSidebar() {
                             if (updatedSession) {
                                 updatedSession.autoNamed = true;
                                 updatedSession.isRenamed = true;
+                                updatedSession.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(updatedSession);
+                                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                                    LuminaSync.triggerDebouncedSync();
+                                }
                             }
                             if (typeof LuminaToast !== 'undefined') LuminaToast.show(`Title updated: "${newTitle}"`, 'success');
                             renderRecentChatsSidebar();
@@ -3500,8 +3525,12 @@ async function renderRecentChatsSidebar() {
                         const isArchived = !!meta.archived;
                         if (isArchived) {
                             meta.archived = false;
+                            meta.updatedAt = Date.now();
                             await LuminaChatDB.putSession(meta);
                             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                                LuminaSync.triggerDebouncedSync();
+                            }
                             renderRecentChatsSidebar();
                         } else {
                             let currentTitle = meta.title || 'Untitled Chat';
@@ -3521,8 +3550,12 @@ async function renderRecentChatsSidebar() {
                                     meta.isRenamed = true;
                                 }
                                 meta.archived = true;
+                                meta.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(meta);
                                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                                    LuminaSync.triggerDebouncedSync();
+                                }
                                 renderRecentChatsSidebar();
                             }
                         }
@@ -5684,8 +5717,12 @@ async function renderDropdownMenu() {
             } else {
                 session.pinned = false;
             }
+            session.updatedAt = Date.now();
             await LuminaChatDB.putSession(session);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                LuminaSync.triggerDebouncedSync();
+            }
             if (session.isRenamed) {
                 const currentActiveTab = tabs[targetIdx];
                 if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
@@ -5702,8 +5739,12 @@ async function renderDropdownMenu() {
         const isArchived = !!sessionMeta.archived;
         if (isArchived) {
             sessionMeta.archived = false;
+            sessionMeta.updatedAt = Date.now();
             await LuminaChatDB.putSession(sessionMeta);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                LuminaSync.triggerDebouncedSync();
+            }
             renderRecentChatsSidebar();
         } else {
             let currentTitle = sessionMeta.title || 'Untitled Chat';
@@ -5723,8 +5764,12 @@ async function renderDropdownMenu() {
                     sessionMeta.isRenamed = true;
                 }
                 sessionMeta.archived = true;
+                sessionMeta.updatedAt = Date.now();
                 await LuminaChatDB.putSession(sessionMeta);
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
                 renderRecentChatsSidebar();
             }
         }

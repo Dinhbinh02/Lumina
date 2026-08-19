@@ -1,4 +1,4 @@
-
+﻿
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -7657,7 +7657,7 @@ class LuminaChatUI {
         return `
           <div class="lumina-chat-input-wrapper">
             <div class="lumina-input-meta-container" id="input-meta-container">
-                ${isSidePanel ? '' : '<div class="lumina-web-chips-group" id="web-chips-group"></div>'}
+                ${isSidePanel ? '' : '<div class="lumina-web-chips" id="web-chips-group"></div>'}
                 <div class="lumina-redirect-group" id="redirect-chips-group"></div>
             </div>
             <div class="lumina-input-container">
@@ -7667,7 +7667,7 @@ class LuminaChatUI {
                          <button class="lumina-upload-btn" id="upload-btn" title="Upload File">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                          </button>
-                         ${isSidePanel ? '<div class="lumina-web-chips-group" id="web-chips-group"></div>' : ''}
+                         ${isSidePanel ? '<div class="lumina-web-chips" id="web-chips-group"></div>' : ''}
                     </div>
                     <textarea id="chat-input" class="lumina-chat-input" placeholder="Ask anything..." rows="1"></textarea>
                     <div class="lumina-trailing-group">
@@ -9674,6 +9674,18 @@ class LuminaChatUI {
                 return;
             }
         }
+        let timeStr = '';
+        if (entry && entry.dataset.timestamp) {
+            const ts = parseInt(entry.dataset.timestamp);
+            if (!isNaN(ts) && ts > 0) {
+                const d = new Date(ts);
+                const today = new Date();
+                const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                const timeOnly = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateOnly = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                timeStr = isToday ? timeOnly : `${timeOnly} · ${dateOnly}`;
+            }
+        }
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'lumina-actions';
         actionsDiv.innerHTML = `
@@ -9686,6 +9698,7 @@ class LuminaChatUI {
             <button class="lumina-answer-action-btn" data-action="edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
+            ${timeStr ? `<span class="lumina-answer-timestamp">${timeStr}</span>` : ''}
         `;
         answerDiv.appendChild(actionsDiv);
     }
@@ -11978,29 +11991,48 @@ const LuminaChatDB = {
         const db = await this.init();
         let totalBytes = 0;
         
-        const getStoreSize = (storeName) => {
-            return new Promise((resolve) => {
-                const tx = db.transaction(storeName, 'readonly');
-                const store = tx.objectStore(storeName);
-                const request = store.openCursor();
-                request.onsuccess = (e) => {
+        return new Promise((resolve) => {
+            const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], 'readonly');
+            const sessionStore = tx.objectStore(this.SESSIONS_STORE);
+            const msgStore = tx.objectStore(this.MESSAGES_STORE);
+            
+            const sessionReq = sessionStore.getAll();
+            sessionReq.onsuccess = () => {
+                const sessions = sessionReq.result || [];
+                const activeSessionIds = new Set();
+                
+                sessions.forEach(s => {
+                    if (s && s.id && !s.isDeleted) {
+                        activeSessionIds.add(s.id);
+                        const keyStr = JSON.stringify(s.id);
+                        const valStr = JSON.stringify(s);
+                        totalBytes += (keyStr.length + valStr.length) * 2;
+                    }
+                });
+                
+                if (activeSessionIds.size === 0) {
+                    resolve(totalBytes);
+                    return;
+                }
+                
+                const msgReq = msgStore.openCursor();
+                msgReq.onsuccess = (e) => {
                     const cursor = e.target.result;
                     if (cursor) {
-                        const keyStr = JSON.stringify(cursor.key);
-                        const valStr = JSON.stringify(cursor.value);
-                        totalBytes += (keyStr.length + valStr.length) * 2;
+                        if (activeSessionIds.has(cursor.key)) {
+                            const keyStr = JSON.stringify(cursor.key);
+                            const valStr = JSON.stringify(cursor.value);
+                            totalBytes += (keyStr.length + valStr.length) * 2;
+                        }
                         cursor.continue();
                     } else {
-                        resolve();
+                        resolve(totalBytes);
                     }
                 };
-                request.onerror = () => resolve();
-            });
-        };
-        
-        await getStoreSize(this.SESSIONS_STORE);
-        await getStoreSize(this.MESSAGES_STORE);
-        return totalBytes;
+                msgReq.onerror = () => resolve(totalBytes);
+            };
+            sessionReq.onerror = () => resolve(0);
+        });
     }
 };
 
@@ -13293,6 +13325,9 @@ const ChatHistoryManager = {
                 meta.updatedAt = Date.now();
                 await LuminaChatDB.putSession(meta);
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
                 return true;
             }
             return false;
@@ -13327,7 +13362,7 @@ const ChatHistoryManager = {
     },
     async clearAllHistory() {
         try {
-            const sessions = await LuminaChatDB.getAllSessions();
+            const sessions = await LuminaChatDB.getAllSessions(true);
             for (const sessionId of Object.keys(sessions)) {
                 const session = sessions[sessionId];
                 if (session && session.archived) {
@@ -21720,15 +21755,25 @@ class LuminaSettingsModal {
         });
       }
     }
-    document.getElementById('lumina-export-settings-btn').addEventListener('click', () => {
-      chrome.storage.local.get(null, (data) => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    document.getElementById('lumina-export-settings-btn').addEventListener('click', async () => {
+      try {
+        let exportData;
+        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.gatherLocalData === 'function') {
+          exportData = await LuminaSync.gatherLocalData();
+        } else {
+          exportData = await new Promise(resolve => chrome.storage.local.get(null, resolve));
+        }
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `lumina_backup_${Date.now()}.json`;
         a.click();
-      });
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Export failed:', err);
+        alert('Failed to export data.');
+      }
     });
     const fileInput = document.getElementById('lumina-import-settings-file');
     document.getElementById('lumina-import-settings-btn').addEventListener('click', () => fileInput.click());
@@ -21736,17 +21781,33 @@ class LuminaSettingsModal {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
           const data = JSON.parse(evt.target.result);
-          chrome.storage.local.clear(() => {
-            chrome.storage.local.set(data, () => {
-              alert('Settings successfully imported!');
-              this.loadSettings();
+          if (!data || typeof data !== 'object') throw new Error('Invalid format');
+          
+          if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.persistMergedData === 'function') {
+            const sessionsObj = data.lumina_chat_sessions || {};
+            await LuminaSync.persistMergedData(data, sessionsObj, []);
+          } else {
+            await new Promise(resolve => {
+              chrome.storage.local.clear(() => {
+                chrome.storage.local.set(data, resolve);
+              });
             });
-          });
+          }
+          alert('Backup data successfully imported!');
+          this.loadSettings();
+          LuminaSettingsModal.updateStorageUsage();
+          const scope = window.LuminaSelectionScope;
+          if (scope) {
+            scope.renderRecentChatsSidebar();
+          }
         } catch (err) {
+          console.error('Import failed:', err);
           alert('Invalid JSON backup file.');
+        } finally {
+          fileInput.value = '';
         }
       };
       reader.readAsText(file);
@@ -24659,7 +24720,7 @@ function createWebChipElement(source, selectedSources, luminaTabId) {
     titleSpan.textContent = displayName || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || 'Untitled'));
     chip.addEventListener('click', (event) => {
         event.stopPropagation();
-        const container = chip.closest('.lumina-web-chips-group');
+        const container = chip.closest('.lumina-web-chips');
         if (container) container.dataset.muteTooltips = 'true';
         if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
             try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
@@ -24686,7 +24747,7 @@ function updateWebChips() {
     if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === 'function') {
         try { LuminaChatUI.prototype._hideTagTooltip(); } catch (e) { }
     }
-    const containers = document.querySelectorAll('.lumina-web-chips-group');
+    const containers = document.querySelectorAll('.lumina-web-chips');
     containers.forEach(container => {
         const luminaTabId = getLuminaTabIdForPane(container);
         if (!luminaTabId) {
@@ -25163,6 +25224,23 @@ async function init() {
         } else if (request.action === 'lumina_sessions_index_updated') {
             if (typeof renderRecentChatsSidebar === 'function') {
                 renderRecentChatsSidebar();
+            }
+            if (typeof LuminaChatDB !== 'undefined' && Array.isArray(tabs)) {
+                let tabsUpdated = false;
+                Promise.all(tabs.map(async (tab) => {
+                    if (tab && tab.sessionId) {
+                        const meta = await LuminaChatDB.getSession(tab.sessionId).catch(() => null);
+                        if (meta && (meta.isRenamed || meta.autoNamed) && meta.title && tab.title !== meta.title) {
+                            tab.title = meta.title;
+                            tabsUpdated = true;
+                        }
+                    }
+                })).then(() => {
+                    if (tabsUpdated) {
+                        renderTabs();
+                        if (typeof renderSidebarTabs === 'function') renderSidebarTabs();
+                    }
+                });
             }
         } else if (request.action === 'lumina_notes_updated') {
             if (typeof luminaNotesPanelInstance !== 'undefined' && luminaNotesPanelInstance) {
@@ -25861,8 +25939,12 @@ async function renderRecentChatsSidebar() {
                         } else {
                             session.pinned = false;
                         }
+                        session.updatedAt = Date.now();
                         await LuminaChatDB.putSession(session);
                         chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                            LuminaSync.triggerDebouncedSync();
+                        }
                         if (session.isRenamed) {
                             const activeTab = tabs[activeTabIndex];
                             if (activeTab && activeTab.sessionId === sid) {
@@ -25923,7 +26005,11 @@ async function renderRecentChatsSidebar() {
                             if (updatedSession) {
                                 updatedSession.autoNamed = true;
                                 updatedSession.isRenamed = true;
+                                updatedSession.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(updatedSession);
+                                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                                    LuminaSync.triggerDebouncedSync();
+                                }
                             }
                             if (typeof LuminaToast !== 'undefined') LuminaToast.show(`Title updated: "${newTitle}"`, 'success');
                             renderRecentChatsSidebar();
@@ -25938,8 +26024,12 @@ async function renderRecentChatsSidebar() {
                         const isArchived = !!meta.archived;
                         if (isArchived) {
                             meta.archived = false;
+                            meta.updatedAt = Date.now();
                             await LuminaChatDB.putSession(meta);
                             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                                LuminaSync.triggerDebouncedSync();
+                            }
                             renderRecentChatsSidebar();
                         } else {
                             let currentTitle = meta.title || 'Untitled Chat';
@@ -25959,8 +26049,12 @@ async function renderRecentChatsSidebar() {
                                     meta.isRenamed = true;
                                 }
                                 meta.archived = true;
+                                meta.updatedAt = Date.now();
                                 await LuminaChatDB.putSession(meta);
                                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                                    LuminaSync.triggerDebouncedSync();
+                                }
                                 renderRecentChatsSidebar();
                             }
                         }
@@ -28122,8 +28216,12 @@ async function renderDropdownMenu() {
             } else {
                 session.pinned = false;
             }
+            session.updatedAt = Date.now();
             await LuminaChatDB.putSession(session);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                LuminaSync.triggerDebouncedSync();
+            }
             if (session.isRenamed) {
                 const currentActiveTab = tabs[targetIdx];
                 if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
@@ -28140,8 +28238,12 @@ async function renderDropdownMenu() {
         const isArchived = !!sessionMeta.archived;
         if (isArchived) {
             sessionMeta.archived = false;
+            sessionMeta.updatedAt = Date.now();
             await LuminaChatDB.putSession(sessionMeta);
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                LuminaSync.triggerDebouncedSync();
+            }
             renderRecentChatsSidebar();
         } else {
             let currentTitle = sessionMeta.title || 'Untitled Chat';
@@ -28161,8 +28263,12 @@ async function renderDropdownMenu() {
                     sessionMeta.isRenamed = true;
                 }
                 sessionMeta.archived = true;
+                sessionMeta.updatedAt = Date.now();
                 await LuminaChatDB.putSession(sessionMeta);
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
                 renderRecentChatsSidebar();
             }
         }

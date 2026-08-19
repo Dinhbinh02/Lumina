@@ -43,8 +43,8 @@ body {
   --lumina-shadow-tertiary: 0 2px 8px rgba(0, 0, 0, 0.1);
   --lumina-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
   --lumina-shadow-focus: 0 0 0 3px rgba(var(--lumina-primary-rgb), 0.4);
-  --lumina-primary-color: #0056D2;
-  --lumina-primary-rgb: 0, 86, 210;
+  --lumina-primary-color: #000000;
+  --lumina-primary-rgb: 0, 0, 0;
   --lumina-text-primary: #202124;
   --lumina-text-secondary: #5f6368;
   --lumina-text-tertiary: #9aa0a6;
@@ -84,8 +84,8 @@ body {
   --lumina-text-primary: #ffffff;
   --lumina-text-secondary: #e0e0e0;
   --lumina-text-tertiary: #80848c;
-  --lumina-primary-color: #0A84FF;
-  --lumina-primary-rgb: 10, 132, 255;
+  --lumina-primary-color: #ffffff;
+  --lumina-primary-rgb: 255, 255, 255;
   --lumina-ui-border: rgba(255, 255, 255, 0.15);
   --lumina-ui-bg: #3c3c3c;
   --lumina-ui-bg-light: #2c2c2c;
@@ -330,7 +330,7 @@ body {
 .lumina-selected-text-tag {
   display: inline-block !important;
   background: transparent !important;
-  color: #0076d6 !important;
+  color: var(--lumina-text-primary) !important;
   border: none !important;
   padding: 0 !important;
   margin: 0 4px 0 0 !important;
@@ -501,7 +501,7 @@ body {
   overflow-x: hidden;
 }
 
-.lumina-web-chips-group {
+.lumina-web-chips {
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
@@ -530,7 +530,7 @@ body {
   display: none !important;
 }
 
-.lumina-web-chips-group::-webkit-scrollbar,
+.lumina-web-chips::-webkit-scrollbar,
 .lumina-redirect-group::-webkit-scrollbar {
   display: none;
 }
@@ -1114,7 +1114,7 @@ body {
 }
 
 .lumina-question-edit-toolbar .lumina-edit-save {
-  background: var(--lumina-primary-color) !important;
+  background: #000000 !important;
   border: none !important;
   color: #ffffff !important;
   padding: 6px 16px !important;
@@ -1123,7 +1123,18 @@ body {
 }
 
 .lumina-question-edit-toolbar .lumina-edit-save:hover {
-  filter: brightness(0.9) !important;
+  background: #222222 !important;
+  filter: none !important;
+}
+
+[data-theme="dark"] .lumina-question-edit-toolbar .lumina-edit-save {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .lumina-question-edit-toolbar .lumina-edit-save:hover {
+  background: #e0e0e0 !important;
+  filter: none !important;
 }
 
 .lumina-question-edit-toolbar .lumina-edit-save:disabled {
@@ -1852,7 +1863,7 @@ body {
   order: 1 !important;
 }
 
-.lumina-left-actions .lumina-web-chips-group {
+.lumina-left-actions .lumina-web-chips {
   order: 2 !important;
 }
 
@@ -2288,40 +2299,56 @@ body {
   pointer-events: none !important;
 }
 
-.lumina-action-btn.active.send,
-.lumina-action-btn.pause {
-  background: #0b57d0 !important;
+.lumina-action-btn.active.send {
+  background: #000000 !important;
   color: #ffffff !important;
   cursor: pointer !important;
 }
 
-[data-theme="dark"] .lumina-action-btn.active.send {
-  background: #a8c7fa !important;
-  color: #042f62 !important;
+.lumina-action-btn.active.send:hover {
+  background: #222222 !important;
 }
 
-.lumina-action-btn.active.send svg,
-.lumina-action-btn.pause svg {
+[data-theme="dark"] .lumina-action-btn.active.send {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .lumina-action-btn.active.send:hover {
+  background: #e0e0e0 !important;
+}
+
+.lumina-action-btn.active.send svg {
   filter: none !important;
+  color: #ffffff !important;
 }
 
 [data-theme="dark"] .lumina-action-btn.active.send svg {
   filter: none !important;
-  color: #042f62 !important;
+  color: #000000 !important;
 }
 
 .lumina-action-btn.pause {
   background: #FF3B30 !important;
+  color: #ffffff !important;
   cursor: pointer;
 }
 
+.lumina-action-btn.pause svg {
+  filter: none !important;
+}
+
 .lumina-tool-item.active {
-  color: var(--lumina-primary) !important;
-  background: rgba(0, 122, 255, 0.1) !important;
+  color: var(--lumina-text-primary) !important;
+  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.08)) !important;
+}
+
+[data-theme="dark"] .lumina-tool-item.active {
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 .lumina-tool-item.active span {
-  color: var(--lumina-primary) !important;
+  color: var(--lumina-text-primary) !important;
 }
 
 .lumina-proofread-toggle.active,
@@ -2421,10 +2448,10 @@ body {
   align-items: center !important;
   justify-content: center !important;
   flex-direction: column !important;
-  color: var(--lumina-primary-color, #0076d6) !important;
+  color: var(--lumina-primary-color, #000000) !important;
   font-weight: var(--lumina-weight-semibold) !important;
   font-size: 1.07em !important;
-  border: 2px dashed var(--lumina-primary-color, #0076d6) !important;
+  border: 2px dashed var(--lumina-primary-color, #000000) !important;
   border-radius: 12px !important;
   z-index: 1000 !important;
   pointer-events: none !important;
@@ -2981,9 +3008,14 @@ body {
 }
 
 .lumina-model-item.active {
-  background: var(--lumina-primary-bg-light, rgba(0, 122, 255, 0.1));
-  color: var(--lumina-primary, #007aff);
-  font-weight: var(--lumina-weight-medium) !important;
+  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.08));
+  color: var(--lumina-text-primary);
+  font-weight: var(--lumina-weight-semibold) !important;
+}
+
+[data-theme="dark"] .lumina-model-item.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .lumina-model-item .model-info {
@@ -4179,7 +4211,7 @@ b .katex * {
   margin-top: -8px;
   margin-left: -8px;
   border: 2px solid rgba(0, 0, 0, 0.2);
-  border-top-color: #0b57d0;
+  border-top-color: #000000;
   border-radius: 50%;
   animation: lumina-spin 0.8s linear infinite;
   z-index: 10;
@@ -4191,7 +4223,7 @@ b .katex * {
 
 [data-theme="dark"] .lumina-preview-item.is-uploading::after {
   border-color: rgba(255, 255, 255, 0.2);
-  border-top-color: #a8c7fa;
+  border-top-color: #ffffff;
 }
 
 @keyframes lumina-spin {
@@ -4819,12 +4851,23 @@ b .katex * {
 }
 
 .lumina-edit-save {
-  background: var(--lumina-primary-color) !important;
-  color: white !important;
+  background: #000000 !important;
+  color: #ffffff !important;
 }
 
 .lumina-edit-save:hover {
-  filter: brightness(0.9) !important;
+  background: #222222 !important;
+  filter: none !important;
+}
+
+[data-theme="dark"] .lumina-edit-save {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .lumina-edit-save:hover {
+  background: #e0e0e0 !important;
+  filter: none !important;
 }
 
 .lumina-edit-save:disabled {
@@ -4841,7 +4884,7 @@ b .katex * {
   height: 32px;
   padding: 0 14px;
   border-radius: 12px;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.05);
   cursor: pointer;
   user-select: none;
   font-size: 0.85em;
@@ -4856,42 +4899,50 @@ b .katex * {
 }
 
 .lumina-web-chip:hover {
-  border-color: #0b57d0;
-  color: #0b57d0;
-  background: rgba(11, 87, 208, 0.04);
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: var(--lumina-text-primary);
+}
+
+[data-theme="dark"] .lumina-web-chip {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--lumina-text-secondary);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 [data-theme="dark"] .lumina-web-chip:hover {
-  border-color: #a8c7fa;
-  color: #a8c7fa;
-  background: rgba(168, 199, 250, 0.08);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--lumina-text-primary);
 }
 
 .lumina-web-chip.is-active {
   border-width: 1px;
-  border-color: rgba(0, 86, 210, 0.25) !important;
-  color: #0056d2 !important;
-  background: rgba(0, 86, 210, 0.14) !important;
+  border-color: #000000 !important;
+  color: #ffffff !important;
+  background: #000000 !important;
   opacity: 1;
   box-shadow: none !important;
   font-weight: var(--lumina-weight-medium);
 }
 
 .lumina-web-chip.is-active:hover {
-  background: rgba(0, 86, 210, 0.22) !important;
-  border-color: rgba(0, 86, 210, 0.35) !important;
+  background: #222222 !important;
+  border-color: #222222 !important;
+  color: #ffffff !important;
   box-shadow: none !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active {
-  background: rgba(10, 132, 255, 0.22) !important;
-  color: #70b5ff !important;
-  border-color: rgba(10, 132, 255, 0.4) !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
 }
 
 [data-theme="dark"] .lumina-web-chip.is-active:hover {
-  background: rgba(10, 132, 255, 0.32) !important;
-  border-color: rgba(10, 132, 255, 0.5) !important;
+  background: #e0e0e0 !important;
+  border-color: #e0e0e0 !important;
+  color: #000000 !important;
 }
 
 .lumina-web-chip.is-ghost {
@@ -4901,13 +4952,13 @@ b .katex * {
 
 .lumina-web-chip.is-ghost:hover {
   opacity: 1;
-  border-color: #0b57d0;
-  color: #0b57d0;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--lumina-text-primary);
 }
 
 [data-theme="dark"] .lumina-web-chip.is-ghost:hover {
-  border-color: #a8c7fa;
-  color: #a8c7fa;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--lumina-text-primary);
 }
 
 .lumina-web-tab-picker {
@@ -5844,7 +5895,7 @@ b .katex * {
 }
 
 .topbar .lumina-model-item.active {
-  color: #007aff !important;
+  color: var(--lumina-text-primary) !important;
   font-weight: var(--lumina-weight-semibold) !important;
 }
 
@@ -5860,6 +5911,15 @@ b .katex * {
 
 .lumina-chat-answer .lumina-actions {
   margin-left: -4px !important;
+}
+
+.lumina-answer-timestamp {
+  margin-left: auto !important;
+  font-size: 0.9em !important;
+  color: var(--lumina-text-tertiary) !important;
+  font-weight: var(--lumina-weight-regular) !important;
+  user-select: none !important;
+  line-height: 1.2 !important;
 }
 
 .lumina-answer-action-btn {
@@ -7094,7 +7154,7 @@ b .katex * {
 }
 
 .sparks-editor-save {
-  background: var(--lumina-primary-color) !important;
+  background: #000000 !important;
   color: #ffffff !important;
   border: none;
   border-radius: 6px;
@@ -7106,7 +7166,18 @@ b .katex * {
 }
 
 .sparks-editor-save:hover:not(:disabled) {
-  filter: brightness(0.9) !important;
+  background: #222222 !important;
+  filter: none !important;
+}
+
+[data-theme="dark"] .sparks-editor-save {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .sparks-editor-save:hover:not(:disabled) {
+  background: #e0e0e0 !important;
+  filter: none !important;
 }
 
 .sparks-editor-save:disabled {
@@ -7263,8 +7334,8 @@ b .katex * {
 
 .sparks-add-file-btn {
   background: none;
-  border: 1px solid var(--lumina-primary-color, #007aff);
-  color: var(--lumina-primary-color, #007aff);
+  border: 1px solid var(--lumina-ui-border);
+  color: var(--lumina-text-primary);
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 0.86em;
@@ -7278,7 +7349,7 @@ b .katex * {
 }
 
 .sparks-add-file-btn:hover {
-  background: rgba(0, 122, 255, 0.05);
+  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.05));
 }
 
 .sparks-editor-preview {
@@ -8256,13 +8327,13 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
 
 .lumina-canvas-tab-btn.active {
   background: #ffffff;
-  color: #1a73e8;
+  color: var(--lumina-text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .lumina-canvas-tab-btn.active {
   background: #2a2b2f;
-  color: #8ab4f8;
+  color: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -11481,8 +11552,8 @@ mark.notes-search-highlight {
 
 .tts-preset-quick-chip:hover {
   background: var(--lumina-hover-bg, #f1f5f9);
-  border-color: var(--lumina-primary-color, #007aff);
-  color: var(--lumina-primary-color, #007aff);
+  border-color: var(--lumina-text-primary);
+  color: var(--lumina-text-primary);
 }
 
 [data-theme="dark"] .tts-preset-quick-chip {
@@ -11493,7 +11564,7 @@ mark.notes-search-highlight {
 
 [data-theme="dark"] .tts-preset-quick-chip:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: var(--lumina-primary-color, #0a84ff);
+  border-color: rgba(255, 255, 255, 0.3);
   color: #ffffff;
 }
 
@@ -11638,8 +11709,13 @@ mark.notes-search-highlight {
   font-weight: 600;
   padding: 1px 5px;
   border-radius: 4px;
-  background: rgba(0, 122, 255, 0.1);
-  color: var(--lumina-primary-color, #007aff);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--lumina-text-primary);
+}
+
+[data-theme="dark"] .tts-rec-voice-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .tts-rec-duration {
