@@ -1694,14 +1694,6 @@ function initSpotlightAskSelection() {
             const activeElement = targetEl || (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
             const isTextareaOrInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
 
-            if (window.LuminaSelection) {
-                if (isTextareaOrInput) {
-                    LuminaSelection.expandInputToWordBoundaries(activeElement);
-                } else {
-                    LuminaSelection.expandToWordBoundaries();
-                }
-            }
-
             if (isTextareaOrInput) {
                 if (window.LuminaSelection) LuminaSelection.hide();
                 return;
@@ -1753,14 +1745,6 @@ function initSpotlightAskSelection() {
                 ? document.activeElement
                 : (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
             const isTextareaOrInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-
-            if (window.LuminaSelection) {
-                if (isTextareaOrInput) {
-                    LuminaSelection.expandInputToWordBoundaries(activeElement);
-                } else {
-                    LuminaSelection.expandToWordBoundaries();
-                }
-            }
 
             if (isTextareaOrInput) return;
 

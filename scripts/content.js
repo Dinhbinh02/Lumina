@@ -243,13 +243,6 @@
         const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
         const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
         setTimeout(() => {
-            if (window.LuminaSelection) {
-                if (isInput) {
-                    LuminaSelection.expandInputToWordBoundaries(activeElement);
-                } else {
-                    LuminaSelection.expandToWordBoundaries();
-                }
-            }
             let text = '';
             let range = null;
             if (isInput) {
@@ -289,13 +282,6 @@
         const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
         const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
         setTimeout(() => {
-            if (window.LuminaSelection) {
-                if (isInput) {
-                    LuminaSelection.expandInputToWordBoundaries(activeElement);
-                } else {
-                    LuminaSelection.expandToWordBoundaries();
-                }
-            }
             let text = '';
             let range = null;
             if (isInput) {
