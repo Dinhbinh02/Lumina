@@ -2603,22 +2603,30 @@ class LuminaSettingsModal {
 
   static updateCloudSyncDashboard() {
     const sizeEl = document.getElementById('lumina-cloud-stat-size');
+    const md5El = document.getElementById('lumina-cloud-stat-md5');
     const timeEl = document.getElementById('lumina-cloud-stat-time');
     const relativeEl = document.getElementById('lumina-cloud-stat-relative');
     const itemsEl = document.getElementById('lumina-cloud-stat-items');
+    const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
+    const mediaEl = document.getElementById('lumina-cloud-stat-media');
+    const mediaSubEl = document.getElementById('lumina-cloud-stat-media-sub');
 
     if (!sizeEl) return;
 
     if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
       sizeEl.textContent = '—';
+      if (md5El) md5El.textContent = 'Not connected';
       timeEl.textContent = 'Not signed in';
       if (relativeEl) relativeEl.textContent = 'Sign in to sync';
       if (itemsEl) itemsEl.textContent = '—';
+      if (breakdownEl) breakdownEl.textContent = '—';
+      if (mediaEl) mediaEl.textContent = '—';
+      if (mediaSubEl) mediaSubEl.textContent = '—';
       return;
     }
 
-    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5'], async (res) => {
-      // 1. Format Size
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
+      // 1. Format Cloud Size & MD5 Fingerprint
       if (res.last_sync_size) {
         const bytes = parseInt(res.last_sync_size, 10);
         if (!isNaN(bytes)) {
@@ -2629,26 +2637,36 @@ class LuminaSettingsModal {
           sizeEl.textContent = '—';
         }
       } else {
-        sizeEl.textContent = '—';
+        sizeEl.textContent = '0 KB';
       }
 
-      // 2. Format Last Sync Time
+      if (md5El) {
+        if (res.last_sync_md5) {
+          md5El.textContent = `MD5: ${res.last_sync_md5.slice(0, 8)}...`;
+          md5El.title = `Full Checksum: ${res.last_sync_md5}`;
+        } else {
+          md5El.textContent = 'Gzip Compressed';
+        }
+      }
+
+      // 2. Format Last Sync Time & Status
       if (res.last_sync_time) {
         const date = new Date(res.last_sync_time);
         timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (relativeEl) {
           const diffMin = Math.floor((Date.now() - res.last_sync_time) / 60000);
-          if (diffMin < 1) relativeEl.textContent = 'Just now';
-          else if (diffMin < 60) relativeEl.textContent = `${diffMin}m ago`;
-          else if (diffMin < 1440) relativeEl.textContent = `${Math.floor(diffMin / 60)}h ago`;
-          else relativeEl.textContent = date.toLocaleDateString();
+          let relText = 'Just now';
+          if (diffMin >= 1 && diffMin < 60) relText = `${diffMin}m ago`;
+          else if (diffMin >= 60 && diffMin < 1440) relText = `${Math.floor(diffMin / 60)}h ago`;
+          else if (diffMin >= 1440) relText = date.toLocaleDateString();
+          relativeEl.textContent = `${relText} · In sync`;
         }
       } else {
         timeEl.textContent = 'Never';
         if (relativeEl) relativeEl.textContent = 'No backup yet';
       }
 
-      // 3. Count Items (Sessions, Notes, Highlights)
+      // 3. Count Chats, Notes, Highlights
       try {
         let sessionCount = 0;
         let noteCount = 0;
@@ -2664,16 +2682,50 @@ class LuminaSettingsModal {
           noteCount = notes.length;
         }
 
-        if (itemsEl) {
-          itemsEl.textContent = `${sessionCount} chats`;
+        if (Array.isArray(res.lumina_highlights)) {
+          highlightCount = res.lumina_highlights.length;
         }
-        const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
+
+        if (itemsEl) {
+          itemsEl.textContent = `${sessionCount} ${sessionCount === 1 ? 'chat' : 'chats'}`;
+        }
         if (breakdownEl) {
-          breakdownEl.textContent = `${noteCount} notes`;
+          if (highlightCount > 0) {
+            breakdownEl.textContent = `${noteCount} notes · ${highlightCount} hl`;
+          } else {
+            breakdownEl.textContent = `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`;
+          }
         }
       } catch (e) {
         if (itemsEl) itemsEl.textContent = 'Active';
       }
+
+      // 4. Count Media & Blobs (TTS Audio & Attachments)
+      try {
+        let ttsCount = 0;
+        let attCount = 0;
+
+        if (typeof TTSDB !== 'undefined') {
+          const recs = await TTSDB.getAllRecordings().catch(() => []);
+          ttsCount = (recs || []).length;
+        }
+
+        const uploadedBlobs = res.drive_uploaded_blobs || [];
+        const attFromBlobs = uploadedBlobs.filter(n => n.startsWith('att_') || n.startsWith('blob_att_'));
+        if (attFromBlobs.length > 0) {
+          attCount = attFromBlobs.length;
+        } else if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
+          const attMeta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
+          attCount = (attMeta || []).length;
+        }
+
+        if (mediaEl) {
+          mediaEl.textContent = `${ttsCount} TTS ${ttsCount === 1 ? 'audio' : 'audios'}`;
+        }
+        if (mediaSubEl) {
+          mediaSubEl.textContent = `${attCount} ${attCount === 1 ? 'attachment' : 'attachments'}`;
+        }
+      } catch (e) {}
     });
   }
 }

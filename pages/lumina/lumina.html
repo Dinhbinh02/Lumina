@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina</title>
     <script src="init.js"></script>
+    <link rel="stylesheet" href="../../lib/vendor/blocknote.css">
     <link rel="stylesheet" href="lumina.bundle.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1778,9 +1779,9 @@
 
                                     <div class="lumina-cloud-sync-stats-grid">
                                         <div class="lumina-cloud-stat-card">
-                                            <span class="stat-label">Cloud Size</span>
+                                            <span class="stat-label">Cloud Backup</span>
                                             <span class="stat-value" id="lumina-cloud-stat-size">0 KB</span>
-                                            <span class="stat-sub">Gzip Compressed</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-md5">Gzip Compressed</span>
                                         </div>
                                         <div class="lumina-cloud-stat-card">
                                             <span class="stat-label">Last Sync</span>
@@ -1788,10 +1789,14 @@
                                             <span class="stat-sub" id="lumina-cloud-stat-relative">No backup yet</span>
                                         </div>
                                         <div class="lumina-cloud-stat-card">
-                                            <span class="stat-label">Synced Items</span>
+                                            <span class="stat-label">Chats &amp; Notes</span>
                                             <span class="stat-value" id="lumina-cloud-stat-items">0 chats</span>
-                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">Chats &amp;
-                                                Notes</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-breakdown">0 notes</span>
+                                        </div>
+                                        <div class="lumina-cloud-stat-card">
+                                            <span class="stat-label">Media &amp; Blobs</span>
+                                            <span class="stat-value" id="lumina-cloud-stat-media">0 TTS audio</span>
+                                            <span class="stat-sub" id="lumina-cloud-stat-media-sub">0 attachments</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2197,6 +2202,7 @@
         </div>
     </div>
 
+    <script src="../../lib/vendor/blocknote.js"></script>
     <script src="lumina.bundle.js" defer></script>
 </body>
 

@@ -1687,24 +1687,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     if (request.action === 'lumina_drive_sync') {
         const isAuto = !!request.isAuto;
+        const forcePush = !!request.forcePush;
+        const forcePull = !!request.forcePull;
         if (typeof LuminaSync !== 'undefined') {
-            // Skip if a sync just completed within the last 5 seconds (prevents double-sync on startup)
-            const now = Date.now();
-            const lastSyncAt = globalThis._lastDriveSyncAt || 0;
-            if (isAuto && (now - lastSyncAt) < 5000 && !LuminaSync.isSyncing) {
-                try { sendResponse({ success: true, skipped: true }); } catch (e) {}
-                return true;
-            }
-            LuminaSync.syncData(isAuto)
+            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
+            const syncPromise = forcePush
+                ? LuminaSync.pushToCloud()
+                : (forcePull || isAuto)
+                    ? LuminaSync.pullFromCloud(forcePull)
+                    : LuminaSync.syncData(isAuto);
+
+            syncPromise
                 .then(result => {
                     globalThis._lastDriveSyncAt = Date.now();
+                    try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
                     try { sendResponse({ success: true, result }); } catch (e) {}
                 })
-                .catch(err => { try { sendResponse({ success: false, error: err.message }); } catch (e) {} });
+                .catch(err => {
+                    try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
+                    try { sendResponse({ success: false, error: err.message }); } catch (e) {}
+                });
         } else {
             sendResponse({ success: false, error: 'LuminaSync not available' });
         }
         return true; // Keep channel open for async response
+    }
+    if (request.action === 'lumina_clean_drive_duplicates') {
+        if (typeof LuminaSync !== 'undefined') {
+            LuminaSync.cleanDriveDuplicates()
+                .then(res => sendResponse(res))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+        } else {
+            sendResponse({ success: false, error: 'LuminaSync not available' });
+        }
+        return true;
     }
     switch (request.action) {
         case 'generate_chat_title': {

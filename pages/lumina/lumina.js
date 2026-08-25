@@ -2291,6 +2291,10 @@ function updateWebChips() {
 }
 
 function scheduleVisibleTabsMinHeightReflow() {
+    const chatLayout = document.getElementById('chat-layout');
+    if (chatLayout && (chatLayout.style.display === 'none' || window.getComputedStyle(chatLayout).display === 'none')) {
+        return;
+    }
     if (minHeightReflowRaf) {
         cancelAnimationFrame(minHeightReflowRaf);
         minHeightReflowRaf = null;
@@ -6374,7 +6378,13 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
         if (request.action === 'lumina_sync_status') {
             const wrapper = document.getElementById('user-avatar-wrapper');
             if (wrapper) {
-                wrapper.classList.toggle('is-syncing', request.status === 'syncing');
+                if (request.status === 'syncing') {
+                    wrapper.classList.add('is-syncing');
+                } else if (request.status === 'done' || request.status === 'failure') {
+                    setTimeout(() => {
+                        wrapper.classList.remove('is-syncing');
+                    }, 400);
+                }
             }
             if (typeof LuminaSync !== 'undefined') {
                 if (request.status === 'done') {
@@ -6386,6 +6396,28 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
         }
     });
 }
+
+// Auto-pull when returning to tab after being away for >= 5 minutes
+let lastTabActiveTime = Date.now();
+const IDLE_SYNC_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+function checkSyncOnTabReturn() {
+    if (document.visibilityState === 'visible') {
+        const now = Date.now();
+        const awayDuration = now - lastTabActiveTime;
+        lastTabActiveTime = now;
+        if (awayDuration >= IDLE_SYNC_THRESHOLD_MS) {
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated) {
+                LuminaSync.checkAutoSync(false);
+            }
+        }
+    } else {
+        lastTabActiveTime = Date.now();
+    }
+}
+
+document.addEventListener('visibilitychange', checkSyncOnTabReturn);
+window.addEventListener('focus', checkSyncOnTabReturn);
 
 window.showCustomPopup = function ({ title, body, isInput = false, defaultValue = '', placeholder = '', confirmLabel = 'Confirm', isDanger = false }) {
     return new Promise((resolve) => {

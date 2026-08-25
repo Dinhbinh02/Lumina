@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -4334,11 +4334,14 @@ if (typeof window !== 'undefined') {
 // --- BUNDLED FROM: lib/ui/common.js ---
 window.luminaLoadScript = function(url) {
     return new Promise((resolve, reject) => {
-        if (document.querySelector(`script[src="${url}"]`)) {
+        const resolvedUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL && !url.startsWith('http') && !url.startsWith('chrome-extension:'))
+            ? chrome.runtime.getURL(url.replace(/^\.\.\/\.\.\//, '').replace(/^\//, ''))
+            : url;
+        if (document.querySelector(`script[src="${url}"], script[src="${resolvedUrl}"]`)) {
             return resolve();
         }
         const script = document.createElement('script');
-        script.src = url;
+        script.src = resolvedUrl;
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
@@ -4347,12 +4350,15 @@ window.luminaLoadScript = function(url) {
 
 window.luminaLoadCSS = function(url) {
     return new Promise((resolve) => {
-        if (document.querySelector(`link[href="${url}"]`)) {
+        const resolvedUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL && !url.startsWith('http') && !url.startsWith('chrome-extension:'))
+            ? chrome.runtime.getURL(url.replace(/^\.\.\/\.\.\//, '').replace(/^\//, ''))
+            : url;
+        if (document.querySelector(`link[href="${url}"], link[href="${resolvedUrl}"]`)) {
             return resolve();
         }
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = url;
+        link.href = resolvedUrl;
         link.onload = resolve;
         document.head.appendChild(link);
     });
@@ -6374,7 +6380,11 @@ class LuminaChatUI {
         };
     }
     static applyViewportMinHeight(entry, container, inputWrapper) {
-        if (!entry || !container) return;
+        if (!entry || !container) return false;
+        // If container is hidden or detached (e.g. user switched view to notes/sparks), skip silently
+        if (container.offsetParent === null && (window.getComputedStyle(container).display === 'none' || !document.body.contains(container))) {
+            return false;
+        }
         const { viewportHeight } = this.getViewportStats(container, inputWrapper);
         if (viewportHeight > 0) {
             let marginBottom = 0;
@@ -6385,7 +6395,6 @@ class LuminaChatUI {
             entry.style.setProperty('min-height', (viewportHeight - marginBottom - 10) + 'px', 'important');
             return true;
         }
-        console.warn('[LuminaChatUI] applyViewportMinHeight failed: viewportHeight is 0');
         return false;
     }
     adjustEntryMargin(entry, behavior = 'none') {
@@ -6492,14 +6501,15 @@ class LuminaChatUI {
             this.sharedTooltip.style.opacity = '0';
         }
     }
-    setInitialEntryHeight(entry, skipScroll = false, preAppendScroll = 0, forceScroll = false) {
+    setInitialEntryHeight(entry, skipScroll = false, preAppendScroll = 0, forceScroll = false, retryCount = 0) {
         if (!entry || !this.container) return;
         const scrollContainer = this.getScrollContainer();
         if (!scrollContainer) return;
         const container = this.container.querySelector('.lumina-chat-container') || this.container;
+        if (container.offsetParent === null && (window.getComputedStyle(container).display === 'none' || !document.body.contains(container))) {
+            return;
+        }
         const inputWrapper = this.container.querySelector('.lumina-chat-input-wrapper') || document.body.querySelector('.lumina-chat-input-wrapper');
-        const allEntries = this.historyEl.querySelectorAll('.lumina-entry');
-        const currentIndex = Array.from(allEntries).indexOf(entry);
         if (LuminaChatUI.applyViewportMinHeight(entry, container, inputWrapper)) {
             this.clearEntryMargins(entry);
             if (!skipScroll && (!this.disableAutoScroll || forceScroll)) {
@@ -6508,8 +6518,8 @@ class LuminaChatUI {
                 const maxScroll = scrollContainer.scrollHeight - viewportHeight;
                 scrollContainer.scrollTop = Math.min(targetScrollTop, maxScroll);
             }
-        } else {
-            setTimeout(() => this.setInitialEntryHeight(entry, skipScroll), 80);
+        } else if (retryCount < 2) {
+            setTimeout(() => this.setInitialEntryHeight(entry, skipScroll, preAppendScroll, forceScroll, retryCount + 1), 80);
         }
     }
     appendError(text) {
@@ -10420,7 +10430,6 @@ async function sha256Hash(str) {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     } catch (e) {
-        // Fallback for non-secure contexts if any
         let h = 5381;
         for (let i = 0; i < str.length; i++) {
             h = ((h << 5) + h) + str.charCodeAt(i);
@@ -10430,117 +10439,21 @@ async function sha256Hash(str) {
     }
 }
 
-function mergeProviders(local, remote, useLocalSettings) {
-    if (!Array.isArray(local)) return remote;
-    if (!Array.isArray(remote)) return local;
-    const merged = [];
-    const localMap = new Map(local.map(p => [p.id, p]));
-    const remoteMap = new Map(remote.map(p => [p.id, p]));
-    const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
-    for (const id of allIds) {
-        const localP = localMap.get(id);
-        const remoteP = remoteMap.get(id);
-        if (localP && remoteP) {
-            const localKey = localP.apiKey || '';
-            const remoteKey = remoteP.apiKey || '';
-            let chosenKey = '';
-            if (localKey && !remoteKey) {
-                chosenKey = localKey;
-            } else if (!localKey && remoteKey) {
-                chosenKey = remoteKey;
-            } else {
-                chosenKey = useLocalSettings ? localKey : remoteKey;
-            }
-            const base = useLocalSettings ? localP : remoteP;
-            merged.push({
-                ...base,
-                apiKey: chosenKey
-            });
-        } else if (localP) {
-            merged.push(localP);
-        } else if (remoteP) {
-            merged.push(remoteP);
-        }
-    }
-    return merged;
-}
-
-function getEntityTime(item) {
-    if (!item || typeof item !== 'object') return 0;
-    return item.updatedAt || item.createdAt || item.timestamp || item.time || 0;
-}
-
-/**
- * Standard LWW (Last-Write-Wins) Element-Set merge function.
- * Supports both Array collections and Object maps.
- * Handles single-sided items (always preserved) and conflicts (newest timestamp wins).
- */
-function mergeEntities(localCollection, remoteCollection, options = {}) {
-    const isArrayFormat = Array.isArray(localCollection) || Array.isArray(remoteCollection);
-    const tombstoneRetentionMs = options.tombstoneRetentionMs || (30 * 24 * 60 * 60 * 1000); // 30 days
-    const now = Date.now();
-    
-    // Normalize to Maps indexed by entity ID
-    const localMap = new Map();
-    const remoteMap = new Map();
-
-    if (isArrayFormat) {
-        const localList = Array.isArray(localCollection) ? localCollection : [];
-        const remoteList = Array.isArray(remoteCollection) ? remoteCollection : [];
-        localList.forEach(item => { if (item && item.id) localMap.set(item.id, item); });
-        remoteList.forEach(item => { if (item && item.id) remoteMap.set(item.id, item); });
-    } else {
-        const localObj = (localCollection && typeof localCollection === 'object') ? localCollection : {};
-        const remoteObj = (remoteCollection && typeof remoteCollection === 'object') ? remoteCollection : {};
-        Object.entries(localObj).forEach(([id, item]) => {
-            if (item && typeof item === 'object') localMap.set(id, item.id ? item : { ...item, id });
-        });
-        Object.entries(remoteObj).forEach(([id, item]) => {
-            if (item && typeof item === 'object') remoteMap.set(id, item.id ? item : { ...item, id });
-        });
-    }
-
-    const mergedMap = new Map();
-    const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
-
-    for (const id of allIds) {
-        const localItem = localMap.get(id);
-        const remoteItem = remoteMap.get(id);
-
-        let chosen = null;
-        if (localItem && remoteItem) {
-            const localTime = getEntityTime(localItem);
-            const remoteTime = getEntityTime(remoteItem);
-            chosen = localTime >= remoteTime ? localItem : remoteItem;
-        } else if (localItem) {
-            chosen = localItem;
-        } else if (remoteItem) {
-            chosen = remoteItem;
-        }
-
-        if (chosen) {
-            if (chosen.isDeleted) {
-                const itemTime = getEntityTime(chosen);
-                // Prune tombstones older than retention window (30 days)
-                if (now - itemTime < tombstoneRetentionMs) {
-                    mergedMap.set(id, chosen);
-                }
-            } else {
-                mergedMap.set(id, chosen);
-            }
-        }
-    }
-
-    if (isArrayFormat) {
-        return Array.from(mergedMap.values());
-    } else {
-        const resultMap = {};
-        for (const [id, item] of mergedMap.entries()) {
-            resultMap[id] = item;
-        }
-        return resultMap;
-    }
-}
+const isExcludedKey = (k) => [
+    'google_oauth_token', 'google_oauth_token_time',
+    'google_user_info', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size',
+    'drive_uploaded_blobs', 'drive_backup_file_id',
+    'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
+    'sidepanel_active_tab_index', 'sidepanel_active_group_index', 'sidepanel_secondary_tab_index',
+    'sidepanel_is_split_mode', 'sidepanel_split_ratio',
+    'lumina_active_tab_index', 'lumina_active_group_index', 'lumina_secondary_tab_index',
+    'lumina_is_split_mode', 'lumina_split_ratio',
+    'luminaWindowId', 'pendingMicToggle',
+    'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
+    'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent',
+    'attachments'
+].includes(k) || k.includes('_inst_') || k.startsWith('pending_sidepanel_query_') || k.startsWith('rot_') ||
+    k === 'audio_cache' || k.startsWith('lumina_img_cache_') || k.startsWith('lumina_img_query_') || k.startsWith('spotlight_history_') || k.startsWith('yt_transcript_');
 
 const WEB_OAUTH_CONFIG = {
     clientId: "824888142961-mlpoj5jeqbo1lv2d61mho7cnnde9aicv.apps.googleusercontent.com",
@@ -10622,12 +10535,13 @@ class AuthService {
             console.warn('[Auth] Init failed:', e);
         }
         this.isInitialized = true;
-        this.notifyListeners();
-        if (this.isAuthenticated && typeof LuminaSync !== 'undefined') {
-            // Only auto-sync on init in page context (when user opens Lumina UI), NOT on every background SW wake-up!
-            if (typeof window !== 'undefined') {
-                LuminaSync.checkAutoSync(true);
-            }
+        this.notifyListeners(this.isAuthenticated, this.user);
+        if (this.isAuthenticated && typeof window !== 'undefined') {
+            setTimeout(() => {
+                if (typeof LuminaSync !== 'undefined') {
+                    LuminaSync.checkAutoSync(true);
+                }
+            }, 100);
         }
     }
     async _refreshTokenIfNeeded() {
@@ -10726,6 +10640,10 @@ class AuthService {
         try {
             const token = await this.getAuthToken(true);
             await this.fetchUserInfo(token);
+            // Cloud is authoritative: immediately pull cloud backup to replace local data
+            if (typeof LuminaSync !== 'undefined') {
+                await LuminaSync.pullFromCloud(true).catch(e => console.warn('[Auth] Post-login pull error:', e));
+            }
             return this.user;
         } catch (error) {
             console.error('Login failed:', error);
@@ -10810,17 +10728,30 @@ class SyncManager {
     _isPageContext() {
         return typeof window !== 'undefined';
     }
-    _delegateSyncToBackground(isAuto = false) {
+    _delegateSyncToBackground(action = 'lumina_drive_sync', params = {}) {
+        this.notifyListeners('Syncing...', null);
+        const wrapper = (typeof document !== 'undefined') ? document.getElementById('user-avatar-wrapper') : null;
+        if (wrapper) wrapper.classList.add('is-syncing');
+
         return new Promise((resolve) => {
             try {
-                chrome.runtime.sendMessage({ action: 'lumina_drive_sync', isAuto }, (res) => {
+                chrome.runtime.sendMessage({ action, ...params }, (res) => {
                     if (chrome.runtime.lastError) {
                         console.warn('[Sync] SW delegate failed:', chrome.runtime.lastError.message);
+                        if (wrapper) wrapper.classList.remove('is-syncing');
+                        this.notifyListeners('Sync failure', null);
+                    } else {
+                        setTimeout(() => {
+                            if (wrapper) wrapper.classList.remove('is-syncing');
+                            this.notifyListeners('Synced just now', Date.now());
+                        }, 500);
                     }
                     resolve(res);
                 });
             } catch (e) {
                 console.warn('[Sync] SW delegate error:', e);
+                if (wrapper) wrapper.classList.remove('is-syncing');
+                this.notifyListeners('Sync failure', null);
                 resolve(null);
             }
         });
@@ -10831,8 +10762,6 @@ class SyncManager {
         this.listeners = [];
         this.isSyncing = false;
 
-        // Auto sync is managed upon AuthService init completion
-
         const isBackground = typeof window === 'undefined';
         if (isBackground && typeof chrome !== 'undefined') {
             if (chrome.runtime && chrome.runtime.onStartup) {
@@ -10840,6 +10769,10 @@ class SyncManager {
                     this.checkAutoSync(true);
                 });
             }
+        } else if (typeof window !== 'undefined') {
+            setTimeout(() => {
+                this.checkAutoSync(true);
+            }, 200);
         }
 
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
@@ -10849,7 +10782,8 @@ class SyncManager {
                 const keys = Object.keys(changes);
                 const excludedKeys = [
                     'google_oauth_token', 'google_oauth_token_time',
-                    'google_user_info', 'lumina_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5',
+                    'google_user_info', 'lumina_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size',
+                    'drive_uploaded_blobs', 'drive_backup_file_id',
                     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
                     'sidepanel_active_tab_index', 'sidepanel_active_group_index',
                     'lumina_active_tab_index', 'lumina_active_group_index'
@@ -10866,48 +10800,57 @@ class SyncManager {
         }
     }
 
-    triggerDebouncedSync(delayMs = 2000) {
+    /**
+     * Debounced push to cloud after user modifications on this device.
+     */
+    triggerDebouncedSync(delayMs = 1000) {
         if (!this.authService.isAuthenticated) return;
         if (this._debounceTimer) clearTimeout(this._debounceTimer);
         this._debounceTimer = setTimeout(() => {
             this._debounceTimer = null;
-            this.syncData(true).catch(err => console.error('[Sync] Debounced sync failed:', err));
+            this.pushToCloud().catch(err => console.error('[Sync] Debounced push failed:', err));
         }, delayMs);
     }
+
     addListener(callback) {
         this.listeners.push(callback);
     }
     notifyListeners(status, lastSync) {
         this.listeners.forEach(cb => cb(status, lastSync));
     }
+
     async checkAutoSync(forceCheck = false) {
         if (!this.authService.isAuthenticated) return;
-        // In page context, delegate to Service Worker to avoid duplicate Drive requests
         if (this._isPageContext()) {
-            await this._delegateSyncToBackground(true);
+            await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true });
             return;
         }
         try {
-            await this.syncData(true);
+            await this.pullFromCloud(forceCheck);
         } catch (e) {
-            console.error('[Sync] Auto-sync failed:', e);
+            console.error('[Sync] Auto-sync pull failed:', e);
         }
     }
+
     async getLastSyncTime() {
         const result = await chrome.storage.local.get(['last_sync_time']);
         return result.last_sync_time ? new Date(result.last_sync_time).toLocaleString() : 'Never';
     }
+
     async getToken(interactive = false) {
         return await this.authService.getAuthToken(interactive);
     }
+
     async syncUp(isAuto = false) {
-        if (this._isPageContext()) return await this._delegateSyncToBackground(isAuto);
-        return await this.syncData(isAuto);
+        if (this._isPageContext()) return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: false, forcePush: true });
+        return await this.pushToCloud();
     }
+
     async syncDown() {
-        if (this._isPageContext()) return await this._delegateSyncToBackground(false);
-        return await this.syncData(false);
+        if (this._isPageContext()) return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true, forcePull: true });
+        return await this.pullFromCloud(true);
     }
+
     async downloadBackup(token, fileId) {
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -10923,6 +10866,7 @@ class SyncManager {
         const jsonStr = new TextDecoder().decode(buffer);
         return JSON.parse(jsonStr);
     }
+
     async listAppDataFiles(token) {
         const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'appDataFolder' in parents and trashed = false")}&spaces=appDataFolder&fields=files(id, name, md5Checksum, modifiedTime, size)&pageSize=1000`;
         const response = await fetch(url, {
@@ -10933,6 +10877,7 @@ class SyncManager {
         const data = await response.json();
         return data.files || [];
     }
+
     async uploadBlobFile(token, filename, blob, existingFileId = null) {
         const mimeType = (blob && blob.type) ? blob.type : 'application/octet-stream';
         const metadata = {
@@ -10956,6 +10901,7 @@ class SyncManager {
         if (!response.ok) throw new Error(`Failed to upload blob ${filename}`);
         return await response.json();
     }
+
     async downloadBlobFile(token, fileId) {
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -10964,6 +10910,7 @@ class SyncManager {
         if (!response.ok) throw new Error(`Failed to download blob ${fileId}`);
         return await response.blob();
     }
+
     async deleteDriveFile(token, fileId) {
         try {
             const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
@@ -10976,6 +10923,7 @@ class SyncManager {
             return false;
         }
     }
+
     async createBackupFile(token, content) {
         const metadata = {
             name: this.FILENAME,
@@ -10992,9 +10940,9 @@ class SyncManager {
         });
         if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
         if (!response.ok) throw new Error('Failed to create file');
-        const resData = await response.json();
-        return resData;
+        return await response.json();
     }
+
     async updateBackupFile(token, fileId, content) {
         const metadata = {
             name: this.FILENAME
@@ -11010,9 +10958,68 @@ class SyncManager {
         });
         if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
         if (!response.ok) throw new Error('Failed to update file');
-        const resData = await response.json();
-        return resData;
+        return await response.json();
     }
+
+    async getFileMetadata(token, fileId) {
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,md5Checksum,modifiedTime,size`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
+        if (!response.ok) return null;
+        return await response.json();
+    }
+
+    async getOrFindBackupFile(token, forceRefresh = false) {
+        let activeToken = token;
+        let cachedId = this.cachedBackupFileId;
+        if (!cachedId && !forceRefresh) {
+            const stored = await chrome.storage.local.get(['drive_backup_file_id']);
+            cachedId = stored.drive_backup_file_id;
+        }
+
+        if (cachedId && !forceRefresh) {
+            try {
+                const meta = await this.getFileMetadata(activeToken, cachedId);
+                if (meta && meta.id) {
+                    this.cachedBackupFileId = meta.id;
+                    return { token: activeToken, remoteFile: meta, fileId: meta.id, driveFiles: null };
+                }
+            } catch (err) {
+                if (err.message === 'UNAUTHORIZED') {
+                    await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
+                    activeToken = await this.authService.getAuthToken(false, true);
+                    const meta = await this.getFileMetadata(activeToken, cachedId).catch(() => null);
+                    if (meta && meta.id) {
+                        this.cachedBackupFileId = meta.id;
+                        return { token: activeToken, remoteFile: meta, fileId: meta.id, driveFiles: null };
+                    }
+                }
+            }
+        }
+
+        let driveFiles = [];
+        try {
+            driveFiles = await this.listAppDataFiles(activeToken);
+        } catch (err) {
+            if (err.message === 'UNAUTHORIZED') {
+                await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
+                activeToken = await this.authService.getAuthToken(false, true);
+                driveFiles = await this.listAppDataFiles(activeToken);
+            } else {
+                throw err;
+            }
+        }
+
+        const remoteFile = driveFiles.find(f => f.name === this.FILENAME) || null;
+        const fileId = remoteFile ? remoteFile.id : null;
+        if (fileId) {
+            this.cachedBackupFileId = fileId;
+            chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {});
+        }
+        return { token: activeToken, remoteFile, fileId, driveFiles };
+    }
+
     async fetchRemoteBackup(token, isAuto = false) {
         let activeToken = token;
         let driveFiles = [];
@@ -11035,21 +11042,16 @@ class SyncManager {
         }
 
         const fileId = remoteFile.id;
-        const syncMeta = await chrome.storage.local.get(['last_sync_md5']);
-        const lastSyncMd5 = syncMeta.last_sync_md5;
-
-        if (lastSyncMd5 && remoteFile.md5Checksum === lastSyncMd5) {
-            return { token: activeToken, remoteFile, remoteBackup: null, fileId, lastSyncMd5, driveFiles };
-        }
-
+        this.cachedBackupFileId = fileId;
+        chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {});
         const remoteBackup = await this.downloadBackup(activeToken, fileId);
-        return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5, driveFiles };
+        return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5: remoteFile.md5Checksum, driveFiles };
     }
 
     async gatherLocalData() {
         const localData = await chrome.storage.local.get(null);
 
-        // Gather Notes & Collections from NotesManager / IndexedDB (including tombstones)
+        // Gather Notes & Collections from NotesManager / IndexedDB
         if (typeof NotesManager !== 'undefined') {
             try {
                 localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === 'function'
@@ -11063,7 +11065,7 @@ class SyncManager {
             }
         }
 
-        // Gather TTS recordings (Metadata only for JSON, blob handled separately, including tombstones)
+        // Gather TTS recordings (Metadata only for JSON, blob handled separately)
         if (typeof TTSDB !== 'undefined') {
             try {
                 const recordings = typeof TTSDB.getAllRecordingsRaw === 'function'
@@ -11088,7 +11090,7 @@ class SyncManager {
             }
         }
 
-        // Load chat history from IndexedDB (including tombstones)
+        // Load chat history from IndexedDB
         if (typeof LuminaChatDB !== 'undefined') {
             try {
                 const sessions = typeof LuminaChatDB.getAllSessionsRaw === 'function'
@@ -11112,357 +11114,251 @@ class SyncManager {
         return localData;
     }
 
-    mergeSyncData(localData, remoteData) {
-        const lastSynced = localData.last_sync_time || 0;
-        const localSettingsTime = localData.settings_last_updated || 0;
-        const remoteSettingsTime = remoteData.settings_last_updated || 0;
-        const useLocalSettings = localSettingsTime >= remoteSettingsTime;
-
-        const mergedData = {};
-        const isSessionKey = (k) => k.startsWith('lumina_session_');
-        const isExcludedKey = (k) => [
-            'google_oauth_token', 'google_oauth_token_time',
-            'google_user_info', 'last_sync_time', 'last_sync_hash', 'last_sync_md5',
-            'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
-            'sidepanel_active_tab_index', 'sidepanel_active_group_index', 'sidepanel_secondary_tab_index',
-            'sidepanel_is_split_mode', 'sidepanel_split_ratio',
-            'lumina_active_tab_index', 'lumina_active_group_index', 'lumina_secondary_tab_index',
-            'lumina_is_split_mode', 'lumina_split_ratio',
-            'luminaWindowId', 'pendingMicToggle',
-            'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
-            'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent',
-            'attachments'
-        ].includes(k) || k.includes('_inst_') || k.startsWith('pending_sidepanel_query_') || k.startsWith('rot_') ||
-            k === 'audio_cache' || k.startsWith('lumina_img_cache_') || k.startsWith('lumina_img_query_') || k.startsWith('spotlight_history_') || k.startsWith('yt_transcript_');
-
-        const allKeys = new Set([...Object.keys(localData), ...Object.keys(remoteData)]);
-        for (const key of allKeys) {
-            if (isExcludedKey(key) || key === 'lumina_chat_sessions' || isSessionKey(key)) continue;
-
-            if (key === 'providers') {
-                mergedData[key] = mergeProviders(localData[key], remoteData[key], useLocalSettings);
-            } else if (key === 'lumina_sparks' || key === 'lumina_notes_collections' || key === 'lumina_notes_items' || key === 'lumina_tts_recordings') {
-                mergedData[key] = mergeEntities(localData[key], remoteData[key]);
-            } else if (key in localData && key in remoteData) {
-                mergedData[key] = useLocalSettings ? localData[key] : remoteData[key];
-            } else if (key in localData) {
-                mergedData[key] = localData[key];
-            } else if (key in remoteData) {
-                mergedData[key] = remoteData[key];
-            }
+    /**
+     * PULL FROM CLOUD — Cloud is authoritative.
+     * Overwrites local Dexie/IndexedDB and chrome.storage.local entirely with cloud backup.
+     * Does NOT push anything to cloud.
+     */
+    async pullFromCloud(force = false) {
+        if (this._isPageContext()) {
+            return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true, forcePull: force });
         }
+        if (this.isSyncing) return;
+        this.isSyncing = true;
+        this.notifyListeners('Syncing...', null);
+        try {
+            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
+            const initialToken = await this.getToken(!force);
+            if (!initialToken) throw new Error('Not authenticated');
 
-        // Merge Chat Sessions using standardized mergeEntities
-        const localSessions = localData.lumina_chat_sessions || {};
-        const remoteSessions = remoteData.lumina_chat_sessions || {};
-        const mergedSessions = mergeEntities(localSessions, remoteSessions);
-        const updatedRemoteSessionIds = new Set();
+            const localSync = await chrome.storage.local.get(['last_sync_md5']);
+            const { token, remoteFile, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, force);
 
-        for (const sid of Object.keys(mergedSessions)) {
-            const chosenSession = mergedSessions[sid];
-            const sessionKey = `lumina_session_${sid}`;
-            const localTime = getEntityTime(localSessions[sid]);
-            const remoteTime = getEntityTime(remoteSessions[sid]);
+            if (!remoteFile || !fileId) {
+                this.notifyListeners('No cloud data', null);
+                try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
+                return null;
+            }
 
-            if (localSessions[sid] && remoteSessions[sid]) {
-                if (localTime >= remoteTime) {
-                    if (sessionKey in localData) mergedData[sessionKey] = localData[sessionKey];
-                } else {
-                    if (sessionKey in remoteData) {
-                        mergedData[sessionKey] = remoteData[sessionKey];
-                        updatedRemoteSessionIds.add(sid);
+            // If MD5 matches and not forced, Cloud has NOT changed! Skip download!
+            if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
+                const now = Date.now();
+                this.notifyListeners('Synced just now', now);
+                try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
+                return now;
+            }
+
+            const remoteBackup = await this.downloadBackup(token, fileId);
+
+            if (!remoteBackup || !remoteBackup.data) {
+                this.notifyListeners('No cloud data', null);
+                try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
+                return null;
+            }
+
+            const remoteData = remoteBackup.data;
+            delete remoteData.attachments; // Backward compatibility cleanup
+
+            // 1. Replace chrome.storage.local keys with remoteData
+            const currentLocal = await chrome.storage.local.get(null);
+            const keysToRemove = [];
+            for (const key of Object.keys(currentLocal)) {
+                if (isExcludedKey(key)) continue;
+                if (key.startsWith('lumina_session_') || key === 'lumina_chat_sessions') continue;
+                if (key.startsWith('highlights_')) continue;
+                if (!(key in remoteData)) {
+                    keysToRemove.push(key);
+                }
+            }
+            if (keysToRemove.length > 0) {
+                await chrome.storage.local.remove(keysToRemove);
+            }
+
+            const storageToSet = {};
+            for (const [k, v] of Object.entries(remoteData)) {
+                if (isExcludedKey(k)) continue;
+                if (k.startsWith('lumina_session_') || k === 'lumina_chat_sessions') continue;
+                if (k.startsWith('highlights_')) continue;
+                storageToSet[k] = v;
+            }
+            if (Object.keys(storageToSet).length > 0) {
+                await chrome.storage.local.set(storageToSet);
+            }
+
+            // 2. Overwrite Highlights in IndexedDB
+            if (typeof LuminaAnnotationDB !== 'undefined') {
+                const currentHighlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+                for (const key of Object.keys(currentHighlights)) {
+                    if (!(key in remoteData)) {
+                        await LuminaAnnotationDB.delete(key).catch(() => {});
                     }
                 }
-            } else if (localSessions[sid]) {
-                if (sessionKey in localData) mergedData[sessionKey] = localData[sessionKey];
-            } else if (remoteSessions[sid]) {
-                if (sessionKey in remoteData) {
-                    mergedData[sessionKey] = remoteData[sessionKey];
-                    updatedRemoteSessionIds.add(sid);
+                for (const [k, v] of Object.entries(remoteData)) {
+                    if (k.startsWith('highlights_')) {
+                        await LuminaAnnotationDB.put(k, v).catch(() => {});
+                    }
                 }
             }
-        }
 
-        mergedData.lumina_chat_sessions = mergedSessions;
+            // 3. Overwrite Chat Sessions & Messages in IndexedDB
+            const remoteSessions = remoteData.lumina_chat_sessions || {};
+            const activeAttachmentIds = new Set();
 
-        const localKeysToRemove = [];
-        for (const key of Object.keys(remoteData)) {
-            if (isExcludedKey(key)) continue;
-            if (!(key in mergedData) && key !== 'lumina_chat_sessions' && !isSessionKey(key)) {
-                localKeysToRemove.push(key);
-            }
-        }
-
-        mergedData.settings_last_updated = useLocalSettings ? (localSettingsTime || Date.now()) : remoteSettingsTime;
-
-        return { mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds };
-    }
-
-    async persistMergedData(mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds = new Set()) {
-        if (localKeysToRemove.length > 0) {
-            await chrome.storage.local.remove(localKeysToRemove);
-        }
-
-        // Active attachments filter
-        const activeAttachmentIds = new Set();
-        for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
-            if (sessionMeta && sessionMeta.isDeleted) continue;
-            const sessionKey = `lumina_session_${sid}`;
-            const sessionMsgs = mergedData[sessionKey];
-            if (Array.isArray(sessionMsgs)) {
-                for (const msg of sessionMsgs) {
-                    if (msg && Array.isArray(msg.images)) {
-                        for (const img of msg.images) {
-                            if (img && typeof img === 'object' && img.attachmentId) {
-                                activeAttachmentIds.add(img.attachmentId);
+            if (typeof LuminaChatDB !== 'undefined') {
+                try {
+                    const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+                    for (const s of Object.values(currentSessions)) {
+                        if (s && s.id && !remoteSessions[s.id]) {
+                            await LuminaChatDB.deleteSession(s.id).catch(() => {});
+                            await LuminaChatDB.deleteMessages(s.id).catch(() => {});
+                        }
+                    }
+                    for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
+                        await LuminaChatDB.putSession(sessionMeta).catch(() => {});
+                        if (sessionMeta && sessionMeta.isDeleted) {
+                            await LuminaChatDB.deleteMessages(sid).catch(() => {});
+                        } else {
+                            const sessionKey = `lumina_session_${sid}`;
+                            const messages = remoteData[sessionKey];
+                            if (Array.isArray(messages)) {
+                                await LuminaChatDB.putMessages(sid, messages).catch(() => {});
+                                for (const msg of messages) {
+                                    if (msg && Array.isArray(msg.images)) {
+                                        for (const img of msg.images) {
+                                            if (img && typeof img === 'object' && img.attachmentId) {
+                                                activeAttachmentIds.add(img.attachmentId);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+                } catch (err) {
+                    console.error('[Sync] Failed to apply chats from cloud:', err);
                 }
             }
-        }
 
-        const isAttachmentActive = (key) => {
-            if (activeAttachmentIds.has(key)) return true;
-            for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
-                if (sessionMeta && sessionMeta.isDeleted) continue;
-                if (key.includes(sid)) return true;
-            }
-            return false;
-        };
+            // 4. Overwrite Notes & Collections via NotesManager
+            if (typeof NotesManager !== 'undefined') {
+                try {
+                    const remoteCollections = remoteData.lumina_notes_collections;
+                    const remoteNotes = remoteData.lumina_notes_items;
+                    const db = await NotesManager.getDB();
 
-        // Save highlights to IndexedDB
-        if (typeof LuminaAnnotationDB !== 'undefined') {
-            for (const key of Object.keys(mergedData)) {
-                if (key.startsWith('highlights_')) {
-                    await LuminaAnnotationDB.put(key, mergedData[key]).catch(() => {});
-                    delete mergedData[key];
-                }
-            }
-            for (const key of localKeysToRemove) {
-                if (key.startsWith('highlights_')) {
-                    await LuminaAnnotationDB.delete(key).catch(() => {});
-                }
-            }
-        }
-
-        // Save chat history to IndexedDB
-        if (typeof LuminaChatDB !== 'undefined') {
-            try {
-                const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
-                for (const s of Object.values(currentSessions)) {
-                    if (s && s.id && !mergedSessions[s.id]) {
-                        await LuminaChatDB.deleteSession(s.id).catch(() => {});
-                    }
-                }
-                for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
-                    await LuminaChatDB.putSession(sessionMeta).catch(() => {});
-                    if (sessionMeta && sessionMeta.isDeleted) {
-                        await LuminaChatDB.deleteMessages(sid).catch(() => {});
-                    } else {
-                        const sessionKey = `lumina_session_${sid}`;
-                        const messages = mergedData[sessionKey];
-                        if (Array.isArray(messages)) {
-                            await LuminaChatDB.putMessages(sid, messages).catch(() => {});
+                    if (Array.isArray(remoteCollections)) {
+                        const remoteColIds = new Set(remoteCollections.map(c => c && c.id).filter(Boolean));
+                        const currentCols = await NotesManager.getCollections().catch(() => []);
+                        const txCol = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
+                        const storeCol = txCol.objectStore(NotesManager.STORE_COLLECTIONS);
+                        for (const c of currentCols) {
+                            if (c && c.id && !remoteColIds.has(c.id)) {
+                                storeCol.delete(c.id);
+                            }
+                        }
+                        for (const col of remoteCollections) {
+                            if (col && col.id) storeCol.put(col);
                         }
                     }
-                    delete mergedData[`lumina_session_${sid}`];
-                }
-            } catch (err) {
-                console.error('[Sync] Failed to save chat history to IndexedDB:', err);
-            }
-        }
 
-        // Save Notes & Collections to IndexedDB via NotesManager
-        if (typeof NotesManager !== 'undefined') {
-            try {
-                const mergedCollections = mergedData.lumina_notes_collections;
-                const mergedNotes = mergedData.lumina_notes_items;
-                const db = await NotesManager.getDB();
-                if (Array.isArray(mergedCollections)) {
-                    const activeColIds = new Set(mergedCollections.map(c => c && c.id).filter(Boolean));
-                    const currentCols = await NotesManager.getCollections().catch(() => []);
-                    const txCol = db.transaction(NotesManager.STORE_COLLECTIONS, 'readwrite');
-                    const storeCol = txCol.objectStore(NotesManager.STORE_COLLECTIONS);
-                    for (const c of currentCols) {
-                        if (c && c.id && !activeColIds.has(c.id)) {
-                            storeCol.delete(c.id);
+                    if (Array.isArray(remoteNotes)) {
+                        const remoteNoteIds = new Set(remoteNotes.map(n => n && n.id).filter(Boolean));
+                        const currentNotes = await NotesManager.getNotes().catch(() => []);
+                        const txNote = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
+                        const storeNote = txNote.objectStore(NotesManager.STORE_NOTES);
+                        for (const n of currentNotes) {
+                            if (n && n.id && !remoteNoteIds.has(n.id)) {
+                                storeNote.delete(n.id);
+                            }
+                        }
+                        for (const note of remoteNotes) {
+                            if (note && note.id) storeNote.put(note);
                         }
                     }
-                    for (const col of mergedCollections) {
-                        if (col && col.id) {
-                            storeCol.put(col);
+                } catch (err) {
+                    console.error('[Sync] Failed to apply notes from cloud:', err);
+                }
+            }
+
+            // 5. Overwrite TTS Recordings in TTSDB
+            const activeTtsRecMap = new Map();
+            let ttsUpdated = false;
+            if (typeof TTSDB !== 'undefined' && Array.isArray(remoteData.lumina_tts_recordings)) {
+                try {
+                    const remoteRecs = remoteData.lumina_tts_recordings;
+                    const remoteRecIds = new Set(remoteRecs.map(r => r && r.id).filter(Boolean));
+                    const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+                    const currentMap = new Map(currentRecs.map(r => [r.id, r]));
+
+                    for (const r of currentRecs) {
+                        if (r && r.id && !remoteRecIds.has(r.id)) {
+                            await TTSDB.deleteRecording(r.id).catch(() => {});
+                            ttsUpdated = true;
                         }
                     }
-                }
-                if (Array.isArray(mergedNotes)) {
-                    const activeNoteIds = new Set(mergedNotes.map(n => n && n.id).filter(Boolean));
-                    const currentNotes = await NotesManager.getNotes().catch(() => []);
-                    const txNote = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
-                    const storeNote = txNote.objectStore(NotesManager.STORE_NOTES);
-                    for (const n of currentNotes) {
-                        if (n && n.id && !activeNoteIds.has(n.id)) {
-                            storeNote.delete(n.id);
+
+                    for (const recMeta of remoteRecs) {
+                        if (recMeta && recMeta.id) {
+                            if (!recMeta.isDeleted) activeTtsRecMap.set(recMeta.id, recMeta);
+                            const localRec = currentMap.get(recMeta.id);
+                            await TTSDB.saveRecording({
+                                ...recMeta,
+                                audioBlob: localRec ? localRec.audioBlob : null
+                            }).catch(() => {});
+                            ttsUpdated = true;
                         }
                     }
-                    for (const note of mergedNotes) {
-                        if (note && note.id) {
-                            storeNote.put(note);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('[Sync] Failed to save merged notes to IndexedDB:', err);
-            }
-        }
-
-        // Save TTS Recordings Metadata & Remove deleted items from TTSDB
-        let ttsUpdated = false;
-        if (typeof TTSDB !== 'undefined' && Array.isArray(mergedData.lumina_tts_recordings)) {
-            try {
-                const mergedRecs = mergedData.lumina_tts_recordings;
-                const activeRecIds = new Set(mergedRecs.map(r => r && r.id).filter(Boolean));
-                const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
-                const currentMap = new Map(currentRecs.map(r => [r.id, r]));
-
-                for (const r of currentRecs) {
-                    if (r && r.id && !activeRecIds.has(r.id)) {
-                        await TTSDB.deleteRecording(r.id).catch(() => {});
-                        ttsUpdated = true;
-                    }
-                }
-
-                for (const recMeta of mergedRecs) {
-                    if (recMeta && recMeta.id) {
-                        const localRec = currentMap.get(recMeta.id);
-                        // Preserve existing audioBlob if not updated or until blob sync pulls new one
-                        const existingBlob = localRec ? localRec.audioBlob : null;
-                        await TTSDB.saveRecording({
-                            ...recMeta,
-                            audioBlob: existingBlob
-                        }).catch(() => {});
-                        ttsUpdated = true;
-                    }
-                }
-            } catch (err) {
-                console.error('[Sync] Failed to persist merged TTS records:', err);
-            }
-        }
-
-        delete mergedData.lumina_chat_sessions;
-        await chrome.storage.local.set(mergedData);
-
-        if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
-            try {
-                const metadata = await LuminaAttachmentDB.getAllMetadata();
-                for (const item of metadata) {
-                    if (!isAttachmentActive(item.key)) {
-                        await LuminaAttachmentDB.delete(item.key);
-                    }
-                }
-            } catch (cleanupErr) {
-                console.error('[Sync Cleanup] Failed to clean up orphaned attachments', cleanupErr);
-            }
-        }
-
-        try {
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
-            chrome.runtime.sendMessage({ action: 'lumina_notes_updated' }).catch(() => {});
-            chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' }).catch(() => {});
-            if (ttsUpdated) {
-                chrome.runtime.sendMessage({ action: 'lumina_tts_updated' }).catch(() => {});
-            }
-            if (updatedRemoteSessionIds && updatedRemoteSessionIds.size > 0) {
-                for (const sid of updatedRemoteSessionIds) {
-                    chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: sid, source: 'drive_sync' }).catch(() => {});
+                } catch (err) {
+                    console.error('[Sync] Failed to apply TTS records from cloud:', err);
                 }
             }
-        } catch (e) {}
 
-        return { isAttachmentActive };
-    }
+            // 6. Download remote blobs (attachments & TTS audio)
+            let actualDriveFiles = driveFiles;
+            if (!actualDriveFiles && (activeAttachmentIds.size > 0 || activeTtsRecMap.size > 0)) {
+                actualDriveFiles = await this.listAppDataFiles(token).catch(() => []);
+            }
+            const driveFileMap = new Map((actualDriveFiles || []).map(f => [f.name, f]));
 
-    async syncBlobs(token, activeAttachmentIds, activeTtsRecMap, existingDriveFiles = null) {
-        if (!token) return;
-        try {
-            const driveFiles = existingDriveFiles || (await this.listAppDataFiles(token));
-            const driveFileMap = new Map(driveFiles.map(f => [f.name, f]));
-
-            // 1. Sync Chat Attachments (att_{key}.bin)
+            // Download missing attachments
             if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.init) {
                 const db = await LuminaAttachmentDB.init();
-                const localAttachments = await new Promise((resolve) => {
-                    const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, 'readonly');
-                    const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
-                    const req = store.openCursor();
-                    const map = new Map();
-                    req.onsuccess = (e) => {
-                        const cursor = e.target.result;
-                        if (cursor) {
-                            if (cursor.value instanceof Blob) {
-                                map.set(cursor.key, cursor.value);
-                            }
-                            cursor.continue();
-                        } else {
-                            resolve(map);
-                        }
-                    };
-                    req.onerror = () => resolve(map);
-                });
-
-                // Upload missing local attachments
-                for (const [key, blob] of localAttachments.entries()) {
-                    if (!activeAttachmentIds.has(key)) continue;
-                    const filename = `att_${key}.bin`;
-                    if (!driveFileMap.has(filename) && blob) {
-                        try {
-                            const res = await this.uploadBlobFile(token, filename, blob);
-                            if (res) driveFileMap.set(filename, res);
-                        } catch (err) {
-                            console.warn(`[Sync] Failed to upload attachment ${key}:`, err);
-                        }
-                    }
-                }
-
-                // Download remote attachments missing locally
                 for (const [filename, fileObj] of driveFileMap.entries()) {
                     if (filename.startsWith('att_') && filename.endsWith('.bin')) {
                         const key = filename.slice(4, -4);
-                        if (activeAttachmentIds.has(key) && !localAttachments.has(key)) {
-                            try {
-                                const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
-                                if (downloadedBlob) {
-                                    await LuminaAttachmentDB.put(key, downloadedBlob);
+                        if (activeAttachmentIds.has(key)) {
+                            const exists = await LuminaAttachmentDB.get(key).catch(() => null);
+                            if (!exists) {
+                                try {
+                                    const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
+                                    if (downloadedBlob) {
+                                        await LuminaAttachmentDB.put(key, downloadedBlob);
+                                    }
+                                } catch (err) {
+                                    console.warn(`[Sync] Failed to download attachment ${key}:`, err);
                                 }
-                            } catch (err) {
-                                console.warn(`[Sync] Failed to download attachment ${key}:`, err);
                             }
                         }
                     }
                 }
+
+                // Clean up local orphaned attachments
+                try {
+                    const metadata = await LuminaAttachmentDB.getAllMetadata();
+                    for (const item of metadata) {
+                        if (!activeAttachmentIds.has(item.key)) {
+                            await LuminaAttachmentDB.delete(item.key);
+                        }
+                    }
+                } catch (cleanupErr) {}
             }
 
-            // 2. Sync TTS Audio Blobs (tts_{id}.bin)
+            // Download missing TTS audio
             if (typeof TTSDB !== 'undefined') {
+                let ttsAudioDownloaded = false;
                 const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
                 const localRecMap = new Map(currentRecs.map(r => [r.id, r]));
 
-                // Upload missing local TTS audio blobs
-                for (const [id, rec] of localRecMap.entries()) {
-                    if (!activeTtsRecMap.has(id)) continue;
-                    const filename = `tts_${id}.bin`;
-                    if (rec.audioBlob instanceof Blob && !driveFileMap.has(filename)) {
-                        try {
-                            const res = await this.uploadBlobFile(token, filename, rec.audioBlob);
-                            if (res) driveFileMap.set(filename, res);
-                        } catch (err) {
-                            console.warn(`[Sync] Failed to upload TTS audio ${id}:`, err);
-                        }
-                    }
-                }
-
-                // Download remote TTS audio blobs missing locally
-                let ttsAudioDownloaded = false;
                 for (const [filename, fileObj] of driveFileMap.entries()) {
                     if (filename.startsWith('tts_') && filename.endsWith('.bin')) {
                         const id = filename.slice(4, -4);
@@ -11481,162 +11377,354 @@ class SyncManager {
                         }
                     }
                 }
-
-                if (ttsAudioDownloaded) {
-                    try { chrome.runtime.sendMessage({ action: 'lumina_tts_updated' }); } catch (e) {}
-                }
+                if (ttsAudioDownloaded) ttsUpdated = true;
             }
 
-            // 3. Clean up orphaned remote blobs on Drive
-            for (const [filename, fileObj] of driveFileMap.entries()) {
-                if (filename.startsWith('att_') && filename.endsWith('.bin')) {
-                    const key = filename.slice(4, -4);
-                    if (!activeAttachmentIds.has(key)) {
-                        await this.deleteDriveFile(token, fileObj.id);
-                    }
-                } else if (filename.startsWith('tts_') && filename.endsWith('.bin')) {
-                    const id = filename.slice(4, -4);
-                    if (!activeTtsRecMap.has(id)) {
-                        await this.deleteDriveFile(token, fileObj.id);
-                    }
+            // 7. Update Sync Metadata
+            const now = Date.now();
+            await chrome.storage.local.set({
+                last_sync_time: now,
+                last_sync_md5: remoteFile ? remoteFile.md5Checksum : null,
+                last_sync_size: remoteFile ? remoteFile.size : null
+            });
+            if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
+
+            // 8. Broadcast UI updates to all components
+            try {
+                chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'lumina_notes_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' }).catch(() => {});
+                if (ttsUpdated) {
+                    chrome.runtime.sendMessage({ action: 'lumina_tts_updated' }).catch(() => {});
                 }
-            }
-        } catch (blobErr) {
-            console.error('[Sync] syncBlobs error:', blobErr);
+                chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {});
+            } catch (e) {}
+
+            this.notifyListeners('Synced just now', now);
+            return now;
+        } catch (error) {
+            console.error('[Sync] pullFromCloud error:', error);
+            this.notifyListeners('Sync failure', null);
+            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
+            throw error;
+        } finally {
+            this.isSyncing = false;
         }
     }
 
-    async syncData(isAuto = false, retryCount = 0) {
-        // In page context, always delegate Drive calls to the Service Worker
+    /**
+     * PUSH TO CLOUD — Uploads local data to Google Drive.
+     * Called after user actions (creating notes, changing settings, saving chat).
+     */
+    async pushToCloud() {
         if (this._isPageContext()) {
-            return await this._delegateSyncToBackground(isAuto);
+            return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: false, forcePush: true });
         }
         if (this.isSyncing) return;
         this.isSyncing = true;
         try {
-            let initialToken = await this.getToken(!isAuto);
+            const initialToken = await this.getToken(true);
             if (!initialToken) throw new Error('Not authenticated');
 
-            const { token, remoteFile, remoteBackup, fileId, lastSyncMd5, driveFiles } = await this.fetchRemoteBackup(initialToken, isAuto);
-
-            const remoteData = (remoteBackup && remoteBackup.data) ? remoteBackup.data : {};
-            delete remoteData.attachments; // Backward compatibility cleanup
-
+            let { token, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, false);
             const localData = await this.gatherLocalData();
-            const { mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds } = this.mergeSyncData(localData, remoteData);
 
-            // Construct payload to upload BEFORE persistMergedData mutates/deletes chat keys from mergedData
-            const dataToUpload = { ...mergedData };
-
-            if (remoteBackup !== null) {
-                await this.persistMergedData(mergedData, mergedSessions, localKeysToRemove, updatedRemoteSessionIds);
-            }
-
-            // Compute hash (exclude volatile sync-meta keys from hash)
-            const dataForHash = { ...dataToUpload };
-            delete dataForHash.last_sync_time;
-            delete dataForHash.last_sync_hash;
-            delete dataForHash.last_sync_md5;
-            delete dataForHash.last_sync_size;
-            delete dataForHash.settings_last_updated; // volatile: can change after sync due to storage.onChanged
-            delete dataForHash.lumina_chat_sessions;  // index-only: session data is in lumina_session_* keys
-            const newHash = await sha256Hash(JSON.stringify(dataForHash));
-            const stored = await chrome.storage.local.get(["last_sync_hash", "last_sync_md5"]);
-            const now = Date.now();
-            mergedData.last_sync_time = now;
-            mergedData.last_sync_hash = newHash;
-
-            // Gather active attachment IDs & active TTS IDs for blob sync
-            const activeAttachmentIds = new Set();
-            for (const [sid, sessionMeta] of Object.entries(mergedSessions)) {
-                if (sessionMeta && sessionMeta.isDeleted) continue;
-                const sessionKey = `lumina_session_${sid}`;
-                const sessionMsgs = dataToUpload[sessionKey];
-                if (Array.isArray(sessionMsgs)) {
-                    for (const msg of sessionMsgs) {
-                        if (msg && Array.isArray(msg.images)) {
-                            for (const img of msg.images) {
-                                if (img && typeof img === 'object' && img.attachmentId) {
-                                    activeAttachmentIds.add(img.attachmentId);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            const activeTtsRecMap = new Map();
-            if (Array.isArray(dataToUpload.lumina_tts_recordings)) {
-                dataToUpload.lumina_tts_recordings.forEach(r => {
-                    if (r && r.id && !r.isDeleted) activeTtsRecMap.set(r.id, r);
-                });
-            }
-
-            // If local data hash is unchanged and remote file was unchanged (or merged with no new diffs), skip metadata upload
-            const isLocalUnchanged = (stored.last_sync_hash === newHash);
-            const isRemoteUnchanged = (remoteBackup === null);
-
-            if (fileId && isLocalUnchanged && (isRemoteUnchanged || remoteFile)) {
-                const finalMd5 = remoteFile ? remoteFile.md5Checksum : lastSyncMd5;
-                const finalSize = remoteFile ? remoteFile.size : null;
-                await chrome.storage.local.set({
-                    last_sync_time: now,
-                    last_sync_hash: newHash,
-                    last_sync_md5: finalMd5,
-                    last_sync_size: finalSize
-                });
-                if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
-                
-                // Still synchronize delta Blobs asynchronously using pre-fetched driveFiles
-                this.syncBlobs(token, activeAttachmentIds, activeTtsRecMap, driveFiles).catch(err => {
-                    console.error('[Sync] Background syncBlobs error:', err);
-                });
-
-                this.notifyListeners('Synced just now', now);
-                return now;
-            }
-
-            // Notify ring only when actually uploading
+            // Notify UI
             this.notifyListeners('Syncing...', null);
             try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
 
+            const dataToUpload = { ...localData };
             const payload = {
                 timestamp: new Date().toISOString(),
                 version: chrome.runtime.getManifest().version,
                 data: dataToUpload
             };
 
-            const uploadRes = fileId
-                ? await this.updateBackupFile(token, fileId, JSON.stringify(payload))
-                : await this.createBackupFile(token, JSON.stringify(payload));
+            let uploadRes;
+            try {
+                uploadRes = fileId
+                    ? await this.updateBackupFile(token, fileId, JSON.stringify(payload))
+                    : await this.createBackupFile(token, JSON.stringify(payload));
+            } catch (err) {
+                // If 404 or file not found on Drive, refresh fileId and try creating or re-updating
+                if (fileId) {
+                    const refreshed = await this.getOrFindBackupFile(token, true);
+                    token = refreshed.token;
+                    fileId = refreshed.fileId;
+                    uploadRes = fileId
+                        ? await this.updateBackupFile(token, fileId, JSON.stringify(payload))
+                        : await this.createBackupFile(token, JSON.stringify(payload));
+                } else {
+                    throw err;
+                }
+            }
+
+            if (uploadRes && uploadRes.id) {
+                this.cachedBackupFileId = uploadRes.id;
+                chrome.storage.local.set({ drive_backup_file_id: uploadRes.id }).catch(() => {});
+            }
 
             const newUploadedMd5 = (uploadRes && typeof uploadRes === 'object') ? uploadRes.md5Checksum : uploadRes;
             const newUploadedSize = (uploadRes && typeof uploadRes === 'object') ? uploadRes.size : null;
 
+            // Track and skip already uploaded blobs so we NEVER re-upload existing blobs repeatedly!
+            const storedBlobs = await chrome.storage.local.get(['drive_uploaded_blobs']);
+            const uploadedBlobSet = new Set(storedBlobs.drive_uploaded_blobs || []);
+            let hasNewBlobs = false;
+
+            // Upload missing local attachments
+            if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.init) {
+                const db = await LuminaAttachmentDB.init();
+                const localAttachments = await new Promise((resolve) => {
+                    const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, 'readonly');
+                    const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
+                    const req = store.openCursor();
+                    const map = new Map();
+                    req.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            if (cursor.value instanceof Blob) map.set(cursor.key, cursor.value);
+                            cursor.continue();
+                        } else resolve(map);
+                    };
+                    req.onerror = () => resolve(map);
+                });
+
+                for (const [key, blob] of localAttachments.entries()) {
+                    const filename = `att_${key}.bin`;
+                    if (!uploadedBlobSet.has(filename) && blob) {
+                        try {
+                            await this.uploadBlobFile(token, filename, blob);
+                            uploadedBlobSet.add(filename);
+                            hasNewBlobs = true;
+                        } catch (err) {
+                            console.warn(`[Sync] Failed to upload attachment ${key}:`, err);
+                        }
+                    }
+                }
+            }
+
+            // Upload missing local TTS audio
+            if (typeof TTSDB !== 'undefined') {
+                const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+                for (const rec of currentRecs) {
+                    if (rec && rec.id && rec.audioBlob instanceof Blob) {
+                        const filename = `tts_${rec.id}.bin`;
+                        if (!uploadedBlobSet.has(filename)) {
+                            try {
+                                await this.uploadBlobFile(token, filename, rec.audioBlob);
+                                uploadedBlobSet.add(filename);
+                                hasNewBlobs = true;
+                            } catch (err) {
+                                console.warn(`[Sync] Failed to upload TTS audio ${rec.id}:`, err);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (hasNewBlobs || !storedBlobs.drive_uploaded_blobs) {
+                await chrome.storage.local.set({ drive_uploaded_blobs: Array.from(uploadedBlobSet) });
+            }
+
+            const now = Date.now();
             await chrome.storage.local.set({
                 last_sync_time: now,
-                last_sync_hash: newHash,
                 last_sync_md5: newUploadedMd5,
                 last_sync_size: newUploadedSize
             });
 
             if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
 
-            // Sync Blobs independently using pre-fetched driveFiles
-            await this.syncBlobs(token, activeAttachmentIds, activeTtsRecMap, driveFiles);
-
             this.notifyListeners('Synced just now', now);
-            // Broadcast sync-done status to all extension pages
             try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
             return now;
         } catch (error) {
-            console.error('[Sync] Sync failed:', error);
-            await chrome.storage.local.remove(['last_sync_hash']).catch(() => {});
+            console.error('[Sync] pushToCloud error:', error);
             this.notifyListeners('Sync failure', null);
             try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
             throw error;
         } finally {
             this.isSyncing = false;
+        }
+    }
+
+    /**
+     * Cleans up duplicate files on Google Drive (keeps the latest, deletes older copies).
+     */
+    async cleanDriveDuplicates() {
+        if (this._isPageContext()) {
+            return await this._delegateSyncToBackground('lumina_clean_drive_duplicates');
+        }
+        const token = await this.getToken(true);
+        if (!token) return { success: false, error: 'Not authenticated' };
+
+        const allFiles = await this.listAppDataFiles(token);
+        if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
+
+        // Group by filename
+        const fileMap = new Map();
+        for (const file of allFiles) {
+            if (!fileMap.has(file.name)) {
+                fileMap.set(file.name, []);
+            }
+            fileMap.get(file.name).push(file);
+        }
+
+        let deletedCount = 0;
+        for (const [name, files] of fileMap.entries()) {
+            if (files.length > 1) {
+                // Sort by modifiedTime descending (newest first)
+                files.sort((a, b) => new Date(b.modifiedTime || 0) - new Date(a.modifiedTime || 0));
+                // Keep the first (newest), delete all older duplicates
+                const toDelete = files.slice(1);
+                for (const f of toDelete) {
+                    console.log(`[Sync] Deleting duplicate file on Drive: ${f.name} (id: ${f.id})`);
+                    await this.deleteDriveFile(token, f.id);
+                    deletedCount++;
+                }
+            }
+        }
+
+        // Also update local cache of uploaded blobs
+        const uniqueBlobNames = Array.from(fileMap.keys()).filter(n => n.endsWith('.bin'));
+        await chrome.storage.local.set({ drive_uploaded_blobs: uniqueBlobNames });
+
+        console.log(`[Sync] Cleaned ${deletedCount} duplicate files on Google Drive.`);
+        return { success: true, deletedCount };
+    }
+
+    /**
+     * Prints a clean table of all files on Google Drive appDataFolder.
+     */
+    async showDriveFiles() {
+        const token = await this.getToken(true);
+        if (!token) {
+            console.warn('[Sync] Not authenticated');
+            return [];
+        }
+        const files = await this.listAppDataFiles(token);
+        console.table(files.map(f => ({
+            Name: f.name,
+            Size: (f.size / 1024).toFixed(1) + ' KB',
+            MD5: f.md5Checksum ? f.md5Checksum.slice(0, 10) + '...' : 'N/A',
+            Modified: new Date(f.modifiedTime).toLocaleString(),
+            ID: f.id
+        })));
+        return files;
+    }
+
+    /**
+     * Cleans up orphaned blob files (att_*, blob_att_*, tts_*, blob_tts_*) on Google Drive that are no longer referenced in local data.
+     */
+    async cleanOrphanedDriveBlobs() {
+        const token = await this.getToken(true);
+        if (!token) return { success: false, error: 'Not authenticated' };
+
+        const allFiles = await this.listAppDataFiles(token);
+        if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
+
+        // Collect all active attachment IDs from ChatDB & Notes
+        const activeAttachmentKeys = new Set();
+        if (typeof LuminaChatDB !== 'undefined') {
+            try {
+                const sessions = await LuminaChatDB.getAllSessions(true).catch(() => ({}));
+                for (const sid of Object.keys(sessions)) {
+                    const msgs = await LuminaChatDB.getMessages(sid).catch(() => []);
+                    for (const m of msgs) {
+                        if (Array.isArray(m.files)) {
+                            for (const f of m.files) {
+                                if (f && f.attachmentId) activeAttachmentKeys.add(String(f.attachmentId));
+                            }
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Collect active TTS IDs
+        const activeTtsIds = new Set();
+        if (typeof TTSDB !== 'undefined') {
+            try {
+                const recs = await TTSDB.getAllRecordings().catch(() => []);
+                for (const r of recs) {
+                    if (r && r.id && !r.isDeleted) activeTtsIds.add(String(r.id));
+                }
+            } catch (e) {}
+        }
+
+        let deletedCount = 0;
+        for (const file of allFiles) {
+            const name = file.name;
+            let isOrphan = false;
+
+            // Check old & new attachment naming
+            if (name.startsWith('att_') && name.endsWith('.bin')) {
+                const key = name.slice(4, -4);
+                if (!activeAttachmentKeys.has(key)) isOrphan = true;
+            } else if (name.startsWith('blob_att_')) {
+                isOrphan = true;
+                for (const key of activeAttachmentKeys) {
+                    if (name.includes(key)) { isOrphan = false; break; }
+                }
+            } else if (name.startsWith('tts_') && name.endsWith('.bin')) {
+                const id = name.slice(4, -4);
+                if (!activeTtsIds.has(id)) isOrphan = true;
+            } else if (name.startsWith('blob_tts_')) {
+                isOrphan = true;
+                for (const id of activeTtsIds) {
+                    if (name.includes(id)) { isOrphan = false; break; }
+                }
+            }
+
+            if (isOrphan) {
+                console.log(`[Sync] Deleting orphaned file on Drive: ${name} (id: ${file.id})`);
+                await this.deleteDriveFile(token, file.id);
+                deletedCount++;
+            }
+        }
+
+        // Update local cache
+        const remainingFiles = await this.listAppDataFiles(token);
+        const uniqueBlobNames = (remainingFiles || []).map(f => f.name).filter(n => n.endsWith('.bin'));
+        await chrome.storage.local.set({ drive_uploaded_blobs: uniqueBlobNames });
+
+        console.log(`[Sync] Cleaned ${deletedCount} orphaned blob files on Google Drive.`);
+        return { success: true, deletedCount };
+    }
+
+    /**
+     * Downloads lumina_backup.json from Google Drive and saves it as a file on your computer.
+     */
+    async downloadBackupFileToComputer() {
+        const token = await this.getToken(true);
+        if (!token) throw new Error('Not authenticated');
+        const files = await this.listAppDataFiles(token);
+        const remoteFile = files.find(f => f.name === this.FILENAME);
+        if (!remoteFile) throw new Error('lumina_backup.json not found on Google Drive');
+        const data = await this.downloadBackup(token, remoteFile.id);
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lumina_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log('[Sync] Backup downloaded successfully!');
+        return data;
+    }
+
+    /**
+     * Backward compatible sync entry point.
+     */
+    async syncData(isAuto = false) {
+        if (isAuto) {
+            return await this.pullFromCloud(false);
+        } else {
+            return await this.pushToCloud();
         }
     }
 }
@@ -11651,7 +11739,6 @@ if (typeof window !== 'undefined') {
     globalThis.LuminaAuth = LuminaAuth;
     globalThis.LuminaSync = LuminaSync;
 }
-
 
 
 // --- BUNDLED FROM: lib/core/highlight_db.js ---
@@ -11808,14 +11895,7 @@ const LuminaChatDB = {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], 'readwrite');
-            const sessionStore = tx.objectStore(this.SESSIONS_STORE);
-            const getReq = sessionStore.get(sessionId);
-            getReq.onsuccess = () => {
-                const s = getReq.result || { id: sessionId, createdAt: Date.now() };
-                s.isDeleted = true;
-                s.updatedAt = Date.now();
-                sessionStore.put(s);
-            };
+            tx.objectStore(this.SESSIONS_STORE).delete(sessionId);
             tx.objectStore(this.MESSAGES_STORE).delete(sessionId);
             tx.oncomplete = () => resolve(true);
             tx.onerror = (e) => reject(e.target.error);
@@ -11823,14 +11903,7 @@ const LuminaChatDB = {
     },
 
     async deleteSessionHard(sessionId) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], 'readwrite');
-            tx.objectStore(this.SESSIONS_STORE).delete(sessionId);
-            tx.objectStore(this.MESSAGES_STORE).delete(sessionId);
-            tx.oncomplete = () => resolve(true);
-            tx.onerror = (e) => reject(e.target.error);
-        });
+        return this.deleteSession(sessionId);
     },
 
     async getAllSessions(includeDeleted = false) {
@@ -11843,10 +11916,8 @@ const LuminaChatDB = {
                 const sessionsMap = {};
                 const list = request.result || [];
                 list.forEach(s => {
-                    if (s && s.id) {
-                        if (includeDeleted || !s.isDeleted) {
-                            sessionsMap[s.id] = s;
-                        }
+                    if (s && s.id && !s.isDeleted) {
+                        sessionsMap[s.id] = s;
                     }
                 });
                 resolve(sessionsMap);
@@ -11856,7 +11927,7 @@ const LuminaChatDB = {
     },
 
     async getAllSessionsRaw() {
-        return this.getAllSessions(true);
+        return this.getAllSessions(false);
     },
 
     async getMessages(sessionId) {
@@ -14546,19 +14617,13 @@ class NotesManager {
     static async deleteCollection(collectionId) {
         const db = await NotesManager.getDB();
 
-        // Mark collection as deleted (tombstone) and unassign its notes (set collectionId = null)
+        // Delete collection directly and unassign its notes (set collectionId = null)
         return new Promise((resolve, reject) => {
             const tx = db.transaction([NotesManager.STORE_COLLECTIONS, NotesManager.STORE_NOTES], 'readwrite');
             const colStore = tx.objectStore(NotesManager.STORE_COLLECTIONS);
             const noteStore = tx.objectStore(NotesManager.STORE_NOTES);
 
-            const getReq = colStore.get(collectionId);
-            getReq.onsuccess = () => {
-                const col = getReq.result || { id: collectionId, createdAt: Date.now() };
-                col.isDeleted = true;
-                col.updatedAt = Date.now();
-                colStore.put(col);
-            };
+            colStore.delete(collectionId);
 
             const index = noteStore.index('collectionId');
             const req = index.openCursor(IDBKeyRange.only(collectionId));
@@ -14723,21 +14788,14 @@ class NotesManager {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(NotesManager.STORE_NOTES, 'readwrite');
             const store = tx.objectStore(NotesManager.STORE_NOTES);
-            const getReq = store.get(noteId);
-            getReq.onsuccess = () => {
-                const note = getReq.result || { id: noteId, createdAt: Date.now() };
-                note.isDeleted = true;
-                note.updatedAt = Date.now();
-                const putReq = store.put(note);
-                putReq.onsuccess = () => {
-                    if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                        LuminaSync.triggerDebouncedSync();
-                    }
-                    resolve(true);
-                };
-                putReq.onerror = (e) => reject(e.target.error);
+            const req = store.delete(noteId);
+            req.onsuccess = () => {
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
+                resolve(true);
             };
-            getReq.onerror = (e) => reject(e.target.error);
+            req.onerror = (e) => reject(e.target.error);
         });
     }
 }
@@ -14996,6 +15054,26 @@ class NotesPanel {
         if (this.notesSearchInput) {
             this.notesSearchInput.addEventListener('input', (e) => {
                 this.renderNotesList(e.target.value.trim().toLowerCase());
+            });
+        }
+
+        const editorBody = document.querySelector('.notes-editor-body');
+        if (editorBody) {
+            editorBody.addEventListener('click', (e) => {
+                if (e.target === this.noteTitleInput) return;
+                const isInsideBlock = e.target.closest('.bn-block, .bn-inline-content, [contenteditable="true"]');
+                if (!isInsideBlock) {
+                    const ed = this.blocknoteInstance?.editor;
+                    if (!ed) return;
+                    try {
+                        const doc = ed.document;
+                        if (doc && doc.length > 0) {
+                            const lastBlock = doc[doc.length - 1];
+                            ed.setTextCursorPosition(lastBlock, 'end');
+                        }
+                        ed.focus();
+                    } catch (_) {}
+                }
             });
         }
 
@@ -16618,9 +16696,15 @@ class NotesPanel {
         if (!window.LuminaBlockNote) {
             if (typeof window.luminaLoadScript === 'function') {
                 try {
+                    const cssUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+                        ? chrome.runtime.getURL('lib/vendor/blocknote.css')
+                        : '../../lib/vendor/blocknote.css';
+                    const jsUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+                        ? chrome.runtime.getURL('lib/vendor/blocknote.js')
+                        : '../../lib/vendor/blocknote.js';
                     await Promise.all([
-                        window.luminaLoadCSS('../../lib/vendor/blocknote.css'),
-                        window.luminaLoadScript('../../lib/vendor/blocknote.js')
+                        window.luminaLoadCSS(cssUrl),
+                        window.luminaLoadScript(jsUrl)
                     ]);
                 } catch (e) {
                     console.error('Failed to load BlockNote dynamic scripts:', e);
@@ -16634,7 +16718,13 @@ class NotesPanel {
         }
 
         try {
-            const initialBlocks = (initialData && Array.isArray(initialData)) ? initialData : undefined;
+            let initialBlocks = undefined;
+            if (initialData && Array.isArray(initialData)) {
+                initialBlocks = initialData;
+            } else if (initialData?.blocks && Array.isArray(initialData.blocks)) {
+                initialBlocks = initialData.blocks;
+            }
+
             this.blocknoteInstance = window.LuminaBlockNote.mount(
                 this.editorContainer,
                 initialBlocks,
@@ -17037,29 +17127,14 @@ class TTSDB {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
             const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
-            const getReq = store.get(id);
-            getReq.onsuccess = () => {
-                const rec = getReq.result || { id: id, createdAt: Date.now() };
-                rec.isDeleted = true;
-                rec.audioBlob = null;
-                rec.updatedAt = Date.now();
-                const putReq = store.put(rec);
-                putReq.onsuccess = () => resolve(true);
-                putReq.onerror = (e) => reject(e.target.error);
-            };
-            getReq.onerror = (e) => reject(e.target.error);
-        });
-    }
-
-    static async deleteRecordingHard(id) {
-        const db = await TTSDB.getDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(TTSDB.STORE_RECORDINGS, 'readwrite');
-            const store = tx.objectStore(TTSDB.STORE_RECORDINGS);
             const request = store.delete(id);
             request.onsuccess = () => resolve(true);
             request.onerror = (e) => reject(e.target.error);
         });
+    }
+
+    static async deleteRecordingHard(id) {
+        return TTSDB.deleteRecording(id);
     }
 }
 
@@ -22007,22 +22082,30 @@ class LuminaSettingsModal {
 
   static updateCloudSyncDashboard() {
     const sizeEl = document.getElementById('lumina-cloud-stat-size');
+    const md5El = document.getElementById('lumina-cloud-stat-md5');
     const timeEl = document.getElementById('lumina-cloud-stat-time');
     const relativeEl = document.getElementById('lumina-cloud-stat-relative');
     const itemsEl = document.getElementById('lumina-cloud-stat-items');
+    const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
+    const mediaEl = document.getElementById('lumina-cloud-stat-media');
+    const mediaSubEl = document.getElementById('lumina-cloud-stat-media-sub');
 
     if (!sizeEl) return;
 
     if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
       sizeEl.textContent = '—';
+      if (md5El) md5El.textContent = 'Not connected';
       timeEl.textContent = 'Not signed in';
       if (relativeEl) relativeEl.textContent = 'Sign in to sync';
       if (itemsEl) itemsEl.textContent = '—';
+      if (breakdownEl) breakdownEl.textContent = '—';
+      if (mediaEl) mediaEl.textContent = '—';
+      if (mediaSubEl) mediaSubEl.textContent = '—';
       return;
     }
 
-    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5'], async (res) => {
-      // 1. Format Size
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
+      // 1. Format Cloud Size & MD5 Fingerprint
       if (res.last_sync_size) {
         const bytes = parseInt(res.last_sync_size, 10);
         if (!isNaN(bytes)) {
@@ -22033,26 +22116,36 @@ class LuminaSettingsModal {
           sizeEl.textContent = '—';
         }
       } else {
-        sizeEl.textContent = '—';
+        sizeEl.textContent = '0 KB';
       }
 
-      // 2. Format Last Sync Time
+      if (md5El) {
+        if (res.last_sync_md5) {
+          md5El.textContent = `MD5: ${res.last_sync_md5.slice(0, 8)}...`;
+          md5El.title = `Full Checksum: ${res.last_sync_md5}`;
+        } else {
+          md5El.textContent = 'Gzip Compressed';
+        }
+      }
+
+      // 2. Format Last Sync Time & Status
       if (res.last_sync_time) {
         const date = new Date(res.last_sync_time);
         timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (relativeEl) {
           const diffMin = Math.floor((Date.now() - res.last_sync_time) / 60000);
-          if (diffMin < 1) relativeEl.textContent = 'Just now';
-          else if (diffMin < 60) relativeEl.textContent = `${diffMin}m ago`;
-          else if (diffMin < 1440) relativeEl.textContent = `${Math.floor(diffMin / 60)}h ago`;
-          else relativeEl.textContent = date.toLocaleDateString();
+          let relText = 'Just now';
+          if (diffMin >= 1 && diffMin < 60) relText = `${diffMin}m ago`;
+          else if (diffMin >= 60 && diffMin < 1440) relText = `${Math.floor(diffMin / 60)}h ago`;
+          else if (diffMin >= 1440) relText = date.toLocaleDateString();
+          relativeEl.textContent = `${relText} · In sync`;
         }
       } else {
         timeEl.textContent = 'Never';
         if (relativeEl) relativeEl.textContent = 'No backup yet';
       }
 
-      // 3. Count Items (Sessions, Notes, Highlights)
+      // 3. Count Chats, Notes, Highlights
       try {
         let sessionCount = 0;
         let noteCount = 0;
@@ -22068,16 +22161,50 @@ class LuminaSettingsModal {
           noteCount = notes.length;
         }
 
-        if (itemsEl) {
-          itemsEl.textContent = `${sessionCount} chats`;
+        if (Array.isArray(res.lumina_highlights)) {
+          highlightCount = res.lumina_highlights.length;
         }
-        const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
+
+        if (itemsEl) {
+          itemsEl.textContent = `${sessionCount} ${sessionCount === 1 ? 'chat' : 'chats'}`;
+        }
         if (breakdownEl) {
-          breakdownEl.textContent = `${noteCount} notes`;
+          if (highlightCount > 0) {
+            breakdownEl.textContent = `${noteCount} notes · ${highlightCount} hl`;
+          } else {
+            breakdownEl.textContent = `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`;
+          }
         }
       } catch (e) {
         if (itemsEl) itemsEl.textContent = 'Active';
       }
+
+      // 4. Count Media & Blobs (TTS Audio & Attachments)
+      try {
+        let ttsCount = 0;
+        let attCount = 0;
+
+        if (typeof TTSDB !== 'undefined') {
+          const recs = await TTSDB.getAllRecordings().catch(() => []);
+          ttsCount = (recs || []).length;
+        }
+
+        const uploadedBlobs = res.drive_uploaded_blobs || [];
+        const attFromBlobs = uploadedBlobs.filter(n => n.startsWith('att_') || n.startsWith('blob_att_'));
+        if (attFromBlobs.length > 0) {
+          attCount = attFromBlobs.length;
+        } else if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
+          const attMeta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
+          attCount = (attMeta || []).length;
+        }
+
+        if (mediaEl) {
+          mediaEl.textContent = `${ttsCount} TTS ${ttsCount === 1 ? 'audio' : 'audios'}`;
+        }
+        if (mediaSubEl) {
+          mediaSubEl.textContent = `${attCount} ${attCount === 1 ? 'attachment' : 'attachments'}`;
+        }
+      } catch (e) {}
     });
   }
 }
@@ -24695,6 +24822,10 @@ function updateWebChips() {
 }
 
 function scheduleVisibleTabsMinHeightReflow() {
+    const chatLayout = document.getElementById('chat-layout');
+    if (chatLayout && (chatLayout.style.display === 'none' || window.getComputedStyle(chatLayout).display === 'none')) {
+        return;
+    }
     if (minHeightReflowRaf) {
         cancelAnimationFrame(minHeightReflowRaf);
         minHeightReflowRaf = null;
@@ -28778,7 +28909,13 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
         if (request.action === 'lumina_sync_status') {
             const wrapper = document.getElementById('user-avatar-wrapper');
             if (wrapper) {
-                wrapper.classList.toggle('is-syncing', request.status === 'syncing');
+                if (request.status === 'syncing') {
+                    wrapper.classList.add('is-syncing');
+                } else if (request.status === 'done' || request.status === 'failure') {
+                    setTimeout(() => {
+                        wrapper.classList.remove('is-syncing');
+                    }, 400);
+                }
             }
             if (typeof LuminaSync !== 'undefined') {
                 if (request.status === 'done') {
@@ -28790,6 +28927,28 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
         }
     });
 }
+
+// Auto-pull when returning to tab after being away for >= 5 minutes
+let lastTabActiveTime = Date.now();
+const IDLE_SYNC_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+function checkSyncOnTabReturn() {
+    if (document.visibilityState === 'visible') {
+        const now = Date.now();
+        const awayDuration = now - lastTabActiveTime;
+        lastTabActiveTime = now;
+        if (awayDuration >= IDLE_SYNC_THRESHOLD_MS) {
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated) {
+                LuminaSync.checkAutoSync(false);
+            }
+        }
+    } else {
+        lastTabActiveTime = Date.now();
+    }
+}
+
+document.addEventListener('visibilitychange', checkSyncOnTabReturn);
+window.addEventListener('focus', checkSyncOnTabReturn);
 
 window.showCustomPopup = function ({ title, body, isInput = false, defaultValue = '', placeholder = '', confirmLabel = 'Confirm', isDanger = false }) {
     return new Promise((resolve) => {
@@ -29963,8 +30122,7 @@ async function sparksSaveOrder(orderedIds) {
 async function sparksDelete(id) {
     const sparks = await sparksLoad();
     if (sparks[id]) {
-        sparks[id].isDeleted = true;
-        sparks[id].updatedAt = Date.now();
+        delete sparks[id];
         await sparksSave(sparks);
     }
 }

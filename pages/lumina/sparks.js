@@ -228,8 +228,7 @@ async function sparksSaveOrder(orderedIds) {
 async function sparksDelete(id) {
     const sparks = await sparksLoad();
     if (sparks[id]) {
-        sparks[id].isDeleted = true;
-        sparks[id].updatedAt = Date.now();
+        delete sparks[id];
         await sparksSave(sparks);
     }
 }
