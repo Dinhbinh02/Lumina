@@ -5913,15 +5913,6 @@ b .katex * {
   margin-left: -4px !important;
 }
 
-.lumina-answer-timestamp {
-  margin-left: auto !important;
-  font-size: 0.9em !important;
-  color: var(--lumina-text-tertiary) !important;
-  font-weight: var(--lumina-weight-regular) !important;
-  user-select: none !important;
-  line-height: 1.2 !important;
-}
-
 .lumina-answer-action-btn {
   display: flex;
   align-items: center;
@@ -6338,8 +6329,8 @@ b .katex * {
 .recent-chat-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 6px;
+  gap: 3px;
+  padding: 5px 6px;
   border-radius: 6px;
   color: var(--lumina-sidebar-text);
   cursor: pointer;
@@ -6439,9 +6430,10 @@ b .katex * {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
+  margin: 0;
   background: none;
   border: none;
   border-radius: 50%;
@@ -6456,10 +6448,27 @@ b .katex * {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: var(--lumina-sidebar-text-muted);
   opacity: 0.8;
+}
+
+.recent-chat-item__time {
+  display: none;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--lumina-sidebar-text-muted);
+  opacity: 0.75;
+  user-select: none;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+}
+
+.recent-chat-item:hover .recent-chat-item__time,
+.recent-chat-item.ctx-active .recent-chat-item__time {
+  display: inline-block;
 }
 
 .recent-chat-item:hover .recent-chat-item__menu-btn,

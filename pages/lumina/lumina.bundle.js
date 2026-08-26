@@ -1,4 +1,4 @@
-
+﻿
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -9589,18 +9589,6 @@ class LuminaChatUI {
                 return;
             }
         }
-        let timeStr = '';
-        if (entry && entry.dataset.timestamp) {
-            const ts = parseInt(entry.dataset.timestamp);
-            if (!isNaN(ts) && ts > 0) {
-                const d = new Date(ts);
-                const today = new Date();
-                const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-                const timeOnly = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const dateOnly = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                timeStr = isToday ? timeOnly : `${timeOnly} · ${dateOnly}`;
-            }
-        }
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'lumina-actions';
         actionsDiv.innerHTML = `
@@ -9613,7 +9601,6 @@ class LuminaChatUI {
             <button class="lumina-answer-action-btn" data-action="edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
-            ${timeStr ? `<span class="lumina-answer-timestamp">${timeStr}</span>` : ''}
         `;
         answerDiv.appendChild(actionsDiv);
     }
@@ -10441,7 +10428,7 @@ async function sha256Hash(str) {
 
 const isExcludedKey = (k) => [
     'google_oauth_token', 'google_oauth_token_time',
-    'google_user_info', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size',
+    'google_user_info', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size', 'last_cloud_stats',
     'drive_uploaded_blobs', 'drive_backup_file_id',
     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
     'sidepanel_active_tab_index', 'sidepanel_active_group_index', 'sidepanel_secondary_tab_index',
@@ -10782,7 +10769,7 @@ class SyncManager {
                 const keys = Object.keys(changes);
                 const excludedKeys = [
                     'google_oauth_token', 'google_oauth_token_time',
-                    'google_user_info', 'lumina_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size',
+                    'google_user_info', 'lumina_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size', 'last_cloud_stats',
                     'drive_uploaded_blobs', 'drive_backup_file_id',
                     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
                     'sidepanel_active_tab_index', 'sidepanel_active_group_index',
@@ -10852,18 +10839,23 @@ class SyncManager {
     }
 
     async downloadBackup(token, fileId) {
+        console.log(`[Sync Debug] Downloading backup payload from Drive file ID: ${fileId}...`);
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.status === 401 || response.status === 403) throw new Error('UNAUTHORIZED');
         if (!response.ok) throw new Error('Download failed');
         const buffer = await response.arrayBuffer();
+        console.log(`[Sync Debug] Downloaded raw buffer size: ${buffer.byteLength} bytes`);
         const arr = new Uint8Array(buffer);
         if (arr.length >= 2 && arr[0] === 0x1f && arr[1] === 0x8b) {
+            console.log(`[Sync Debug] Decompressing GZIP backup...`);
             const jsonStr = await decompressData(buffer);
+            console.log(`[Sync Debug] Decompressed JSON length: ${jsonStr.length} characters`);
             return JSON.parse(jsonStr);
         }
         const jsonStr = new TextDecoder().decode(buffer);
+        console.log(`[Sync Debug] Decoded plain JSON length: ${jsonStr.length} characters`);
         return JSON.parse(jsonStr);
     }
 
@@ -10980,12 +10972,17 @@ class SyncManager {
 
         if (cachedId && !forceRefresh) {
             try {
+                console.log(`[Sync Debug] Checking cached backup file ID: ${cachedId}`);
                 const meta = await this.getFileMetadata(activeToken, cachedId);
                 if (meta && meta.id) {
+                    console.log(`[Sync Debug] Cached file found:`, meta);
                     this.cachedBackupFileId = meta.id;
                     return { token: activeToken, remoteFile: meta, fileId: meta.id, driveFiles: null };
+                } else {
+                    console.log(`[Sync Debug] Cached file metadata not found for ID: ${cachedId}`);
                 }
             } catch (err) {
+                console.warn(`[Sync Debug] Error checking cached file ID:`, err);
                 if (err.message === 'UNAUTHORIZED') {
                     await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
                     activeToken = await this.authService.getAuthToken(false, true);
@@ -10998,10 +10995,13 @@ class SyncManager {
             }
         }
 
+        console.log(`[Sync Debug] Searching appDataFolder for ${this.FILENAME}...`);
         let driveFiles = [];
         try {
             driveFiles = await this.listAppDataFiles(activeToken);
+            console.log(`[Sync Debug] Total files found in appDataFolder: ${driveFiles.length}`, driveFiles);
         } catch (err) {
+            console.warn(`[Sync Debug] Error listing appDataFiles:`, err);
             if (err.message === 'UNAUTHORIZED') {
                 await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
                 activeToken = await this.authService.getAuthToken(false, true);
@@ -11013,6 +11013,7 @@ class SyncManager {
 
         const remoteFile = driveFiles.find(f => f.name === this.FILENAME) || null;
         const fileId = remoteFile ? remoteFile.id : null;
+        console.log(`[Sync Debug] Matched backup file:`, remoteFile);
         if (fileId) {
             this.cachedBackupFileId = fileId;
             chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {});
@@ -11120,10 +11121,15 @@ class SyncManager {
      * Does NOT push anything to cloud.
      */
     async pullFromCloud(force = false) {
+        console.log(`[Sync Debug] ---> pullFromCloud started (force: ${force}, context: ${this._isPageContext() ? 'Page' : 'Background'})`);
         if (this._isPageContext()) {
+            console.log(`[Sync Debug] Page context detected, delegating to Background worker...`);
             return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true, forcePull: force });
         }
-        if (this.isSyncing) return;
+        if (this.isSyncing) {
+            console.log(`[Sync Debug] Sync already in progress, aborting concurrent pull.`);
+            return;
+        }
         this.isSyncing = true;
         this.notifyListeners('Syncing...', null);
         try {
@@ -11132,16 +11138,36 @@ class SyncManager {
             if (!initialToken) throw new Error('Not authenticated');
 
             const localSync = await chrome.storage.local.get(['last_sync_md5']);
+            console.log(`[Sync Debug] Local stored last_sync_md5: ${localSync.last_sync_md5}`);
             const { token, remoteFile, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, force);
 
             if (!remoteFile || !fileId) {
+                console.warn(`[Sync Debug] No backup file found on Google Drive (remoteFile/fileId is null).`);
                 this.notifyListeners('No cloud data', null);
                 try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
                 return null;
             }
 
+            console.log(`[Sync Debug] Remote file metadata:`, {
+                id: fileId,
+                name: remoteFile.name,
+                md5Checksum: remoteFile.md5Checksum,
+                size: remoteFile.size,
+                modifiedTime: remoteFile.modifiedTime
+            });
+
+            const currentLocalSummary = await this.gatherLocalData();
+            console.log(`[Sync Debug] ---> CURRENT LOCAL DATA SUMMARY:`, {
+                last_sync_md5: localSync.last_sync_md5,
+                chatSessionsCount: Object.keys(currentLocalSummary.lumina_chat_sessions || {}).length,
+                notesCount: (currentLocalSummary.lumina_notes_items || []).length,
+                collectionsCount: (currentLocalSummary.lumina_notes_collections || []).length,
+                storageKeys: Object.keys(currentLocalSummary)
+            }, currentLocalSummary);
+
             // If MD5 matches and not forced, Cloud has NOT changed! Skip download!
             if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
+                console.log(`[Sync Debug] MD5 checksum matched local (${remoteFile.md5Checksum}) and force=false. Skipping download! (Pass force=true or call LuminaSync.pullFromCloud(true) to force pull)`);
                 const now = Date.now();
                 this.notifyListeners('Synced just now', now);
                 try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
@@ -11151,12 +11177,21 @@ class SyncManager {
             const remoteBackup = await this.downloadBackup(token, fileId);
 
             if (!remoteBackup || !remoteBackup.data) {
+                console.warn(`[Sync Debug] Downloaded backup contains empty data.`);
                 this.notifyListeners('No cloud data', null);
                 try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
                 return null;
             }
 
             const remoteData = remoteBackup.data;
+            console.log(`[Sync Debug] ---> DOWNLOADED REMOTE DATA FROM DRIVE:`, {
+                version: remoteBackup.version,
+                timestamp: remoteBackup.timestamp,
+                chatSessionsCount: Object.keys(remoteData.lumina_chat_sessions || {}).length,
+                notesCount: (remoteData.lumina_notes_items || []).length,
+                collectionsCount: (remoteData.lumina_notes_collections || []).length,
+                storageKeys: Object.keys(remoteData)
+            }, remoteData);
             delete remoteData.attachments; // Backward compatibility cleanup
 
             // 1. Replace chrome.storage.local keys with remoteData
@@ -11193,11 +11228,14 @@ class SyncManager {
                         await LuminaAnnotationDB.delete(key).catch(() => {});
                     }
                 }
+                let countHighlights = 0;
                 for (const [k, v] of Object.entries(remoteData)) {
                     if (k.startsWith('highlights_')) {
                         await LuminaAnnotationDB.put(k, v).catch(() => {});
+                        countHighlights++;
                     }
                 }
+                console.log(`[Sync Debug] Applied ${countHighlights} highlights to LuminaAnnotationDB`);
             }
 
             // 3. Overwrite Chat Sessions & Messages in IndexedDB
@@ -11210,18 +11248,21 @@ class SyncManager {
                     for (const s of Object.values(currentSessions)) {
                         if (s && s.id && !remoteSessions[s.id]) {
                             await LuminaChatDB.deleteSession(s.id).catch(() => {});
-                            await LuminaChatDB.deleteMessages(s.id).catch(() => {});
                         }
                     }
+                    let sessionCount = 0;
+                    let msgCount = 0;
                     for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
                         await LuminaChatDB.putSession(sessionMeta).catch(() => {});
+                        sessionCount++;
                         if (sessionMeta && sessionMeta.isDeleted) {
-                            await LuminaChatDB.deleteMessages(sid).catch(() => {});
+                            await LuminaChatDB.deleteSession(sid).catch(() => {});
                         } else {
                             const sessionKey = `lumina_session_${sid}`;
                             const messages = remoteData[sessionKey];
                             if (Array.isArray(messages)) {
                                 await LuminaChatDB.putMessages(sid, messages).catch(() => {});
+                                msgCount += messages.length;
                                 for (const msg of messages) {
                                     if (msg && Array.isArray(msg.images)) {
                                         for (const img of msg.images) {
@@ -11234,6 +11275,7 @@ class SyncManager {
                             }
                         }
                     }
+                    console.log(`[Sync Debug] Applied ${sessionCount} chat sessions and ${msgCount} messages to LuminaChatDB`);
                 } catch (err) {
                     console.error('[Sync] Failed to apply chats from cloud:', err);
                 }
@@ -11259,6 +11301,7 @@ class SyncManager {
                         for (const col of remoteCollections) {
                             if (col && col.id) storeCol.put(col);
                         }
+                        console.log(`[Sync Debug] Applied ${remoteCollections.length} note collections`);
                     }
 
                     if (Array.isArray(remoteNotes)) {
@@ -11274,6 +11317,7 @@ class SyncManager {
                         for (const note of remoteNotes) {
                             if (note && note.id) storeNote.put(note);
                         }
+                        console.log(`[Sync Debug] Applied ${remoteNotes.length} notes items`);
                     }
                 } catch (err) {
                     console.error('[Sync] Failed to apply notes from cloud:', err);
@@ -11382,10 +11426,19 @@ class SyncManager {
 
             // 7. Update Sync Metadata
             const now = Date.now();
+            const cloudStats = {
+                chatsCount: Object.values(remoteSessions).filter(s => s && !s.isDeleted).length,
+                notesCount: Array.isArray(remoteData.lumina_notes_items) ? remoteData.lumina_notes_items.filter(n => n && !n.isDeleted).length : 0,
+                collectionsCount: Array.isArray(remoteData.lumina_notes_collections) ? remoteData.lumina_notes_collections.length : 0,
+                highlightsCount: Object.keys(remoteData).filter(k => k.startsWith('highlights_')).length,
+                ttsCount: Array.isArray(remoteData.lumina_tts_recordings) ? remoteData.lumina_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
+                attachmentsCount: activeAttachmentIds.size
+            };
             await chrome.storage.local.set({
                 last_sync_time: now,
                 last_sync_md5: remoteFile ? remoteFile.md5Checksum : null,
-                last_sync_size: remoteFile ? remoteFile.size : null
+                last_sync_size: remoteFile ? remoteFile.size : null,
+                last_cloud_stats: cloudStats
             });
             if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
 
@@ -11528,10 +11581,19 @@ class SyncManager {
             }
 
             const now = Date.now();
+            const cloudStats = {
+                chatsCount: Object.values(localData.lumina_chat_sessions || {}).filter(s => s && !s.isDeleted).length,
+                notesCount: Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items.filter(n => n && !n.isDeleted).length : 0,
+                collectionsCount: Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections.length : 0,
+                highlightsCount: Object.keys(localData).filter(k => k.startsWith('highlights_')).length,
+                ttsCount: Array.isArray(localData.lumina_tts_recordings) ? localData.lumina_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
+                attachmentsCount: Array.from(uploadedBlobSet).filter(n => n.startsWith('att_') || n.startsWith('blob_att_')).length
+            };
             await chrome.storage.local.set({
                 last_sync_time: now,
                 last_sync_md5: newUploadedMd5,
-                last_sync_size: newUploadedSize
+                last_sync_size: newUploadedSize,
+                last_cloud_stats: cloudStats
             });
 
             if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
@@ -13286,6 +13348,9 @@ const ChatHistoryManager = {
             });
             chrome.runtime.sendMessage({ action: 'lumina_sessions_deleted', deletedIds: [sessionId] }).catch(() => {});
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                LuminaSync.triggerDebouncedSync();
+            }
             return true;
         } catch (error) {
             console.error('Failed to delete chat history:', error);
@@ -13347,6 +13412,9 @@ const ChatHistoryManager = {
                 await this.deleteSessionWithAttachments(sessionId);
             }
             chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                LuminaSync.triggerDebouncedSync();
+            }
             return true;
         } catch (error) {
             console.error('Failed to clear chat history:', error);
@@ -13380,6 +13448,9 @@ const ChatHistoryManager = {
                 console.log(`[Lumina History] Retention policy (${months} months) reached. Deleting ${deletedSessionIds.length} old chat sessions from DB:`, deletedSessionIds);
                 chrome.runtime.sendMessage({ action: 'cleanup_opfs_files' });
                 chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
+                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
+                    LuminaSync.triggerDebouncedSync();
+                }
             }
         } catch (error) {
             console.error('[Lumina History] Error cleaning up history by age:', error);
@@ -22104,7 +22175,7 @@ class LuminaSettingsModal {
       return;
     }
 
-    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'last_cloud_stats', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
       // 1. Format Cloud Size & MD5 Fingerprint
       if (res.last_sync_size) {
         const bytes = parseInt(res.last_sync_size, 10);
@@ -22145,24 +22216,29 @@ class LuminaSettingsModal {
         if (relativeEl) relativeEl.textContent = 'No backup yet';
       }
 
-      // 3. Count Chats, Notes, Highlights
+      // 3. Display Cloud Chats, Notes, Highlights (from Cloud Backup snapshot)
       try {
+        const cloudStats = res.last_cloud_stats || null;
         let sessionCount = 0;
         let noteCount = 0;
         let highlightCount = 0;
 
-        if (typeof LuminaChatDB !== 'undefined') {
-          const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
-          sessionCount = Object.keys(sessions || {}).length;
-        }
-
-        if (typeof NotesManager !== 'undefined') {
-          const notes = await NotesManager.getNotes().catch(() => []);
-          noteCount = notes.length;
-        }
-
-        if (Array.isArray(res.lumina_highlights)) {
-          highlightCount = res.lumina_highlights.length;
+        if (cloudStats) {
+          sessionCount = cloudStats.chatsCount || 0;
+          noteCount = cloudStats.notesCount || 0;
+          highlightCount = cloudStats.highlightsCount || 0;
+        } else if (res.last_sync_time) {
+          if (typeof LuminaChatDB !== 'undefined') {
+            const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+            sessionCount = Object.keys(sessions || {}).length;
+          }
+          if (typeof NotesManager !== 'undefined') {
+            const notes = await NotesManager.getNotes().catch(() => []);
+            noteCount = notes.length;
+          }
+          if (Array.isArray(res.lumina_highlights)) {
+            highlightCount = res.lumina_highlights.length;
+          }
         }
 
         if (itemsEl) {
@@ -22179,23 +22255,19 @@ class LuminaSettingsModal {
         if (itemsEl) itemsEl.textContent = 'Active';
       }
 
-      // 4. Count Media & Blobs (TTS Audio & Attachments)
+      // 4. Display Cloud Media & Blobs (TTS Audio & Attachments)
       try {
+        const cloudStats = res.last_cloud_stats || null;
         let ttsCount = 0;
         let attCount = 0;
 
-        if (typeof TTSDB !== 'undefined') {
-          const recs = await TTSDB.getAllRecordings().catch(() => []);
-          ttsCount = (recs || []).length;
-        }
-
-        const uploadedBlobs = res.drive_uploaded_blobs || [];
-        const attFromBlobs = uploadedBlobs.filter(n => n.startsWith('att_') || n.startsWith('blob_att_'));
-        if (attFromBlobs.length > 0) {
-          attCount = attFromBlobs.length;
-        } else if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
-          const attMeta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
-          attCount = (attMeta || []).length;
+        if (cloudStats) {
+          ttsCount = cloudStats.ttsCount || 0;
+          attCount = cloudStats.attachmentsCount || 0;
+        } else {
+          const uploadedBlobs = res.drive_uploaded_blobs || [];
+          attCount = uploadedBlobs.filter(n => n.startsWith('att_') || n.startsWith('blob_att_')).length;
+          ttsCount = uploadedBlobs.filter(n => n.startsWith('tts_')).length;
         }
 
         if (mediaEl) {
@@ -25791,6 +25863,16 @@ async function renderRecentChatsSidebar() {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
             }
             if (!displayTitle) displayTitle = "Untitled Chat";
+            let timeStr = '';
+            const ts = session.updatedAt || session.createdAt;
+            if (ts) {
+                const d = new Date(ts);
+                const today = new Date();
+                const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                const timeOnly = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateOnly = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                timeStr = isToday ? timeOnly : `${dateOnly}`;
+            }
             let iconHTML = '';
             const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
             const isActive = session.id === activeSessionId ? ' active' : '';
@@ -25799,10 +25881,12 @@ async function renderRecentChatsSidebar() {
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>
                 </span>
             ` : '';
+            const timeHTML = timeStr ? `<span class="recent-chat-item__time">${timeStr}</span>` : '';
             html += `
                 <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
                     ${iconHTML}
                     <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
+                    ${timeHTML}
                     ${pinHTML}
                     <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -25851,6 +25935,16 @@ async function renderRecentChatsSidebar() {
                     displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
                 }
                 if (!displayTitle) displayTitle = "Untitled Chat";
+                let timeStr = '';
+                const ts = session.updatedAt || session.createdAt;
+                if (ts) {
+                    const d = new Date(ts);
+                    const today = new Date();
+                    const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                    const timeOnly = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateOnly = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    timeStr = isToday ? timeOnly : `${dateOnly}`;
+                }
                 let iconHTML = '';
                 const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
                 const isActive = session.id === activeSessionId ? ' active' : '';
@@ -25859,10 +25953,12 @@ async function renderRecentChatsSidebar() {
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>
                     </span>
                 ` : '';
+                const timeHTML = timeStr ? `<span class="recent-chat-item__time">${timeStr}</span>` : '';
                 archiveHtml += `
                     <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
                         ${iconHTML}
                         <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
+                        ${timeHTML}
                         ${pinHTML}
                         <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -26827,47 +26923,6 @@ function setupGlobalListeners() {
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
             return;
-        }
-        const pairs = { '(': ')', '{': '}', '[': ']' };
-        if (pairs[event.key]) {
-            const activeEl = document.activeElement;
-            const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
-            if (isInput) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                const openChar = event.key;
-                const closeChar = pairs[openChar];
-                if (activeEl.isContentEditable) {
-                    const sel = window.getSelection();
-                    if (sel && sel.rangeCount > 0) {
-                        const selectedText = sel.toString();
-                        document.execCommand('insertText', false, openChar + selectedText + closeChar);
-                        const range = sel.getRangeAt(0);
-                        if (range.startContainer.nodeType === 3) {
-                            const newOffset = Math.max(0, range.startOffset - 1);
-                            range.setStart(range.startContainer, newOffset);
-                            range.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(range);
-                        }
-                        activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                } else {
-                    const start = activeEl.selectionStart;
-                    const end = activeEl.selectionEnd;
-                    const val = activeEl.value;
-                    const before = val.substring(0, start);
-                    const selectedText = val.substring(start, end);
-                    const after = val.substring(end);
-                    activeEl.value = before + openChar + selectedText + closeChar + after;
-                    activeEl.focus();
-                    const newCursor = start + 1 + selectedText.length;
-                    activeEl.setSelectionRange(newCursor, newCursor);
-                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                return;
-            }
         }
         const activeElement = document.activeElement;
         const selection = window.getSelection().toString().trim();

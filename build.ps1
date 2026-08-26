@@ -51,7 +51,7 @@ function Invoke-LuminaBuild {
     if (Test-Path $entryPath) {
         try {
             Write-Host "Compiling tools/blocknote_entry.jsx with esbuild..."
-            & npx esbuild tools/blocknote_entry.jsx --bundle --outfile=lib/vendor/blocknote.js --loader:.js=jsx --loader:.jsx=jsx --conditions=style '--define:process.env.NODE_ENV="production"'
+            & npx esbuild tools/blocknote_entry.jsx --bundle --outfile=lib/vendor/blocknote.js --loader:.js=jsx --loader:.jsx=jsx --conditions=style '--define:process.env.NODE_ENV=\"production\"'
         } catch {
             Write-Warning "esbuild compilation skipped or failed: $_"
         }

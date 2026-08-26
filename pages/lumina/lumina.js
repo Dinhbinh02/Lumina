@@ -3260,6 +3260,16 @@ async function renderRecentChatsSidebar() {
                 displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
             }
             if (!displayTitle) displayTitle = "Untitled Chat";
+            let timeStr = '';
+            const ts = session.updatedAt || session.createdAt;
+            if (ts) {
+                const d = new Date(ts);
+                const today = new Date();
+                const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                const timeOnly = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateOnly = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                timeStr = isToday ? timeOnly : `${dateOnly}`;
+            }
             let iconHTML = '';
             const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
             const isActive = session.id === activeSessionId ? ' active' : '';
@@ -3268,10 +3278,12 @@ async function renderRecentChatsSidebar() {
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>
                 </span>
             ` : '';
+            const timeHTML = timeStr ? `<span class="recent-chat-item__time">${timeStr}</span>` : '';
             html += `
                 <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
                     ${iconHTML}
                     <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
+                    ${timeHTML}
                     ${pinHTML}
                     <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -3320,6 +3332,16 @@ async function renderRecentChatsSidebar() {
                     displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
                 }
                 if (!displayTitle) displayTitle = "Untitled Chat";
+                let timeStr = '';
+                const ts = session.updatedAt || session.createdAt;
+                if (ts) {
+                    const d = new Date(ts);
+                    const today = new Date();
+                    const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                    const timeOnly = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateOnly = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    timeStr = isToday ? timeOnly : `${dateOnly}`;
+                }
                 let iconHTML = '';
                 const isNamingClass = (window.namingSessionIds && window.namingSessionIds.has(session.id)) ? ' is-naming' : '';
                 const isActive = session.id === activeSessionId ? ' active' : '';
@@ -3328,10 +3350,12 @@ async function renderRecentChatsSidebar() {
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>
                     </span>
                 ` : '';
+                const timeHTML = timeStr ? `<span class="recent-chat-item__time">${timeStr}</span>` : '';
                 archiveHtml += `
                     <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ''}" data-title="${escapeHtml(displayTitle)}">
                         ${iconHTML}
                         <span class="recent-chat-item__title">${escapeHtml(displayTitle)}</span>
+                        ${timeHTML}
                         ${pinHTML}
                         <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -4296,47 +4320,6 @@ function setupGlobalListeners() {
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
             return;
-        }
-        const pairs = { '(': ')', '{': '}', '[': ']' };
-        if (pairs[event.key]) {
-            const activeEl = document.activeElement;
-            const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
-            if (isInput) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                const openChar = event.key;
-                const closeChar = pairs[openChar];
-                if (activeEl.isContentEditable) {
-                    const sel = window.getSelection();
-                    if (sel && sel.rangeCount > 0) {
-                        const selectedText = sel.toString();
-                        document.execCommand('insertText', false, openChar + selectedText + closeChar);
-                        const range = sel.getRangeAt(0);
-                        if (range.startContainer.nodeType === 3) {
-                            const newOffset = Math.max(0, range.startOffset - 1);
-                            range.setStart(range.startContainer, newOffset);
-                            range.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(range);
-                        }
-                        activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                } else {
-                    const start = activeEl.selectionStart;
-                    const end = activeEl.selectionEnd;
-                    const val = activeEl.value;
-                    const before = val.substring(0, start);
-                    const selectedText = val.substring(start, end);
-                    const after = val.substring(end);
-                    activeEl.value = before + openChar + selectedText + closeChar + after;
-                    activeEl.focus();
-                    const newCursor = start + 1 + selectedText.length;
-                    activeEl.setSelectionRange(newCursor, newCursor);
-                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                return;
-            }
         }
         const activeElement = document.activeElement;
         const selection = window.getSelection().toString().trim();

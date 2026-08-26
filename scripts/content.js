@@ -644,49 +644,6 @@
     }
     document.addEventListener('keydown', async (event) => {
         if (isExtensionDisabled) return;
-        const pairs = { '(': ')', '{': '}', '[': ']' };
-        if (pairs[event.key]) {
-            const activeEl = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
-                ? LuminaChatUI.getDeepActiveElement()
-                : document.activeElement;
-            const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
-            if (isInput) {
-                event.preventDefault();
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-                const openChar = event.key;
-                const closeChar = pairs[openChar];
-                if (activeEl.isContentEditable) {
-                    const sel = window.getSelection();
-                    if (sel && sel.rangeCount > 0) {
-                        const selectedText = sel.toString();
-                        document.execCommand('insertText', false, openChar + selectedText + closeChar);
-                        const range = sel.getRangeAt(0);
-                        if (range.startContainer.nodeType === 3) {
-                            const newOffset = Math.max(0, range.startOffset - 1);
-                            range.setStart(range.startContainer, newOffset);
-                            range.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(range);
-                        }
-                        activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                } else {
-                    const start = activeEl.selectionStart;
-                    const end = activeEl.selectionEnd;
-                    const val = activeEl.value;
-                    const before = val.substring(0, start);
-                    const selectedText = val.substring(start, end);
-                    const after = val.substring(end);
-                    activeEl.value = before + openChar + selectedText + closeChar + after;
-                    activeEl.focus();
-                    const newCursor = start + 1 + selectedText.length;
-                    activeEl.setSelectionRange(newCursor, newCursor);
-                    activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                return;
-            }
-        }
         if (matchesShortcut(event, 'translateInput')) {
             const activeElement = (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function')
                 ? LuminaChatUI.getDeepActiveElement()

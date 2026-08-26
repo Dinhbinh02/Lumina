@@ -2625,7 +2625,7 @@ class LuminaSettingsModal {
       return;
     }
 
-    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'last_cloud_stats', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
       // 1. Format Cloud Size & MD5 Fingerprint
       if (res.last_sync_size) {
         const bytes = parseInt(res.last_sync_size, 10);
@@ -2666,24 +2666,29 @@ class LuminaSettingsModal {
         if (relativeEl) relativeEl.textContent = 'No backup yet';
       }
 
-      // 3. Count Chats, Notes, Highlights
+      // 3. Display Cloud Chats, Notes, Highlights (from Cloud Backup snapshot)
       try {
+        const cloudStats = res.last_cloud_stats || null;
         let sessionCount = 0;
         let noteCount = 0;
         let highlightCount = 0;
 
-        if (typeof LuminaChatDB !== 'undefined') {
-          const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
-          sessionCount = Object.keys(sessions || {}).length;
-        }
-
-        if (typeof NotesManager !== 'undefined') {
-          const notes = await NotesManager.getNotes().catch(() => []);
-          noteCount = notes.length;
-        }
-
-        if (Array.isArray(res.lumina_highlights)) {
-          highlightCount = res.lumina_highlights.length;
+        if (cloudStats) {
+          sessionCount = cloudStats.chatsCount || 0;
+          noteCount = cloudStats.notesCount || 0;
+          highlightCount = cloudStats.highlightsCount || 0;
+        } else if (res.last_sync_time) {
+          if (typeof LuminaChatDB !== 'undefined') {
+            const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+            sessionCount = Object.keys(sessions || {}).length;
+          }
+          if (typeof NotesManager !== 'undefined') {
+            const notes = await NotesManager.getNotes().catch(() => []);
+            noteCount = notes.length;
+          }
+          if (Array.isArray(res.lumina_highlights)) {
+            highlightCount = res.lumina_highlights.length;
+          }
         }
 
         if (itemsEl) {
@@ -2700,23 +2705,19 @@ class LuminaSettingsModal {
         if (itemsEl) itemsEl.textContent = 'Active';
       }
 
-      // 4. Count Media & Blobs (TTS Audio & Attachments)
+      // 4. Display Cloud Media & Blobs (TTS Audio & Attachments)
       try {
+        const cloudStats = res.last_cloud_stats || null;
         let ttsCount = 0;
         let attCount = 0;
 
-        if (typeof TTSDB !== 'undefined') {
-          const recs = await TTSDB.getAllRecordings().catch(() => []);
-          ttsCount = (recs || []).length;
-        }
-
-        const uploadedBlobs = res.drive_uploaded_blobs || [];
-        const attFromBlobs = uploadedBlobs.filter(n => n.startsWith('att_') || n.startsWith('blob_att_'));
-        if (attFromBlobs.length > 0) {
-          attCount = attFromBlobs.length;
-        } else if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
-          const attMeta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
-          attCount = (attMeta || []).length;
+        if (cloudStats) {
+          ttsCount = cloudStats.ttsCount || 0;
+          attCount = cloudStats.attachmentsCount || 0;
+        } else {
+          const uploadedBlobs = res.drive_uploaded_blobs || [];
+          attCount = uploadedBlobs.filter(n => n.startsWith('att_') || n.startsWith('blob_att_')).length;
+          ttsCount = uploadedBlobs.filter(n => n.startsWith('tts_')).length;
         }
 
         if (mediaEl) {
