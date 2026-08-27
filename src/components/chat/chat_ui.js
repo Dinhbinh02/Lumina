@@ -541,6 +541,15 @@ export class LuminaChatUI {
             this._autoScrollGuardHandler = () => {
                 if (this._suspendAutoScrollGuard) return;
                 this.disableAutoScroll = !this._isNearBottom(72);
+                if (this._regenScrollLocked && this._regenScrollContainer) {
+                    const currentTop = this._regenScrollContainer.scrollTop;
+                    const expectedTop = this._regenScrollPosition || 0;
+                    if (Math.abs(currentTop - expectedTop) > 60) {
+                        this._regenScrollLocked = false;
+                        this._regenScrollContainer = null;
+                        this._regenScrollPosition = null;
+                    }
+                }
             };
             scrollContainer.addEventListener('scroll', this._autoScrollGuardHandler, { passive: true });
             this._autoScrollGuardHandler();
@@ -942,8 +951,8 @@ export class LuminaChatUI {
         let thinkingContent = '';
         let isThinkingComplete = false;
         const scrollContainer = this.getScrollContainer();
-        const preserveScrollTop = (skipScroll || this.disableAutoScroll) && scrollContainer
-            ? scrollContainer.scrollTop
+        const preserveScrollTop = (skipScroll || this.disableAutoScroll || this._regenScrollLocked) && scrollContainer
+            ? (this._regenScrollLocked && this._regenScrollPosition != null ? this._regenScrollPosition : scrollContainer.scrollTop)
             : null;
         const newText = answerDiv.getAttribute('data-raw-text') || '';
         if (answerDiv.__lastRenderedText === newText && !isFinished) return;
@@ -1077,7 +1086,7 @@ export class LuminaChatUI {
                 }
             });
         }
-        if (!skipScroll && !this.disableStreamAutoFollow && !this._scrollThrottled) {
+        if (!skipScroll && !this.disableStreamAutoFollow && !this._scrollThrottled && !this._regenScrollLocked) {
             this._scrollThrottled = true;
             setTimeout(() => { this._scrollThrottled = false; }, 100);
             this.scrollToBottom();
@@ -1093,6 +1102,9 @@ export class LuminaChatUI {
         this._renderPending = false;
         this._scrollThrottled = false;
         this._pendingRenderSkipScroll = false;
+        this._regenScrollLocked = false;
+        this._regenScrollContainer = null;
+        this._regenScrollPosition = null;
         const answerDivSnapshot = this.currentAnswerDiv;
 
         const sourcesSnapshot = Array.isArray(this.webSearchSources) ? [...this.webSearchSources] : [];
@@ -1315,7 +1327,11 @@ export class LuminaChatUI {
                 const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(entry, scrollContainer, this.historyEl);
                 const { viewportHeight } = LuminaChatUI.getViewportStats(container, inputWrapper);
                 const maxScroll = scrollContainer.scrollHeight - viewportHeight;
-                scrollContainer.scrollTop = Math.min(targetScrollTop, maxScroll);
+                const finalScrollTop = Math.min(targetScrollTop, maxScroll);
+                scrollContainer.scrollTop = finalScrollTop;
+                if (this._regenScrollLocked) {
+                    this._regenScrollPosition = finalScrollTop;
+                }
             }
         } else if (retryCount < 2) {
             setTimeout(() => this.setInitialEntryHeight(entry, skipScroll, preAppendScroll, forceScroll, retryCount + 1), 80);
@@ -3636,7 +3652,19 @@ export class LuminaChatUI {
             toRemove.remove();
         }
         entry.querySelectorAll('.lumina-chat-answer, .lumina-web-search').forEach(el => el.remove());
-        this.setInitialEntryHeight(entry, isRegenerate, 0, !isRegenerate);
+        const scrollContainer = this.getScrollContainer();
+        if (isRegenerate) {
+            this._regenScrollLocked = true;
+            this._regenScrollContainer = scrollContainer;
+            if (scrollContainer) {
+                this._regenScrollPosition = scrollContainer.scrollTop;
+            }
+        } else {
+            this._regenScrollLocked = false;
+            this._regenScrollContainer = null;
+            this._regenScrollPosition = null;
+        }
+        this.setInitialEntryHeight(entry, false, 0, true);
         this.showLoading(null, isRegenerate);
         if (typeof this.options.onSubmit === 'function') {
             const entryId = entry.dataset.entryId;
