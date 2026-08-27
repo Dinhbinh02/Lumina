@@ -1,4 +1,4 @@
-﻿
+
 // --- BUNDLED FROM: lib/core/constants.js ---
 
 var LUMINA_DEFAULTS = {
@@ -10792,6 +10792,12 @@ class SyncManager {
      */
     triggerDebouncedSync(delayMs = 1000) {
         if (!this.authService.isAuthenticated) return;
+        if (this._isPageContext()) {
+            try {
+                chrome.runtime.sendMessage({ action: 'lumina_drive_sync_debounced', delayMs }).catch(() => {});
+            } catch (e) {}
+            return;
+        }
         if (this._debounceTimer) clearTimeout(this._debounceTimer);
         this._debounceTimer = setTimeout(() => {
             this._debounceTimer = null;
@@ -10860,7 +10866,7 @@ class SyncManager {
     }
 
     async listAppDataFiles(token) {
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'appDataFolder' in parents and trashed = false")}&spaces=appDataFolder&fields=files(id, name, md5Checksum, modifiedTime, size)&pageSize=1000`;
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'appDataFolder' in parents and trashed = false")}&spaces=appDataFolder&orderBy=${encodeURIComponent("modifiedTime desc")}&fields=files(id, name, md5Checksum, modifiedTime, size)&pageSize=1000`;
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -10964,44 +10970,10 @@ class SyncManager {
 
     async getOrFindBackupFile(token, forceRefresh = false) {
         let activeToken = token;
-        let cachedId = this.cachedBackupFileId;
-        if (!cachedId && !forceRefresh) {
-            const stored = await chrome.storage.local.get(['drive_backup_file_id']);
-            cachedId = stored.drive_backup_file_id;
-        }
-
-        if (cachedId && !forceRefresh) {
-            try {
-                console.log(`[Sync Debug] Checking cached backup file ID: ${cachedId}`);
-                const meta = await this.getFileMetadata(activeToken, cachedId);
-                if (meta && meta.id) {
-                    console.log(`[Sync Debug] Cached file found:`, meta);
-                    this.cachedBackupFileId = meta.id;
-                    return { token: activeToken, remoteFile: meta, fileId: meta.id, driveFiles: null };
-                } else {
-                    console.log(`[Sync Debug] Cached file metadata not found for ID: ${cachedId}`);
-                }
-            } catch (err) {
-                console.warn(`[Sync Debug] Error checking cached file ID:`, err);
-                if (err.message === 'UNAUTHORIZED') {
-                    await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
-                    activeToken = await this.authService.getAuthToken(false, true);
-                    const meta = await this.getFileMetadata(activeToken, cachedId).catch(() => null);
-                    if (meta && meta.id) {
-                        this.cachedBackupFileId = meta.id;
-                        return { token: activeToken, remoteFile: meta, fileId: meta.id, driveFiles: null };
-                    }
-                }
-            }
-        }
-
-        console.log(`[Sync Debug] Searching appDataFolder for ${this.FILENAME}...`);
         let driveFiles = [];
         try {
             driveFiles = await this.listAppDataFiles(activeToken);
-            console.log(`[Sync Debug] Total files found in appDataFolder: ${driveFiles.length}`, driveFiles);
         } catch (err) {
-            console.warn(`[Sync Debug] Error listing appDataFiles:`, err);
             if (err.message === 'UNAUTHORIZED') {
                 await chrome.storage.local.remove(['google_oauth_token', 'google_oauth_token_time']);
                 activeToken = await this.authService.getAuthToken(false, true);
@@ -11011,14 +10983,27 @@ class SyncManager {
             }
         }
 
-        const remoteFile = driveFiles.find(f => f.name === this.FILENAME) || null;
-        const fileId = remoteFile ? remoteFile.id : null;
-        console.log(`[Sync Debug] Matched backup file:`, remoteFile);
-        if (fileId) {
-            this.cachedBackupFileId = fileId;
-            chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {});
+        const backupFiles = (driveFiles || []).filter(f => f.name === this.FILENAME);
+        if (backupFiles.length === 0) {
+            this.cachedBackupFileId = null;
+            await chrome.storage.local.remove(['drive_backup_file_id']).catch(() => {});
+            return { token: activeToken, remoteFile: null, fileId: null, driveFiles };
         }
-        return { token: activeToken, remoteFile, fileId, driveFiles };
+
+        const primaryFile = backupFiles[0];
+        const fileId = primaryFile.id;
+        this.cachedBackupFileId = fileId;
+        chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {});
+
+        if (backupFiles.length > 1) {
+            const duplicates = backupFiles.slice(1);
+            for (const dup of duplicates) {
+                console.log(`[Sync] Removing duplicate backup file on Drive: ${dup.name} (id: ${dup.id})`);
+                this.deleteDriveFile(activeToken, dup.id).catch(() => {});
+            }
+        }
+
+        return { token: activeToken, remoteFile: primaryFile, fileId, driveFiles };
     }
 
     async fetchRemoteBackup(token, isAuto = false) {
@@ -11780,7 +11765,7 @@ class SyncManager {
     }
 
     /**
-     * Backward compatible sync entry point.
+     * Backward compatible sync entry point (1-way authoritative).
      */
     async syncData(isAuto = false) {
         if (isAuto) {
@@ -11978,8 +11963,10 @@ const LuminaChatDB = {
                 const sessionsMap = {};
                 const list = request.result || [];
                 list.forEach(s => {
-                    if (s && s.id && !s.isDeleted) {
-                        sessionsMap[s.id] = s;
+                    if (s && s.id) {
+                        if (!s.isDeleted || includeDeleted) {
+                            sessionsMap[s.id] = s;
+                        }
                     }
                 });
                 resolve(sessionsMap);
@@ -11989,7 +11976,7 @@ const LuminaChatDB = {
     },
 
     async getAllSessionsRaw() {
-        return this.getAllSessions(false);
+        return this.getAllSessions(true);
     },
 
     async getMessages(sessionId) {

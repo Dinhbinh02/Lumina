@@ -1689,6 +1689,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const isAuto = !!request.isAuto;
         const forcePush = !!request.forcePush;
         const forcePull = !!request.forcePull;
+        const smartSync = !!request.smartSync;
         if (typeof LuminaSync !== 'undefined') {
             try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
             const syncPromise = forcePush
@@ -1711,6 +1712,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: false, error: 'LuminaSync not available' });
         }
         return true; // Keep channel open for async response
+    }
+    if (request.action === 'lumina_drive_sync_debounced') {
+        if (typeof LuminaSync !== 'undefined') {
+            LuminaSync.triggerDebouncedSync(request.delayMs || 1000);
+            sendResponse({ success: true });
+        } else {
+            sendResponse({ success: false });
+        }
+        return true;
     }
     if (request.action === 'lumina_clean_drive_duplicates') {
         if (typeof LuminaSync !== 'undefined') {
