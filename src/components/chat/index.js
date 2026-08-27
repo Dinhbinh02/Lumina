@@ -5,3 +5,5 @@ export * from './dom_morph.js';
 export * from './media_embed.js';
 export * from './code_renderer.js';
 export * from './async_media_search.js';
+export * from './dynamic_media_processor.js';
+export * from './chart_renderer.js';

@@ -28854,6 +28854,248 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     window.ensureMarkedLoaded = ensureMarkedLoaded;
   }
 
+  // src/components/chat/async_media_search.js
+  async function searchGoogleImages2(query) {
+    return new Promise((resolve) => {
+      if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) return resolve([]);
+      chrome.runtime.sendMessage({ action: "fetch_images", keyword: query }, (res) => {
+        if (chrome.runtime.lastError) {
+          console.warn("[Lumina] fetch_images error:", chrome.runtime.lastError.message);
+          resolve([]);
+        } else if (res && res.success && res.images) {
+          resolve(res.images);
+        } else {
+          resolve([]);
+        }
+      });
+    });
+  }
+  async function searchYoutubeVideo(query) {
+    try {
+      const searchUrl = `https://html.duckduckgo.com/html/?q=site:youtube.com+${encodeURIComponent(query)}`;
+      const res = await fetch(searchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+      });
+      if (!res.ok) throw new Error("Failed to fetch DDG search results");
+      const text = await res.text();
+      const matches = text.match(/uddg=([^&"']+)/g);
+      if (matches) {
+        for (const match of matches) {
+          const decodedUrl = decodeURIComponent(match.substring(5));
+          if (decodedUrl.includes("youtube.com/watch") || decodedUrl.includes("youtu.be/")) {
+            let id = "";
+            if (decodedUrl.includes("youtube.com/watch")) {
+              try {
+                const urlObj = new URL(decodedUrl);
+                id = urlObj.searchParams.get("v") || "";
+              } catch (e) {
+                const vMatch = decodedUrl.match(/[?&]v=([^&#]+)/);
+                if (vMatch) id = vMatch[1];
+              }
+            } else {
+              id = decodedUrl.split("/").pop() || "";
+            }
+            if (id) {
+              return {
+                id,
+                url: `https://www.youtube.com/watch?v=${id}`,
+                embedUrl: `https://www.youtube.com/embed/${id}`
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[Lumina] searchYoutubeVideo failed:", e);
+    }
+    return null;
+  }
+
+  // src/components/chat/dynamic_media_processor.js
+  var luminaResolvedYoutubeCache = /* @__PURE__ */ new Map();
+  var luminaResolvedImagesCache = /* @__PURE__ */ new Map();
+  function processLuminaDynamicYoutubeElements(rootNode) {
+    if (!rootNode) return;
+    const yts = [];
+    if (rootNode.classList && rootNode.classList.contains("lumina-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
+      yts.push(rootNode);
+    }
+    if (rootNode.querySelectorAll) {
+      const found = rootNode.querySelectorAll(".lumina-youtube-dynamic:not(.is-loading-started)");
+      found.forEach((y) => yts.push(y));
+    }
+    yts.forEach(async (yt) => {
+      yt.classList.add("is-loading-started");
+      const rawQuery = yt.getAttribute("data-query") || "";
+      const cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, " ");
+      if (!cleanQuery) return;
+      let resolvePromise;
+      if (luminaResolvedYoutubeCache.has(cleanQuery)) {
+        resolvePromise = luminaResolvedYoutubeCache.get(cleanQuery);
+      } else {
+        resolvePromise = searchYoutubeVideo(cleanQuery);
+        luminaResolvedYoutubeCache.set(cleanQuery, resolvePromise);
+      }
+      try {
+        const videoData = await resolvePromise;
+        const videoId = typeof videoData === "object" && videoData ? videoData.id : videoData;
+        if (videoId) {
+          const embedUrl = `https://www.youtube.com/embed/${videoId}?origin=https://www.youtube.com`;
+          const text = yt.getAttribute("data-text") || "YouTube video player";
+          yt.innerHTML = `<iframe width="100%" height="315" src="${embedUrl}" title="${text}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe>`;
+          yt.classList.remove("is-loading");
+          const answerDiv = yt.closest(".lumina-chat-answer");
+          if (answerDiv) {
+            const originalHref = yt.getAttribute("data-original-href");
+            const rawText = answerDiv.getAttribute("data-raw-text") || "";
+            if (rawText.includes(originalHref)) {
+              const newHref = `youtube://${videoId}`;
+              const newRawText = rawText.replaceAll(originalHref, newHref);
+              answerDiv.setAttribute("data-raw-text", newRawText);
+              yt.setAttribute("data-original-href", newHref);
+            }
+          }
+        } else {
+          yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">Kh\xF4ng t\xECm th\u1EA5y video ph\xF9 h\u1EE3p tr\xEAn YouTube cho t\u1EEB kh\xF3a "${cleanQuery}"</div>`;
+          yt.classList.remove("is-loading");
+        }
+      } catch (e) {
+        yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">L\u1ED7i t\u1EA3i video YouTube</div>`;
+        yt.classList.remove("is-loading");
+      }
+    });
+  }
+  function processLuminaDynamicImageElements(rootNode) {
+    if (!rootNode) return;
+    const found = [];
+    if (rootNode.classList && rootNode.classList.contains("lumina-async-image")) {
+      found.push(rootNode);
+    }
+    if (rootNode.querySelectorAll) {
+      rootNode.querySelectorAll(".lumina-async-image").forEach((i) => found.push(i));
+    }
+    const imgs = found.filter((img) => {
+      if (img.classList.contains("is-loading-started")) return false;
+      const src = img.getAttribute("src") || "";
+      return src.startsWith("data:image/svg+xml") || !src;
+    });
+    imgs.forEach(async (img) => {
+      img.classList.add("is-loading-started");
+      const rawQuery = img.getAttribute("data-query") || "";
+      let cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, " ");
+      if (!cleanQuery) {
+        const originalHref = img.getAttribute("data-original-href") || "";
+        if (originalHref.startsWith("image-search://")) {
+          const [searchUrl] = originalHref.split("#");
+          const queryPart = searchUrl.replace("image-search://", "");
+          cleanQuery = decodeURIComponent(queryPart).replace(/\+/g, " ");
+        }
+      }
+      if (!cleanQuery) return;
+      if (luminaResolvedImagesCache.has(cleanQuery)) {
+        try {
+          const cachedResult = await luminaResolvedImagesCache.get(cleanQuery);
+          if (cachedResult && cachedResult.fallbackUrls) {
+            img.dataset.fallbackUrls = JSON.stringify(cachedResult.fallbackUrls);
+          }
+          img.src = cachedResult ? cachedResult.url : "";
+        } catch (err) {
+          img.src = "";
+          img.style.display = "none";
+        }
+        return;
+      }
+      const loadPromise = (async () => {
+        try {
+          const urls = await searchGoogleImages2(cleanQuery);
+          if (urls && urls.length > 0) {
+            return { url: urls[0], fallbackUrls: urls.slice(1, 4) };
+          }
+        } catch (err) {
+        }
+        throw new Error("Google Image search failed");
+      })();
+      luminaResolvedImagesCache.set(cleanQuery, loadPromise);
+      try {
+        const result = await loadPromise;
+        if (result && result.fallbackUrls) {
+          img.dataset.fallbackUrls = JSON.stringify(result.fallbackUrls);
+        }
+        img.src = result ? result.url : "";
+      } catch (err) {
+        img.src = "";
+        img.style.display = "none";
+      }
+    });
+  }
+  if (typeof window !== "undefined") {
+    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements;
+    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements;
+  }
+
+  // src/components/chat/chart_renderer.js
+  function renderChartJSWrapper(wrapper) {
+    const configAttr = wrapper.getAttribute("data-chartjs-config");
+    if (!configAttr) {
+      wrapper.classList.remove("is-loading");
+      return;
+    }
+    if (wrapper.getAttribute("data-last-rendered-source") === configAttr) return;
+    const chatAnswer = wrapper.closest(".lumina-chat-answer");
+    if (chatAnswer && chatAnswer.classList.contains("streaming")) return;
+    const rawConfig = configAttr.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+    let config;
+    try {
+      config = JSON.parse(rawConfig);
+    } catch (_) {
+      return;
+    }
+    wrapper.setAttribute("data-last-rendered-source", configAttr);
+    requestAnimationFrame(() => {
+      try {
+        if (typeof Chart === "undefined") {
+          if (typeof window.ensureChartLoaded === "function") {
+            window.ensureChartLoaded().then(() => {
+              renderChartJSWrapper(wrapper);
+            }).catch(() => {
+              wrapper.removeAttribute("data-last-rendered-source");
+              setTimeout(() => renderChartJSWrapper(wrapper), 300);
+            });
+          }
+          return;
+        }
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark" || document.body.getAttribute("data-theme") === "dark";
+        const textColor = isDark ? "#e8eaed" : "#1c1c1e";
+        const gridColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+        const bgColor = isDark ? "#1e2130" : "#ffffff";
+        config.options = config.options || {};
+        config.options.plugins = config.options.plugins || {};
+        config.options.animation = config.options.animation !== false ? { duration: 600, easing: "easeOutQuart" } : false;
+        config.options.responsive = true;
+        config.options.maintainAspectRatio = true;
+        let canvas = wrapper.querySelector("canvas");
+        if (!canvas) {
+          wrapper.innerHTML = "";
+          canvas = document.createElement("canvas");
+          wrapper.appendChild(canvas);
+        }
+        wrapper.classList.remove("is-loading");
+        const ctx = canvas.getContext("2d");
+        if (wrapper._chartInstance) {
+          wrapper._chartInstance.destroy();
+        }
+        wrapper._chartInstance = new Chart(ctx, config);
+      } catch (e) {
+        wrapper.classList.remove("is-loading");
+      }
+    });
+  }
+  if (typeof window !== "undefined") {
+    window._renderChartJSWrapper = renderChartJSWrapper;
+  }
+
   // src/pages/lumina/index.js
   var import_marked_min = __toESM(require_marked_min());
   var import_highlight_min = __toESM(require_highlight_min());
@@ -29464,7 +29706,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     }
   }, true);
-  async function searchGoogleImages2(query) {
+  async function searchGoogleImages3(query) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "fetch_images", keyword: query }, (res) => {
         if (chrome.runtime.lastError) {
@@ -29478,7 +29720,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       });
     });
   }
-  async function searchYoutubeVideo(query) {
+  async function searchYoutubeVideo2(query) {
     try {
       const searchUrl = `https://html.duckduckgo.com/html/?q=site:youtube.com+${encodeURIComponent(query)}`;
       const res = await fetch(searchUrl, {
@@ -29521,8 +29763,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     return null;
   }
-  var luminaResolvedYoutubeCache = /* @__PURE__ */ new Map();
-  function processLuminaDynamicYoutubeElements(rootNode) {
+  var luminaResolvedYoutubeCache2 = /* @__PURE__ */ new Map();
+  function processLuminaDynamicYoutubeElements2(rootNode) {
     if (!rootNode) return;
     const yts = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
@@ -29538,11 +29780,11 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, " ");
       if (!cleanQuery) return;
       let resolvePromise;
-      if (luminaResolvedYoutubeCache.has(cleanQuery)) {
-        resolvePromise = luminaResolvedYoutubeCache.get(cleanQuery);
+      if (luminaResolvedYoutubeCache2.has(cleanQuery)) {
+        resolvePromise = luminaResolvedYoutubeCache2.get(cleanQuery);
       } else {
-        resolvePromise = searchYoutubeVideo(cleanQuery);
-        luminaResolvedYoutubeCache.set(cleanQuery, resolvePromise);
+        resolvePromise = searchYoutubeVideo2(cleanQuery);
+        luminaResolvedYoutubeCache2.set(cleanQuery, resolvePromise);
       }
       try {
         const videoId = await resolvePromise;
@@ -29578,8 +29820,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     });
   }
-  var luminaResolvedImagesCache = /* @__PURE__ */ new Map();
-  function processLuminaDynamicImageElements(rootNode) {
+  var luminaResolvedImagesCache2 = /* @__PURE__ */ new Map();
+  function processLuminaDynamicImageElements2(rootNode) {
     if (!rootNode) return;
     const found = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-async-image")) {
@@ -29606,9 +29848,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       }
       if (!cleanQuery) return;
-      if (luminaResolvedImagesCache.has(cleanQuery)) {
+      if (luminaResolvedImagesCache2.has(cleanQuery)) {
         try {
-          const cachedResult2 = await luminaResolvedImagesCache.get(cleanQuery);
+          const cachedResult2 = await luminaResolvedImagesCache2.get(cleanQuery);
           if (cachedResult2 && cachedResult2.fallbackUrls) {
             img.dataset.fallbackUrls = JSON.stringify(cachedResult2.fallbackUrls);
           }
@@ -29645,7 +29887,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             img.dataset.fallbackUrls = JSON.stringify(cachedResult.fallbackUrls);
           }
           img.src = cachedResult.url || "";
-          luminaResolvedImagesCache.set(cleanQuery, Promise.resolve(cachedResult));
+          luminaResolvedImagesCache2.set(cleanQuery, Promise.resolve(cachedResult));
         } catch (err) {
           img.src = "";
           const wrapper = img.closest(".lumina-image-wrapper");
@@ -29666,7 +29908,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
       const loadPromise = (async () => {
         try {
-          const urls = await searchGoogleImages2(cleanQuery);
+          const urls = await searchGoogleImages3(cleanQuery);
           if (urls && urls.length > 0) {
             const result = { url: urls[0], fallbackUrls: urls.slice(1, 4) };
             if (typeof LuminaImageCacheDB !== "undefined") {
@@ -29680,7 +29922,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
         throw new Error("Google Image search failed");
       })();
-      luminaResolvedImagesCache.set(cleanQuery, loadPromise);
+      luminaResolvedImagesCache2.set(cleanQuery, loadPromise);
       try {
         const result = await loadPromise;
         if (result && result.fallbackUrls) {
@@ -29816,15 +30058,15 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
-        processLuminaDynamicImageElements(node);
-        processLuminaDynamicYoutubeElements(node);
+        processLuminaDynamicImageElements2(node);
+        processLuminaDynamicYoutubeElements2(node);
         processLuminaChartElements(node);
       }
     }
   });
   luminaImageObserver.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-  processLuminaDynamicImageElements(document.body);
-  processLuminaDynamicYoutubeElements(document.body);
+  processLuminaDynamicImageElements2(document.body);
+  processLuminaDynamicYoutubeElements2(document.body);
   processLuminaChartElements(document.body);
   var LuminaModelHelper2 = {
     async getPromptSupport() {
@@ -34150,8 +34392,8 @@ Output only the revised text.`;
         _LuminaChatUI.injectAnswerActions(ans);
       }
       await yieldToMain();
-      processLuminaDynamicImageElements(container2);
-      processLuminaDynamicYoutubeElements(container2);
+      processLuminaDynamicImageElements2(container2);
+      processLuminaDynamicYoutubeElements2(container2);
       processLuminaChartElements(container2);
     }
     static async injectCopyButtons(container2) {
