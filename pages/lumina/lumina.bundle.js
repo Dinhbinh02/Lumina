@@ -20444,6 +20444,22 @@ ${script}`;
     }
   }
 
+  // src/components/panels/notes/notes_utils.js
+  function timeAgo(ts) {
+    if (!ts) return "";
+    const now = Date.now();
+    const diff = now - ts;
+    const mins = Math.floor(diff / 6e4);
+    const hours = Math.floor(diff / 36e5);
+    const days = Math.floor(diff / 864e5);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days}d ago`;
+    return new Date(ts).toLocaleDateString(void 0, { month: "short", day: "numeric" });
+  }
+
   // src/components/panels/notes_panel.js
   var NotesPanel2 = class {
     constructor() {
@@ -20536,17 +20552,7 @@ ${script}`;
       });
     }
     timeAgo(ts) {
-      const now = Date.now();
-      const diff = now - ts;
-      const mins = Math.floor(diff / 6e4);
-      const hours = Math.floor(diff / 36e5);
-      const days = Math.floor(diff / 864e5);
-      if (mins < 1) return "Just now";
-      if (mins < 60) return `${mins}m ago`;
-      if (hours < 24) return `${hours}h ago`;
-      if (days === 1) return "Yesterday";
-      if (days < 7) return `${days}d ago`;
-      return new Date(ts).toLocaleDateString(void 0, { month: "short", day: "numeric" });
+      return timeAgo(ts);
     }
     cacheElements() {
       this.container = document.getElementById("notes-page");
@@ -22942,7 +22948,7 @@ ${script}`;
         const isActive = rec.id === this.currentRecordingId ? "active" : "";
         const starColor = rec.starred ? "#f59e0b" : "currentColor";
         const voiceLabel = rec.mode === "multi" ? `${rec.voice} + ${rec.voice2}` : rec.voice;
-        const timeAgo = this.formatRelativeTime(rec.createdAt);
+        const timeAgo2 = this.formatRelativeTime(rec.createdAt);
         const durationStr = this.formatTime(rec.durationSeconds || 0);
         return `
                 <div class="tts-recording-item ${isActive}" data-id="${rec.id}">
@@ -22966,7 +22972,7 @@ ${script}`;
                     <div class="tts-rec-meta">
                         <span class="tts-rec-voice-tag">${this.escapeHtml(voiceLabel)}</span>
                         <span class="tts-rec-duration">${durationStr}</span>
-                        <span class="tts-rec-time">${timeAgo}</span>
+                        <span class="tts-rec-time">${timeAgo2}</span>
                     </div>
                 </div>
             `;
@@ -37521,9 +37527,9 @@ Output only the revised text.`;
             ` : "";
         const timeHTML = timeStr ? `<span class="recent-chat-item__time">${timeStr}</span>` : "";
         html += `
-                <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ""}" data-title="${escapeHtml3(displayTitle)}">
+                <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ""}" data-title="${escapeHtml4(displayTitle)}">
                     ${iconHTML}
-                    <span class="recent-chat-item__title">${escapeHtml3(displayTitle)}</span>
+                    <span class="recent-chat-item__title">${escapeHtml4(displayTitle)}</span>
                     ${timeHTML}
                     ${pinHTML}
                     <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
@@ -37591,9 +37597,9 @@ Output only the revised text.`;
                 ` : "";
           const timeHTML = timeStr ? `<span class="recent-chat-item__time">${timeStr}</span>` : "";
           archiveHtml += `
-                    <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ""}" data-title="${escapeHtml3(displayTitle)}">
+                    <div class="recent-chat-item${isActive}${isNamingClass}" data-session-id="${session.id}" data-spark-id="${session.sparkId || ""}" data-title="${escapeHtml4(displayTitle)}">
                         ${iconHTML}
-                        <span class="recent-chat-item__title">${escapeHtml3(displayTitle)}</span>
+                        <span class="recent-chat-item__title">${escapeHtml4(displayTitle)}</span>
                         ${timeHTML}
                         ${pinHTML}
                         <button class="recent-chat-item__menu-btn" data-session-id="${session.id}" title="More options" tabindex="-1">
@@ -39733,7 +39739,7 @@ ${fileContexts}`;
       }
     }
   };
-  function escapeHtml3(str) {
+  function escapeHtml4(str) {
     if (!str) return "";
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
@@ -40447,7 +40453,7 @@ ${selectedAns.text}`;
       if (!welcomeEl) {
         welcomeEl = document.createElement("div");
         welcomeEl.className = "lumina-homepage-welcome";
-        welcomeEl.innerHTML = `<div class="welcome-title">${escapeHtml3(getDynamicWelcomeTitle())}</div>`;
+        welcomeEl.innerHTML = `<div class="welcome-title">${escapeHtml4(getDynamicWelcomeTitle())}</div>`;
         if (historyEl && historyEl.parentNode === chatContainer) {
           chatContainer.insertBefore(welcomeEl, historyEl);
         } else {

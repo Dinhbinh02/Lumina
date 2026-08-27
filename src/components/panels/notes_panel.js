@@ -1,4 +1,5 @@
 import { NotesManager } from '../../db/notes_manager.js';
+import { timeAgo, escapeHtml } from './notes/notes_utils.js';
 
 export class NotesPanel {
     constructor() {
@@ -91,17 +92,7 @@ export class NotesPanel {
         });
     }
     timeAgo(ts) {
-        const now = Date.now();
-        const diff = now - ts;
-        const mins = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-        if (mins < 1) return 'Just now';
-        if (mins < 60) return `${mins}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days === 1) return 'Yesterday';
-        if (days < 7) return `${days}d ago`;
-        return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        return timeAgo(ts);
     }
     cacheElements() {
         this.container = document.getElementById('notes-page');
@@ -178,6 +169,7 @@ export class NotesPanel {
                             const isEmpty = !firstBlock.content ||
                                             firstBlock.content.length === 0 ||
                                             (firstBlock.content.length === 1 && !firstBlock.content[0].text);
+
                             if (isEmpty) {
                                 ed.setTextCursorPosition(firstBlock, 'start');
                             } else {
