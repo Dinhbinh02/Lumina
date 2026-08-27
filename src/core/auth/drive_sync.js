@@ -659,51 +659,6 @@ export class SyncManager {
             let { token, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, false);
             const localData = await this.gatherLocalData();
 
-            if (fileId) {
-                try {
-                    const cloudBackup = await this.downloadBackup(token, fileId);
-                    if (cloudBackup && cloudBackup.data) {
-                        const cloudData = cloudBackup.data;
-                        const cloudSessions = cloudData.lumina_chat_sessions || {};
-                        const localSessions = localData.lumina_chat_sessions || {};
-                        const merged = { ...cloudSessions };
-                        for (const [sid, localSession] of Object.entries(localSessions)) {
-                            const cloudSession = cloudSessions[sid];
-                            if (!cloudSession) {
-                                merged[sid] = localSession;
-                            } else {
-                                const localTime = localSession.updatedAt || localSession.createdAt || 0;
-                                const cloudTime = cloudSession.updatedAt || cloudSession.createdAt || 0;
-                                merged[sid] = localTime >= cloudTime ? localSession : cloudSession;
-                            }
-                        }
-                        localData.lumina_chat_sessions = merged;
-
-                        const cloudNotes = Array.isArray(cloudData.lumina_notes_items) ? cloudData.lumina_notes_items : [];
-                        const localNotes = Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items : [];
-                        const notesMap = new Map(cloudNotes.map(n => [n.id, n]));
-                        for (const note of localNotes) {
-                            if (!note || !note.id) continue;
-                            const cloudNote = notesMap.get(note.id);
-                            if (!cloudNote || (note.updatedAt || 0) >= (cloudNote.updatedAt || 0)) {
-                                notesMap.set(note.id, note);
-                            }
-                        }
-                        localData.lumina_notes_items = Array.from(notesMap.values());
-
-                        const cloudCols = Array.isArray(cloudData.lumina_notes_collections) ? cloudData.lumina_notes_collections : [];
-                        const localCols = Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections : [];
-                        const colsMap = new Map(cloudCols.map(c => [c.id, c]));
-                        for (const col of localCols) {
-                            if (col && col.id) colsMap.set(col.id, col);
-                        }
-                        localData.lumina_notes_collections = Array.from(colsMap.values());
-                    }
-                } catch (mergeErr) {
-                    console.warn('[Sync] Cloud merge failed, pushing local-only:', mergeErr);
-                }
-            }
-
             this.notifyListeners('Syncing...', null);
             try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
 
