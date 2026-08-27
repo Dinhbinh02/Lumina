@@ -1,7 +1,9 @@
 import { DEFAULT_SPARKS } from './default_sparks.js';
+export const SPARKS_KEY = 'lumina_sparks';
 export { DEFAULT_SPARKS };
 
 async function sparksLoad() {
+
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];
     if (!sparks) {

@@ -3,6 +3,7 @@ import { initSidePanelManager, toggleSidePanel, ensureSidePanelOpen, broadcastTo
 import { detectMediaType, processAttachments, processAttachmentsForGemini, readOpfsFileAsBase64 } from './media_processor.js';
 import { fetchAudio, stopGoogleAudioOffscreen, getLemma, getAmericanSpelling } from './audio_fetcher.js';
 import { initHighlightHandlers } from './highlight_handlers.js';
+import { initSyncHandlers } from './sync_handlers.js';
 
 export {
     initStorageCleanup,
@@ -18,9 +19,12 @@ export {
     stopGoogleAudioOffscreen,
     getLemma,
     getAmericanSpelling,
-    initHighlightHandlers
+    initHighlightHandlers,
+    initSyncHandlers
 };
 
 initStorageCleanup();
 initSidePanelManager();
 initHighlightHandlers();
+initSyncHandlers();
+

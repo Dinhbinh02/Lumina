@@ -38,6 +38,8 @@ async function buildLuminaWorkspace() {
             sourcemap: false
         });
 
+
+
         if (isWatch) {
             await jsContext.watch();
         } else {

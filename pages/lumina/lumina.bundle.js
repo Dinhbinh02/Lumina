@@ -7665,6 +7665,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   var require_auto_render_min = __commonJS({
     "lib/vendor/katex/auto-render.min.js"(exports, module) {
       !(function(e, t) {
+        if (typeof window !== "undefined" && window.katex) {
+          window.renderMathInElement = t(window.katex);
+          return;
+        }
+        if (typeof globalThis !== "undefined" && globalThis.katex) {
+          globalThis.renderMathInElement = t(globalThis.katex);
+          return;
+        }
         "object" == typeof exports && "object" == typeof module ? module.exports = t(__require("katex")) : "function" == typeof define && define.amd ? define(["katex"], t) : "object" == typeof exports ? exports.renderMathInElement = t(__require("katex")) : e.renderMathInElement = t(e.katex);
       })("undefined" != typeof self ? self : exports, (function(e) {
         return (function() {
@@ -27429,6 +27437,7 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
   };
 
   // src/components/sparks/sparks.js
+  var SPARKS_KEY = "lumina_sparks";
   async function sparksLoad() {
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];
