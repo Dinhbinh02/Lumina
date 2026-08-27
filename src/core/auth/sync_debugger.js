@@ -171,17 +171,30 @@ export async function debugSync() {
 
     const syncStorageData = await chrome.storage.local.get([
         'last_sync_time', 'last_sync_md5', 'last_sync_size', 'last_cloud_stats',
-        'drive_backup_file_id', 'google_oauth_token'
+        'drive_backup_file_id', 'google_user_info'
     ]);
 
-    const hasToken = !!syncStorageData.google_oauth_token;
+    const isAuthenticated = typeof LuminaAuth !== 'undefined'
+        ? LuminaAuth.isAuthenticated
+        : !!syncStorageData.google_user_info;
+
+    let token = null;
+    if (isAuthenticated) {
+        try {
+            token = await LuminaSync.getToken(false);
+        } catch (e) {
+            console.warn('[SyncDebug] Could not get token:', e.message);
+        }
+    }
+
     const lastSyncAt = syncStorageData.last_sync_time
         ? new Date(syncStorageData.last_sync_time).toLocaleString()
         : 'Never';
 
     console.log('%cSync state:', 'color: #fbbf24; font-weight: bold');
     console.table({
-        'Authenticated': hasToken ? '✅ Yes' : '❌ No',
+        'Authenticated': isAuthenticated ? '✅ Yes' : '❌ No',
+        'Token acquired': token ? '✅ Yes' : '❌ No',
         'Last sync': lastSyncAt,
         'Last sync MD5': syncStorageData.last_sync_md5 || '—',
         'Last sync size': syncStorageData.last_sync_size ? `${(syncStorageData.last_sync_size / 1024).toFixed(1)} KB` : '—',
@@ -202,8 +215,8 @@ export async function debugSync() {
         printSection('📝 Local sessions', localStats.chats.sessions);
     }
 
-    if (!hasToken) {
-        console.warn('%c⚠️ Not authenticated - cannot check cloud data.', 'color: #f87171');
+    if (!isAuthenticated || !token) {
+        console.warn('%c⚠️ Not authenticated or token unavailable - cannot check cloud data.', 'color: #f87171');
         console.groupEnd();
         return { local: localStats, cloud: null };
     }
@@ -212,12 +225,10 @@ export async function debugSync() {
 
     let cloudStats;
     let rawCloudData;
-    let activeToken;
     try {
-        const result = await gatherCloudStats(syncStorageData.google_oauth_token);
+        const result = await gatherCloudStats(token);
         cloudStats = result.stats;
         rawCloudData = result.rawData;
-        activeToken = result.activeToken;
     } catch (e) {
         console.error('[SyncDebug] Failed to fetch cloud stats:', e);
         console.groupEnd();

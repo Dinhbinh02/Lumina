@@ -41341,13 +41341,22 @@ ${selectedAns.text}`;
       "last_sync_size",
       "last_cloud_stats",
       "drive_backup_file_id",
-      "google_oauth_token"
+      "google_user_info"
     ]);
-    const hasToken = !!syncStorageData.google_oauth_token;
+    const isAuthenticated = typeof LuminaAuth !== "undefined" ? LuminaAuth.isAuthenticated : !!syncStorageData.google_user_info;
+    let token = null;
+    if (isAuthenticated) {
+      try {
+        token = await LuminaSync2.getToken(false);
+      } catch (e) {
+        console.warn("[SyncDebug] Could not get token:", e.message);
+      }
+    }
     const lastSyncAt = syncStorageData.last_sync_time ? new Date(syncStorageData.last_sync_time).toLocaleString() : "Never";
     console.log("%cSync state:", "color: #fbbf24; font-weight: bold");
     console.table({
-      "Authenticated": hasToken ? "\u2705 Yes" : "\u274C No",
+      "Authenticated": isAuthenticated ? "\u2705 Yes" : "\u274C No",
+      "Token acquired": token ? "\u2705 Yes" : "\u274C No",
       "Last sync": lastSyncAt,
       "Last sync MD5": syncStorageData.last_sync_md5 || "\u2014",
       "Last sync size": syncStorageData.last_sync_size ? `${(syncStorageData.last_sync_size / 1024).toFixed(1)} KB` : "\u2014",
@@ -41365,20 +41374,18 @@ ${selectedAns.text}`;
     if (localStats.chats.sessions.length > 0) {
       printSection("\u{1F4DD} Local sessions", localStats.chats.sessions);
     }
-    if (!hasToken) {
-      console.warn("%c\u26A0\uFE0F Not authenticated - cannot check cloud data.", "color: #f87171");
+    if (!isAuthenticated || !token) {
+      console.warn("%c\u26A0\uFE0F Not authenticated or token unavailable - cannot check cloud data.", "color: #f87171");
       console.groupEnd();
       return { local: localStats, cloud: null };
     }
     console.log("%cFetching cloud data...", "color: #6ee7b7");
     let cloudStats;
     let rawCloudData;
-    let activeToken;
     try {
-      const result = await gatherCloudStats(syncStorageData.google_oauth_token);
+      const result = await gatherCloudStats(token);
       cloudStats = result.stats;
       rawCloudData = result.rawData;
-      activeToken = result.activeToken;
     } catch (e) {
       console.error("[SyncDebug] Failed to fetch cloud stats:", e);
       console.groupEnd();
