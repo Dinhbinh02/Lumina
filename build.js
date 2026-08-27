@@ -72,7 +72,8 @@ async function buildLuminaWorkspace() {
 
 async function buildBackground() {
     const entry = path.resolve(__dirname, 'src/background/index.js');
-    const outfile = path.resolve(__dirname, 'dist/background.bundle.js');
+    const outfile = path.resolve(__dirname, 'scripts/background.bundle.js');
+    const distOutfile = path.resolve(__dirname, 'dist/background.bundle.js');
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
@@ -89,8 +90,10 @@ async function buildBackground() {
     } else {
         await ctx.rebuild();
         await ctx.dispose();
+        fs.copyFileSync(outfile, distOutfile);
     }
 }
+
 
 async function buildContent() {
     const entry = path.resolve(__dirname, 'src/content/index.js');

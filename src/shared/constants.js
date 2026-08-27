@@ -66,11 +66,29 @@ export function getKeysArray(keyStr) {
     return keyStr.split(',').map(k => k.trim()).filter(k => k.length > 0);
 }
 
+export const SUPPORTED_MIME_TYPES = new Set([
+    'image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif', 'image/gif',
+    'video/mp4', 'video/mpeg', 'video/mov', 'video/quicktime', 'video/avi', 'video/x-flv', 'video/flv', 'video/mpg', 'video/webm', 'video/wmv', 'video/3gpp',
+    'audio/wav', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/mpeg', 'audio/m4a',
+    'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain', 'text/html', 'text/css', 'text/javascript', 'text/csv', 'text/tsv', 'text/tab-separated-values', 'text/markdown',
+    'text/x-python', 'text/x-java', 'text/x-c', 'text/x-cpp', 'text/x-shellscript', 'application/json', 'application/xml'
+]);
+
+export const MIME_ALIASES = {
+    'application/javascript': 'text/javascript', 'text/x-python-script': 'text/x-python', 'application/x-javascript': 'text/javascript'
+};
+
 if (typeof globalThis !== 'undefined') {
     globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
     globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
     globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
+    globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
+    globalThis.MIME_ALIASES = MIME_ALIASES;
     globalThis.escapeHtml = escapeHtml;
     globalThis.getTodayString = getTodayString;
     globalThis.getKeysArray = getKeysArray;
 }
+

@@ -53,8 +53,10 @@
     "default_popup": "pages/popup/popup.html"
   },
   "background": {
-    "service_worker": "scripts/background.js"
+    "service_worker": "scripts/background.bundle.js",
+    "type": "module"
   },
+
   "commands": {
     "open-lumina-chat": {
       "suggested_key": {
