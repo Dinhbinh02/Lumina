@@ -14246,7 +14246,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     globalThis.NotesManager = NotesManager2;
   }
 
-  // src/db/chat_history.js
+  // src/db/chat_render_utils.js
   (function() {
     const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
     if (!globalObj.LuminaRawTextRegistry) {
@@ -14289,20 +14289,36 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       const msg = list[index];
       if (msg && msg.type === "context" && index + 1 < list.length) {
         if (list[index + 1] && list[index + 1].type === "question") {
-          group.push({ msg: list[index], originalIndex: index });
+          group.push(msg);
           index++;
+          group.push(list[index]);
+          index++;
+          while (index < list.length && list[index] && list[index].type !== "context" && list[index].type !== "question") {
+            group.push(list[index]);
+            index++;
+          }
+          qaGroups.push(group);
+          continue;
         }
       }
-      group.push({ msg: list[index], originalIndex: index });
-      index++;
-      if (index < list.length && list[index] && list[index].type === "answer") {
-        group.push({ msg: list[index], originalIndex: index });
+      if (msg && msg.type === "question") {
+        group.push(msg);
         index++;
+        while (index < list.length && list[index] && list[index].type !== "context" && list[index].type !== "question") {
+          group.push(list[index]);
+          index++;
+        }
+        qaGroups.push(group);
+        continue;
       }
+      group.push(msg);
+      index++;
       qaGroups.push(group);
     }
     return qaGroups;
   }
+
+  // src/db/chat_history.js
   var ChatHistoryManager2 = {
     STORAGE_KEY: "lumina_chat_sessions",
     LEGACY_KEY: "chat_history",
@@ -16840,7 +16856,7 @@ ${script}`;
     globalThis.GroqAligner = GroqAligner2;
   }
 
-  // src/core/auth/auth.js
+  // src/core/auth/crypto_utils.js
   async function compressData(string) {
     const byteArray = new TextEncoder().encode(string);
     const stream = new CompressionStream("gzip");
@@ -16895,6 +16911,8 @@ ${script}`;
     "ankiQuickNoteContent",
     "attachments"
   ].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("lumina_img_cache_") || k.startsWith("lumina_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
+
+  // src/core/auth/google_auth.js
   var WEB_OAUTH_CONFIG = {
     clientId: "824888142961-mlpoj5jeqbo1lv2d61mho7cnnde9aicv.apps.googleusercontent.com",
     scopes: [
@@ -16971,8 +16989,8 @@ ${script}`;
       this.notifyListeners(this.isAuthenticated, this.user);
       if (this.isAuthenticated && typeof window !== "undefined") {
         setTimeout(() => {
-          if (typeof LuminaSync2 !== "undefined") {
-            LuminaSync2.checkAutoSync(true);
+          if (typeof LuminaSync !== "undefined") {
+            LuminaSync.checkAutoSync(true);
           }
         }, 100);
       }
@@ -17066,8 +17084,8 @@ ${script}`;
       try {
         const token = await this.getAuthToken(true);
         await this.fetchUserInfo(token);
-        if (typeof LuminaSync2 !== "undefined") {
-          await LuminaSync2.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
+        if (typeof LuminaSync !== "undefined") {
+          await LuminaSync.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
         }
         return this.user;
       } catch (error) {
@@ -17148,6 +17166,12 @@ ${script}`;
       this.listeners.forEach((cb) => cb(this.isAuthenticated, this.user));
     }
   };
+  var LuminaAuth2 = new AuthService();
+  if (typeof window !== "undefined") {
+    window.LuminaAuth = LuminaAuth2;
+  }
+
+  // src/core/auth/drive_sync.js
   var SyncManager = class {
     _isPageContext() {
       return typeof window !== "undefined";
@@ -17421,31 +17445,6 @@ ${script}`;
         }
       }
       return { token: activeToken, remoteFile: primaryFile, fileId, driveFiles };
-    }
-    async fetchRemoteBackup(token, isAuto = false) {
-      let activeToken = token;
-      let driveFiles = [];
-      try {
-        driveFiles = await this.listAppDataFiles(activeToken);
-      } catch (err) {
-        if (err.message === "UNAUTHORIZED") {
-          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
-          activeToken = await this.authService.getAuthToken(!isAuto, true);
-          driveFiles = await this.listAppDataFiles(activeToken);
-        } else {
-          throw err;
-        }
-      }
-      const remoteFile = driveFiles.find((f) => f.name === this.FILENAME) || null;
-      if (!remoteFile) {
-        return { token: activeToken, remoteFile: null, remoteBackup: null, fileId: null, driveFiles };
-      }
-      const fileId = remoteFile.id;
-      this.cachedBackupFileId = fileId;
-      chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {
-      });
-      const remoteBackup = await this.downloadBackup(activeToken, fileId);
-      return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5: remoteFile.md5Checksum, driveFiles };
     }
     async gatherLocalData() {
       const localData = await chrome.storage.local.get(null);
@@ -18056,13 +18055,9 @@ ${script}`;
       }
     }
   };
-  var LuminaAuth2 = new AuthService();
   var LuminaSync2 = new SyncManager(LuminaAuth2);
-  if (typeof globalThis !== "undefined") {
-    globalThis.LuminaAuth = LuminaAuth2;
-    globalThis.LuminaSync = LuminaSync2;
-    globalThis.AuthService = AuthService;
-    globalThis.SyncManager = SyncManager;
+  if (typeof window !== "undefined") {
+    window.LuminaSync = LuminaSync2;
   }
 
   // src/helpers/annotation_utils.js
@@ -27219,9 +27214,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     LuminaSettingsModal2.init();
   });
 
-  // src/components/sparks/sparks.js
-  var SPARKS_KEY = "lumina_sparks";
-  var sidebarSparksExpanded = false;
+  // src/components/sparks/default_sparks.js
   var DEFAULT_SPARKS = {
     "spark_ielts_writing_task1": {
       name: "IELTS Writing Task 1 Tutor",
@@ -27371,6 +27364,8 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
   * Briefly show keyword mapping and explain other choices only if necessary.`
     }
   };
+
+  // src/components/sparks/sparks.js
   async function sparksLoad() {
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];
