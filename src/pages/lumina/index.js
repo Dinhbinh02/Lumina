@@ -10,3 +10,4 @@ import '../../helpers/index.js';
 import '../../components/index.js';
 import './controllers/index.js';
 import './workspace.js';
+import '../../core/auth/sync_debugger.js';

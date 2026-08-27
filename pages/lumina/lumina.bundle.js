@@ -41193,6 +41193,267 @@ ${selectedAns.text}`;
       }
     });
   })();
+
+  // src/core/auth/sync_debugger.js
+  async function gatherLocalStats() {
+    const stats = {
+      storage: {},
+      chats: { sessionCount: 0, sessions: [] },
+      notes: { collectionsCount: 0, notesCount: 0 },
+      highlights: { urlCount: 0 },
+      tts: { recordingsCount: 0 },
+      attachments: { count: 0 }
+    };
+    const allLocal = await chrome.storage.local.get(null);
+    for (const [k, v] of Object.entries(allLocal)) {
+      if (isExcludedKey(k) || k.startsWith("lumina_session_")) continue;
+      const size = JSON.stringify(v).length;
+      stats.storage[k] = { size, preview: JSON.stringify(v).slice(0, 80) };
+    }
+    if (typeof LuminaChatDB !== "undefined") {
+      try {
+        const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+        const sessionList = Object.values(sessions).filter((s) => s && !s.isDeleted);
+        stats.chats.sessionCount = sessionList.length;
+        stats.chats.sessions = sessionList.map((s) => ({
+          id: s.id,
+          title: s.title || "(no title)",
+          updatedAt: s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "?",
+          messageCount: s.messageCount || "?"
+        }));
+      } catch (e) {
+        stats.chats.error = e.message;
+      }
+    }
+    if (typeof NotesManager !== "undefined") {
+      try {
+        const notes = await NotesManager.getNotes().catch(() => []);
+        const cols = await NotesManager.getCollections().catch(() => []);
+        stats.notes.notesCount = notes.filter((n) => n && !n.isDeleted).length;
+        stats.notes.collectionsCount = cols.length;
+      } catch (e) {
+        stats.notes.error = e.message;
+      }
+    }
+    if (typeof LuminaAnnotationDB !== "undefined") {
+      try {
+        const highlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+        stats.highlights.urlCount = Object.keys(highlights).filter((k) => k.startsWith("highlights_")).length;
+      } catch (e) {
+        stats.highlights.error = e.message;
+      }
+    }
+    if (typeof TTSDB !== "undefined") {
+      try {
+        const recs = await TTSDB.getAllRecordings().catch(() => []);
+        stats.tts.recordingsCount = recs.filter((r) => r && !r.isDeleted).length;
+      } catch (e) {
+        stats.tts.error = e.message;
+      }
+    }
+    if (typeof LuminaAttachmentDB !== "undefined") {
+      try {
+        const meta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
+        stats.attachments.count = meta.length;
+      } catch (e) {
+        stats.attachments.error = e.message;
+      }
+    }
+    return stats;
+  }
+  async function gatherCloudStats(token) {
+    const stats = {
+      backupFile: null,
+      chats: { sessionCount: 0, sessions: [] },
+      notes: { collectionsCount: 0, notesCount: 0 },
+      highlights: { urlCount: 0 },
+      tts: { recordingsCount: 0 },
+      attachments: { count: 0 },
+      driveFiles: []
+    };
+    const { token: activeToken, remoteFile, fileId, driveFiles } = await LuminaSync2.getOrFindBackupFile(token, true);
+    stats.driveFiles = (driveFiles || []).map((f) => ({
+      name: f.name,
+      size: f.size,
+      md5: f.md5Checksum,
+      modifiedTime: f.modifiedTime
+    }));
+    if (!remoteFile || !fileId) {
+      stats.backupFile = null;
+      return { stats, activeToken };
+    }
+    stats.backupFile = {
+      id: remoteFile.id,
+      md5: remoteFile.md5Checksum,
+      size: parseInt(remoteFile.size || 0),
+      modifiedTime: remoteFile.modifiedTime
+    };
+    const backup = await LuminaSync2.downloadBackup(activeToken, fileId);
+    if (!backup || !backup.data) return { stats, activeToken };
+    const data = backup.data;
+    const cloudSessions = data.lumina_chat_sessions || {};
+    const activeCloudSessions = Object.values(cloudSessions).filter((s) => s && !s.isDeleted);
+    stats.chats.sessionCount = activeCloudSessions.length;
+    stats.chats.sessions = activeCloudSessions.map((s) => ({
+      id: s.id,
+      title: s.title || "(no title)",
+      updatedAt: s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "?",
+      messageCount: s.messageCount || "?"
+    }));
+    const cloudNotes = data.lumina_notes_items || [];
+    const cloudCols = data.lumina_notes_collections || [];
+    stats.notes.notesCount = cloudNotes.filter((n) => n && !n.isDeleted).length;
+    stats.notes.collectionsCount = cloudCols.length;
+    stats.highlights.urlCount = Object.keys(data).filter((k) => k.startsWith("highlights_")).length;
+    const cloudTts = data.lumina_tts_recordings || [];
+    stats.tts.recordingsCount = cloudTts.filter((r) => r && !r.isDeleted).length;
+    const attFiles = (driveFiles || []).filter((f) => f.name.startsWith("att_") && f.name.endsWith(".bin"));
+    stats.attachments.count = attFiles.length;
+    return { stats, activeToken, rawData: data };
+  }
+  function printSection(title, data) {
+    console.groupCollapsed(`%c${title}`, "color: #7c9fd4; font-weight: bold; font-size: 13px;");
+    console.table(data);
+    console.groupEnd();
+  }
+  function compareSessionLists(local, cloud) {
+    const localMap = new Map(local.map((s) => [s.id, s]));
+    const cloudMap = new Map(cloud.map((s) => [s.id, s]));
+    const onlyLocal = local.filter((s) => !cloudMap.has(s.id));
+    const onlyCloud = cloud.filter((s) => !localMap.has(s.id));
+    const inBoth = local.filter((s) => cloudMap.has(s.id));
+    return { onlyLocal, onlyCloud, inBoth };
+  }
+  async function debugSync() {
+    console.group("%c\u{1F50D} LUMINA SYNC DEBUGGER", "color: #a78bfa; font-weight: bold; font-size: 15px;");
+    console.log("%cGathering local data...", "color: #6ee7b7");
+    let localStats;
+    try {
+      localStats = await gatherLocalStats();
+    } catch (e) {
+      console.error("[SyncDebug] Failed to gather local stats:", e);
+      console.groupEnd();
+      return;
+    }
+    const syncStorageData = await chrome.storage.local.get([
+      "last_sync_time",
+      "last_sync_md5",
+      "last_sync_size",
+      "last_cloud_stats",
+      "drive_backup_file_id",
+      "google_oauth_token"
+    ]);
+    const hasToken = !!syncStorageData.google_oauth_token;
+    const lastSyncAt = syncStorageData.last_sync_time ? new Date(syncStorageData.last_sync_time).toLocaleString() : "Never";
+    console.log("%cSync state:", "color: #fbbf24; font-weight: bold");
+    console.table({
+      "Authenticated": hasToken ? "\u2705 Yes" : "\u274C No",
+      "Last sync": lastSyncAt,
+      "Last sync MD5": syncStorageData.last_sync_md5 || "\u2014",
+      "Last sync size": syncStorageData.last_sync_size ? `${(syncStorageData.last_sync_size / 1024).toFixed(1)} KB` : "\u2014",
+      "Backup file ID": syncStorageData.drive_backup_file_id || "\u2014"
+    });
+    console.log("%c\u{1F4F1} LOCAL DATA", "color: #6ee7b7; font-weight: bold; font-size: 14px;");
+    console.table({
+      "Chat sessions": localStats.chats.sessionCount,
+      "Notes": localStats.notes.notesCount,
+      "Note collections": localStats.notes.collectionsCount,
+      "Highlighted URLs": localStats.highlights.urlCount,
+      "TTS recordings": localStats.tts.recordingsCount,
+      "Attachments": localStats.attachments.count
+    });
+    if (localStats.chats.sessions.length > 0) {
+      printSection("\u{1F4DD} Local sessions", localStats.chats.sessions);
+    }
+    if (!hasToken) {
+      console.warn("%c\u26A0\uFE0F Not authenticated - cannot check cloud data.", "color: #f87171");
+      console.groupEnd();
+      return { local: localStats, cloud: null };
+    }
+    console.log("%cFetching cloud data...", "color: #6ee7b7");
+    let cloudStats;
+    let rawCloudData;
+    let activeToken;
+    try {
+      const result = await gatherCloudStats(syncStorageData.google_oauth_token);
+      cloudStats = result.stats;
+      rawCloudData = result.rawData;
+      activeToken = result.activeToken;
+    } catch (e) {
+      console.error("[SyncDebug] Failed to fetch cloud stats:", e);
+      console.groupEnd();
+      return { local: localStats, cloud: null, error: e.message };
+    }
+    console.log("%c\u2601\uFE0F CLOUD DATA", "color: #93c5fd; font-weight: bold; font-size: 14px;");
+    if (cloudStats.backupFile) {
+      const backupAge = cloudStats.backupFile.modifiedTime ? `${Math.round((Date.now() - new Date(cloudStats.backupFile.modifiedTime).getTime()) / 6e4)} min ago` : "?";
+      console.table({
+        "Backup file ID": cloudStats.backupFile.id,
+        "Backup size": `${(cloudStats.backupFile.size / 1024).toFixed(1)} KB`,
+        "Last modified": backupAge,
+        "MD5": cloudStats.backupFile.md5
+      });
+    } else {
+      console.warn("%c\u26A0\uFE0F No backup file found on Google Drive.", "color: #f87171");
+    }
+    console.table({
+      "Chat sessions": cloudStats.chats.sessionCount,
+      "Notes": cloudStats.notes.notesCount,
+      "Note collections": cloudStats.notes.collectionsCount,
+      "Highlighted URLs": cloudStats.highlights.urlCount,
+      "TTS recordings": cloudStats.tts.recordingsCount,
+      "Attachments": cloudStats.attachments.count
+    });
+    if (cloudStats.chats.sessions.length > 0) {
+      printSection("\u{1F4DD} Cloud sessions", cloudStats.chats.sessions);
+    }
+    console.log("%c\u{1F500} DIFF (local vs cloud)", "color: #f9a8d4; font-weight: bold; font-size: 14px;");
+    const diff = {
+      "Chat sessions (local)": localStats.chats.sessionCount,
+      "Chat sessions (cloud)": cloudStats.chats.sessionCount,
+      "Notes (local)": localStats.notes.notesCount,
+      "Notes (cloud)": cloudStats.notes.notesCount,
+      "Highlights (local)": localStats.highlights.urlCount,
+      "Highlights (cloud)": cloudStats.highlights.urlCount,
+      "TTS (local)": localStats.tts.recordingsCount,
+      "TTS (cloud)": cloudStats.tts.recordingsCount,
+      "Attachments (local)": localStats.attachments.count,
+      "Attachments (cloud)": cloudStats.attachments.count
+    };
+    console.table(diff);
+    const chatDiff = compareSessionLists(localStats.chats.sessions, cloudStats.chats.sessions);
+    if (chatDiff.onlyLocal.length > 0) {
+      console.warn("%c\u26A0\uFE0F Sessions ONLY on local (not synced to cloud):", "color: #fbbf24; font-weight: bold");
+      console.table(chatDiff.onlyLocal);
+    }
+    if (chatDiff.onlyCloud.length > 0) {
+      console.warn("%c\u26A0\uFE0F Sessions ONLY on cloud (not pulled to local):", "color: #fbbf24; font-weight: bold");
+      console.table(chatDiff.onlyCloud);
+    }
+    const isMd5Match = syncStorageData.last_sync_md5 && cloudStats.backupFile?.md5 && syncStorageData.last_sync_md5 === cloudStats.backupFile.md5;
+    console.log("%c\u{1F4CA} SYNC HEALTH", "color: #a3e635; font-weight: bold; font-size: 14px;");
+    console.table({
+      "MD5 match (local cache vs cloud)": isMd5Match ? "\u2705 Match" : "\u26A0\uFE0F Mismatch \u2014 sync may be needed",
+      "Local-only sessions": chatDiff.onlyLocal.length,
+      "Cloud-only sessions": chatDiff.onlyCloud.length,
+      "Sessions in both": chatDiff.inBoth.length
+    });
+    if (!isMd5Match) {
+      console.warn("%c\u{1F449} MD5 mismatch detected. Run LuminaSync.syncData() or force push/pull to fix.", "color: #f87171");
+    } else if (chatDiff.onlyLocal.length === 0 && chatDiff.onlyCloud.length === 0) {
+      console.log("%c\u2705 Everything looks in sync!", "color: #6ee7b7; font-weight: bold");
+    }
+    console.groupEnd();
+    return {
+      local: localStats,
+      cloud: cloudStats,
+      diff: chatDiff,
+      syncHealthy: isMd5Match && chatDiff.onlyLocal.length === 0 && chatDiff.onlyCloud.length === 0
+    };
+  }
+  if (typeof window !== "undefined") {
+    window.debugSync = debugSync;
+  }
 })();
 /*!
   Highlight.js v11.9.0 (git: f47103d4f1)
