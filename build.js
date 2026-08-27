@@ -94,7 +94,31 @@ async function buildBackground() {
 
 async function buildContent() {
     const entry = path.resolve(__dirname, 'src/content/index.js');
-    const outfile = path.resolve(__dirname, 'dist/content.bundle.js');
+    const outfile = path.resolve(__dirname, 'scripts/content.bundle.js');
+    const distOutfile = path.resolve(__dirname, 'dist/content.bundle.js');
+    if (!fs.existsSync(entry)) return;
+
+    const ctx = await esbuild.context({
+        entryPoints: [entry],
+        bundle: true,
+        outfile: outfile,
+        format: 'iife',
+        target: ['chrome110'],
+        sourcemap: false
+    });
+
+    if (isWatch) {
+        await ctx.watch();
+    } else {
+        await ctx.rebuild();
+        await ctx.dispose();
+        fs.copyFileSync(outfile, distOutfile);
+    }
+}
+
+async function buildPopup() {
+    const entry = path.resolve(__dirname, 'src/popup/index.js');
+    const outfile = path.resolve(__dirname, 'pages/popup/popup.bundle.js');
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
@@ -125,6 +149,7 @@ async function run() {
     await buildLuminaWorkspace();
     await buildBackground();
     await buildContent();
+    await buildPopup();
     console.log('[Lumina Build] Build completed successfully.');
 
     if (isWatch) {
@@ -136,3 +161,4 @@ run().catch((err) => {
     console.error('[Lumina Build Error]', err);
     process.exit(1);
 });
+
