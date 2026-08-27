@@ -13340,6 +13340,2268 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     globalThis.getKeysArray = getKeysArray;
   }
 
+  // src/db/attachment_db.js
+  var LuminaAttachmentDB2 = {
+    DB_NAME: "LuminaAttachmentDB",
+    DB_VERSION: 1,
+    STORE_NAME: "attachments",
+    _db: null,
+    init() {
+      return new Promise((resolve, reject) => {
+        if (this._db) return resolve(this._db);
+        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            db.createObjectStore(this.STORE_NAME);
+          }
+        };
+        request.onsuccess = (e) => {
+          this._db = e.target.result;
+          this._db.onclose = () => {
+            this._db = null;
+          };
+          this._db.onversionchange = () => {
+            if (this._db) {
+              this._db.close();
+              this._db = null;
+            }
+          };
+          resolve(this._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async put(key, blob) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.put(blob, key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async get(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async delete(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.delete(key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async clear() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.clear();
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getAll(maxSize = 2 * 1024 * 1024) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.openCursor();
+        const results = {};
+        const conversionPromises = [];
+        request.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            const key = cursor.key;
+            const blob = cursor.value;
+            if (blob instanceof Blob) {
+              if (blob.size <= maxSize) {
+                const p = this.blobToDataURL(blob).then((dataUrl) => {
+                  if (dataUrl) results[key] = dataUrl;
+                });
+                conversionPromises.push(p);
+              }
+            }
+            cursor.continue();
+          } else {
+            Promise.all(conversionPromises).then(() => {
+              resolve(results);
+            }).catch(reject);
+          }
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getAllMetadata() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.openCursor();
+        const results = [];
+        request.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            const key = cursor.key;
+            const blob = cursor.value;
+            if (blob instanceof Blob) {
+              results.push({
+                key,
+                size: blob.size,
+                type: blob.type
+              });
+            }
+            cursor.continue();
+          } else {
+            resolve(results);
+          }
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    dataURLtoBlob(dataUrl) {
+      if (!dataUrl || typeof dataUrl !== "string") return null;
+      try {
+        const commaIdx = dataUrl.indexOf(",");
+        if (commaIdx === -1) return null;
+        const header = dataUrl.substring(0, commaIdx);
+        const base64Data = dataUrl.substring(commaIdx + 1);
+        const mimeMatch = header.match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "image/png";
+        const bstr = atob(base64Data);
+        const len = bstr.length;
+        const u8arr = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          u8arr[i] = bstr.charCodeAt(i);
+        }
+        return new Blob([u8arr], { type: mime });
+      } catch (e) {
+        console.error("Failed to convert dataURL to Blob", e);
+        return null;
+      }
+    },
+    async dataURLtoBlobAsync(dataUrl) {
+      if (!dataUrl || typeof dataUrl !== "string") return null;
+      try {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      } catch (e) {
+        return this.dataURLtoBlob(dataUrl);
+      }
+    },
+    blobToDataURL(blob) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    },
+    async cleanupStorage(maxTotalBytes = 250 * 1024 * 1024) {
+      const metadataList = await this.getAllMetadata();
+      let totalBytes = metadataList.reduce((acc, item) => acc + item.size, 0);
+      if (totalBytes <= maxTotalBytes) return { freed: 0, remaining: totalBytes };
+      let freedBytes = 0;
+      for (const item of metadataList) {
+        if (totalBytes <= maxTotalBytes) break;
+        await this.delete(item.key).catch(() => {
+        });
+        freedBytes += item.size;
+        totalBytes -= item.size;
+      }
+      return { freed: freedBytes, remaining: totalBytes };
+    }
+  };
+  var LuminaImageCacheDB2 = {
+    DB_NAME: "LuminaImageCacheDB",
+    DB_VERSION: 1,
+    STORE_NAME: "image_queries",
+    _db: null,
+    init() {
+      return new Promise((resolve, reject) => {
+        if (this._db) return resolve(this._db);
+        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            db.createObjectStore(this.STORE_NAME);
+          }
+        };
+        request.onsuccess = (e) => {
+          this._db = e.target.result;
+          this._db.onclose = () => {
+            this._db = null;
+          };
+          this._db.onversionchange = () => {
+            if (this._db) {
+              this._db.close();
+              this._db = null;
+            }
+          };
+          resolve(this._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async put(key, value) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.put({ value, timestamp: Date.now() }, key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async get(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = () => {
+          const res = request.result;
+          if (res) {
+            if (Date.now() - res.timestamp > 24 * 60 * 60 * 1e3) {
+              this.delete(key).catch(() => {
+              });
+              resolve(null);
+            } else {
+              resolve(res.value);
+            }
+          } else {
+            resolve(null);
+          }
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async delete(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.delete(key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async clear() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.clear();
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async cleanupExpired() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.openCursor();
+        const now = Date.now();
+        request.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            if (now - cursor.value.timestamp > 24 * 60 * 60 * 1e3) {
+              cursor.delete();
+            }
+            cursor.continue();
+          } else {
+            resolve(true);
+          }
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getStorageUsage() {
+      const db = await this.init();
+      let totalBytes = 0;
+      return new Promise((resolve) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.openCursor();
+        request.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            const keyStr = JSON.stringify(cursor.key);
+            const valStr = JSON.stringify(cursor.value);
+            totalBytes += (keyStr.length + valStr.length) * 2;
+            cursor.continue();
+          } else {
+            resolve(totalBytes);
+          }
+        };
+        request.onerror = () => resolve(0);
+      });
+    }
+  };
+  var LuminaAudioCacheDB = {
+    DB_NAME: "LuminaAudioCacheDB",
+    DB_VERSION: 1,
+    STORE_NAME: "audio_entries",
+    _db: null,
+    init() {
+      return new Promise((resolve, reject) => {
+        if (this._db) return resolve(this._db);
+        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            db.createObjectStore(this.STORE_NAME);
+          }
+        };
+        request.onsuccess = (e) => {
+          this._db = e.target.result;
+          this._db.onclose = () => {
+            this._db = null;
+          };
+          this._db.onversionchange = () => {
+            if (this._db) {
+              this._db.close();
+              this._db = null;
+            }
+          };
+          resolve(this._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async put(key, entry) {
+      const db = await this.init();
+      let dbValue = { ...entry };
+      if (entry && entry.data && Array.isArray(entry.data)) {
+        dbValue.data = await Promise.all(entry.data.map(async (base64) => {
+          if (typeof base64 !== "string" || !base64.startsWith("data:")) return base64;
+          return await LuminaAttachmentDB2.dataURLtoBlobAsync(base64) || base64;
+        }));
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.put({ value: dbValue, timestamp: Date.now() }, key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async get(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = async () => {
+          const res = request.result;
+          if (res) {
+            if (Date.now() - res.timestamp > 24 * 60 * 60 * 1e3) {
+              this.delete(key).catch(() => {
+              });
+              resolve(null);
+            } else {
+              const entry = { ...res.value };
+              if (entry && entry.data && Array.isArray(entry.data)) {
+                try {
+                  const base64Promises = entry.data.map(async (item) => {
+                    if (item instanceof Blob) {
+                      return await LuminaAttachmentDB2.blobToDataURL(item);
+                    }
+                    return item;
+                  });
+                  entry.data = (await Promise.all(base64Promises)).filter(Boolean);
+                } catch (err) {
+                  console.error("Failed to deserialize Blobs in audio cache get:", err);
+                }
+              }
+              resolve(entry);
+            }
+          } else {
+            resolve(null);
+          }
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async delete(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.delete(key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async clear() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.clear();
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async cleanupExpired() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.openCursor();
+        const now = Date.now();
+        request.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            if (now - cursor.value.timestamp > 24 * 60 * 60 * 1e3) {
+              cursor.delete();
+            }
+            cursor.continue();
+          } else {
+            resolve(true);
+          }
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getStorageUsage() {
+      const db = await this.init();
+      let totalBytes = 0;
+      return new Promise((resolve) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.openCursor();
+        request.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            const keyStr = JSON.stringify(cursor.key);
+            totalBytes += keyStr.length * 2;
+            const val = cursor.value;
+            if (val) {
+              if (val.value && val.value.data && Array.isArray(val.value.data)) {
+                val.value.data.forEach((item) => {
+                  if (item instanceof Blob) {
+                    totalBytes += item.size;
+                  } else if (typeof item === "string") {
+                    totalBytes += item.length * 2;
+                  }
+                });
+                const copy = { ...val };
+                delete copy.value.data;
+                totalBytes += JSON.stringify(copy).length * 2;
+              } else {
+                totalBytes += JSON.stringify(val).length * 2;
+              }
+            }
+            cursor.continue();
+          } else {
+            resolve(totalBytes);
+          }
+        };
+        request.onerror = () => resolve(0);
+      });
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.LuminaAttachmentDB = LuminaAttachmentDB2;
+    globalThis.LuminaImageCacheDB = LuminaImageCacheDB2;
+    globalThis.LuminaAudioCacheDB = LuminaAudioCacheDB;
+  }
+
+  // src/db/highlight_db.js
+  var LuminaAnnotationDB2 = {
+    DB_NAME: "LuminaHighlightDB",
+    DB_VERSION: 1,
+    STORE_NAME: "highlights",
+    _db: null,
+    init() {
+      return new Promise((resolve, reject) => {
+        if (this._db) return resolve(this._db);
+        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            db.createObjectStore(this.STORE_NAME);
+          }
+        };
+        request.onsuccess = (e) => {
+          this._db = e.target.result;
+          this._db.onclose = () => {
+            this._db = null;
+          };
+          this._db.onversionchange = () => {
+            if (this._db) {
+              this._db.close();
+              this._db = null;
+            }
+          };
+          resolve(this._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async put(key, highlightsArray) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.put(highlightsArray, key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async get(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async delete(key) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readwrite");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.delete(key);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getAllKeys() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.getAllKeys();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getAll() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, "readonly");
+        const store = tx.objectStore(this.STORE_NAME);
+        const keysReq = store.getAllKeys();
+        const valsReq = store.getAll();
+        tx.oncomplete = () => {
+          const keys = keysReq.result || [];
+          const vals = valsReq.result || [];
+          const results = {};
+          for (let i = 0; i < keys.length; i++) {
+            results[keys[i]] = vals[i];
+          }
+          resolve(results);
+        };
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    }
+  };
+  var LuminaHighlightDB = LuminaAnnotationDB2;
+  if (typeof globalThis !== "undefined") {
+    globalThis.LuminaAnnotationDB = LuminaAnnotationDB2;
+    globalThis.LuminaHighlightDB = LuminaHighlightDB;
+  }
+
+  // src/db/chat_db.js
+  var LuminaChatDB2 = {
+    DB_NAME: "LuminaChatDB",
+    DB_VERSION: 1,
+    SESSIONS_STORE: "sessions",
+    MESSAGES_STORE: "messages",
+    _db: null,
+    init() {
+      return new Promise((resolve, reject) => {
+        if (this._db) return resolve(this._db);
+        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.SESSIONS_STORE)) {
+            db.createObjectStore(this.SESSIONS_STORE, { keyPath: "id" });
+          }
+          if (!db.objectStoreNames.contains(this.MESSAGES_STORE)) {
+            db.createObjectStore(this.MESSAGES_STORE);
+          }
+        };
+        request.onsuccess = (e) => {
+          this._db = e.target.result;
+          this._db.onclose = () => {
+            this._db = null;
+          };
+          this._db.onversionchange = () => {
+            if (this._db) {
+              this._db.close();
+              this._db = null;
+            }
+          };
+          resolve(this._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getSession(sessionId, includeDeleted = false) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.SESSIONS_STORE, "readonly");
+        const store = tx.objectStore(this.SESSIONS_STORE);
+        const request = store.get(sessionId);
+        request.onsuccess = () => {
+          const s = request.result || null;
+          if (!s) return resolve(null);
+          if (s.isDeleted && !includeDeleted) return resolve(null);
+          resolve(s);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async putSession(sessionMeta) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.SESSIONS_STORE, "readwrite");
+        const store = tx.objectStore(this.SESSIONS_STORE);
+        const request = store.put(sessionMeta);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async deleteSession(sessionId) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], "readwrite");
+        tx.objectStore(this.SESSIONS_STORE).delete(sessionId);
+        tx.objectStore(this.MESSAGES_STORE).delete(sessionId);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async deleteSessionHard(sessionId) {
+      return this.deleteSession(sessionId);
+    },
+    async getAllSessions(includeDeleted = false) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.SESSIONS_STORE, "readonly");
+        const store = tx.objectStore(this.SESSIONS_STORE);
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const sessionsMap = {};
+          const list = request.result || [];
+          list.forEach((s) => {
+            if (s && s.id) {
+              if (!s.isDeleted || includeDeleted) {
+                sessionsMap[s.id] = s;
+              }
+            }
+          });
+          resolve(sessionsMap);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getAllSessionsRaw() {
+      return this.getAllSessions(true);
+    },
+    async getMessages(sessionId) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.MESSAGES_STORE, "readonly");
+        const store = tx.objectStore(this.MESSAGES_STORE);
+        const request = store.get(sessionId);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async putMessages(sessionId, messages) {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.MESSAGES_STORE, "readwrite");
+        const store = tx.objectStore(this.MESSAGES_STORE);
+        const request = store.put(messages, sessionId);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async clearAll() {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], "readwrite");
+        tx.objectStore(this.SESSIONS_STORE).clear();
+        tx.objectStore(this.MESSAGES_STORE).clear();
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    },
+    async getStorageUsage() {
+      const db = await this.init();
+      let totalBytes = 0;
+      return new Promise((resolve) => {
+        const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], "readonly");
+        const sessionStore = tx.objectStore(this.SESSIONS_STORE);
+        const msgStore = tx.objectStore(this.MESSAGES_STORE);
+        const sessionReq = sessionStore.getAll();
+        sessionReq.onsuccess = () => {
+          const sessions = sessionReq.result || [];
+          const activeSessionIds = /* @__PURE__ */ new Set();
+          sessions.forEach((s) => {
+            if (s && s.id && !s.isDeleted) {
+              activeSessionIds.add(s.id);
+              const keyStr = JSON.stringify(s.id);
+              const valStr = JSON.stringify(s);
+              totalBytes += (keyStr.length + valStr.length) * 2;
+            }
+          });
+          if (activeSessionIds.size === 0) {
+            resolve(totalBytes);
+            return;
+          }
+          const msgReq = msgStore.openCursor();
+          msgReq.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              if (activeSessionIds.has(cursor.key)) {
+                const keyStr = JSON.stringify(cursor.key);
+                const valStr = JSON.stringify(cursor.value);
+                totalBytes += (keyStr.length + valStr.length) * 2;
+              }
+              cursor.continue();
+            } else {
+              resolve(totalBytes);
+            }
+          };
+          msgReq.onerror = () => resolve(totalBytes);
+        };
+        sessionReq.onerror = () => resolve(0);
+      });
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.LuminaChatDB = LuminaChatDB2;
+  }
+
+  // src/db/notes_manager.js
+  var NotesManager2 = class _NotesManager {
+    static DB_NAME = "LuminaNotesDB";
+    static DB_VERSION = 1;
+    static STORE_COLLECTIONS = "collections";
+    static STORE_NOTES = "notes";
+    static _db = null;
+    static async getDB() {
+      if (_NotesManager._db) return _NotesManager._db;
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(_NotesManager.DB_NAME, _NotesManager.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(_NotesManager.STORE_COLLECTIONS)) {
+            db.createObjectStore(_NotesManager.STORE_COLLECTIONS, { keyPath: "id" });
+          }
+          if (!db.objectStoreNames.contains(_NotesManager.STORE_NOTES)) {
+            const notesStore = db.createObjectStore(_NotesManager.STORE_NOTES, { keyPath: "id" });
+            notesStore.createIndex("collectionId", "collectionId", { unique: false });
+            notesStore.createIndex("updatedAt", "updatedAt", { unique: false });
+          }
+        };
+        request.onsuccess = async (e) => {
+          _NotesManager._db = e.target.result;
+          _NotesManager._db.onclose = () => {
+            _NotesManager._db = null;
+          };
+          _NotesManager._db.onversionchange = () => {
+            if (_NotesManager._db) {
+              _NotesManager._db.close();
+              _NotesManager._db = null;
+            }
+          };
+          await _NotesManager.ensureDefaultSeed();
+          resolve(_NotesManager._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async ensureDefaultSeed() {
+    }
+    static async getCollections(includeDeleted = false) {
+      const db = await _NotesManager.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_COLLECTIONS, "readonly");
+        const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const list = request.result || [];
+          resolve(includeDeleted ? list : list.filter((c) => c && !c.isDeleted));
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async getAllCollectionsRaw() {
+      return _NotesManager.getCollections(true);
+    }
+    static async createCollection(name, icon = "folder") {
+      const db = await _NotesManager.getDB();
+      const newCol = {
+        id: "col_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+        name: name.trim() || "Untitled Collection",
+        icon,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_COLLECTIONS, "readwrite");
+        const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
+        const request = store.put(newCol);
+        request.onsuccess = () => {
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          resolve(newCol);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async renameCollection(collectionId, newName) {
+      if (!collectionId || collectionId === "all") return false;
+      const db = await _NotesManager.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_COLLECTIONS, "readwrite");
+        const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
+        const getReq = store.get(collectionId);
+        getReq.onsuccess = () => {
+          const col = getReq.result;
+          if (!col || col.isDeleted) return resolve(false);
+          col.name = newName.trim() || "Untitled Collection";
+          col.updatedAt = Date.now();
+          const putReq = store.put(col);
+          putReq.onsuccess = () => {
+            if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+              LuminaSync.triggerDebouncedSync();
+            }
+            resolve(col);
+          };
+          putReq.onerror = (e) => reject(e.target.error);
+        };
+        getReq.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async deleteCollection(collectionId) {
+      const db = await _NotesManager.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([_NotesManager.STORE_COLLECTIONS, _NotesManager.STORE_NOTES], "readwrite");
+        const colStore = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
+        const noteStore = tx.objectStore(_NotesManager.STORE_NOTES);
+        colStore.delete(collectionId);
+        const index = noteStore.index("collectionId");
+        const req = index.openCursor(IDBKeyRange.only(collectionId));
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            const note = cursor.value;
+            note.collectionId = null;
+            note.updatedAt = Date.now();
+            cursor.update(note);
+            cursor.continue();
+          }
+        };
+        tx.oncomplete = () => {
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          resolve(true);
+        };
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async getNotes(collectionId = null, includeDeleted = false) {
+      const db = await _NotesManager.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_NOTES, "readonly");
+        const store = tx.objectStore(_NotesManager.STORE_NOTES);
+        let request;
+        if (collectionId && collectionId !== "all") {
+          const index = store.index("collectionId");
+          request = index.getAll(IDBKeyRange.only(collectionId));
+        } else {
+          request = store.getAll();
+        }
+        request.onsuccess = () => {
+          let notes = request.result || [];
+          if (!includeDeleted) {
+            notes = notes.filter((n) => n && !n.isDeleted);
+          }
+          notes.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+          resolve(notes);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async getAllNotesRaw() {
+      return _NotesManager.getNotes(null, true);
+    }
+    static async getNote(noteId, includeDeleted = false) {
+      const db = await _NotesManager.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_NOTES, "readonly");
+        const store = tx.objectStore(_NotesManager.STORE_NOTES);
+        const request = store.get(noteId);
+        request.onsuccess = () => {
+          const note = request.result || null;
+          if (!note) return resolve(null);
+          if (note.isDeleted && !includeDeleted) return resolve(null);
+          resolve(note);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async createNote(collectionId = null, title = "Untitled Note") {
+      if (collectionId === "all" || collectionId === "col_default") collectionId = null;
+      const db = await _NotesManager.getDB();
+      const now = Date.now();
+      const newNote = {
+        id: "note_" + now + "_" + Math.random().toString(36).substr(2, 5),
+        collectionId,
+        title,
+        content: {
+          time: now,
+          blocks: [],
+          version: "2.30.7"
+        },
+        pinned: false,
+        createdAt: now,
+        updatedAt: now
+      };
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
+        const store = tx.objectStore(_NotesManager.STORE_NOTES);
+        const request = store.put(newNote);
+        request.onsuccess = () => {
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          resolve(newNote);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async saveNote(noteId, updates) {
+      const db = await _NotesManager.getDB();
+      const existingNote = await _NotesManager.getNote(noteId);
+      if (!existingNote) return null;
+      const updatedNote = {
+        ...existingNote,
+        ...updates,
+        updatedAt: Date.now()
+      };
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
+        const store = tx.objectStore(_NotesManager.STORE_NOTES);
+        const request = store.put(updatedNote);
+        request.onsuccess = () => {
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          resolve(updatedNote);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async pinNote(noteId, pinned = true) {
+      return _NotesManager.saveNote(noteId, { pinned, updatedAt: void 0 });
+    }
+    static async moveNote(noteId, newCollectionId) {
+      const db = await _NotesManager.getDB();
+      const note = await _NotesManager.getNote(noteId);
+      if (!note) return null;
+      note.collectionId = newCollectionId;
+      note.updatedAt = Date.now();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
+        const store = tx.objectStore(_NotesManager.STORE_NOTES);
+        const request = store.put(note);
+        request.onsuccess = () => {
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          resolve(note);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async getNoteCount(collectionId) {
+      const notes = await _NotesManager.getNotes(collectionId, false);
+      return notes.length;
+    }
+    static async deleteNote(noteId) {
+      const db = await _NotesManager.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
+        const store = tx.objectStore(_NotesManager.STORE_NOTES);
+        const req = store.delete(noteId);
+        req.onsuccess = () => {
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          resolve(true);
+        };
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.NotesManager = NotesManager2;
+  }
+
+  // src/db/chat_history.js
+  (function() {
+    const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
+    if (!globalObj.LuminaRawTextRegistry) {
+      globalObj.LuminaRawTextRegistry = /* @__PURE__ */ new WeakMap();
+    }
+    if (typeof Element !== "undefined" && Element.prototype) {
+      const originalSetAttribute = Element.prototype.setAttribute;
+      const originalGetAttribute = Element.prototype.getAttribute;
+      const originalRemoveAttribute = Element.prototype.removeAttribute;
+      Element.prototype.setAttribute = function(name, value) {
+        if (name === "data-raw-text") {
+          globalObj.LuminaRawTextRegistry.set(this, value);
+          const truncated = typeof value === "string" && value.length > 1e3 ? value.substring(0, 1e3) + "... (truncated in DOM)" : value;
+          return originalSetAttribute.call(this, name, truncated);
+        }
+        return originalSetAttribute.call(this, name, value);
+      };
+      Element.prototype.getAttribute = function(name) {
+        if (name === "data-raw-text") {
+          if (globalObj.LuminaRawTextRegistry.has(this)) {
+            return globalObj.LuminaRawTextRegistry.get(this);
+          }
+        }
+        return originalGetAttribute.call(this, name);
+      };
+      Element.prototype.removeAttribute = function(name) {
+        if (name === "data-raw-text") {
+          globalObj.LuminaRawTextRegistry.delete(this);
+        }
+        return originalRemoveAttribute.call(this, name);
+      };
+    }
+  })();
+  function reconstructGroups(messages) {
+    const qaGroups = [];
+    let index = 0;
+    const list = Array.isArray(messages) ? messages : [];
+    while (index < list.length) {
+      const group = [];
+      const msg = list[index];
+      if (msg && msg.type === "context" && index + 1 < list.length) {
+        if (list[index + 1] && list[index + 1].type === "question") {
+          group.push({ msg: list[index], originalIndex: index });
+          index++;
+        }
+      }
+      group.push({ msg: list[index], originalIndex: index });
+      index++;
+      if (index < list.length && list[index] && list[index].type === "answer") {
+        group.push({ msg: list[index], originalIndex: index });
+        index++;
+      }
+      qaGroups.push(group);
+    }
+    return qaGroups;
+  }
+  var ChatHistoryManager2 = {
+    STORAGE_KEY: "lumina_chat_sessions",
+    LEGACY_KEY: "chat_history",
+    TEMP_POPUP_KEY: "lumina_popup_sessions",
+    MAX_HISTORIES: 999,
+    RETENTION_DAYS: 180,
+    currentSessionId: null,
+    generateSessionId() {
+      return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    },
+    async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null) {
+      if (!historyEl && typeof currentPopup !== "undefined" && currentPopup) {
+        historyEl = currentPopup.querySelector(".lumina-chat-history");
+      }
+      if (!historyEl) return;
+      const now = Date.now();
+      if (!force && this._lastSaveTime && now - this._lastSaveTime < 500) {
+        if (this._saveTimeout) clearTimeout(this._saveTimeout);
+        this._saveTimeout = setTimeout(() => this.saveCurrentChat(historyEl, optionalSessionId, sparkId, force, extraSettings), 500);
+        return;
+      }
+      this._lastSaveTime = now;
+      if (this._saveTimeout) clearTimeout(this._saveTimeout);
+      if (optionalSessionId && historyEl.dataset.sessionId && historyEl.dataset.sessionId !== optionalSessionId) {
+        return;
+      }
+      const history = historyEl;
+      if (!history || history.children.length === 0) return;
+      const messages = this.extractMessages(history);
+      if (messages.length === 0) {
+        return;
+      }
+      let activeSessionId = optionalSessionId || this.currentSessionId;
+      if (!activeSessionId) {
+        activeSessionId = this.generateSessionId();
+        if (!optionalSessionId) this.currentSessionId = activeSessionId;
+      }
+      const title = this.generateChatTitle(history);
+      const timestamp = Date.now();
+      try {
+        const optimizedMessages = messages.map((msg) => {
+          if (msg.type === "question") {
+            const cleanItem = (item) => {
+              if (typeof item === "object" && item && (item.attachmentId || item.fileUri)) {
+                const newItem = { ...item };
+                if (newItem.dataUrl) newItem.dataUrl = null;
+                if (newItem.previewUrl && newItem.previewUrl.startsWith("data:")) newItem.previewUrl = null;
+                if (newItem.data) newItem.data = null;
+                return newItem;
+              }
+              return item;
+            };
+            return {
+              ...msg,
+              files: Array.isArray(msg.files || msg.images) ? (msg.files || msg.images).map(cleanItem) : msg.files || msg.images
+            };
+          }
+          return msg;
+        });
+        await LuminaChatDB2.putMessages(activeSessionId, optimizedMessages);
+        const existingSession = await LuminaChatDB2.getSession(activeSessionId) || {};
+        const isRenamed = existingSession.isRenamed || false;
+        const autoNamed = existingSession.autoNamed || false;
+        const finalTitle = isRenamed || autoNamed ? existingSession.title : title;
+        const questions = messages.map((m, idx) => ({ ...m, originalIndex: idx })).filter((m) => m.type === "question").map((m) => {
+          const nextAnswer = messages.slice(m.originalIndex + 1).find((msg) => msg.type === "answer");
+          const answerSummary = nextAnswer ? String(nextAnswer.content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 100) : "";
+          const rawText = String(m.content || "");
+          const truncatedText = rawText.length > 500 ? rawText.substring(0, 500) + "..." : rawText;
+          return {
+            text: truncatedText,
+            index: m.originalIndex,
+            snippet: answerSummary,
+            timestamp: m.timestamp
+          };
+        });
+        let fullSearchText = questions.map((q) => q.text).join(" ").replace(/\s+/g, " ");
+        if (fullSearchText.length > 2e3) {
+          fullSearchText = fullSearchText.substring(0, 2e3);
+        }
+        const latestAnswer = [...messages].reverse().find((m) => m.type === "answer");
+        const contentForSnippet = latestAnswer ? String(latestAnswer.content || "") : messages[0] ? String(messages[0].content || "") : "No messages";
+        const snippet = contentForSnippet.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 100);
+        const latestTimestamp = messages.length > 0 ? messages[messages.length - 1].timestamp : timestamp;
+        const sessionMeta = {
+          id: activeSessionId,
+          title: finalTitle,
+          isRenamed,
+          autoNamed: existingSession.autoNamed || false,
+          sparkId: sparkId || existingSession.sparkId || null,
+          searchIndex: fullSearchText,
+          questions,
+          snippet,
+          context: (typeof currentContext !== "undefined" ? currentContext : "") || "",
+          pinned: existingSession.pinned !== void 0 ? existingSession.pinned : existingSession.isPinned !== void 0 ? existingSession.isPinned : typeof isPinned !== "undefined" ? isPinned : false,
+          isPinned: existingSession.pinned !== void 0 ? existingSession.pinned : existingSession.isPinned !== void 0 ? existingSession.isPinned : typeof isPinned !== "undefined" ? isPinned : false,
+          position: (existingSession.pinned || existingSession.isPinned || typeof isPinned !== "undefined" && isPinned) && typeof currentPopup !== "undefined" && currentPopup ? {
+            left: currentPopup.style.left,
+            top: currentPopup.style.top
+          } : null,
+          createdAt: existingSession.createdAt || timestamp,
+          updatedAt: force || !existingSession.updatedAt || latestTimestamp > existingSession.updatedAt ? timestamp : existingSession.updatedAt,
+          hasContent: true,
+          selectedModel: extraSettings && extraSettings.selectedModel || existingSession.selectedModel || null,
+          thinkingLevel: extraSettings && extraSettings.thinkingLevel || existingSession.thinkingLevel || null,
+          archived: existingSession.archived || false
+        };
+        await LuminaChatDB2.putSession(sessionMeta);
+        if (sparkId) {
+          const finalModel = extraSettings && extraSettings.selectedModel || existingSession.selectedModel || null;
+          const finalThinking = extraSettings && extraSettings.thinkingLevel || existingSession.thinkingLevel || null;
+          if (finalModel || finalThinking) {
+            const settingsRes = await chrome.storage.local.get(["lumina_spark_last_settings"]);
+            const sparkSettings = settingsRes.lumina_spark_last_settings || {};
+            sparkSettings[sparkId] = {
+              selectedModel: finalModel,
+              thinkingLevel: finalThinking
+            };
+            await chrome.storage.local.set({ lumina_spark_last_settings: sparkSettings });
+          }
+        }
+        if (typeof window !== "undefined") {
+          window._localSavedSessions = window._localSavedSessions || {};
+          window._localSavedSessions[activeSessionId] = Date.now();
+        }
+        const senderInstanceId = typeof window !== "undefined" && window._luminaWindowInstanceId ? window._luminaWindowInstanceId : null;
+        chrome.runtime.sendMessage({ action: "lumina_session_updated", sessionId: activeSessionId, source: "local_save", senderInstanceId }).catch(() => {
+        });
+        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated", senderInstanceId }).catch(() => {
+        });
+      } catch (error) {
+        console.error("Failed to save chat history:", error);
+      }
+    },
+    createCompletedStepperHTML(query, sourcesCount) {
+      const checkIcon = '<svg class="lumina-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      return `
+            <div class="lumina-completed-step">
+                ${checkIcon}
+                <span class="lumina-step-text">Searched for: <strong>"${query}"</strong> (${sourcesCount} sources)</span>
+            </div>
+        `;
+    },
+    extractMessages(historyElement) {
+      const messages = [];
+      for (const child of historyElement.children) {
+        if (!child.classList.contains("lumina-entry")) continue;
+        const entryType = child.dataset.entryType;
+        const fromCache = child.dataset.fromCache === "true";
+        const timestamp = parseInt(child.dataset.timestamp) || Date.now();
+        const questionEl = child.querySelector(".lumina-chat-question");
+        const versionsContainer = child.querySelector(".lumina-answer-versions");
+        const answerEl = child.querySelector(".lumina-chat-answer");
+        if (questionEl) {
+          let serializedImages = Array.isArray(questionEl._luminaImages) ? questionEl._luminaImages : Array.isArray(child._luminaImages) ? child._luminaImages : null;
+          if (!serializedImages && questionEl.dataset.images) {
+            try {
+              const parsedImages = JSON.parse(questionEl.dataset.images);
+              if (Array.isArray(parsedImages)) {
+                serializedImages = parsedImages;
+              } else if (parsedImages && Array.isArray(parsedImages.files)) {
+                serializedImages = parsedImages.files;
+              } else {
+                serializedImages = null;
+              }
+            } catch (_) {
+              serializedImages = null;
+            }
+          }
+          messages.push({
+            type: "question",
+            content: questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim(),
+            files: serializedImages,
+            timestamp,
+            metadata: { fromCache }
+          });
+        }
+        if (versionsContainer) {
+          const versions = Array.from(versionsContainer.querySelectorAll(".lumina-answer-version"));
+          const activeVersion = versionsContainer.querySelector(".lumina-answer-version.active");
+          const activeIndex = activeVersion ? parseInt(activeVersion.dataset.versionIndex) || 0 : 0;
+          const versionContents = versions.map((v) => {
+            const ans = v.querySelector(".lumina-chat-answer");
+            return ans ? ans.getAttribute("data-raw-text") || ans.innerHTML : "";
+          });
+          const activeAnswerEl = activeVersion ? activeVersion.querySelector(".lumina-chat-answer") : versions[0] ? versions[0].querySelector(".lumina-chat-answer") : null;
+          const webSearchData = activeAnswerEl?.dataset.webSearch ? JSON.parse(activeAnswerEl.dataset.webSearch) : null;
+          messages.push({
+            type: "answer",
+            content: versionContents[activeIndex] || versionContents[0] || "",
+            versions: versionContents,
+            activeVersionIndex: activeIndex,
+            timestamp,
+            metadata: { fromCache, webSearch: webSearchData }
+          });
+        } else if (answerEl) {
+          const webSearchData = answerEl.dataset.webSearch ? JSON.parse(answerEl.dataset.webSearch) : null;
+          messages.push({
+            type: "answer",
+            content: answerEl.getAttribute("data-raw-text") || answerEl.innerHTML,
+            timestamp,
+            metadata: { fromCache, webSearch: webSearchData }
+          });
+        }
+      }
+      return messages;
+    },
+    generateChatTitle(historyElement) {
+      const allEntries = Array.from(historyElement.querySelectorAll(".lumina-entry"));
+      if (allEntries.length === 0) return "New Chat";
+      for (let i = allEntries.length - 1; i >= 0; i--) {
+        const entry = allEntries[i];
+        const questionEl = entry.querySelector(".lumina-chat-question");
+        if (questionEl) {
+          return questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim();
+        }
+      }
+      return "New Chat";
+    },
+    async loadChat(sessionId) {
+      try {
+        const chatMeta = await LuminaChatDB2.getSession(sessionId);
+        if (chatMeta) {
+          this.currentSessionId = sessionId;
+          const messages = await LuminaChatDB2.getMessages(sessionId) || [];
+          const chatData = {
+            ...chatMeta,
+            messages,
+            sessionId,
+            timestamp: chatMeta.createdAt || chatMeta.updatedAt
+          };
+          await this.restoreChat(chatData);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Failed to load chat history:", error);
+        return false;
+      }
+    },
+    async restoreChat(chatData, historyContainer = null, targetIndex = null) {
+      if (!historyContainer && typeof currentPopup === "undefined") return;
+      if (!historyContainer && !currentPopup) {
+        showChatPopup("");
+        overridePopupAnimation(currentPopup);
+      }
+      const history = historyContainer || currentPopup.querySelector(".lumina-chat-history");
+      if (!history) return;
+      const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
+      if (globalObj.LuminaActiveBlobUrls && globalObj.LuminaActiveBlobUrls.length > 0) {
+        globalObj.LuminaActiveBlobUrls.forEach((url) => {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+          }
+        });
+        globalObj.LuminaActiveBlobUrls = [];
+      }
+      const restoreId = Math.random().toString(36).substr(2, 9);
+      history.__activeRestoreId = restoreId;
+      history.innerHTML = "";
+      if (chatData.context) currentContext = chatData.context;
+      let sparksMap = {};
+      if (chatData.sparkId) {
+        try {
+          const sparksRes = await chrome.storage.local.get(["lumina_sparks"]);
+          sparksMap = sparksRes.lumina_sparks || {};
+        } catch (e) {
+          console.error("Failed to load sparks in restoreChat", e);
+        }
+      }
+      const processPromises = [];
+      if (typeof document !== "undefined" && !document.getElementById("lumina-lazy-load-styles")) {
+        const style = document.createElement("style");
+        style.id = "lumina-lazy-load-styles";
+        style.textContent = `
+                .lumina-load-more-history {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 8px 12px;
+                    margin: 8px auto;
+                    height: 32px;
+                    color: var(--lumina-sidebar-text-muted);
+                    font-size: 11px;
+                    cursor: pointer;
+                    user-select: none;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+        document.head.appendChild(style);
+      }
+      const renderGroup = async (group, targetContainer) => {
+        if (history.__activeRestoreId !== restoreId) return;
+        let i = 0;
+        while (i < group.length) {
+          if (history.__activeRestoreId !== restoreId) return;
+          const item = group[i];
+          const msg = item.msg;
+          const msgIdx = item.originalIndex;
+          if (msg.type === "question") {
+            const entryDiv = document.createElement("div");
+            entryDiv.className = "lumina-entry";
+            entryDiv.dataset.entryId = msg.metadata?.entryId || "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
+            entryDiv.dataset.entryType = msg.metadata?.entryType || "qa";
+            if (msg.timestamp) entryDiv.dataset.timestamp = String(msg.timestamp);
+            const questionDiv = document.createElement("div");
+            questionDiv.className = "lumina-chat-question";
+            questionDiv.dataset.messageIndex = msgIdx;
+            questionDiv.dataset.entryType = entryDiv.dataset.entryType;
+            questionDiv.setAttribute("data-raw-text", msg.content);
+            if (msg.files) questionDiv.dataset.files = JSON.stringify(msg.files);
+            const visibleImages = Array.isArray(msg.files) ? msg.files.filter((imgItem) => {
+              if (typeof imgItem === "string") return true;
+              if (!imgItem || typeof imgItem !== "object") return false;
+              return !imgItem.hiddenInPreview && !imgItem.parentAttachmentId;
+            }) : [];
+            if (visibleImages.length > 0) {
+              questionDiv._luminaImages = visibleImages;
+              entryDiv._luminaImages = visibleImages;
+              questionDiv.dataset.images = JSON.stringify({
+                compact: true,
+                count: visibleImages.length,
+                files: visibleImages.map((imgItem, imgIdx) => {
+                  if (typeof imgItem === "string") {
+                    return {
+                      name: `Image ${imgIdx + 1}`,
+                      mimeType: "image/*",
+                      isImage: true,
+                      dataLength: imgItem.length,
+                      dataUrl: imgItem
+                    };
+                  }
+                  return {
+                    name: imgItem?.name || `File ${imgIdx + 1}`,
+                    mimeType: imgItem?.mimeType || "",
+                    isImage: !!imgItem?.isImage || (imgItem?.mimeType || "").startsWith("image/"),
+                    fileUri: imgItem?.fileUri || "",
+                    dataLength: (imgItem?.dataUrl || imgItem?.data || "").length,
+                    dataUrl: imgItem?.dataUrl || imgItem?.previewUrl || (imgItem?.mimeType && imgItem?.data ? `data:${imgItem.mimeType};base64,${imgItem.data}` : ""),
+                    attachmentId: imgItem?.attachmentId || null
+                  };
+                })
+              });
+              const filesDiv = document.createElement("div");
+              filesDiv.className = "lumina-chat-question-files";
+              visibleImages.forEach((item2) => {
+                const isImage = item2.isImage || item2.mimeType && item2.mimeType.startsWith("image/");
+                const rawSrc = item2.objectUrl || item2.dataUrl || item2.previewUrl || (item2.mimeType && item2.data ? `data:${item2.mimeType};base64,${item2.data}` : "");
+                const src = isImage ? rawSrc.startsWith("data:") || rawSrc.startsWith("blob:") ? rawSrc : typeof LuminaChatUI !== "undefined" ? LuminaChatUI._resolveImagePreviewSrc(item2, rawSrc) : rawSrc : rawSrc;
+                if (isImage) {
+                  const img = document.createElement("img");
+                  img.src = src;
+                  if (item2.attachmentId) {
+                    img.dataset.attachmentId = item2.attachmentId;
+                  }
+                  if (item2.name) img.alt = item2.name;
+                  img.className = "lumina-clickable-image";
+                  img.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (typeof LuminaChatUI !== "undefined") {
+                      LuminaChatUI.showImagePreview(img.src, img.alt);
+                    }
+                  });
+                  filesDiv.appendChild(img);
+                } else {
+                  const fileName = item2.name || "File";
+                  const displayName = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getDisplayFileName(fileName) : fileName;
+                  const category = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.inferFileCategory(item2) : "other";
+                  const icon = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getFileIconByCategory(category) : "\u{1F4C4}";
+                  const typeLabel = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getFileTypeLabel(item2) : "";
+                  const fileChip = document.createElement("div");
+                  fileChip.className = "lumina-preview-item is-file lumina-question-file-chip";
+                  if (item2.attachmentId) {
+                    fileChip.dataset.attachmentId = item2.attachmentId;
+                  }
+                  fileChip.title = fileName;
+                  fileChip.innerHTML = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${displayName || fileName}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${typeLabel}</span></div></div>`;
+                  filesDiv.appendChild(fileChip);
+                }
+              });
+              entryDiv.appendChild(filesDiv);
+              visibleImages.forEach((imgItem) => {
+                if (imgItem && imgItem.attachmentId) {
+                  LuminaAttachmentDB2.get(imgItem.attachmentId).then(async (blob) => {
+                    if (blob) {
+                      const dataUrl = await LuminaAttachmentDB2.blobToDataURL(blob);
+                      const imgEl = entryDiv.querySelector(`[data-attachment-id="${imgItem.attachmentId}"]`);
+                      if (imgEl && dataUrl) {
+                        imgEl.src = dataUrl;
+                      }
+                    }
+                  }).catch((err) => console.error("Failed to hydrate attachment preview in restoreChat", err));
+                }
+              });
+            }
+            let cleanMsgContent = (msg.content || "").trim();
+            if (cleanMsgContent.startsWith("[Context:")) {
+              const closeBracketIdx = cleanMsgContent.indexOf("]");
+              const contextText = cleanMsgContent.substring(9, closeBracketIdx).trim();
+              const taglessText = cleanMsgContent.substring(closeBracketIdx + 1).trim();
+              const tagContent = contextText ? `"${contextText}"` : "";
+              questionDiv.innerHTML = `<div class="lumina-question-content">${tagContent} ${taglessText}</div>`;
+            } else {
+              questionDiv.innerHTML = `<div class="lumina-question-content">${cleanMsgContent}</div>`;
+            }
+            const row = document.createElement("div");
+            row.className = "lumina-question-row";
+            row.appendChild(questionDiv);
+            entryDiv.appendChild(row);
+            if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.injectQuestionActions === "function") {
+              LuminaChatUI.injectQuestionActions(questionDiv);
+            }
+            if (i + 1 < group.length && group[i + 1].msg.type === "answer") {
+              const answerMsg = group[i + 1].msg;
+              if (answerMsg.metadata?.webSearch) {
+                const stepperHTML = this.createCompletedStepperHTML(
+                  answerMsg.metadata.webSearch.query,
+                  answerMsg.metadata.webSearch.sourcesCount
+                );
+                const stepperContainer = document.createElement("div");
+                stepperContainer.innerHTML = stepperHTML.trim();
+                entryDiv.appendChild(stepperContainer.firstChild);
+              }
+              if (answerMsg.versions && answerMsg.versions.length > 1) {
+                const versionsContainer = document.createElement("div");
+                versionsContainer.className = "lumina-answer-versions";
+                const activeIndex = answerMsg.versions.length - 1;
+                answerMsg.versions.forEach((versionContent, idx) => {
+                  const versionDiv = document.createElement("div");
+                  versionDiv.className = "lumina-answer-version" + (idx === activeIndex ? " active" : "");
+                  versionDiv.dataset.versionIndex = idx.toString();
+                  const answerDiv = document.createElement("div");
+                  answerDiv.className = "lumina-chat-answer";
+                  answerDiv.setAttribute("data-raw-text", versionContent);
+                  const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
+                  if (displayContent.trim().startsWith("<")) {
+                    answerDiv.innerHTML = displayContent;
+                  } else if (typeof marked !== "undefined") {
+                    let content = displayContent;
+                    let html = marked.parse(content);
+                    if (answerMsg.metadata?.webSearch?.sources) {
+                      const sources = answerMsg.metadata.webSearch.sources;
+                      html = html.replace(/\[(\d+)\]/g, (match, num) => {
+                        const sIdx = parseInt(num) - 1;
+                        if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                        return match;
+                      });
+                    }
+                    answerDiv.innerHTML = html;
+                  } else {
+                    answerDiv.textContent = displayContent;
+                  }
+                  answerDiv.querySelectorAll("a").forEach((link) => {
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                  });
+                  if (typeof LuminaChatUI !== "undefined") {
+                    processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                  }
+                  if (chatData.sparkId && sparksMap[chatData.sparkId]) {
+                    const spark = sparksMap[chatData.sparkId];
+                    const headerDiv = document.createElement("div");
+                    headerDiv.className = "lumina-spark-message-header";
+                    const nameSpan = document.createElement("span");
+                    nameSpan.className = "lumina-spark-name";
+                    nameSpan.textContent = spark.name;
+                    const sepSpan = document.createElement("span");
+                    sepSpan.className = "lumina-spark-separator";
+                    sepSpan.textContent = " \u2022 ";
+                    const typeSpan = document.createElement("span");
+                    typeSpan.className = "lumina-spark-type";
+                    typeSpan.textContent = "Custom Spark";
+                    headerDiv.appendChild(nameSpan);
+                    headerDiv.appendChild(sepSpan);
+                    headerDiv.appendChild(typeSpan);
+                    answerDiv.insertBefore(headerDiv, answerDiv.firstChild);
+                  }
+                  versionDiv.appendChild(answerDiv);
+                  versionsContainer.appendChild(versionDiv);
+                });
+                const navContainer = document.createElement("div");
+                navContainer.className = "lumina-answer-nav";
+                navContainer.innerHTML = `
+                                <button class="lumina-answer-nav-btn nav-prev" ${activeIndex === 0 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+                                <span class="lumina-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
+                                <button class="lumina-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+                            `;
+                versionsContainer.appendChild(navContainer);
+                if (typeof showAnswerVersion === "function") {
+                  navContainer.querySelector(".nav-prev").addEventListener("click", () => showAnswerVersion(entryDiv, "prev"));
+                  navContainer.querySelector(".nav-next").addEventListener("click", () => showAnswerVersion(entryDiv, "next"));
+                }
+                entryDiv.appendChild(versionsContainer);
+              } else {
+                const answerDiv = document.createElement("div");
+                answerDiv.className = "lumina-chat-answer";
+                answerDiv.setAttribute("data-raw-text", answerMsg.content);
+                let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
+                displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+                  const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  const displayType = type.replace("code/", "").toUpperCase();
+                  return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
+      <div class="lumina-canvas-card-left">
+        <div class="lumina-canvas-card-info">
+          <div class="lumina-canvas-card-title">${name}</div>
+          <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
+        </div>
+      </div>
+    </div>`;
+                });
+                displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+                  return `*\u{1F504} Canvas Updated: **${name}***`;
+                });
+                displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+                  return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
+                });
+                if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
+                  answerDiv.innerHTML = displayContent;
+                } else if (typeof marked !== "undefined") {
+                  let content = displayContent;
+                  content = content.replace(/!\[([^\]]*)\]\((image-search:\/\/[^)]*)\)/g, (match, alt, url) => {
+                    return `![${alt}](${url.replace(/ /g, "%20")})`;
+                  });
+                  let html = marked.parse(content);
+                  if (answerMsg.metadata?.webSearch?.sources) {
+                    const sources = answerMsg.metadata.webSearch.sources;
+                    html = html.replace(/\[(\d+)\]/g, (match, num) => {
+                      const sIdx = parseInt(num) - 1;
+                      if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                      return match;
+                    });
+                  }
+                  answerDiv.innerHTML = html;
+                } else {
+                  answerDiv.textContent = displayContent;
+                }
+                answerDiv.querySelectorAll("a").forEach((link) => {
+                  link.target = "_blank";
+                  link.rel = "noopener noreferrer";
+                });
+                if (typeof LuminaChatUI !== "undefined") {
+                  processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                }
+                if (chatData.sparkId && sparksMap[chatData.sparkId]) {
+                  const spark = sparksMap[chatData.sparkId];
+                  const headerDiv = document.createElement("div");
+                  headerDiv.className = "lumina-spark-message-header";
+                  const nameSpan = document.createElement("span");
+                  nameSpan.className = "lumina-spark-name";
+                  nameSpan.textContent = spark.name;
+                  const sepSpan = document.createElement("span");
+                  sepSpan.className = "lumina-spark-separator";
+                  sepSpan.textContent = " \u2022 ";
+                  const typeSpan = document.createElement("span");
+                  typeSpan.className = "lumina-spark-type";
+                  typeSpan.textContent = "Custom Spark";
+                  headerDiv.appendChild(nameSpan);
+                  headerDiv.appendChild(sepSpan);
+                  headerDiv.appendChild(typeSpan);
+                  answerDiv.insertBefore(headerDiv, answerDiv.firstChild);
+                }
+                entryDiv.appendChild(answerDiv);
+              }
+              i++;
+            }
+            targetContainer.appendChild(entryDiv);
+            if (typeof attachQuestionListeners === "function") attachQuestionListeners(questionDiv.querySelector("[contenteditable]"));
+          } else if (msg.type === "answer") {
+            const entryDiv = document.createElement("div");
+            entryDiv.className = "lumina-entry";
+            entryDiv.dataset.entryId = msg.metadata?.entryId || "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
+            entryDiv.dataset.entryType = msg.metadata?.entryType || "qa";
+            if (msg.metadata?.webSearch) {
+              const stepperHTML = this.createCompletedStepperHTML(msg.metadata.webSearch.query, msg.metadata.webSearch.sourcesCount);
+              const stepperContainer = document.createElement("div");
+              stepperContainer.innerHTML = stepperHTML.trim();
+              entryDiv.appendChild(stepperContainer.firstChild);
+            }
+            const answerDiv = document.createElement("div");
+            answerDiv.className = "lumina-chat-answer";
+            answerDiv.setAttribute("data-raw-text", msg.content);
+            let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
+            displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+              const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              const displayType = type.replace("code/", "").toUpperCase();
+              return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
+      <div class="lumina-canvas-card-left">
+        <div class="lumina-canvas-card-info">
+          <div class="lumina-canvas-card-title">${name}</div>
+          <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
+        </div>
+      </div>
+    </div>`;
+            });
+            displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+              return `*\u{1F504} Canvas Updated: **${name}***`;
+            });
+            displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+              return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
+            });
+            if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
+              answerDiv.innerHTML = displayContent;
+            } else if (typeof marked !== "undefined") {
+              let c = displayContent;
+              c = c.replace(/!\[([^\]]*)\]\((image-search:\/\/[^)]*)\)/g, (match, alt, url) => {
+                return `![${alt}](${url.replace(/ /g, "%20")})`;
+              });
+              answerDiv.innerHTML = marked.parse(c);
+            } else {
+              answerDiv.textContent = displayContent;
+            }
+            answerDiv.querySelectorAll("a").forEach((link) => {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            });
+            if (typeof LuminaChatUI !== "undefined") {
+              processPromises.push(LuminaChatUI.processContainer(answerDiv));
+            }
+            if (chatData.sparkId && sparksMap[chatData.sparkId]) {
+              const spark = sparksMap[chatData.sparkId];
+              const headerDiv = document.createElement("div");
+              headerDiv.className = "lumina-spark-message-header";
+              const nameSpan = document.createElement("span");
+              nameSpan.className = "lumina-spark-name";
+              nameSpan.textContent = spark.name;
+              const sepSpan = document.createElement("span");
+              sepSpan.className = "lumina-spark-separator";
+              sepSpan.textContent = " \u2022 ";
+              const typeSpan = document.createElement("span");
+              typeSpan.className = "lumina-spark-type";
+              typeSpan.textContent = "Custom Spark";
+              headerDiv.appendChild(nameSpan);
+              headerDiv.appendChild(sepSpan);
+              headerDiv.appendChild(typeSpan);
+              answerDiv.insertBefore(headerDiv, answerDiv.firstChild);
+            }
+            entryDiv.appendChild(answerDiv);
+            targetContainer.appendChild(entryDiv);
+          }
+          i++;
+        }
+      };
+      const qaGroups = reconstructGroups(chatData.messages);
+      const bypassPagination = targetIndex !== null || qaGroups.length <= 10;
+      if (bypassPagination) {
+        for (const group of qaGroups) {
+          if (history.__activeRestoreId !== restoreId) return;
+          await renderGroup(group, history);
+        }
+      } else {
+        const initialPageSize = 10;
+        const initialGroups = qaGroups.slice(-initialPageSize);
+        const remainingGroups = qaGroups.slice(0, -initialPageSize);
+        historyContainer.__remainingSessionId = chatData.sessionId;
+        historyContainer.__loadedGroupsCount = initialPageSize;
+        const loadMoreDiv = document.createElement("div");
+        loadMoreDiv.className = "lumina-load-more-history";
+        loadMoreDiv.innerHTML = `
+                <svg class="lumina-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px; animation: spin 0.8s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+            `;
+        if (history.__activeRestoreId !== restoreId) return;
+        history.appendChild(loadMoreDiv);
+        for (const group of initialGroups) {
+          if (history.__activeRestoreId !== restoreId) return;
+          await renderGroup(group, history);
+        }
+        const loadNextChunk = async () => {
+          if (loadMoreDiv.dataset.loading === "true") return;
+          loadMoreDiv.dataset.loading = "true";
+          const spinner = loadMoreDiv.querySelector(".lumina-load-more-spinner");
+          if (spinner) spinner.style.display = "block";
+          const loadedCount = historyContainer.__loadedGroupsCount || 10;
+          const allMessages = await LuminaChatDB2.getMessages(historyContainer.__remainingSessionId).catch(() => []);
+          const allGroups = reconstructGroups(allMessages);
+          const remaining = allGroups.slice(0, -loadedCount);
+          if (remaining.length === 0) {
+            loadMoreDiv.remove();
+            return;
+          }
+          const chunkSize = 15;
+          const chunk = remaining.slice(-chunkSize);
+          historyContainer.__loadedGroupsCount = loadedCount + chunk.length;
+          const oldScrollHeight = historyContainer.scrollHeight;
+          const oldScrollTop = historyContainer.scrollTop;
+          const fragment = document.createDocumentFragment();
+          for (const group of chunk) {
+            await renderGroup(group, fragment);
+          }
+          if (loadMoreDiv.nextSibling) {
+            history.insertBefore(fragment, loadMoreDiv.nextSibling);
+          } else {
+            history.appendChild(fragment);
+          }
+          const newScrollHeight = historyContainer.scrollHeight;
+          historyContainer.scrollTop = newScrollHeight - oldScrollHeight + oldScrollTop;
+          loadMoreDiv.dataset.loading = "false";
+          if (remaining.length <= chunk.length) {
+            loadMoreObserver.disconnect();
+            loadMoreDiv.remove();
+          }
+        };
+        const loadMoreObserver = new IntersectionObserver(async (entries) => {
+          if (entries[0].isIntersecting) {
+            await loadNextChunk();
+          }
+        }, { root: historyContainer, threshold: 0.1 });
+        loadMoreObserver.observe(loadMoreDiv);
+        loadMoreDiv.addEventListener("click", loadNextChunk);
+      }
+      const hasEntries = history.querySelector(".lumina-entry");
+      const regenBtn = document.getElementById("lumina-regenerate-btn") || document.querySelector(".lumina-regenerate-btn");
+      if (processPromises.length > 0) {
+        if (historyContainer) {
+          historyContainer.__processingPromises = processPromises;
+        }
+        await Promise.all(processPromises);
+      }
+      if (regenBtn) {
+        regenBtn.style.display = hasEntries ? "flex" : "none";
+      }
+      const wsContainers = history.querySelectorAll(".lumina-websource-container");
+      if (wsContainers.length > 0) {
+        wsContainers.forEach((container2) => {
+          const iframe = container2.querySelector("iframe");
+          if (!iframe) return;
+          const realSrc = container2.dataset.sourceUrl || (iframe.src && iframe.src !== "about:blank" ? iframe.src : "") || container2.dataset.savedSrc || "";
+          if (!realSrc || realSrc === "about:blank") return;
+          container2.dataset.lazySrc = realSrc;
+          container2.classList.add("is-lazy-unloaded");
+          iframe.removeAttribute("src");
+        });
+        const lazyObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const container2 = entry.target;
+            if (!container2.classList.contains("is-lazy-unloaded")) return;
+            const lazySrc = container2.dataset.lazySrc;
+            if (!lazySrc) return;
+            const iframe = container2.querySelector("iframe");
+            if (!iframe) return;
+            container2.classList.remove("is-lazy-unloaded");
+            container2.classList.add("is-loading");
+            iframe.onload = () => setTimeout(() => container2.classList.remove("is-loading"), 600);
+            lazyObserver.unobserve(container2);
+            const sourceId = container2.dataset.sourceId;
+            if (sourceId && typeof chrome !== "undefined" && chrome.runtime) {
+              chrome.storage.local.get(["customSources"], (data) => {
+                const sources = data.customSources || [];
+                const source = sources.find((s) => s.id === sourceId);
+                if (source && (source.css || source.selector || source.zoom && source.zoom !== 100)) {
+                  chrome.runtime.sendMessage({
+                    action: "prepare_iframe_injection",
+                    frameUrl: lazySrc,
+                    css: source.css || "",
+                    selector: source.selector || "",
+                    zoom: source.zoom || 100
+                  }).catch(() => {
+                  });
+                }
+                iframe.src = lazySrc;
+              });
+            } else {
+              iframe.src = lazySrc;
+            }
+          });
+        }, { rootMargin: "200px" });
+        wsContainers.forEach((container2) => {
+          if (container2.classList.contains("is-lazy-unloaded")) {
+            lazyObserver.observe(container2);
+          }
+        });
+      }
+    },
+    async getAllHistories() {
+      return await LuminaChatDB2.getAllSessions();
+    },
+    async deleteSessionWithAttachments(sessionId) {
+      try {
+        const messages = await LuminaChatDB2.getMessages(sessionId);
+        if (Array.isArray(messages)) {
+          for (const msg of messages) {
+            const files = msg.files || msg.images;
+            if (Array.isArray(files)) {
+              for (const file of files) {
+                if (file && file.attachmentId) {
+                  try {
+                    await LuminaAttachmentDB2.delete(file.attachmentId);
+                  } catch (e) {
+                    console.error("Failed to delete attachment from DB:", file.attachmentId, e);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching messages for attachment cleanup:", e);
+      }
+      await LuminaChatDB2.deleteSession(sessionId);
+    },
+    async deleteChat(sessionId) {
+      try {
+        await this.deleteSessionWithAttachments(sessionId);
+        chrome.runtime.sendMessage({ action: "get_stored_files" }, (response) => {
+          if (response && response.success && Array.isArray(response.files)) {
+            const sessionFiles = response.files.filter((f) => f.sessionId === sessionId);
+            sessionFiles.forEach((sf) => {
+              chrome.runtime.sendMessage({ action: "delete_stored_file", fileName: sf.rawName });
+            });
+          }
+        });
+        chrome.runtime.sendMessage({ action: "lumina_sessions_deleted", deletedIds: [sessionId] }).catch(() => {
+        });
+        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        });
+        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+          LuminaSync.triggerDebouncedSync();
+        }
+        return true;
+      } catch (error) {
+        console.error("Failed to delete chat history:", error);
+        return false;
+      }
+    },
+    async renameChat(sessionId, newTitle) {
+      try {
+        const meta = await LuminaChatDB2.getSession(sessionId);
+        if (meta) {
+          meta.title = newTitle;
+          meta.isRenamed = true;
+          meta.updatedAt = Date.now();
+          await LuminaChatDB2.putSession(meta);
+          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          });
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Failed to rename chat history:", error);
+        return false;
+      }
+    },
+    async updateSessionModelAndThinking(sessionId, selectedModel, thinkingLevel) {
+      if (!sessionId || sessionId === "null") return false;
+      try {
+        const meta = await LuminaChatDB2.getSession(sessionId);
+        if (meta) {
+          if (selectedModel !== void 0) meta.selectedModel = selectedModel;
+          if (thinkingLevel !== void 0) meta.thinkingLevel = thinkingLevel;
+          await LuminaChatDB2.putSession(meta);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Failed to update session model and thinking level:", error);
+        return false;
+      }
+    },
+    async getStorageUsage() {
+      try {
+        return await LuminaChatDB2.getStorageUsage();
+      } catch (error) {
+        console.error("Error calculating chat storage:", error);
+        return 0;
+      }
+    },
+    async clearAllHistory() {
+      try {
+        const sessions = await LuminaChatDB2.getAllSessions(true);
+        for (const sessionId of Object.keys(sessions)) {
+          const session = sessions[sessionId];
+          if (session && session.archived) {
+            continue;
+          }
+          await this.deleteSessionWithAttachments(sessionId);
+        }
+        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        });
+        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+          LuminaSync.triggerDebouncedSync();
+        }
+        return true;
+      } catch (error) {
+        console.error("Failed to clear chat history:", error);
+        return false;
+      }
+    },
+    startNewSession() {
+      this.currentSessionId = this.generateSessionId();
+    },
+    async migrateIfNeeded() {
+      return;
+    },
+    async cleanupHistoryByAge() {
+      try {
+        const settings = await chrome.storage.local.get(["historyRetentionMonths"]);
+        const months = settings.historyRetentionMonths !== void 0 ? parseFloat(settings.historyRetentionMonths) : 3;
+        if (months === 0) return;
+        const retentionMs = months * 30 * 24 * 60 * 60 * 1e3;
+        const cutoffTime = Date.now() - retentionMs;
+        const sessions = await LuminaChatDB2.getAllSessions();
+        const deletedSessionIds = [];
+        for (const [id, session] of Object.entries(sessions)) {
+          const sessionTime = session.updatedAt || session.createdAt || 0;
+          if (sessionTime < cutoffTime) {
+            deletedSessionIds.push(id);
+            await this.deleteSessionWithAttachments(id);
+          }
+        }
+        if (deletedSessionIds.length > 0) {
+          chrome.runtime.sendMessage({ action: "cleanup_opfs_files" });
+          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          });
+          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
+            LuminaSync.triggerDebouncedSync();
+          }
+        }
+      } catch (error) {
+        console.error("[Lumina History] Error cleaning up history by age:", error);
+      }
+    },
+    async getSessionMessages(sessionId) {
+      return await LuminaChatDB2.getMessages(sessionId) || [];
+    },
+    async saveSessionMessages(sessionId, messages) {
+      const result = await LuminaChatDB2.putMessages(sessionId, messages);
+      if (typeof LuminaAttachmentDB2 !== "undefined" && LuminaAttachmentDB2.getAllMetadata) {
+        (async () => {
+          try {
+            const activeIds = /* @__PURE__ */ new Set();
+            if (Array.isArray(messages)) {
+              for (const msg of messages) {
+                const files = msg.files || msg.images;
+                if (Array.isArray(files)) {
+                  for (const file of files) {
+                    if (file && file.attachmentId) {
+                      activeIds.add(file.attachmentId);
+                    }
+                  }
+                }
+              }
+            }
+            const metadata = await LuminaAttachmentDB2.getAllMetadata();
+            const sessionPrefix = `${sessionId}_`;
+            for (const item of metadata) {
+              if (item && item.key && item.key.startsWith(sessionPrefix)) {
+                if (!activeIds.has(item.key)) {
+                  await LuminaAttachmentDB2.delete(item.key).catch(() => {
+                  });
+                }
+              }
+            }
+          } catch (err) {
+            console.error("[Auto Cleanup] Failed to clean up orphaned attachments:", err);
+          }
+        })();
+      }
+      return result;
+    }
+  };
+  var LuminaChatHistory = ChatHistoryManager2;
+  if (typeof window !== "undefined") {
+    if (window.location.protocol === "chrome-extension:") {
+      ChatHistoryManager2.cleanupHistoryByAge();
+    }
+    window.ChatHistoryManager = ChatHistoryManager2;
+    window.LuminaChatHistory = LuminaChatHistory;
+  }
+  if (typeof globalThis !== "undefined") {
+    globalThis.ChatHistoryManager = ChatHistoryManager2;
+    globalThis.LuminaChatHistory = LuminaChatHistory;
+  }
+
+  // src/db/migration.js
+  async function runLuminaMigrations() {
+    try {
+      const allLocalData = await chrome.storage.local.get(null);
+      const keysToRemove = [];
+      for (const key of Object.keys(allLocalData)) {
+        if (key.startsWith("highlights_")) {
+          const legacyHighlights = allLocalData[key] || [];
+          if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
+            const flatHighlights = legacyHighlights.map((h) => {
+              if (Array.isArray(h)) return h;
+              if (!h || !h.rangeData) return null;
+              return [
+                h.id,
+                h.color,
+                Array.isArray(h.rangeData.startPath) ? h.rangeData.startPath.join("/") : "",
+                h.rangeData.startOffset,
+                Array.isArray(h.rangeData.endPath) ? h.rangeData.endPath.join("/") : "",
+                h.rangeData.endOffset,
+                h.rangeData.text || "",
+                h.timestamp || Date.now()
+              ];
+            }).filter(Boolean);
+            if (flatHighlights.length > 0) {
+              try {
+                const existing = await LuminaAnnotationDB2.get(key);
+                if (!existing || existing.length === 0) {
+                  await LuminaAnnotationDB2.put(key, flatHighlights);
+                }
+              } catch (dbErr) {
+                console.error(`[Lumina Migration] Failed to migrate highlights for key: ${key}`, dbErr);
+              }
+            }
+          }
+          keysToRemove.push(key);
+        }
+        const lowerKey = key.toLowerCase();
+        if (key.startsWith("chatbox_") || lowerKey.includes("spotlight") || key === "tavilyApiKey" || lowerKey.includes("monica") || lowerKey.includes("lynote") || key === "audio_cache" || key.startsWith("lumina_img_cache_") || key.startsWith("lumina_img_query_")) {
+          keysToRemove.push(key);
+        }
+      }
+      if (keysToRemove.length > 0) {
+        await chrome.storage.local.remove(keysToRemove);
+      }
+    } catch (err) {
+      console.error("[Lumina Migration] Standalone highlights/obsolete keys purge failed:", err);
+    }
+    const MIGRATION_FLAG = "lumina_session_migrated_v7";
+    const PREV_MIGRATION_FLAGS = [
+      "lumina_session_migrated_v2",
+      "lumina_session_migrated_v3",
+      "lumina_session_migrated_v4",
+      "lumina_session_migrated_v5",
+      "lumina_session_migrated_v6"
+    ];
+    const flagResult = await chrome.storage.local.get([MIGRATION_FLAG]);
+    if (flagResult[MIGRATION_FLAG]) {
+      return;
+    }
+    try {
+      const allData = await chrome.storage.local.get(null);
+      const keysToRemove = [...PREV_MIGRATION_FLAGS];
+      const serializeHighlight = (h) => {
+        if (!h || !h.rangeData) return null;
+        return [
+          h.id,
+          h.color,
+          Array.isArray(h.rangeData.startPath) ? h.rangeData.startPath.join("/") : "",
+          h.rangeData.startOffset,
+          Array.isArray(h.rangeData.endPath) ? h.rangeData.endPath.join("/") : "",
+          h.rangeData.endOffset,
+          h.rangeData.text || "",
+          h.timestamp || Date.now()
+        ];
+      };
+      for (const key of Object.keys(allData)) {
+        if (key.toLowerCase().includes("spotlight") || key.startsWith("chatbox_") || key.toLowerCase().includes("monica") || key.toLowerCase().includes("lynote")) {
+          keysToRemove.push(key);
+          continue;
+        }
+        if (key.startsWith("highlights_")) {
+          const legacyHighlights = allData[key] || [];
+          if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
+            const flatHighlights = legacyHighlights.map(serializeHighlight).filter(Boolean);
+            if (flatHighlights.length > 0) {
+              try {
+                await LuminaAnnotationDB2.put(key, flatHighlights);
+              } catch (dbErr) {
+                console.error(`[Lumina Migration] Failed to save highlights for key: ${key}`, dbErr);
+              }
+            }
+          }
+          keysToRemove.push(key);
+        }
+      }
+      const sessionsKey = "lumina_chat_sessions";
+      let sessions = allData[sessionsKey] || {};
+      let sessionsUpdated = false;
+      for (const sessionId of Object.keys(sessions)) {
+        if (sessionId.startsWith("session_")) {
+          const newSessionId = sessionId.replace("session_", "");
+          const sessionMeta = { ...sessions[sessionId] };
+          sessionMeta.id = newSessionId;
+          sessions[newSessionId] = sessionMeta;
+          delete sessions[sessionId];
+          sessionsUpdated = true;
+          const oldSessionKey = `lumina_session_${sessionId}`;
+          const newSessionKey = `lumina_session_${newSessionId}`;
+          if (allData[oldSessionKey] && !allData[newSessionKey]) {
+            allData[newSessionKey] = allData[oldSessionKey];
+            keysToRemove.push(oldSessionKey);
+          }
+          const oldHistoryKey = `lumina_history_${sessionId}`;
+          const newHistoryKey = `lumina_history_${newSessionId}`;
+          if (allData[oldHistoryKey] && !allData[newHistoryKey]) {
+            allData[newHistoryKey] = allData[oldHistoryKey];
+            keysToRemove.push(oldHistoryKey);
+          }
+        }
+      }
+      for (const key of Object.keys(allData)) {
+        if (key.startsWith("lumina_session_session_")) {
+          const oldSessionId = key.replace("lumina_session_", "");
+          const newSessionId = oldSessionId.replace("session_", "");
+          const newSessionKey = `lumina_session_${newSessionId}`;
+          allData[newSessionKey] = allData[key];
+          keysToRemove.push(key);
+          const oldHistoryKey = `lumina_history_${oldSessionId}`;
+          if (allData[oldHistoryKey]) {
+            const newHistoryKey = `lumina_history_${newSessionId}`;
+            allData[newHistoryKey] = allData[oldHistoryKey];
+            keysToRemove.push(oldHistoryKey);
+          }
+          if (sessions[oldSessionId]) {
+            const sessionMeta = { ...sessions[oldSessionId] };
+            sessionMeta.id = newSessionId;
+            sessions[newSessionId] = sessionMeta;
+            delete sessions[oldSessionId];
+            sessionsUpdated = true;
+          }
+        }
+      }
+      const migratedSessionIds = /* @__PURE__ */ new Set();
+      for (const sessionId of Object.keys(sessions)) {
+        const meta = sessions[sessionId];
+        if (meta) {
+          const normId = sessionId.startsWith("session_") ? sessionId.replace("session_", "") : sessionId;
+          const messageKey = `lumina_session_${normId}`;
+          const messages = allData[messageKey] || meta.messages || [];
+          try {
+            meta.id = normId;
+            await LuminaChatDB2.putSession(meta);
+            await LuminaChatDB2.putMessages(normId, messages);
+            migratedSessionIds.add(normId);
+            keysToRemove.push(messageKey);
+            keysToRemove.push(`lumina_history_${normId}`);
+          } catch (chatDbErr) {
+            console.error(`[Lumina Migration] Failed to migrate chat session ${normId} to IndexedDB:`, chatDbErr);
+          }
+        }
+      }
+      for (const key of Object.keys(allData)) {
+        if (key.startsWith("lumina_session_")) {
+          const rawId = key.replace("lumina_session_", "");
+          if (rawId === "settings" || rawId === "session_settings") continue;
+          const normId = rawId.startsWith("session_") ? rawId.replace("session_", "") : rawId;
+          if (!migratedSessionIds.has(normId)) {
+            const messages = allData[key] || [];
+            if (Array.isArray(messages) && messages.length > 0) {
+              try {
+                const latestTimestamp = messages[messages.length - 1]?.timestamp || Date.now();
+                const meta = {
+                  id: normId,
+                  title: messages[0]?.content?.substring(0, 40) || "Recovered Chat",
+                  createdAt: messages[0]?.timestamp || latestTimestamp,
+                  updatedAt: latestTimestamp,
+                  hasContent: true
+                };
+                await LuminaChatDB2.putSession(meta);
+                await LuminaChatDB2.putMessages(normId, messages);
+              } catch (recoveryErr) {
+                console.error(`[Lumina Migration] Failed to recover standalone chat session ${normId}:`, recoveryErr);
+              }
+            }
+            keysToRemove.push(key);
+          }
+        }
+      }
+      keysToRemove.push(sessionsKey);
+      const dataToSet = {
+        [MIGRATION_FLAG]: true
+      };
+      await chrome.storage.local.set(dataToSet);
+      if (keysToRemove.length > 0) {
+        await chrome.storage.local.remove(keysToRemove);
+      }
+    } catch (error) {
+      console.error("[Lumina Migration] Fatal error during migration:", error);
+    }
+  }
+  runLuminaMigrations();
+
   // src/core/ai/token_utils.js
   var LuminaToken2 = {
     count: function(text) {
@@ -17732,491 +19994,6 @@ ${script}`;
         `;
     }
   };
-
-  // lib/core/attachment_db.js
-  var LuminaAttachmentDB2 = {
-    DB_NAME: "LuminaAttachmentDB",
-    DB_VERSION: 1,
-    STORE_NAME: "attachments",
-    _db: null,
-    init() {
-      return new Promise((resolve, reject) => {
-        if (this._db) return resolve(this._db);
-        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-            db.createObjectStore(this.STORE_NAME);
-          }
-        };
-        request.onsuccess = (e) => {
-          this._db = e.target.result;
-          this._db.onclose = () => {
-            this._db = null;
-          };
-          this._db.onversionchange = () => {
-            if (this._db) {
-              this._db.close();
-              this._db = null;
-            }
-          };
-          resolve(this._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async put(key, blob) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.put(blob, key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async get(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.get(key);
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async delete(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.delete(key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async clear() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.clear();
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getAll(maxSize = 2 * 1024 * 1024) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.openCursor();
-        const results = {};
-        const conversionPromises = [];
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            const key = cursor.key;
-            const blob = cursor.value;
-            if (blob instanceof Blob) {
-              if (blob.size <= maxSize) {
-                const p = this.blobToDataURL(blob).then((dataUrl) => {
-                  if (dataUrl) results[key] = dataUrl;
-                });
-                conversionPromises.push(p);
-              }
-            }
-            cursor.continue();
-          } else {
-            Promise.all(conversionPromises).then(() => {
-              resolve(results);
-            }).catch(reject);
-          }
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getAllMetadata() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.openCursor();
-        const results = [];
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            const key = cursor.key;
-            const blob = cursor.value;
-            if (blob instanceof Blob) {
-              results.push({
-                key,
-                size: blob.size,
-                type: blob.type
-              });
-            }
-            cursor.continue();
-          } else {
-            resolve(results);
-          }
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    dataURLtoBlob(dataUrl) {
-      if (!dataUrl || typeof dataUrl !== "string") return null;
-      try {
-        const commaIdx = dataUrl.indexOf(",");
-        if (commaIdx === -1) return null;
-        const header = dataUrl.substring(0, commaIdx);
-        const base64Data = dataUrl.substring(commaIdx + 1);
-        const mimeMatch = header.match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "image/png";
-        const bstr = atob(base64Data);
-        const len = bstr.length;
-        const u8arr = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          u8arr[i] = bstr.charCodeAt(i);
-        }
-        return new Blob([u8arr], { type: mime });
-      } catch (e) {
-        console.error("Failed to convert dataURL to Blob", e);
-        return null;
-      }
-    },
-    async dataURLtoBlobAsync(dataUrl) {
-      if (!dataUrl || typeof dataUrl !== "string") return null;
-      try {
-        const res = await fetch(dataUrl);
-        return await res.blob();
-      } catch (e) {
-        return this.dataURLtoBlob(dataUrl);
-      }
-    },
-    blobToDataURL(blob) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
-      });
-    },
-    async cleanupStorage(maxTotalBytes = 250 * 1024 * 1024) {
-      const metadataList = await this.getAllMetadata();
-      let totalBytes = metadataList.reduce((acc, item) => acc + item.size, 0);
-      if (totalBytes <= maxTotalBytes) return { freed: 0, remaining: totalBytes };
-      let freedBytes = 0;
-      for (const item of metadataList) {
-        if (totalBytes <= maxTotalBytes) break;
-        await this.delete(item.key).catch(() => {
-        });
-        freedBytes += item.size;
-        totalBytes -= item.size;
-      }
-      return { freed: freedBytes, remaining: totalBytes };
-    }
-  };
-  var LuminaImageCacheDB2 = {
-    DB_NAME: "LuminaImageCacheDB",
-    DB_VERSION: 1,
-    STORE_NAME: "image_queries",
-    _db: null,
-    init() {
-      return new Promise((resolve, reject) => {
-        if (this._db) return resolve(this._db);
-        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-            db.createObjectStore(this.STORE_NAME);
-          }
-        };
-        request.onsuccess = (e) => {
-          this._db = e.target.result;
-          this._db.onclose = () => {
-            this._db = null;
-          };
-          this._db.onversionchange = () => {
-            if (this._db) {
-              this._db.close();
-              this._db = null;
-            }
-          };
-          resolve(this._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async put(key, value) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.put({ value, timestamp: Date.now() }, key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async get(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.get(key);
-        request.onsuccess = () => {
-          const res = request.result;
-          if (res) {
-            if (Date.now() - res.timestamp > 24 * 60 * 60 * 1e3) {
-              this.delete(key).catch(() => {
-              });
-              resolve(null);
-            } else {
-              resolve(res.value);
-            }
-          } else {
-            resolve(null);
-          }
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async delete(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.delete(key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async clear() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.clear();
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async cleanupExpired() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.openCursor();
-        const now = Date.now();
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            if (now - cursor.value.timestamp > 24 * 60 * 60 * 1e3) {
-              cursor.delete();
-            }
-            cursor.continue();
-          } else {
-            resolve(true);
-          }
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getStorageUsage() {
-      const db = await this.init();
-      let totalBytes = 0;
-      return new Promise((resolve) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.openCursor();
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            const keyStr = JSON.stringify(cursor.key);
-            const valStr = JSON.stringify(cursor.value);
-            totalBytes += (keyStr.length + valStr.length) * 2;
-            cursor.continue();
-          } else {
-            resolve(totalBytes);
-          }
-        };
-        request.onerror = () => resolve(0);
-      });
-    }
-  };
-  var LuminaAudioCacheDB = {
-    DB_NAME: "LuminaAudioCacheDB",
-    DB_VERSION: 1,
-    STORE_NAME: "audio_entries",
-    _db: null,
-    init() {
-      return new Promise((resolve, reject) => {
-        if (this._db) return resolve(this._db);
-        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-            db.createObjectStore(this.STORE_NAME);
-          }
-        };
-        request.onsuccess = (e) => {
-          this._db = e.target.result;
-          this._db.onclose = () => {
-            this._db = null;
-          };
-          this._db.onversionchange = () => {
-            if (this._db) {
-              this._db.close();
-              this._db = null;
-            }
-          };
-          resolve(this._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async put(key, entry) {
-      const db = await this.init();
-      let dbValue = { ...entry };
-      if (entry && entry.data && Array.isArray(entry.data)) {
-        dbValue.data = await Promise.all(entry.data.map(async (base64) => {
-          if (typeof base64 !== "string" || !base64.startsWith("data:")) return base64;
-          return await LuminaAttachmentDB2.dataURLtoBlobAsync(base64) || base64;
-        }));
-      }
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.put({ value: dbValue, timestamp: Date.now() }, key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async get(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.get(key);
-        request.onsuccess = async () => {
-          const res = request.result;
-          if (res) {
-            if (Date.now() - res.timestamp > 24 * 60 * 60 * 1e3) {
-              this.delete(key).catch(() => {
-              });
-              resolve(null);
-            } else {
-              const entry = { ...res.value };
-              if (entry && entry.data && Array.isArray(entry.data)) {
-                try {
-                  const base64Promises = entry.data.map(async (item) => {
-                    if (item instanceof Blob) {
-                      return await LuminaAttachmentDB2.blobToDataURL(item);
-                    }
-                    return item;
-                  });
-                  entry.data = (await Promise.all(base64Promises)).filter(Boolean);
-                } catch (err) {
-                  console.error("Failed to deserialize Blobs in audio cache get:", err);
-                }
-              }
-              resolve(entry);
-            }
-          } else {
-            resolve(null);
-          }
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async delete(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.delete(key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async clear() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.clear();
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async cleanupExpired() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.openCursor();
-        const now = Date.now();
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            if (now - cursor.value.timestamp > 24 * 60 * 60 * 1e3) {
-              cursor.delete();
-            }
-            cursor.continue();
-          } else {
-            resolve(true);
-          }
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getStorageUsage() {
-      const db = await this.init();
-      let totalBytes = 0;
-      return new Promise((resolve) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.openCursor();
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            const keyStr = JSON.stringify(cursor.key);
-            totalBytes += keyStr.length * 2;
-            const val = cursor.value;
-            if (val) {
-              if (val.value && val.value.data && Array.isArray(val.value.data)) {
-                val.value.data.forEach((item) => {
-                  if (item instanceof Blob) {
-                    totalBytes += item.size;
-                  } else if (typeof item === "string") {
-                    totalBytes += item.length * 2;
-                  }
-                });
-                const copy = { ...val };
-                delete copy.value.data;
-                totalBytes += JSON.stringify(copy).length * 2;
-              } else {
-                totalBytes += JSON.stringify(val).length * 2;
-              }
-            }
-            cursor.continue();
-          } else {
-            resolve(totalBytes);
-          }
-        };
-        request.onerror = () => resolve(0);
-      });
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.LuminaAttachmentDB = LuminaAttachmentDB2;
-    window.LuminaImageCacheDB = LuminaImageCacheDB2;
-    window.LuminaAudioCacheDB = LuminaAudioCacheDB;
-  }
-  if (typeof globalThis !== "undefined") {
-    globalThis.LuminaAttachmentDB = LuminaAttachmentDB2;
-    globalThis.LuminaImageCacheDB = LuminaImageCacheDB2;
-    globalThis.LuminaAudioCacheDB = LuminaAudioCacheDB;
-  }
 
   // src/pages/lumina/index.js
   var import_marked_min = __toESM(require_marked_min());
@@ -24649,1528 +26426,6 @@ Output only the revised text.`;
     }
   };
 
-  // lib/core/highlight_db.js
-  var LuminaAnnotationDB2 = {
-    DB_NAME: "LuminaHighlightDB",
-    DB_VERSION: 1,
-    STORE_NAME: "highlights",
-    _db: null,
-    init() {
-      return new Promise((resolve, reject) => {
-        if (this._db) return resolve(this._db);
-        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-            db.createObjectStore(this.STORE_NAME);
-          }
-        };
-        request.onsuccess = (e) => {
-          this._db = e.target.result;
-          this._db.onclose = () => {
-            this._db = null;
-          };
-          this._db.onversionchange = () => {
-            if (this._db) {
-              this._db.close();
-              this._db = null;
-            }
-          };
-          resolve(this._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async put(key, highlightsArray) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.put(highlightsArray, key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async get(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.get(key);
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async delete(key) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readwrite");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.delete(key);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getAllKeys() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.getAllKeys();
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getAll() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, "readonly");
-        const store = tx.objectStore(this.STORE_NAME);
-        const keysReq = store.getAllKeys();
-        const valsReq = store.getAll();
-        tx.oncomplete = () => {
-          const keys = keysReq.result || [];
-          const vals = valsReq.result || [];
-          const results = {};
-          for (let i = 0; i < keys.length; i++) {
-            results[keys[i]] = vals[i];
-          }
-          resolve(results);
-        };
-        tx.onerror = (e) => reject(e.target.error);
-      });
-    }
-  };
-  if (typeof self !== "undefined") {
-    self.LuminaAnnotationDB = LuminaAnnotationDB2;
-  }
-
-  // lib/core/chat_db.js
-  var LuminaChatDB2 = {
-    DB_NAME: "LuminaChatDB",
-    DB_VERSION: 1,
-    SESSIONS_STORE: "sessions",
-    MESSAGES_STORE: "messages",
-    _db: null,
-    init() {
-      return new Promise((resolve, reject) => {
-        if (this._db) return resolve(this._db);
-        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(this.SESSIONS_STORE)) {
-            db.createObjectStore(this.SESSIONS_STORE, { keyPath: "id" });
-          }
-          if (!db.objectStoreNames.contains(this.MESSAGES_STORE)) {
-            db.createObjectStore(this.MESSAGES_STORE);
-          }
-        };
-        request.onsuccess = (e) => {
-          this._db = e.target.result;
-          this._db.onclose = () => {
-            this._db = null;
-          };
-          this._db.onversionchange = () => {
-            if (this._db) {
-              this._db.close();
-              this._db = null;
-            }
-          };
-          resolve(this._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getSession(sessionId, includeDeleted = false) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.SESSIONS_STORE, "readonly");
-        const store = tx.objectStore(this.SESSIONS_STORE);
-        const request = store.get(sessionId);
-        request.onsuccess = () => {
-          const s = request.result || null;
-          if (!s) return resolve(null);
-          if (s.isDeleted && !includeDeleted) return resolve(null);
-          resolve(s);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async putSession(sessionMeta) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.SESSIONS_STORE, "readwrite");
-        const store = tx.objectStore(this.SESSIONS_STORE);
-        const request = store.put(sessionMeta);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async deleteSession(sessionId) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], "readwrite");
-        tx.objectStore(this.SESSIONS_STORE).delete(sessionId);
-        tx.objectStore(this.MESSAGES_STORE).delete(sessionId);
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async deleteSessionHard(sessionId) {
-      return this.deleteSession(sessionId);
-    },
-    async getAllSessions(includeDeleted = false) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.SESSIONS_STORE, "readonly");
-        const store = tx.objectStore(this.SESSIONS_STORE);
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const sessionsMap = {};
-          const list = request.result || [];
-          list.forEach((s) => {
-            if (s && s.id) {
-              if (!s.isDeleted || includeDeleted) {
-                sessionsMap[s.id] = s;
-              }
-            }
-          });
-          resolve(sessionsMap);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getAllSessionsRaw() {
-      return this.getAllSessions(true);
-    },
-    async getMessages(sessionId) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.MESSAGES_STORE, "readonly");
-        const store = tx.objectStore(this.MESSAGES_STORE);
-        const request = store.get(sessionId);
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async putMessages(sessionId, messages) {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(this.MESSAGES_STORE, "readwrite");
-        const store = tx.objectStore(this.MESSAGES_STORE);
-        const request = store.put(messages, sessionId);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async clearAll() {
-      const db = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], "readwrite");
-        tx.objectStore(this.SESSIONS_STORE).clear();
-        tx.objectStore(this.MESSAGES_STORE).clear();
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = (e) => reject(e.target.error);
-      });
-    },
-    async getStorageUsage() {
-      const db = await this.init();
-      let totalBytes = 0;
-      return new Promise((resolve) => {
-        const tx = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], "readonly");
-        const sessionStore = tx.objectStore(this.SESSIONS_STORE);
-        const msgStore = tx.objectStore(this.MESSAGES_STORE);
-        const sessionReq = sessionStore.getAll();
-        sessionReq.onsuccess = () => {
-          const sessions = sessionReq.result || [];
-          const activeSessionIds = /* @__PURE__ */ new Set();
-          sessions.forEach((s) => {
-            if (s && s.id && !s.isDeleted) {
-              activeSessionIds.add(s.id);
-              const keyStr = JSON.stringify(s.id);
-              const valStr = JSON.stringify(s);
-              totalBytes += (keyStr.length + valStr.length) * 2;
-            }
-          });
-          if (activeSessionIds.size === 0) {
-            resolve(totalBytes);
-            return;
-          }
-          const msgReq = msgStore.openCursor();
-          msgReq.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              if (activeSessionIds.has(cursor.key)) {
-                const keyStr = JSON.stringify(cursor.key);
-                const valStr = JSON.stringify(cursor.value);
-                totalBytes += (keyStr.length + valStr.length) * 2;
-              }
-              cursor.continue();
-            } else {
-              resolve(totalBytes);
-            }
-          };
-          msgReq.onerror = () => resolve(totalBytes);
-        };
-        sessionReq.onerror = () => resolve(0);
-      });
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.LuminaChatDB = LuminaChatDB2;
-  }
-  if (typeof globalThis !== "undefined") {
-    globalThis.LuminaChatDB = LuminaChatDB2;
-  }
-
-  // lib/core/migration.js
-  (async function() {
-    try {
-      const allLocalData = await chrome.storage.local.get(null);
-      const keysToRemove = [];
-      for (const key of Object.keys(allLocalData)) {
-        if (key.startsWith("highlights_")) {
-          const legacyHighlights = allLocalData[key] || [];
-          if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
-            const flatHighlights = legacyHighlights.map((h) => {
-              if (Array.isArray(h)) return h;
-              if (!h || !h.rangeData) return null;
-              return [
-                h.id,
-                h.color,
-                Array.isArray(h.rangeData.startPath) ? h.rangeData.startPath.join("/") : "",
-                h.rangeData.startOffset,
-                Array.isArray(h.rangeData.endPath) ? h.rangeData.endPath.join("/") : "",
-                h.rangeData.endOffset,
-                h.rangeData.text || "",
-                h.timestamp || Date.now()
-              ];
-            }).filter(Boolean);
-            if (flatHighlights.length > 0) {
-              try {
-                const existing = await LuminaAnnotationDB.get(key);
-                if (!existing || existing.length === 0) {
-                  await LuminaAnnotationDB.put(key, flatHighlights);
-                  console.log(`[Lumina Migration] Migrated highlights to IndexedDB for key: ${key}`);
-                }
-              } catch (dbErr) {
-                console.error(`[Lumina Migration] Failed to migrate highlights for key: ${key}`, dbErr);
-              }
-            }
-          }
-          keysToRemove.push(key);
-        }
-        const lowerKey = key.toLowerCase();
-        if (key.startsWith("chatbox_") || lowerKey.includes("spotlight") || key === "tavilyApiKey" || lowerKey.includes("monica") || lowerKey.includes("lynote") || key === "audio_cache" || key.startsWith("lumina_img_cache_") || key.startsWith("lumina_img_query_")) {
-          keysToRemove.push(key);
-        }
-      }
-      if (keysToRemove.length > 0) {
-        await chrome.storage.local.remove(keysToRemove);
-        console.log("[Lumina Migration] Successfully purged legacy/obsolete keys from local storage:", keysToRemove);
-      }
-    } catch (err) {
-      console.error("[Lumina Migration] Standalone highlights/obsolete keys purge failed:", err);
-    }
-    const MIGRATION_FLAG = "lumina_session_migrated_v7";
-    const PREV_MIGRATION_FLAGS = [
-      "lumina_session_migrated_v2",
-      "lumina_session_migrated_v3",
-      "lumina_session_migrated_v4",
-      "lumina_session_migrated_v5",
-      "lumina_session_migrated_v6"
-    ];
-    const flagResult = await chrome.storage.local.get([MIGRATION_FLAG]);
-    if (flagResult[MIGRATION_FLAG]) {
-      return;
-    }
-    console.log("[Lumina Migration] Running migration v7: Migrating all highlights and chat history to IndexedDB...");
-    try {
-      const allData = await chrome.storage.local.get(null);
-      const keysToRemove = [...PREV_MIGRATION_FLAGS];
-      const serializeHighlight = (h) => {
-        if (!h || !h.rangeData) return null;
-        return [
-          h.id,
-          h.color,
-          Array.isArray(h.rangeData.startPath) ? h.rangeData.startPath.join("/") : "",
-          h.rangeData.startOffset,
-          Array.isArray(h.rangeData.endPath) ? h.rangeData.endPath.join("/") : "",
-          h.rangeData.endOffset,
-          h.rangeData.text || "",
-          h.timestamp || Date.now()
-        ];
-      };
-      for (const key of Object.keys(allData)) {
-        if (key.toLowerCase().includes("spotlight") || key.startsWith("chatbox_") || key.toLowerCase().includes("monica") || key.toLowerCase().includes("lynote")) {
-          keysToRemove.push(key);
-          continue;
-        }
-        if (key.startsWith("highlights_")) {
-          const legacyHighlights = allData[key] || [];
-          if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
-            const flatHighlights = legacyHighlights.map(serializeHighlight).filter(Boolean);
-            if (flatHighlights.length > 0) {
-              try {
-                await LuminaAnnotationDB.put(key, flatHighlights);
-                console.log(`[Lumina Migration] Successfully migrated highlights to IndexedDB for key: ${key}`);
-              } catch (dbErr) {
-                console.error(`[Lumina Migration] Failed to save highlights for key: ${key}`, dbErr);
-              }
-            }
-          }
-          keysToRemove.push(key);
-        }
-      }
-      const sessionsKey = "lumina_chat_sessions";
-      let sessions = allData[sessionsKey] || {};
-      let sessionsUpdated = false;
-      for (const sessionId of Object.keys(sessions)) {
-        if (sessionId.startsWith("session_")) {
-          const newSessionId = sessionId.replace("session_", "");
-          const sessionMeta = { ...sessions[sessionId] };
-          sessionMeta.id = newSessionId;
-          sessions[newSessionId] = sessionMeta;
-          delete sessions[sessionId];
-          sessionsUpdated = true;
-          const oldSessionKey = `lumina_session_${sessionId}`;
-          const newSessionKey = `lumina_session_${newSessionId}`;
-          if (allData[oldSessionKey] && !allData[newSessionKey]) {
-            allData[newSessionKey] = allData[oldSessionKey];
-            keysToRemove.push(oldSessionKey);
-          }
-          const oldHistoryKey = `lumina_history_${sessionId}`;
-          const newHistoryKey = `lumina_history_${newSessionId}`;
-          if (allData[oldHistoryKey] && !allData[newHistoryKey]) {
-            allData[newHistoryKey] = allData[oldHistoryKey];
-            keysToRemove.push(oldHistoryKey);
-          }
-        }
-      }
-      for (const key of Object.keys(allData)) {
-        if (key.startsWith("lumina_session_session_")) {
-          const oldSessionId = key.replace("lumina_session_", "");
-          const newSessionId = oldSessionId.replace("session_", "");
-          const newSessionKey = `lumina_session_${newSessionId}`;
-          allData[newSessionKey] = allData[key];
-          keysToRemove.push(key);
-          const oldHistoryKey = `lumina_history_${oldSessionId}`;
-          if (allData[oldHistoryKey]) {
-            const newHistoryKey = `lumina_history_${newSessionId}`;
-            allData[newHistoryKey] = allData[oldHistoryKey];
-            keysToRemove.push(oldHistoryKey);
-          }
-          if (sessions[oldSessionId]) {
-            const sessionMeta = { ...sessions[oldSessionId] };
-            sessionMeta.id = newSessionId;
-            sessions[newSessionId] = sessionMeta;
-            delete sessions[oldSessionId];
-            sessionsUpdated = true;
-          }
-        }
-      }
-      const migratedSessionIds = /* @__PURE__ */ new Set();
-      for (const sessionId of Object.keys(sessions)) {
-        const meta = sessions[sessionId];
-        if (meta) {
-          const normId = sessionId.startsWith("session_") ? sessionId.replace("session_", "") : sessionId;
-          const messageKey = `lumina_session_${normId}`;
-          const messages = allData[messageKey] || meta.messages || [];
-          try {
-            meta.id = normId;
-            await LuminaChatDB.putSession(meta);
-            await LuminaChatDB.putMessages(normId, messages);
-            migratedSessionIds.add(normId);
-            keysToRemove.push(messageKey);
-            keysToRemove.push(`lumina_history_${normId}`);
-            console.log(`[Lumina Migration] Migrated indexed chat session: ${normId}`);
-          } catch (chatDbErr) {
-            console.error(`[Lumina Migration] Failed to migrate chat session ${normId} to IndexedDB:`, chatDbErr);
-          }
-        }
-      }
-      for (const key of Object.keys(allData)) {
-        if (key.startsWith("lumina_session_")) {
-          const rawId = key.replace("lumina_session_", "");
-          if (rawId === "settings" || rawId === "session_settings") continue;
-          const normId = rawId.startsWith("session_") ? rawId.replace("session_", "") : rawId;
-          if (!migratedSessionIds.has(normId)) {
-            const messages = allData[key] || [];
-            if (Array.isArray(messages) && messages.length > 0) {
-              try {
-                const latestTimestamp = messages[messages.length - 1]?.timestamp || Date.now();
-                const meta = {
-                  id: normId,
-                  title: messages[0]?.content?.substring(0, 40) || "Recovered Chat",
-                  createdAt: messages[0]?.timestamp || latestTimestamp,
-                  updatedAt: latestTimestamp,
-                  hasContent: true
-                };
-                await LuminaChatDB.putSession(meta);
-                await LuminaChatDB.putMessages(normId, messages);
-                console.log(`[Lumina Migration] Recovered standalone chat session: ${normId}`);
-              } catch (recoveryErr) {
-                console.error(`[Lumina Migration] Failed to recover standalone chat session ${normId}:`, recoveryErr);
-              }
-            }
-            keysToRemove.push(key);
-          }
-        }
-      }
-      keysToRemove.push(sessionsKey);
-      const dataToSet = {
-        [MIGRATION_FLAG]: true
-      };
-      console.log("[Lumina Migration] Purging local storage keys:", keysToRemove);
-      await chrome.storage.local.set(dataToSet);
-      if (keysToRemove.length > 0) {
-        await chrome.storage.local.remove(keysToRemove);
-      }
-      console.log("[Lumina Migration] Migration completed successfully.");
-    } catch (error) {
-      console.error("[Lumina Migration] Fatal error during migration:", error);
-    }
-  })();
-
-  // lib/core/chat_history.js
-  (function() {
-    const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
-    if (!globalObj.LuminaRawTextRegistry) {
-      globalObj.LuminaRawTextRegistry = /* @__PURE__ */ new WeakMap();
-    }
-    if (typeof Element !== "undefined" && Element.prototype) {
-      const originalSetAttribute = Element.prototype.setAttribute;
-      const originalGetAttribute = Element.prototype.getAttribute;
-      const originalRemoveAttribute = Element.prototype.removeAttribute;
-      Element.prototype.setAttribute = function(name, value) {
-        if (name === "data-raw-text") {
-          globalObj.LuminaRawTextRegistry.set(this, value);
-          const truncated = typeof value === "string" && value.length > 1e3 ? value.substring(0, 1e3) + "... (truncated in DOM)" : value;
-          return originalSetAttribute.call(this, name, truncated);
-        }
-        return originalSetAttribute.call(this, name, value);
-      };
-      Element.prototype.getAttribute = function(name) {
-        if (name === "data-raw-text") {
-          if (globalObj.LuminaRawTextRegistry.has(this)) {
-            return globalObj.LuminaRawTextRegistry.get(this);
-          }
-        }
-        return originalGetAttribute.call(this, name);
-      };
-      Element.prototype.removeAttribute = function(name) {
-        if (name === "data-raw-text") {
-          globalObj.LuminaRawTextRegistry.delete(this);
-        }
-        return originalRemoveAttribute.call(this, name);
-      };
-    }
-  })();
-  function reconstructGroups(messages) {
-    const qaGroups = [];
-    let index = 0;
-    const list = Array.isArray(messages) ? messages : [];
-    while (index < list.length) {
-      const group = [];
-      const msg = list[index];
-      if (msg && msg.type === "context" && index + 1 < list.length) {
-        if (list[index + 1] && list[index + 1].type === "question") {
-          group.push({ msg: list[index], originalIndex: index });
-          index++;
-        }
-      }
-      group.push({ msg: list[index], originalIndex: index });
-      index++;
-      if (index < list.length && list[index] && list[index].type === "answer") {
-        group.push({ msg: list[index], originalIndex: index });
-        index++;
-      }
-      qaGroups.push(group);
-    }
-    return qaGroups;
-  }
-  var ChatHistoryManager2 = {
-    STORAGE_KEY: "lumina_chat_sessions",
-    LEGACY_KEY: "chat_history",
-    TEMP_POPUP_KEY: "lumina_popup_sessions",
-    MAX_HISTORIES: 999,
-    RETENTION_DAYS: 180,
-    currentSessionId: null,
-    generateSessionId() {
-      return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    },
-    async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null) {
-      if (!historyEl && typeof currentPopup !== "undefined" && currentPopup) {
-        historyEl = currentPopup.querySelector(".lumina-chat-history");
-      }
-      if (!historyEl) return;
-      const now = Date.now();
-      if (!force && this._lastSaveTime && now - this._lastSaveTime < 500) {
-        if (this._saveTimeout) clearTimeout(this._saveTimeout);
-        this._saveTimeout = setTimeout(() => this.saveCurrentChat(historyEl, optionalSessionId, sparkId, force, extraSettings), 500);
-        return;
-      }
-      this._lastSaveTime = now;
-      if (this._saveTimeout) clearTimeout(this._saveTimeout);
-      if (optionalSessionId && historyEl.dataset.sessionId && historyEl.dataset.sessionId !== optionalSessionId) {
-        console.log("[Lumina Chat History] Discarding save due to session ID mismatch", {
-          expected: optionalSessionId,
-          current: historyEl.dataset.sessionId
-        });
-        return;
-      }
-      const history = historyEl;
-      if (!history || history.children.length === 0) return;
-      const messages = this.extractMessages(history);
-      if (messages.length === 0) {
-        return;
-      }
-      let activeSessionId = optionalSessionId || this.currentSessionId;
-      if (!activeSessionId) {
-        activeSessionId = this.generateSessionId();
-        if (!optionalSessionId) this.currentSessionId = activeSessionId;
-      }
-      const title = this.generateChatTitle(history);
-      const timestamp = Date.now();
-      try {
-        const optimizedMessages = messages.map((msg) => {
-          if (msg.type === "question") {
-            const cleanItem = (item) => {
-              if (typeof item === "object" && item && (item.attachmentId || item.fileUri)) {
-                const newItem = { ...item };
-                if (newItem.dataUrl) newItem.dataUrl = null;
-                if (newItem.previewUrl && newItem.previewUrl.startsWith("data:")) newItem.previewUrl = null;
-                if (newItem.data) newItem.data = null;
-                return newItem;
-              }
-              return item;
-            };
-            return {
-              ...msg,
-              files: Array.isArray(msg.files || msg.images) ? (msg.files || msg.images).map(cleanItem) : msg.files || msg.images
-            };
-          }
-          return msg;
-        });
-        await LuminaChatDB.putMessages(activeSessionId, optimizedMessages);
-        const existingSession = await LuminaChatDB.getSession(activeSessionId) || {};
-        const isRenamed = existingSession.isRenamed || false;
-        const autoNamed = existingSession.autoNamed || false;
-        const finalTitle = isRenamed || autoNamed ? existingSession.title : title;
-        const questions = messages.map((m, idx) => ({ ...m, originalIndex: idx })).filter((m) => m.type === "question").map((m) => {
-          const nextAnswer = messages.slice(m.originalIndex + 1).find((msg) => msg.type === "answer");
-          const answerSummary = nextAnswer ? String(nextAnswer.content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 100) : "";
-          const rawText = String(m.content || "");
-          const truncatedText = rawText.length > 500 ? rawText.substring(0, 500) + "..." : rawText;
-          return {
-            text: truncatedText,
-            index: m.originalIndex,
-            snippet: answerSummary,
-            timestamp: m.timestamp
-          };
-        });
-        let fullSearchText = questions.map((q) => q.text).join(" ").replace(/\s+/g, " ");
-        if (fullSearchText.length > 2e3) {
-          fullSearchText = fullSearchText.substring(0, 2e3);
-        }
-        const latestAnswer = [...messages].reverse().find((m) => m.type === "answer");
-        const contentForSnippet = latestAnswer ? String(latestAnswer.content || "") : messages[0] ? String(messages[0].content || "") : "No messages";
-        const snippet = contentForSnippet.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 100);
-        const latestTimestamp = messages.length > 0 ? messages[messages.length - 1].timestamp : timestamp;
-        const sessionMeta = {
-          id: activeSessionId,
-          title: finalTitle,
-          isRenamed,
-          autoNamed: existingSession.autoNamed || false,
-          sparkId: sparkId || existingSession.sparkId || null,
-          searchIndex: fullSearchText,
-          questions,
-          snippet,
-          context: (typeof currentContext !== "undefined" ? currentContext : "") || "",
-          pinned: existingSession.pinned !== void 0 ? existingSession.pinned : existingSession.isPinned !== void 0 ? existingSession.isPinned : typeof isPinned !== "undefined" ? isPinned : false,
-          isPinned: existingSession.pinned !== void 0 ? existingSession.pinned : existingSession.isPinned !== void 0 ? existingSession.isPinned : typeof isPinned !== "undefined" ? isPinned : false,
-          position: (existingSession.pinned || existingSession.isPinned || typeof isPinned !== "undefined" && isPinned) && typeof currentPopup !== "undefined" && currentPopup ? {
-            left: currentPopup.style.left,
-            top: currentPopup.style.top
-          } : null,
-          createdAt: existingSession.createdAt || timestamp,
-          updatedAt: force || !existingSession.updatedAt || latestTimestamp > existingSession.updatedAt ? timestamp : existingSession.updatedAt,
-          hasContent: true,
-          selectedModel: extraSettings && extraSettings.selectedModel || existingSession.selectedModel || null,
-          thinkingLevel: extraSettings && extraSettings.thinkingLevel || existingSession.thinkingLevel || null,
-          archived: existingSession.archived || false
-        };
-        await LuminaChatDB.putSession(sessionMeta);
-        if (sparkId) {
-          const finalModel = extraSettings && extraSettings.selectedModel || existingSession.selectedModel || null;
-          const finalThinking = extraSettings && extraSettings.thinkingLevel || existingSession.thinkingLevel || null;
-          if (finalModel || finalThinking) {
-            const settingsRes = await chrome.storage.local.get(["lumina_spark_last_settings"]);
-            const sparkSettings = settingsRes.lumina_spark_last_settings || {};
-            sparkSettings[sparkId] = {
-              selectedModel: finalModel,
-              thinkingLevel: finalThinking
-            };
-            await chrome.storage.local.set({ lumina_spark_last_settings: sparkSettings });
-          }
-        }
-        const allSessions = await LuminaChatDB.getAllSessions();
-        let sortedIds = Object.keys(allSessions).sort((a, b) => (allSessions[b].updatedAt || 0) - (allSessions[a].updatedAt || 0));
-        if (typeof window !== "undefined") {
-          window._localSavedSessions = window._localSavedSessions || {};
-          window._localSavedSessions[activeSessionId] = Date.now();
-        }
-        const senderInstanceId = typeof window !== "undefined" && window._luminaWindowInstanceId ? window._luminaWindowInstanceId : null;
-        chrome.runtime.sendMessage({ action: "lumina_session_updated", sessionId: activeSessionId, source: "local_save", senderInstanceId }).catch(() => {
-        });
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated", senderInstanceId }).catch(() => {
-        });
-      } catch (error) {
-        console.error("Failed to save chat history:", error);
-      }
-    },
-    createCompletedStepperHTML(query, sourcesCount) {
-      const checkIcon = '<svg class="lumina-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-      return `
-            <div class="lumina-completed-step">
-                ${checkIcon}
-                <span class="lumina-step-text">Searched for: <strong>"${query}"</strong> (${sourcesCount} sources)</span>
-            </div>
-        `;
-    },
-    extractMessages(historyElement) {
-      const messages = [];
-      for (const child of historyElement.children) {
-        if (!child.classList.contains("lumina-entry")) continue;
-        const entryType = child.dataset.entryType;
-        const fromCache = child.dataset.fromCache === "true";
-        const timestamp = parseInt(child.dataset.timestamp) || Date.now();
-        const questionEl = child.querySelector(".lumina-chat-question");
-        const versionsContainer = child.querySelector(".lumina-answer-versions");
-        const answerEl = child.querySelector(".lumina-chat-answer");
-        if (questionEl) {
-          let serializedImages = Array.isArray(questionEl._luminaImages) ? questionEl._luminaImages : Array.isArray(child._luminaImages) ? child._luminaImages : null;
-          if (!serializedImages && questionEl.dataset.images) {
-            try {
-              const parsedImages = JSON.parse(questionEl.dataset.images);
-              if (Array.isArray(parsedImages)) {
-                serializedImages = parsedImages;
-              } else if (parsedImages && Array.isArray(parsedImages.files)) {
-                serializedImages = parsedImages.files;
-              } else {
-                serializedImages = null;
-              }
-            } catch (_) {
-              serializedImages = null;
-            }
-          }
-          messages.push({
-            type: "question",
-            content: questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim(),
-            files: serializedImages,
-            timestamp,
-            metadata: { fromCache }
-          });
-        }
-        if (versionsContainer) {
-          const versions = Array.from(versionsContainer.querySelectorAll(".lumina-answer-version"));
-          const activeVersion = versionsContainer.querySelector(".lumina-answer-version.active");
-          const activeIndex = activeVersion ? parseInt(activeVersion.dataset.versionIndex) || 0 : 0;
-          const versionContents = versions.map((v) => {
-            const ans = v.querySelector(".lumina-chat-answer");
-            return ans ? ans.getAttribute("data-raw-text") || ans.innerHTML : "";
-          });
-          const activeAnswerEl = activeVersion ? activeVersion.querySelector(".lumina-chat-answer") : versions[0] ? versions[0].querySelector(".lumina-chat-answer") : null;
-          const webSearchData = activeAnswerEl?.dataset.webSearch ? JSON.parse(activeAnswerEl.dataset.webSearch) : null;
-          messages.push({
-            type: "answer",
-            content: versionContents[activeIndex] || versionContents[0] || "",
-            versions: versionContents,
-            activeVersionIndex: activeIndex,
-            timestamp,
-            metadata: { fromCache, webSearch: webSearchData }
-          });
-        } else if (answerEl) {
-          const webSearchData = answerEl.dataset.webSearch ? JSON.parse(answerEl.dataset.webSearch) : null;
-          messages.push({
-            type: "answer",
-            content: answerEl.getAttribute("data-raw-text") || answerEl.innerHTML,
-            timestamp,
-            metadata: { fromCache, webSearch: webSearchData }
-          });
-        }
-      }
-      return messages;
-    },
-    generateChatTitle(historyElement) {
-      const allEntries = Array.from(historyElement.querySelectorAll(".lumina-entry"));
-      if (allEntries.length === 0) return "New Chat";
-      for (let i = allEntries.length - 1; i >= 0; i--) {
-        const entry = allEntries[i];
-        const questionEl = entry.querySelector(".lumina-chat-question");
-        if (questionEl) {
-          return questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim();
-        }
-      }
-      return "New Chat";
-    },
-    async loadChat(sessionId) {
-      try {
-        const chatMeta = await LuminaChatDB.getSession(sessionId);
-        if (chatMeta) {
-          this.currentSessionId = sessionId;
-          const messages = await LuminaChatDB.getMessages(sessionId) || [];
-          const chatData = {
-            ...chatMeta,
-            messages,
-            sessionId,
-            timestamp: chatMeta.createdAt || chatMeta.updatedAt
-          };
-          await this.restoreChat(chatData);
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error("Failed to load chat history:", error);
-        return false;
-      }
-    },
-    async restoreChat(chatData, historyContainer = null, targetIndex = null) {
-      if (!historyContainer && typeof currentPopup === "undefined") return;
-      if (!historyContainer && !currentPopup) {
-        showChatPopup("");
-        overridePopupAnimation(currentPopup);
-      }
-      const history = historyContainer || currentPopup.querySelector(".lumina-chat-history");
-      if (!history) return;
-      const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
-      if (globalObj.LuminaActiveBlobUrls && globalObj.LuminaActiveBlobUrls.length > 0) {
-        globalObj.LuminaActiveBlobUrls.forEach((url) => {
-          try {
-            URL.revokeObjectURL(url);
-          } catch (e) {
-          }
-        });
-        globalObj.LuminaActiveBlobUrls = [];
-      }
-      const restoreId = Math.random().toString(36).substr(2, 9);
-      history.__activeRestoreId = restoreId;
-      history.innerHTML = "";
-      if (chatData.context) currentContext = chatData.context;
-      let sparksMap = {};
-      if (chatData.sparkId) {
-        try {
-          const sparksRes = await chrome.storage.local.get(["lumina_sparks"]);
-          sparksMap = sparksRes.lumina_sparks || {};
-        } catch (e) {
-          console.error("Failed to load sparks in restoreChat", e);
-        }
-      }
-      const processPromises = [];
-      if (typeof document !== "undefined" && !document.getElementById("lumina-lazy-load-styles")) {
-        const style = document.createElement("style");
-        style.id = "lumina-lazy-load-styles";
-        style.textContent = `
-                .lumina-load-more-history {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 8px 12px;
-                    margin: 8px auto;
-                    height: 32px;
-                    color: var(--lumina-sidebar-text-muted);
-                    font-size: 11px;
-                    cursor: pointer;
-                    user-select: none;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `;
-        document.head.appendChild(style);
-      }
-      const renderGroup = async (group, targetContainer) => {
-        if (history.__activeRestoreId !== restoreId) return;
-        let i = 0;
-        while (i < group.length) {
-          if (history.__activeRestoreId !== restoreId) return;
-          const item = group[i];
-          const msg = item.msg;
-          const msgIdx = item.originalIndex;
-          if (msg.type === "question") {
-            const entryDiv = document.createElement("div");
-            entryDiv.className = "lumina-entry";
-            entryDiv.dataset.entryId = msg.metadata?.entryId || "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
-            entryDiv.dataset.entryType = msg.metadata?.entryType || "qa";
-            if (msg.timestamp) entryDiv.dataset.timestamp = String(msg.timestamp);
-            const questionDiv = document.createElement("div");
-            questionDiv.className = "lumina-chat-question";
-            questionDiv.dataset.messageIndex = msgIdx;
-            questionDiv.dataset.entryType = entryDiv.dataset.entryType;
-            questionDiv.setAttribute("data-raw-text", msg.content);
-            if (msg.files) questionDiv.dataset.files = JSON.stringify(msg.files);
-            const visibleImages = Array.isArray(msg.files) ? msg.files.filter((imgItem) => {
-              if (typeof imgItem === "string") return true;
-              if (!imgItem || typeof imgItem !== "object") return false;
-              return !imgItem.hiddenInPreview && !imgItem.parentAttachmentId;
-            }) : [];
-            if (visibleImages.length > 0) {
-              questionDiv._luminaImages = visibleImages;
-              entryDiv._luminaImages = visibleImages;
-              questionDiv.dataset.images = JSON.stringify({
-                compact: true,
-                count: visibleImages.length,
-                files: visibleImages.map((imgItem, imgIdx) => {
-                  if (typeof imgItem === "string") {
-                    return {
-                      name: `Image ${imgIdx + 1}`,
-                      mimeType: "image/*",
-                      isImage: true,
-                      dataLength: imgItem.length,
-                      dataUrl: imgItem
-                    };
-                  }
-                  return {
-                    name: imgItem?.name || `File ${imgIdx + 1}`,
-                    mimeType: imgItem?.mimeType || "",
-                    isImage: !!imgItem?.isImage || (imgItem?.mimeType || "").startsWith("image/"),
-                    fileUri: imgItem?.fileUri || "",
-                    dataLength: (imgItem?.dataUrl || imgItem?.data || "").length,
-                    dataUrl: imgItem?.dataUrl || imgItem?.previewUrl || (imgItem?.mimeType && imgItem?.data ? `data:${imgItem.mimeType};base64,${imgItem.data}` : ""),
-                    attachmentId: imgItem?.attachmentId || null
-                  };
-                })
-              });
-              const filesDiv = document.createElement("div");
-              filesDiv.className = "lumina-chat-question-files";
-              visibleImages.forEach((item2) => {
-                const isImage = item2.isImage || item2.mimeType && item2.mimeType.startsWith("image/");
-                const rawSrc = item2.objectUrl || item2.dataUrl || item2.previewUrl || (item2.mimeType && item2.data ? `data:${item2.mimeType};base64,${item2.data}` : "");
-                const src = isImage ? rawSrc.startsWith("data:") || rawSrc.startsWith("blob:") ? rawSrc : typeof LuminaChatUI !== "undefined" ? LuminaChatUI._resolveImagePreviewSrc(item2, rawSrc) : rawSrc : rawSrc;
-                if (isImage) {
-                  const img = document.createElement("img");
-                  img.src = src;
-                  if (item2.attachmentId) {
-                    img.dataset.attachmentId = item2.attachmentId;
-                  }
-                  if (item2.name) img.alt = item2.name;
-                  img.className = "lumina-clickable-image";
-                  img.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    if (typeof LuminaChatUI !== "undefined") {
-                      LuminaChatUI.showImagePreview(img.src, img.alt);
-                    }
-                  });
-                  filesDiv.appendChild(img);
-                } else {
-                  const fileName = item2.name || "File";
-                  const displayName = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getDisplayFileName(fileName) : fileName;
-                  const category = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.inferFileCategory(item2) : "other";
-                  const icon = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getFileIconByCategory(category) : "\u{1F4C4}";
-                  const typeLabel = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getFileTypeLabel(item2) : "";
-                  const fileChip = document.createElement("div");
-                  fileChip.className = "lumina-preview-item is-file lumina-question-file-chip";
-                  if (item2.attachmentId) {
-                    fileChip.dataset.attachmentId = item2.attachmentId;
-                  }
-                  fileChip.title = fileName;
-                  fileChip.innerHTML = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${displayName || fileName}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${typeLabel}</span></div></div>`;
-                  filesDiv.appendChild(fileChip);
-                }
-              });
-              entryDiv.appendChild(filesDiv);
-              visibleImages.forEach((imgItem) => {
-                if (imgItem && imgItem.attachmentId) {
-                  LuminaAttachmentDB.get(imgItem.attachmentId).then(async (blob) => {
-                    if (blob) {
-                      const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
-                      const imgEl = entryDiv.querySelector(`[data-attachment-id="${imgItem.attachmentId}"]`);
-                      if (imgEl && dataUrl) {
-                        imgEl.src = dataUrl;
-                      }
-                    }
-                  }).catch((err) => console.error("Failed to hydrate attachment preview in restoreChat", err));
-                }
-              });
-            }
-            let cleanMsgContent = (msg.content || "").trim();
-            if (cleanMsgContent.startsWith("[Context:")) {
-              const closeBracketIdx = cleanMsgContent.indexOf("]");
-              const contextText = cleanMsgContent.substring(9, closeBracketIdx).trim();
-              const taglessText = cleanMsgContent.substring(closeBracketIdx + 1).trim();
-              const tagContent = contextText ? `"${contextText}"` : "";
-              questionDiv.innerHTML = `<div class="lumina-question-content">${tagContent} ${taglessText}</div>`;
-            } else {
-              questionDiv.innerHTML = `<div class="lumina-question-content">${cleanMsgContent}</div>`;
-            }
-            const row = document.createElement("div");
-            row.className = "lumina-question-row";
-            row.appendChild(questionDiv);
-            entryDiv.appendChild(row);
-            if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.injectQuestionActions === "function") {
-              LuminaChatUI.injectQuestionActions(questionDiv);
-            }
-            if (i + 1 < group.length && group[i + 1].msg.type === "answer") {
-              const answerMsg = group[i + 1].msg;
-              if (answerMsg.metadata?.webSearch) {
-                const stepperHTML = this.createCompletedStepperHTML(
-                  answerMsg.metadata.webSearch.query,
-                  answerMsg.metadata.webSearch.sourcesCount
-                );
-                const stepperContainer = document.createElement("div");
-                stepperContainer.innerHTML = stepperHTML.trim();
-                entryDiv.appendChild(stepperContainer.firstChild);
-              }
-              if (answerMsg.versions && answerMsg.versions.length > 1) {
-                const versionsContainer = document.createElement("div");
-                versionsContainer.className = "lumina-answer-versions";
-                const activeIndex = answerMsg.versions.length - 1;
-                answerMsg.versions.forEach((versionContent, idx) => {
-                  const versionDiv = document.createElement("div");
-                  versionDiv.className = "lumina-answer-version" + (idx === activeIndex ? " active" : "");
-                  versionDiv.dataset.versionIndex = idx.toString();
-                  const answerDiv = document.createElement("div");
-                  answerDiv.className = "lumina-chat-answer";
-                  answerDiv.setAttribute("data-raw-text", versionContent);
-                  const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-                  if (displayContent.trim().startsWith("<")) {
-                    answerDiv.innerHTML = displayContent;
-                  } else if (typeof marked !== "undefined") {
-                    let content = displayContent;
-                    let html = marked.parse(content);
-                    if (answerMsg.metadata?.webSearch?.sources) {
-                      const sources = answerMsg.metadata.webSearch.sources;
-                      html = html.replace(/\[(\d+)\]/g, (match, num) => {
-                        const sIdx = parseInt(num) - 1;
-                        if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
-                        return match;
-                      });
-                    }
-                    answerDiv.innerHTML = html;
-                  } else {
-                    answerDiv.textContent = displayContent;
-                  }
-                  answerDiv.querySelectorAll("a").forEach((link) => {
-                    link.target = "_blank";
-                    link.rel = "noopener noreferrer";
-                  });
-                  if (typeof LuminaChatUI !== "undefined") {
-                    processPromises.push(LuminaChatUI.processContainer(answerDiv));
-                  }
-                  if (chatData.sparkId && sparksMap[chatData.sparkId]) {
-                    const spark = sparksMap[chatData.sparkId];
-                    const headerDiv = document.createElement("div");
-                    headerDiv.className = "lumina-spark-message-header";
-                    const nameSpan = document.createElement("span");
-                    nameSpan.className = "lumina-spark-name";
-                    nameSpan.textContent = spark.name;
-                    const sepSpan = document.createElement("span");
-                    sepSpan.className = "lumina-spark-separator";
-                    sepSpan.textContent = " \u2022 ";
-                    const typeSpan = document.createElement("span");
-                    typeSpan.className = "lumina-spark-type";
-                    typeSpan.textContent = "Custom Spark";
-                    headerDiv.appendChild(nameSpan);
-                    headerDiv.appendChild(sepSpan);
-                    headerDiv.appendChild(typeSpan);
-                    answerDiv.insertBefore(headerDiv, answerDiv.firstChild);
-                  }
-                  versionDiv.appendChild(answerDiv);
-                  versionsContainer.appendChild(versionDiv);
-                });
-                const navContainer = document.createElement("div");
-                navContainer.className = "lumina-answer-nav";
-                navContainer.innerHTML = `
-                                <button class="lumina-answer-nav-btn nav-prev" ${activeIndex === 0 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-                                <span class="lumina-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                                <button class="lumina-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
-                            `;
-                versionsContainer.appendChild(navContainer);
-                if (typeof showAnswerVersion === "function") {
-                  navContainer.querySelector(".nav-prev").addEventListener("click", () => showAnswerVersion(entryDiv, "prev"));
-                  navContainer.querySelector(".nav-next").addEventListener("click", () => showAnswerVersion(entryDiv, "next"));
-                }
-                entryDiv.appendChild(versionsContainer);
-              } else {
-                const answerDiv = document.createElement("div");
-                answerDiv.className = "lumina-chat-answer";
-                answerDiv.setAttribute("data-raw-text", answerMsg.content);
-                let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-                displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
-                  const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                  const displayType = type.replace("code/", "").toUpperCase();
-                  return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-      <div class="lumina-canvas-card-left">
-        <div class="lumina-canvas-card-info">
-          <div class="lumina-canvas-card-title">${name}</div>
-          <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
-        </div>
-      </div>
-    </div>`;
-                });
-                displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
-                  return `*\u{1F504} Canvas Updated: **${name}***`;
-                });
-                displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
-                  return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
-                });
-                if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
-                  answerDiv.innerHTML = displayContent;
-                } else if (typeof marked !== "undefined") {
-                  let content = displayContent;
-                  content = content.replace(/!\[([^\]]*)\]\((image-search:\/\/[^)]*)\)/g, (match, alt, url) => {
-                    return `![${alt}](${url.replace(/ /g, "%20")})`;
-                  });
-                  let html = marked.parse(content);
-                  if (answerMsg.metadata?.webSearch?.sources) {
-                    const sources = answerMsg.metadata.webSearch.sources;
-                    html = html.replace(/\[(\d+)\]/g, (match, num) => {
-                      const sIdx = parseInt(num) - 1;
-                      if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
-                      return match;
-                    });
-                  }
-                  answerDiv.innerHTML = html;
-                } else {
-                  answerDiv.textContent = displayContent;
-                }
-                answerDiv.querySelectorAll("a").forEach((link) => {
-                  link.target = "_blank";
-                  link.rel = "noopener noreferrer";
-                });
-                if (typeof LuminaChatUI !== "undefined") {
-                  processPromises.push(LuminaChatUI.processContainer(answerDiv));
-                }
-                if (chatData.sparkId && sparksMap[chatData.sparkId]) {
-                  const spark = sparksMap[chatData.sparkId];
-                  const headerDiv = document.createElement("div");
-                  headerDiv.className = "lumina-spark-message-header";
-                  const nameSpan = document.createElement("span");
-                  nameSpan.className = "lumina-spark-name";
-                  nameSpan.textContent = spark.name;
-                  const sepSpan = document.createElement("span");
-                  sepSpan.className = "lumina-spark-separator";
-                  sepSpan.textContent = " \u2022 ";
-                  const typeSpan = document.createElement("span");
-                  typeSpan.className = "lumina-spark-type";
-                  typeSpan.textContent = "Custom Spark";
-                  headerDiv.appendChild(nameSpan);
-                  headerDiv.appendChild(sepSpan);
-                  headerDiv.appendChild(typeSpan);
-                  answerDiv.insertBefore(headerDiv, answerDiv.firstChild);
-                }
-                entryDiv.appendChild(answerDiv);
-              }
-              i++;
-            }
-            targetContainer.appendChild(entryDiv);
-            if (typeof attachQuestionListeners === "function") attachQuestionListeners(questionDiv.querySelector("[contenteditable]"));
-          } else if (msg.type === "answer") {
-            const entryDiv = document.createElement("div");
-            entryDiv.className = "lumina-entry";
-            entryDiv.dataset.entryId = msg.metadata?.entryId || "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
-            entryDiv.dataset.entryType = msg.metadata?.entryType || "qa";
-            if (msg.metadata?.webSearch) {
-              const stepperHTML = this.createCompletedStepperHTML(msg.metadata.webSearch.query, msg.metadata.webSearch.sourcesCount);
-              const stepperContainer = document.createElement("div");
-              stepperContainer.innerHTML = stepperHTML.trim();
-              entryDiv.appendChild(stepperContainer.firstChild);
-            }
-            const answerDiv = document.createElement("div");
-            answerDiv.className = "lumina-chat-answer";
-            answerDiv.setAttribute("data-raw-text", msg.content);
-            let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-            displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
-              const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              const displayType = type.replace("code/", "").toUpperCase();
-              return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-      <div class="lumina-canvas-card-left">
-        <div class="lumina-canvas-card-info">
-          <div class="lumina-canvas-card-title">${name}</div>
-          <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
-        </div>
-      </div>
-    </div>`;
-            });
-            displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
-              return `*\u{1F504} Canvas Updated: **${name}***`;
-            });
-            displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
-              return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
-            });
-            if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
-              answerDiv.innerHTML = displayContent;
-            } else if (typeof marked !== "undefined") {
-              let c = displayContent;
-              c = c.replace(/!\[([^\]]*)\]\((image-search:\/\/[^)]*)\)/g, (match, alt, url) => {
-                return `![${alt}](${url.replace(/ /g, "%20")})`;
-              });
-              answerDiv.innerHTML = marked.parse(c);
-            } else {
-              answerDiv.textContent = displayContent;
-            }
-            answerDiv.querySelectorAll("a").forEach((link) => {
-              link.target = "_blank";
-              link.rel = "noopener noreferrer";
-            });
-            if (typeof LuminaChatUI !== "undefined") {
-              processPromises.push(LuminaChatUI.processContainer(answerDiv));
-            }
-            if (chatData.sparkId && sparksMap[chatData.sparkId]) {
-              const spark = sparksMap[chatData.sparkId];
-              const headerDiv = document.createElement("div");
-              headerDiv.className = "lumina-spark-message-header";
-              const nameSpan = document.createElement("span");
-              nameSpan.className = "lumina-spark-name";
-              nameSpan.textContent = spark.name;
-              const sepSpan = document.createElement("span");
-              sepSpan.className = "lumina-spark-separator";
-              sepSpan.textContent = " \u2022 ";
-              const typeSpan = document.createElement("span");
-              typeSpan.className = "lumina-spark-type";
-              typeSpan.textContent = "Custom Spark";
-              headerDiv.appendChild(nameSpan);
-              headerDiv.appendChild(sepSpan);
-              headerDiv.appendChild(typeSpan);
-              answerDiv.insertBefore(headerDiv, answerDiv.firstChild);
-            }
-            entryDiv.appendChild(answerDiv);
-            targetContainer.appendChild(entryDiv);
-          }
-          i++;
-        }
-      };
-      const qaGroups = reconstructGroups(chatData.messages);
-      const bypassPagination = targetIndex !== null || qaGroups.length <= 10;
-      if (bypassPagination) {
-        for (const group of qaGroups) {
-          if (history.__activeRestoreId !== restoreId) return;
-          await renderGroup(group, history);
-        }
-      } else {
-        const initialPageSize = 10;
-        const initialGroups = qaGroups.slice(-initialPageSize);
-        const remainingGroups = qaGroups.slice(0, -initialPageSize);
-        historyContainer.__remainingSessionId = chatData.sessionId;
-        historyContainer.__loadedGroupsCount = initialPageSize;
-        const loadMoreDiv = document.createElement("div");
-        loadMoreDiv.className = "lumina-load-more-history";
-        loadMoreDiv.innerHTML = `
-                <svg class="lumina-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px; animation: spin 0.8s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
-            `;
-        if (history.__activeRestoreId !== restoreId) return;
-        history.appendChild(loadMoreDiv);
-        for (const group of initialGroups) {
-          if (history.__activeRestoreId !== restoreId) return;
-          await renderGroup(group, history);
-        }
-        const loadNextChunk = async () => {
-          if (loadMoreDiv.dataset.loading === "true") return;
-          loadMoreDiv.dataset.loading = "true";
-          const spinner = loadMoreDiv.querySelector(".lumina-load-more-spinner");
-          if (spinner) spinner.style.display = "block";
-          const loadedCount = historyContainer.__loadedGroupsCount || 10;
-          const allMessages = await LuminaChatDB.getMessages(historyContainer.__remainingSessionId).catch(() => []);
-          const allGroups = reconstructGroups(allMessages);
-          const remaining = allGroups.slice(0, -loadedCount);
-          if (remaining.length === 0) {
-            loadMoreDiv.remove();
-            return;
-          }
-          const chunkSize = 15;
-          const chunk = remaining.slice(-chunkSize);
-          historyContainer.__loadedGroupsCount = loadedCount + chunk.length;
-          const oldScrollHeight = historyContainer.scrollHeight;
-          const oldScrollTop = historyContainer.scrollTop;
-          const fragment = document.createDocumentFragment();
-          for (const group of chunk) {
-            await renderGroup(group, fragment);
-          }
-          if (loadMoreDiv.nextSibling) {
-            history.insertBefore(fragment, loadMoreDiv.nextSibling);
-          } else {
-            history.appendChild(fragment);
-          }
-          const newScrollHeight = historyContainer.scrollHeight;
-          historyContainer.scrollTop = newScrollHeight - oldScrollHeight + oldScrollTop;
-          loadMoreDiv.dataset.loading = "false";
-          if (remaining.length <= chunk.length) {
-            loadMoreObserver.disconnect();
-            loadMoreDiv.remove();
-          }
-        };
-        const loadMoreObserver = new IntersectionObserver(async (entries) => {
-          if (entries[0].isIntersecting) {
-            await loadNextChunk();
-          }
-        }, { root: historyContainer, threshold: 0.1 });
-        loadMoreObserver.observe(loadMoreDiv);
-        loadMoreDiv.addEventListener("click", loadNextChunk);
-      }
-      const hasEntries = history.querySelector(".lumina-entry");
-      const regenBtn = document.getElementById("lumina-regenerate-btn") || document.querySelector(".lumina-regenerate-btn");
-      if (processPromises.length > 0) {
-        if (historyContainer) {
-          historyContainer.__processingPromises = processPromises;
-        }
-        await Promise.all(processPromises);
-      }
-      if (regenBtn) {
-        regenBtn.style.display = hasEntries ? "flex" : "none";
-      }
-      const wsContainers = history.querySelectorAll(".lumina-websource-container");
-      if (wsContainers.length > 0) {
-        wsContainers.forEach((container2) => {
-          const iframe = container2.querySelector("iframe");
-          if (!iframe) return;
-          const realSrc = container2.dataset.sourceUrl || (iframe.src && iframe.src !== "about:blank" ? iframe.src : "") || container2.dataset.savedSrc || "";
-          if (!realSrc || realSrc === "about:blank") return;
-          container2.dataset.lazySrc = realSrc;
-          container2.classList.add("is-lazy-unloaded");
-          iframe.removeAttribute("src");
-        });
-        const lazyObserver = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            const container2 = entry.target;
-            if (!container2.classList.contains("is-lazy-unloaded")) return;
-            const lazySrc = container2.dataset.lazySrc;
-            if (!lazySrc) return;
-            const iframe = container2.querySelector("iframe");
-            if (!iframe) return;
-            container2.classList.remove("is-lazy-unloaded");
-            container2.classList.add("is-loading");
-            iframe.onload = () => setTimeout(() => container2.classList.remove("is-loading"), 600);
-            lazyObserver.unobserve(container2);
-            const sourceId = container2.dataset.sourceId;
-            if (sourceId && typeof chrome !== "undefined" && chrome.runtime) {
-              chrome.storage.local.get(["customSources"], (data) => {
-                const sources = data.customSources || [];
-                const source = sources.find((s) => s.id === sourceId);
-                if (source && (source.css || source.selector || source.zoom && source.zoom !== 100)) {
-                  chrome.runtime.sendMessage({
-                    action: "prepare_iframe_injection",
-                    frameUrl: lazySrc,
-                    css: source.css || "",
-                    selector: source.selector || "",
-                    zoom: source.zoom || 100
-                  }).catch(() => {
-                  });
-                }
-                iframe.src = lazySrc;
-              });
-            } else {
-              iframe.src = lazySrc;
-            }
-          });
-        }, { rootMargin: "200px" });
-        wsContainers.forEach((container2) => {
-          if (container2.classList.contains("is-lazy-unloaded")) {
-            lazyObserver.observe(container2);
-          }
-        });
-      }
-    },
-    async getAllHistories() {
-      return await LuminaChatDB.getAllSessions();
-    },
-    async deleteSessionWithAttachments(sessionId) {
-      try {
-        const messages = await LuminaChatDB.getMessages(sessionId);
-        if (Array.isArray(messages)) {
-          for (const msg of messages) {
-            const files = msg.files || msg.images;
-            if (Array.isArray(files)) {
-              for (const file of files) {
-                if (file && file.attachmentId) {
-                  try {
-                    await LuminaAttachmentDB.delete(file.attachmentId);
-                  } catch (e) {
-                    console.error("Failed to delete attachment from DB:", file.attachmentId, e);
-                  }
-                }
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error fetching messages for attachment cleanup:", e);
-      }
-      await LuminaChatDB.deleteSession(sessionId);
-    },
-    async deleteChat(sessionId) {
-      try {
-        await this.deleteSessionWithAttachments(sessionId);
-        chrome.runtime.sendMessage({ action: "get_stored_files" }, (response) => {
-          if (response && response.success && Array.isArray(response.files)) {
-            const sessionFiles = response.files.filter((f) => f.sessionId === sessionId);
-            sessionFiles.forEach((sf) => {
-              chrome.runtime.sendMessage({ action: "delete_stored_file", fileName: sf.rawName });
-            });
-          }
-        });
-        chrome.runtime.sendMessage({ action: "lumina_sessions_deleted", deletedIds: [sessionId] }).catch(() => {
-        });
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
-        });
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
-        }
-        return true;
-      } catch (error) {
-        console.error("Failed to delete chat history:", error);
-        return false;
-      }
-    },
-    async renameChat(sessionId, newTitle) {
-      try {
-        const meta = await LuminaChatDB.getSession(sessionId);
-        if (meta) {
-          meta.title = newTitle;
-          meta.isRenamed = true;
-          meta.updatedAt = Date.now();
-          await LuminaChatDB.putSession(meta);
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
-          });
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error("Failed to rename chat history:", error);
-        return false;
-      }
-    },
-    async updateSessionModelAndThinking(sessionId, selectedModel, thinkingLevel) {
-      if (!sessionId || sessionId === "null") return false;
-      try {
-        const meta = await LuminaChatDB.getSession(sessionId);
-        if (meta) {
-          if (selectedModel !== void 0) meta.selectedModel = selectedModel;
-          if (thinkingLevel !== void 0) meta.thinkingLevel = thinkingLevel;
-          await LuminaChatDB.putSession(meta);
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error("Failed to update session model and thinking level:", error);
-        return false;
-      }
-    },
-    async getStorageUsage() {
-      try {
-        return await LuminaChatDB.getStorageUsage();
-      } catch (error) {
-        console.error("Error calculating chat storage:", error);
-        return 0;
-      }
-    },
-    async clearAllHistory() {
-      try {
-        const sessions = await LuminaChatDB.getAllSessions(true);
-        for (const sessionId of Object.keys(sessions)) {
-          const session = sessions[sessionId];
-          if (session && session.archived) {
-            continue;
-          }
-          await this.deleteSessionWithAttachments(sessionId);
-        }
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
-        });
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
-        }
-        return true;
-      } catch (error) {
-        console.error("Failed to clear chat history:", error);
-        return false;
-      }
-    },
-    startNewSession() {
-      this.currentSessionId = this.generateSessionId();
-    },
-    async migrateIfNeeded() {
-      return;
-    },
-    async cleanupHistoryByAge() {
-      try {
-        const settings = await chrome.storage.local.get(["historyRetentionMonths"]);
-        const months = settings.historyRetentionMonths !== void 0 ? parseFloat(settings.historyRetentionMonths) : 3;
-        if (months === 0) return;
-        const retentionMs = months * 30 * 24 * 60 * 60 * 1e3;
-        const cutoffTime = Date.now() - retentionMs;
-        const sessions = await LuminaChatDB.getAllSessions();
-        const deletedSessionIds = [];
-        for (const [id, session] of Object.entries(sessions)) {
-          const sessionTime = session.updatedAt || session.createdAt || 0;
-          if (sessionTime < cutoffTime) {
-            deletedSessionIds.push(id);
-            await this.deleteSessionWithAttachments(id);
-          }
-        }
-        if (deletedSessionIds.length > 0) {
-          console.log(`[Lumina History] Retention policy (${months} months) reached. Deleting ${deletedSessionIds.length} old chat sessions from DB:`, deletedSessionIds);
-          chrome.runtime.sendMessage({ action: "cleanup_opfs_files" });
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
-          });
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-        }
-      } catch (error) {
-        console.error("[Lumina History] Error cleaning up history by age:", error);
-      }
-    },
-    async getSessionMessages(sessionId) {
-      return await LuminaChatDB.getMessages(sessionId) || [];
-    },
-    async saveSessionMessages(sessionId, messages) {
-      const result = await LuminaChatDB.putMessages(sessionId, messages);
-      if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.getAllMetadata) {
-        (async () => {
-          try {
-            const activeIds = /* @__PURE__ */ new Set();
-            if (Array.isArray(messages)) {
-              for (const msg of messages) {
-                const files = msg.files || msg.images;
-                if (Array.isArray(files)) {
-                  for (const file of files) {
-                    if (file && file.attachmentId) {
-                      activeIds.add(file.attachmentId);
-                    }
-                  }
-                }
-              }
-            }
-            const metadata = await LuminaAttachmentDB.getAllMetadata();
-            const sessionPrefix = `${sessionId}_`;
-            for (const item of metadata) {
-              if (item && item.key && item.key.startsWith(sessionPrefix)) {
-                if (!activeIds.has(item.key)) {
-                  await LuminaAttachmentDB.delete(item.key).catch(() => {
-                  });
-                  console.log(`[Auto Cleanup] Deleted orphaned attachment for session ${sessionId}: ${item.key}`);
-                }
-              }
-            }
-          } catch (err) {
-            console.error("[Auto Cleanup] Failed to clean up orphaned attachments:", err);
-          }
-        })();
-      }
-      return result;
-    }
-  };
-  if (typeof window !== "undefined" && window.location.protocol === "chrome-extension:") {
-    ChatHistoryManager2.cleanupHistoryByAge();
-  }
-  if (typeof window !== "undefined") {
-    window.ChatHistoryManager = ChatHistoryManager2;
-  }
-
   // lib/ui/history_panel.js
   var LuminaHistory = class {
     constructor() {
@@ -26572,284 +26827,6 @@ Output only the revised text.`;
   document.addEventListener("DOMContentLoaded", () => {
     window.luminaHistory = new LuminaHistory();
   });
-
-  // lib/core/notes_manager.js
-  var NotesManager2 = class _NotesManager {
-    static DB_NAME = "LuminaNotesDB";
-    static DB_VERSION = 1;
-    static STORE_COLLECTIONS = "collections";
-    static STORE_NOTES = "notes";
-    static _db = null;
-    /**
-     * Initialize IndexedDB database connection
-     */
-    static async getDB() {
-      if (_NotesManager._db) return _NotesManager._db;
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(_NotesManager.DB_NAME, _NotesManager.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(_NotesManager.STORE_COLLECTIONS)) {
-            db.createObjectStore(_NotesManager.STORE_COLLECTIONS, { keyPath: "id" });
-          }
-          if (!db.objectStoreNames.contains(_NotesManager.STORE_NOTES)) {
-            const notesStore = db.createObjectStore(_NotesManager.STORE_NOTES, { keyPath: "id" });
-            notesStore.createIndex("collectionId", "collectionId", { unique: false });
-            notesStore.createIndex("updatedAt", "updatedAt", { unique: false });
-          }
-        };
-        request.onsuccess = async (e) => {
-          _NotesManager._db = e.target.result;
-          _NotesManager._db.onclose = () => {
-            _NotesManager._db = null;
-          };
-          _NotesManager._db.onversionchange = () => {
-            if (_NotesManager._db) {
-              _NotesManager._db.close();
-              _NotesManager._db = null;
-            }
-          };
-          await _NotesManager.ensureDefaultSeed();
-          resolve(_NotesManager._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async ensureDefaultSeed() {
-    }
-    // --- COLLECTION API ---
-    static async getCollections(includeDeleted = false) {
-      const db = await _NotesManager.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_COLLECTIONS, "readonly");
-        const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const list = request.result || [];
-          resolve(includeDeleted ? list : list.filter((c) => c && !c.isDeleted));
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async getAllCollectionsRaw() {
-      return _NotesManager.getCollections(true);
-    }
-    static async createCollection(name, icon = "folder") {
-      const db = await _NotesManager.getDB();
-      const newCol = {
-        id: "col_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-        name: name.trim() || "Untitled Collection",
-        icon,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_COLLECTIONS, "readwrite");
-        const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
-        const request = store.put(newCol);
-        request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          resolve(newCol);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async renameCollection(collectionId, newName) {
-      if (!collectionId || collectionId === "all") return false;
-      const db = await _NotesManager.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_COLLECTIONS, "readwrite");
-        const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
-        const getReq = store.get(collectionId);
-        getReq.onsuccess = () => {
-          const col = getReq.result;
-          if (!col || col.isDeleted) return resolve(false);
-          col.name = newName.trim() || "Untitled Collection";
-          col.updatedAt = Date.now();
-          const putReq = store.put(col);
-          putReq.onsuccess = () => {
-            if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-              LuminaSync.triggerDebouncedSync();
-            }
-            resolve(col);
-          };
-          putReq.onerror = (e) => reject(e.target.error);
-        };
-        getReq.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async deleteCollection(collectionId) {
-      const db = await _NotesManager.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction([_NotesManager.STORE_COLLECTIONS, _NotesManager.STORE_NOTES], "readwrite");
-        const colStore = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
-        const noteStore = tx.objectStore(_NotesManager.STORE_NOTES);
-        colStore.delete(collectionId);
-        const index = noteStore.index("collectionId");
-        const req = index.openCursor(IDBKeyRange.only(collectionId));
-        req.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            const note = cursor.value;
-            note.collectionId = null;
-            note.updatedAt = Date.now();
-            cursor.update(note);
-            cursor.continue();
-          }
-        };
-        tx.oncomplete = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          resolve(true);
-        };
-        tx.onerror = (e) => reject(e.target.error);
-      });
-    }
-    // --- NOTES API ---
-    static async getNotes(collectionId = null, includeDeleted = false) {
-      const db = await _NotesManager.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_NOTES, "readonly");
-        const store = tx.objectStore(_NotesManager.STORE_NOTES);
-        let request;
-        if (collectionId && collectionId !== "all") {
-          const index = store.index("collectionId");
-          request = index.getAll(IDBKeyRange.only(collectionId));
-        } else {
-          request = store.getAll();
-        }
-        request.onsuccess = () => {
-          let notes = request.result || [];
-          if (!includeDeleted) {
-            notes = notes.filter((n) => n && !n.isDeleted);
-          }
-          notes.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-          resolve(notes);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async getAllNotesRaw() {
-      return _NotesManager.getNotes(null, true);
-    }
-    static async getNote(noteId, includeDeleted = false) {
-      const db = await _NotesManager.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_NOTES, "readonly");
-        const store = tx.objectStore(_NotesManager.STORE_NOTES);
-        const request = store.get(noteId);
-        request.onsuccess = () => {
-          const note = request.result || null;
-          if (!note) return resolve(null);
-          if (note.isDeleted && !includeDeleted) return resolve(null);
-          resolve(note);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async createNote(collectionId = null, title = "Untitled Note") {
-      if (collectionId === "all" || collectionId === "col_default") collectionId = null;
-      const db = await _NotesManager.getDB();
-      const now = Date.now();
-      const newNote = {
-        id: "note_" + now + "_" + Math.random().toString(36).substr(2, 5),
-        collectionId,
-        title,
-        content: {
-          time: now,
-          blocks: [],
-          version: "2.30.7"
-        },
-        pinned: false,
-        createdAt: now,
-        updatedAt: now
-      };
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
-        const store = tx.objectStore(_NotesManager.STORE_NOTES);
-        const request = store.put(newNote);
-        request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          resolve(newNote);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async saveNote(noteId, updates) {
-      const db = await _NotesManager.getDB();
-      const existingNote = await _NotesManager.getNote(noteId);
-      if (!existingNote) return null;
-      const updatedNote = {
-        ...existingNote,
-        ...updates,
-        updatedAt: Date.now()
-      };
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
-        const store = tx.objectStore(_NotesManager.STORE_NOTES);
-        const request = store.put(updatedNote);
-        request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          resolve(updatedNote);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async pinNote(noteId, pinned = true) {
-      return _NotesManager.saveNote(noteId, { pinned, updatedAt: void 0 });
-    }
-    static async moveNote(noteId, newCollectionId) {
-      const db = await _NotesManager.getDB();
-      const note = await _NotesManager.getNote(noteId);
-      if (!note) return null;
-      note.collectionId = newCollectionId;
-      note.updatedAt = Date.now();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
-        const store = tx.objectStore(_NotesManager.STORE_NOTES);
-        const request = store.put(note);
-        request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          resolve(note);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async getNoteCount(collectionId) {
-      const notes = await _NotesManager.getNotes(collectionId, false);
-      return notes.length;
-    }
-    static async deleteNote(noteId) {
-      const db = await _NotesManager.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_NotesManager.STORE_NOTES, "readwrite");
-        const store = tx.objectStore(_NotesManager.STORE_NOTES);
-        const req = store.delete(noteId);
-        req.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
-          }
-          resolve(true);
-        };
-        req.onerror = (e) => reject(e.target.error);
-      });
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.NotesManager = NotesManager2;
-  }
-  if (typeof globalThis !== "undefined") {
-    globalThis.NotesManager = NotesManager2;
-  }
 
   // lib/ui/notes_panel.js
   var NotesPanel2 = class {
