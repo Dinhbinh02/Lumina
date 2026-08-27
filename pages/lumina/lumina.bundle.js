@@ -29301,7 +29301,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     syncChildren(container2, newBody);
   }
-  function buildYoutubeEmbedUrl(href) {
+  function buildYoutubeEmbedUrl2(href) {
     if (href.startsWith("youtube://search")) return "";
     let id = "";
     let isPlaylist = false;
@@ -29391,7 +29391,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               const query = href.substring("youtube://search?q=".length);
               return `<div class="lumina-youtube-wrapper lumina-youtube-dynamic is-loading" data-query="${query}" data-original-href="${href}" data-text="${text || ""}"><div class="lumina-media-skeleton"></div></div>`;
             }
-            const embedUrl = buildYoutubeEmbedUrl(href);
+            const embedUrl = buildYoutubeEmbedUrl2(href);
             if (embedUrl) {
               return `<div class="lumina-youtube-wrapper"><iframe width="100%" height="315" src="${embedUrl}" title="${text || "YouTube video player"}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe></div>`;
             }
@@ -29411,7 +29411,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               const query = href.substring("youtube://search?q=".length);
               return `<div class="lumina-youtube-wrapper lumina-youtube-dynamic is-loading" data-query="${query}" data-original-href="${href}" data-text="${text || ""}"><div class="lumina-media-skeleton"></div></div>`;
             }
-            const embedUrl = buildYoutubeEmbedUrl(href);
+            const embedUrl = buildYoutubeEmbedUrl2(href);
             if (embedUrl) {
               return `<div class="lumina-youtube-wrapper"><iframe width="100%" height="315" src="${embedUrl}" title="${text || "YouTube video player"}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe></div>`;
             }
