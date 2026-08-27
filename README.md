@@ -13,47 +13,57 @@ A modular, privacy-first AI browser extension and workspace built on Chrome Exte
 
 Lumina is engineered around a domain-driven, multi-tier architecture designed to maintain strict separation of concerns across extension service workers, content script sandboxes, local storage engines, and user-facing presentation layers.
 
-```mermaid
-graph TD
-    subgraph Layer5["Layer 5: Presentation & Workspace UI"]
-        ChatUI["Chat Interface & Stream Renderer"]
-        SparksView["Sparks Agent Studio & Sandbox"]
-        NotesEditor["BlockNote Rich Text Editor"]
-        Modals["Settings, Search & History Modals"]
-    end
+![Lumina Architecture](assets/architecture.svg)
 
-    subgraph Layer4["Layer 4: Core Services & Real-time Engines"]
-        AIService["Chat Stream & Token Service"]
-        AudioEngine["PCM 16-bit 24kHz Processor"]
-        TTSManager["TTS Queue & Voice Synthesis"]
-        AuthSync["Google Auth & Drive Sync"]
-    end
+<details>
+<summary>D2 Architecture Specification</summary>
 
-    subgraph Layer3["Layer 3: Persistence Layer (IndexedDB)"]
-        ChatDB["LuminaChatDB (Threads & Messages)"]
-        HighlightDB["LuminaHighlightDB (Web Annotations)"]
-        AttachmentDB["LuminaAttachmentDB (Files & Media)"]
-        AudioCache["LuminaAudioCacheDB"]
-    end
+```d2
+vars: {
+  d2-config: {
+    sketch: true
+    theme-id: 0
+  }
+}
 
-    subgraph Layer2["Layer 2: Content Scripts & DOM Injections"]
-        ContentScript["Content Script Lifecycle"]
-        ActionBar["Selection Floating Action Bar"]
-        WebExtractors["DOM, PDF & YouTube Parsers"]
-    end
+presentation_layer: "Presentation Layer (Workspace UI)" {
+  chat_ui: "Chat Interface & Stream Renderer\n(Markdown / KaTeX / Charts)"
+  sparks_studio: "Sparks Agent Studio\n(Isolated Prompts & Preview)"
+  notes_editor: "BlockNote Rich Editor\n(Document Workspace)"
+  modals: "Modals & Side Panels\n(Settings / Search / History)"
+}
 
-    subgraph Layer1["Layer 1: Extension Runtime & Background Service Worker"]
-        ServiceWorker["Background Service Worker (MV3)"]
-        SidePanel["Side Panel Window Coordinator"]
-        OffscreenDoc["Offscreen Audio Processing"]
-    end
+service_layer: "Core Services & AI Engines (src/core/)" {
+  ai_stream: "AI Streaming Dispatcher\n(Multi-provider & Key Rotation)"
+  audio_engine: "PCM 16-bit 24kHz Audio Engine\n(Gemini Live WebSocket)"
+  tts_manager: "TTS Synthesis Manager\n(Voice Queue & Audio Fetch)"
+  auth_sync: "OAuth & Drive Sync\n(Chrome Identity API)"
+}
 
-    Layer5 --> Layer4
-    Layer4 --> Layer3
-    Layer5 --> Layer3
-    Layer2 <--> Layer1
-    Layer4 <--> Layer1
+persistence_layer: "Persistence Layer (IndexedDB / Local Storage)" {
+  chat_db: "LuminaChatDB\n(Threads, Messages & Sparks)"
+  highlight_db: "LuminaHighlightDB\n(Web Page Annotations)"
+  attachment_db: "LuminaAttachmentDB\n(Binary Files & Knowledge)"
+  storage_local: "chrome.storage.local\n(Settings, Keys & Sync State)"
+}
+
+content_layer: "Content Script & In-Page (src/content/)" {
+  action_bar: "Selection Floating Action Bar\n(Translate / Explain / Proofread)"
+  extractors: "Web Extractors & Annotations\n(YouTube Transcripts, PDF Parser)"
+}
+
+runtime_layer: "Extension Runtime (src/background/)" {
+  service_worker: "Manifest V3 Background Worker\n(Long-lived Ports, Auto-Naming)"
+  sidepanel_offscreen: "Side Panel & Offscreen Audio\n(Window Bindings, PCM Capture)"
+}
+
+presentation_layer -> service_layer: Invokes services
+service_layer -> persistence_layer: Stores & retrieves
+presentation_layer -> persistence_layer: Reads cache
+content_layer <-> runtime_layer: Bi-directional IPC
+service_layer <-> runtime_layer: Port streaming
 ```
+</details>
 
 ### Layer Breakdown
 
