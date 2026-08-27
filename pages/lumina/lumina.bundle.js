@@ -5,13 +5,7 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-  }) : x)(function(x) {
-    if (typeof require !== "undefined") return require.apply(this, arguments);
-    throw Error('Dynamic require of "' + x + '" is not supported');
-  });
-  var __commonJS = (cb, mod) => function __require2() {
+  var __commonJS = (cb, mod) => function __require() {
     try {
       return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
     } catch (e) {
@@ -4579,7 +4573,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   var require_katex_min = __commonJS({
     "lib/vendor/katex/katex.min.js"(exports, module) {
       !(function(e, t) {
-        "object" == typeof exports && "object" == typeof module ? module.exports = t() : "function" == typeof define && define.amd ? define([], t) : "object" == typeof exports ? exports.katex = t() : e.katex = t();
+        var k = t();
+        if (typeof window !== "undefined") window.katex = k;
+        if (typeof globalThis !== "undefined") globalThis.katex = k;
+        if ("object" == typeof exports && "object" == typeof module) module.exports = k;
+        else if ("function" == typeof define && define.amd) define([], (function() {
+          return k;
+        }));
+        else e.katex = k;
       })("undefined" != typeof self ? self : exports, (function() {
         return (function() {
           "use strict";
@@ -7665,15 +7666,15 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   var require_auto_render_min = __commonJS({
     "lib/vendor/katex/auto-render.min.js"(exports, module) {
       !(function(e, t) {
-        if (typeof window !== "undefined" && window.katex) {
-          window.renderMathInElement = t(window.katex);
-          return;
-        }
-        if (typeof globalThis !== "undefined" && globalThis.katex) {
-          globalThis.renderMathInElement = t(globalThis.katex);
-          return;
-        }
-        "object" == typeof exports && "object" == typeof module ? module.exports = t(__require("katex")) : "function" == typeof define && define.amd ? define(["katex"], t) : "object" == typeof exports ? exports.renderMathInElement = t(__require("katex")) : e.renderMathInElement = t(e.katex);
+        var k = typeof window !== "undefined" && window.katex ? window.katex : typeof globalThis !== "undefined" ? globalThis.katex : typeof self !== "undefined" ? self.katex : null;
+        var r = t(k);
+        if (typeof window !== "undefined") window.renderMathInElement = r;
+        if (typeof globalThis !== "undefined") globalThis.renderMathInElement = r;
+        if ("object" == typeof exports && "object" == typeof module) module.exports = r;
+        else if ("function" == typeof define && define.amd) define([], (function() {
+          return r;
+        }));
+        else e.renderMathInElement = r;
       })("undefined" != typeof self ? self : exports, (function(e) {
         return (function() {
           "use strict";
@@ -27438,6 +27439,7 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
 
   // src/components/sparks/sparks.js
   var SPARKS_KEY = "lumina_sparks";
+  var sidebarSparksExpanded = false;
   async function sparksLoad() {
     const res = await chrome.storage.local.get([SPARKS_KEY]);
     let sparks = res[SPARKS_KEY];

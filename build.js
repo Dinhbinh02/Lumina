@@ -34,9 +34,9 @@ async function buildLuminaWorkspace() {
             outfile: jsOut,
             format: 'iife',
             target: ['chrome110'],
-            external: ['katex'],
             sourcemap: false
         });
+
 
 
 
