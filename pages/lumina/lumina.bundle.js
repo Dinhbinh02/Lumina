@@ -28672,6 +28672,188 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     initSparks();
   }
 
+  // src/components/chat/model_helper.js
+  var LuminaModelHelper = {
+    async getPromptSupport() {
+      if (typeof window.getPromptApiSupport === "function") {
+        return await window.getPromptApiSupport();
+      }
+      return { supported: false, status: "no", reason: "Prompt API not loaded" };
+    },
+    buildModelChain(data, promptSupport) {
+      const chain = [];
+      const modelsList = data.models || [];
+      modelsList.forEach((item) => {
+        const modelVal = item.model || item.modelName;
+        if (modelVal && modelVal !== "Gemini Nano (Built-in)" && item.providerId !== "builtin") {
+          chain.push({
+            ...item,
+            model: modelVal
+          });
+        }
+      });
+      return chain;
+    },
+    getThinkingOptions(currentModel, currentProviderId, providers = []) {
+      const provider = providers.find((p) => p.id === currentProviderId);
+      const isGemini = (provider ? provider.type === "gemini" : false) || currentModel && currentModel.toLowerCase().includes("gemini") && !currentModel.toLowerCase().includes("gemma") || currentProviderId && currentProviderId.toLowerCase().includes("gemini");
+      const isGemma4 = currentModel ? /gemma-4/i.test(currentModel) : false;
+      const isGemmaOld = currentModel ? /gemma/i.test(currentModel) && !isGemma4 : false;
+      if (isGemini) {
+        return [
+          { value: "minimal", title: "Minimal", desc: "Minimal thinking, very fast" },
+          { value: "low", title: "Low", desc: "Short thinking, fast response" },
+          { value: "medium", title: "Standard", desc: "Best for most questions" },
+          { value: "high", title: "Extended", desc: "Complex problem solving" }
+        ];
+      } else if (isGemmaOld) {
+        return [
+          { value: "none", title: "None", desc: "Thinking is not supported" }
+        ];
+      } else {
+        return [
+          { value: "none", title: "None", desc: "No reasoning, fastest response" },
+          { value: "low", title: "Low", desc: "Quick reasoning, low latency" },
+          { value: "medium", title: "Standard", desc: "Best for most questions" },
+          { value: "high", title: "Extended", desc: "Complex problem solving" }
+        ];
+      }
+    },
+    getDefaultThinking(modelName, providerId, providers = []) {
+      const provider = providers && providers.find((p) => p.id === providerId);
+      const isGemini = (provider ? provider.type === "gemini" : false) || providerId && providerId.toLowerCase().includes("gemini") || modelName && modelName.toLowerCase().includes("gemini") && !modelName.toLowerCase().includes("gemma");
+      return isGemini ? "minimal" : "none";
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.LuminaModelHelper = LuminaModelHelper;
+  }
+
+  // src/components/chat/templates.js
+  var LuminaTemplates2 = class _LuminaTemplates {
+    static escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+    static modelItem(displayName, model) {
+      const name = displayName || model;
+      return `<span class="model-name">${_LuminaTemplates.escapeHtml(name)}</span>`;
+    }
+    static thinkingDots() {
+      const temp = document.getElementById("lumina-thinkingIndicatorTemplate");
+      if (temp) {
+        const clone = temp.content.cloneNode(true);
+        const dots = clone.querySelector(".thinking-dots");
+        return dots ? dots.innerHTML : `
+                <span class="sparks-typing-dot"></span>
+                <span class="sparks-typing-dot"></span>
+                <span class="sparks-typing-dot"></span>
+            `;
+      }
+      return `
+            <span class="sparks-typing-dot"></span>
+            <span class="sparks-typing-dot"></span>
+            <span class="sparks-typing-dot"></span>
+        `;
+    }
+    static sidebarContextMenu(items) {
+      return items.map((item) => {
+        if (item.type === "header") {
+          return `<div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">${_LuminaTemplates.escapeHtml(item.label)}</div>`;
+        }
+        if (item.type === "divider") {
+          return `<div class="sidebar-ctx-divider"></div>`;
+        }
+        const dangerClass = item.danger ? " sidebar-ctx-item--danger" : "";
+        return `
+                <div class="sidebar-ctx-item${dangerClass}" data-action="${_LuminaTemplates.escapeHtml(item.action)}">
+                    ${item.icon || ""}
+                    <span>${_LuminaTemplates.escapeHtml(item.label)}</span>
+                </div>
+            `;
+      }).join("");
+    }
+  };
+  var loadedScripts = /* @__PURE__ */ new Set();
+  function loadScript(src) {
+    if (loadedScripts.has(src)) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = () => {
+        loadedScripts.add(src);
+        resolve();
+      };
+      s.onerror = (err) => reject(err);
+      document.body.appendChild(s);
+    });
+  }
+  function loadCSS(href) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`link[href="${href}"]`)) {
+        resolve();
+        return;
+      }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.onload = () => resolve();
+      link.onerror = (err) => reject(err);
+      document.head.appendChild(link);
+    });
+  }
+  async function ensureKatexLoaded() {
+    if (typeof renderMathInElement !== "undefined") return;
+    try {
+      await loadCSS("../../lib/vendor/katex/katex.min.css");
+      await loadScript("../../lib/vendor/katex/katex.min.js");
+      await loadScript("../../lib/vendor/katex/auto-render.min.js");
+    } catch (e) {
+      console.error("Failed to lazy load KaTeX", e);
+    }
+  }
+  async function ensureChartLoaded() {
+    if (typeof Chart !== "undefined") return;
+    try {
+      await loadScript("../../lib/vendor/chart.min.js");
+    } catch (e) {
+      console.error("Failed to lazy load Chart.js", e);
+    }
+  }
+  async function ensurePdfjsLoaded() {
+    if (typeof pdfjsLib !== "undefined") return;
+    try {
+      await loadScript("../../lib/vendor/pdf.min.js");
+    } catch (e) {
+      console.error("Failed to lazy load PDF.js", e);
+    }
+  }
+  async function ensureHighlightLoaded() {
+    if (typeof hljs !== "undefined") return;
+    try {
+      await loadScript("../../lib/vendor/highlight.min.js");
+    } catch (e) {
+      console.error("Failed to lazy load Highlight.js", e);
+    }
+  }
+  async function ensureMarkedLoaded() {
+    if (typeof marked !== "undefined") return;
+    try {
+      await loadScript("../../lib/vendor/marked.min.js");
+    } catch (e) {
+      console.error("Failed to lazy load Marked", e);
+    }
+  }
+  if (typeof window !== "undefined") {
+    window.LuminaTemplates = LuminaTemplates2;
+    window.ensureKatexLoaded = ensureKatexLoaded;
+    window.ensureChartLoaded = ensureChartLoaded;
+    window.ensurePdfjsLoaded = ensurePdfjsLoaded;
+    window.ensureHighlightLoaded = ensureHighlightLoaded;
+    window.ensureMarkedLoaded = ensureMarkedLoaded;
+  }
+
   // src/pages/lumina/index.js
   var import_marked_min = __toESM(require_marked_min());
   var import_highlight_min = __toESM(require_highlight_min());
@@ -29644,7 +29826,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   processLuminaDynamicImageElements(document.body);
   processLuminaDynamicYoutubeElements(document.body);
   processLuminaChartElements(document.body);
-  var LuminaModelHelper = {
+  var LuminaModelHelper2 = {
     async getPromptSupport() {
       if (typeof window.getPromptApiSupport === "function") {
         return await window.getPromptApiSupport();
@@ -29696,7 +29878,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       return isGemini ? "minimal" : "none";
     }
   };
-  window.LuminaModelHelper = LuminaModelHelper;
+  window.LuminaModelHelper = LuminaModelHelper2;
   var LuminaChatUI2 = class _LuminaChatUI {
     static getDeepActiveElement() {
       let el = document.activeElement;
@@ -34736,7 +34918,7 @@ Output only the revised text.`;
     }
     return result;
   }
-  var LuminaTemplates2 = class _LuminaTemplates {
+  var LuminaTemplates3 = class _LuminaTemplates {
     static escapeHtml(str) {
       if (!str) return "";
       return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -34782,27 +34964,27 @@ Output only the revised text.`;
   };
   if (typeof window !== "undefined") {
     window.LuminaChatUI = LuminaChatUI2;
-    window.LuminaTemplates = LuminaTemplates2;
+    window.LuminaTemplates = LuminaTemplates3;
     window.luminaExtractMainContent = extractMainContent;
     window.luminaEstimateTokens = luminaEstimateTokens;
     window.luminaTruncateHistoryWindow = luminaTruncateHistoryWindow;
   }
-  var loadedScripts = /* @__PURE__ */ new Set();
-  function loadScript(src) {
-    if (loadedScripts.has(src)) return Promise.resolve();
+  var loadedScripts2 = /* @__PURE__ */ new Set();
+  function loadScript2(src) {
+    if (loadedScripts2.has(src)) return Promise.resolve();
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
       s.src = src;
       s.async = true;
       s.onload = () => {
-        loadedScripts.add(src);
+        loadedScripts2.add(src);
         resolve();
       };
       s.onerror = (err) => reject(err);
       document.body.appendChild(s);
     });
   }
-  function loadCSS(href) {
+  function loadCSS2(href) {
     return new Promise((resolve, reject) => {
       if (document.querySelector(`link[href="${href}"]`)) {
         resolve();
@@ -34819,9 +35001,9 @@ Output only the revised text.`;
   window.ensureKatexLoaded = async function() {
     if (typeof renderMathInElement !== "undefined") return;
     try {
-      await loadCSS("../../lib/vendor/katex/katex.min.css");
-      await loadScript("../../lib/vendor/katex/katex.min.js");
-      await loadScript("../../lib/vendor/katex/auto-render.min.js");
+      await loadCSS2("../../lib/vendor/katex/katex.min.css");
+      await loadScript2("../../lib/vendor/katex/katex.min.js");
+      await loadScript2("../../lib/vendor/katex/auto-render.min.js");
     } catch (e) {
       console.error("Failed to lazy load KaTeX", e);
     }
@@ -34829,7 +35011,7 @@ Output only the revised text.`;
   window.ensureChartLoaded = async function() {
     if (typeof Chart !== "undefined") return;
     try {
-      await loadScript("../../lib/vendor/chart.min.js");
+      await loadScript2("../../lib/vendor/chart.min.js");
     } catch (e) {
       console.error("Failed to lazy load Chart.js", e);
     }
@@ -34837,7 +35019,7 @@ Output only the revised text.`;
   window.ensurePdfjsLoaded = async function() {
     if (typeof pdfjsLib !== "undefined") return;
     try {
-      await loadScript("../../lib/vendor/pdf.min.js");
+      await loadScript2("../../lib/vendor/pdf.min.js");
     } catch (e) {
       console.error("Failed to lazy load PDF.js", e);
     }
@@ -34845,7 +35027,7 @@ Output only the revised text.`;
   window.ensureHighlightLoaded = async function() {
     if (typeof hljs !== "undefined") return;
     try {
-      await loadScript("../../lib/vendor/highlight.min.js");
+      await loadScript2("../../lib/vendor/highlight.min.js");
     } catch (e) {
       console.error("Failed to lazy load Highlight.js", e);
     }
@@ -34853,7 +35035,7 @@ Output only the revised text.`;
   window.ensureMarkedLoaded = async function() {
     if (typeof marked !== "undefined") return;
     try {
-      await loadScript("../../lib/vendor/marked.min.js");
+      await loadScript2("../../lib/vendor/marked.min.js");
     } catch (e) {
       console.error("Failed to lazy load Marked", e);
     }

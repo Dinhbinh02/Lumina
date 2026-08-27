@@ -5,3 +5,5 @@ export * from './dictionary/dictionary_popup.js';
 export * from './modals/search_modal.js';
 export * from './modals/settings_modal.js';
 export * from './sparks/sparks.js';
+export * from './chat/index.js';
+
