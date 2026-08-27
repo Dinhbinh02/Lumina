@@ -1,4 +1,9 @@
 import { LuminaSync } from '../core/auth/drive_sync.js';
+import '../db/chat_db.js';
+import '../db/notes_manager.js';
+import '../db/highlight_db.js';
+import '../db/attachment_db.js';
+import '../core/audio/tts_manager.js';
 
 export function initSyncHandlers() {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
