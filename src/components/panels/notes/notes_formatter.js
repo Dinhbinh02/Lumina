@@ -1,0 +1,52 @@
+export function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+export function timeAgo(timestamp) {
+    if (!timestamp) return '';
+    const now = Date.now();
+    const diff = Math.floor((now - timestamp) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    const date = new Date(timestamp);
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+export function extractSearchSnippet(text, query, snippetLength = 120) {
+    if (!text) return '';
+    if (!query) return text.slice(0, snippetLength);
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const index = lowerText.indexOf(lowerQuery);
+    if (index === -1) return text.slice(0, snippetLength);
+    const start = Math.max(0, index - Math.floor(snippetLength / 3));
+    const end = Math.min(text.length, start + snippetLength);
+    let snippet = text.slice(start, end);
+    if (start > 0) snippet = '...' + snippet;
+    if (end < text.length) snippet = snippet + '...';
+    return snippet;
+}
+
+export function highlightSnippet(snippet, query) {
+    if (!query || !snippet) return escapeHtml(snippet);
+    const escapedSnippet = escapeHtml(snippet);
+    const escapedQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return escapedSnippet.replace(regex, '<mark class="lumina-search-match">$1</mark>');
+}
+
+export function calculateWordCount(text) {
+    if (!text) return { words: 0, chars: 0 };
+    const cleanText = text.trim();
+    const words = cleanText ? cleanText.split(/\s+/).length : 0;
+    const chars = cleanText.length;
+    return { words, chars };
+}
