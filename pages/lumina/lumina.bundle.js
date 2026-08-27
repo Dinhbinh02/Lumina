@@ -14691,8 +14691,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         while (i < group.length) {
           if (history.__activeRestoreId !== restoreId) return;
           const item = group[i];
-          const msg = item.msg;
-          const msgIdx = item.originalIndex;
+          const msg = item && typeof item === "object" && item.msg ? item.msg : item;
+          if (!msg || typeof msg !== "object") {
+            i++;
+            continue;
+          }
+          const msgIdx = item && typeof item === "object" && item.originalIndex !== void 0 ? item.originalIndex : i;
           if (msg.type === "question") {
             const entryDiv = document.createElement("div");
             entryDiv.className = "lumina-entry";
@@ -14806,8 +14810,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.injectQuestionActions === "function") {
               LuminaChatUI.injectQuestionActions(questionDiv);
             }
-            if (i + 1 < group.length && group[i + 1].msg.type === "answer") {
-              const answerMsg = group[i + 1].msg;
+            const nextItem = i + 1 < group.length ? group[i + 1] : null;
+            const nextMsg = nextItem && typeof nextItem === "object" && nextItem.msg ? nextItem.msg : nextItem;
+            if (nextMsg && nextMsg.type === "answer") {
+              const answerMsg = nextMsg;
               if (answerMsg.metadata?.webSearch) {
                 const stepperHTML = this.createCompletedStepperHTML(
                   answerMsg.metadata.webSearch.query,
