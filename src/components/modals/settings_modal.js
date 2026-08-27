@@ -2515,3 +2515,7 @@ export class LuminaSettingsModal {
 document.addEventListener('DOMContentLoaded', () => {
   LuminaSettingsModal.init();
 });
+
+if (typeof globalThis !== 'undefined') {
+    globalThis.LuminaSettingsModal = LuminaSettingsModal;
+}

@@ -27361,6 +27361,9 @@ Markets reached historic highs this morning following breakthroughs in artificia
   document.addEventListener("DOMContentLoaded", () => {
     LuminaSettingsModal2.init();
   });
+  if (typeof globalThis !== "undefined") {
+    globalThis.LuminaSettingsModal = LuminaSettingsModal2;
+  }
 
   // src/components/sparks/default_sparks.js
   var DEFAULT_SPARKS = {
