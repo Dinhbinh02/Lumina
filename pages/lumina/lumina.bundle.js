@@ -13268,12 +13268,18 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     "text/x-python-script": "text/x-python",
     "application/x-javascript": "text/javascript"
   };
+  var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "lumina_web_selection_";
+  function isWebPageUrl(url) {
+    return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") && url.includes("?sid="));
+  }
   if (typeof globalThis !== "undefined") {
     globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
     globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
     globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
     globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
     globalThis.MIME_ALIASES = MIME_ALIASES;
+    globalThis.WEB_SOURCE_SELECTION_STORAGE_PREFIX = WEB_SOURCE_SELECTION_STORAGE_PREFIX;
+    globalThis.isWebPageUrl = isWebPageUrl;
     globalThis.escapeHtml = escapeHtml2;
     globalThis.getTodayString = getTodayString;
     globalThis.getKeysArray = getKeysArray;
@@ -28662,6 +28668,215 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   var import_auto_render_min = __toESM(require_auto_render_min());
   var import_chart_min = __toESM(require_chart_min());
 
+  // src/pages/lumina/controllers/view_controller.js
+  var LuminaViewManager2 = {
+    currentView: "chat",
+    views: {
+      chat: {
+        el: "#chat-layout",
+        hasTopbar: true,
+        displayType: "",
+        onOpen: () => {
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+        }
+      },
+      notes: {
+        el: "#notes-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-notes-btn")?.classList.add("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          if (!window.luminaNotesPanelInstance && typeof NotesPanel !== "undefined") {
+            window.luminaNotesPanelInstance = new NotesPanel();
+          }
+          if (window.luminaNotesPanelInstance) {
+            window.luminaNotesPanelInstance.init(params?.noteId, params?.colId);
+          }
+        }
+      },
+      tts: {
+        el: "#tts-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-tts-btn")?.classList.add("active");
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          if (!window.luminaTTSPanelInstance && typeof TTSPanel !== "undefined") {
+            window.luminaTTSPanelInstance = new TTSPanel();
+          }
+          if (window.luminaTTSPanelInstance && typeof window.luminaTTSPanelInstance.init === "function") {
+            window.luminaTTSPanelInstance.init(params?.recordingId);
+          }
+        }
+      },
+      sparks: {
+        el: "#sparks-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          if (params && params.sparkId && typeof window.sparksLoadSpark === "function") {
+            window.sparksLoadSpark(params.sparkId);
+          }
+        }
+      }
+    },
+    switchView(targetView, params = {}) {
+      if (!this.views[targetView]) return;
+      this.currentView = targetView;
+      const initStyle = document.getElementById("view-init-style");
+      if (initStyle) initStyle.remove();
+      Object.keys(this.views).forEach((viewName) => {
+        const config = this.views[viewName];
+        const domEl = document.querySelector(config.el);
+        if (domEl) {
+          if (viewName === targetView) {
+            if (config.displayType) {
+              domEl.style.display = config.displayType;
+            } else {
+              domEl.style.removeProperty("display");
+            }
+          } else {
+            if (viewName === "chat") {
+              domEl.style.setProperty("display", "none", "important");
+            } else {
+              domEl.style.display = "none";
+            }
+          }
+        }
+      });
+      const topbar = document.getElementById("lumina-topbar");
+      if (topbar) {
+        if (this.views[targetView].hasTopbar) {
+          topbar.style.removeProperty("display");
+          topbar.style.display = "flex";
+        } else {
+          topbar.style.setProperty("display", "none", "important");
+        }
+      }
+      if (targetView === "tts") {
+        document.title = "TTS Studio";
+      } else if (targetView === "notes") {
+        document.title = "Notes";
+      } else if (targetView === "sparks") {
+        document.title = "Sparks";
+      } else {
+        document.title = "Lumina";
+      }
+      this.updateUrl(targetView, params);
+      if (this.views[targetView].onOpen) {
+        this.views[targetView].onOpen(params);
+      }
+    },
+    updateUrl(viewName, params = {}) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (viewName === "notes") {
+        urlParams.delete("sid");
+        urlParams.delete("sparkId");
+        urlParams.delete("recordingId");
+        urlParams.set("view", "notes");
+        if (params.noteId) {
+          urlParams.set("noteId", params.noteId);
+        } else {
+          urlParams.delete("noteId");
+        }
+        if (params.colId && params.colId !== "all") {
+          urlParams.set("colId", params.colId);
+        } else {
+          urlParams.delete("colId");
+        }
+      } else if (viewName === "sparks") {
+        urlParams.delete("sid");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("recordingId");
+        urlParams.set("view", "sparks");
+        if (params.sparkId) {
+          urlParams.set("sparkId", params.sparkId);
+        } else {
+          urlParams.delete("sparkId");
+        }
+      } else if (viewName === "tts") {
+        urlParams.delete("sid");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("sparkId");
+        urlParams.set("view", "tts");
+        if (params.recordingId) {
+          urlParams.set("recordingId", params.recordingId);
+        } else {
+          urlParams.delete("recordingId");
+        }
+      } else {
+        urlParams.delete("view");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("sparkId");
+        urlParams.delete("recordingId");
+        const primaryTab = typeof window.tabs !== "undefined" && typeof window.activeTabIndex !== "undefined" ? window.tabs[window.activeTabIndex] : null;
+        const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : "");
+        if (sidVal) {
+          urlParams.set("sid", sidVal);
+        } else {
+          urlParams.delete("sid");
+        }
+      }
+      const newUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
+      window.history.pushState({ view: viewName, ...params }, "", newUrl);
+    }
+  };
+  function updateNotesUrl(noteId, colId) {
+    LuminaViewManager2.updateUrl("notes", { noteId, colId });
+  }
+  function notesOpenPage(noteIdToLoad, colIdToLoad) {
+    LuminaViewManager2.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
+  }
+  function notesClosePage() {
+    LuminaViewManager2.switchView("chat");
+  }
+  function sparksOpenPage2(sparkId) {
+    LuminaViewManager2.switchView("sparks", { sparkId });
+  }
+  function sparksClosePage3() {
+    LuminaViewManager2.switchView("chat");
+  }
+  function ttsOpenPage() {
+    LuminaViewManager2.switchView("tts");
+  }
+  function ttsClosePage() {
+    LuminaViewManager2.switchView("chat");
+  }
+  if (typeof window !== "undefined") {
+    window.LuminaViewManager = LuminaViewManager2;
+    window.updateNotesUrl = updateNotesUrl;
+    window.notesOpenPage = notesOpenPage;
+    window.notesClosePage = notesClosePage;
+    window.sparksOpenPage = sparksOpenPage2;
+    window.sparksClosePage = sparksClosePage3;
+    window.ttsOpenPage = ttsOpenPage;
+    window.ttsClosePage = ttsClosePage;
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const view = urlParams.get("view");
+      if (view === "notes") {
+        LuminaViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
+      } else if (view === "sparks") {
+        LuminaViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
+      } else if (view === "tts") {
+        LuminaViewManager2.switchView("tts", { recordingId: urlParams.get("recordingId") });
+      }
+    });
+  }
+
   // lib/ui/common.js
   window.luminaLoadScript = function(url) {
     return new Promise((resolve, reject) => {
@@ -34839,7 +35054,7 @@ Output only the revised text.`;
       document.documentElement.style.setProperty("--lumina-fontSize", size + "px", "important");
     }
   }
-  var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "lumina_web_source_selection_";
+  var WEB_SOURCE_SELECTION_STORAGE_PREFIX2 = "lumina_web_source_selection_";
   var currentBrowserTabTokens = /* @__PURE__ */ new Map();
   function getLuminaTabIdForPane(container2) {
     return activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null;
@@ -34853,14 +35068,14 @@ Output only the revised text.`;
     return tab ? tab.id : null;
   }
   function getWebSelectionStorageKey(key) {
-    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${String(key)}`;
+    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX2}${String(key)}`;
   }
   function readWebSelectionFromStorage(scopeKey) {
     try {
       const rawValue = localStorage.getItem(getWebSelectionStorageKey(scopeKey));
       if (!rawValue) return [];
       const parsedValue = JSON.parse(rawValue);
-      return Array.isArray(parsedValue) ? parsedValue.filter((source) => source && isWebPageUrl(source.url)).map((source) => ({
+      return Array.isArray(parsedValue) ? parsedValue.filter((source) => source && isWebPageUrl2(source.url)).map((source) => ({
         tabId: source.tabId,
         title: source.title,
         url: source.url,
@@ -34873,7 +35088,7 @@ Output only the revised text.`;
   }
   function writeWebSelectionToStorage(scopeKey, selection) {
     const key = getWebSelectionStorageKey(scopeKey);
-    const validSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url));
+    const validSelection = (selection || []).filter((source) => source && isWebPageUrl2(source.url));
     if (validSelection.length > 0) {
       localStorage.setItem(key, JSON.stringify(validSelection.map((source) => ({
         tabId: source.tabId,
@@ -34894,7 +35109,7 @@ Output only the revised text.`;
   function saveWebSelectionForScope(luminaTabId, selection) {
     const scopeKey = getWebSelectionScopeKey(luminaTabId);
     if (!scopeKey) return;
-    const normalizedSelection = (selection || []).filter((source) => source && isWebPageUrl(source.url)).map((source) => ({
+    const normalizedSelection = (selection || []).filter((source) => source && isWebPageUrl2(source.url)).map((source) => ({
       tabId: source.tabId,
       title: source.title,
       url: source.url,
@@ -35047,10 +35262,10 @@ Output only the revised text.`;
   function updateWebSelectionForTab(tabId, updater) {
     const stringTabId = String(tabId);
     const storageKeys = Object.keys(localStorage).filter(
-      (key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
+      (key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX2)
     );
     storageKeys.forEach((storageKey) => {
-      const scopeKey = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
+      const scopeKey = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX2.length);
       const selection = readWebSelectionFromStorage(scopeKey);
       let changed = false;
       const updatedSelection = selection.map((source) => {
@@ -35080,10 +35295,10 @@ Output only the revised text.`;
       }
     }
     const storageKeys = Object.keys(localStorage).filter(
-      (key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX)
+      (key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX2)
     );
     storageKeys.forEach((storageKey) => {
-      const luminaTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX.length);
+      const luminaTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX2.length);
       const selection = readWebSelectionFromStorage(luminaTabId);
       const matches = selection.filter((s) => String(s.tabId) === stringTabId);
       if (matches.length > 0) {
@@ -35706,7 +35921,7 @@ Output only the revised text.`;
       chrome.storage.local.remove([`lumina_history_${tabToRemove.sessionId}`]);
     }
     const storageKeys = Object.keys(localStorage).filter(
-      (key) => key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX}${tabId}_`)
+      (key) => key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX2}${tabId}_`)
     );
     storageKeys.forEach((key) => localStorage.removeItem(key));
     tabs2.forEach((t, i) => {
@@ -36207,7 +36422,7 @@ Output only the revised text.`;
       updateWebChips();
     });
   }
-  function isWebPageUrl(url) {
+  function isWebPageUrl2(url) {
     return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") && url.includes("?sid="));
   }
   function syncCurrentBrowserTab() {
@@ -36232,7 +36447,7 @@ Output only the revised text.`;
         }
         chrome.windows.getAll({ populate: true }, (windows) => {
           const sortedWindows = windows.filter((w) => w.type === "normal").sort((a, b) => b.id - a.id);
-          const realTab = sortedWindows.map((w) => w.tabs.find((t) => t.active)).find((t) => t && isWebPageUrl(t.url));
+          const realTab = sortedWindows.map((w) => w.tabs.find((t) => t.active)).find((t) => t && isWebPageUrl2(t.url));
           if (realTab) {
             currentBrowserTab = {
               tabId: realTab.id,
@@ -36250,7 +36465,7 @@ Output only the revised text.`;
         });
         return;
       }
-      if (activeTab && isWebPageUrl(activeTab.url)) {
+      if (activeTab && isWebPageUrl2(activeTab.url)) {
         currentBrowserTab = {
           tabId: activeTab.id,
           title: activeTab.title || "Untitled",
@@ -36313,7 +36528,7 @@ Output only the revised text.`;
     }
     closeWebTabPicker();
     chrome.tabs.query({ windowType: "normal" }, (tabs3) => {
-      const availableTabs = (tabs3 || []).filter((tab) => tab && isWebPageUrl(tab.url)).map((tab) => ({
+      const availableTabs = (tabs3 || []).filter((tab) => tab && isWebPageUrl2(tab.url)).map((tab) => ({
         tabId: tab.id,
         title: tab.title || "Untitled",
         url: tab.url,
@@ -36570,7 +36785,7 @@ Output only the revised text.`;
         container2.dataset.muteHandlerSet = "true";
       }
       const selectedSources = getWebSelectionForScope(luminaTabId);
-      const onValidWebPage = currentBrowserTab && isWebPageUrl(currentBrowserTab.url);
+      const onValidWebPage = currentBrowserTab && isWebPageUrl2(currentBrowserTab.url);
       let newFingerprint = "";
       if (onValidWebPage) {
         const currentTabId = String(currentBrowserTab.tabId);
@@ -36638,7 +36853,7 @@ Output only the revised text.`;
     });
   }
   function toggleWebSourcePin(source, forceState = null, luminaTabId = null) {
-    if (!source || !isWebPageUrl(source.url)) return;
+    if (!source || !isWebPageUrl2(source.url)) return;
     const targetLuminaTabId = luminaTabId || getCurrentLuminaTabId();
     if (!targetLuminaTabId) return;
     const currentSelection = getWebSelectionForScope(targetLuminaTabId);
@@ -38315,7 +38530,7 @@ AI: ${ans.text}`;
       }
     }
     let webSourceScope = [];
-    if (isSidePanel && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
+    if (isSidePanel && currentBrowserTab && isWebPageUrl2(currentBrowserTab.url)) {
       const selection = getWebSelectionForScope(currentTab.id);
       const isCurrentPinned = selection.some((s) => String(s.tabId) === String(currentBrowserTab.tabId));
       if (isCurrentPinned) {
@@ -38324,7 +38539,7 @@ AI: ${ans.text}`;
         ];
       }
     }
-    if (isSidePanel && shouldReadPage && currentBrowserTab && isWebPageUrl(currentBrowserTab.url)) {
+    if (isSidePanel && shouldReadPage && currentBrowserTab && isWebPageUrl2(currentBrowserTab.url)) {
       const alreadyPinned = webSourceScope.some((s) => s.tabId === currentBrowserTab.tabId);
       if (!alreadyPinned) {
         webSourceScope = [
@@ -41251,7 +41466,7 @@ ${selectedAns.text}`;
     window.initGeminiLiveModal = initGeminiLiveModal2;
     let luminaNotesPanelInstance2 = null;
     let luminaTTSPanelInstance2 = null;
-    const LuminaViewManager2 = {
+    const LuminaViewManager3 = {
       currentView: "chat",
       views: {
         chat: {
@@ -41416,44 +41631,44 @@ ${selectedAns.text}`;
         window.history.pushState({ view: viewName, ...params }, "", newUrl);
       }
     };
-    function updateNotesUrl(noteId, colId) {
-      LuminaViewManager2.updateUrl("notes", { noteId, colId });
+    function updateNotesUrl2(noteId, colId) {
+      LuminaViewManager3.updateUrl("notes", { noteId, colId });
     }
-    function notesOpenPage(noteIdToLoad, colIdToLoad) {
-      LuminaViewManager2.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
+    function notesOpenPage2(noteIdToLoad, colIdToLoad) {
+      LuminaViewManager3.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
     }
-    function notesClosePage() {
-      LuminaViewManager2.switchView("chat");
+    function notesClosePage2() {
+      LuminaViewManager3.switchView("chat");
     }
-    function sparksOpenPage2(sparkId) {
-      LuminaViewManager2.switchView("sparks", { sparkId });
+    function sparksOpenPage3(sparkId) {
+      LuminaViewManager3.switchView("sparks", { sparkId });
     }
-    function sparksClosePage3() {
-      LuminaViewManager2.switchView("chat");
+    function sparksClosePage4() {
+      LuminaViewManager3.switchView("chat");
     }
-    function ttsOpenPage() {
-      LuminaViewManager2.switchView("tts");
+    function ttsOpenPage2() {
+      LuminaViewManager3.switchView("tts");
     }
-    function ttsClosePage() {
-      LuminaViewManager2.switchView("chat");
+    function ttsClosePage2() {
+      LuminaViewManager3.switchView("chat");
     }
-    window.LuminaViewManager = LuminaViewManager2;
-    window.updateNotesUrl = updateNotesUrl;
-    window.notesOpenPage = notesOpenPage;
-    window.notesClosePage = notesClosePage;
-    window.sparksOpenPage = sparksOpenPage2;
-    window.sparksClosePage = sparksClosePage3;
-    window.ttsOpenPage = ttsOpenPage;
-    window.ttsClosePage = ttsClosePage;
+    window.LuminaViewManager = LuminaViewManager3;
+    window.updateNotesUrl = updateNotesUrl2;
+    window.notesOpenPage = notesOpenPage2;
+    window.notesClosePage = notesClosePage2;
+    window.sparksOpenPage = sparksOpenPage3;
+    window.sparksClosePage = sparksClosePage4;
+    window.ttsOpenPage = ttsOpenPage2;
+    window.ttsClosePage = ttsClosePage2;
     document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const view = urlParams.get("view");
       if (view === "notes") {
-        LuminaViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
+        LuminaViewManager3.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
       } else if (view === "sparks") {
-        LuminaViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
+        LuminaViewManager3.switchView("sparks", { sparkId: urlParams.get("sparkId") });
       } else if (view === "tts") {
-        LuminaViewManager2.switchView("tts", { recordingId: urlParams.get("recordingId") });
+        LuminaViewManager3.switchView("tts", { recordingId: urlParams.get("recordingId") });
       }
     });
   })();

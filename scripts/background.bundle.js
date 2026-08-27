@@ -287,12 +287,18 @@ var MIME_ALIASES = {
   "text/x-python-script": "text/x-python",
   "application/x-javascript": "text/javascript"
 };
+var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "lumina_web_selection_";
+function isWebPageUrl(url) {
+  return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") && url.includes("?sid="));
+}
 if (typeof globalThis !== "undefined") {
   globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
   globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
   globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
   globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
   globalThis.MIME_ALIASES = MIME_ALIASES;
+  globalThis.WEB_SOURCE_SELECTION_STORAGE_PREFIX = WEB_SOURCE_SELECTION_STORAGE_PREFIX;
+  globalThis.isWebPageUrl = isWebPageUrl;
   globalThis.escapeHtml = escapeHtml;
   globalThis.getTodayString = getTodayString;
   globalThis.getKeysArray = getKeysArray;
