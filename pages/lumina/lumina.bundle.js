@@ -28424,7 +28424,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         activeTab.historyEl.removeAttribute("data-session-id");
       }
       activeTab.scrollTop = -1;
-      if (typeof updateUrlSessionId === "function") {
+      if (typeof window.updateUrlSessionId === "function") {
+        window.updateUrlSessionId(null);
+      } else if (typeof updateUrlSessionId === "function") {
         updateUrlSessionId(null);
       }
       if (targetChatUI) {
@@ -28436,11 +28438,15 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       }
       await renderSparkWelcomeScreen2(activeTab);
-      if (typeof updateWelcomeScreenState === "function") {
+      if (typeof window.updateWelcomeScreenState === "function") {
+        window.updateWelcomeScreenState("primary");
+      } else if (typeof updateWelcomeScreenState === "function") {
         updateWelcomeScreenState("primary");
       }
-      if (typeof renderTabs === "function") renderTabs();
-      if (typeof saveTabsState === "function") saveTabsState();
+      if (typeof window.renderTabs === "function") window.renderTabs();
+      else if (typeof renderTabs === "function") renderTabs();
+      if (typeof window.saveTabsState === "function") window.saveTabsState();
+      else if (typeof saveTabsState === "function") saveTabsState();
       if (window.updateTopbarModelSelector) {
         window.updateTopbarModelSelector();
       }
@@ -28699,12 +28705,21 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       tabs.forEach((tab) => {
         if (tab && tab.sparkId && !tab.sessionId) {
           renderSparkWelcomeScreen2(tab);
-          if (typeof updateWelcomeScreenState === "function") {
+          if (typeof window.updateWelcomeScreenState === "function") {
+            window.updateWelcomeScreenState("primary");
+          } else if (typeof updateWelcomeScreenState === "function") {
             updateWelcomeScreenState("primary");
           }
         }
       });
     }
+  }
+  if (typeof window !== "undefined") {
+    window.openSparkChat = openSparkChat2;
+    window.renderSparkWelcomeScreen = renderSparkWelcomeScreen2;
+    window.sparksClosePage = sparksClosePage2;
+    window.sparksOpenPage = sparksOpenPage;
+    window.sidebarSparksRenderList = sidebarSparksRenderList2;
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initSparks);
@@ -40275,6 +40290,15 @@ ${selectedAns.text}`;
       }
     }
     updatePaneBlankState();
+  }
+  if (typeof window !== "undefined") {
+    window.updateWelcomeScreenState = updateWelcomeScreenState2;
+    window.renderTabs = renderTabs2;
+    window.saveTabsState = saveTabsState2;
+    if (typeof updateUrlSessionId2 === "function") window.updateUrlSessionId = updateUrlSessionId2;
+    if (typeof updateInputPlaceholder === "function") window.updateInputPlaceholder = updateInputPlaceholder;
+    if (typeof resetChat2 === "function") window.resetChat = resetChat2;
+    if (typeof renderRecentChatsSidebar === "function") window.renderRecentChatsSidebar = renderRecentChatsSidebar;
   }
   if (typeof LuminaSync !== "undefined") {
     LuminaSync.addListener((status) => {

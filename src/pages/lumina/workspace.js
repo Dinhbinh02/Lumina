@@ -6351,6 +6351,16 @@ function updateWelcomeScreenState() {
     updatePaneBlankState();
 }
 
+if (typeof window !== 'undefined') {
+    window.updateWelcomeScreenState = updateWelcomeScreenState;
+    window.renderTabs = renderTabs;
+    window.saveTabsState = saveTabsState;
+    if (typeof updateUrlSessionId === 'function') window.updateUrlSessionId = updateUrlSessionId;
+    if (typeof updateInputPlaceholder === 'function') window.updateInputPlaceholder = updateInputPlaceholder;
+    if (typeof resetChat === 'function') window.resetChat = resetChat;
+    if (typeof renderRecentChatsSidebar === 'function') window.renderRecentChatsSidebar = renderRecentChatsSidebar;
+}
+
 if (typeof LuminaSync !== 'undefined') {
     LuminaSync.addListener((status) => {
         const wrapper = document.getElementById('user-avatar-wrapper');

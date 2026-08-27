@@ -962,7 +962,9 @@ async function openSparkChat(sparkId) {
             activeTab.historyEl.removeAttribute('data-session-id');
         }
         activeTab.scrollTop = -1;
-        if (typeof updateUrlSessionId === 'function') {
+        if (typeof window.updateUrlSessionId === 'function') {
+            window.updateUrlSessionId(null);
+        } else if (typeof updateUrlSessionId === 'function') {
             updateUrlSessionId(null);
         }
         if (targetChatUI) {
@@ -974,11 +976,15 @@ async function openSparkChat(sparkId) {
             }
         }
         await renderSparkWelcomeScreen(activeTab);
-        if (typeof updateWelcomeScreenState === 'function') {
+        if (typeof window.updateWelcomeScreenState === 'function') {
+            window.updateWelcomeScreenState('primary');
+        } else if (typeof updateWelcomeScreenState === 'function') {
             updateWelcomeScreenState('primary');
         }
-        if (typeof renderTabs === 'function') renderTabs();
-        if (typeof saveTabsState === 'function') saveTabsState();
+        if (typeof window.renderTabs === 'function') window.renderTabs();
+        else if (typeof renderTabs === 'function') renderTabs();
+        if (typeof window.saveTabsState === 'function') window.saveTabsState();
+        else if (typeof saveTabsState === 'function') saveTabsState();
         if (window.updateTopbarModelSelector) {
             window.updateTopbarModelSelector();
         }
@@ -1246,13 +1252,24 @@ function initSparks() {
         tabs.forEach(tab => {
             if (tab && tab.sparkId && !tab.sessionId) {
                 renderSparkWelcomeScreen(tab);
-                if (typeof updateWelcomeScreenState === 'function') {
+                if (typeof window.updateWelcomeScreenState === 'function') {
+                    window.updateWelcomeScreenState('primary');
+                } else if (typeof updateWelcomeScreenState === 'function') {
                     updateWelcomeScreenState('primary');
                 }
             }
         });
     }
 }
+
+if (typeof window !== 'undefined') {
+    window.openSparkChat = openSparkChat;
+    window.renderSparkWelcomeScreen = renderSparkWelcomeScreen;
+    window.sparksClosePage = sparksClosePage;
+    window.sparksOpenPage = sparksOpenPage;
+    window.sidebarSparksRenderList = sidebarSparksRenderList;
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSparks);
 } else {
