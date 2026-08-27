@@ -154,6 +154,58 @@ function initSidePanelManager() {
       updateDisplayMode(changes.displayMode.newValue || "popup");
     }
   });
+  if (chrome.commands && chrome.commands.onCommand) {
+    chrome.commands.onCommand.addListener((command, tab) => {
+      if (command === "toggle-side-panel" || command === "open-lumina-chat") {
+        if (tab && tab.windowId) {
+          toggleSidePanel(tab.windowId);
+        } else {
+          chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
+            if (currentWindow && currentWindow.id) {
+              toggleSidePanel(currentWindow.id);
+            }
+          });
+        }
+      } else if (command === "new-chat") {
+        chrome.runtime.sendMessage({ action: "new_chat" }).catch(() => {
+        });
+        if (tab && tab.windowId) {
+          ensureSidePanelOpen(tab.windowId);
+        } else {
+          chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
+            if (currentWindow && currentWindow.id) {
+              ensureSidePanelOpen(currentWindow.id);
+            }
+          });
+        }
+      }
+    });
+  }
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "open_sidepanel" || request.action === "toggle_sidepanel") {
+      const windowId = sender.tab ? sender.tab.windowId : request.windowId || null;
+      if (windowId) {
+        if (request.action === "open_sidepanel") {
+          ensureSidePanelOpen(windowId);
+        } else {
+          toggleSidePanel(windowId);
+        }
+        sendResponse({ success: true });
+      } else {
+        chrome.windows.getCurrent({ populate: false }, (currentWindow) => {
+          if (currentWindow && currentWindow.id) {
+            if (request.action === "open_sidepanel") {
+              ensureSidePanelOpen(currentWindow.id);
+            } else {
+              toggleSidePanel(currentWindow.id);
+            }
+            sendResponse({ success: true });
+          }
+        });
+      }
+      return true;
+    }
+  });
 }
 
 // src/shared/constants.js
