@@ -13477,7 +13477,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       return { freed: freedBytes, remaining: totalBytes };
     }
   };
-  var LuminaImageCacheDB2 = {
+  var LuminaImageCacheDB = {
     DB_NAME: "LuminaImageCacheDB",
     DB_VERSION: 1,
     STORE_NAME: "image_queries",
@@ -13770,7 +13770,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   };
   if (typeof globalThis !== "undefined") {
     globalThis.LuminaAttachmentDB = LuminaAttachmentDB2;
-    globalThis.LuminaImageCacheDB = LuminaImageCacheDB2;
+    globalThis.LuminaImageCacheDB = LuminaImageCacheDB;
     globalThis.LuminaAudioCacheDB = LuminaAudioCacheDB;
   }
 
@@ -28916,7 +28916,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   // src/components/chat/dynamic_media_processor.js
   var luminaResolvedYoutubeCache = /* @__PURE__ */ new Map();
   var luminaResolvedImagesCache = /* @__PURE__ */ new Map();
-  function processLuminaDynamicYoutubeElements(rootNode) {
+  function processLuminaDynamicYoutubeElements2(rootNode) {
     if (!rootNode) return;
     const yts = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
@@ -28967,7 +28967,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     });
   }
-  function processLuminaDynamicImageElements(rootNode) {
+  function processLuminaDynamicImageElements2(rootNode) {
     if (!rootNode) return;
     const found = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-async-image")) {
@@ -29031,8 +29031,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     });
   }
   if (typeof window !== "undefined") {
-    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements;
-    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements;
+    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements2;
+    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements2;
   }
 
   // src/components/chat/chart_renderer.js
@@ -29096,1031 +29096,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     window._renderChartJSWrapper = renderChartJSWrapper;
   }
 
-  // src/pages/lumina/index.js
-  var import_marked_min = __toESM(require_marked_min());
-  var import_highlight_min = __toESM(require_highlight_min());
-  var import_katex_min = __toESM(require_katex_min());
-  var import_auto_render_min = __toESM(require_auto_render_min());
-  var import_chart_min = __toESM(require_chart_min());
-
-  // src/pages/lumina/controllers/view_controller.js
-  var LuminaViewManager2 = {
-    currentView: "chat",
-    views: {
-      chat: {
-        el: "#chat-layout",
-        hasTopbar: true,
-        displayType: "",
-        onOpen: () => {
-          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-        }
-      },
-      notes: {
-        el: "#notes-page",
-        hasTopbar: false,
-        displayType: "flex",
-        onOpen: (params) => {
-          document.getElementById("sidebar-notes-btn")?.classList.add("active");
-          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-          if (!window.luminaNotesPanelInstance && typeof NotesPanel !== "undefined") {
-            window.luminaNotesPanelInstance = new NotesPanel();
-          }
-          if (window.luminaNotesPanelInstance) {
-            window.luminaNotesPanelInstance.init(params?.noteId, params?.colId);
-          }
-        }
-      },
-      tts: {
-        el: "#tts-page",
-        hasTopbar: false,
-        displayType: "flex",
-        onOpen: (params) => {
-          document.getElementById("sidebar-tts-btn")?.classList.add("active");
-          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-          if (!window.luminaTTSPanelInstance && typeof TTSPanel !== "undefined") {
-            window.luminaTTSPanelInstance = new TTSPanel();
-          }
-          if (window.luminaTTSPanelInstance && typeof window.luminaTTSPanelInstance.init === "function") {
-            window.luminaTTSPanelInstance.init(params?.recordingId);
-          }
-        }
-      },
-      sparks: {
-        el: "#sparks-page",
-        hasTopbar: false,
-        displayType: "flex",
-        onOpen: (params) => {
-          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-          if (params && params.sparkId && typeof window.sparksLoadSpark === "function") {
-            window.sparksLoadSpark(params.sparkId);
-          }
-        }
-      }
-    },
-    switchView(targetView, params = {}) {
-      if (!this.views[targetView]) return;
-      this.currentView = targetView;
-      const initStyle = document.getElementById("view-init-style");
-      if (initStyle) initStyle.remove();
-      Object.keys(this.views).forEach((viewName) => {
-        const config = this.views[viewName];
-        const domEl = document.querySelector(config.el);
-        if (domEl) {
-          if (viewName === targetView) {
-            if (config.displayType) {
-              domEl.style.display = config.displayType;
-            } else {
-              domEl.style.removeProperty("display");
-            }
-          } else {
-            if (viewName === "chat") {
-              domEl.style.setProperty("display", "none", "important");
-            } else {
-              domEl.style.display = "none";
-            }
-          }
-        }
-      });
-      const topbar = document.getElementById("lumina-topbar");
-      if (topbar) {
-        if (this.views[targetView].hasTopbar) {
-          topbar.style.removeProperty("display");
-          topbar.style.display = "flex";
-        } else {
-          topbar.style.setProperty("display", "none", "important");
-        }
-      }
-      if (targetView === "tts") {
-        document.title = "TTS Studio";
-      } else if (targetView === "notes") {
-        document.title = "Notes";
-      } else if (targetView === "sparks") {
-        document.title = "Sparks";
-      } else {
-        document.title = "Lumina";
-      }
-      this.updateUrl(targetView, params);
-      if (this.views[targetView].onOpen) {
-        this.views[targetView].onOpen(params);
-      }
-    },
-    updateUrl(viewName, params = {}) {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (viewName === "notes") {
-        urlParams.delete("sid");
-        urlParams.delete("sparkId");
-        urlParams.delete("recordingId");
-        urlParams.set("view", "notes");
-        if (params.noteId) {
-          urlParams.set("noteId", params.noteId);
-        } else {
-          urlParams.delete("noteId");
-        }
-        if (params.colId && params.colId !== "all") {
-          urlParams.set("colId", params.colId);
-        } else {
-          urlParams.delete("colId");
-        }
-      } else if (viewName === "sparks") {
-        urlParams.delete("sid");
-        urlParams.delete("noteId");
-        urlParams.delete("colId");
-        urlParams.delete("recordingId");
-        urlParams.set("view", "sparks");
-        if (params.sparkId) {
-          urlParams.set("sparkId", params.sparkId);
-        } else {
-          urlParams.delete("sparkId");
-        }
-      } else if (viewName === "tts") {
-        urlParams.delete("sid");
-        urlParams.delete("noteId");
-        urlParams.delete("colId");
-        urlParams.delete("sparkId");
-        urlParams.set("view", "tts");
-        if (params.recordingId) {
-          urlParams.set("recordingId", params.recordingId);
-        } else {
-          urlParams.delete("recordingId");
-        }
-      } else {
-        urlParams.delete("view");
-        urlParams.delete("noteId");
-        urlParams.delete("colId");
-        urlParams.delete("sparkId");
-        urlParams.delete("recordingId");
-        const primaryTab = typeof window.tabs !== "undefined" && typeof window.activeTabIndex !== "undefined" ? window.tabs[window.activeTabIndex] : null;
-        const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : "");
-        if (sidVal) {
-          urlParams.set("sid", sidVal);
-        } else {
-          urlParams.delete("sid");
-        }
-      }
-      const newUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
-      window.history.pushState({ view: viewName, ...params }, "", newUrl);
-    }
-  };
-  function updateNotesUrl(noteId, colId) {
-    LuminaViewManager2.updateUrl("notes", { noteId, colId });
-  }
-  function notesOpenPage(noteIdToLoad, colIdToLoad) {
-    LuminaViewManager2.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
-  }
-  function notesClosePage() {
-    LuminaViewManager2.switchView("chat");
-  }
-  function sparksOpenPage2(sparkId) {
-    LuminaViewManager2.switchView("sparks", { sparkId });
-  }
-  function sparksClosePage3() {
-    LuminaViewManager2.switchView("chat");
-  }
-  function ttsOpenPage() {
-    LuminaViewManager2.switchView("tts");
-  }
-  function ttsClosePage() {
-    LuminaViewManager2.switchView("chat");
-  }
-  if (typeof window !== "undefined") {
-    window.LuminaViewManager = LuminaViewManager2;
-    window.updateNotesUrl = updateNotesUrl;
-    window.notesOpenPage = notesOpenPage;
-    window.notesClosePage = notesClosePage;
-    window.sparksOpenPage = sparksOpenPage2;
-    window.sparksClosePage = sparksClosePage3;
-    window.ttsOpenPage = ttsOpenPage;
-    window.ttsClosePage = ttsClosePage;
-    document.addEventListener("DOMContentLoaded", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const view = urlParams.get("view");
-      if (view === "notes") {
-        LuminaViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
-      } else if (view === "sparks") {
-        LuminaViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
-      } else if (view === "tts") {
-        LuminaViewManager2.switchView("tts", { recordingId: urlParams.get("recordingId") });
-      }
-    });
-  }
-
-  // src/components/chat/common_ui.js
-  window.luminaLoadScript = function(url) {
-    return new Promise((resolve, reject) => {
-      const resolvedUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL && !url.startsWith("http") && !url.startsWith("chrome-extension:") ? chrome.runtime.getURL(url.replace(/^\.\.\/\.\.\//, "").replace(/^\//, "")) : url;
-      if (document.querySelector(`script[src="${url}"], script[src="${resolvedUrl}"]`)) {
-        return resolve();
-      }
-      const script = document.createElement("script");
-      script.src = resolvedUrl;
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  };
-  window.luminaLoadCSS = function(url) {
-    return new Promise((resolve) => {
-      const resolvedUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL && !url.startsWith("http") && !url.startsWith("chrome-extension:") ? chrome.runtime.getURL(url.replace(/^\.\.\/\.\.\//, "").replace(/^\//, "")) : url;
-      if (document.querySelector(`link[href="${url}"], link[href="${resolvedUrl}"]`)) {
-        return resolve();
-      }
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = resolvedUrl;
-      link.onload = resolve;
-      document.head.appendChild(link);
-    });
-  };
-  if (typeof marked !== "undefined") {
-    marked.use({
-      extensions: [
-        {
-          name: "inlineMath",
-          level: "inline",
-          start(src) {
-            return src.indexOf("$");
-          },
-          tokenizer(src, tokens) {
-            const match = src.match(/^\$((?:[^\$\\\n]|\\.)+?)\$/);
-            if (match) {
-              const content = match[1];
-              if (/^\s|\s$/.test(content)) return;
-              if (/\s/.test(content)) {
-                const hasMathSymbol = /[\\^_\=+\-*\/<>≤≥≠≈±∞%]/.test(content);
-                if (!hasMathSymbol) return;
-              } else {
-                if (/^\d+(?:[.,]\d+)?$/.test(content)) return;
-              }
-              return {
-                type: "inlineMath",
-                raw: match[0],
-                text: content
-              };
-            }
-          },
-          renderer(token) {
-            if (typeof katex !== "undefined" && katex.renderToString) {
-              try {
-                const math = (token.text || "").replace(/\\frac\{/g, "\\dfrac{");
-                return katex.renderToString(math, { displayMode: false, throwOnError: false, strict: "ignore" });
-              } catch (e) {
-                return token.raw;
-              }
-            }
-            return `<span class="lumina-math-inline-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</span>`;
-          }
-        },
-        {
-          name: "blockMath",
-          level: "block",
-          start(src) {
-            return src.indexOf("$$");
-          },
-          tokenizer(src, tokens) {
-            const match = src.match(/^\$\$\n?([\s\S]+?)\n?\$\$/);
-            if (match) {
-              return {
-                type: "blockMath",
-                raw: match[0],
-                text: match[1]
-              };
-            }
-          },
-          renderer(token) {
-            if (typeof katex !== "undefined" && katex.renderToString) {
-              try {
-                return katex.renderToString(token.text, { displayMode: true, throwOnError: false, strict: "ignore" });
-              } catch (e) {
-                return token.raw;
-              }
-            }
-            return `<div class="lumina-math-block-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</div>`;
-          }
-        }
-      ]
-    });
-  }
-  function morphDOM(container2, newHTML) {
-    const parser = new DOMParser();
-    const newDoc = parser.parseFromString(newHTML, "text/html");
-    const newBody = newDoc.body;
-    function syncChildren(oldParent, newParent) {
-      const oldChildren = Array.from(oldParent.childNodes);
-      const newChildren = Array.from(newParent.childNodes);
-      const alignedOldChildren = newChildren.map((newChild) => {
-        if (newChild.nodeType !== Node.ELEMENT_NODE) {
-          const matchIdx2 = oldChildren.findIndex((o) => o.nodeType === newChild.nodeType);
-          if (matchIdx2 !== -1) {
-            return oldChildren.splice(matchIdx2, 1)[0];
-          }
-          return null;
-        }
-        if (newChild.classList && newChild.classList.contains("lumina-image-wrapper")) {
-          const newImgTag = newChild.querySelector("img");
-          const href = newImgTag ? newImgTag.getAttribute("data-original-href") : null;
-          if (href) {
-            const matchIdx2 = oldChildren.findIndex((o) => {
-              if (!o.classList || !o.classList.contains("lumina-image-wrapper")) return false;
-              const oImg = o.querySelector("img");
-              return oImg && oImg.getAttribute("data-original-href") === href;
-            });
-            if (matchIdx2 !== -1) {
-              return oldChildren.splice(matchIdx2, 1)[0];
-            }
-          }
-        }
-        const matchIdx = oldChildren.findIndex((o) => o.tagName === newChild.tagName && o.nodeType === newChild.nodeType);
-        if (matchIdx !== -1) {
-          return oldChildren.splice(matchIdx, 1)[0];
-        }
-        return null;
-      });
-      const copyBtns = oldChildren.filter((o) => o.classList && o.classList.contains("lumina-code-copy-btn"));
-      oldChildren.forEach((o) => {
-        if (!o.classList || !o.classList.contains("lumina-code-copy-btn")) {
-          o.remove();
-        }
-      });
-      alignedOldChildren.forEach((alignedChild, idx) => {
-        const currentChild = oldParent.childNodes[idx];
-        if (!alignedChild) {
-          const newImported = oldParent.ownerDocument.importNode(newChildren[idx], true);
-          if (currentChild) {
-            oldParent.insertBefore(newImported, currentChild);
-          } else {
-            oldParent.appendChild(newImported);
-          }
-        } else {
-          if (currentChild !== alignedChild) {
-            if (currentChild) {
-              oldParent.insertBefore(alignedChild, currentChild);
-            } else {
-              oldParent.appendChild(alignedChild);
-            }
-          }
-          syncNodes(alignedChild, newChildren[idx]);
-        }
-      });
-      if (copyBtns.length > 0 && oldParent.tagName === "PRE") {
-        copyBtns.forEach((btn) => {
-          if (oldParent.lastChild !== btn) {
-            oldParent.appendChild(btn);
-          }
-        });
-      }
-    }
-    function syncNodes(oldNode, newNode) {
-      if (oldNode.nodeType === Node.TEXT_NODE && newNode.nodeType === Node.TEXT_NODE) {
-        if (oldNode.textContent !== newNode.textContent) {
-          oldNode.textContent = newNode.textContent;
-        }
-        return;
-      }
-      if (oldNode.nodeType !== newNode.nodeType || oldNode.tagName !== newNode.tagName) {
-        oldNode.parentNode.replaceChild(oldNode.ownerDocument.importNode(newNode, true), oldNode);
-        return;
-      }
-      const oldAttrs = oldNode.attributes;
-      const newAttrs = newNode.attributes;
-      if (oldAttrs) {
-        for (let i = oldAttrs.length - 1; i >= 0; i--) {
-          const attr = oldAttrs[i].name;
-          if (attr === "style" && oldNode.classList && (oldNode.classList.contains("lumina-media-skeleton") || oldNode.classList.contains("lumina-async-image") || oldNode.classList.contains("lumina-youtube-dynamic"))) {
-            continue;
-          }
-          if (!newNode.hasAttribute(attr)) {
-            oldNode.removeAttribute(attr);
-          }
-        }
-      }
-      if (newAttrs) {
-        for (let i = 0; i < newAttrs.length; i++) {
-          const attr = newAttrs[i].name;
-          const val = newAttrs[i].value;
-          if (oldNode.tagName === "IMG" && attr === "src") {
-            const isNewPlaceholder = val.startsWith("data:image/svg+xml");
-            const isOldReal = oldNode.src && !oldNode.src.startsWith("data:image/svg+xml");
-            if (isNewPlaceholder && isOldReal) {
-              continue;
-            }
-          }
-          if (oldNode.tagName === "IMG" && attr === "class") {
-            const newClasses = val.split(" ");
-            const oldClasses = Array.from(oldNode.classList);
-            oldClasses.forEach((c) => {
-              if (c.startsWith("is-loading") || c === "copied" || c === "btn-applied" || c === "is-loading-started") {
-                if (!newClasses.includes(c)) newClasses.push(c);
-              }
-            });
-            oldNode.setAttribute("class", newClasses.join(" "));
-            continue;
-          }
-          if (oldNode.classList && (oldNode.classList.contains("lumina-image-wrapper") || oldNode.classList.contains("lumina-youtube-wrapper")) && attr === "class") {
-            const newClasses = val.split(" ");
-            if (oldNode.classList.contains("is-loading")) {
-              if (!newClasses.includes("is-loading")) newClasses.push("is-loading");
-            } else {
-              const idx = newClasses.indexOf("is-loading");
-              if (idx !== -1) newClasses.splice(idx, 1);
-            }
-            oldNode.setAttribute("class", newClasses.join(" "));
-            continue;
-          }
-          if (oldNode.getAttribute(attr) !== val) {
-            oldNode.setAttribute(attr, val);
-          }
-        }
-      }
-      syncChildren(oldNode, newNode);
-    }
-    syncChildren(container2, newBody);
-  }
-  function buildYoutubeEmbedUrl2(href) {
-    if (href.startsWith("youtube://search")) return "";
-    let id = "";
-    let isPlaylist = false;
-    if (href.startsWith("youtube://")) {
-      id = href.replace("youtube://", "");
-      if (id.startsWith("list_")) {
-        id = id.replace("list_", "");
-        isPlaylist = true;
-      }
-    } else if (href.includes("youtube.com/playlist")) {
-      try {
-        const urlParams = new URLSearchParams(new URL(href).search);
-        id = urlParams.get("list") || "";
-        isPlaylist = true;
-      } catch (e) {
-      }
-    } else if (href.includes("youtube.com/watch")) {
-      try {
-        const url = new URL(href);
-        const urlParams = new URLSearchParams(url.search);
-        const listId = urlParams.get("list");
-        const videoId = urlParams.get("v");
-        if (listId && !videoId) {
-          id = listId;
-          isPlaylist = true;
-        } else {
-          id = videoId || "";
-        }
-      } catch (e) {
-      }
-    } else if (href.includes("youtu.be/")) {
-      id = href.split("/").pop() || "";
-    }
-    if (!id) return "";
-    if (isPlaylist) {
-      return `https://www.youtube.com/embed/videoseries?list=${id}&origin=https://www.youtube.com`;
-    }
-    return `https://www.youtube.com/embed/${id}?origin=https://www.youtube.com`;
-  }
-  if (typeof marked !== "undefined") {
-    marked.use({
-      renderer: {
-        code(token) {
-          const { lang, text } = token;
-          if (lang === "chartjs") {
-            const escapedVal = text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-            return `<div class="lumina-d2-wrapper lumina-chartjs-wrapper is-loading" data-chartjs-config="${escapedVal}"><div class="lumina-media-skeleton lumina-d2-skeleton"></div></div>`;
-          }
-          if (lang === "d2") {
-            const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            return `<div class="lumina-d2-wrapper is-loading"><pre class="lumina-d2-source" style="display:none !important;">${escaped}</pre><div class="lumina-media-skeleton lumina-d2-skeleton"></div></div>`;
-          }
-          const escapedText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          let langLabel = "Code";
-          if (lang) {
-            const rawLang = lang.toLowerCase();
-            if (rawLang === "js" || rawLang === "javascript") langLabel = "JavaScript";
-            else if (rawLang === "ts" || rawLang === "typescript") langLabel = "TypeScript";
-            else if (rawLang === "html") langLabel = "HTML";
-            else if (rawLang === "css") langLabel = "CSS";
-            else if (rawLang === "py" || rawLang === "python") langLabel = "Python";
-            else if (rawLang === "json") langLabel = "JSON";
-            else if (rawLang === "go" || rawLang === "golang") langLabel = "Go";
-            else if (rawLang === "rs" || rawLang === "rust") langLabel = "Rust";
-            else if (rawLang === "sh" || rawLang === "bash" || rawLang === "shell") langLabel = "Bash";
-            else if (rawLang === "cpp" || rawLang === "c++") langLabel = "C++";
-            else if (rawLang === "cs" || rawLang === "csharp") langLabel = "C#";
-            else langLabel = lang.charAt(0).toUpperCase() + lang.slice(1);
-          }
-          const COPY_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-          const DOWNLOAD_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-          return `<div class="lumina-code-block-wrap">
-                    <div class="lumina-code-header">
-                        <span class="lumina-code-lang">${langLabel}</span>
-                        <div class="lumina-code-actions">
-                            <button class="lumina-code-download-btn disabled" disabled title="Streaming code...">${DOWNLOAD_SVG}</button>
-                            <button class="lumina-code-copy-btn disabled" disabled title="Streaming code...">${COPY_SVG}</button>
-                        </div>
-                    </div>
-                    <pre><code class="${lang ? `language-${lang}` : ""}">${escapedText}</code></pre>
-                </div>`;
-        },
-        image(token) {
-          const { href, title, text } = token;
-          if (href && (href.startsWith("youtube://") || href.includes("youtube.com/") || href.includes("youtu.be/"))) {
-            if (href.startsWith("youtube://search?q=")) {
-              const query = href.substring("youtube://search?q=".length);
-              return `<div class="lumina-youtube-wrapper lumina-youtube-dynamic is-loading" data-query="${query}" data-original-href="${href}" data-text="${text || ""}"><div class="lumina-media-skeleton"></div></div>`;
-            }
-            const embedUrl = buildYoutubeEmbedUrl2(href);
-            if (embedUrl) {
-              return `<div class="lumina-youtube-wrapper"><iframe width="100%" height="315" src="${embedUrl}" title="${text || "YouTube video player"}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe></div>`;
-            }
-          }
-          if (href && href.startsWith("image-search://")) {
-            const [searchUrl] = href.split("#");
-            const query = searchUrl.replace("image-search://", "");
-            const cleanQuery = decodeURIComponent(query).replace(/\+/g, " ");
-            return `<div class="lumina-image-wrapper is-loading"><div class="lumina-media-skeleton"></div><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3C/svg%3E" data-query="${encodeURIComponent(cleanQuery)}" data-original-href="${href}" alt="${text || "diagram"}" class="lumina-async-image lumina-clickable-image" />${text ? `<div class="lumina-image-caption">${text}</div>` : ""}</div>`;
-          }
-          return false;
-        },
-        link(token) {
-          const { href, text } = token;
-          if (href && (href.startsWith("youtube://") || href.includes("youtube.com/") || href.includes("youtu.be/"))) {
-            if (href.startsWith("youtube://search?q=")) {
-              const query = href.substring("youtube://search?q=".length);
-              return `<div class="lumina-youtube-wrapper lumina-youtube-dynamic is-loading" data-query="${query}" data-original-href="${href}" data-text="${text || ""}"><div class="lumina-media-skeleton"></div></div>`;
-            }
-            const embedUrl = buildYoutubeEmbedUrl2(href);
-            if (embedUrl) {
-              return `<div class="lumina-youtube-wrapper"><iframe width="100%" height="315" src="${embedUrl}" title="${text || "YouTube video player"}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe></div>`;
-            }
-          }
-          return false;
-        }
-      }
-    });
-  }
-  document.addEventListener("load", (event) => {
-    const target = event.target;
-    if (target && target.tagName === "IMG" && target.classList.contains("lumina-async-image") && !target.src.startsWith("data:")) {
-      target.style.opacity = "1";
-      const wrapper = target.closest(".lumina-image-wrapper");
-      if (wrapper) {
-        wrapper.classList.remove("is-loading");
-        const skeleton = wrapper.querySelector(".lumina-media-skeleton");
-        if (skeleton) skeleton.style.display = "none";
-      }
-    }
-  }, true);
-  document.addEventListener("error", (event) => {
-    const target = event.target;
-    if (target && target.tagName === "IMG" && target.classList.contains("lumina-async-image") && !target.src.startsWith("data:")) {
-      let fallbackUrls = [];
-      try {
-        if (target.dataset.fallbackUrls) {
-          fallbackUrls = JSON.parse(target.dataset.fallbackUrls);
-        }
-      } catch (e) {
-      }
-      if (fallbackUrls && fallbackUrls.length > 0) {
-        const nextUrl = fallbackUrls.shift();
-        target.dataset.fallbackUrls = JSON.stringify(fallbackUrls);
-        target.src = nextUrl;
-      } else {
-        const wrapper = target.closest(".lumina-image-wrapper");
-        if (wrapper) {
-          wrapper.classList.remove("is-loading");
-          const skeleton = wrapper.querySelector(".lumina-media-skeleton");
-          if (skeleton) {
-            skeleton.textContent = "Failed to load image";
-            skeleton.style.background = "#fee2e2";
-            skeleton.style.color = "#ef4444";
-            skeleton.style.display = "flex";
-            skeleton.style.animation = "none";
-          }
-        }
-        target.style.display = "none";
-      }
-    }
-  }, true);
-  async function searchGoogleImages3(query) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "fetch_images", keyword: query }, (res) => {
-        if (chrome.runtime.lastError) {
-          console.warn("[Lumina] fetch_images error:", chrome.runtime.lastError.message);
-          resolve([]);
-        } else if (res && res.success && res.images) {
-          resolve(res.images);
-        } else {
-          resolve([]);
-        }
-      });
-    });
-  }
-  async function searchYoutubeVideo2(query) {
-    try {
-      const searchUrl = `https://html.duckduckgo.com/html/?q=site:youtube.com+${encodeURIComponent(query)}`;
-      const res = await fetch(searchUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-      });
-      if (!res.ok) throw new Error("Failed to fetch DDG HTML search results");
-      const text = await res.text();
-      const matches = text.match(/uddg=([^&"']+)/g);
-      if (matches) {
-        for (const match of matches) {
-          const decodedUrl = decodeURIComponent(match.substring(5));
-          if (decodedUrl.includes("youtube.com/watch") || decodedUrl.includes("youtu.be/")) {
-            let id = "";
-            if (decodedUrl.includes("youtube.com/watch")) {
-              try {
-                const urlObj = new URL(decodedUrl);
-                id = urlObj.searchParams.get("v") || "";
-              } catch (e) {
-                const vMatch = decodedUrl.match(/[?&]v=([^&#]+)/);
-                if (vMatch) id = vMatch[1];
-              }
-            } else {
-              id = decodedUrl.split("/").pop() || "";
-            }
-            if (id) {
-              id = id.split("&")[0].split("?")[0];
-              return id;
-            }
-          }
-        }
-      }
-      const rawWatchMatch = text.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if (rawWatchMatch) {
-        return rawWatchMatch[1];
-      }
-    } catch (e) {
-      console.warn("[Lumina] YouTube search error:", e);
-    }
-    return null;
-  }
-  var luminaResolvedYoutubeCache2 = /* @__PURE__ */ new Map();
-  function processLuminaDynamicYoutubeElements2(rootNode) {
-    if (!rootNode) return;
-    const yts = [];
-    if (rootNode.classList && rootNode.classList.contains("lumina-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
-      yts.push(rootNode);
-    }
-    if (rootNode.querySelectorAll) {
-      const found = rootNode.querySelectorAll(".lumina-youtube-dynamic:not(.is-loading-started)");
-      found.forEach((y) => yts.push(y));
-    }
-    yts.forEach(async (yt) => {
-      yt.classList.add("is-loading-started");
-      const rawQuery = yt.getAttribute("data-query") || "";
-      const cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, " ");
-      if (!cleanQuery) return;
-      let resolvePromise;
-      if (luminaResolvedYoutubeCache2.has(cleanQuery)) {
-        resolvePromise = luminaResolvedYoutubeCache2.get(cleanQuery);
-      } else {
-        resolvePromise = searchYoutubeVideo2(cleanQuery);
-        luminaResolvedYoutubeCache2.set(cleanQuery, resolvePromise);
-      }
-      try {
-        const videoId = await resolvePromise;
-        if (videoId) {
-          const embedUrl = `https://www.youtube.com/embed/${videoId}?origin=https://www.youtube.com`;
-          const text = yt.getAttribute("data-text") || "YouTube video player";
-          yt.innerHTML = `<iframe width="100%" height="315" src="${embedUrl}" title="${text}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe>`;
-          yt.classList.remove("is-loading");
-          const answerDiv = yt.closest(".lumina-chat-answer");
-          if (answerDiv) {
-            const originalHref = yt.getAttribute("data-original-href");
-            const rawText = answerDiv.getAttribute("data-raw-text") || "";
-            if (rawText.includes(originalHref)) {
-              const newHref = `youtube://${videoId}`;
-              const newRawText = rawText.replaceAll(originalHref, newHref);
-              answerDiv.setAttribute("data-raw-text", newRawText);
-              yt.setAttribute("data-original-href", newHref);
-              const historyEl = yt.closest(".lumina-chat-history") || yt.closest(".lumina-chat-scroll-content") || (typeof currentPopup !== "undefined" && currentPopup ? currentPopup.querySelector(".lumina-chat-history") : null);
-              if (historyEl && typeof ChatHistoryManager !== "undefined") {
-                const sessionId = historyEl.dataset.sessionId || ChatHistoryManager.currentSessionId;
-                ChatHistoryManager.saveCurrentChat(historyEl, sessionId);
-              }
-            }
-          }
-        } else {
-          yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">Kh\xF4ng t\xECm th\u1EA5y video ph\xF9 h\u1EE3p tr\xEAn YouTube cho t\u1EEB kh\xF3a "${cleanQuery}"</div>`;
-          yt.classList.remove("is-loading");
-        }
-      } catch (e) {
-        console.error("[Lumina YT Resolve] Error:", e);
-        yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">L\u1ED7i t\u1EA3i video YouTube</div>`;
-        yt.classList.remove("is-loading");
-      }
-    });
-  }
-  var luminaResolvedImagesCache2 = /* @__PURE__ */ new Map();
-  function processLuminaDynamicImageElements2(rootNode) {
-    if (!rootNode) return;
-    const found = [];
-    if (rootNode.classList && rootNode.classList.contains("lumina-async-image")) {
-      found.push(rootNode);
-    }
-    if (rootNode.querySelectorAll) {
-      rootNode.querySelectorAll(".lumina-async-image").forEach((i) => found.push(i));
-    }
-    const imgs = found.filter((img) => {
-      if (img.classList.contains("is-loading-started")) return false;
-      const src = img.getAttribute("src") || "";
-      return src.startsWith("data:image/svg+xml") || !src;
-    });
-    imgs.forEach(async (img) => {
-      img.classList.add("is-loading-started");
-      const rawQuery = img.getAttribute("data-query") || "";
-      let cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, " ");
-      if (!cleanQuery) {
-        const originalHref = img.getAttribute("data-original-href") || "";
-        if (originalHref.startsWith("image-search://")) {
-          const [searchUrl] = originalHref.split("#");
-          const queryPart = searchUrl.replace("image-search://", "");
-          cleanQuery = decodeURIComponent(queryPart).replace(/\+/g, " ");
-        }
-      }
-      if (!cleanQuery) return;
-      if (luminaResolvedImagesCache2.has(cleanQuery)) {
-        try {
-          const cachedResult2 = await luminaResolvedImagesCache2.get(cleanQuery);
-          if (cachedResult2 && cachedResult2.fallbackUrls) {
-            img.dataset.fallbackUrls = JSON.stringify(cachedResult2.fallbackUrls);
-          }
-          img.src = cachedResult2 ? cachedResult2.url : "";
-        } catch (err) {
-          img.src = "";
-          const wrapper = img.closest(".lumina-image-wrapper");
-          if (wrapper) {
-            wrapper.classList.remove("is-loading");
-            const skeleton = wrapper.querySelector(".lumina-media-skeleton");
-            if (skeleton) {
-              skeleton.textContent = "Failed to load image";
-              skeleton.style.background = "#fee2e2";
-              skeleton.style.color = "#ef4444";
-              skeleton.style.display = "flex";
-              skeleton.style.animation = "none";
-            }
-          }
-          img.style.display = "none";
-        }
-        return;
-      }
-      let cachedResult = null;
-      try {
-        if (typeof LuminaImageCacheDB !== "undefined") {
-          cachedResult = await LuminaImageCacheDB.get(cleanQuery);
-        }
-      } catch (e) {
-        console.warn("[Lumina] Failed to read IndexedDB image cache:", e);
-      }
-      if (cachedResult) {
-        try {
-          if (cachedResult.fallbackUrls) {
-            img.dataset.fallbackUrls = JSON.stringify(cachedResult.fallbackUrls);
-          }
-          img.src = cachedResult.url || "";
-          luminaResolvedImagesCache2.set(cleanQuery, Promise.resolve(cachedResult));
-        } catch (err) {
-          img.src = "";
-          const wrapper = img.closest(".lumina-image-wrapper");
-          if (wrapper) {
-            wrapper.classList.remove("is-loading");
-            const skeleton = wrapper.querySelector(".lumina-media-skeleton");
-            if (skeleton) {
-              skeleton.textContent = "Failed to load image";
-              skeleton.style.background = "#fee2e2";
-              skeleton.style.color = "#ef4444";
-              skeleton.style.display = "flex";
-              skeleton.style.animation = "none";
-            }
-          }
-          img.style.display = "none";
-        }
-        return;
-      }
-      const loadPromise = (async () => {
-        try {
-          const urls = await searchGoogleImages3(cleanQuery);
-          if (urls && urls.length > 0) {
-            const result = { url: urls[0], fallbackUrls: urls.slice(1, 4) };
-            if (typeof LuminaImageCacheDB !== "undefined") {
-              LuminaImageCacheDB.put(cleanQuery, result).catch(() => {
-              });
-            }
-            return result;
-          }
-        } catch (err) {
-          console.warn("[Lumina] Google Image search error:", err);
-        }
-        throw new Error("Google Image search failed");
-      })();
-      luminaResolvedImagesCache2.set(cleanQuery, loadPromise);
-      try {
-        const result = await loadPromise;
-        if (result && result.fallbackUrls) {
-          img.dataset.fallbackUrls = JSON.stringify(result.fallbackUrls);
-        }
-        img.src = result ? result.url : "";
-      } catch (err) {
-        img.src = "";
-        const wrapper = img.closest(".lumina-image-wrapper");
-        if (wrapper) {
-          wrapper.classList.remove("is-loading");
-          const skeleton = wrapper.querySelector(".lumina-media-skeleton");
-          if (skeleton) {
-            skeleton.textContent = "Failed to load image";
-            skeleton.style.background = "#fee2e2";
-            skeleton.style.color = "#ef4444";
-            skeleton.style.display = "flex";
-            skeleton.style.animation = "none";
-          }
-        }
-        img.style.display = "none";
-      }
-    });
-  }
-  function _renderChartJSWrapper(wrapper) {
-    const configAttr = wrapper.getAttribute("data-chartjs-config");
-    if (!configAttr) {
-      wrapper.classList.remove("is-loading");
-      return;
-    }
-    if (wrapper.getAttribute("data-last-rendered-source") === configAttr) return;
-    const chatAnswer = wrapper.closest(".lumina-chat-answer");
-    if (chatAnswer && chatAnswer.classList.contains("streaming")) return;
-    const rawConfig = configAttr.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-    let config;
-    try {
-      config = JSON.parse(rawConfig);
-    } catch (_) {
-      return;
-    }
-    wrapper.setAttribute("data-last-rendered-source", configAttr);
-    requestAnimationFrame(() => {
-      try {
-        if (typeof Chart === "undefined") {
-          window.ensureChartLoaded().then(() => {
-            _renderChartJSWrapper(wrapper);
-          }).catch(() => {
-            wrapper.removeAttribute("data-last-rendered-source");
-            setTimeout(() => _renderChartJSWrapper(wrapper), 300);
-          });
-          return;
-        }
-        const isDark = document.documentElement.getAttribute("data-theme") === "dark" || document.body.getAttribute("data-theme") === "dark";
-        const textColor = isDark ? "#e8eaed" : "#1c1c1e";
-        const gridColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
-        const bgColor = isDark ? "#1e2130" : "#ffffff";
-        config.options = config.options || {};
-        config.options.plugins = config.options.plugins || {};
-        config.options.animation = config.options.animation !== false ? { duration: 600, easing: "easeOutQuart" } : false;
-        config.options.responsive = true;
-        config.options.maintainAspectRatio = true;
-        const circularTypes = ["pie", "doughnut", "polarArea", "radar"];
-        const isCircular = circularTypes.includes(config.type);
-        if (isCircular && config.options.aspectRatio === void 0) {
-          config.options.aspectRatio = 2.2;
-        }
-        if (Array.isArray(config.data && config.data.datasets)) {
-          const hasMixed = config.data.datasets.some((ds) => ds.type === "line") && config.data.datasets.some((ds) => !ds.type || ds.type === "bar");
-          if (hasMixed) {
-            config.data.datasets.forEach((ds) => {
-              if (ds.order === void 0) {
-                ds.order = ds.type === "line" ? 0 : 1;
-              }
-            });
-          }
-        }
-        config.options.scales = config.options.scales || {};
-        ["x", "y", "r"].forEach((axis) => {
-          if (config.options.scales[axis] !== void 0) {
-            config.options.scales[axis].ticks = config.options.scales[axis].ticks || {};
-            config.options.scales[axis].ticks.color = textColor;
-            config.options.scales[axis].grid = config.options.scales[axis].grid || {};
-            config.options.scales[axis].grid.color = gridColor;
-            if (config.options.scales[axis].pointLabels) {
-              config.options.scales[axis].pointLabels.color = textColor;
-            }
-          }
-        });
-        if (config.options.plugins.legend) {
-          config.options.plugins.legend.labels = config.options.plugins.legend.labels || {};
-          config.options.plugins.legend.labels.color = textColor;
-        }
-        if (config.options.plugins.title) {
-          config.options.plugins.title.color = textColor;
-          config.options.plugins.title.display = true;
-        }
-        const container2 = document.createElement("div");
-        container2.className = "lumina-chartjs-container";
-        const canvas = document.createElement("canvas");
-        container2.appendChild(canvas);
-        const oldCanvas = wrapper.querySelector("canvas");
-        if (oldCanvas) {
-          const stale = Chart.getChart(oldCanvas);
-          if (stale) stale.destroy();
-        }
-        wrapper.innerHTML = "";
-        wrapper.appendChild(container2);
-        wrapper.classList.remove("is-loading");
-        wrapper.classList.add("lumina-chart-rendered");
-        new Chart(canvas, config);
-      } catch (err) {
-        console.error("[Lumina Chart.js] Render error:", err);
-        wrapper.classList.remove("is-loading");
-        wrapper.removeAttribute("data-last-rendered-source");
-        wrapper.innerHTML = `<div style="color:#ef4444;padding:12px;font-size:13px;font-weight:500;">Chart Error: ${err.message}</div>`;
-      }
-    });
-  }
-  function processLuminaChartElements(rootNode) {
-    if (!rootNode) return;
-    const found = [];
-    if (rootNode.classList && rootNode.classList.contains("lumina-chartjs-wrapper")) {
-      found.push(rootNode);
-    }
-    if (rootNode.querySelectorAll) {
-      rootNode.querySelectorAll(".lumina-chartjs-wrapper").forEach((el) => found.push(el));
-    }
-    for (const wrapper of found) {
-      _renderChartJSWrapper(wrapper);
-    }
-  }
-  var luminaImageObserver = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (node.nodeType !== Node.ELEMENT_NODE) continue;
-        processLuminaDynamicImageElements2(node);
-        processLuminaDynamicYoutubeElements2(node);
-        processLuminaChartElements(node);
-      }
-    }
-  });
-  luminaImageObserver.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-  processLuminaDynamicImageElements2(document.body);
-  processLuminaDynamicYoutubeElements2(document.body);
-  processLuminaChartElements(document.body);
-  var LuminaModelHelper2 = {
-    async getPromptSupport() {
-      if (typeof window.getPromptApiSupport === "function") {
-        return await window.getPromptApiSupport();
-      }
-      return { supported: false, status: "no", reason: "Prompt API not loaded" };
-    },
-    buildModelChain(data, promptSupport) {
-      const chain = [];
-      const modelsList = data.models || [];
-      modelsList.forEach((item) => {
-        const modelVal = item.model || item.modelName;
-        if (modelVal && modelVal !== "Gemini Nano (Built-in)" && item.providerId !== "builtin") {
-          chain.push({
-            ...item,
-            model: modelVal
-          });
-        }
-      });
-      return chain;
-    },
-    getThinkingOptions(currentModel, currentProviderId, providers = []) {
-      const provider = providers.find((p) => p.id === currentProviderId);
-      const isGemini = (provider ? provider.type === "gemini" : false) || currentModel && currentModel.toLowerCase().includes("gemini") && !currentModel.toLowerCase().includes("gemma") || currentProviderId && currentProviderId.toLowerCase().includes("gemini");
-      const isGemma4 = currentModel ? /gemma-4/i.test(currentModel) : false;
-      const isGemmaOld = currentModel ? /gemma/i.test(currentModel) && !isGemma4 : false;
-      if (isGemini) {
-        return [
-          { value: "minimal", title: "Minimal", desc: "Minimal thinking, very fast" },
-          { value: "low", title: "Low", desc: "Short thinking, fast response" },
-          { value: "medium", title: "Standard", desc: "Best for most questions" },
-          { value: "high", title: "Extended", desc: "Complex problem solving" }
-        ];
-      } else if (isGemmaOld) {
-        return [
-          { value: "none", title: "None", desc: "Thinking is not supported" }
-        ];
-      } else {
-        return [
-          { value: "none", title: "None", desc: "No reasoning, fastest response" },
-          { value: "low", title: "Low", desc: "Quick reasoning, low latency" },
-          { value: "medium", title: "Standard", desc: "Best for most questions" },
-          { value: "high", title: "Extended", desc: "Complex problem solving" }
-        ];
-      }
-    },
-    getDefaultThinking(modelName, providerId, providers = []) {
-      const provider = providers && providers.find((p) => p.id === providerId);
-      const isGemini = (provider ? provider.type === "gemini" : false) || providerId && providerId.toLowerCase().includes("gemini") || modelName && modelName.toLowerCase().includes("gemini") && !modelName.toLowerCase().includes("gemma");
-      return isGemini ? "minimal" : "none";
-    }
-  };
-  window.LuminaModelHelper = LuminaModelHelper2;
+  // src/components/chat/chat_ui.js
   var LuminaChatUI2 = class _LuminaChatUI {
     static getDeepActiveElement() {
       let el = document.activeElement;
@@ -34392,8 +33368,8 @@ Output only the revised text.`;
         _LuminaChatUI.injectAnswerActions(ans);
       }
       await yieldToMain();
-      processLuminaDynamicImageElements2(container2);
-      processLuminaDynamicYoutubeElements2(container2);
+      processLuminaDynamicImageElements(container2);
+      processLuminaDynamicYoutubeElements(container2);
       processLuminaChartElements(container2);
     }
     static async injectCopyButtons(container2) {
@@ -35085,203 +34061,225 @@ Output only the revised text.`;
       });
     }
   };
-  function extractMainContent(doc = document) {
-    const docClone = doc.cloneNode(true);
-    const selectorsToRemove = [
-      "nav",
-      "footer",
-      "header",
-      "aside",
-      "script",
-      "style",
-      "iframe",
-      "noscript",
-      "form",
-      "svg",
-      "canvas",
-      ".ads",
-      "#sidebar",
-      ".sidebar",
-      ".menu",
-      ".navigation",
-      ".footer",
-      ".header",
-      ".ad-box",
-      ".social-share",
-      ".comments",
-      '[id^="lumina-"]',
-      '[class^="lumina-"]'
-    ];
-    selectorsToRemove.forEach((s) => {
-      docClone.querySelectorAll(s).forEach((el) => el.remove());
-    });
-    const mainSelectors = ["article", "main", '[role="main"]', ".post-content", ".article-content", ".entry-content"];
-    let contentEl = null;
-    for (const s of mainSelectors) {
-      const el = docClone.querySelector(s);
-      if (el && el.innerText.trim().length > 200) {
-        contentEl = el;
-        break;
-      }
-    }
-    if (!contentEl) contentEl = docClone.body;
-    let text = contentEl.innerText || contentEl.textContent || "";
-    text = text.replace(/[ \t]+/g, " ").replace(/\n\s*\n/g, "\n\n").trim();
-    return {
-      url: window.location.href,
-      title: document.title,
-      content: text
-    };
-  }
-  function luminaEstimateTokens(text) {
-    if (!text) return 0;
-    return Math.ceil(text.length / 3);
-  }
-  function luminaTruncateHistoryWindow(messages, maxTokens) {
-    if (maxTokens === null || maxTokens < 0) return [...messages];
-    const estimateFn = typeof window.luminaEstimateTokens === "function" ? window.luminaEstimateTokens : ((t) => Math.ceil((t || "").length / 3));
-    const result = [];
-    let currentTokens = 0;
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const msg = messages[i];
-      let pairTokens = estimateFn(msg.text || msg.content || "");
-      const pair = [msg];
-      if (msg.role === "model" && i > 0 && messages[i - 1].role === "user") {
-        const userMsg = messages[i - 1];
-        pairTokens += estimateFn(userMsg.text || userMsg.content || "");
-        pair.unshift(userMsg);
-        i--;
-      }
-      if (currentTokens + pairTokens > maxTokens) {
-        break;
-      }
-      result.unshift(...pair);
-      currentTokens += pairTokens;
-    }
-    return result;
-  }
-  var LuminaTemplates3 = class _LuminaTemplates {
-    static escapeHtml(str) {
-      if (!str) return "";
-      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-    static modelItem(displayName, model) {
-      const name = displayName || model;
-      return `<span class="model-name">${_LuminaTemplates.escapeHtml(name)}</span>`;
-    }
-    static thinkingDots() {
-      const temp = document.getElementById("lumina-thinkingIndicatorTemplate");
-      if (temp) {
-        const clone = temp.content.cloneNode(true);
-        const dots = clone.querySelector(".thinking-dots");
-        return dots ? dots.innerHTML : `
-                <span class="sparks-typing-dot"></span>
-                <span class="sparks-typing-dot"></span>
-                <span class="sparks-typing-dot"></span>
-            `;
-      }
-      return `
-            <span class="sparks-typing-dot"></span>
-            <span class="sparks-typing-dot"></span>
-            <span class="sparks-typing-dot"></span>
-        `;
-    }
-    static sidebarContextMenu(items) {
-      return items.map((item) => {
-        if (item.type === "header") {
-          return `<div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">${_LuminaTemplates.escapeHtml(item.label)}</div>`;
-        }
-        if (item.type === "divider") {
-          return `<div class="sidebar-ctx-divider"></div>`;
-        }
-        const dangerClass = item.danger ? " sidebar-ctx-item--danger" : "";
-        return `
-                <div class="sidebar-ctx-item${dangerClass}" data-action="${_LuminaTemplates.escapeHtml(item.action)}">
-                    ${item.icon || ""}
-                    <span>${_LuminaTemplates.escapeHtml(item.label)}</span>
-                </div>
-            `;
-      }).join("");
-    }
-  };
   if (typeof window !== "undefined") {
     window.LuminaChatUI = LuminaChatUI2;
-    window.LuminaTemplates = LuminaTemplates3;
-    window.luminaExtractMainContent = extractMainContent;
-    window.luminaEstimateTokens = luminaEstimateTokens;
-    window.luminaTruncateHistoryWindow = luminaTruncateHistoryWindow;
   }
-  var loadedScripts2 = /* @__PURE__ */ new Set();
-  function loadScript2(src) {
-    if (loadedScripts2.has(src)) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = src;
-      s.async = true;
-      s.onload = () => {
-        loadedScripts2.add(src);
-        resolve();
-      };
-      s.onerror = (err) => reject(err);
-      document.body.appendChild(s);
-    });
-  }
-  function loadCSS2(href) {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector(`link[href="${href}"]`)) {
-        resolve();
-        return;
+
+  // src/pages/lumina/index.js
+  var import_marked_min = __toESM(require_marked_min());
+  var import_highlight_min = __toESM(require_highlight_min());
+  var import_katex_min = __toESM(require_katex_min());
+  var import_auto_render_min = __toESM(require_auto_render_min());
+  var import_chart_min = __toESM(require_chart_min());
+
+  // src/pages/lumina/controllers/view_controller.js
+  var LuminaViewManager2 = {
+    currentView: "chat",
+    views: {
+      chat: {
+        el: "#chat-layout",
+        hasTopbar: true,
+        displayType: "",
+        onOpen: () => {
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+        }
+      },
+      notes: {
+        el: "#notes-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-notes-btn")?.classList.add("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          if (!window.luminaNotesPanelInstance && typeof NotesPanel !== "undefined") {
+            window.luminaNotesPanelInstance = new NotesPanel();
+          }
+          if (window.luminaNotesPanelInstance) {
+            window.luminaNotesPanelInstance.init(params?.noteId, params?.colId);
+          }
+        }
+      },
+      tts: {
+        el: "#tts-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-tts-btn")?.classList.add("active");
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          if (!window.luminaTTSPanelInstance && typeof TTSPanel !== "undefined") {
+            window.luminaTTSPanelInstance = new TTSPanel();
+          }
+          if (window.luminaTTSPanelInstance && typeof window.luminaTTSPanelInstance.init === "function") {
+            window.luminaTTSPanelInstance.init(params?.recordingId);
+          }
+        }
+      },
+      sparks: {
+        el: "#sparks-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          if (params && params.sparkId && typeof window.sparksLoadSpark === "function") {
+            window.sparksLoadSpark(params.sparkId);
+          }
+        }
       }
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
-      link.onload = () => resolve();
-      link.onerror = (err) => reject(err);
-      document.head.appendChild(link);
+    },
+    switchView(targetView, params = {}) {
+      if (!this.views[targetView]) return;
+      this.currentView = targetView;
+      const initStyle = document.getElementById("view-init-style");
+      if (initStyle) initStyle.remove();
+      Object.keys(this.views).forEach((viewName) => {
+        const config = this.views[viewName];
+        const domEl = document.querySelector(config.el);
+        if (domEl) {
+          if (viewName === targetView) {
+            if (config.displayType) {
+              domEl.style.display = config.displayType;
+            } else {
+              domEl.style.removeProperty("display");
+            }
+          } else {
+            if (viewName === "chat") {
+              domEl.style.setProperty("display", "none", "important");
+            } else {
+              domEl.style.display = "none";
+            }
+          }
+        }
+      });
+      const topbar = document.getElementById("lumina-topbar");
+      if (topbar) {
+        if (this.views[targetView].hasTopbar) {
+          topbar.style.removeProperty("display");
+          topbar.style.display = "flex";
+        } else {
+          topbar.style.setProperty("display", "none", "important");
+        }
+      }
+      if (targetView === "tts") {
+        document.title = "TTS Studio";
+      } else if (targetView === "notes") {
+        document.title = "Notes";
+      } else if (targetView === "sparks") {
+        document.title = "Sparks";
+      } else {
+        document.title = "Lumina";
+      }
+      this.updateUrl(targetView, params);
+      if (this.views[targetView].onOpen) {
+        this.views[targetView].onOpen(params);
+      }
+    },
+    updateUrl(viewName, params = {}) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (viewName === "notes") {
+        urlParams.delete("sid");
+        urlParams.delete("sparkId");
+        urlParams.delete("recordingId");
+        urlParams.set("view", "notes");
+        if (params.noteId) {
+          urlParams.set("noteId", params.noteId);
+        } else {
+          urlParams.delete("noteId");
+        }
+        if (params.colId && params.colId !== "all") {
+          urlParams.set("colId", params.colId);
+        } else {
+          urlParams.delete("colId");
+        }
+      } else if (viewName === "sparks") {
+        urlParams.delete("sid");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("recordingId");
+        urlParams.set("view", "sparks");
+        if (params.sparkId) {
+          urlParams.set("sparkId", params.sparkId);
+        } else {
+          urlParams.delete("sparkId");
+        }
+      } else if (viewName === "tts") {
+        urlParams.delete("sid");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("sparkId");
+        urlParams.set("view", "tts");
+        if (params.recordingId) {
+          urlParams.set("recordingId", params.recordingId);
+        } else {
+          urlParams.delete("recordingId");
+        }
+      } else {
+        urlParams.delete("view");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("sparkId");
+        urlParams.delete("recordingId");
+        const primaryTab = typeof window.tabs !== "undefined" && typeof window.activeTabIndex !== "undefined" ? window.tabs[window.activeTabIndex] : null;
+        const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : "");
+        if (sidVal) {
+          urlParams.set("sid", sidVal);
+        } else {
+          urlParams.delete("sid");
+        }
+      }
+      const newUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
+      window.history.pushState({ view: viewName, ...params }, "", newUrl);
+    }
+  };
+  function updateNotesUrl(noteId, colId) {
+    LuminaViewManager2.updateUrl("notes", { noteId, colId });
+  }
+  function notesOpenPage(noteIdToLoad, colIdToLoad) {
+    LuminaViewManager2.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
+  }
+  function notesClosePage() {
+    LuminaViewManager2.switchView("chat");
+  }
+  function sparksOpenPage2(sparkId) {
+    LuminaViewManager2.switchView("sparks", { sparkId });
+  }
+  function sparksClosePage3() {
+    LuminaViewManager2.switchView("chat");
+  }
+  function ttsOpenPage() {
+    LuminaViewManager2.switchView("tts");
+  }
+  function ttsClosePage() {
+    LuminaViewManager2.switchView("chat");
+  }
+  if (typeof window !== "undefined") {
+    window.LuminaViewManager = LuminaViewManager2;
+    window.updateNotesUrl = updateNotesUrl;
+    window.notesOpenPage = notesOpenPage;
+    window.notesClosePage = notesClosePage;
+    window.sparksOpenPage = sparksOpenPage2;
+    window.sparksClosePage = sparksClosePage3;
+    window.ttsOpenPage = ttsOpenPage;
+    window.ttsClosePage = ttsClosePage;
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const view = urlParams.get("view");
+      if (view === "notes") {
+        LuminaViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
+      } else if (view === "sparks") {
+        LuminaViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
+      } else if (view === "tts") {
+        LuminaViewManager2.switchView("tts", { recordingId: urlParams.get("recordingId") });
+      }
     });
   }
-  window.ensureKatexLoaded = async function() {
-    if (typeof renderMathInElement !== "undefined") return;
-    try {
-      await loadCSS2("../../lib/vendor/katex/katex.min.css");
-      await loadScript2("../../lib/vendor/katex/katex.min.js");
-      await loadScript2("../../lib/vendor/katex/auto-render.min.js");
-    } catch (e) {
-      console.error("Failed to lazy load KaTeX", e);
-    }
-  };
-  window.ensureChartLoaded = async function() {
-    if (typeof Chart !== "undefined") return;
-    try {
-      await loadScript2("../../lib/vendor/chart.min.js");
-    } catch (e) {
-      console.error("Failed to lazy load Chart.js", e);
-    }
-  };
-  window.ensurePdfjsLoaded = async function() {
-    if (typeof pdfjsLib !== "undefined") return;
-    try {
-      await loadScript2("../../lib/vendor/pdf.min.js");
-    } catch (e) {
-      console.error("Failed to lazy load PDF.js", e);
-    }
-  };
-  window.ensureHighlightLoaded = async function() {
-    if (typeof hljs !== "undefined") return;
-    try {
-      await loadScript2("../../lib/vendor/highlight.min.js");
-    } catch (e) {
-      console.error("Failed to lazy load Highlight.js", e);
-    }
-  };
-  window.ensureMarkedLoaded = async function() {
-    if (typeof marked !== "undefined") return;
-    try {
-      await loadScript2("../../lib/vendor/marked.min.js");
-    } catch (e) {
-      console.error("Failed to lazy load Marked", e);
-    }
-  };
 
   // src/pages/lumina/workspace.js
   window._luminaWindowInstanceId = window._luminaWindowInstanceId || "win_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);

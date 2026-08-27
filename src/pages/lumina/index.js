@@ -9,7 +9,7 @@ import '../../../lib/vendor/katex/katex.min.js';
 import '../../../lib/vendor/katex/auto-render.min.js';
 import '../../../lib/vendor/chart.min.js';
 import './controllers/index.js';
-import '../../components/chat/common_ui.js';
 import './workspace.js';
+
 
 
