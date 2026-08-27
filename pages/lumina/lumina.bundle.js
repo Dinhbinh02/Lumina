@@ -24564,6 +24564,152 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
   }
 
+  // src/components/modals/settings/dom_templates.js
+  var SETTINGS_TEMPLATES = {
+    "lumina-providerItemTemplate": `
+    <div class="lumina-settings-provider-card provider-item">
+        <div class="provider-item-content">
+            <div class="provider-logo-container"></div>
+            <div class="provider-info">
+                <span class="provider-title provider-item-name"></span>
+                <span class="provider-badge"></span>
+            </div>
+        </div>
+    </div>
+  `,
+    "lumina-chainItemTemplate": `
+    <div class="lumina-settings-chain-card chain-item" draggable="true">
+        <span class="chain-number"></span>
+        <div class="chain-details">
+            <span class="chain-title"></span>
+            <span class="chain-subtitle"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="lumina-settings-icon-btn edit" title="Edit Model">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="lumina-settings-icon-btn remove" title="Remove">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `,
+    "lumina-mappingRowTemplate": `
+    <div class="lumina-settings-chain-card chain-item">
+        <span class="chain-number mapping-number"></span>
+        <div class="chain-details">
+            <span class="chain-title mapping-name"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="lumina-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="lumina-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `,
+    "lumina-userFactItemTemplate": `
+    <div class="lumina-settings-chain-card chain-item">
+        <span class="chain-number fact-index"></span>
+        <div class="chain-details">
+            <span class="chain-title fact-text"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="lumina-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="lumina-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `,
+    "lumina-annotationRowTemplate": `
+    <div class="lumina-settings-chain-card chain-item">
+        <span class="chain-number annotation-number"></span>
+        <div class="chain-details annotation-details">
+            <div class="annotation-color-preview"></div>
+            <span class="chain-title annotation-shortcut-text font-medium"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="lumina-settings-icon-btn edit annotation-edit-btn" title="Edit Highlight">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="lumina-settings-icon-btn remove annotation-delete-btn" title="Delete Highlight">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `
+  };
+  function injectSettingsTemplates() {
+    Object.entries(SETTINGS_TEMPLATES).forEach(([id, html]) => {
+      if (!document.getElementById(id)) {
+        const t = document.createElement("template");
+        t.id = id;
+        t.innerHTML = html.trim();
+        document.body.appendChild(t);
+      }
+    });
+  }
+
+  // src/components/modals/settings/providers_data.js
+  function getDefaultProviders() {
+    return [
+      { id: "gemini-default", name: "Gemini", type: "gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/models", apiKey: "", apiKeyUrl: "https://aistudio.google.com/app/apikey" },
+      { id: "openai-default", name: "OpenAI", type: "openai", endpoint: "https://api.openai.com/v1/chat/completions", apiKey: "", apiKeyUrl: "https://platform.openai.com/api-keys" },
+      { id: "anthropic-default", name: "Anthropic (Claude)", type: "openai", endpoint: "https://api.anthropic.com/v1", apiKey: "", apiKeyUrl: "https://console.anthropic.com/settings/keys" },
+      { id: "deepseek-default", name: "DeepSeek", type: "openai", endpoint: "https://api.deepseek.com/v1", apiKey: "", apiKeyUrl: "https://platform.deepseek.com/api_keys" },
+      { id: "grok-default", name: "xAI (Grok)", type: "openai", endpoint: "https://api.x.ai/v1", apiKey: "", apiKeyUrl: "https://console.x.ai/" },
+      { id: "perplexity-default", name: "Perplexity AI", type: "openai", endpoint: "https://api.perplexity.ai", apiKey: "", apiKeyUrl: "https://www.perplexity.ai/settings/api" },
+      { id: "openrouter-default", name: "OpenRouter", type: "openai", endpoint: "https://openrouter.ai/api/v1", apiKey: "", apiKeyUrl: "https://openrouter.ai/keys" },
+      { id: "groq-default", name: "Groq", type: "openai", endpoint: "https://api.groq.com/openai/v1", apiKey: "", apiKeyUrl: "https://console.groq.com/keys" },
+      { id: "mistral-default", name: "Mistral AI", type: "openai", endpoint: "https://api.mistral.ai/v1", apiKey: "", apiKeyUrl: "https://console.mistral.ai/api-keys/" },
+      { id: "cohere-default", name: "Cohere", type: "openai", endpoint: "https://api.cohere.com/v1", apiKey: "", apiKeyUrl: "https://dashboard.cohere.com/api-keys" },
+      { id: "together-default", name: "Together AI", type: "openai", endpoint: "https://api.together.xyz/v1", apiKey: "", apiKeyUrl: "https://api.together.ai/settings/api-keys" },
+      { id: "replicate-default", name: "Replicate", type: "openai", endpoint: "https://api.replicate.com/v1", apiKey: "", apiKeyUrl: "https://replicate.com/account/api-tokens" },
+      { id: "fireworks-default", name: "Fireworks AI", type: "openai", endpoint: "https://api.fireworks.ai/inference/v1", apiKey: "", apiKeyUrl: "https://fireworks.ai/account/api-keys" },
+      { id: "deepinfra-default", name: "DeepInfra", type: "openai", endpoint: "https://api.deepinfra.com/v1/openai", apiKey: "", apiKeyUrl: "https://deepinfra.com/dash/api_keys" },
+      { id: "novita-default", name: "Novita AI", type: "openai", endpoint: "https://api.novita.ai/v3/openai", apiKey: "", apiKeyUrl: "https://novita.ai/dashboard/key-management" },
+      { id: "huggingface-default", name: "Hugging Face", type: "openai", endpoint: "https://api-inference.huggingface.co/v1", apiKey: "", apiKeyUrl: "https://huggingface.co/settings/tokens" },
+      { id: "cerebras-default", name: "Cerebras", type: "openai", endpoint: "https://api.cerebras.ai/v1", apiKey: "", apiKeyUrl: "https://cloud.cerebras.ai/" },
+      { id: "alibaba-default", name: "Alibaba Qwen", type: "openai", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: "", apiKeyUrl: "https://dashscope.console.aliyun.com/" },
+      { id: "moonshot-default", name: "Moonshot AI (Kimi)", type: "openai", endpoint: "https://api.moonshot.cn/v1", apiKey: "", apiKeyUrl: "https://platform.moonshot.cn/console/api-keys" },
+      { id: "minimax-default", name: "MiniMax", type: "openai", endpoint: "https://api.minimax.chat/v1", apiKey: "", apiKeyUrl: "https://platform.minimaxi.com/" },
+      { id: "zhipu-default", name: "Zhipu AI (GLM)", type: "openai", endpoint: "https://open.bigmodel.cn/api/paas/v4", apiKey: "", apiKeyUrl: "https://open.bigmodel.cn/usercenter/apikeys" },
+      { id: "ollama-default", name: "Ollama (Local)", type: "openai", endpoint: "http://localhost:11434/v1", apiKey: "", apiKeyUrl: "https://ollama.com/" },
+      { id: "lmstudio-default", name: "LM Studio (Local)", type: "openai", endpoint: "http://localhost:1234/v1", apiKey: "", apiKeyUrl: "https://lmstudio.ai/" },
+      { id: "vllm-default", name: "vLLM (Local)", type: "openai", endpoint: "http://localhost:8000/v1", apiKey: "", apiKeyUrl: "https://github.com/vllm-project/vllm" },
+      { id: "localai-default", name: "LocalAI (Local)", type: "openai", endpoint: "http://localhost:8080/v1", apiKey: "", apiKeyUrl: "https://localai.io/" }
+    ];
+  }
+
   // src/components/modals/settings_modal.js
   var LuminaSettingsModal2 = class _LuminaSettingsModal {
     static init() {
@@ -24627,132 +24773,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.initialized = true;
     }
     static injectDOMTemplates() {
-      const templates = {
-        "lumina-providerItemTemplate": `
-        <div class="lumina-settings-provider-card provider-item">
-            <div class="provider-item-content">
-                <div class="provider-logo-container"></div>
-                <div class="provider-info">
-                    <span class="provider-title provider-item-name"></span>
-                    <span class="provider-badge"></span>
-                </div>
-            </div>
-        </div>
-      `,
-        "lumina-chainItemTemplate": `
-        <div class="lumina-settings-chain-card chain-item" draggable="true">
-            <span class="chain-number"></span>
-            <div class="chain-details">
-                <span class="chain-title"></span>
-                <span class="chain-subtitle"></span>
-            </div>
-            <div class="chain-actions">
-                <button type="button" class="lumina-settings-icon-btn edit" title="Edit Model">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                </button>
-                <button type="button" class="lumina-settings-icon-btn remove" title="Remove">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        </div>
-      `,
-        "lumina-mappingRowTemplate": `
-        <div class="lumina-settings-chain-card chain-item">
-            <span class="chain-number mapping-number"></span>
-            <div class="chain-details">
-                <span class="chain-title mapping-name"></span>
-            </div>
-            <div class="chain-actions">
-                <button type="button" class="lumina-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                </button>
-                <button type="button" class="lumina-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        </div>
-      `,
-        "lumina-userFactItemTemplate": `
-        <div class="lumina-settings-chain-card chain-item">
-            <span class="chain-number fact-index"></span>
-            <div class="chain-details">
-                <span class="chain-title fact-text"></span>
-            </div>
-            <div class="chain-actions">
-                <button type="button" class="lumina-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                </button>
-                <button type="button" class="lumina-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        </div>
-      `,
-        "lumina-annotationRowTemplate": `
-        <div class="lumina-settings-chain-card chain-item">
-            <span class="chain-number annotation-number"></span>
-            <div class="chain-details annotation-details">
-                <div class="annotation-color-preview"></div>
-                <span class="chain-title annotation-shortcut-text font-medium"></span>
-            </div>
-            <div class="chain-actions">
-                <button type="button" class="lumina-settings-icon-btn edit annotation-edit-btn" title="Edit Shortcut">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                </button>
-                <button type="button" class="lumina-settings-icon-btn remove annotation-delete-btn" title="Delete Shortcut">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        </div>
-      `,
-        "lumina-apiKeyResultItemTemplate": `
-        <div class="lumina-settings-api-result-item">
-            <div class="api-result-header">
-                <span class="api-key-result-icon"></span>
-                <span class="api-key-result-name font-semibold"></span>
-                <span class="api-key-result-status badge"></span>
-            </div>
-            <div class="api-key-result-failed-info"></div>
-        </div>
-      `,
-        "lumina-failedKeyInfoTemplate": `
-        <div class="lumina-settings-failed-key-info">
-            \u2022 <code class="failed-key-name"></code> \u2192 <span class="failed-key-status"></span>
-        </div>
-      `
-      };
-      for (const [id, html] of Object.entries(templates)) {
-        if (!document.getElementById(id)) {
-          const temp = document.createElement("template");
-          temp.id = id;
-          temp.innerHTML = html.trim();
-          document.body.appendChild(temp);
-        }
-      }
+      injectSettingsTemplates();
     }
     static show() {
       if (!this.initialized) this.init();
@@ -24998,33 +25019,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.setupDropdownInputs("lumina-settings-stt-model", "lumina-settings-stt-model-menu");
     }
     static getDefaultProviders() {
-      return [
-        { id: "gemini-default", name: "Gemini", type: "gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/models", apiKey: "", apiKeyUrl: "https://aistudio.google.com/app/apikey" },
-        { id: "openai-default", name: "OpenAI", type: "openai", endpoint: "https://api.openai.com/v1/chat/completions", apiKey: "", apiKeyUrl: "https://platform.openai.com/api-keys" },
-        { id: "anthropic-default", name: "Anthropic (Claude)", type: "openai", endpoint: "https://api.anthropic.com/v1", apiKey: "", apiKeyUrl: "https://console.anthropic.com/settings/keys" },
-        { id: "deepseek-default", name: "DeepSeek", type: "openai", endpoint: "https://api.deepseek.com/v1", apiKey: "", apiKeyUrl: "https://platform.deepseek.com/api_keys" },
-        { id: "grok-default", name: "xAI (Grok)", type: "openai", endpoint: "https://api.x.ai/v1", apiKey: "", apiKeyUrl: "https://console.x.ai/" },
-        { id: "perplexity-default", name: "Perplexity AI", type: "openai", endpoint: "https://api.perplexity.ai", apiKey: "", apiKeyUrl: "https://www.perplexity.ai/settings/api" },
-        { id: "openrouter-default", name: "OpenRouter", type: "openai", endpoint: "https://openrouter.ai/api/v1", apiKey: "", apiKeyUrl: "https://openrouter.ai/keys" },
-        { id: "groq-default", name: "Groq", type: "openai", endpoint: "https://api.groq.com/openai/v1", apiKey: "", apiKeyUrl: "https://console.groq.com/keys" },
-        { id: "mistral-default", name: "Mistral AI", type: "openai", endpoint: "https://api.mistral.ai/v1", apiKey: "", apiKeyUrl: "https://console.mistral.ai/api-keys/" },
-        { id: "cohere-default", name: "Cohere", type: "openai", endpoint: "https://api.cohere.com/v1", apiKey: "", apiKeyUrl: "https://dashboard.cohere.com/api-keys" },
-        { id: "together-default", name: "Together AI", type: "openai", endpoint: "https://api.together.xyz/v1", apiKey: "", apiKeyUrl: "https://api.together.ai/settings/api-keys" },
-        { id: "replicate-default", name: "Replicate", type: "openai", endpoint: "https://api.replicate.com/v1", apiKey: "", apiKeyUrl: "https://replicate.com/account/api-tokens" },
-        { id: "fireworks-default", name: "Fireworks AI", type: "openai", endpoint: "https://api.fireworks.ai/inference/v1", apiKey: "", apiKeyUrl: "https://fireworks.ai/account/api-keys" },
-        { id: "deepinfra-default", name: "DeepInfra", type: "openai", endpoint: "https://api.deepinfra.com/v1/openai", apiKey: "", apiKeyUrl: "https://deepinfra.com/dash/api_keys" },
-        { id: "novita-default", name: "Novita AI", type: "openai", endpoint: "https://api.novita.ai/v3/openai", apiKey: "", apiKeyUrl: "https://novita.ai/dashboard/key-management" },
-        { id: "huggingface-default", name: "Hugging Face", type: "openai", endpoint: "https://api-inference.huggingface.co/v1", apiKey: "", apiKeyUrl: "https://huggingface.co/settings/tokens" },
-        { id: "cerebras-default", name: "Cerebras", type: "openai", endpoint: "https://api.cerebras.ai/v1", apiKey: "", apiKeyUrl: "https://cloud.cerebras.ai/" },
-        { id: "alibaba-default", name: "Alibaba Qwen", type: "openai", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: "", apiKeyUrl: "https://dashscope.console.aliyun.com/" },
-        { id: "moonshot-default", name: "Moonshot AI (Kimi)", type: "openai", endpoint: "https://api.moonshot.cn/v1", apiKey: "", apiKeyUrl: "https://platform.moonshot.cn/console/api-keys" },
-        { id: "minimax-default", name: "MiniMax", type: "openai", endpoint: "https://api.minimax.chat/v1", apiKey: "", apiKeyUrl: "https://platform.minimaxi.com/" },
-        { id: "zhipu-default", name: "Zhipu AI (GLM)", type: "openai", endpoint: "https://open.bigmodel.cn/api/paas/v4", apiKey: "", apiKeyUrl: "https://open.bigmodel.cn/usercenter/apikeys" },
-        { id: "ollama-default", name: "Ollama (Local)", type: "openai", endpoint: "http://localhost:11434/v1", apiKey: "", apiKeyUrl: "https://ollama.com/" },
-        { id: "lmstudio-default", name: "LM Studio (Local)", type: "openai", endpoint: "http://localhost:1234/v1", apiKey: "", apiKeyUrl: "https://lmstudio.ai/" },
-        { id: "vllm-default", name: "vLLM (Local)", type: "openai", endpoint: "http://localhost:8000/v1", apiKey: "", apiKeyUrl: "https://github.com/vllm-project/vllm" },
-        { id: "localai-default", name: "LocalAI (Local)", type: "openai", endpoint: "http://localhost:8080/v1", apiKey: "", apiKeyUrl: "https://localai.io/" }
-      ];
+      return getDefaultProviders();
     }
     static getProviderLogoSvg(id) {
       const norm = (id || "").toLowerCase();
