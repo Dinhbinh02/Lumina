@@ -120,10 +120,9 @@ export class LuminaChatUI {
         this.inputPaneEl = null;
         this.webSearchSources = [];
         this._lastActiveEntry = null;
-        this._streamRenderPaused = false;
-        this._streamRenderSelectionActive = false;
         this._pendingRenderSkipScroll = false;
         this._pinnedQuestionEl = null;
+
         this._pinnedQuestionChipEl = null;
         this._pinnedQuestionScrollContainer = null;
         this._pinnedQuestionScrollRaf = null;
@@ -157,8 +156,8 @@ export class LuminaChatUI {
             }, { passive: true });
         }
         this._setupAutoScrollGuard();
-        this._setupSelectionRenderGuard();
         this._initContextMenu();
+
         this._setupHistoryDelegation();
         if (this.historyEl) this.initListeners(this.historyEl);
         this.tokenLimit = null;
@@ -549,31 +548,8 @@ export class LuminaChatUI {
         bind();
         requestAnimationFrame(bind);
     }
-    _setupSelectionRenderGuard() {
-        if (this._selectionRenderGuardAttached) return;
-        this._selectionRenderGuardAttached = true;
-        this._selectionPointerDownHandler = (e) => {
-            const answer = e.target?.closest?.('.lumina-chat-answer');
-            if (!answer || answer !== this.currentAnswerDiv) return;
-            this._streamRenderSelectionActive = true;
-            this._streamRenderPaused = true;
-        };
-        this._selectionPointerUpHandler = () => {
-            if (!this._streamRenderSelectionActive) return;
-            this._streamRenderSelectionActive = false;
-            this._streamRenderPaused = false;
-            if (this.currentAnswerDiv && this._renderPending) {
-                this._flushPendingStreamRender();
-            }
-        };
-        document.addEventListener('mousedown', this._selectionPointerDownHandler, true);
-        document.addEventListener('pointerdown', this._selectionPointerDownHandler, true);
-        document.addEventListener('touchstart', this._selectionPointerDownHandler, true);
-        document.addEventListener('mouseup', this._selectionPointerUpHandler, true);
-        document.addEventListener('pointerup', this._selectionPointerUpHandler, true);
-        document.addEventListener('touchend', this._selectionPointerUpHandler, true);
-    }
     _flushPendingStreamRender() {
+
         if (!this.currentAnswerDiv) return;
         const answerDiv = this.currentAnswerDiv;
         const skipScroll = this._pendingRenderSkipScroll;
@@ -950,7 +926,6 @@ export class LuminaChatUI {
             setTimeout(() => {
                 if (targetDiv) {
                     this._renderPending = false;
-                    if (this._streamRenderPaused) return;
                     const shouldSkipScroll = this._pendingRenderSkipScroll;
                     this._pendingRenderSkipScroll = false;
                     this._doRender(targetDiv, shouldSkipScroll);
@@ -959,6 +934,7 @@ export class LuminaChatUI {
                     this._pendingRenderSkipScroll = false;
                 }
             }, 80);
+
         }
     }
     _doRender(answerDiv, skipScroll = false, isFinished = false) {
@@ -1116,10 +1092,9 @@ export class LuminaChatUI {
         this._flushPendingStreamRender();
         this._renderPending = false;
         this._scrollThrottled = false;
-        this._streamRenderPaused = false;
-        this._streamRenderSelectionActive = false;
         this._pendingRenderSkipScroll = false;
         const answerDivSnapshot = this.currentAnswerDiv;
+
         const sourcesSnapshot = Array.isArray(this.webSearchSources) ? [...this.webSearchSources] : [];
         const rawText = answerDivSnapshot ? (answerDivSnapshot.getAttribute('data-raw-text') || '') : '';
         if (typeof window !== 'undefined' && window.LuminaCanvas) {
