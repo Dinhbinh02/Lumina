@@ -1,0 +1,10 @@
+import '../../lib/core/constants.js';
+import '../../lib/helpers/file_processor.js';
+import '../../lib/helpers/annotation_utils.js';
+import '../../lib/helpers/selection_utils.js';
+import '../../lib/vendor/turndown.js';
+import '../../lib/parsers/freedict_parser.js';
+import '../../lib/ui/dictionary_popup.js';
+import '../../lib/ui/common.js';
+import '../../lib/helpers/youtube_utils.js';
+import '../../scripts/content.js';

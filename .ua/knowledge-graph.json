@@ -1,0 +1,5882 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "Lumina",
+    "languages": [
+      "css",
+      "html",
+      "javascript",
+      "json"
+    ],
+    "frameworks": [],
+    "description": "",
+    "analyzedAt": "2026-08-27T02:55:12.356Z",
+    "gitCommitHash": "v1.0-refactor-baseline"
+  },
+  "nodes": [
+    {
+      "id": "file:lib/core/attachment_db.js",
+      "type": "file",
+      "name": "attachment_db.js",
+      "filePath": "lib/core/attachment_db.js",
+      "summary": "IndexedDB storage layer for caching images, PDFs, audio blobs, and file attachments.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/core/auth.js",
+      "type": "file",
+      "name": "auth.js",
+      "filePath": "lib/core/auth.js",
+      "summary": "OAuth2 authentication helper for Google Account login and Drive/Cloud sync.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/auth.js:compressData",
+      "type": "function",
+      "name": "compressData",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        1,
+        9
+      ],
+      "summary": "compressData in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/auth.js:decompressData",
+      "type": "function",
+      "name": "decompressData",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        11,
+        19
+      ],
+      "summary": "decompressData in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/auth.js:sha256Hash",
+      "type": "function",
+      "name": "sha256Hash",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        21,
+        35
+      ],
+      "summary": "sha256Hash in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/auth.js:isExcludedKey",
+      "type": "function",
+      "name": "isExcludedKey",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        37,
+        51
+      ],
+      "summary": "isExcludedKey in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/auth.js:launchGoogleWebAuthFlow",
+      "type": "function",
+      "name": "launchGoogleWebAuthFlow",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        62,
+        99
+      ],
+      "summary": "launchGoogleWebAuthFlow in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/core/auth.js:AuthService",
+      "type": "class",
+      "name": "AuthService",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        101,
+        320
+      ],
+      "summary": "AuthService in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/core/auth.js:SyncManager",
+      "type": "class",
+      "name": "SyncManager",
+      "filePath": "lib/core/auth.js",
+      "lineRange": [
+        322,
+        1385
+      ],
+      "summary": "SyncManager in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/core/chat_db.js",
+      "type": "file",
+      "name": "chat_db.js",
+      "filePath": "lib/core/chat_db.js",
+      "summary": "IndexedDB storage layer for persisting chat threads, user and assistant messages, and timestamps.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/core/chat_history.js",
+      "type": "file",
+      "name": "chat_history.js",
+      "filePath": "lib/core/chat_history.js",
+      "summary": "High-level chat history controller managing conversation threads, messages, and synchronization.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/chat_history.js:escapeHTMLAttr",
+      "type": "function",
+      "name": "escapeHTMLAttr",
+      "filePath": "lib/core/chat_history.js",
+      "lineRange": [
+        41,
+        49
+      ],
+      "summary": "escapeHTMLAttr in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/chat_history.js:createObjectUrlFromDataUrl",
+      "type": "function",
+      "name": "createObjectUrlFromDataUrl",
+      "filePath": "lib/core/chat_history.js",
+      "lineRange": [
+        51,
+        76
+      ],
+      "summary": "createObjectUrlFromDataUrl in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/chat_history.js:resolveImagePreviewSrc",
+      "type": "function",
+      "name": "resolveImagePreviewSrc",
+      "filePath": "lib/core/chat_history.js",
+      "lineRange": [
+        78,
+        89
+      ],
+      "summary": "resolveImagePreviewSrc in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/core/chat_history.js:reconstructGroups",
+      "type": "function",
+      "name": "reconstructGroups",
+      "filePath": "lib/core/chat_history.js",
+      "lineRange": [
+        90,
+        112
+      ],
+      "summary": "reconstructGroups in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/core/constants.js",
+      "type": "file",
+      "name": "constants.js",
+      "filePath": "lib/core/constants.js",
+      "summary": "Global constants, storage keys, action types, default model configurations, and prompt templates.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/core/gemini_live.js",
+      "type": "file",
+      "name": "gemini_live.js",
+      "filePath": "lib/core/gemini_live.js",
+      "summary": "Gemini Live WebSocket client for real-time bidirectional multimodal audio and text streaming.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:lib/core/gemini_live.js:GeminiLiveClient",
+      "type": "class",
+      "name": "GeminiLiveClient",
+      "filePath": "lib/core/gemini_live.js",
+      "lineRange": [
+        5,
+        443
+      ],
+      "summary": "GeminiLiveClient in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/core/highlight_db.js",
+      "type": "file",
+      "name": "highlight_db.js",
+      "filePath": "lib/core/highlight_db.js",
+      "summary": "IndexedDB storage layer for managing web page text highlights and color annotations.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/core/memory.js",
+      "type": "file",
+      "name": "memory.js",
+      "filePath": "lib/core/memory.js",
+      "summary": "Persistent memory and context injection manager for AI prompt customization.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/core/migration.js",
+      "type": "file",
+      "name": "migration.js",
+      "filePath": "lib/core/migration.js",
+      "summary": "Data migration utility between Chrome Storage and IndexedDB versions.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/core/notes_manager.js",
+      "type": "file",
+      "name": "notes_manager.js",
+      "filePath": "lib/core/notes_manager.js",
+      "summary": "Manager for notes and scratchpads integrated with BlockNote editor.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:lib/core/notes_manager.js:NotesManager",
+      "type": "class",
+      "name": "NotesManager",
+      "filePath": "lib/core/notes_manager.js",
+      "lineRange": [
+        7,
+        314
+      ],
+      "summary": "NotesManager in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/core/pcm_processor.js",
+      "type": "file",
+      "name": "pcm_processor.js",
+      "filePath": "lib/core/pcm_processor.js",
+      "summary": "AudioWorklet / PCM audio stream processor for Gemini Live realtime audio.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:lib/core/pcm_processor.js:PCMWorkletProcessor",
+      "type": "class",
+      "name": "PCMWorkletProcessor",
+      "filePath": "lib/core/pcm_processor.js",
+      "lineRange": [
+        5,
+        13
+      ],
+      "summary": "PCMWorkletProcessor in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/core/token_utils.js",
+      "type": "file",
+      "name": "token_utils.js",
+      "filePath": "lib/core/token_utils.js",
+      "summary": "Token counting utilities and context window truncation helpers.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/core/tts_manager.js",
+      "type": "file",
+      "name": "tts_manager.js",
+      "filePath": "lib/core/tts_manager.js",
+      "summary": "Text-to-speech audio manager handling speech synthesis queue, audio decoding, and playback.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/core/tts_manager.js:TTSDB",
+      "type": "class",
+      "name": "TTSDB",
+      "filePath": "lib/core/tts_manager.js",
+      "lineRange": [
+        1,
+        158
+      ],
+      "summary": "TTSDB in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/core/tts_manager.js:TTSManager",
+      "type": "class",
+      "name": "TTSManager",
+      "filePath": "lib/core/tts_manager.js",
+      "lineRange": [
+        160,
+        734
+      ],
+      "summary": "TTSManager in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/core/tts_manager.js:GroqAligner",
+      "type": "class",
+      "name": "GroqAligner",
+      "filePath": "lib/core/tts_manager.js",
+      "lineRange": [
+        736,
+        848
+      ],
+      "summary": "GroqAligner in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/helpers/annotation_utils.js",
+      "type": "file",
+      "name": "annotation_utils.js",
+      "filePath": "lib/helpers/annotation_utils.js",
+      "summary": "DOM annotation and highlight rendering utility for web pages.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/helpers/file_processor.js",
+      "type": "file",
+      "name": "file_processor.js",
+      "filePath": "lib/helpers/file_processor.js",
+      "summary": "Multi-format file processor (PDF, Text, Images, Audio) for attachment extraction.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/helpers/proxy.html",
+      "type": "file",
+      "name": "proxy.html",
+      "filePath": "lib/helpers/proxy.html",
+      "summary": "Source file lib/helpers/proxy.html in Lumina extension.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/helpers/selection_utils.js",
+      "type": "file",
+      "name": "selection_utils.js",
+      "filePath": "lib/helpers/selection_utils.js",
+      "summary": "DOM selection helper for capturing text, bounding client rects, and XPath ranges.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/helpers/youtube_utils.js",
+      "type": "file",
+      "name": "youtube_utils.js",
+      "filePath": "lib/helpers/youtube_utils.js",
+      "summary": "YouTube transcript extractor and video metadata parser.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/parsers/freedict_parser.js",
+      "type": "file",
+      "name": "freedict_parser.js",
+      "filePath": "lib/parsers/freedict_parser.js",
+      "summary": "Offline dictionary parser for FreeDict XML/format definitions.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/ui/common.js",
+      "type": "file",
+      "name": "common.js",
+      "filePath": "lib/ui/common.js",
+      "summary": "Shared UI helpers, toast notifications, modal dialog helpers, and icon renderers.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:morphDOM",
+      "type": "function",
+      "name": "morphDOM",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        99,
+        234
+      ],
+      "summary": "morphDOM in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:buildYoutubeEmbedUrl",
+      "type": "function",
+      "name": "buildYoutubeEmbedUrl",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        236,
+        273
+      ],
+      "summary": "buildYoutubeEmbedUrl in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:searchGoogleImages",
+      "type": "function",
+      "name": "searchGoogleImages",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        408,
+        421
+      ],
+      "summary": "searchGoogleImages in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:searchYoutubeVideo",
+      "type": "function",
+      "name": "searchYoutubeVideo",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        423,
+        465
+      ],
+      "summary": "searchYoutubeVideo in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:processLuminaDynamicYoutubeElements",
+      "type": "function",
+      "name": "processLuminaDynamicYoutubeElements",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        469,
+        526
+      ],
+      "summary": "processLuminaDynamicYoutubeElements in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:processLuminaDynamicImageElements",
+      "type": "function",
+      "name": "processLuminaDynamicImageElements",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        530,
+        654
+      ],
+      "summary": "processLuminaDynamicImageElements in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:_renderChartJSWrapper",
+      "type": "function",
+      "name": "_renderChartJSWrapper",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        656,
+        758
+      ],
+      "summary": "_renderChartJSWrapper in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:processLuminaChartElements",
+      "type": "function",
+      "name": "processLuminaChartElements",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        760,
+        772
+      ],
+      "summary": "processLuminaChartElements in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:extractMainContent",
+      "type": "function",
+      "name": "extractMainContent",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        5856,
+        5888
+      ],
+      "summary": "extractMainContent in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:luminaEstimateTokens",
+      "type": "function",
+      "name": "luminaEstimateTokens",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        5889,
+        5892
+      ],
+      "summary": "luminaEstimateTokens in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:luminaTruncateHistoryWindow",
+      "type": "function",
+      "name": "luminaTruncateHistoryWindow",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        5893,
+        5917
+      ],
+      "summary": "luminaTruncateHistoryWindow in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:loadScript",
+      "type": "function",
+      "name": "loadScript",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        5981,
+        5994
+      ],
+      "summary": "loadScript in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:lib/ui/common.js:loadCSS",
+      "type": "function",
+      "name": "loadCSS",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        5996,
+        6009
+      ],
+      "summary": "loadCSS in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/ui/common.js:LuminaChatUI",
+      "type": "class",
+      "name": "LuminaChatUI",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        849,
+        5855
+      ],
+      "summary": "LuminaChatUI in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/ui/common.js:LuminaTemplates",
+      "type": "class",
+      "name": "LuminaTemplates",
+      "filePath": "lib/ui/common.js",
+      "lineRange": [
+        5918,
+        5969
+      ],
+      "summary": "LuminaTemplates in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/ui/dictionary_popup.js",
+      "type": "file",
+      "name": "dictionary_popup.js",
+      "filePath": "lib/ui/dictionary_popup.js",
+      "summary": "In-page floating dictionary definition popup UI.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/ui/history_panel.js",
+      "type": "file",
+      "name": "history_panel.js",
+      "filePath": "lib/ui/history_panel.js",
+      "summary": "Sidebar history drawer UI component displaying conversation list and search.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:lib/ui/history_panel.js:LuminaHistory",
+      "type": "class",
+      "name": "LuminaHistory",
+      "filePath": "lib/ui/history_panel.js",
+      "lineRange": [
+        2,
+        399
+      ],
+      "summary": "LuminaHistory in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:lib/ui/notes_panel.js",
+      "type": "file",
+      "name": "notes_panel.js",
+      "filePath": "lib/ui/notes_panel.js",
+      "summary": "Side panel drawer for managing notes and quick snippets.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/ui/notes_panel.js:NotesPanel",
+      "type": "class",
+      "name": "NotesPanel",
+      "filePath": "lib/ui/notes_panel.js",
+      "lineRange": [
+        6,
+        2162
+      ],
+      "summary": "NotesPanel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/ui/tts_panel.js",
+      "type": "file",
+      "name": "tts_panel.js",
+      "filePath": "lib/ui/tts_panel.js",
+      "summary": "Floating or embedded TTS voice controls and playback UI widget.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:lib/ui/tts_panel.js:TTSPanel",
+      "type": "class",
+      "name": "TTSPanel",
+      "filePath": "lib/ui/tts_panel.js",
+      "lineRange": [
+        6,
+        1629
+      ],
+      "summary": "TTSPanel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/vendor/blocknote.css",
+      "type": "file",
+      "name": "blocknote.css",
+      "filePath": "lib/vendor/blocknote.css",
+      "summary": "Source file lib/vendor/blocknote.css in Lumina extension.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/vendor/blocknote.js",
+      "type": "file",
+      "name": "blocknote.js",
+      "filePath": "lib/vendor/blocknote.js",
+      "summary": "Source file lib/vendor/blocknote.js in Lumina extension.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:lib/vendor/katex/katex.min.css",
+      "type": "file",
+      "name": "katex.min.css",
+      "filePath": "lib/vendor/katex/katex.min.css",
+      "summary": "Source file lib/vendor/katex/katex.min.css in Lumina extension.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:lib/vendor/turndown.js",
+      "type": "file",
+      "name": "turndown.js",
+      "filePath": "lib/vendor/turndown.js",
+      "summary": "Source file lib/vendor/turndown.js in Lumina extension.",
+      "tags": [
+        "lib"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/lumina/init.js",
+      "type": "file",
+      "name": "init.js",
+      "filePath": "pages/lumina/init.js",
+      "summary": "Source file pages/lumina/init.js in Lumina extension.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/lumina/lumina.css",
+      "type": "file",
+      "name": "lumina.css",
+      "filePath": "pages/lumina/lumina.css",
+      "summary": "Primary monolithic styling rules for Lumina Workspace, theme variables, chat bubbles, sidebar, and animations.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/lumina/lumina.html",
+      "type": "file",
+      "name": "lumina.html",
+      "filePath": "pages/lumina/lumina.html",
+      "summary": "Source file pages/lumina/lumina.html in Lumina extension.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/lumina/lumina.js",
+      "type": "file",
+      "name": "lumina.js",
+      "filePath": "pages/lumina/lumina.js",
+      "summary": "Primary monolithic controller for Lumina Workspace page (chat interface, model selection, prompt execution, streaming renderer).",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getPaneActiveModel",
+      "type": "function",
+      "name": "getPaneActiveModel",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3,
+        10
+      ],
+      "summary": "getPaneActiveModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:setPaneActiveModel",
+      "type": "function",
+      "name": "setPaneActiveModel",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        12,
+        24
+      ],
+      "summary": "setPaneActiveModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getPaneActiveThinking",
+      "type": "function",
+      "name": "getPaneActiveThinking",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        26,
+        28
+      ],
+      "summary": "getPaneActiveThinking in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:setPaneActiveThinking",
+      "type": "function",
+      "name": "setPaneActiveThinking",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        30,
+        36
+      ],
+      "summary": "setPaneActiveThinking in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:bindContainerWheelForward",
+      "type": "function",
+      "name": "bindContainerWheelForward",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        41,
+        64
+      ],
+      "summary": "bindContainerWheelForward in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateUrlSessionId",
+      "type": "function",
+      "name": "updateUrlSessionId",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        74,
+        95
+      ],
+      "summary": "updateUrlSessionId in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getHoveredInputEl",
+      "type": "function",
+      "name": "getHoveredInputEl",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        180,
+        186
+      ],
+      "summary": "getHoveredInputEl in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getShortcutTargetTab",
+      "type": "function",
+      "name": "getShortcutTargetTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        188,
+        190
+      ],
+      "summary": "getShortcutTargetTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updatePaneHighlight",
+      "type": "function",
+      "name": "updatePaneHighlight",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        198,
+        199
+      ],
+      "summary": "updatePaneHighlight in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:applyFontSize",
+      "type": "function",
+      "name": "applyFontSize",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        239,
+        246
+      ],
+      "summary": "applyFontSize in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getLuminaTabIdForPane",
+      "type": "function",
+      "name": "getLuminaTabIdForPane",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        252,
+        254
+      ],
+      "summary": "getLuminaTabIdForPane in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getWebSelectionScopeKey",
+      "type": "function",
+      "name": "getWebSelectionScopeKey",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        256,
+        259
+      ],
+      "summary": "getWebSelectionScopeKey in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getCurrentLuminaTabId",
+      "type": "function",
+      "name": "getCurrentLuminaTabId",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        261,
+        264
+      ],
+      "summary": "getCurrentLuminaTabId in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getWebSelectionStorageKey",
+      "type": "function",
+      "name": "getWebSelectionStorageKey",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        266,
+        268
+      ],
+      "summary": "getWebSelectionStorageKey in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:readWebSelectionFromStorage",
+      "type": "function",
+      "name": "readWebSelectionFromStorage",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        270,
+        287
+      ],
+      "summary": "readWebSelectionFromStorage in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:writeWebSelectionToStorage",
+      "type": "function",
+      "name": "writeWebSelectionToStorage",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        289,
+        302
+      ],
+      "summary": "writeWebSelectionToStorage in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:deleteWebSelectionFromStorage",
+      "type": "function",
+      "name": "deleteWebSelectionFromStorage",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        304,
+        307
+      ],
+      "summary": "deleteWebSelectionFromStorage in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getWebSelectionForScope",
+      "type": "function",
+      "name": "getWebSelectionForScope",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        309,
+        314
+      ],
+      "summary": "getWebSelectionForScope in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:saveWebSelectionForScope",
+      "type": "function",
+      "name": "saveWebSelectionForScope",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        316,
+        330
+      ],
+      "summary": "saveWebSelectionForScope in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:ensureContentScriptsInjected",
+      "type": "function",
+      "name": "ensureContentScriptsInjected",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        332,
+        353
+      ],
+      "summary": "ensureContentScriptsInjected in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:fetchFreshWebContent",
+      "type": "function",
+      "name": "fetchFreshWebContent",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        355,
+        427
+      ],
+      "summary": "fetchFreshWebContent in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:refreshWebSourceTokens",
+      "type": "function",
+      "name": "refreshWebSourceTokens",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        429,
+        457
+      ],
+      "summary": "refreshWebSourceTokens in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:saveCurrentWebSelection",
+      "type": "function",
+      "name": "saveCurrentWebSelection",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        459,
+        464
+      ],
+      "summary": "saveCurrentWebSelection in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:loadCurrentWebSelection",
+      "type": "function",
+      "name": "loadCurrentWebSelection",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        466,
+        478
+      ],
+      "summary": "loadCurrentWebSelection in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateWebSelectionForTab",
+      "type": "function",
+      "name": "updateWebSelectionForTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        480,
+        505
+      ],
+      "summary": "updateWebSelectionForTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:refreshWebSourceTokensForTab",
+      "type": "function",
+      "name": "refreshWebSourceTokensForTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        507,
+        540
+      ],
+      "summary": "refreshWebSourceTokensForTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:isSelectionInsideEditable",
+      "type": "function",
+      "name": "isSelectionInsideEditable",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        542,
+        569
+      ],
+      "summary": "isSelectionInsideEditable in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:bindHistoryScroll",
+      "type": "function",
+      "name": "bindHistoryScroll",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        571,
+        622
+      ],
+      "summary": "bindHistoryScroll in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:showTopbarLoading",
+      "type": "function",
+      "name": "showTopbarLoading",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        627,
+        645
+      ],
+      "summary": "showTopbarLoading in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:hideTopbarLoading",
+      "type": "function",
+      "name": "hideTopbarLoading",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        647,
+        662
+      ],
+      "summary": "hideTopbarLoading in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:restoreScrollPosition",
+      "type": "function",
+      "name": "restoreScrollPosition",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        664,
+        681
+      ],
+      "summary": "restoreScrollPosition in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:restoreLatestScrollPosition",
+      "type": "function",
+      "name": "restoreLatestScrollPosition",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        683,
+        695
+      ],
+      "summary": "restoreLatestScrollPosition in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:scheduleScrollRestore",
+      "type": "function",
+      "name": "scheduleScrollRestore",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        697,
+        724
+      ],
+      "summary": "scheduleScrollRestore in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleRemoteSync",
+      "type": "function",
+      "name": "handleRemoteSync",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        726,
+        834
+      ],
+      "summary": "handleRemoteSync in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:normalizeTabs",
+      "type": "function",
+      "name": "normalizeTabs",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        836,
+        856
+      ],
+      "summary": "normalizeTabs in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:ensureTabHistoryLoaded",
+      "type": "function",
+      "name": "ensureTabHistoryLoaded",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        858,
+        917
+      ],
+      "summary": "ensureTabHistoryLoaded in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:initTabs",
+      "type": "function",
+      "name": "initTabs",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        919,
+        1120
+      ],
+      "summary": "initTabs in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:createTab",
+      "type": "function",
+      "name": "createTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1122,
+        1124
+      ],
+      "summary": "createTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:switchTab",
+      "type": "function",
+      "name": "switchTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1126,
+        1175
+      ],
+      "summary": "switchTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:syncTabUI",
+      "type": "function",
+      "name": "syncTabUI",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1177,
+        1199
+      ],
+      "summary": "syncTabUI in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:closeTab",
+      "type": "function",
+      "name": "closeTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1201,
+        1226
+      ],
+      "summary": "closeTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateTabTitle",
+      "type": "function",
+      "name": "updateTabTitle",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1228,
+        1235
+      ],
+      "summary": "updateTabTitle in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:saveTabsState",
+      "type": "function",
+      "name": "saveTabsState",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1237,
+        1293
+      ],
+      "summary": "saveTabsState in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:normalizeRestoredHistory",
+      "type": "function",
+      "name": "normalizeRestoredHistory",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1295,
+        1451
+      ],
+      "summary": "normalizeRestoredHistory in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getGroupColor",
+      "type": "function",
+      "name": "getGroupColor",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1460,
+        1478
+      ],
+      "summary": "getGroupColor in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:renderTabs",
+      "type": "function",
+      "name": "renderTabs",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1480,
+        1529
+      ],
+      "summary": "renderTabs in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleMouseMove",
+      "type": "function",
+      "name": "handleMouseMove",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1531,
+        1566
+      ],
+      "summary": "handleMouseMove in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleMouseUp",
+      "type": "function",
+      "name": "handleMouseUp",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1568,
+        1617
+      ],
+      "summary": "handleMouseUp in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:initSpotlightAskSelection",
+      "type": "function",
+      "name": "initSpotlightAskSelection",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1619,
+        1796
+      ],
+      "summary": "initSpotlightAskSelection in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleCommentSubmission",
+      "type": "function",
+      "name": "handleCommentSubmission",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1798,
+        1834
+      ],
+      "summary": "handleCommentSubmission in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:setupWebSourceTracking",
+      "type": "function",
+      "name": "setupWebSourceTracking",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1836,
+        1872
+      ],
+      "summary": "setupWebSourceTracking in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:isWebPageUrl",
+      "type": "function",
+      "name": "isWebPageUrl",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1874,
+        1880
+      ],
+      "summary": "isWebPageUrl in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:syncCurrentBrowserTab",
+      "type": "function",
+      "name": "syncCurrentBrowserTab",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1882,
+        1956
+      ],
+      "summary": "syncCurrentBrowserTab in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:formatHeadTailTitle",
+      "type": "function",
+      "name": "formatHeadTailTitle",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1958,
+        1960
+      ],
+      "summary": "formatHeadTailTitle in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:closeWebTabPicker",
+      "type": "function",
+      "name": "closeWebTabPicker",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1962,
+        1976
+      ],
+      "summary": "closeWebTabPicker in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:refreshWebTabPicker",
+      "type": "function",
+      "name": "refreshWebTabPicker",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1978,
+        1983
+      ],
+      "summary": "refreshWebTabPicker in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:openWebTabPicker",
+      "type": "function",
+      "name": "openWebTabPicker",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        1985,
+        2139
+      ],
+      "summary": "openWebTabPicker in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getDomainDisplayName",
+      "type": "function",
+      "name": "getDomainDisplayName",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2141,
+        2160
+      ],
+      "summary": "getDomainDisplayName in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:createWebChipElement",
+      "type": "function",
+      "name": "createWebChipElement",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2162,
+        2229
+      ],
+      "summary": "createWebChipElement in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateWebChips",
+      "type": "function",
+      "name": "updateWebChips",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2231,
+        2291
+      ],
+      "summary": "updateWebChips in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:scheduleVisibleTabsMinHeightReflow",
+      "type": "function",
+      "name": "scheduleVisibleTabsMinHeightReflow",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2293,
+        2317
+      ],
+      "summary": "scheduleVisibleTabsMinHeightReflow in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:toggleWebSourcePin",
+      "type": "function",
+      "name": "toggleWebSourcePin",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2319,
+        2351
+      ],
+      "summary": "toggleWebSourcePin in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:init",
+      "type": "function",
+      "name": "init",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2353,
+        2904
+      ],
+      "summary": "init in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:initSidebar",
+      "type": "function",
+      "name": "initSidebar",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        2906,
+        3187
+      ],
+      "summary": "initSidebar in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateRecentChatsActiveState",
+      "type": "function",
+      "name": "updateRecentChatsActiveState",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3189,
+        3211
+      ],
+      "summary": "updateRecentChatsActiveState in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateSidebarSparksActiveState",
+      "type": "function",
+      "name": "updateSidebarSparksActiveState",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3213,
+        3217
+      ],
+      "summary": "updateSidebarSparksActiveState in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:renderRecentChatsSidebar",
+      "type": "function",
+      "name": "renderRecentChatsSidebar",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3221,
+        3696
+      ],
+      "summary": "renderRecentChatsSidebar in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:syncSessionsWithBackground",
+      "type": "function",
+      "name": "syncSessionsWithBackground",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3698,
+        3704
+      ],
+      "summary": "syncSessionsWithBackground in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:setupPort",
+      "type": "function",
+      "name": "setupPort",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3706,
+        3846
+      ],
+      "summary": "setupPort in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleSubmit",
+      "type": "function",
+      "name": "handleSubmit",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        3851,
+        4254
+      ],
+      "summary": "handleSubmit in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleTranslation",
+      "type": "function",
+      "name": "handleTranslation",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        4256,
+        4258
+      ],
+      "summary": "handleTranslation in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:matchesAnnotationShortcut",
+      "type": "function",
+      "name": "matchesAnnotationShortcut",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        4260,
+        4271
+      ],
+      "summary": "matchesAnnotationShortcut in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:setupGlobalListeners",
+      "type": "function",
+      "name": "setupGlobalListeners",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        4273,
+        4758
+      ],
+      "summary": "setupGlobalListeners in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:resetChat",
+      "type": "function",
+      "name": "resetChat",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        4760,
+        4845
+      ],
+      "summary": "resetChat in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:setupRegenerateButtons",
+      "type": "function",
+      "name": "setupRegenerateButtons",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        4847,
+        4863
+      ],
+      "summary": "setupRegenerateButtons in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:triggerRegenerate",
+      "type": "function",
+      "name": "triggerRegenerate",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        4983,
+        5023
+      ],
+      "summary": "triggerRegenerate in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:showAnswerVersion",
+      "type": "function",
+      "name": "showAnswerVersion",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5025,
+        5037
+      ],
+      "summary": "showAnswerVersion in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateVersionNav",
+      "type": "function",
+      "name": "updateVersionNav",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5039,
+        5048
+      ],
+      "summary": "updateVersionNav in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:isShortcutMatch",
+      "type": "function",
+      "name": "isShortcutMatch",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5050,
+        5080
+      ],
+      "summary": "isShortcutMatch in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:isShortcutMatchImmediate",
+      "type": "function",
+      "name": "isShortcutMatchImmediate",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5082,
+        5091
+      ],
+      "summary": "isShortcutMatchImmediate in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:dispatchConfiguredShortcutAction",
+      "type": "function",
+      "name": "dispatchConfiguredShortcutAction",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5093,
+        5128
+      ],
+      "summary": "dispatchConfiguredShortcutAction in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:cycleActiveModel",
+      "type": "function",
+      "name": "cycleActiveModel",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5130,
+        5189
+      ],
+      "summary": "cycleActiveModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:matchesShortcut",
+      "type": "function",
+      "name": "matchesShortcut",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5191,
+        5199
+      ],
+      "summary": "matchesShortcut in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:playSpotlightAudio",
+      "type": "function",
+      "name": "playSpotlightAudio",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5201,
+        5225
+      ],
+      "summary": "playSpotlightAudio in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getSpotlightAudioCtx",
+      "type": "function",
+      "name": "getSpotlightAudioCtx",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5228,
+        5233
+      ],
+      "summary": "getSpotlightAudioCtx in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:stopSpotlightAudio",
+      "type": "function",
+      "name": "stopSpotlightAudio",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5238,
+        5244
+      ],
+      "summary": "stopSpotlightAudio in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:playBase64Audio",
+      "type": "function",
+      "name": "playBase64Audio",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5246,
+        5289
+      ],
+      "summary": "playBase64Audio in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:initSpotlightDictLauncher",
+      "type": "function",
+      "name": "initSpotlightDictLauncher",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5291,
+        5310
+      ],
+      "summary": "initSpotlightDictLauncher in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:showSpotlightDictLauncher",
+      "type": "function",
+      "name": "showSpotlightDictLauncher",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5312,
+        5319
+      ],
+      "summary": "showSpotlightDictLauncher in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:hideSpotlightDictLauncher",
+      "type": "function",
+      "name": "hideSpotlightDictLauncher",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5321,
+        5323
+      ],
+      "summary": "hideSpotlightDictLauncher in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:showSpotlightDictionaryPopup",
+      "type": "function",
+      "name": "showSpotlightDictionaryPopup",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5325,
+        5348
+      ],
+      "summary": "showSpotlightDictionaryPopup in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:handleYouTubeTrigger",
+      "type": "function",
+      "name": "handleYouTubeTrigger",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5390,
+        5441
+      ],
+      "summary": "handleYouTubeTrigger in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:escapeHtml",
+      "type": "function",
+      "name": "escapeHtml",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5610,
+        5617
+      ],
+      "summary": "escapeHtml in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:renderDropdownMenu",
+      "type": "function",
+      "name": "renderDropdownMenu",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5619,
+        5855
+      ],
+      "summary": "renderDropdownMenu in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:initTopbarModelSelector",
+      "type": "function",
+      "name": "initTopbarModelSelector",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        5857,
+        6117
+      ],
+      "summary": "initTopbarModelSelector in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateTopbarSparkTitle",
+      "type": "function",
+      "name": "updateTopbarSparkTitle",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6119,
+        6122
+      ],
+      "summary": "updateTopbarSparkTitle in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateInputPlaceholder",
+      "type": "function",
+      "name": "updateInputPlaceholder",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6126,
+        6136
+      ],
+      "summary": "updateInputPlaceholder in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateSidebarUserProfile",
+      "type": "function",
+      "name": "updateSidebarUserProfile",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6139,
+        6232
+      ],
+      "summary": "updateSidebarUserProfile in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:getDynamicWelcomeTitle",
+      "type": "function",
+      "name": "getDynamicWelcomeTitle",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6239,
+        6308
+      ],
+      "summary": "getDynamicWelcomeTitle in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updatePaneBlankState",
+      "type": "function",
+      "name": "updatePaneBlankState",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6310,
+        6311
+      ],
+      "summary": "updatePaneBlankState in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:updateWelcomeScreenState",
+      "type": "function",
+      "name": "updateWelcomeScreenState",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6313,
+        6347
+      ],
+      "summary": "updateWelcomeScreenState in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:checkSyncOnTabReturn",
+      "type": "function",
+      "name": "checkSyncOnTabReturn",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6387,
+        6400
+      ],
+      "summary": "checkSyncOnTabReturn in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/lumina.js:startConcurrentAutoNaming",
+      "type": "function",
+      "name": "startConcurrentAutoNaming",
+      "filePath": "pages/lumina/lumina.js",
+      "lineRange": [
+        6466,
+        6518
+      ],
+      "summary": "startConcurrentAutoNaming in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/lumina/search_modal.css",
+      "type": "file",
+      "name": "search_modal.css",
+      "filePath": "pages/lumina/search_modal.css",
+      "summary": "Styles for search dialog and highlighted search results.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/lumina/search_modal.js",
+      "type": "file",
+      "name": "search_modal.js",
+      "filePath": "pages/lumina/search_modal.js",
+      "summary": "Search modal dialog controller for full-text search across past chats and notes.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:pages/lumina/search_modal.js:LuminaSearchModal",
+      "type": "class",
+      "name": "LuminaSearchModal",
+      "filePath": "pages/lumina/search_modal.js",
+      "lineRange": [
+        2,
+        307
+      ],
+      "summary": "LuminaSearchModal in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/lumina/settings_modal.css",
+      "type": "file",
+      "name": "settings_modal.css",
+      "filePath": "pages/lumina/settings_modal.css",
+      "summary": "Styles for settings modal, tabs, form inputs, and sliders.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/lumina/settings_modal.js",
+      "type": "file",
+      "name": "settings_modal.js",
+      "filePath": "pages/lumina/settings_modal.js",
+      "summary": "Settings modal dialog controller for API keys, theme switching, model presets, and system prompts.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:pages/lumina/settings_modal.js:LuminaSettingsModal",
+      "type": "class",
+      "name": "LuminaSettingsModal",
+      "filePath": "pages/lumina/settings_modal.js",
+      "lineRange": [
+        1,
+        2732
+      ],
+      "summary": "LuminaSettingsModal in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/lumina/sparks.js",
+      "type": "file",
+      "name": "sparks.js",
+      "filePath": "pages/lumina/sparks.js",
+      "summary": "Sparks prompt template manager and quick action executor.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksLoad",
+      "type": "function",
+      "name": "sparksLoad",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        187,
+        208
+      ],
+      "summary": "sparksLoad in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksSave",
+      "type": "function",
+      "name": "sparksSave",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        210,
+        215
+      ],
+      "summary": "sparksSave in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksSaveOrder",
+      "type": "function",
+      "name": "sparksSaveOrder",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        217,
+        226
+      ],
+      "summary": "sparksSaveOrder in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksDelete",
+      "type": "function",
+      "name": "sparksDelete",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        228,
+        234
+      ],
+      "summary": "sparksDelete in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksNewId",
+      "type": "function",
+      "name": "sparksNewId",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        236,
+        238
+      ],
+      "summary": "sparksNewId in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksOpenPage",
+      "type": "function",
+      "name": "sparksOpenPage",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        240,
+        252
+      ],
+      "summary": "sparksOpenPage in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksClosePage",
+      "type": "function",
+      "name": "sparksClosePage",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        254,
+        265
+      ],
+      "summary": "sparksClosePage in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksRenderList",
+      "type": "function",
+      "name": "sparksRenderList",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        267,
+        333
+      ],
+      "summary": "sparksRenderList in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sparksOpenEditor",
+      "type": "function",
+      "name": "sparksOpenEditor",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        335,
+        916
+      ],
+      "summary": "sparksOpenEditor in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:getSparkColor",
+      "type": "function",
+      "name": "getSparkColor",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        917,
+        933
+      ],
+      "summary": "getSparkColor in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:sidebarSparksRenderList",
+      "type": "function",
+      "name": "sidebarSparksRenderList",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        934,
+        1042
+      ],
+      "summary": "sidebarSparksRenderList in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:showSparkContextMenu",
+      "type": "function",
+      "name": "showSparkContextMenu",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        1043,
+        1104
+      ],
+      "summary": "showSparkContextMenu in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:openSparkChat",
+      "type": "function",
+      "name": "openSparkChat",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        1105,
+        1187
+      ],
+      "summary": "openSparkChat in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:renderSparkWelcomeScreen",
+      "type": "function",
+      "name": "renderSparkWelcomeScreen",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        1188,
+        1244
+      ],
+      "summary": "renderSparkWelcomeScreen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:openAvatarCropper",
+      "type": "function",
+      "name": "openAvatarCropper",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        1245,
+        1387
+      ],
+      "summary": "openAvatarCropper in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:pages/lumina/sparks.js:initSparks",
+      "type": "function",
+      "name": "initSparks",
+      "filePath": "pages/lumina/sparks.js",
+      "lineRange": [
+        1388,
+        1449
+      ],
+      "summary": "initSparks in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:pages/offscreen/offscreen.html",
+      "type": "file",
+      "name": "offscreen.html",
+      "filePath": "pages/offscreen/offscreen.html",
+      "summary": "Source file pages/offscreen/offscreen.html in Lumina extension.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/offscreen/offscreen.js",
+      "type": "file",
+      "name": "offscreen.js",
+      "filePath": "pages/offscreen/offscreen.js",
+      "summary": "Offscreen document script for background audio playback and recording in Manifest V3.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:pages/offscreen/offscreen.js:playEdgeTTS",
+      "type": "function",
+      "name": "playEdgeTTS",
+      "filePath": "pages/offscreen/offscreen.js",
+      "lineRange": [
+        39,
+        42
+      ],
+      "summary": "playEdgeTTS in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:pages/offscreen/offscreen.js:playAudio",
+      "type": "function",
+      "name": "playAudio",
+      "filePath": "pages/offscreen/offscreen.js",
+      "lineRange": [
+        44,
+        47
+      ],
+      "summary": "playAudio in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:pages/offscreen/offscreen.js:playBase64",
+      "type": "function",
+      "name": "playBase64",
+      "filePath": "pages/offscreen/offscreen.js",
+      "lineRange": [
+        49,
+        52
+      ],
+      "summary": "playBase64 in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:pages/offscreen/offscreen.js:trimAudioBufferSilence",
+      "type": "function",
+      "name": "trimAudioBufferSilence",
+      "filePath": "pages/offscreen/offscreen.js",
+      "lineRange": [
+        57,
+        85
+      ],
+      "summary": "trimAudioBufferSilence in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:pages/offscreen/offscreen.js:stopCurrentAudio",
+      "type": "function",
+      "name": "stopCurrentAudio",
+      "filePath": "pages/offscreen/offscreen.js",
+      "lineRange": [
+        87,
+        102
+      ],
+      "summary": "stopCurrentAudio in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:pages/offscreen/offscreen.js:playSound",
+      "type": "function",
+      "name": "playSound",
+      "filePath": "pages/offscreen/offscreen.js",
+      "lineRange": [
+        104,
+        137
+      ],
+      "summary": "playSound in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/popup/popup.css",
+      "type": "file",
+      "name": "popup.css",
+      "filePath": "pages/popup/popup.css",
+      "summary": "Source file pages/popup/popup.css in Lumina extension.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:pages/popup/popup.html",
+      "type": "file",
+      "name": "popup.html",
+      "filePath": "pages/popup/popup.html",
+      "summary": "Source file pages/popup/popup.html in Lumina extension.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:pages/popup/popup.js",
+      "type": "file",
+      "name": "popup.js",
+      "filePath": "pages/popup/popup.js",
+      "summary": "Quick action popup menu script for toolbar icon click.",
+      "tags": [
+        "pages"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:scripts/background.js",
+      "type": "file",
+      "name": "background.js",
+      "filePath": "scripts/background.js",
+      "summary": "Extension Background Service Worker handling lifecycle, sidepanel toggling, shortcut commands, and offscreen audio management.",
+      "tags": [
+        "scripts"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getPromptApiNamespace",
+      "type": "function",
+      "name": "getPromptApiNamespace",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        42,
+        59
+      ],
+      "summary": "getPromptApiNamespace in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:broadcastToSession",
+      "type": "function",
+      "name": "broadcastToSession",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        68,
+        80
+      ],
+      "summary": "broadcastToSession in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:updateOpenSidePanelsSession",
+      "type": "function",
+      "name": "updateOpenSidePanelsSession",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        91,
+        93
+      ],
+      "summary": "updateOpenSidePanelsSession in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:toggleSidePanel",
+      "type": "function",
+      "name": "toggleSidePanel",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        146,
+        174
+      ],
+      "summary": "toggleSidePanel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:ensureSidePanelOpen",
+      "type": "function",
+      "name": "ensureSidePanelOpen",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        176,
+        189
+      ],
+      "summary": "ensureSidePanelOpen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:checkAndRegisterScripts",
+      "type": "function",
+      "name": "checkAndRegisterScripts",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        191,
+        192
+      ],
+      "summary": "checkAndRegisterScripts in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:updateDisplayMode",
+      "type": "function",
+      "name": "updateDisplayMode",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        194,
+        202
+      ],
+      "summary": "updateDisplayMode in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:incrementModelUsage",
+      "type": "function",
+      "name": "incrementModelUsage",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        214,
+        235
+      ],
+      "summary": "incrementModelUsage in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:normalizeOpenAICompatibleEndpoint",
+      "type": "function",
+      "name": "normalizeOpenAICompatibleEndpoint",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        237,
+        254
+      ],
+      "summary": "normalizeOpenAICompatibleEndpoint in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:optimizeContextString",
+      "type": "function",
+      "name": "optimizeContextString",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        256,
+        266
+      ],
+      "summary": "optimizeContextString in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:isGeminiModel",
+      "type": "function",
+      "name": "isGeminiModel",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        268,
+        271
+      ],
+      "summary": "isGeminiModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:buildChatSystemInstruction",
+      "type": "function",
+      "name": "buildChatSystemInstruction",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        273,
+        393
+      ],
+      "summary": "buildChatSystemInstruction in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:buildProofreadSystemPrompt",
+      "type": "function",
+      "name": "buildProofreadSystemPrompt",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        395,
+        405
+      ],
+      "summary": "buildProofreadSystemPrompt in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getGeminiApiKey",
+      "type": "function",
+      "name": "getGeminiApiKey",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        407,
+        433
+      ],
+      "summary": "getGeminiApiKey in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:detectMediaType",
+      "type": "function",
+      "name": "detectMediaType",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        435,
+        458
+      ],
+      "summary": "detectMediaType in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:inferGeminiMediaResolution",
+      "type": "function",
+      "name": "inferGeminiMediaResolution",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        460,
+        482
+      ],
+      "summary": "inferGeminiMediaResolution in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:uint8ArrayToBase64",
+      "type": "function",
+      "name": "uint8ArrayToBase64",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        499,
+        508
+      ],
+      "summary": "uint8ArrayToBase64 in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:readOpfsFileAsBase64",
+      "type": "function",
+      "name": "readOpfsFileAsBase64",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        510,
+        530
+      ],
+      "summary": "readOpfsFileAsBase64 in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:normalizeMimeType",
+      "type": "function",
+      "name": "normalizeMimeType",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        532,
+        535
+      ],
+      "summary": "normalizeMimeType in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:isSupportedAttachmentMime",
+      "type": "function",
+      "name": "isSupportedAttachmentMime",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        537,
+        540
+      ],
+      "summary": "isSupportedAttachmentMime in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:isTextAttachmentMime",
+      "type": "function",
+      "name": "isTextAttachmentMime",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        542,
+        545
+      ],
+      "summary": "isTextAttachmentMime in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getBase64FromAttachment",
+      "type": "function",
+      "name": "getBase64FromAttachment",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        547,
+        555
+      ],
+      "summary": "getBase64FromAttachment in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:decodeBase64Utf8",
+      "type": "function",
+      "name": "decodeBase64Utf8",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        557,
+        565
+      ],
+      "summary": "decodeBase64Utf8 in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:filterParentAttachments",
+      "type": "function",
+      "name": "filterParentAttachments",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        567,
+        581
+      ],
+      "summary": "filterParentAttachments in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:processAttachments",
+      "type": "function",
+      "name": "processAttachments",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        583,
+        656
+      ],
+      "summary": "processAttachments in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:processAttachmentsForGemini",
+      "type": "function",
+      "name": "processAttachmentsForGemini",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        658,
+        736
+      ],
+      "summary": "processAttachmentsForGemini in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:cleanThinkingBlocks",
+      "type": "function",
+      "name": "cleanThinkingBlocks",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        738,
+        744
+      ],
+      "summary": "cleanThinkingBlocks in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:buildApiPayload",
+      "type": "function",
+      "name": "buildApiPayload",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        746,
+        923
+      ],
+      "summary": "buildApiPayload in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getModelChain",
+      "type": "function",
+      "name": "getModelChain",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        925,
+        976
+      ],
+      "summary": "getModelChain in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getKeysArray",
+      "type": "function",
+      "name": "getKeysArray",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        978,
+        981
+      ],
+      "summary": "getKeysArray in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getTodayString",
+      "type": "function",
+      "name": "getTodayString",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        983,
+        986
+      ],
+      "summary": "getTodayString in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:fetchWithRotation",
+      "type": "function",
+      "name": "fetchWithRotation",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        988,
+        1046
+      ],
+      "summary": "fetchWithRotation in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getApiKeyForProvider",
+      "type": "function",
+      "name": "getApiKeyForProvider",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1048,
+        1055
+      ],
+      "summary": "getApiKeyForProvider in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getModelForProvider",
+      "type": "function",
+      "name": "getModelForProvider",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1057,
+        1064
+      ],
+      "summary": "getModelForProvider in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getDefaultModel",
+      "type": "function",
+      "name": "getDefaultModel",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1066,
+        1073
+      ],
+      "summary": "getDefaultModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getDefaultVisionModel",
+      "type": "function",
+      "name": "getDefaultVisionModel",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1075,
+        1082
+      ],
+      "summary": "getDefaultVisionModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:setStatus",
+      "type": "function",
+      "name": "setStatus",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1084,
+        1093
+      ],
+      "summary": "setStatus in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getLuminaCache",
+      "type": "function",
+      "name": "getLuminaCache",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1097,
+        1120
+      ],
+      "summary": "getLuminaCache in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:setLuminaCache",
+      "type": "function",
+      "name": "setLuminaCache",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1122,
+        1137
+      ],
+      "summary": "setLuminaCache in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getAudioFromCache",
+      "type": "function",
+      "name": "getAudioFromCache",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1142,
+        1154
+      ],
+      "summary": "getAudioFromCache in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:setAudioCache",
+      "type": "function",
+      "name": "setAudioCache",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1156,
+        1170
+      ],
+      "summary": "setAudioCache in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:fetchPageContent",
+      "type": "function",
+      "name": "fetchPageContent",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1172,
+        1195
+      ],
+      "summary": "fetchPageContent in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:executeChatRequest",
+      "type": "function",
+      "name": "executeChatRequest",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1197,
+        1570
+      ],
+      "summary": "executeChatRequest in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:generateOneOffCompletion",
+      "type": "function",
+      "name": "generateOneOffCompletion",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1572,
+        1641
+      ],
+      "summary": "generateOneOffCompletion in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:bridgeLog",
+      "type": "function",
+      "name": "bridgeLog",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        1643,
+        1652
+      ],
+      "summary": "bridgeLog in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getSpotlightWindowId",
+      "type": "function",
+      "name": "getSpotlightWindowId",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        2591,
+        2613
+      ],
+      "summary": "getSpotlightWindowId in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:createSpotlightWindow",
+      "type": "function",
+      "name": "createSpotlightWindow",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        2644,
+        2799
+      ],
+      "summary": "createSpotlightWindow in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:translateTextGoogle",
+      "type": "function",
+      "name": "translateTextGoogle",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3062,
+        3095
+      ],
+      "summary": "translateTextGoogle in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:extractJsonArray",
+      "type": "function",
+      "name": "extractJsonArray",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3097,
+        3108
+      ],
+      "summary": "extractJsonArray in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getActiveModelForTranslation",
+      "type": "function",
+      "name": "getActiveModelForTranslation",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3110,
+        3148
+      ],
+      "summary": "getActiveModelForTranslation in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:translateTextWithAI",
+      "type": "function",
+      "name": "translateTextWithAI",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3150,
+        3274
+      ],
+      "summary": "translateTextWithAI in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:translateText",
+      "type": "function",
+      "name": "translateText",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3276,
+        3294
+      ],
+      "summary": "translateText in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:proofreadText",
+      "type": "function",
+      "name": "proofreadText",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3296,
+        3310
+      ],
+      "summary": "proofreadText in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:handleChatStream",
+      "type": "function",
+      "name": "handleChatStream",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3312,
+        3390
+      ],
+      "summary": "handleChatStream in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:setupOffscreenDocument",
+      "type": "function",
+      "name": "setupOffscreenDocument",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3393,
+        3408
+      ],
+      "summary": "setupOffscreenDocument in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:playNativeTTS",
+      "type": "function",
+      "name": "playNativeTTS",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3410,
+        3444
+      ],
+      "summary": "playNativeTTS in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:playAudioOffscreen",
+      "type": "function",
+      "name": "playAudioOffscreen",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3446,
+        3459
+      ],
+      "summary": "playAudioOffscreen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:playEdgeTTSOffscreen",
+      "type": "function",
+      "name": "playEdgeTTSOffscreen",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3461,
+        3480
+      ],
+      "summary": "playEdgeTTSOffscreen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:playBase64AudioOffscreen",
+      "type": "function",
+      "name": "playBase64AudioOffscreen",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3482,
+        3495
+      ],
+      "summary": "playBase64AudioOffscreen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:stopAudioOffscreen",
+      "type": "function",
+      "name": "stopAudioOffscreen",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3497,
+        3503
+      ],
+      "summary": "stopAudioOffscreen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:stopGoogleAudioOffscreen",
+      "type": "function",
+      "name": "stopGoogleAudioOffscreen",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3505,
+        3511
+      ],
+      "summary": "stopGoogleAudioOffscreen in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getLemma",
+      "type": "function",
+      "name": "getLemma",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3513,
+        3529
+      ],
+      "summary": "getLemma in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:getAmericanSpelling",
+      "type": "function",
+      "name": "getAmericanSpelling",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3531,
+        3544
+      ],
+      "summary": "getAmericanSpelling in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:fetchAudio",
+      "type": "function",
+      "name": "fetchAudio",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3546,
+        3659
+      ],
+      "summary": "fetchAudio in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:scripts/background.js:generateChatTitleFromModel",
+      "type": "function",
+      "name": "generateChatTitleFromModel",
+      "filePath": "scripts/background.js",
+      "lineRange": [
+        3661,
+        3731
+      ],
+      "summary": "generateChatTitleFromModel in Lumina",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:scripts/content.js",
+      "type": "file",
+      "name": "content.js",
+      "filePath": "scripts/content.js",
+      "summary": "Content script coordinator injecting UI, handling selection events, translation popups, and message passing with background/popup.",
+      "tags": [
+        "scripts"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:tools/blocknote_entry.jsx",
+      "type": "file",
+      "name": "blocknote_entry.jsx",
+      "filePath": "tools/blocknote_entry.jsx",
+      "summary": "React entry point bundling BlockNote editor for note taking.",
+      "tags": [
+        "tools"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/blocknote_entry.jsx:BlockNoteApp",
+      "type": "function",
+      "name": "BlockNoteApp",
+      "filePath": "tools/blocknote_entry.jsx",
+      "lineRange": [
+        49,
+        404
+      ],
+      "summary": "BlockNoteApp in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tools/clear_comments.js",
+      "type": "file",
+      "name": "clear_comments.js",
+      "filePath": "tools/clear_comments.js",
+      "summary": "Source file tools/clear_comments.js in Lumina extension.",
+      "tags": [
+        "tools"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/clear_comments.js:getFiles",
+      "type": "function",
+      "name": "getFiles",
+      "filePath": "tools/clear_comments.js",
+      "lineRange": [
+        6,
+        23
+      ],
+      "summary": "getFiles in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/clear_comments.js:stripJSComments",
+      "type": "function",
+      "name": "stripJSComments",
+      "filePath": "tools/clear_comments.js",
+      "lineRange": [
+        25,
+        107
+      ],
+      "summary": "stripJSComments in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/clear_comments.js:stripCSSComments",
+      "type": "function",
+      "name": "stripCSSComments",
+      "filePath": "tools/clear_comments.js",
+      "lineRange": [
+        109,
+        149
+      ],
+      "summary": "stripCSSComments in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/clear_comments.js:stripHTMLComments",
+      "type": "function",
+      "name": "stripHTMLComments",
+      "filePath": "tools/clear_comments.js",
+      "lineRange": [
+        151,
+        166
+      ],
+      "summary": "stripHTMLComments in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/clear_comments.js:stripCommentsFromHTML",
+      "type": "function",
+      "name": "stripCommentsFromHTML",
+      "filePath": "tools/clear_comments.js",
+      "lineRange": [
+        168,
+        177
+      ],
+      "summary": "stripCommentsFromHTML in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:tools/clear_comments.js:processFiles",
+      "type": "function",
+      "name": "processFiles",
+      "filePath": "tools/clear_comments.js",
+      "lineRange": [
+        179,
+        261
+      ],
+      "summary": "processFiles in Lumina",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tools/generate_symbols.js",
+      "type": "file",
+      "name": "generate_symbols.js",
+      "filePath": "tools/generate_symbols.js",
+      "summary": "Source file tools/generate_symbols.js in Lumina extension.",
+      "tags": [
+        "tools"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tools/generate_symbols.js:getFiles",
+      "type": "function",
+      "name": "getFiles",
+      "filePath": "tools/generate_symbols.js",
+      "lineRange": [
+        6,
+        20
+      ],
+      "summary": "getFiles in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tools/generate_symbols.js:parseSymbols",
+      "type": "function",
+      "name": "parseSymbols",
+      "filePath": "tools/generate_symbols.js",
+      "lineRange": [
+        22,
+        78
+      ],
+      "summary": "parseSymbols in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tools/generate_symbols.js:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "tools/generate_symbols.js",
+      "lineRange": [
+        79,
+        105
+      ],
+      "summary": "main in Lumina",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:manifest.json",
+      "type": "config",
+      "name": "manifest.json",
+      "filePath": "manifest.json",
+      "summary": "Extension Manifest V3 defining permissions, background service worker, commands, content scripts, and web accessible resources.",
+      "tags": [
+        "."
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:rules.json",
+      "type": "config",
+      "name": "rules.json",
+      "filePath": "rules.json",
+      "summary": "Declarative Net Request ruleset for network header and request modifications.",
+      "tags": [
+        "."
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Project manifest defining npm dependencies (BlockNote, React, esbuild) and build scripts.",
+      "tags": [
+        "."
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "function:lib/core/auth.js:compressData",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "function:lib/core/auth.js:decompressData",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "function:lib/core/auth.js:sha256Hash",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "function:lib/core/auth.js:isExcludedKey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "function:lib/core/auth.js:launchGoogleWebAuthFlow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "class:lib/core/auth.js:AuthService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/auth.js",
+      "target": "class:lib/core/auth.js:SyncManager",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/chat_history.js",
+      "target": "function:lib/core/chat_history.js:escapeHTMLAttr",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/chat_history.js",
+      "target": "function:lib/core/chat_history.js:createObjectUrlFromDataUrl",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/chat_history.js",
+      "target": "function:lib/core/chat_history.js:resolveImagePreviewSrc",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/chat_history.js",
+      "target": "function:lib/core/chat_history.js:reconstructGroups",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/gemini_live.js",
+      "target": "class:lib/core/gemini_live.js:GeminiLiveClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/notes_manager.js",
+      "target": "class:lib/core/notes_manager.js:NotesManager",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/pcm_processor.js",
+      "target": "class:lib/core/pcm_processor.js:PCMWorkletProcessor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/tts_manager.js",
+      "target": "class:lib/core/tts_manager.js:TTSDB",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/tts_manager.js",
+      "target": "class:lib/core/tts_manager.js:TTSManager",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/tts_manager.js",
+      "target": "class:lib/core/tts_manager.js:GroqAligner",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:morphDOM",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:buildYoutubeEmbedUrl",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:searchGoogleImages",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:searchYoutubeVideo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:processLuminaDynamicYoutubeElements",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:processLuminaDynamicImageElements",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:_renderChartJSWrapper",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:processLuminaChartElements",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:extractMainContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:luminaEstimateTokens",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:luminaTruncateHistoryWindow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:loadScript",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "function:lib/ui/common.js:loadCSS",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "class:lib/ui/common.js:LuminaChatUI",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/common.js",
+      "target": "class:lib/ui/common.js:LuminaTemplates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/history_panel.js",
+      "target": "class:lib/ui/history_panel.js:LuminaHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/notes_panel.js",
+      "target": "class:lib/ui/notes_panel.js:NotesPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/ui/tts_panel.js",
+      "target": "class:lib/ui/tts_panel.js:TTSPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getPaneActiveModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:setPaneActiveModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getPaneActiveThinking",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:setPaneActiveThinking",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:bindContainerWheelForward",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateUrlSessionId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getHoveredInputEl",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getShortcutTargetTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updatePaneHighlight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:applyFontSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getLuminaTabIdForPane",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getWebSelectionScopeKey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getCurrentLuminaTabId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getWebSelectionStorageKey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:readWebSelectionFromStorage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:writeWebSelectionToStorage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:deleteWebSelectionFromStorage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getWebSelectionForScope",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:saveWebSelectionForScope",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:ensureContentScriptsInjected",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:fetchFreshWebContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:refreshWebSourceTokens",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:saveCurrentWebSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:loadCurrentWebSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateWebSelectionForTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:refreshWebSourceTokensForTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:isSelectionInsideEditable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:bindHistoryScroll",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:showTopbarLoading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:hideTopbarLoading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:restoreScrollPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:restoreLatestScrollPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:scheduleScrollRestore",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleRemoteSync",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:normalizeTabs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:ensureTabHistoryLoaded",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:initTabs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:createTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:switchTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:syncTabUI",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:closeTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateTabTitle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:saveTabsState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:normalizeRestoredHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getGroupColor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:renderTabs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleMouseMove",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleMouseUp",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:initSpotlightAskSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleCommentSubmission",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:setupWebSourceTracking",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:isWebPageUrl",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:syncCurrentBrowserTab",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:formatHeadTailTitle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:closeWebTabPicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:refreshWebTabPicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:openWebTabPicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getDomainDisplayName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:createWebChipElement",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateWebChips",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:scheduleVisibleTabsMinHeightReflow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:toggleWebSourcePin",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:init",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:initSidebar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateRecentChatsActiveState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateSidebarSparksActiveState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:renderRecentChatsSidebar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:syncSessionsWithBackground",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:setupPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleSubmit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleTranslation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:matchesAnnotationShortcut",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:setupGlobalListeners",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:resetChat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:setupRegenerateButtons",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:triggerRegenerate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:showAnswerVersion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateVersionNav",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:isShortcutMatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:isShortcutMatchImmediate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:dispatchConfiguredShortcutAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:cycleActiveModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:matchesShortcut",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:playSpotlightAudio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getSpotlightAudioCtx",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:stopSpotlightAudio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:playBase64Audio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:initSpotlightDictLauncher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:showSpotlightDictLauncher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:hideSpotlightDictLauncher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:showSpotlightDictionaryPopup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:handleYouTubeTrigger",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:escapeHtml",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:renderDropdownMenu",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:initTopbarModelSelector",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateTopbarSparkTitle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateInputPlaceholder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateSidebarUserProfile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:getDynamicWelcomeTitle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updatePaneBlankState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:updateWelcomeScreenState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:checkSyncOnTabReturn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "function:pages/lumina/lumina.js:startConcurrentAutoNaming",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/search_modal.js",
+      "target": "class:pages/lumina/search_modal.js:LuminaSearchModal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/settings_modal.js",
+      "target": "class:pages/lumina/settings_modal.js:LuminaSettingsModal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksLoad",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksSave",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksSaveOrder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksDelete",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksNewId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksOpenPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksClosePage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksRenderList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sparksOpenEditor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:getSparkColor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:sidebarSparksRenderList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:showSparkContextMenu",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:openSparkChat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:renderSparkWelcomeScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:openAvatarCropper",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/sparks.js",
+      "target": "function:pages/lumina/sparks.js:initSparks",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/offscreen/offscreen.js",
+      "target": "function:pages/offscreen/offscreen.js:playEdgeTTS",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/offscreen/offscreen.js",
+      "target": "function:pages/offscreen/offscreen.js:playAudio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/offscreen/offscreen.js",
+      "target": "function:pages/offscreen/offscreen.js:playBase64",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/offscreen/offscreen.js",
+      "target": "function:pages/offscreen/offscreen.js:trimAudioBufferSilence",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/offscreen/offscreen.js",
+      "target": "function:pages/offscreen/offscreen.js:stopCurrentAudio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/offscreen/offscreen.js",
+      "target": "function:pages/offscreen/offscreen.js:playSound",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getPromptApiNamespace",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:broadcastToSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:updateOpenSidePanelsSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:toggleSidePanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:ensureSidePanelOpen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:checkAndRegisterScripts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:updateDisplayMode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:incrementModelUsage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:normalizeOpenAICompatibleEndpoint",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:optimizeContextString",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:isGeminiModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:buildChatSystemInstruction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:buildProofreadSystemPrompt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getGeminiApiKey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:detectMediaType",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:inferGeminiMediaResolution",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:uint8ArrayToBase64",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:readOpfsFileAsBase64",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:normalizeMimeType",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:isSupportedAttachmentMime",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:isTextAttachmentMime",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getBase64FromAttachment",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:decodeBase64Utf8",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:filterParentAttachments",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:processAttachments",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:processAttachmentsForGemini",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:cleanThinkingBlocks",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:buildApiPayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getModelChain",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getKeysArray",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getTodayString",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:fetchWithRotation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getApiKeyForProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getModelForProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getDefaultModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getDefaultVisionModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:setStatus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getLuminaCache",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:setLuminaCache",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getAudioFromCache",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:setAudioCache",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:fetchPageContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:executeChatRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:generateOneOffCompletion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:bridgeLog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getSpotlightWindowId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:createSpotlightWindow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:translateTextGoogle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:extractJsonArray",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getActiveModelForTranslation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:translateTextWithAI",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:translateText",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:proofreadText",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:handleChatStream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:setupOffscreenDocument",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:playNativeTTS",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:playAudioOffscreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:playEdgeTTSOffscreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:playBase64AudioOffscreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:stopAudioOffscreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:stopGoogleAudioOffscreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getLemma",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:getAmericanSpelling",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:fetchAudio",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "function:scripts/background.js:generateChatTitleFromModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/blocknote_entry.jsx",
+      "target": "function:tools/blocknote_entry.jsx:BlockNoteApp",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/clear_comments.js",
+      "target": "function:tools/clear_comments.js:getFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/clear_comments.js",
+      "target": "function:tools/clear_comments.js:stripJSComments",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/clear_comments.js",
+      "target": "function:tools/clear_comments.js:stripCSSComments",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/clear_comments.js",
+      "target": "function:tools/clear_comments.js:stripHTMLComments",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/clear_comments.js",
+      "target": "function:tools/clear_comments.js:stripCommentsFromHTML",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/clear_comments.js",
+      "target": "function:tools/clear_comments.js:processFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/generate_symbols.js",
+      "target": "function:tools/generate_symbols.js:getFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/generate_symbols.js",
+      "target": "function:tools/generate_symbols.js:parseSymbols",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/generate_symbols.js",
+      "target": "function:tools/generate_symbols.js:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tools/blocknote_entry.jsx",
+      "target": "file:react",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tools/blocknote_entry.jsx",
+      "target": "file:react-dom/client",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tools/blocknote_entry.jsx",
+      "target": "file:@blocknote/react",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tools/blocknote_entry.jsx",
+      "target": "file:@blocknote/mantine",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tools/blocknote_entry.jsx",
+      "target": "file:@blocknote/mantine/style.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:scripts/background.js",
+      "target": "file:pages/offscreen/offscreen.html",
+      "type": "triggers",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/content.js",
+      "target": "file:lib/core/constants.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/content.js",
+      "target": "file:lib/ui/dictionary_popup.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/content.js",
+      "target": "file:lib/helpers/selection_utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:scripts/content.js",
+      "target": "file:lib/helpers/annotation_utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:lib/core/chat_history.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:lib/core/gemini_live.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:lib/core/tts_manager.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:lib/core/notes_manager.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:lib/core/memory.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:pages/lumina/settings_modal.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:pages/lumina/search_modal.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:pages/lumina/lumina.js",
+      "target": "file:pages/lumina/sparks.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/chat_history.js",
+      "target": "file:lib/core/chat_db.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/chat_history.js",
+      "target": "file:lib/core/token_utils.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/gemini_live.js",
+      "target": "file:lib/core/pcm_processor.js",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/tts_manager.js",
+      "target": "file:lib/ui/tts_panel.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/notes_manager.js",
+      "target": "file:lib/ui/notes_panel.js",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/core/notes_manager.js",
+      "target": "file:tools/blocknote_entry.jsx",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 1
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:utility-layer",
+      "name": "Utility Layer",
+      "description": "Shared utilities, helpers, and common libraries",
+      "nodeIds": [
+        "file:lib/core/attachment_db.js",
+        "file:lib/core/auth.js",
+        "file:lib/core/chat_db.js",
+        "file:lib/core/chat_history.js",
+        "file:lib/core/constants.js",
+        "file:lib/core/gemini_live.js",
+        "file:lib/core/highlight_db.js",
+        "file:lib/core/memory.js",
+        "file:lib/core/migration.js",
+        "file:lib/core/notes_manager.js",
+        "file:lib/core/pcm_processor.js",
+        "file:lib/core/token_utils.js",
+        "file:lib/core/tts_manager.js",
+        "file:lib/helpers/annotation_utils.js",
+        "file:lib/helpers/file_processor.js",
+        "file:lib/helpers/proxy.html",
+        "file:lib/helpers/selection_utils.js",
+        "file:lib/helpers/youtube_utils.js",
+        "file:lib/parsers/freedict_parser.js"
+      ]
+    },
+    {
+      "id": "layer:ui-layer",
+      "name": "UI Layer",
+      "description": "User interface components and views",
+      "nodeIds": [
+        "file:lib/ui/common.js",
+        "file:lib/ui/dictionary_popup.js",
+        "file:lib/ui/history_panel.js",
+        "file:lib/ui/notes_panel.js",
+        "file:lib/ui/tts_panel.js",
+        "file:pages/lumina/init.js",
+        "file:pages/lumina/lumina.css",
+        "file:pages/lumina/lumina.html",
+        "file:pages/lumina/lumina.js",
+        "file:pages/lumina/search_modal.css",
+        "file:pages/lumina/search_modal.js",
+        "file:pages/lumina/settings_modal.css",
+        "file:pages/lumina/settings_modal.js",
+        "file:pages/lumina/sparks.js",
+        "file:pages/offscreen/offscreen.html",
+        "file:pages/offscreen/offscreen.js",
+        "file:pages/popup/popup.css",
+        "file:pages/popup/popup.html",
+        "file:pages/popup/popup.js"
+      ]
+    },
+    {
+      "id": "layer:external-services",
+      "name": "External Services",
+      "description": "External service integrations, SDKs, and third-party adapters",
+      "nodeIds": [
+        "file:lib/vendor/blocknote.css",
+        "file:lib/vendor/blocknote.js",
+        "file:lib/vendor/katex/katex.min.css",
+        "file:lib/vendor/turndown.js"
+      ]
+    },
+    {
+      "id": "layer:core",
+      "name": "Core",
+      "description": "Core application files",
+      "nodeIds": [
+        "file:scripts/background.js",
+        "file:scripts/content.js",
+        "file:tools/blocknote_entry.jsx",
+        "file:tools/clear_comments.js",
+        "file:tools/generate_symbols.js"
+      ]
+    }
+  ],
+  "tour": [],
+  "tours": [
+    [
+      {
+        "order": 1,
+        "title": "Utility Layer",
+        "description": "Shared utilities, helpers, and common libraries. Key files: attachment_db.js, auth.js, highlight_db.js, migration.js, file_processor.js, proxy.html, youtube_utils.js, freedict_parser.js, chat_history.js, gemini_live.js, tts_manager.js, notes_manager.js, memory.js, constants.js, selection_utils.js, annotation_utils.js, chat_db.js, token_utils.js, pcm_processor.js.",
+        "nodeIds": [
+          "file:lib/core/attachment_db.js",
+          "file:lib/core/auth.js",
+          "file:lib/core/highlight_db.js",
+          "file:lib/core/migration.js",
+          "file:lib/helpers/file_processor.js",
+          "file:lib/helpers/proxy.html",
+          "file:lib/helpers/youtube_utils.js",
+          "file:lib/parsers/freedict_parser.js",
+          "file:lib/core/chat_history.js",
+          "file:lib/core/gemini_live.js",
+          "file:lib/core/tts_manager.js",
+          "file:lib/core/notes_manager.js",
+          "file:lib/core/memory.js",
+          "file:lib/core/constants.js",
+          "file:lib/helpers/selection_utils.js",
+          "file:lib/helpers/annotation_utils.js",
+          "file:lib/core/chat_db.js",
+          "file:lib/core/token_utils.js",
+          "file:lib/core/pcm_processor.js"
+        ]
+      },
+      {
+        "order": 2,
+        "title": "UI Layer",
+        "description": "User interface components and views. Key files: common.js, history_panel.js, init.js, lumina.css, lumina.html, lumina.js, search_modal.css, settings_modal.css, offscreen.js, popup.css, popup.html, popup.js, settings_modal.js, search_modal.js, sparks.js, offscreen.html, dictionary_popup.js, tts_panel.js, notes_panel.js.",
+        "nodeIds": [
+          "file:lib/ui/common.js",
+          "file:lib/ui/history_panel.js",
+          "file:pages/lumina/init.js",
+          "file:pages/lumina/lumina.css",
+          "file:pages/lumina/lumina.html",
+          "file:pages/lumina/lumina.js",
+          "file:pages/lumina/search_modal.css",
+          "file:pages/lumina/settings_modal.css",
+          "file:pages/offscreen/offscreen.js",
+          "file:pages/popup/popup.css",
+          "file:pages/popup/popup.html",
+          "file:pages/popup/popup.js",
+          "file:pages/lumina/settings_modal.js",
+          "file:pages/lumina/search_modal.js",
+          "file:pages/lumina/sparks.js",
+          "file:pages/offscreen/offscreen.html",
+          "file:lib/ui/dictionary_popup.js",
+          "file:lib/ui/tts_panel.js",
+          "file:lib/ui/notes_panel.js"
+        ]
+      },
+      {
+        "order": 3,
+        "title": "External Services",
+        "description": "External service integrations, SDKs, and third-party adapters. Key files: blocknote.css, blocknote.js, katex.min.css, turndown.js.",
+        "nodeIds": [
+          "file:lib/vendor/blocknote.css",
+          "file:lib/vendor/blocknote.js",
+          "file:lib/vendor/katex/katex.min.css",
+          "file:lib/vendor/turndown.js"
+        ]
+      },
+      {
+        "order": 4,
+        "title": "Core",
+        "description": "Core application files. Key files: background.js, content.js, clear_comments.js, generate_symbols.js, blocknote_entry.jsx.",
+        "nodeIds": [
+          "file:scripts/background.js",
+          "file:scripts/content.js",
+          "file:tools/clear_comments.js",
+          "file:tools/generate_symbols.js",
+          "file:tools/blocknote_entry.jsx"
+        ]
+      },
+      {
+        "order": 5,
+        "title": "Supporting Components",
+        "description": "Additional supporting files: manifest.json, rules.json, package.json, compressData, decompressData, sha256Hash, isExcludedKey, launchGoogleWebAuthFlow, AuthService, SyncManager, morphDOM, buildYoutubeEmbedUrl, searchGoogleImages, searchYoutubeVideo, processLuminaDynamicYoutubeElements, processLuminaDynamicImageElements, _renderChartJSWrapper, processLuminaChartElements, extractMainContent, luminaEstimateTokens, luminaTruncateHistoryWindow, loadScript, loadCSS, LuminaChatUI, LuminaTemplates, LuminaHistory, getPaneActiveModel, setPaneActiveModel, getPaneActiveThinking, setPaneActiveThinking, bindContainerWheelForward, updateUrlSessionId, getHoveredInputEl, getShortcutTargetTab, updatePaneHighlight, applyFontSize, getLuminaTabIdForPane, getWebSelectionScopeKey, getCurrentLuminaTabId, getWebSelectionStorageKey, readWebSelectionFromStorage, writeWebSelectionToStorage, deleteWebSelectionFromStorage, getWebSelectionForScope, saveWebSelectionForScope, ensureContentScriptsInjected, fetchFreshWebContent, refreshWebSourceTokens, saveCurrentWebSelection, loadCurrentWebSelection, updateWebSelectionForTab, refreshWebSourceTokensForTab, isSelectionInsideEditable, bindHistoryScroll, showTopbarLoading, hideTopbarLoading, restoreScrollPosition, restoreLatestScrollPosition, scheduleScrollRestore, handleRemoteSync, normalizeTabs, ensureTabHistoryLoaded, initTabs, createTab, switchTab, syncTabUI, closeTab, updateTabTitle, saveTabsState, normalizeRestoredHistory, getGroupColor, renderTabs, handleMouseMove, handleMouseUp, initSpotlightAskSelection, handleCommentSubmission, setupWebSourceTracking, isWebPageUrl, syncCurrentBrowserTab, formatHeadTailTitle, closeWebTabPicker, refreshWebTabPicker, openWebTabPicker, getDomainDisplayName, createWebChipElement, updateWebChips, scheduleVisibleTabsMinHeightReflow, toggleWebSourcePin, init, initSidebar, updateRecentChatsActiveState, updateSidebarSparksActiveState, renderRecentChatsSidebar, syncSessionsWithBackground, setupPort, handleSubmit, handleTranslation, matchesAnnotationShortcut, setupGlobalListeners, resetChat, setupRegenerateButtons, triggerRegenerate, showAnswerVersion, updateVersionNav, isShortcutMatch, isShortcutMatchImmediate, dispatchConfiguredShortcutAction, cycleActiveModel, matchesShortcut, playSpotlightAudio, getSpotlightAudioCtx, stopSpotlightAudio, playBase64Audio, initSpotlightDictLauncher, showSpotlightDictLauncher, hideSpotlightDictLauncher, showSpotlightDictionaryPopup, handleYouTubeTrigger, escapeHtml, renderDropdownMenu, initTopbarModelSelector, updateTopbarSparkTitle, updateInputPlaceholder, updateSidebarUserProfile, getDynamicWelcomeTitle, updatePaneBlankState, updateWelcomeScreenState, checkSyncOnTabReturn, startConcurrentAutoNaming, playEdgeTTS, playAudio, playBase64, trimAudioBufferSilence, stopCurrentAudio, playSound, getPromptApiNamespace, broadcastToSession, updateOpenSidePanelsSession, toggleSidePanel, ensureSidePanelOpen, checkAndRegisterScripts, updateDisplayMode, incrementModelUsage, normalizeOpenAICompatibleEndpoint, optimizeContextString, isGeminiModel, buildChatSystemInstruction, buildProofreadSystemPrompt, getGeminiApiKey, detectMediaType, inferGeminiMediaResolution, uint8ArrayToBase64, readOpfsFileAsBase64, normalizeMimeType, isSupportedAttachmentMime, isTextAttachmentMime, getBase64FromAttachment, decodeBase64Utf8, filterParentAttachments, processAttachments, processAttachmentsForGemini, cleanThinkingBlocks, buildApiPayload, getModelChain, getKeysArray, getTodayString, fetchWithRotation, getApiKeyForProvider, getModelForProvider, getDefaultModel, getDefaultVisionModel, setStatus, getLuminaCache, setLuminaCache, getAudioFromCache, setAudioCache, fetchPageContent, executeChatRequest, generateOneOffCompletion, bridgeLog, getSpotlightWindowId, createSpotlightWindow, translateTextGoogle, extractJsonArray, getActiveModelForTranslation, translateTextWithAI, translateText, proofreadText, handleChatStream, setupOffscreenDocument, playNativeTTS, playAudioOffscreen, playEdgeTTSOffscreen, playBase64AudioOffscreen, stopAudioOffscreen, stopGoogleAudioOffscreen, getLemma, getAmericanSpelling, fetchAudio, generateChatTitleFromModel, getFiles, stripJSComments, stripCSSComments, stripHTMLComments, stripCommentsFromHTML, processFiles, getFiles, parseSymbols, main, escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups, GeminiLiveClient, TTSDB, TTSManager, GroqAligner, NotesManager, LuminaSettingsModal, LuminaSearchModal, sparksLoad, sparksSave, sparksSaveOrder, sparksDelete, sparksNewId, sparksOpenPage, sparksClosePage, sparksRenderList, sparksOpenEditor, getSparkColor, sidebarSparksRenderList, showSparkContextMenu, openSparkChat, renderSparkWelcomeScreen, openAvatarCropper, initSparks, PCMWorkletProcessor, TTSPanel, NotesPanel, BlockNoteApp.",
+        "nodeIds": [
+          "config:manifest.json",
+          "config:rules.json",
+          "config:package.json",
+          "function:lib/core/auth.js:compressData",
+          "function:lib/core/auth.js:decompressData",
+          "function:lib/core/auth.js:sha256Hash",
+          "function:lib/core/auth.js:isExcludedKey",
+          "function:lib/core/auth.js:launchGoogleWebAuthFlow",
+          "class:lib/core/auth.js:AuthService",
+          "class:lib/core/auth.js:SyncManager",
+          "function:lib/ui/common.js:morphDOM",
+          "function:lib/ui/common.js:buildYoutubeEmbedUrl",
+          "function:lib/ui/common.js:searchGoogleImages",
+          "function:lib/ui/common.js:searchYoutubeVideo",
+          "function:lib/ui/common.js:processLuminaDynamicYoutubeElements",
+          "function:lib/ui/common.js:processLuminaDynamicImageElements",
+          "function:lib/ui/common.js:_renderChartJSWrapper",
+          "function:lib/ui/common.js:processLuminaChartElements",
+          "function:lib/ui/common.js:extractMainContent",
+          "function:lib/ui/common.js:luminaEstimateTokens",
+          "function:lib/ui/common.js:luminaTruncateHistoryWindow",
+          "function:lib/ui/common.js:loadScript",
+          "function:lib/ui/common.js:loadCSS",
+          "class:lib/ui/common.js:LuminaChatUI",
+          "class:lib/ui/common.js:LuminaTemplates",
+          "class:lib/ui/history_panel.js:LuminaHistory",
+          "function:pages/lumina/lumina.js:getPaneActiveModel",
+          "function:pages/lumina/lumina.js:setPaneActiveModel",
+          "function:pages/lumina/lumina.js:getPaneActiveThinking",
+          "function:pages/lumina/lumina.js:setPaneActiveThinking",
+          "function:pages/lumina/lumina.js:bindContainerWheelForward",
+          "function:pages/lumina/lumina.js:updateUrlSessionId",
+          "function:pages/lumina/lumina.js:getHoveredInputEl",
+          "function:pages/lumina/lumina.js:getShortcutTargetTab",
+          "function:pages/lumina/lumina.js:updatePaneHighlight",
+          "function:pages/lumina/lumina.js:applyFontSize",
+          "function:pages/lumina/lumina.js:getLuminaTabIdForPane",
+          "function:pages/lumina/lumina.js:getWebSelectionScopeKey",
+          "function:pages/lumina/lumina.js:getCurrentLuminaTabId",
+          "function:pages/lumina/lumina.js:getWebSelectionStorageKey",
+          "function:pages/lumina/lumina.js:readWebSelectionFromStorage",
+          "function:pages/lumina/lumina.js:writeWebSelectionToStorage",
+          "function:pages/lumina/lumina.js:deleteWebSelectionFromStorage",
+          "function:pages/lumina/lumina.js:getWebSelectionForScope",
+          "function:pages/lumina/lumina.js:saveWebSelectionForScope",
+          "function:pages/lumina/lumina.js:ensureContentScriptsInjected",
+          "function:pages/lumina/lumina.js:fetchFreshWebContent",
+          "function:pages/lumina/lumina.js:refreshWebSourceTokens",
+          "function:pages/lumina/lumina.js:saveCurrentWebSelection",
+          "function:pages/lumina/lumina.js:loadCurrentWebSelection",
+          "function:pages/lumina/lumina.js:updateWebSelectionForTab",
+          "function:pages/lumina/lumina.js:refreshWebSourceTokensForTab",
+          "function:pages/lumina/lumina.js:isSelectionInsideEditable",
+          "function:pages/lumina/lumina.js:bindHistoryScroll",
+          "function:pages/lumina/lumina.js:showTopbarLoading",
+          "function:pages/lumina/lumina.js:hideTopbarLoading",
+          "function:pages/lumina/lumina.js:restoreScrollPosition",
+          "function:pages/lumina/lumina.js:restoreLatestScrollPosition",
+          "function:pages/lumina/lumina.js:scheduleScrollRestore",
+          "function:pages/lumina/lumina.js:handleRemoteSync",
+          "function:pages/lumina/lumina.js:normalizeTabs",
+          "function:pages/lumina/lumina.js:ensureTabHistoryLoaded",
+          "function:pages/lumina/lumina.js:initTabs",
+          "function:pages/lumina/lumina.js:createTab",
+          "function:pages/lumina/lumina.js:switchTab",
+          "function:pages/lumina/lumina.js:syncTabUI",
+          "function:pages/lumina/lumina.js:closeTab",
+          "function:pages/lumina/lumina.js:updateTabTitle",
+          "function:pages/lumina/lumina.js:saveTabsState",
+          "function:pages/lumina/lumina.js:normalizeRestoredHistory",
+          "function:pages/lumina/lumina.js:getGroupColor",
+          "function:pages/lumina/lumina.js:renderTabs",
+          "function:pages/lumina/lumina.js:handleMouseMove",
+          "function:pages/lumina/lumina.js:handleMouseUp",
+          "function:pages/lumina/lumina.js:initSpotlightAskSelection",
+          "function:pages/lumina/lumina.js:handleCommentSubmission",
+          "function:pages/lumina/lumina.js:setupWebSourceTracking",
+          "function:pages/lumina/lumina.js:isWebPageUrl",
+          "function:pages/lumina/lumina.js:syncCurrentBrowserTab",
+          "function:pages/lumina/lumina.js:formatHeadTailTitle",
+          "function:pages/lumina/lumina.js:closeWebTabPicker",
+          "function:pages/lumina/lumina.js:refreshWebTabPicker",
+          "function:pages/lumina/lumina.js:openWebTabPicker",
+          "function:pages/lumina/lumina.js:getDomainDisplayName",
+          "function:pages/lumina/lumina.js:createWebChipElement",
+          "function:pages/lumina/lumina.js:updateWebChips",
+          "function:pages/lumina/lumina.js:scheduleVisibleTabsMinHeightReflow",
+          "function:pages/lumina/lumina.js:toggleWebSourcePin",
+          "function:pages/lumina/lumina.js:init",
+          "function:pages/lumina/lumina.js:initSidebar",
+          "function:pages/lumina/lumina.js:updateRecentChatsActiveState",
+          "function:pages/lumina/lumina.js:updateSidebarSparksActiveState",
+          "function:pages/lumina/lumina.js:renderRecentChatsSidebar",
+          "function:pages/lumina/lumina.js:syncSessionsWithBackground",
+          "function:pages/lumina/lumina.js:setupPort",
+          "function:pages/lumina/lumina.js:handleSubmit",
+          "function:pages/lumina/lumina.js:handleTranslation",
+          "function:pages/lumina/lumina.js:matchesAnnotationShortcut",
+          "function:pages/lumina/lumina.js:setupGlobalListeners",
+          "function:pages/lumina/lumina.js:resetChat",
+          "function:pages/lumina/lumina.js:setupRegenerateButtons",
+          "function:pages/lumina/lumina.js:triggerRegenerate",
+          "function:pages/lumina/lumina.js:showAnswerVersion",
+          "function:pages/lumina/lumina.js:updateVersionNav",
+          "function:pages/lumina/lumina.js:isShortcutMatch",
+          "function:pages/lumina/lumina.js:isShortcutMatchImmediate",
+          "function:pages/lumina/lumina.js:dispatchConfiguredShortcutAction",
+          "function:pages/lumina/lumina.js:cycleActiveModel",
+          "function:pages/lumina/lumina.js:matchesShortcut",
+          "function:pages/lumina/lumina.js:playSpotlightAudio",
+          "function:pages/lumina/lumina.js:getSpotlightAudioCtx",
+          "function:pages/lumina/lumina.js:stopSpotlightAudio",
+          "function:pages/lumina/lumina.js:playBase64Audio",
+          "function:pages/lumina/lumina.js:initSpotlightDictLauncher",
+          "function:pages/lumina/lumina.js:showSpotlightDictLauncher",
+          "function:pages/lumina/lumina.js:hideSpotlightDictLauncher",
+          "function:pages/lumina/lumina.js:showSpotlightDictionaryPopup",
+          "function:pages/lumina/lumina.js:handleYouTubeTrigger",
+          "function:pages/lumina/lumina.js:escapeHtml",
+          "function:pages/lumina/lumina.js:renderDropdownMenu",
+          "function:pages/lumina/lumina.js:initTopbarModelSelector",
+          "function:pages/lumina/lumina.js:updateTopbarSparkTitle",
+          "function:pages/lumina/lumina.js:updateInputPlaceholder",
+          "function:pages/lumina/lumina.js:updateSidebarUserProfile",
+          "function:pages/lumina/lumina.js:getDynamicWelcomeTitle",
+          "function:pages/lumina/lumina.js:updatePaneBlankState",
+          "function:pages/lumina/lumina.js:updateWelcomeScreenState",
+          "function:pages/lumina/lumina.js:checkSyncOnTabReturn",
+          "function:pages/lumina/lumina.js:startConcurrentAutoNaming",
+          "function:pages/offscreen/offscreen.js:playEdgeTTS",
+          "function:pages/offscreen/offscreen.js:playAudio",
+          "function:pages/offscreen/offscreen.js:playBase64",
+          "function:pages/offscreen/offscreen.js:trimAudioBufferSilence",
+          "function:pages/offscreen/offscreen.js:stopCurrentAudio",
+          "function:pages/offscreen/offscreen.js:playSound",
+          "function:scripts/background.js:getPromptApiNamespace",
+          "function:scripts/background.js:broadcastToSession",
+          "function:scripts/background.js:updateOpenSidePanelsSession",
+          "function:scripts/background.js:toggleSidePanel",
+          "function:scripts/background.js:ensureSidePanelOpen",
+          "function:scripts/background.js:checkAndRegisterScripts",
+          "function:scripts/background.js:updateDisplayMode",
+          "function:scripts/background.js:incrementModelUsage",
+          "function:scripts/background.js:normalizeOpenAICompatibleEndpoint",
+          "function:scripts/background.js:optimizeContextString",
+          "function:scripts/background.js:isGeminiModel",
+          "function:scripts/background.js:buildChatSystemInstruction",
+          "function:scripts/background.js:buildProofreadSystemPrompt",
+          "function:scripts/background.js:getGeminiApiKey",
+          "function:scripts/background.js:detectMediaType",
+          "function:scripts/background.js:inferGeminiMediaResolution",
+          "function:scripts/background.js:uint8ArrayToBase64",
+          "function:scripts/background.js:readOpfsFileAsBase64",
+          "function:scripts/background.js:normalizeMimeType",
+          "function:scripts/background.js:isSupportedAttachmentMime",
+          "function:scripts/background.js:isTextAttachmentMime",
+          "function:scripts/background.js:getBase64FromAttachment",
+          "function:scripts/background.js:decodeBase64Utf8",
+          "function:scripts/background.js:filterParentAttachments",
+          "function:scripts/background.js:processAttachments",
+          "function:scripts/background.js:processAttachmentsForGemini",
+          "function:scripts/background.js:cleanThinkingBlocks",
+          "function:scripts/background.js:buildApiPayload",
+          "function:scripts/background.js:getModelChain",
+          "function:scripts/background.js:getKeysArray",
+          "function:scripts/background.js:getTodayString",
+          "function:scripts/background.js:fetchWithRotation",
+          "function:scripts/background.js:getApiKeyForProvider",
+          "function:scripts/background.js:getModelForProvider",
+          "function:scripts/background.js:getDefaultModel",
+          "function:scripts/background.js:getDefaultVisionModel",
+          "function:scripts/background.js:setStatus",
+          "function:scripts/background.js:getLuminaCache",
+          "function:scripts/background.js:setLuminaCache",
+          "function:scripts/background.js:getAudioFromCache",
+          "function:scripts/background.js:setAudioCache",
+          "function:scripts/background.js:fetchPageContent",
+          "function:scripts/background.js:executeChatRequest",
+          "function:scripts/background.js:generateOneOffCompletion",
+          "function:scripts/background.js:bridgeLog",
+          "function:scripts/background.js:getSpotlightWindowId",
+          "function:scripts/background.js:createSpotlightWindow",
+          "function:scripts/background.js:translateTextGoogle",
+          "function:scripts/background.js:extractJsonArray",
+          "function:scripts/background.js:getActiveModelForTranslation",
+          "function:scripts/background.js:translateTextWithAI",
+          "function:scripts/background.js:translateText",
+          "function:scripts/background.js:proofreadText",
+          "function:scripts/background.js:handleChatStream",
+          "function:scripts/background.js:setupOffscreenDocument",
+          "function:scripts/background.js:playNativeTTS",
+          "function:scripts/background.js:playAudioOffscreen",
+          "function:scripts/background.js:playEdgeTTSOffscreen",
+          "function:scripts/background.js:playBase64AudioOffscreen",
+          "function:scripts/background.js:stopAudioOffscreen",
+          "function:scripts/background.js:stopGoogleAudioOffscreen",
+          "function:scripts/background.js:getLemma",
+          "function:scripts/background.js:getAmericanSpelling",
+          "function:scripts/background.js:fetchAudio",
+          "function:scripts/background.js:generateChatTitleFromModel",
+          "function:tools/clear_comments.js:getFiles",
+          "function:tools/clear_comments.js:stripJSComments",
+          "function:tools/clear_comments.js:stripCSSComments",
+          "function:tools/clear_comments.js:stripHTMLComments",
+          "function:tools/clear_comments.js:stripCommentsFromHTML",
+          "function:tools/clear_comments.js:processFiles",
+          "function:tools/generate_symbols.js:getFiles",
+          "function:tools/generate_symbols.js:parseSymbols",
+          "function:tools/generate_symbols.js:main",
+          "function:lib/core/chat_history.js:escapeHTMLAttr",
+          "function:lib/core/chat_history.js:createObjectUrlFromDataUrl",
+          "function:lib/core/chat_history.js:resolveImagePreviewSrc",
+          "function:lib/core/chat_history.js:reconstructGroups",
+          "class:lib/core/gemini_live.js:GeminiLiveClient",
+          "class:lib/core/tts_manager.js:TTSDB",
+          "class:lib/core/tts_manager.js:TTSManager",
+          "class:lib/core/tts_manager.js:GroqAligner",
+          "class:lib/core/notes_manager.js:NotesManager",
+          "class:pages/lumina/settings_modal.js:LuminaSettingsModal",
+          "class:pages/lumina/search_modal.js:LuminaSearchModal",
+          "function:pages/lumina/sparks.js:sparksLoad",
+          "function:pages/lumina/sparks.js:sparksSave",
+          "function:pages/lumina/sparks.js:sparksSaveOrder",
+          "function:pages/lumina/sparks.js:sparksDelete",
+          "function:pages/lumina/sparks.js:sparksNewId",
+          "function:pages/lumina/sparks.js:sparksOpenPage",
+          "function:pages/lumina/sparks.js:sparksClosePage",
+          "function:pages/lumina/sparks.js:sparksRenderList",
+          "function:pages/lumina/sparks.js:sparksOpenEditor",
+          "function:pages/lumina/sparks.js:getSparkColor",
+          "function:pages/lumina/sparks.js:sidebarSparksRenderList",
+          "function:pages/lumina/sparks.js:showSparkContextMenu",
+          "function:pages/lumina/sparks.js:openSparkChat",
+          "function:pages/lumina/sparks.js:renderSparkWelcomeScreen",
+          "function:pages/lumina/sparks.js:openAvatarCropper",
+          "function:pages/lumina/sparks.js:initSparks",
+          "class:lib/core/pcm_processor.js:PCMWorkletProcessor",
+          "class:lib/ui/tts_panel.js:TTSPanel",
+          "class:lib/ui/notes_panel.js:NotesPanel",
+          "function:tools/blocknote_entry.jsx:BlockNoteApp"
+        ]
+      }
+    ]
+  ]
+}
