@@ -1,5 +1,5 @@
 import { NotesManager } from '../../db/notes_manager.js';
-import { timeAgo, escapeHtml } from './notes/notes_utils.js';
+import { timeAgo, escapeHtml } from './notes_utils.js';
 
 export class NotesPanel {
     constructor() {

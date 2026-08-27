@@ -1,5 +1,4 @@
 export function renderVoiceCardHTML(voice, isSelected = false) {
-    const isCustom = voice.isCustom || false;
     const accent = voice.accent || 'US';
     const gender = voice.gender || 'neutral';
     const desc = voice.description || '';
@@ -31,4 +30,12 @@ export function filterVoices(voices, { search = '', gender = 'all', accent = 'al
         }
         return true;
     });
+}
+
+export function getDefaultTTSPresets() {
+    return [
+        { id: 'preset_story', name: 'Storyteller', rate: 0.95, pitch: 1.0, voice: 'en-US-Neural2-F' },
+        { id: 'preset_fast', name: 'Fast Review', rate: 1.35, pitch: 1.05, voice: 'en-US-Neural2-J' },
+        { id: 'preset_news', name: 'News Broadcaster', rate: 1.05, pitch: 1.0, voice: 'en-US-Neural2-D' }
+    ];
 }

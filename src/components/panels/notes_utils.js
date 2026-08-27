@@ -50,3 +50,17 @@ export function calculateWordCount(text) {
     const chars = cleanText.length;
     return { words, chars };
 }
+
+export function filterNotesByCollection(notes, collectionId) {
+    if (!Array.isArray(notes)) return [];
+    if (!collectionId || collectionId === 'all') {
+        return notes.filter(n => !n.isDeleted && !n.isArchived);
+    }
+    if (collectionId === 'trash') {
+        return notes.filter(n => n.isDeleted);
+    }
+    if (collectionId === 'uncategorized') {
+        return notes.filter(n => !n.isDeleted && !n.collectionId);
+    }
+    return notes.filter(n => !n.isDeleted && n.collectionId === collectionId);
+}

@@ -20546,20 +20546,17 @@ ${script}`;
     }
   }
 
-  // src/components/panels/notes/notes_utils.js
-  function timeAgo(ts) {
-    if (!ts) return "";
+  // src/components/panels/notes_utils.js
+  function timeAgo(timestamp) {
+    if (!timestamp) return "";
     const now = Date.now();
-    const diff = now - ts;
-    const mins = Math.floor(diff / 6e4);
-    const hours = Math.floor(diff / 36e5);
-    const days = Math.floor(diff / 864e5);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days}d ago`;
-    return new Date(ts).toLocaleDateString(void 0, { month: "short", day: "numeric" });
+    const diff = Math.floor((now - timestamp) / 1e3);
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    const date = new Date(timestamp);
+    return date.toLocaleDateString(void 0, { month: "short", day: "numeric" });
   }
 
   // src/components/panels/notes_panel.js
