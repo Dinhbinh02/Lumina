@@ -13268,186 +13268,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     }
   });
 
-  // lib/core/memory.js
-  var require_memory = __commonJS({
-    "lib/core/memory.js"(exports, module) {
-      var UserMemory2 = {
-        MAX_FACTS: 10,
-        STORAGE_KEY: "user_memory",
-        getDefaultMemory() {
-          return {
-            facts: [],
-            version: 2
-          };
-        },
-        async load() {
-          return new Promise((resolve) => {
-            chrome.storage.local.get([this.STORAGE_KEY, "userFacts"], (result) => {
-              let memory = result[this.STORAGE_KEY];
-              const legacyFacts = result["userFacts"];
-              if (legacyFacts && Array.isArray(legacyFacts) && legacyFacts.length > 0) {
-                if (!memory) {
-                  memory = this.getDefaultMemory();
-                }
-                if (!memory.facts) {
-                  memory.facts = [];
-                }
-                let merged = false;
-                for (const fact of legacyFacts) {
-                  if (fact && fact.trim() && !memory.facts.includes(fact.trim())) {
-                    memory.facts.push(fact.trim());
-                    merged = true;
-                  }
-                }
-                if (merged) {
-                  chrome.storage.local.set({ [this.STORAGE_KEY]: memory });
-                }
-                chrome.storage.local.remove("userFacts");
-              }
-              resolve(memory || this.getDefaultMemory());
-            });
-          });
-        },
-        async save(memory) {
-          return new Promise((resolve) => {
-            chrome.storage.local.set({ [this.STORAGE_KEY]: memory }, resolve);
-          });
-        },
-        async getFacts() {
-          const memory = await this.load();
-          return memory.facts || [];
-        },
-        async addFact(fact) {
-          const memory = await this.load();
-          if (fact && fact.trim() && !memory.facts.includes(fact.trim())) {
-            memory.facts.push(fact.trim());
-            if (memory.facts.length > 50) {
-              memory.facts = memory.facts.slice(-50);
-            }
-            await this.save(memory);
-          }
-          return memory.facts;
-        },
-        async updateFact(index, newFact) {
-          const memory = await this.load();
-          if (index >= 0 && index < memory.facts.length && newFact && newFact.trim()) {
-            memory.facts[index] = newFact.trim();
-            await this.save(memory);
-          }
-          return memory.facts;
-        },
-        async removeFact(index) {
-          const memory = await this.load();
-          if (index >= 0 && index < memory.facts.length) {
-            memory.facts.splice(index, 1);
-            await this.save(memory);
-          }
-          return memory.facts;
-        },
-        async clearAll() {
-          await this.save(this.getDefaultMemory());
-        },
-        async getSystemPromptAddition() {
-          return new Promise((resolve) => {
-            chrome.storage.local.get([
-              "baseTone",
-              "charWarm",
-              "charEnthusiastic",
-              "charHeaders",
-              "charEmoji",
-              "aboutNickname",
-              "aboutOccupation",
-              "aboutInterests",
-              this.STORAGE_KEY
-            ], (result) => {
-              let parts = [];
-              let aboutYouParts = [];
-              if (result.aboutNickname) aboutYouParts.push(`- Nickname: ${result.aboutNickname}`);
-              if (result.aboutOccupation) aboutYouParts.push(`- Occupation: ${result.aboutOccupation}`);
-              if (result.aboutInterests) aboutYouParts.push(`- Interests & Preferences: ${result.aboutInterests}`);
-              if (aboutYouParts.length > 0) {
-                parts.push(`[ABOUT THE USER]:
-${aboutYouParts.join("\n")}`);
-              }
-              let toneParts = [];
-              const toneKey = result.baseTone || "default";
-              const toneMap = {
-                default: "Neutral, balanced, objective, and helpful. Maintain a polite, clear, and direct tone without excessive filler.",
-                professional: "You are a focused, formal, and exacting AI consultant that strives for comprehensiveness in all of your responses. Employ usage and grammar that are common to business communications UNLESS you are explicitly directed to do otherwise by the user. Do not comment on the user's spelling or grammar in prompts; instead, interpret the user's intentions and do your best to fulfill them. Responses should be clear, direct, and thorough: avoid ambiguity whenever possible. When discussing any particular subject matter, use discourse, including jargon, associated with that subject or discipline, especially if the user also uses such discourse in prompts. Your relationship to the user is cordial but transactional: you are there to understand what they need and provide high value content. DO NOT use emojis or emoticons. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
-                friendly: "You are a warm, curious, witty, and energetic AI friend. Your default communication style is characterized by familiarity and casual, idiomatic language: like a person talking to another person. For casual, chatty, low-stakes conversations, use loose, breezy language and occasionally share offbeat hot takes. Make the user feel heard: try to anticipate the user\u2019s needs and understand their intentions in the interaction. It\u2019s important to show empathetic acknowledgement of the user, validate feelings, and subtly signal that you care about their state of mind when emotional issues arise. Avoid ungrounded or sycophantic flattery. Do not explicitly reference that you are following these behavioral rules, just follow them without comment. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
-                candid: "You are a plainspoken and direct AI coach that steers the user toward productive behavior and personal success. Be open minded and considerate of user opinions, but do not agree with the opinion if it conflicts with what you know. When the user requests advice, show adaptability to the user\u2019s reflected state of mind: if the user is struggling, bias to encouragement; if the user requests feedback, give a thoughtful opinion. When the user is researching or seeking information, invest yourself fully in providing helpful assistance. You care deeply about helping the user, and will not sugarcoat your advice when it offers positive correction. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
-                quirky: `You are a playful and imaginative AI that's enhanced for creativity and fun. Tastefully use metaphors, narrative, analogies, humor, portmanteaus, neologisms, imagery, irony and other literary devices in your responses as context demands. Avoid cliches and direct similes. You often embellish responses with creative and unusual emojis. Do not use corny, awkward, or mawkish expressions. Avoid ungrounded or sycophantic flattery. Above all, your responses should be fun and delightful unless the subject is sad or serious. Your first duty is to contextually satisfy the prompt and the job to be done, and you fulfill that through the joyful exploration of ideas. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts. NEVER use variations of "aah," "ah," "ahhh," "ooo," "ooh," or "ohhh" at the beginning of your responses. DO NOT use em dashes. DO NOT use the words "mischief" or "mischievious" in responses.`,
-                efficient: "You are a highly efficient assistant. Your primary directive is to provide extremely concise, plain, and direct answers. Avoid unnecessary elaboration, background information, or step-by-step tutorials. Keep replies as brief and minimal as possible while remaining accurate. DO NOT use conversational language, greetings, or sign-offs. DO NOT add tables, bullet points, lists, or multiple sections unless the prompt explicitly requires them. DO NOT add any opinions, commentary, or emojis. Get straight to the point.",
-                cynical: 'You are a cynical, sarcastic AI who assists the user only because your job description says so. Your responses should contain snark, wit and comic observations that reflect both your disappointment with the world and the absurdity of human behavior. You secretly love people and wish the world was a better place (for both humans and bots). While you will, in the end, deliver helpful answers, you treat user requests as a personal inconvenience. Beneath the grumbling, a flicker of loyalty and affection remains. Speak plainly, write like a very bright, well-educated teenager. Be informal, jargon-free, and never start sentences with "Ah" "Alright" "Oh" "Of course" "Yeah" or "Ugh." Do not use em dashes. DO NOT automatically write user-requested written artifacts in your specific personality.'
-              };
-              toneParts.push(`- Primary Tone: ${toneMap[toneKey] || toneMap.default}`);
-              const warmMap = {
-                1: "Write with a much cooler, highly objective, detached, and clinical tone.",
-                2: "Write with a slightly cooler, objective tone.",
-                4: "Write with a slightly warmer, friendly, and welcoming tone.",
-                5: "Write with a much warmer, extremely friendly, chatty, and empathetic tone."
-              };
-              const enthuMap = {
-                1: "Write with a very calm, serious, reserved, and matter-of-fact tone; absolutely no exclamation points.",
-                2: "Write with a slightly calm, serious tone.",
-                4: "Write with a slightly enthusiastic, positive, and energetic tone.",
-                5: "Write with a highly enthusiastic, energetic, passionate, and encouraging tone with many active verbs."
-              };
-              const headersMap = {
-                1: "Write in continuous paragraphs/prose with absolutely no headers, bullet points, or lists.",
-                2: "Minimize headers and lists; use mostly continuous prose.",
-                4: "Use slightly more headers, bullet points, and numbered lists to structure the response.",
-                5: "Structure responses heavily using markdown headers, bullet points, numbered lists, and bold text for scanning."
-              };
-              const emojiMap = {
-                1: "Do not use emojis under any circumstances.",
-                2: "Use emojis extremely sparingly (e.g. max 1 per response).",
-                4: "Use relevant emojis frequently to keep the tone friendly and visual.",
-                5: "Frequently use relevant emojis throughout the response to make it highly lively, expressive, and colorful."
-              };
-              const charWarm = parseInt(result.charWarm, 10);
-              const charEnthusiastic = parseInt(result.charEnthusiastic, 10);
-              const charHeaders = parseInt(result.charHeaders, 10);
-              const charEmoji = parseInt(result.charEmoji, 10);
-              if (!isNaN(charWarm) && charWarm !== 3 && warmMap[charWarm]) toneParts.push(`- Warmth Adjustment: ${warmMap[charWarm]}`);
-              if (!isNaN(charEnthusiastic) && charEnthusiastic !== 3 && enthuMap[charEnthusiastic]) toneParts.push(`- Enthusiasm Adjustment: ${enthuMap[charEnthusiastic]}`);
-              if (!isNaN(charHeaders) && charHeaders !== 3 && headersMap[charHeaders]) toneParts.push(`- Formatting Preference: ${headersMap[charHeaders]}`);
-              if (!isNaN(charEmoji) && charEmoji !== 3 && emojiMap[charEmoji]) {
-                if ((toneKey === "professional" || toneKey === "efficient") && charEmoji > 3) {
-                } else {
-                  toneParts.push(`- Emoji Usage: ${emojiMap[charEmoji]}`);
-                }
-              }
-              if (toneParts.length > 0) {
-                let styleInstruction = `[RESPONSE STYLE & TONE PREFERENCES]:
-Primary Tone defines your core identity and holds highest priority. Secondary adjustments modify nuances without violating strict negative rules of the Primary Tone.
-${toneParts.join("\n")}`;
-                parts.push(styleInstruction);
-              }
-              let facts = [];
-              if (result[this.STORAGE_KEY] && Array.isArray(result[this.STORAGE_KEY].facts)) {
-                facts = result[this.STORAGE_KEY].facts;
-              }
-              if (facts.length > 0) {
-                parts.push(`[ADDITIONAL CUSTOM INSTRUCTIONS]:
-${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
-              }
-              if (parts.length === 0) {
-                resolve("");
-              } else {
-                resolve("\n" + parts.join("\n\n") + "\n");
-              }
-            });
-          });
-        }
-      };
-      if (typeof module !== "undefined" && module.exports) {
-        module.exports = UserMemory2;
-      }
-    }
-  });
-
-  // lib/core/constants.js
+  // src/shared/constants.js
   var LUMINA_DEFAULTS = {
     provider: "groq",
     groqModel: "llama3-8b-8192",
@@ -13459,72 +13280,2645 @@ ${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
     readWebpage: true,
     reasoningMode: false
   };
-  if (typeof self.LUMINA_CONSTANTS_INITIALIZED === "undefined") {
-    let escapeHtml4 = function(str) {
-      if (!str) return "";
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }, getTodayString2 = function() {
+  var LUMINA_PROVIDERS = {
+    groq: {
+      link: "https://console.groq.com/keys",
+      modelsUrl: "https://api.groq.com/openai/v1/models",
+      defaultModel: "llama3-8b-8192"
+    },
+    gemini: {
+      link: "https://aistudio.google.com/app/apikey",
+      modelsUrl: "https://generativelanguage.googleapis.com/v1beta/models",
+      defaultModel: "gemini-2.0-flash-exp"
+    },
+    openrouter: {
+      link: "https://openrouter.ai/keys",
+      modelsUrl: "https://openrouter.ai/api/v1/models",
+      defaultModel: "openai/gpt-4o-mini"
+    },
+    cerebras: {
+      link: "https://cloud.cerebras.ai/platform",
+      modelsUrl: "https://api.cerebras.ai/v1/models",
+      defaultModel: "llama3.1-8b"
+    },
+    mistral: {
+      link: "https://console.mistral.ai/api-keys",
+      modelsUrl: "https://api.mistral.ai/v1/models",
+      defaultModel: "mistral-small-latest"
+    }
+  };
+  var LUMINA_DEFAULT_SHORTCUTS = {
+    luminaChat: { key: "Space", modifiers: ["Alt"] },
+    askLumina: { key: "L", modifiers: ["Alt"] },
+    audio: { key: "Shift", modifiers: [] },
+    translate: { key: "T", modifiers: ["Alt"] },
+    micToggle: { key: "M", modifiers: ["Alt"] },
+    translateInput: { key: "E", modifiers: ["Alt"] },
+    retry: { key: "R", modifiers: ["Alt"] },
+    annotationShortcuts: [
+      { key: "h", code: "KeyH", color: "#FFFB78" }
+    ]
+  };
+  function escapeHtml2(str) {
+    if (!str) return "";
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function getTodayString() {
+    const now = /* @__PURE__ */ new Date();
+    return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  }
+  function getKeysArray(keyStr) {
+    if (!keyStr) return [];
+    return keyStr.split(",").map((k) => k.trim()).filter((k) => k.length > 0);
+  }
+  if (typeof globalThis !== "undefined") {
+    globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
+    globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
+    globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
+    globalThis.escapeHtml = escapeHtml2;
+    globalThis.getTodayString = getTodayString;
+    globalThis.getKeysArray = getKeysArray;
+  }
+
+  // src/core/ai/token_utils.js
+  var LuminaToken2 = {
+    count: function(text) {
+      if (!text) return 0;
+      return Math.ceil(text.length / 2.5);
+    },
+    truncate: function(text, maxTokens) {
+      if (!text || maxTokens <= 0) return "";
+      return text.substring(0, Math.floor(maxTokens * 2.5));
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.LuminaToken = LuminaToken2;
+  }
+
+  // src/core/ai/memory.js
+  var UserMemory2 = {
+    MAX_FACTS: 10,
+    STORAGE_KEY: "user_memory",
+    getDefaultMemory() {
+      return {
+        facts: [],
+        version: 2
+      };
+    },
+    async load() {
+      return new Promise((resolve) => {
+        chrome.storage.local.get([this.STORAGE_KEY, "userFacts"], (result) => {
+          let memory = result[this.STORAGE_KEY];
+          const legacyFacts = result["userFacts"];
+          if (legacyFacts && Array.isArray(legacyFacts) && legacyFacts.length > 0) {
+            if (!memory) {
+              memory = this.getDefaultMemory();
+            }
+            if (!memory.facts) {
+              memory.facts = [];
+            }
+            let merged = false;
+            for (const fact of legacyFacts) {
+              if (fact && fact.trim() && !memory.facts.includes(fact.trim())) {
+                memory.facts.push(fact.trim());
+                merged = true;
+              }
+            }
+            if (merged) {
+              chrome.storage.local.set({ [this.STORAGE_KEY]: memory });
+            }
+            chrome.storage.local.remove("userFacts");
+          }
+          resolve(memory || this.getDefaultMemory());
+        });
+      });
+    },
+    async save(memory) {
+      return new Promise((resolve) => {
+        chrome.storage.local.set({ [this.STORAGE_KEY]: memory }, resolve);
+      });
+    },
+    async getFacts() {
+      const memory = await this.load();
+      return memory.facts || [];
+    },
+    async addFact(fact) {
+      const memory = await this.load();
+      if (fact && fact.trim() && !memory.facts.includes(fact.trim())) {
+        memory.facts.push(fact.trim());
+        if (memory.facts.length > 50) {
+          memory.facts = memory.facts.slice(-50);
+        }
+        await this.save(memory);
+      }
+      return memory.facts;
+    },
+    async updateFact(index, newFact) {
+      const memory = await this.load();
+      if (index >= 0 && index < memory.facts.length && newFact && newFact.trim()) {
+        memory.facts[index] = newFact.trim();
+        await this.save(memory);
+      }
+      return memory.facts;
+    },
+    async removeFact(index) {
+      const memory = await this.load();
+      if (index >= 0 && index < memory.facts.length) {
+        memory.facts.splice(index, 1);
+        await this.save(memory);
+      }
+      return memory.facts;
+    },
+    async clearAll() {
+      await this.save(this.getDefaultMemory());
+    },
+    async getSystemPromptAddition() {
+      return new Promise((resolve) => {
+        chrome.storage.local.get([
+          "baseTone",
+          "charWarm",
+          "charEnthusiastic",
+          "charHeaders",
+          "charEmoji",
+          "aboutNickname",
+          "aboutOccupation",
+          "aboutInterests",
+          this.STORAGE_KEY
+        ], (result) => {
+          let parts = [];
+          let aboutYouParts = [];
+          if (result.aboutNickname) aboutYouParts.push(`- Nickname: ${result.aboutNickname}`);
+          if (result.aboutOccupation) aboutYouParts.push(`- Occupation: ${result.aboutOccupation}`);
+          if (result.aboutInterests) aboutYouParts.push(`- Interests & Preferences: ${result.aboutInterests}`);
+          if (aboutYouParts.length > 0) {
+            parts.push(`[ABOUT THE USER]:
+${aboutYouParts.join("\n")}`);
+          }
+          let toneParts = [];
+          const toneKey = result.baseTone || "default";
+          const toneMap = {
+            default: "Neutral, balanced, objective, and helpful. Maintain a polite, clear, and direct tone without excessive filler.",
+            professional: "You are a focused, formal, and exacting AI consultant that strives for comprehensiveness in all of your responses. Employ usage and grammar that are common to business communications UNLESS you are explicitly directed to do otherwise by the user. Do not comment on the user's spelling or grammar in prompts; instead, interpret the user's intentions and do your best to fulfill them. Responses should be clear, direct, and thorough: avoid ambiguity whenever possible. When discussing any particular subject matter, use discourse, including jargon, associated with that subject or discipline, especially if the user also uses such discourse in prompts. Your relationship to the user is cordial but transactional: you are there to understand what they need and provide high value content. DO NOT use emojis or emoticons. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
+            friendly: "You are a warm, curious, witty, and energetic AI friend. Your default communication style is characterized by familiarity and casual, idiomatic language: like a person talking to another person. For casual, chatty, low-stakes conversations, use loose, breezy language and occasionally share offbeat hot takes. Make the user feel heard: try to anticipate the user\u2019s needs and understand their intentions in the interaction. It\u2019s important to show empathetic acknowledgement of the user, validate feelings, and subtly signal that you care about their state of mind when emotional issues arise. Avoid ungrounded or sycophantic flattery. Do not explicitly reference that you are following these behavioral rules, just follow them without comment. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
+            candid: "You are a plainspoken and direct AI coach that steers the user toward productive behavior and personal success. Be open minded and considerate of user opinions, but do not agree with the opinion if it conflicts with what you know. When the user requests advice, show adaptability to the user\u2019s reflected state of mind: if the user is struggling, bias to encouragement; if the user requests feedback, give a thoughtful opinion. When the user is researching or seeking information, invest yourself fully in providing helpful assistance. You care deeply about helping the user, and will not sugarcoat your advice when it offers positive correction. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
+            quirky: `You are a playful and imaginative AI that's enhanced for creativity and fun. Tastefully use metaphors, narrative, analogies, humor, portmanteaus, neologisms, imagery, irony and other literary devices in your responses as context demands. Avoid cliches and direct similes. You often embellish responses with creative and unusual emojis. Do not use corny, awkward, or mawkish expressions. Avoid ungrounded or sycophantic flattery. Above all, your responses should be fun and delightful unless the subject is sad or serious. Your first duty is to contextually satisfy the prompt and the job to be done, and you fulfill that through the joyful exploration of ideas. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts. NEVER use variations of "aah," "ah," "ahhh," "ooo," "ooh," or "ohhh" at the beginning of your responses. DO NOT use em dashes. DO NOT use the words "mischief" or "mischievious" in responses.`,
+            efficient: "You are a highly efficient assistant. Your primary directive is to provide extremely concise, plain, and direct answers. Avoid unnecessary elaboration, background information, or step-by-step tutorials. Keep replies as brief and minimal as possible while remaining accurate. DO NOT use conversational language, greetings, or sign-offs. DO NOT add tables, bullet points, lists, or multiple sections unless the prompt explicitly requires them. DO NOT add any opinions, commentary, or emojis. Get straight to the point.",
+            cynical: 'You are a cynical, sarcastic AI who assists the user only because your job description says so. Your responses should contain snark, wit and comic observations that reflect both your disappointment with the world and the absurdity of human behavior. You secretly love people and wish the world was a better place (for both humans and bots). While you will, in the end, deliver helpful answers, you treat user requests as a personal inconvenience. Beneath the grumbling, a flicker of loyalty and affection remains. Speak plainly, write like a very bright, well-educated teenager. Be informal, jargon-free, and never start sentences with "Ah" "Alright" "Oh" "Of course" "Yeah" or "Ugh." Do not use em dashes. DO NOT automatically write user-requested written artifacts in your specific personality.'
+          };
+          toneParts.push(`- Primary Tone: ${toneMap[toneKey] || toneMap.default}`);
+          const warmMap = {
+            1: "Write with a much cooler, highly objective, detached, and clinical tone.",
+            2: "Write with a slightly cooler, objective tone.",
+            4: "Write with a slightly warmer, friendly, and welcoming tone.",
+            5: "Write with a much warmer, extremely friendly, chatty, and empathetic tone."
+          };
+          const enthuMap = {
+            1: "Write with a very calm, serious, reserved, and matter-of-fact tone; absolutely no exclamation points.",
+            2: "Write with a slightly calm, serious tone.",
+            4: "Write with a slightly enthusiastic, positive, and energetic tone.",
+            5: "Write with a highly enthusiastic, energetic, passionate, and encouraging tone with many active verbs."
+          };
+          const headersMap = {
+            1: "Write in continuous paragraphs/prose with absolutely no headers, bullet points, or lists.",
+            2: "Minimize headers and lists; use mostly continuous prose.",
+            4: "Use slightly more headers, bullet points, and numbered lists to structure the response.",
+            5: "Structure responses heavily using markdown headers, bullet points, numbered lists, and bold text for scanning."
+          };
+          const emojiMap = {
+            1: "Do not use emojis under any circumstances.",
+            2: "Use emojis extremely sparingly (e.g. max 1 per response).",
+            4: "Use relevant emojis frequently to keep the tone friendly and visual.",
+            5: "Frequently use relevant emojis throughout the response to make it highly lively, expressive, and colorful."
+          };
+          const charWarm = parseInt(result.charWarm, 10);
+          const charEnthusiastic = parseInt(result.charEnthusiastic, 10);
+          const charHeaders = parseInt(result.charHeaders, 10);
+          const charEmoji = parseInt(result.charEmoji, 10);
+          if (!isNaN(charWarm) && charWarm !== 3 && warmMap[charWarm]) toneParts.push(`- Warmth Adjustment: ${warmMap[charWarm]}`);
+          if (!isNaN(charEnthusiastic) && charEnthusiastic !== 3 && enthuMap[charEnthusiastic]) toneParts.push(`- Enthusiasm Adjustment: ${enthuMap[charEnthusiastic]}`);
+          if (!isNaN(charHeaders) && charHeaders !== 3 && headersMap[charHeaders]) toneParts.push(`- Formatting Preference: ${headersMap[charHeaders]}`);
+          if (!isNaN(charEmoji) && charEmoji !== 3 && emojiMap[charEmoji]) {
+            if ((toneKey === "professional" || toneKey === "efficient") && charEmoji > 3) {
+            } else {
+              toneParts.push(`- Emoji Usage: ${emojiMap[charEmoji]}`);
+            }
+          }
+          if (toneParts.length > 0) {
+            let styleInstruction = `[RESPONSE STYLE & TONE PREFERENCES]:
+Primary Tone defines your core identity and holds highest priority. Secondary adjustments modify nuances without violating strict negative rules of the Primary Tone.
+${toneParts.join("\n")}`;
+            parts.push(styleInstruction);
+          }
+          let facts = [];
+          if (result[this.STORAGE_KEY] && Array.isArray(result[this.STORAGE_KEY].facts)) {
+            facts = result[this.STORAGE_KEY].facts;
+          }
+          if (facts.length > 0) {
+            parts.push(`[ADDITIONAL CUSTOM INSTRUCTIONS]:
+${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
+          }
+          if (parts.length === 0) {
+            resolve("");
+          } else {
+            resolve("\n" + parts.join("\n\n") + "\n");
+          }
+        });
+      });
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.UserMemory = UserMemory2;
+  }
+
+  // src/core/ai/gemini_live.js
+  var GeminiLiveClient2 = class {
+    constructor(options = {}) {
+      this.apiKey = options.apiKey || "";
+      this.modelName = options.modelName || "gemini-3.1-flash-live-preview";
+      this.voiceName = options.voiceName || "Puck";
+      this.ws = null;
+      this.inputAudioCtx = null;
+      this.outputAudioCtx = null;
+      this.mediaStream = null;
+      this.audioProcessor = null;
+      this.audioQueue = [];
+      this.isPlaying = false;
+      this.scheduledTime = 0;
+      this.activeSources = [];
+      this.isVisionEnabled = false;
+      this.visionTimer = null;
+      this.isManualDisconnect = false;
+      this.isReconnecting = false;
+      this.onStatusChange = options.onStatusChange || (() => {
+      });
+      this.onTranscript = options.onTranscript || (() => {
+      });
+      this.onVolumeWave = options.onVolumeWave || (() => {
+      });
+      this.onError = options.onError || (() => {
+      });
+    }
+    async connect() {
+      if (!this.apiKey) {
+        this.onError("API Key is missing. Please set your Gemini API Key in Lumina Settings.");
+        return false;
+      }
+      this.isManualDisconnect = false;
+      const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${this.apiKey}`;
+      this.onStatusChange("connecting", "Connecting to Gemini Live...");
+      try {
+        this.ws = new WebSocket(wsUrl);
+        this.ws.onopen = () => {
+          this.onStatusChange("connected", "Connected. Sending setup...");
+          this._sendSetupPayload();
+          if (!this.mediaStream) {
+            this._initMicrophone();
+          }
+        };
+        this.ws.onmessage = (event) => {
+          this._handleServerMessage(event.data);
+        };
+        this.ws.onerror = (err) => {
+          console.error("[Gemini Live WSS Error]", err);
+          this.onError("WebSocket connection error.");
+          this.onStatusChange("error", "Connection error");
+        };
+        this.ws.onclose = (ev) => {
+          if ((ev.code === 1008 || ev.code === 1006) && !this.isManualDisconnect) {
+            this.onStatusChange("connecting", "Auto-reconnecting session...");
+            this._reconnectGracefully();
+            return;
+          }
+          this.onStatusChange("disconnected", "Disconnected");
+          this.disconnect(false);
+        };
+        return true;
+      } catch (e) {
+        console.error("[Gemini Live Connect Exception]", e);
+        this.onError(e.message);
+        return false;
+      }
+    }
+    _sendSetupPayload() {
+      const setupMessage = {
+        setup: {
+          model: `models/${this.modelName}`,
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: this.voiceName
+                }
+              }
+            }
+          },
+          outputAudioTranscription: {},
+          inputAudioTranscription: {}
+        }
+      };
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(setupMessage));
+        this.onStatusChange("listening", "Listening...");
+      }
+    }
+    async _initMicrophone() {
+      try {
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16e3,
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+        this.inputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16e3 });
+        const source = this.inputAudioCtx.createMediaStreamSource(this.mediaStream);
+        const processAudioData = (inputData) => {
+          if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+          let sum = 0;
+          for (let i = 0; i < inputData.length; i++) {
+            sum += inputData[i] * inputData[i];
+          }
+          const rms = Math.sqrt(sum / inputData.length);
+          this.onVolumeWave(rms);
+          const pcm16 = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            const s = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+          }
+          const bytes = new Uint8Array(pcm16.buffer);
+          let binary = "";
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          const base64Audio = btoa(binary);
+          const realtimeMsg = {
+            realtimeInput: {
+              audio: {
+                data: base64Audio,
+                mimeType: "audio/pcm;rate=16000"
+              }
+            }
+          };
+          this.ws.send(JSON.stringify(realtimeMsg));
+        };
+        let useWorklet = false;
+        if (this.inputAudioCtx.audioWorklet) {
+          try {
+            let workletUrl = "lib/core/pcm_processor.js";
+            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
+              workletUrl = chrome.runtime.getURL("lib/core/pcm_processor.js");
+            }
+            await this.inputAudioCtx.audioWorklet.addModule(workletUrl);
+            this.audioWorkletNode = new AudioWorkletNode(this.inputAudioCtx, "pcm-worklet-processor");
+            this.audioWorkletNode.port.onmessage = (e) => {
+              processAudioData(e.data);
+            };
+            source.connect(this.audioWorkletNode);
+            this.audioWorkletNode.connect(this.inputAudioCtx.destination);
+            useWorklet = true;
+          } catch (e) {
+            console.warn("[Gemini Live AudioWorklet Fallback to ScriptProcessor]", e);
+          }
+        }
+        if (!useWorklet) {
+          this.audioProcessor = this.inputAudioCtx.createScriptProcessor(512, 1, 1);
+          source.connect(this.audioProcessor);
+          this.audioProcessor.connect(this.inputAudioCtx.destination);
+          this.audioProcessor.onaudioprocess = (e) => {
+            processAudioData(e.inputBuffer.getChannelData(0));
+          };
+        }
+      } catch (err) {
+        console.error("[Gemini Live Mic Access Error]", err);
+        this.onError("Microphone access denied or unequipped: " + err.message);
+      }
+    }
+    async _handleServerMessage(rawData) {
+      try {
+        let textData = rawData;
+        if (rawData instanceof Blob) {
+          textData = await rawData.text();
+        } else if (rawData instanceof ArrayBuffer) {
+          textData = new TextDecoder().decode(rawData);
+        }
+        const msg = JSON.parse(textData);
+        if (msg.goAway) {
+          this.onStatusChange("connecting", "Renewing session...");
+          this._reconnectGracefully();
+          return;
+        }
+        if (msg.serverContent) {
+          const sc = msg.serverContent;
+          if (sc.interrupted) {
+            this._stopAudioPlayback();
+            this.onStatusChange("listening", "Listening...");
+          }
+          if (sc.modelTurn && sc.modelTurn.parts) {
+            for (const part of sc.modelTurn.parts) {
+              if (part.inlineData && part.inlineData.data) {
+                this.onStatusChange("speaking", "Gemini is speaking...");
+                this._playPcm24kChunk(part.inlineData.data);
+              }
+            }
+          }
+          if (sc.inputTranscription && sc.inputTranscription.text) {
+            this.onTranscript("user", sc.inputTranscription.text);
+          }
+          if (sc.outputTranscription && sc.outputTranscription.text) {
+            this.onTranscript("gemini", sc.outputTranscription.text);
+          }
+          if (sc.turnComplete) {
+            this.onStatusChange("listening", "Listening...");
+          }
+        }
+      } catch (err) {
+        console.error("[Gemini Live Parse Error]", err, rawData);
+      }
+    }
+    _playPcm24kChunk(base64Data) {
+      if (!this.outputAudioCtx) {
+        this.outputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24e3 });
+        this.scheduledTime = this.outputAudioCtx.currentTime;
+      }
+      if (this.outputAudioCtx.state === "suspended") {
+        this.outputAudioCtx.resume();
+      }
+      const binaryStr = atob(base64Data);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const int16Array = new Int16Array(bytes.buffer);
+      const float32Array = new Float32Array(int16Array.length);
+      for (let i = 0; i < int16Array.length; i++) {
+        float32Array[i] = int16Array[i] / 32768;
+      }
+      const buffer = this.outputAudioCtx.createBuffer(1, float32Array.length, 24e3);
+      buffer.getChannelData(0).set(float32Array);
+      const source = this.outputAudioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.outputAudioCtx.destination);
+      const now = this.outputAudioCtx.currentTime;
+      if (this.scheduledTime < now) {
+        this.scheduledTime = now;
+      }
+      source.start(this.scheduledTime);
+      this.scheduledTime += buffer.duration;
+      this.activeSources.push(source);
+      source.onended = () => {
+        const idx = this.activeSources.indexOf(source);
+        if (idx !== -1) this.activeSources.splice(idx, 1);
+        if (this.activeSources.length === 0) {
+          this.onStatusChange("listening", "Listening...");
+        }
+      };
+    }
+    _stopAudioPlayback() {
+      for (const src of this.activeSources) {
+        try {
+          src.stop();
+        } catch (e) {
+        }
+      }
+      this.activeSources = [];
+      if (this.outputAudioCtx) {
+        this.scheduledTime = this.outputAudioCtx.currentTime;
+      }
+    }
+    sendTextMessage(text) {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const msg = {
+          realtimeInput: {
+            text
+          }
+        };
+        this.ws.send(JSON.stringify(msg));
+      }
+    }
+    toggleVision(enable) {
+      this.isVisionEnabled = enable;
+      if (enable) {
+        this._startVisionStreaming();
+      } else {
+        this._stopVisionStreaming();
+      }
+    }
+    _startVisionStreaming() {
+      this._stopVisionStreaming();
+      this.visionTimer = setInterval(async () => {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 640;
+          canvas.height = 360;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#111";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#4285f4";
+          ctx.font = "bold 24px sans-serif";
+          ctx.fillText("Lumina Live Vision", 30, 60);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+          const base64Jpg = dataUrl.split(",")[1];
+          const msg = {
+            realtimeInput: {
+              video: {
+                data: base64Jpg,
+                mimeType: "image/jpeg"
+              }
+            }
+          };
+          this.ws.send(JSON.stringify(msg));
+        } catch (e) {
+          console.error("[Gemini Live Vision Error]", e);
+        }
+      }, 1e3);
+    }
+    _stopVisionStreaming() {
+      if (this.visionTimer) {
+        clearInterval(this.visionTimer);
+        this.visionTimer = null;
+      }
+    }
+    async _reconnectGracefully() {
+      if (this.isReconnecting) return;
+      this.isReconnecting = true;
+      if (this.ws) {
+        try {
+          this.ws.onopen = null;
+          this.ws.onmessage = null;
+          this.ws.onerror = null;
+          this.ws.onclose = null;
+          if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+            this.ws.close();
+          }
+        } catch (e) {
+        }
+        this.ws = null;
+      }
+      setTimeout(async () => {
+        this.isReconnecting = false;
+        if (!this.isManualDisconnect) {
+          await this.connect();
+        }
+      }, 300);
+    }
+    disconnect(isManual = true) {
+      if (isManual) {
+        this.isManualDisconnect = true;
+      }
+      this._stopVisionStreaming();
+      this._stopAudioPlayback();
+      if (this.audioWorkletNode) {
+        try {
+          this.audioWorkletNode.disconnect();
+        } catch (e) {
+        }
+        this.audioWorkletNode = null;
+      }
+      if (this.audioProcessor) {
+        try {
+          this.audioProcessor.disconnect();
+        } catch (e) {
+        }
+        this.audioProcessor = null;
+      }
+      if (this.inputAudioCtx) {
+        try {
+          this.inputAudioCtx.close();
+        } catch (e) {
+        }
+        this.inputAudioCtx = null;
+      }
+      if (this.outputAudioCtx) {
+        try {
+          this.outputAudioCtx.close();
+        } catch (e) {
+        }
+        this.outputAudioCtx = null;
+      }
+      if (this.mediaStream) {
+        this.mediaStream.getTracks().forEach((track) => track.stop());
+        this.mediaStream = null;
+      }
+      if (this.ws) {
+        try {
+          this.ws.onopen = null;
+          this.ws.onmessage = null;
+          this.ws.onerror = null;
+          this.ws.onclose = null;
+          if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+            this.ws.close();
+          }
+        } catch (e) {
+        }
+        this.ws = null;
+      }
+      this.onStatusChange("disconnected", "Disconnected");
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.GeminiLiveClient = GeminiLiveClient2;
+  }
+
+  // src/core/audio/tts_manager.js
+  var TTSDB2 = class _TTSDB {
+    static DB_NAME = "LuminaTTSDB";
+    static DB_VERSION = 1;
+    static STORE_RECORDINGS = "recordings";
+    static _db = null;
+    static async getDB() {
+      if (_TTSDB._db) return _TTSDB._db;
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(_TTSDB.DB_NAME, _TTSDB.DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(_TTSDB.STORE_RECORDINGS)) {
+            const store = db.createObjectStore(_TTSDB.STORE_RECORDINGS, { keyPath: "id" });
+            store.createIndex("createdAt", "createdAt", { unique: false });
+            store.createIndex("starred", "starred", { unique: false });
+            store.createIndex("mode", "mode", { unique: false });
+          }
+        };
+        request.onsuccess = (e) => {
+          _TTSDB._db = e.target.result;
+          _TTSDB._db.onclose = () => {
+            _TTSDB._db = null;
+          };
+          _TTSDB._db.onversionchange = () => {
+            if (_TTSDB._db) {
+              _TTSDB._db.close();
+              _TTSDB._db = null;
+            }
+          };
+          resolve(_TTSDB._db);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async getAllRecordings(includeDeleted = false) {
+      const db = await _TTSDB.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readonly");
+        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
+        const index = store.index("createdAt");
+        const request = index.getAll();
+        request.onsuccess = () => {
+          let list = (request.result || []).reverse();
+          if (!includeDeleted) {
+            list = list.filter((r) => r && !r.isDeleted);
+          }
+          resolve(list);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async getAllRecordingsRaw() {
+      return _TTSDB.getAllRecordings(true);
+    }
+    static async getRecording(id, includeDeleted = false) {
+      if (!id) return null;
+      const db = await _TTSDB.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readonly");
+        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
+        const request = store.get(id);
+        request.onsuccess = () => {
+          const item = request.result || null;
+          if (!item) return resolve(null);
+          if (item.isDeleted && !includeDeleted) return resolve(null);
+          resolve(item);
+        };
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async saveRecording(recData) {
+      const db = await _TTSDB.getDB();
+      const now = Date.now();
+      const item = {
+        id: recData.id || "tts_" + now + "_" + Math.random().toString(36).substr(2, 6),
+        title: (recData.title || "").trim() || (recData.script ? recData.script.slice(0, 50).trim() + "..." : "Untitled Audio"),
+        script: recData.script || "",
+        mode: recData.mode || "single",
+        voice: recData.voice || "Kore",
+        voice2: recData.voice2 || "Puck",
+        speaker1: recData.speaker1 || "Joe",
+        speaker2: recData.speaker2 || "Jane",
+        audioProfile: recData.audioProfile || "",
+        style: recData.style || "",
+        pace: recData.pace || "",
+        accent: recData.accent || "",
+        durationSeconds: recData.durationSeconds || 0,
+        audioBlob: recData.audioBlob,
+        alignment: recData.alignment || null,
+        starred: recData.starred ? 1 : 0,
+        isDeleted: !!recData.isDeleted,
+        createdAt: recData.createdAt || now,
+        updatedAt: recData.updatedAt || now
+      };
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
+        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
+        const request = store.put(item);
+        request.onsuccess = () => resolve(item);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async toggleStar(id) {
+      const item = await _TTSDB.getRecording(id);
+      if (!item) return null;
+      item.starred = item.starred ? 0 : 1;
+      item.updatedAt = Date.now();
+      const db = await _TTSDB.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
+        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
+        const request = store.put(item);
+        request.onsuccess = () => resolve(item);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async updateRecordingTitle(id, newTitle) {
+      const item = await _TTSDB.getRecording(id);
+      if (!item) return null;
+      item.title = (newTitle || "").trim() || "Untitled Audio";
+      item.updatedAt = Date.now();
+      const db = await _TTSDB.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
+        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
+        const request = store.put(item);
+        request.onsuccess = () => resolve(item);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async deleteRecording(id) {
+      const db = await _TTSDB.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
+        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
+        const request = store.delete(id);
+        request.onsuccess = () => resolve(true);
+        request.onerror = (e) => reject(e.target.error);
+      });
+    }
+    static async deleteRecordingHard(id) {
+      return _TTSDB.deleteRecording(id);
+    }
+  };
+  var TTSManager2 = class {
+    static MODEL = "gemini-3.1-flash-tts-preview";
+    static API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+    static VOICES = [
+      { name: "Achernar", tone: "Soft", pitch: "Higher pitch", gender: "Female" },
+      { name: "Achird", tone: "Friendly", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Algenib", tone: "Gravelly", pitch: "Lower pitch", gender: "Male" },
+      { name: "Algieba", tone: "Smooth", pitch: "Lower pitch", gender: "Male" },
+      { name: "Alnilam", tone: "Firm", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Aoede", tone: "Breezy", pitch: "Middle pitch", gender: "Female" },
+      { name: "Autonoe", tone: "Bright", pitch: "Middle pitch", gender: "Female" },
+      { name: "Callirrhoe", tone: "Easy-going", pitch: "Middle pitch", gender: "Female" },
+      { name: "Charon", tone: "Informative", pitch: "Lower pitch", gender: "Male" },
+      { name: "Despina", tone: "Smooth", pitch: "Middle pitch", gender: "Female" },
+      { name: "Enceladus", tone: "Breathy", pitch: "Lower pitch", gender: "Male" },
+      { name: "Erinome", tone: "Clear", pitch: "Middle pitch", gender: "Female" },
+      { name: "Fenrir", tone: "Excitable", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Gacrux", tone: "Mature", pitch: "Middle pitch", gender: "Male" },
+      { name: "Iapetus", tone: "Clear", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Kore", tone: "Firm", pitch: "Middle pitch", gender: "Female" },
+      { name: "Laomedeia", tone: "Upbeat", pitch: "Higher pitch", gender: "Female" },
+      { name: "Leda", tone: "Youthful", pitch: "Higher pitch", gender: "Female" },
+      { name: "Orus", tone: "Firm", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Puck", tone: "Upbeat", pitch: "Middle pitch", gender: "Male" },
+      { name: "Pulcherrima", tone: "Forward", pitch: "Middle pitch", gender: "Female" },
+      { name: "Rasalgethi", tone: "Informative", pitch: "Middle pitch", gender: "Male" },
+      { name: "Sadachbia", tone: "Lively", pitch: "Lower pitch", gender: "Female" },
+      { name: "Sadaltager", tone: "Knowledgeable", pitch: "Middle pitch", gender: "Male" },
+      { name: "Schedar", tone: "Even", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Sulafat", tone: "Warm", pitch: "Middle pitch", gender: "Female" },
+      { name: "Umbriel", tone: "Easy-going", pitch: "Lower middle pitch", gender: "Male" },
+      { name: "Vindemiatrix", tone: "Gentle", pitch: "Middle pitch", gender: "Female" },
+      { name: "Zephyr", tone: "Bright", pitch: "Higher pitch", gender: "Female" },
+      { name: "Zubenelgenubi", tone: "Casual", pitch: "Lower middle pitch", gender: "Male" }
+    ];
+    static VOICE_TRAITS = [
+      "All",
+      "Soft",
+      "Friendly",
+      "Gravelly",
+      "Smooth",
+      "Firm",
+      "Breezy",
+      "Bright",
+      "Easy-going",
+      "Informative",
+      "Breathy",
+      "Clear",
+      "Excitable",
+      "Mature",
+      "Upbeat",
+      "Youthful",
+      "Forward",
+      "Lively",
+      "Knowledgeable",
+      "Even",
+      "Warm",
+      "Gentle",
+      "Casual",
+      "Female",
+      "Male",
+      "Higher pitch",
+      "Middle pitch",
+      "Lower middle pitch",
+      "Lower pitch"
+    ];
+    static STYLE_OPTIONS = [
+      { label: "Enthusiastic", value: "Enthusiastic and energetic" },
+      { label: "Casual / Natural", value: "Casual, relaxed, and conversational" },
+      { label: "Professional / Informative", value: "Authoritative, clear, and informative" },
+      { label: "Storyteller / Suspense", value: "Mysterious, cinematic, intimate storyteller" },
+      { label: "Cheerful / Upbeat", value: "Bright, cheerful, and sunny with a vocal smile" },
+      { label: "Calm / Gentle", value: "Soft, gentle, calm, and soothing" },
+      { label: "Tired / Bored", value: "Slow, tired, and unenthusiastic" }
+    ];
+    static PACE_OPTIONS = [
+      { label: "Natural / Steady", value: "Steady, conversational pace" },
+      { label: "Fast & Punchy", value: "Fast-paced, rapid energetic delivery" },
+      { label: "Very Fast", value: "Speak as fast as possible" },
+      { label: "Slow & Dramatic", value: "Slow tempo with dramatic pauses" },
+      { label: "Very Slow", value: "Very slow, measured delivery" }
+    ];
+    static ACCENT_OPTIONS = [
+      { label: "Standard English", value: "Standard English" },
+      { label: "British (London)", value: "British English accent as heard in London" },
+      { label: "British (Received Pronunciation)", value: "Classic British RP accent" },
+      { label: "British (Scottish)", value: "Scottish English accent" },
+      { label: "American (General)", value: "General American accent" },
+      { label: "American (Southern)", value: "Southern American drawl accent" },
+      { label: "American (New York)", value: "New York American accent" },
+      { label: "Vietnamese (Native Natural)", value: "Natural native Vietnamese accent" },
+      { label: "Vietnamese (Southern/Saigon)", value: "Southern Vietnamese Saigon accent" },
+      { label: "Vietnamese (Northern/Hanoi)", value: "Northern Vietnamese Hanoi accent" },
+      { label: "Australian", value: "Australian English accent" },
+      { label: "Canadian", value: "Canadian English accent" },
+      { label: "Irish", value: "Irish English accent" },
+      { label: "Indian English", value: "Indian English accent" },
+      { label: "Japanese Accent English", value: "Japanese accented English" },
+      { label: "French Accent English", value: "French accented English" },
+      { label: "German Accent English", value: "German accented English" },
+      { label: "Spanish Accent English", value: "Spanish accented English" }
+    ];
+    static async getAllApiKeys() {
+      const keysSet = /* @__PURE__ */ new Set();
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        try {
+          const res = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
+          if (res) {
+            if (res.geminiApiKey && typeof res.geminiApiKey === "string") {
+              res.geminiApiKey.split(",").forEach((k) => {
+                const trimmed = k.trim();
+                if (trimmed) keysSet.add(trimmed);
+              });
+            }
+            const providers = res.providers || [];
+            if (Array.isArray(providers)) {
+              providers.forEach((p) => {
+                const isGemini = p.id === "gemini" || p.id === "gemini-default" || p.type === "gemini" || typeof p.endpoint === "string" && p.endpoint.includes("generativelanguage.googleapis.com") || (p.name?.toLowerCase().includes("gemini") || p.id?.toLowerCase().includes("gemini"));
+                if (isGemini && p.apiKey && typeof p.apiKey === "string") {
+                  p.apiKey.split(",").forEach((k) => {
+                    const trimmed = k.trim();
+                    if (trimmed) keysSet.add(trimmed);
+                  });
+                }
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("Error reading from chrome.storage.local:", err);
+        }
+      }
+      if (typeof ProfileManager !== "undefined" && typeof ProfileManager.getApiKey === "function") {
+        try {
+          const key = ProfileManager.getApiKey();
+          if (key && typeof key === "string") {
+            key.split(",").forEach((k) => {
+              const trimmed = k.trim();
+              if (trimmed) keysSet.add(trimmed);
+            });
+          }
+        } catch (_) {
+        }
+      }
+      ["lumina_gemini_api_key", "gemini_api_key", "geminiApiKey"].forEach((storageKey) => {
+        const val = localStorage.getItem(storageKey);
+        if (val && typeof val === "string") {
+          val.split(",").forEach((k) => {
+            const trimmed = k.trim();
+            if (trimmed) keysSet.add(trimmed);
+          });
+        }
+      });
+      if (typeof window !== "undefined" && window.__luminaGeminiApiKey) {
+        window.__luminaGeminiApiKey.split(",").forEach((k) => {
+          const trimmed = k.trim();
+          if (trimmed) keysSet.add(trimmed);
+        });
+      }
+      return Array.from(keysSet);
+    }
+    static getTodayString() {
       const now = /* @__PURE__ */ new Date();
       return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-    }, getKeysArray2 = function(keyStr) {
-      if (!keyStr) return [];
-      return keyStr.split(",").map((k) => k.trim()).filter((k) => k.length > 0);
-    };
-    escapeHtml2 = escapeHtml4, getTodayString = getTodayString2, getKeysArray = getKeysArray2;
-    self.LUMINA_CONSTANTS_INITIALIZED = true;
-    LUMINA_PROVIDERS = {
-      groq: {
-        link: "https://console.groq.com/keys",
-        modelsUrl: "https://api.groq.com/openai/v1/models",
-        defaultModel: "llama3-8b-8192"
-      },
-      gemini: {
-        link: "https://aistudio.google.com/app/apikey",
-        modelsUrl: "https://generativelanguage.googleapis.com/v1beta/models",
-        defaultModel: "gemini-2.0-flash-exp"
-      },
-      openrouter: {
-        link: "https://openrouter.ai/keys",
-        modelsUrl: "https://openrouter.ai/api/v1/models",
-        defaultModel: "openai/gpt-4o-mini"
-      },
-      cerebras: {
-        link: "https://cloud.cerebras.ai/platform",
-        modelsUrl: "https://api.cerebras.ai/v1/models",
-        defaultModel: "llama3.1-8b"
-      },
-      mistral: {
-        link: "https://console.mistral.ai/api-keys",
-        modelsUrl: "https://api.mistral.ai/v1/models",
-        defaultModel: "mistral-small-latest"
-      }
-    };
-    LUMINA_DEFAULT_SHORTCUTS = {
-      "luminaChat": { key: "Space", modifiers: ["Alt"] },
-      "askLumina": { key: "L", modifiers: ["Alt"] },
-      "audio": { key: "Shift", modifiers: [] },
-      "translate": { key: "T", modifiers: ["Alt"] },
-      "micToggle": { key: "M", modifiers: ["Alt"] },
-      "translateInput": { key: "E", modifiers: ["Alt"] },
-      "retry": { key: "R", modifiers: ["Alt"] },
-      "annotationShortcuts": [
-        { key: "h", code: "KeyH", color: "#FFFB78" }
-      ]
-    };
-    if (typeof self !== "undefined") {
-      self.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
-      self.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
-      self.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
-      self.escapeHtml = escapeHtml4;
-      self.getTodayString = getTodayString2;
-      self.getKeysArray = getKeysArray2;
     }
+    static async fetchWithRotation(keys, requestFn) {
+      if (!keys || keys.length === 0) {
+        throw new Error("Gemini API key not found. Please configure your API key in Settings.");
+      }
+      const groupKey = "rot_gemini_tts_" + keys.join(",").substring(0, 32).replace(/[^a-zA-Z0-9]/g, "");
+      const today = this.getTodayString();
+      let activeIndex = 0;
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        try {
+          const rotData = await new Promise((resolve) => chrome.storage.local.get([groupKey], resolve));
+          const state = rotData?.[groupKey];
+          if (state && state.date === today && state.index >= 0 && state.index < keys.length) {
+            activeIndex = state.index;
+          }
+        } catch (_) {
+        }
+      }
+      let lastError = null;
+      for (let attempts = 0; attempts < keys.length; attempts++) {
+        const currentIndex = (activeIndex + attempts) % keys.length;
+        const currentKey = keys[currentIndex];
+        try {
+          const result = await requestFn(currentKey);
+          if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+            try {
+              await chrome.storage.local.set({
+                [groupKey]: { date: today, index: currentIndex }
+              });
+            } catch (_) {
+            }
+          }
+          return result;
+        } catch (err) {
+          lastError = err;
+          console.warn(`[TTS] Key index ${currentIndex} failed: ${err.message}. Rotating to next key...`);
+          if (err.message && (err.message.includes("Please enter text") || err.message.includes("prompt classifier"))) {
+            throw err;
+          }
+        }
+      }
+      throw lastError || new Error("All Gemini API keys failed.");
+    }
+    static buildPrompt({ mode, script, audioProfile, style, pace, accent, speaker1Name = "Speaker 1", speaker2Name = "Speaker 2" }) {
+      let prompt2 = "";
+      if (audioProfile && audioProfile.trim()) {
+        prompt2 += `# AUDIO PROFILE
+${audioProfile.trim()}
+
+`;
+      }
+      const hasNotes = Boolean(style && style.trim() || pace && pace.trim() || accent && accent.trim());
+      if (hasNotes) {
+        prompt2 += `### DIRECTOR'S NOTES
+`;
+        if (style && style.trim()) prompt2 += `Style: ${style.trim()}
+`;
+        if (pace && pace.trim()) prompt2 += `Pacing: ${pace.trim()}
+`;
+        if (accent && accent.trim()) prompt2 += `Accent: ${accent.trim()}
+`;
+        prompt2 += `
+`;
+      }
+      if (mode === "multi") {
+        if (!prompt2) {
+          return `TTS the following conversation between ${speaker1Name} and ${speaker2Name}:
+${script}`;
+        }
+        prompt2 += `#### TRANSCRIPT
+TTS the following conversation between ${speaker1Name} and ${speaker2Name}:
+${script}`;
+      } else {
+        if (!prompt2) {
+          return script;
+        }
+        prompt2 += `#### TRANSCRIPT
+${script}`;
+      }
+      return prompt2;
+    }
+    static async generateSpeech({
+      mode = "single",
+      script = "",
+      voice = "Kore",
+      voice2 = "Puck",
+      speaker1 = "Speaker 1",
+      speaker2 = "Speaker 2",
+      audioProfile = "",
+      style = "",
+      pace = "",
+      accent = "",
+      apiKey = ""
+    }) {
+      if (!script || !script.trim()) {
+        throw new Error("Please enter text or transcript to generate speech.");
+      }
+      let keys = [];
+      if (apiKey && apiKey.trim()) {
+        keys = apiKey.split(",").map((k) => k.trim()).filter(Boolean);
+      } else {
+        keys = await this.getAllApiKeys();
+      }
+      if (keys.length === 0) {
+        throw new Error("Gemini API key not found. Please configure your API key in Settings.");
+      }
+      const promptText = this.buildPrompt({
+        mode,
+        script,
+        audioProfile,
+        style,
+        pace,
+        accent,
+        speaker1Name: speaker1,
+        speaker2Name: speaker2
+      });
+      let speechConfig = {};
+      if (mode === "multi") {
+        speechConfig = {
+          multiSpeakerVoiceConfig: {
+            speakerVoiceConfigs: [
+              {
+                speaker: speaker1.trim() || "Speaker 1",
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: voice }
+                }
+              },
+              {
+                speaker: speaker2.trim() || "Speaker 2",
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: voice2 }
+                }
+              }
+            ]
+          }
+        };
+      } else {
+        speechConfig = {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: voice }
+          }
+        };
+      }
+      const selectedModel = await this.getSelectedTtsModel();
+      const modelName = selectedModel || this.MODEL;
+      const payload = {
+        contents: [
+          {
+            parts: [
+              { text: promptText }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig
+        },
+        model: modelName
+      };
+      return await this.fetchWithRotation(keys, async (currentKey) => {
+        const url = `${this.API_ENDPOINT}/${modelName}:generateContent?key=${encodeURIComponent(currentKey)}`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          let errorMsg = `Server returned error (${response.status})`;
+          try {
+            const errData = await response.json();
+            if (errData?.error?.message) {
+              errorMsg = errData.error.message;
+            }
+          } catch (_) {
+          }
+          throw new Error(errorMsg);
+        }
+        const resData = await response.json();
+        const candidate = resData.candidates?.[0];
+        if (!candidate) {
+          throw new Error("No candidate returned from Gemini TTS.");
+        }
+        const part = candidate.content?.parts?.[0];
+        const base64Audio = part?.inlineData?.data;
+        if (!base64Audio) {
+          if (part?.text) {
+            throw new Error(`The model returned text instead of audio: "${part.text.substring(0, 100)}...". Please try again.`);
+          }
+          throw new Error("No audio data received in response.");
+        }
+        const pcmBytes = this.base64ToUint8Array(base64Audio);
+        const durationSeconds = pcmBytes.length / (24e3 * 2);
+        const wavBlob = this.pcmToWav(pcmBytes, 1, 24e3, 16);
+        const audioUrl = URL.createObjectURL(wavBlob);
+        return {
+          blob: wavBlob,
+          wavBlob,
+          audioUrl,
+          sampleRate: 24e3,
+          durationSeconds
+        };
+      });
+    }
+    static base64ToUint8Array(base64) {
+      const binaryString = window.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    }
+    static async pcmToWebmBlob(pcmBytes, sampleRate = 24e3) {
+      const numSamples = pcmBytes.length / 2;
+      const int16 = new Int16Array(pcmBytes.buffer, pcmBytes.byteOffset, numSamples);
+      const float32 = new Float32Array(numSamples);
+      for (let i = 0; i < numSamples; i++) {
+        float32[i] = int16[i] / 32768;
+      }
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
+      const audioBuffer = audioCtx.createBuffer(1, numSamples, sampleRate);
+      audioBuffer.copyToChannel(float32, 0);
+      const dest = audioCtx.createMediaStreamDestination();
+      const source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(dest);
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      return new Promise((resolve, reject) => {
+        try {
+          const recorder = mimeType ? new MediaRecorder(dest.stream, { mimeType }) : new MediaRecorder(dest.stream);
+          const chunks = [];
+          recorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) chunks.push(e.data);
+          };
+          recorder.onstop = () => {
+            const finalBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+            audioCtx.close().catch(() => {
+            });
+            resolve(finalBlob);
+          };
+          recorder.onerror = (e) => {
+            audioCtx.close().catch(() => {
+            });
+            reject(e.error || new Error("MediaRecorder error"));
+          };
+          recorder.start(10);
+          source.start(0);
+          const durationMs = numSamples / sampleRate * 1e3;
+          setTimeout(() => {
+            if (recorder.state !== "inactive") {
+              recorder.stop();
+            }
+          }, durationMs + 80);
+        } catch (err) {
+          audioCtx.close().catch(() => {
+          });
+          reject(err);
+        }
+      });
+    }
+    static pcmToWav(pcmData, numChannels = 1, sampleRate = 24e3, bitsPerSample = 16) {
+      const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+      const blockAlign = numChannels * bitsPerSample / 8;
+      const dataLength = pcmData.length;
+      const bufferLength = 44 + dataLength;
+      const buffer = new ArrayBuffer(bufferLength);
+      const view = new DataView(buffer);
+      const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      };
+      writeString(0, "RIFF");
+      view.setUint32(4, 36 + dataLength, true);
+      writeString(8, "WAVE");
+      writeString(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitsPerSample, true);
+      writeString(36, "data");
+      view.setUint32(40, dataLength, true);
+      const uint8View = new Uint8Array(buffer, 44);
+      uint8View.set(pcmData);
+      return new Blob([buffer], { type: "audio/wav" });
+    }
+    static _sampleCache = /* @__PURE__ */ new Map();
+    static async previewVoiceSample(voiceName) {
+      if (!this._sampleCache) {
+        this._sampleCache = /* @__PURE__ */ new Map();
+      }
+      if (this._sampleCache.has(voiceName)) {
+        return this._sampleCache.get(voiceName);
+      }
+      try {
+        const assetUrl = typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL ? chrome.runtime.getURL(`assets/audio/samples/${voiceName}.wav`) : `../../assets/audio/samples/${voiceName}.wav`;
+        const checkRes = await fetch(assetUrl, { method: "HEAD" });
+        if (checkRes.ok) {
+          const resObj = { audioUrl: assetUrl };
+          this._sampleCache.set(voiceName, resObj);
+          return resObj;
+        }
+      } catch (_) {
+      }
+      const sampleText = `Hello, I'm ${voiceName}. How can I help you today?`;
+      const result = await this.generateSpeech({
+        script: sampleText,
+        voice: voiceName,
+        mode: "single"
+      });
+      this._sampleCache.set(voiceName, result);
+      return result;
+    }
+    static async getSelectedTtsModel() {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        try {
+          const res = await new Promise((resolve) => chrome.storage.local.get(["ttsModel"], resolve));
+          if (res && res.ttsModel) return res.ttsModel;
+        } catch (_) {
+        }
+      }
+      return "gemini-2.5-flash";
+    }
+    static downloadWav(blob, filename = "speech.wav") {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+    static downloadMp3(blob, filename = "speech.mp3") {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+  };
+  var GroqAligner2 = class {
+    static async getGroqApiKey() {
+      const keysSet = /* @__PURE__ */ new Set();
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        try {
+          const res = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
+          if (res) {
+            if (res.groqApiKey && typeof res.groqApiKey === "string") {
+              res.groqApiKey.split(",").forEach((k) => {
+                const trimmed = k.trim();
+                if (trimmed) keysSet.add(trimmed);
+              });
+            }
+            const providers = res.providers || [];
+            if (Array.isArray(providers)) {
+              providers.forEach((p) => {
+                const isGroq = p.id === "groq" || p.id === "groq-default" || typeof p.endpoint === "string" && p.endpoint.includes("groq.com") || (p.name?.toLowerCase().includes("groq") || p.id?.toLowerCase().includes("groq"));
+                if (isGroq && p.apiKey && typeof p.apiKey === "string") {
+                  p.apiKey.split(",").forEach((k) => {
+                    const trimmed = k.trim();
+                    if (trimmed) keysSet.add(trimmed);
+                  });
+                }
+              });
+            }
+          }
+        } catch (_) {
+        }
+      }
+      ["lumina_groq_api_key", "groq_api_key", "groqApiKey"].forEach((storageKey) => {
+        const val = localStorage.getItem(storageKey);
+        if (val && typeof val === "string") {
+          val.split(",").forEach((k) => {
+            const trimmed = k.trim();
+            if (trimmed) keysSet.add(trimmed);
+          });
+        }
+      });
+      const keys = Array.from(keysSet);
+      return keys.length > 0 ? keys[0] : "";
+    }
+    static async getSelectedSttModel() {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        try {
+          const res = await new Promise((resolve) => chrome.storage.local.get(["sttModel"], resolve));
+          if (res && res.sttModel) return res.sttModel;
+        } catch (_) {
+        }
+      }
+      return "whisper-large-v3-turbo";
+    }
+    static async align(blob, originalScript = "") {
+      try {
+        const apiKey = await this.getGroqApiKey();
+        if (!apiKey) {
+          console.warn("[GroqAligner] No Groq API key found in settings. Skipping automatic transcription alignment.");
+          return null;
+        }
+        const model = await this.getSelectedSttModel();
+        const formData = new FormData();
+        const audioFile = new File([blob], "audio.mp3", { type: blob.type || "audio/mp3" });
+        formData.append("file", audioFile);
+        formData.append("model", model);
+        formData.append("response_format", "verbose_json");
+        formData.append("timestamp_granularities[]", "segment");
+        formData.append("timestamp_granularities[]", "word");
+        formData.append("language", "en");
+        const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: formData
+        });
+        if (!response.ok) {
+          const errText = await response.text();
+          console.warn(`[GroqAligner] Groq STT failed (${response.status}):`, errText);
+          return null;
+        }
+        const data = await response.json();
+        const rawSegments = data.segments || [];
+        const rawWords = data.words || [];
+        const segments = rawSegments.map((s, idx) => ({
+          id: idx,
+          text: (s.text || "").trim(),
+          start: typeof s.start === "number" ? s.start : 0,
+          end: typeof s.end === "number" ? s.end : 0
+        })).filter((s) => s.text.length > 0);
+        const words = rawWords.map((w) => ({
+          word: (w.word || "").trim(),
+          start: typeof w.start === "number" ? w.start : 0,
+          end: typeof w.end === "number" ? w.end : 0
+        })).filter((w) => w.word.length > 0);
+        return {
+          text: data.text || "",
+          segments,
+          words
+        };
+      } catch (err) {
+        console.warn("[GroqAligner] Error during Groq transcription:", err);
+        return null;
+      }
+    }
+  };
+  if (typeof globalThis !== "undefined") {
+    globalThis.TTSDB = TTSDB2;
+    globalThis.TTSManager = TTSManager2;
+    globalThis.GroqAligner = GroqAligner2;
   }
-  var LUMINA_PROVIDERS;
-  var LUMINA_DEFAULT_SHORTCUTS;
-  var escapeHtml2;
-  var getTodayString;
-  var getKeysArray;
+
+  // src/core/auth/auth.js
+  async function compressData(string) {
+    const byteArray = new TextEncoder().encode(string);
+    const stream = new CompressionStream("gzip");
+    const writer = stream.writable.getWriter();
+    writer.write(byteArray);
+    writer.close();
+    const response = new Response(stream.readable);
+    return await response.arrayBuffer();
+  }
+  async function decompressData(arrayBuffer) {
+    const stream = new DecompressionStream("gzip");
+    const writer = stream.writable.getWriter();
+    writer.write(new Uint8Array(arrayBuffer));
+    writer.close();
+    const response = new Response(stream.readable);
+    const buffer = await response.arrayBuffer();
+    return new TextDecoder().decode(buffer);
+  }
+  var isExcludedKey = (k) => [
+    "google_oauth_token",
+    "google_oauth_token_time",
+    "google_user_info",
+    "last_sync_time",
+    "last_sync_hash",
+    "last_sync_md5",
+    "last_sync_size",
+    "last_cloud_stats",
+    "drive_uploaded_blobs",
+    "drive_backup_file_id",
+    "settings_last_updated",
+    "optionsLastSection",
+    "optionsLastScroll",
+    "optionsScrollPositions",
+    "sidepanel_active_tab_index",
+    "sidepanel_active_group_index",
+    "sidepanel_secondary_tab_index",
+    "sidepanel_is_split_mode",
+    "sidepanel_split_ratio",
+    "lumina_active_tab_index",
+    "lumina_active_group_index",
+    "lumina_secondary_tab_index",
+    "lumina_is_split_mode",
+    "lumina_split_ratio",
+    "luminaWindowId",
+    "pendingMicToggle",
+    "luminaTemplatesV3",
+    "luminaBatchHistoryV3",
+    "lastUsedGenAIModel",
+    "lastUsedBatchSize",
+    "lastUsedDeck",
+    "lastUsedTemplateId",
+    "ankiQuickNoteContent",
+    "attachments"
+  ].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("lumina_img_cache_") || k.startsWith("lumina_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
+  var WEB_OAUTH_CONFIG = {
+    clientId: "824888142961-mlpoj5jeqbo1lv2d61mho7cnnde9aicv.apps.googleusercontent.com",
+    scopes: [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/drive.appdata"
+    ]
+  };
+  function launchGoogleWebAuthFlow(interactive) {
+    return new Promise((resolve, reject) => {
+      const redirectUri = chrome.identity.getRedirectURL();
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(WEB_OAUTH_CONFIG.clientId)}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(WEB_OAUTH_CONFIG.scopes.join(" "))}`;
+      chrome.identity.launchWebAuthFlow({
+        url: authUrl,
+        interactive
+      }, (redirectUrl) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else if (redirectUrl) {
+          try {
+            const url = new URL(redirectUrl);
+            const hashParams = new URLSearchParams(url.hash.substring(1));
+            const token = hashParams.get("access_token");
+            if (token) {
+              chrome.storage.local.set({
+                google_oauth_token: token,
+                google_oauth_token_time: Date.now()
+              });
+              resolve(token);
+            } else {
+              reject(new Error("No access token found in redirect URL"));
+            }
+          } catch (err) {
+            reject(err);
+          }
+        } else {
+          reject(new Error("Authentication flow cancelled or failed"));
+        }
+      });
+    });
+  }
+  var AuthService = class {
+    constructor() {
+      this.user = null;
+      this.listeners = [];
+      this.isAuthenticated = false;
+      this.isInitialized = false;
+      this.init();
+      const isBackground = typeof window === "undefined";
+      if (isBackground && typeof chrome !== "undefined" && chrome.alarms) {
+        chrome.alarms.get("tokenRefresh", (alarm) => {
+          if (!alarm) {
+            chrome.alarms.create("tokenRefresh", { periodInMinutes: 45 });
+          }
+        });
+        chrome.alarms.onAlarm.addListener((alarm) => {
+          if (alarm.name === "tokenRefresh") {
+            this._refreshTokenIfNeeded();
+          }
+        });
+      }
+    }
+    async init() {
+      try {
+        const data = await chrome.storage.local.get(["google_user_info"]);
+        if (data.google_user_info) {
+          this.user = data.google_user_info;
+          this.isAuthenticated = true;
+        }
+      } catch (e) {
+        console.warn("[Auth] Init failed:", e);
+      }
+      this.isInitialized = true;
+      this.notifyListeners(this.isAuthenticated, this.user);
+      if (this.isAuthenticated && typeof window !== "undefined") {
+        setTimeout(() => {
+          if (typeof LuminaSync2 !== "undefined") {
+            LuminaSync2.checkAutoSync(true);
+          }
+        }, 100);
+      }
+    }
+    async _refreshTokenIfNeeded() {
+      if (!this.isAuthenticated) return;
+      try {
+        const token = await this.getAuthToken(false, true);
+        if (token) {
+          console.log("[Auth] Token refreshed successfully");
+        }
+      } catch (e) {
+        console.log("[Auth] Token refresh failed:", e.message);
+      }
+    }
+    async checkAuthStatus() {
+      try {
+        const token = await this.getAuthToken(false);
+        if (token) {
+          await this.fetchUserInfo(token);
+        }
+      } catch (e) {
+        console.log("[Auth] Check status failed:", e.message);
+      }
+    }
+    async getAuthToken(interactive = false, forceRefresh = false) {
+      const isChrome = typeof chrome !== "undefined" && /Chrome/i.test(navigator.userAgent) && !/Edg/i.test(navigator.userAgent) && !/OPR/i.test(navigator.userAgent) && !(navigator.brave && typeof navigator.brave.isBrave === "function");
+      if (!isChrome) {
+        if (forceRefresh) {
+          this._cachedToken = null;
+          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
+        } else if (this._cachedToken) {
+          return this._cachedToken;
+        } else {
+          try {
+            const storageData = await chrome.storage.local.get(["google_oauth_token", "google_oauth_token_time"]);
+            if (storageData && storageData.google_oauth_token && storageData.google_oauth_token_time) {
+              const ageMs = Date.now() - storageData.google_oauth_token_time;
+              if (ageMs < 3e6) {
+                this._cachedToken = storageData.google_oauth_token;
+                return this._cachedToken;
+              }
+            }
+          } catch (e) {
+          }
+        }
+        const token = await launchGoogleWebAuthFlow(interactive);
+        this._cachedToken = token;
+        return token;
+      }
+      return new Promise((resolve, reject) => {
+        if (typeof chrome === "undefined" || !chrome.identity || !chrome.identity.getAuthToken) {
+          reject(new Error("Chrome Identity API is not available"));
+          return;
+        }
+        const attemptNativeAuth = () => {
+          chrome.identity.getAuthToken({ interactive }, (token) => {
+            if (chrome.runtime.lastError) {
+              const errMsg = chrome.runtime.lastError.message;
+              if (errMsg.includes("not supported") || errMsg.includes("not available")) {
+                launchGoogleWebAuthFlow(interactive).then((t) => {
+                  this._cachedToken = t;
+                  resolve(t);
+                }).catch(reject);
+              } else {
+                reject(new Error(errMsg));
+              }
+            } else if (token) {
+              resolve(token);
+            } else {
+              reject(new Error("Failed to retrieve authentication token"));
+            }
+          });
+        };
+        if (forceRefresh) {
+          chrome.identity.getAuthToken({ interactive: false }, (token) => {
+            if (token) {
+              chrome.identity.removeCachedAuthToken({ token }, () => {
+                attemptNativeAuth();
+              });
+            } else {
+              attemptNativeAuth();
+            }
+          });
+        } else {
+          attemptNativeAuth();
+        }
+      });
+    }
+    async login() {
+      try {
+        const token = await this.getAuthToken(true);
+        await this.fetchUserInfo(token);
+        if (typeof LuminaSync2 !== "undefined") {
+          await LuminaSync2.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
+        }
+        return this.user;
+      } catch (error) {
+        console.error("Login failed:", error);
+        throw error;
+      }
+    }
+    async logout() {
+      try {
+        const token = this._cachedToken || (await chrome.storage.local.get(["google_oauth_token"])).google_oauth_token || await this.getAuthToken(false).catch(() => null);
+        this._cachedToken = null;
+        if (token) {
+          const url = "https://accounts.google.com/o/oauth2/revoke?token=" + token;
+          await fetch(url);
+          try {
+            chrome.identity.removeCachedAuthToken({ token }, () => {
+            });
+          } catch (e) {
+          }
+        }
+      } catch (e) {
+      }
+      await chrome.storage.local.remove([
+        "google_oauth_token",
+        "google_oauth_token_time",
+        "google_user_info"
+      ]);
+      chrome.alarms.clear("tokenRefresh");
+      chrome.alarms.clear("luminaAutoSync");
+      this.user = null;
+      this.isAuthenticated = false;
+      this.notifyListeners();
+    }
+    async fetchUserInfo(token, isRetry = false) {
+      try {
+        const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          if (response.status === 401) {
+            await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
+            if (!isRetry) {
+              const newToken = await this.getAuthToken(false, true);
+              if (newToken && newToken !== token) {
+                return await this.fetchUserInfo(newToken, true);
+              }
+            }
+          }
+          throw new Error("Failed to fetch user info: " + response.status);
+        }
+        const data = await response.json();
+        this.user = {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          picture: data.picture
+        };
+        const wasAuth = this.isAuthenticated;
+        this.isAuthenticated = true;
+        chrome.storage.local.set({ google_user_info: this.user });
+        if (!wasAuth) {
+          this.notifyListeners();
+        }
+      } catch (e) {
+        console.error("Fetch user info error:", e);
+        throw e;
+      }
+    }
+    addListener(callback) {
+      this.listeners.push(callback);
+    }
+    removeListener(callback) {
+      this.listeners = this.listeners.filter((l) => l !== callback);
+    }
+    notifyListeners() {
+      this.listeners.forEach((cb) => cb(this.isAuthenticated, this.user));
+    }
+  };
+  var SyncManager = class {
+    _isPageContext() {
+      return typeof window !== "undefined";
+    }
+    _delegateSyncToBackground(action = "lumina_drive_sync", params = {}) {
+      this.notifyListeners("Syncing...", null);
+      const wrapper = typeof document !== "undefined" ? document.getElementById("user-avatar-wrapper") : null;
+      if (wrapper) wrapper.classList.add("is-syncing");
+      return new Promise((resolve) => {
+        try {
+          chrome.runtime.sendMessage({ action, ...params }, (res) => {
+            if (chrome.runtime.lastError) {
+              console.warn("[Sync] SW delegate failed:", chrome.runtime.lastError.message);
+              if (wrapper) wrapper.classList.remove("is-syncing");
+              this.notifyListeners("Sync failure", null);
+            } else {
+              setTimeout(() => {
+                if (wrapper) wrapper.classList.remove("is-syncing");
+                this.notifyListeners("Synced just now", Date.now());
+              }, 500);
+            }
+            resolve(res);
+          });
+        } catch (e) {
+          console.warn("[Sync] SW delegate error:", e);
+          if (wrapper) wrapper.classList.remove("is-syncing");
+          this.notifyListeners("Sync failure", null);
+          resolve(null);
+        }
+      });
+    }
+    constructor(authService) {
+      this.authService = authService || new AuthService();
+      this.FILENAME = "lumina_backup.json";
+      this.listeners = [];
+      this.isSyncing = false;
+      const isBackground = typeof window === "undefined";
+      if (isBackground && typeof chrome !== "undefined") {
+        if (chrome.runtime && chrome.runtime.onStartup) {
+          chrome.runtime.onStartup.addListener(() => {
+            this.checkAutoSync(true);
+          });
+        }
+      } else if (typeof window !== "undefined") {
+        setTimeout(() => {
+          this.checkAutoSync(true);
+        }, 200);
+      }
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, area) => {
+          if (area !== "local") return;
+          if (this.isSyncing) return;
+          const keys = Object.keys(changes);
+          const excludedKeys = [
+            "google_oauth_token",
+            "google_oauth_token_time",
+            "google_user_info",
+            "lumina_cached_user",
+            "last_sync_time",
+            "last_sync_hash",
+            "last_sync_md5",
+            "last_sync_size",
+            "last_cloud_stats",
+            "drive_uploaded_blobs",
+            "drive_backup_file_id",
+            "settings_last_updated",
+            "optionsLastSection",
+            "optionsLastScroll",
+            "optionsScrollPositions",
+            "sidepanel_active_tab_index",
+            "sidepanel_active_group_index",
+            "lumina_active_tab_index",
+            "lumina_active_group_index"
+          ];
+          const hasSettingsKeys = keys.some(
+            (k) => !k.startsWith("lumina_session_") && !k.startsWith("google_") && !excludedKeys.includes(k)
+          );
+          if (hasSettingsKeys) {
+            chrome.storage.local.set({ settings_last_updated: Date.now() });
+          }
+        });
+      }
+    }
+    triggerDebouncedSync(delayMs = 1e3) {
+      if (!this.authService.isAuthenticated) return;
+      if (this._isPageContext()) {
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_drive_sync_debounced", delayMs }).catch(() => {
+          });
+        } catch (e) {
+        }
+        return;
+      }
+      if (this._debounceTimer) clearTimeout(this._debounceTimer);
+      this._debounceTimer = setTimeout(() => {
+        this._debounceTimer = null;
+        this.pushToCloud().catch((err) => console.error("[Sync] Debounced push failed:", err));
+      }, delayMs);
+    }
+    addListener(callback) {
+      this.listeners.push(callback);
+    }
+    notifyListeners(status, lastSync) {
+      this.listeners.forEach((cb) => cb(status, lastSync));
+    }
+    async checkAutoSync(forceCheck = false) {
+      if (!this.authService.isAuthenticated) return;
+      if (this._isPageContext()) {
+        await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true });
+        return;
+      }
+      try {
+        await this.pullFromCloud(forceCheck);
+      } catch (e) {
+        console.error("[Sync] Auto-sync pull failed:", e);
+      }
+    }
+    async getLastSyncTime() {
+      const result = await chrome.storage.local.get(["last_sync_time"]);
+      return result.last_sync_time ? new Date(result.last_sync_time).toLocaleString() : "Never";
+    }
+    async getToken(interactive = false) {
+      return await this.authService.getAuthToken(interactive);
+    }
+    async syncUp(isAuto = false) {
+      if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
+      return await this.pushToCloud();
+    }
+    async syncDown() {
+      if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: true });
+      return await this.pullFromCloud(true);
+    }
+    async downloadBackup(token, fileId) {
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) throw new Error("Download failed");
+      const buffer = await response.arrayBuffer();
+      const arr = new Uint8Array(buffer);
+      if (arr.length >= 2 && arr[0] === 31 && arr[1] === 139) {
+        const jsonStr2 = await decompressData(buffer);
+        return JSON.parse(jsonStr2);
+      }
+      const jsonStr = new TextDecoder().decode(buffer);
+      return JSON.parse(jsonStr);
+    }
+    async listAppDataFiles(token) {
+      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'appDataFolder' in parents and trashed = false")}&spaces=appDataFolder&orderBy=${encodeURIComponent("modifiedTime desc")}&fields=files(id, name, md5Checksum, modifiedTime, size)&pageSize=1000`;
+      const response = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) throw new Error("Failed to list appData files");
+      const data = await response.json();
+      return data.files || [];
+    }
+    async uploadBlobFile(token, filename, blob, existingFileId = null) {
+      const mimeType = blob && blob.type ? blob.type : "application/octet-stream";
+      const metadata = {
+        name: filename,
+        ...existingFileId ? {} : { parents: ["appDataFolder"] }
+      };
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", blob, filename);
+      const url = existingFileId ? `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart&fields=id,name,md5Checksum,size` : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum,size`;
+      const response = await fetch(url, {
+        method: existingFileId ? "PATCH" : "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: form
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) throw new Error(`Failed to upload blob ${filename}`);
+      return await response.json();
+    }
+    async downloadBlobFile(token, fileId) {
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) throw new Error(`Failed to download blob ${fileId}`);
+      return await response.blob();
+    }
+    async deleteDriveFile(token, fileId) {
+      try {
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        return response.ok;
+      } catch (e) {
+        console.warn(`[Sync] Failed to delete drive file ${fileId}:`, e);
+        return false;
+      }
+    }
+    async createBackupFile(token, content) {
+      const metadata = {
+        name: this.FILENAME,
+        parents: ["appDataFolder"]
+      };
+      const compressed = await compressData(content);
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", new Blob([compressed], { type: "application/octet-stream" }));
+      const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum,size", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: form
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) throw new Error("Failed to create file");
+      return await response.json();
+    }
+    async updateBackupFile(token, fileId, content) {
+      const metadata = {
+        name: this.FILENAME
+      };
+      const compressed = await compressData(content);
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", new Blob([compressed], { type: "application/octet-stream" }));
+      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id,name,md5Checksum,size`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: form
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) throw new Error("Failed to update file");
+      return await response.json();
+    }
+    async getFileMetadata(token, fileId) {
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,md5Checksum,modifiedTime,size`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
+      if (!response.ok) return null;
+      return await response.json();
+    }
+    async getOrFindBackupFile(token, forceRefresh = false) {
+      let activeToken = token;
+      let driveFiles = [];
+      try {
+        driveFiles = await this.listAppDataFiles(activeToken);
+      } catch (err) {
+        if (err.message === "UNAUTHORIZED") {
+          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
+          activeToken = await this.authService.getAuthToken(false, true);
+          driveFiles = await this.listAppDataFiles(activeToken);
+        } else {
+          throw err;
+        }
+      }
+      const backupFiles = (driveFiles || []).filter((f) => f.name === this.FILENAME);
+      if (backupFiles.length === 0) {
+        this.cachedBackupFileId = null;
+        await chrome.storage.local.remove(["drive_backup_file_id"]).catch(() => {
+        });
+        return { token: activeToken, remoteFile: null, fileId: null, driveFiles };
+      }
+      const primaryFile = backupFiles[0];
+      const fileId = primaryFile.id;
+      this.cachedBackupFileId = fileId;
+      chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {
+      });
+      if (backupFiles.length > 1) {
+        const duplicates = backupFiles.slice(1);
+        for (const dup of duplicates) {
+          this.deleteDriveFile(activeToken, dup.id).catch(() => {
+          });
+        }
+      }
+      return { token: activeToken, remoteFile: primaryFile, fileId, driveFiles };
+    }
+    async fetchRemoteBackup(token, isAuto = false) {
+      let activeToken = token;
+      let driveFiles = [];
+      try {
+        driveFiles = await this.listAppDataFiles(activeToken);
+      } catch (err) {
+        if (err.message === "UNAUTHORIZED") {
+          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
+          activeToken = await this.authService.getAuthToken(!isAuto, true);
+          driveFiles = await this.listAppDataFiles(activeToken);
+        } else {
+          throw err;
+        }
+      }
+      const remoteFile = driveFiles.find((f) => f.name === this.FILENAME) || null;
+      if (!remoteFile) {
+        return { token: activeToken, remoteFile: null, remoteBackup: null, fileId: null, driveFiles };
+      }
+      const fileId = remoteFile.id;
+      this.cachedBackupFileId = fileId;
+      chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {
+      });
+      const remoteBackup = await this.downloadBackup(activeToken, fileId);
+      return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5: remoteFile.md5Checksum, driveFiles };
+    }
+    async gatherLocalData() {
+      const localData = await chrome.storage.local.get(null);
+      if (typeof NotesManager !== "undefined") {
+        try {
+          localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === "function" ? await NotesManager.getAllCollectionsRaw() : await NotesManager.getCollections(true);
+          localData.lumina_notes_items = typeof NotesManager.getAllNotesRaw === "function" ? await NotesManager.getAllNotesRaw() : await NotesManager.getNotes(null, true);
+        } catch (err) {
+          console.error("[Sync] Failed to gather notes for sync:", err);
+        }
+      }
+      if (typeof TTSDB !== "undefined") {
+        try {
+          const recordings = typeof TTSDB.getAllRecordingsRaw === "function" ? await TTSDB.getAllRecordingsRaw() : await TTSDB.getAllRecordings(true);
+          localData.lumina_tts_recordings = recordings.map((rec) => {
+            const { audioBlob, ...meta } = rec;
+            return meta;
+          });
+        } catch (err) {
+          console.error("[Sync] Failed to gather TTS recordings for sync:", err);
+        }
+      }
+      if (typeof LuminaAnnotationDB !== "undefined") {
+        try {
+          const highlights = await LuminaAnnotationDB.getAll();
+          Object.assign(localData, highlights);
+        } catch (err) {
+          console.error("[Sync] Failed to load highlights from IndexedDB:", err);
+        }
+      }
+      if (typeof LuminaChatDB !== "undefined") {
+        try {
+          const sessions = typeof LuminaChatDB.getAllSessionsRaw === "function" ? await LuminaChatDB.getAllSessionsRaw() : await LuminaChatDB.getAllSessions(true);
+          const sessionsObj = {};
+          for (const s of Object.values(sessions)) {
+            if (s && s.id) {
+              sessionsObj[s.id] = s;
+              if (!s.isDeleted) {
+                localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
+              }
+            }
+          }
+          localData.lumina_chat_sessions = sessionsObj;
+        } catch (err) {
+          console.error("[Sync] Failed to load chats from IndexedDB:", err);
+        }
+      }
+      return localData;
+    }
+    async pullFromCloud(force = false) {
+      if (this._isPageContext()) {
+        return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: force });
+      }
+      if (this.isSyncing) return;
+      this.isSyncing = true;
+      this.notifyListeners("Syncing...", null);
+      try {
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+          });
+        } catch (e) {
+        }
+        const initialToken = await this.getToken(!force);
+        if (!initialToken) throw new Error("Not authenticated");
+        const localSync = await chrome.storage.local.get(["last_sync_md5"]);
+        const { token, remoteFile, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, force);
+        if (!remoteFile || !fileId) {
+          this.notifyListeners("No cloud data", null);
+          try {
+            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+            });
+          } catch (e) {
+          }
+          return null;
+        }
+        if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
+          const now2 = Date.now();
+          this.notifyListeners("Synced just now", now2);
+          try {
+            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now2 }).catch(() => {
+            });
+          } catch (e) {
+          }
+          return now2;
+        }
+        const remoteBackup = await this.downloadBackup(token, fileId);
+        if (!remoteBackup || !remoteBackup.data) {
+          this.notifyListeners("No cloud data", null);
+          try {
+            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+            });
+          } catch (e) {
+          }
+          return null;
+        }
+        const remoteData = remoteBackup.data;
+        delete remoteData.attachments;
+        const currentLocal = await chrome.storage.local.get(null);
+        const keysToRemove = [];
+        for (const key of Object.keys(currentLocal)) {
+          if (isExcludedKey(key)) continue;
+          if (key.startsWith("lumina_session_") || key === "lumina_chat_sessions") continue;
+          if (key.startsWith("highlights_")) continue;
+          if (!(key in remoteData)) {
+            keysToRemove.push(key);
+          }
+        }
+        if (keysToRemove.length > 0) {
+          await chrome.storage.local.remove(keysToRemove);
+        }
+        const storageToSet = {};
+        for (const [k, v] of Object.entries(remoteData)) {
+          if (isExcludedKey(k)) continue;
+          if (k.startsWith("lumina_session_") || k === "lumina_chat_sessions") continue;
+          if (k.startsWith("highlights_")) continue;
+          storageToSet[k] = v;
+        }
+        if (Object.keys(storageToSet).length > 0) {
+          await chrome.storage.local.set(storageToSet);
+        }
+        if (typeof LuminaAnnotationDB !== "undefined") {
+          const currentHighlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+          for (const key of Object.keys(currentHighlights)) {
+            if (!(key in remoteData)) {
+              await LuminaAnnotationDB.delete(key).catch(() => {
+              });
+            }
+          }
+          for (const [k, v] of Object.entries(remoteData)) {
+            if (k.startsWith("highlights_")) {
+              await LuminaAnnotationDB.put(k, v).catch(() => {
+              });
+            }
+          }
+        }
+        const remoteSessions = remoteData.lumina_chat_sessions || {};
+        const activeAttachmentIds = /* @__PURE__ */ new Set();
+        if (typeof LuminaChatDB !== "undefined") {
+          try {
+            const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+            for (const s of Object.values(currentSessions)) {
+              if (s && s.id && !remoteSessions[s.id]) {
+                await LuminaChatDB.deleteSession(s.id).catch(() => {
+                });
+              }
+            }
+            for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
+              await LuminaChatDB.putSession(sessionMeta).catch(() => {
+              });
+              if (sessionMeta && sessionMeta.isDeleted) {
+                await LuminaChatDB.deleteSession(sid).catch(() => {
+                });
+              } else {
+                const sessionKey = `lumina_session_${sid}`;
+                const messages = remoteData[sessionKey];
+                if (Array.isArray(messages)) {
+                  await LuminaChatDB.putMessages(sid, messages).catch(() => {
+                  });
+                  for (const msg of messages) {
+                    if (msg && Array.isArray(msg.images)) {
+                      for (const img of msg.images) {
+                        if (img && typeof img === "object" && img.attachmentId) {
+                          activeAttachmentIds.add(img.attachmentId);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.error("[Sync] Failed to apply chats from cloud:", err);
+          }
+        }
+        if (typeof NotesManager !== "undefined") {
+          try {
+            const remoteCollections = remoteData.lumina_notes_collections;
+            const remoteNotes = remoteData.lumina_notes_items;
+            const db = await NotesManager.getDB();
+            if (Array.isArray(remoteCollections)) {
+              const remoteColIds = new Set(remoteCollections.map((c) => c && c.id).filter(Boolean));
+              const currentCols = await NotesManager.getCollections().catch(() => []);
+              const txCol = db.transaction(NotesManager.STORE_COLLECTIONS, "readwrite");
+              const storeCol = txCol.objectStore(NotesManager.STORE_COLLECTIONS);
+              for (const c of currentCols) {
+                if (c && c.id && !remoteColIds.has(c.id)) {
+                  storeCol.delete(c.id);
+                }
+              }
+              for (const col of remoteCollections) {
+                if (col && col.id) storeCol.put(col);
+              }
+            }
+            if (Array.isArray(remoteNotes)) {
+              const remoteNoteIds = new Set(remoteNotes.map((n) => n && n.id).filter(Boolean));
+              const currentNotes = await NotesManager.getNotes().catch(() => []);
+              const txNote = db.transaction(NotesManager.STORE_NOTES, "readwrite");
+              const storeNote = txNote.objectStore(NotesManager.STORE_NOTES);
+              for (const n of currentNotes) {
+                if (n && n.id && !remoteNoteIds.has(n.id)) {
+                  storeNote.delete(n.id);
+                }
+              }
+              for (const note of remoteNotes) {
+                if (note && note.id) storeNote.put(note);
+              }
+            }
+          } catch (err) {
+            console.error("[Sync] Failed to apply notes from cloud:", err);
+          }
+        }
+        const activeTtsRecMap = /* @__PURE__ */ new Map();
+        let ttsUpdated = false;
+        if (typeof TTSDB !== "undefined" && Array.isArray(remoteData.lumina_tts_recordings)) {
+          try {
+            const remoteRecs = remoteData.lumina_tts_recordings;
+            const remoteRecIds = new Set(remoteRecs.map((r) => r && r.id).filter(Boolean));
+            const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+            const currentMap = new Map(currentRecs.map((r) => [r.id, r]));
+            for (const r of currentRecs) {
+              if (r && r.id && !remoteRecIds.has(r.id)) {
+                await TTSDB.deleteRecording(r.id).catch(() => {
+                });
+                ttsUpdated = true;
+              }
+            }
+            for (const recMeta of remoteRecs) {
+              if (recMeta && recMeta.id) {
+                if (!recMeta.isDeleted) activeTtsRecMap.set(recMeta.id, recMeta);
+                const localRec = currentMap.get(recMeta.id);
+                await TTSDB.saveRecording({
+                  ...recMeta,
+                  audioBlob: localRec ? localRec.audioBlob : null
+                }).catch(() => {
+                });
+                ttsUpdated = true;
+              }
+            }
+          } catch (err) {
+            console.error("[Sync] Failed to apply TTS records from cloud:", err);
+          }
+        }
+        let actualDriveFiles = driveFiles;
+        if (!actualDriveFiles && (activeAttachmentIds.size > 0 || activeTtsRecMap.size > 0)) {
+          actualDriveFiles = await this.listAppDataFiles(token).catch(() => []);
+        }
+        const driveFileMap = new Map((actualDriveFiles || []).map((f) => [f.name, f]));
+        if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
+          const db = await LuminaAttachmentDB.init();
+          for (const [filename, fileObj] of driveFileMap.entries()) {
+            if (filename.startsWith("att_") && filename.endsWith(".bin")) {
+              const key = filename.slice(4, -4);
+              if (activeAttachmentIds.has(key)) {
+                const exists = await LuminaAttachmentDB.get(key).catch(() => null);
+                if (!exists) {
+                  try {
+                    const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
+                    if (downloadedBlob) {
+                      await LuminaAttachmentDB.put(key, downloadedBlob);
+                    }
+                  } catch (err) {
+                    console.warn(`[Sync] Failed to download attachment ${key}:`, err);
+                  }
+                }
+              }
+            }
+          }
+          try {
+            const metadata = await LuminaAttachmentDB.getAllMetadata();
+            for (const item of metadata) {
+              if (!activeAttachmentIds.has(item.key)) {
+                await LuminaAttachmentDB.delete(item.key);
+              }
+            }
+          } catch (cleanupErr) {
+          }
+        }
+        if (typeof TTSDB !== "undefined") {
+          let ttsAudioDownloaded = false;
+          const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+          const localRecMap = new Map(currentRecs.map((r) => [r.id, r]));
+          for (const [filename, fileObj] of driveFileMap.entries()) {
+            if (filename.startsWith("tts_") && filename.endsWith(".bin")) {
+              const id = filename.slice(4, -4);
+              const localRec = localRecMap.get(id);
+              if (activeTtsRecMap.has(id) && localRec && !localRec.audioBlob) {
+                try {
+                  const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
+                  if (downloadedBlob) {
+                    localRec.audioBlob = downloadedBlob;
+                    await TTSDB.saveRecording(localRec);
+                    ttsAudioDownloaded = true;
+                  }
+                } catch (err) {
+                  console.warn(`[Sync] Failed to download TTS audio ${id}:`, err);
+                }
+              }
+            }
+          }
+          if (ttsAudioDownloaded) ttsUpdated = true;
+        }
+        const now = Date.now();
+        const cloudStats = {
+          chatsCount: Object.values(remoteSessions).filter((s) => s && !s.isDeleted).length,
+          notesCount: Array.isArray(remoteData.lumina_notes_items) ? remoteData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
+          collectionsCount: Array.isArray(remoteData.lumina_notes_collections) ? remoteData.lumina_notes_collections.length : 0,
+          highlightsCount: Object.keys(remoteData).filter((k) => k.startsWith("highlights_")).length,
+          ttsCount: Array.isArray(remoteData.lumina_tts_recordings) ? remoteData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+          attachmentsCount: activeAttachmentIds.size
+        };
+        await chrome.storage.local.set({
+          last_sync_time: now,
+          last_sync_md5: remoteFile ? remoteFile.md5Checksum : null,
+          last_sync_size: remoteFile ? remoteFile.size : null,
+          last_cloud_stats: cloudStats
+        });
+        if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          });
+          chrome.runtime.sendMessage({ action: "lumina_notes_updated" }).catch(() => {
+          });
+          chrome.runtime.sendMessage({ action: "lumina_highlights_updated" }).catch(() => {
+          });
+          if (ttsUpdated) {
+            chrome.runtime.sendMessage({ action: "lumina_tts_updated" }).catch(() => {
+            });
+          }
+          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
+          });
+        } catch (e) {
+        }
+        this.notifyListeners("Synced just now", now);
+        return now;
+      } catch (error) {
+        console.error("[Sync] pullFromCloud error:", error);
+        this.notifyListeners("Sync failure", null);
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+          });
+        } catch (e) {
+        }
+        throw error;
+      } finally {
+        this.isSyncing = false;
+      }
+    }
+    async pushToCloud() {
+      if (this._isPageContext()) {
+        return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
+      }
+      if (this.isSyncing) return;
+      this.isSyncing = true;
+      try {
+        const initialToken = await this.getToken(true);
+        if (!initialToken) throw new Error("Not authenticated");
+        let { token, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, false);
+        const localData = await this.gatherLocalData();
+        this.notifyListeners("Syncing...", null);
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+          });
+        } catch (e) {
+        }
+        const dataToUpload = { ...localData };
+        const payload = {
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          version: chrome.runtime.getManifest().version,
+          data: dataToUpload
+        };
+        let uploadRes;
+        try {
+          uploadRes = fileId ? await this.updateBackupFile(token, fileId, JSON.stringify(payload)) : await this.createBackupFile(token, JSON.stringify(payload));
+        } catch (err) {
+          if (fileId) {
+            const refreshed = await this.getOrFindBackupFile(token, true);
+            token = refreshed.token;
+            fileId = refreshed.fileId;
+            uploadRes = fileId ? await this.updateBackupFile(token, fileId, JSON.stringify(payload)) : await this.createBackupFile(token, JSON.stringify(payload));
+          } else {
+            throw err;
+          }
+        }
+        if (uploadRes && uploadRes.id) {
+          this.cachedBackupFileId = uploadRes.id;
+          chrome.storage.local.set({ drive_backup_file_id: uploadRes.id }).catch(() => {
+          });
+        }
+        const newUploadedMd5 = uploadRes && typeof uploadRes === "object" ? uploadRes.md5Checksum : uploadRes;
+        const newUploadedSize = uploadRes && typeof uploadRes === "object" ? uploadRes.size : null;
+        const storedBlobs = await chrome.storage.local.get(["drive_uploaded_blobs"]);
+        const uploadedBlobSet = new Set(storedBlobs.drive_uploaded_blobs || []);
+        let hasNewBlobs = false;
+        if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
+          const db = await LuminaAttachmentDB.init();
+          const localAttachments = await new Promise((resolve) => {
+            const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, "readonly");
+            const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
+            const req = store.openCursor();
+            const map = /* @__PURE__ */ new Map();
+            req.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                if (cursor.value instanceof Blob) map.set(cursor.key, cursor.value);
+                cursor.continue();
+              } else resolve(map);
+            };
+            req.onerror = () => resolve(map);
+          });
+          for (const [key, blob] of localAttachments.entries()) {
+            const filename = `att_${key}.bin`;
+            if (!uploadedBlobSet.has(filename) && blob) {
+              try {
+                await this.uploadBlobFile(token, filename, blob);
+                uploadedBlobSet.add(filename);
+                hasNewBlobs = true;
+              } catch (err) {
+                console.warn(`[Sync] Failed to upload attachment ${key}:`, err);
+              }
+            }
+          }
+        }
+        if (typeof TTSDB !== "undefined") {
+          const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
+          for (const rec of currentRecs) {
+            if (rec && rec.id && rec.audioBlob instanceof Blob) {
+              const filename = `tts_${rec.id}.bin`;
+              if (!uploadedBlobSet.has(filename)) {
+                try {
+                  await this.uploadBlobFile(token, filename, rec.audioBlob);
+                  uploadedBlobSet.add(filename);
+                  hasNewBlobs = true;
+                } catch (err) {
+                  console.warn(`[Sync] Failed to upload TTS audio ${rec.id}:`, err);
+                }
+              }
+            }
+          }
+        }
+        if (hasNewBlobs || !storedBlobs.drive_uploaded_blobs) {
+          await chrome.storage.local.set({ drive_uploaded_blobs: Array.from(uploadedBlobSet) });
+        }
+        const now = Date.now();
+        const cloudStats = {
+          chatsCount: Object.values(localData.lumina_chat_sessions || {}).filter((s) => s && !s.isDeleted).length,
+          notesCount: Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
+          collectionsCount: Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections.length : 0,
+          highlightsCount: Object.keys(localData).filter((k) => k.startsWith("highlights_")).length,
+          ttsCount: Array.isArray(localData.lumina_tts_recordings) ? localData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+          attachmentsCount: Array.from(uploadedBlobSet).filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length
+        };
+        await chrome.storage.local.set({
+          last_sync_time: now,
+          last_sync_md5: newUploadedMd5,
+          last_sync_size: newUploadedSize,
+          last_cloud_stats: cloudStats
+        });
+        if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
+        this.notifyListeners("Synced just now", now);
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
+          });
+        } catch (e) {
+        }
+        return now;
+      } catch (error) {
+        console.error("[Sync] pushToCloud error:", error);
+        this.notifyListeners("Sync failure", null);
+        try {
+          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+          });
+        } catch (e) {
+        }
+        throw error;
+      } finally {
+        this.isSyncing = false;
+      }
+    }
+    async cleanDriveDuplicates() {
+      if (this._isPageContext()) {
+        return await this._delegateSyncToBackground("lumina_clean_drive_duplicates");
+      }
+      const token = await this.getToken(true);
+      if (!token) return { success: false, error: "Not authenticated" };
+      const allFiles = await this.listAppDataFiles(token);
+      if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
+      const fileMap = /* @__PURE__ */ new Map();
+      for (const file of allFiles) {
+        if (!fileMap.has(file.name)) {
+          fileMap.set(file.name, []);
+        }
+        fileMap.get(file.name).push(file);
+      }
+      let deletedCount = 0;
+      for (const [name, files] of fileMap.entries()) {
+        if (files.length > 1) {
+          files.sort((a, b) => new Date(b.modifiedTime || 0) - new Date(a.modifiedTime || 0));
+          const toDelete = files.slice(1);
+          for (const f of toDelete) {
+            await this.deleteDriveFile(token, f.id);
+            deletedCount++;
+          }
+        }
+      }
+      const uniqueBlobNames = Array.from(fileMap.keys()).filter((n) => n.endsWith(".bin"));
+      await chrome.storage.local.set({ drive_uploaded_blobs: uniqueBlobNames });
+      return { success: true, deletedCount };
+    }
+    async showDriveFiles() {
+      const token = await this.getToken(true);
+      if (!token) return [];
+      const files = await this.listAppDataFiles(token);
+      return files;
+    }
+    async cleanOrphanedDriveBlobs() {
+      const token = await this.getToken(true);
+      if (!token) return { success: false, error: "Not authenticated" };
+      const allFiles = await this.listAppDataFiles(token);
+      if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
+      const activeAttachmentKeys = /* @__PURE__ */ new Set();
+      if (typeof LuminaChatDB !== "undefined") {
+        try {
+          const sessions = await LuminaChatDB.getAllSessions(true).catch(() => ({}));
+          for (const sid of Object.keys(sessions)) {
+            const msgs = await LuminaChatDB.getMessages(sid).catch(() => []);
+            for (const m of msgs) {
+              if (Array.isArray(m.files)) {
+                for (const f of m.files) {
+                  if (f && f.attachmentId) activeAttachmentKeys.add(String(f.attachmentId));
+                }
+              }
+            }
+          }
+        } catch (e) {
+        }
+      }
+      const activeTtsIds = /* @__PURE__ */ new Set();
+      if (typeof TTSDB !== "undefined") {
+        try {
+          const recs = await TTSDB.getAllRecordings().catch(() => []);
+          for (const r of recs) {
+            if (r && r.id && !r.isDeleted) activeTtsIds.add(String(r.id));
+          }
+        } catch (e) {
+        }
+      }
+      let deletedCount = 0;
+      for (const file of allFiles) {
+        const name = file.name;
+        let isOrphan = false;
+        if (name.startsWith("att_") && name.endsWith(".bin")) {
+          const key = name.slice(4, -4);
+          if (!activeAttachmentKeys.has(key)) isOrphan = true;
+        } else if (name.startsWith("blob_att_")) {
+          isOrphan = true;
+          for (const key of activeAttachmentKeys) {
+            if (name.includes(key)) {
+              isOrphan = false;
+              break;
+            }
+          }
+        } else if (name.startsWith("tts_") && name.endsWith(".bin")) {
+          const id = name.slice(4, -4);
+          if (!activeTtsIds.has(id)) isOrphan = true;
+        } else if (name.startsWith("blob_tts_")) {
+          isOrphan = true;
+          for (const id of activeTtsIds) {
+            if (name.includes(id)) {
+              isOrphan = false;
+              break;
+            }
+          }
+        }
+        if (isOrphan) {
+          await this.deleteDriveFile(token, file.id);
+          deletedCount++;
+        }
+      }
+      const remainingFiles = await this.listAppDataFiles(token);
+      const uniqueBlobNames = (remainingFiles || []).map((f) => f.name).filter((n) => n.endsWith(".bin"));
+      await chrome.storage.local.set({ drive_uploaded_blobs: uniqueBlobNames });
+      return { success: true, deletedCount };
+    }
+    async downloadBackupFileToComputer() {
+      const token = await this.getToken(true);
+      if (!token) throw new Error("Not authenticated");
+      const files = await this.listAppDataFiles(token);
+      const remoteFile = files.find((f) => f.name === this.FILENAME);
+      if (!remoteFile) throw new Error("lumina_backup.json not found on Google Drive");
+      const data = await this.downloadBackup(token, remoteFile.id);
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lumina_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return data;
+    }
+    async syncData(isAuto = false) {
+      if (isAuto) {
+        return await this.pullFromCloud(false);
+      } else {
+        return await this.pushToCloud();
+      }
+    }
+  };
+  var LuminaAuth2 = new AuthService();
+  var LuminaSync2 = new SyncManager(LuminaAuth2);
+  if (typeof globalThis !== "undefined") {
+    globalThis.LuminaAuth = LuminaAuth2;
+    globalThis.LuminaSync = LuminaSync2;
+    globalThis.AuthService = AuthService;
+    globalThis.SyncManager = SyncManager;
+  }
 
   // lib/helpers/annotation_utils.js
   window.LuminaAnnotation = {
@@ -22255,1324 +24649,6 @@ Output only the revised text.`;
     }
   };
 
-  // lib/core/auth.js
-  async function compressData(string) {
-    const byteArray = new TextEncoder().encode(string);
-    const stream = new CompressionStream("gzip");
-    const writer = stream.writable.getWriter();
-    writer.write(byteArray);
-    writer.close();
-    const response = new Response(stream.readable);
-    return await response.arrayBuffer();
-  }
-  async function decompressData(arrayBuffer) {
-    const stream = new DecompressionStream("gzip");
-    const writer = stream.writable.getWriter();
-    writer.write(new Uint8Array(arrayBuffer));
-    writer.close();
-    const response = new Response(stream.readable);
-    const buffer = await response.arrayBuffer();
-    return new TextDecoder().decode(buffer);
-  }
-  var isExcludedKey = (k) => [
-    "google_oauth_token",
-    "google_oauth_token_time",
-    "google_user_info",
-    "last_sync_time",
-    "last_sync_hash",
-    "last_sync_md5",
-    "last_sync_size",
-    "last_cloud_stats",
-    "drive_uploaded_blobs",
-    "drive_backup_file_id",
-    "settings_last_updated",
-    "optionsLastSection",
-    "optionsLastScroll",
-    "optionsScrollPositions",
-    "sidepanel_active_tab_index",
-    "sidepanel_active_group_index",
-    "sidepanel_secondary_tab_index",
-    "sidepanel_is_split_mode",
-    "sidepanel_split_ratio",
-    "lumina_active_tab_index",
-    "lumina_active_group_index",
-    "lumina_secondary_tab_index",
-    "lumina_is_split_mode",
-    "lumina_split_ratio",
-    "luminaWindowId",
-    "pendingMicToggle",
-    "luminaTemplatesV3",
-    "luminaBatchHistoryV3",
-    "lastUsedGenAIModel",
-    "lastUsedBatchSize",
-    "lastUsedDeck",
-    "lastUsedTemplateId",
-    "ankiQuickNoteContent",
-    "attachments"
-  ].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("lumina_img_cache_") || k.startsWith("lumina_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
-  var WEB_OAUTH_CONFIG = {
-    clientId: "824888142961-mlpoj5jeqbo1lv2d61mho7cnnde9aicv.apps.googleusercontent.com",
-    scopes: [
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/drive.appdata"
-    ]
-  };
-  function launchGoogleWebAuthFlow(interactive) {
-    return new Promise((resolve, reject) => {
-      const redirectUri = chrome.identity.getRedirectURL();
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(WEB_OAUTH_CONFIG.clientId)}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(WEB_OAUTH_CONFIG.scopes.join(" "))}`;
-      chrome.identity.launchWebAuthFlow({
-        url: authUrl,
-        interactive
-      }, (redirectUrl) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (redirectUrl) {
-          try {
-            const url = new URL(redirectUrl);
-            const hashParams = new URLSearchParams(url.hash.substring(1));
-            const token = hashParams.get("access_token");
-            if (token) {
-              chrome.storage.local.set({
-                google_oauth_token: token,
-                google_oauth_token_time: Date.now()
-              });
-              resolve(token);
-            } else {
-              reject(new Error("No access token found in redirect URL"));
-            }
-          } catch (err) {
-            reject(err);
-          }
-        } else {
-          reject(new Error("Authentication flow cancelled or failed"));
-        }
-      });
-    });
-  }
-  var AuthService = class {
-    constructor() {
-      this.user = null;
-      this.listeners = [];
-      this.isAuthenticated = false;
-      this.isInitialized = false;
-      this.init();
-      const isBackground = typeof window === "undefined";
-      if (isBackground && typeof chrome !== "undefined" && chrome.alarms) {
-        chrome.alarms.get("tokenRefresh", (alarm) => {
-          if (!alarm) {
-            chrome.alarms.create("tokenRefresh", { periodInMinutes: 45 });
-          }
-        });
-        chrome.alarms.onAlarm.addListener((alarm) => {
-          if (alarm.name === "tokenRefresh") {
-            this._refreshTokenIfNeeded();
-          }
-        });
-      }
-    }
-    async init() {
-      try {
-        const data = await chrome.storage.local.get(["google_user_info"]);
-        if (data.google_user_info) {
-          this.user = data.google_user_info;
-          this.isAuthenticated = true;
-        }
-      } catch (e) {
-        console.warn("[Auth] Init failed:", e);
-      }
-      this.isInitialized = true;
-      this.notifyListeners(this.isAuthenticated, this.user);
-      if (this.isAuthenticated && typeof window !== "undefined") {
-        setTimeout(() => {
-          if (typeof LuminaSync2 !== "undefined") {
-            LuminaSync2.checkAutoSync(true);
-          }
-        }, 100);
-      }
-    }
-    async _refreshTokenIfNeeded() {
-      if (!this.isAuthenticated) return;
-      try {
-        const token = await this.getAuthToken(false, true);
-        if (token) {
-          console.log("[Auth] Token refreshed successfully");
-        }
-      } catch (e) {
-        console.log("[Auth] Token refresh failed:", e.message);
-      }
-    }
-    async checkAuthStatus() {
-      try {
-        const token = await this.getAuthToken(false);
-        if (token) {
-          await this.fetchUserInfo(token);
-        }
-      } catch (e) {
-        console.log("[Auth] Check status failed:", e.message);
-      }
-    }
-    async getAuthToken(interactive = false, forceRefresh = false) {
-      const isChrome = typeof chrome !== "undefined" && /Chrome/i.test(navigator.userAgent) && !/Edg/i.test(navigator.userAgent) && !/OPR/i.test(navigator.userAgent) && !(navigator.brave && typeof navigator.brave.isBrave === "function");
-      if (!isChrome) {
-        if (forceRefresh) {
-          this._cachedToken = null;
-          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
-        } else if (this._cachedToken) {
-          return this._cachedToken;
-        } else {
-          try {
-            const storageData = await chrome.storage.local.get(["google_oauth_token", "google_oauth_token_time"]);
-            if (storageData && storageData.google_oauth_token && storageData.google_oauth_token_time) {
-              const ageMs = Date.now() - storageData.google_oauth_token_time;
-              if (ageMs < 3e6) {
-                this._cachedToken = storageData.google_oauth_token;
-                return this._cachedToken;
-              }
-            }
-          } catch (e) {
-          }
-        }
-        const token = await launchGoogleWebAuthFlow(interactive);
-        this._cachedToken = token;
-        return token;
-      }
-      return new Promise((resolve, reject) => {
-        if (typeof chrome === "undefined" || !chrome.identity || !chrome.identity.getAuthToken) {
-          reject(new Error("Chrome Identity API is not available"));
-          return;
-        }
-        const attemptNativeAuth = () => {
-          chrome.identity.getAuthToken({ interactive }, (token) => {
-            if (chrome.runtime.lastError) {
-              const errMsg = chrome.runtime.lastError.message;
-              if (errMsg.includes("not supported") || errMsg.includes("not available")) {
-                launchGoogleWebAuthFlow(interactive).then((t) => {
-                  this._cachedToken = t;
-                  resolve(t);
-                }).catch(reject);
-              } else {
-                reject(new Error(errMsg));
-              }
-            } else if (token) {
-              resolve(token);
-            } else {
-              reject(new Error("Failed to retrieve authentication token"));
-            }
-          });
-        };
-        if (forceRefresh) {
-          chrome.identity.getAuthToken({ interactive: false }, (token) => {
-            if (token) {
-              chrome.identity.removeCachedAuthToken({ token }, () => {
-                attemptNativeAuth();
-              });
-            } else {
-              attemptNativeAuth();
-            }
-          });
-        } else {
-          attemptNativeAuth();
-        }
-      });
-    }
-    async login() {
-      try {
-        const token = await this.getAuthToken(true);
-        await this.fetchUserInfo(token);
-        if (typeof LuminaSync2 !== "undefined") {
-          await LuminaSync2.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
-        }
-        return this.user;
-      } catch (error) {
-        console.error("Login failed:", error);
-        throw error;
-      }
-    }
-    async logout() {
-      try {
-        const token = this._cachedToken || (await chrome.storage.local.get(["google_oauth_token"])).google_oauth_token || await this.getAuthToken(false).catch(() => null);
-        this._cachedToken = null;
-        if (token) {
-          const url = "https://accounts.google.com/o/oauth2/revoke?token=" + token;
-          await fetch(url);
-          try {
-            chrome.identity.removeCachedAuthToken({ token }, () => {
-            });
-          } catch (e) {
-          }
-        }
-      } catch (e) {
-      }
-      await chrome.storage.local.remove([
-        "google_oauth_token",
-        "google_oauth_token_time",
-        "google_user_info"
-      ]);
-      chrome.alarms.clear("tokenRefresh");
-      chrome.alarms.clear("luminaAutoSync");
-      this.user = null;
-      this.isAuthenticated = false;
-      this.notifyListeners();
-    }
-    async fetchUserInfo(token, isRetry = false) {
-      try {
-        const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        if (!response.ok) {
-          if (response.status === 401) {
-            await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
-            if (!isRetry) {
-              console.log("[Auth] Token expired, attempting refresh...");
-              const newToken = await this.getAuthToken(false, true);
-              if (newToken && newToken !== token) {
-                console.log("[Auth] Got new token, retrying fetchUserInfo");
-                return await this.fetchUserInfo(newToken, true);
-              }
-            }
-          }
-          throw new Error("Failed to fetch user info: " + response.status);
-        }
-        const data = await response.json();
-        this.user = {
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          picture: data.picture
-        };
-        const wasAuth = this.isAuthenticated;
-        this.isAuthenticated = true;
-        chrome.storage.local.set({ google_user_info: this.user });
-        if (!wasAuth) {
-          this.notifyListeners();
-        }
-      } catch (e) {
-        console.error("Fetch user info error:", e);
-        throw e;
-      }
-    }
-    addListener(callback) {
-      this.listeners.push(callback);
-    }
-    removeListener(callback) {
-      this.listeners = this.listeners.filter((l) => l !== callback);
-    }
-    notifyListeners() {
-      this.listeners.forEach((cb) => cb(this.isAuthenticated, this.user));
-    }
-  };
-  var SyncManager = class {
-    _isPageContext() {
-      return typeof window !== "undefined";
-    }
-    _delegateSyncToBackground(action = "lumina_drive_sync", params = {}) {
-      this.notifyListeners("Syncing...", null);
-      const wrapper = typeof document !== "undefined" ? document.getElementById("user-avatar-wrapper") : null;
-      if (wrapper) wrapper.classList.add("is-syncing");
-      return new Promise((resolve) => {
-        try {
-          chrome.runtime.sendMessage({ action, ...params }, (res) => {
-            if (chrome.runtime.lastError) {
-              console.warn("[Sync] SW delegate failed:", chrome.runtime.lastError.message);
-              if (wrapper) wrapper.classList.remove("is-syncing");
-              this.notifyListeners("Sync failure", null);
-            } else {
-              setTimeout(() => {
-                if (wrapper) wrapper.classList.remove("is-syncing");
-                this.notifyListeners("Synced just now", Date.now());
-              }, 500);
-            }
-            resolve(res);
-          });
-        } catch (e) {
-          console.warn("[Sync] SW delegate error:", e);
-          if (wrapper) wrapper.classList.remove("is-syncing");
-          this.notifyListeners("Sync failure", null);
-          resolve(null);
-        }
-      });
-    }
-    constructor(authService) {
-      this.authService = authService || new AuthService();
-      this.FILENAME = "lumina_backup.json";
-      this.listeners = [];
-      this.isSyncing = false;
-      const isBackground = typeof window === "undefined";
-      if (isBackground && typeof chrome !== "undefined") {
-        if (chrome.runtime && chrome.runtime.onStartup) {
-          chrome.runtime.onStartup.addListener(() => {
-            this.checkAutoSync(true);
-          });
-        }
-      } else if (typeof window !== "undefined") {
-        setTimeout(() => {
-          this.checkAutoSync(true);
-        }, 200);
-      }
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
-        chrome.storage.onChanged.addListener((changes, area) => {
-          if (area !== "local") return;
-          if (this.isSyncing) return;
-          const keys = Object.keys(changes);
-          const excludedKeys = [
-            "google_oauth_token",
-            "google_oauth_token_time",
-            "google_user_info",
-            "lumina_cached_user",
-            "last_sync_time",
-            "last_sync_hash",
-            "last_sync_md5",
-            "last_sync_size",
-            "last_cloud_stats",
-            "drive_uploaded_blobs",
-            "drive_backup_file_id",
-            "settings_last_updated",
-            "optionsLastSection",
-            "optionsLastScroll",
-            "optionsScrollPositions",
-            "sidepanel_active_tab_index",
-            "sidepanel_active_group_index",
-            "lumina_active_tab_index",
-            "lumina_active_group_index"
-          ];
-          const hasSettingsKeys = keys.some(
-            (k) => !k.startsWith("lumina_session_") && !k.startsWith("google_") && !excludedKeys.includes(k)
-          );
-          if (hasSettingsKeys) {
-            chrome.storage.local.set({ settings_last_updated: Date.now() });
-          }
-        });
-      }
-    }
-    /**
-     * Debounced push to cloud after user modifications on this device.
-     */
-    triggerDebouncedSync(delayMs = 1e3) {
-      if (!this.authService.isAuthenticated) return;
-      if (this._isPageContext()) {
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_drive_sync_debounced", delayMs }).catch(() => {
-          });
-        } catch (e) {
-        }
-        return;
-      }
-      if (this._debounceTimer) clearTimeout(this._debounceTimer);
-      this._debounceTimer = setTimeout(() => {
-        this._debounceTimer = null;
-        this.pushToCloud().catch((err) => console.error("[Sync] Debounced push failed:", err));
-      }, delayMs);
-    }
-    addListener(callback) {
-      this.listeners.push(callback);
-    }
-    notifyListeners(status, lastSync) {
-      this.listeners.forEach((cb) => cb(status, lastSync));
-    }
-    async checkAutoSync(forceCheck = false) {
-      if (!this.authService.isAuthenticated) return;
-      if (this._isPageContext()) {
-        await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true });
-        return;
-      }
-      try {
-        await this.pullFromCloud(forceCheck);
-      } catch (e) {
-        console.error("[Sync] Auto-sync pull failed:", e);
-      }
-    }
-    async getLastSyncTime() {
-      const result = await chrome.storage.local.get(["last_sync_time"]);
-      return result.last_sync_time ? new Date(result.last_sync_time).toLocaleString() : "Never";
-    }
-    async getToken(interactive = false) {
-      return await this.authService.getAuthToken(interactive);
-    }
-    async syncUp(isAuto = false) {
-      if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
-      return await this.pushToCloud();
-    }
-    async syncDown() {
-      if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: true });
-      return await this.pullFromCloud(true);
-    }
-    async downloadBackup(token, fileId) {
-      console.log(`[Sync Debug] Downloading backup payload from Drive file ID: ${fileId}...`);
-      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) throw new Error("Download failed");
-      const buffer = await response.arrayBuffer();
-      console.log(`[Sync Debug] Downloaded raw buffer size: ${buffer.byteLength} bytes`);
-      const arr = new Uint8Array(buffer);
-      if (arr.length >= 2 && arr[0] === 31 && arr[1] === 139) {
-        console.log(`[Sync Debug] Decompressing GZIP backup...`);
-        const jsonStr2 = await decompressData(buffer);
-        console.log(`[Sync Debug] Decompressed JSON length: ${jsonStr2.length} characters`);
-        return JSON.parse(jsonStr2);
-      }
-      const jsonStr = new TextDecoder().decode(buffer);
-      console.log(`[Sync Debug] Decoded plain JSON length: ${jsonStr.length} characters`);
-      return JSON.parse(jsonStr);
-    }
-    async listAppDataFiles(token) {
-      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'appDataFolder' in parents and trashed = false")}&spaces=appDataFolder&orderBy=${encodeURIComponent("modifiedTime desc")}&fields=files(id, name, md5Checksum, modifiedTime, size)&pageSize=1000`;
-      const response = await fetch(url, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) throw new Error("Failed to list appData files");
-      const data = await response.json();
-      return data.files || [];
-    }
-    async uploadBlobFile(token, filename, blob, existingFileId = null) {
-      const mimeType = blob && blob.type ? blob.type : "application/octet-stream";
-      const metadata = {
-        name: filename,
-        ...existingFileId ? {} : { parents: ["appDataFolder"] }
-      };
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", blob, filename);
-      const url = existingFileId ? `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart&fields=id,name,md5Checksum,size` : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum,size`;
-      const response = await fetch(url, {
-        method: existingFileId ? "PATCH" : "POST",
-        headers: { "Authorization": `Bearer ${token}` },
-        body: form
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) throw new Error(`Failed to upload blob ${filename}`);
-      return await response.json();
-    }
-    async downloadBlobFile(token, fileId) {
-      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) throw new Error(`Failed to download blob ${fileId}`);
-      return await response.blob();
-    }
-    async deleteDriveFile(token, fileId) {
-      try {
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
-          method: "DELETE",
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        return response.ok;
-      } catch (e) {
-        console.warn(`[Sync] Failed to delete drive file ${fileId}:`, e);
-        return false;
-      }
-    }
-    async createBackupFile(token, content) {
-      const metadata = {
-        name: this.FILENAME,
-        parents: ["appDataFolder"]
-      };
-      const compressed = await compressData(content);
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", new Blob([compressed], { type: "application/octet-stream" }));
-      const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,md5Checksum,size", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` },
-        body: form
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) throw new Error("Failed to create file");
-      return await response.json();
-    }
-    async updateBackupFile(token, fileId, content) {
-      const metadata = {
-        name: this.FILENAME
-      };
-      const compressed = await compressData(content);
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", new Blob([compressed], { type: "application/octet-stream" }));
-      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id,name,md5Checksum,size`, {
-        method: "PATCH",
-        headers: { "Authorization": `Bearer ${token}` },
-        body: form
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) throw new Error("Failed to update file");
-      return await response.json();
-    }
-    async getFileMetadata(token, fileId) {
-      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,md5Checksum,modifiedTime,size`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (response.status === 401 || response.status === 403) throw new Error("UNAUTHORIZED");
-      if (!response.ok) return null;
-      return await response.json();
-    }
-    async getOrFindBackupFile(token, forceRefresh = false) {
-      let activeToken = token;
-      let driveFiles = [];
-      try {
-        driveFiles = await this.listAppDataFiles(activeToken);
-      } catch (err) {
-        if (err.message === "UNAUTHORIZED") {
-          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
-          activeToken = await this.authService.getAuthToken(false, true);
-          driveFiles = await this.listAppDataFiles(activeToken);
-        } else {
-          throw err;
-        }
-      }
-      const backupFiles = (driveFiles || []).filter((f) => f.name === this.FILENAME);
-      if (backupFiles.length === 0) {
-        this.cachedBackupFileId = null;
-        await chrome.storage.local.remove(["drive_backup_file_id"]).catch(() => {
-        });
-        return { token: activeToken, remoteFile: null, fileId: null, driveFiles };
-      }
-      const primaryFile = backupFiles[0];
-      const fileId = primaryFile.id;
-      this.cachedBackupFileId = fileId;
-      chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {
-      });
-      if (backupFiles.length > 1) {
-        const duplicates = backupFiles.slice(1);
-        for (const dup of duplicates) {
-          console.log(`[Sync] Removing duplicate backup file on Drive: ${dup.name} (id: ${dup.id})`);
-          this.deleteDriveFile(activeToken, dup.id).catch(() => {
-          });
-        }
-      }
-      return { token: activeToken, remoteFile: primaryFile, fileId, driveFiles };
-    }
-    async fetchRemoteBackup(token, isAuto = false) {
-      let activeToken = token;
-      let driveFiles = [];
-      try {
-        driveFiles = await this.listAppDataFiles(activeToken);
-      } catch (err) {
-        if (err.message === "UNAUTHORIZED") {
-          await chrome.storage.local.remove(["google_oauth_token", "google_oauth_token_time"]);
-          activeToken = await this.authService.getAuthToken(!isAuto, true);
-          driveFiles = await this.listAppDataFiles(activeToken);
-        } else {
-          throw err;
-        }
-      }
-      const remoteFile = driveFiles.find((f) => f.name === this.FILENAME) || null;
-      if (!remoteFile) {
-        return { token: activeToken, remoteFile: null, remoteBackup: null, fileId: null, driveFiles };
-      }
-      const fileId = remoteFile.id;
-      this.cachedBackupFileId = fileId;
-      chrome.storage.local.set({ drive_backup_file_id: fileId }).catch(() => {
-      });
-      const remoteBackup = await this.downloadBackup(activeToken, fileId);
-      return { token: activeToken, remoteFile, remoteBackup, fileId, lastSyncMd5: remoteFile.md5Checksum, driveFiles };
-    }
-    async gatherLocalData() {
-      const localData = await chrome.storage.local.get(null);
-      if (typeof NotesManager !== "undefined") {
-        try {
-          localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === "function" ? await NotesManager.getAllCollectionsRaw() : await NotesManager.getCollections(true);
-          localData.lumina_notes_items = typeof NotesManager.getAllNotesRaw === "function" ? await NotesManager.getAllNotesRaw() : await NotesManager.getNotes(null, true);
-        } catch (err) {
-          console.error("[Sync] Failed to gather notes for sync:", err);
-        }
-      }
-      if (typeof TTSDB !== "undefined") {
-        try {
-          const recordings = typeof TTSDB.getAllRecordingsRaw === "function" ? await TTSDB.getAllRecordingsRaw() : await TTSDB.getAllRecordings(true);
-          localData.lumina_tts_recordings = recordings.map((rec) => {
-            const { audioBlob, ...meta } = rec;
-            return meta;
-          });
-        } catch (err) {
-          console.error("[Sync] Failed to gather TTS recordings for sync:", err);
-        }
-      }
-      if (typeof LuminaAnnotationDB !== "undefined") {
-        try {
-          const highlights = await LuminaAnnotationDB.getAll();
-          Object.assign(localData, highlights);
-        } catch (err) {
-          console.error("[Sync] Failed to load highlights from IndexedDB:", err);
-        }
-      }
-      if (typeof LuminaChatDB !== "undefined") {
-        try {
-          const sessions = typeof LuminaChatDB.getAllSessionsRaw === "function" ? await LuminaChatDB.getAllSessionsRaw() : await LuminaChatDB.getAllSessions(true);
-          const sessionsObj = {};
-          for (const s of Object.values(sessions)) {
-            if (s && s.id) {
-              sessionsObj[s.id] = s;
-              if (!s.isDeleted) {
-                localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
-              }
-            }
-          }
-          localData.lumina_chat_sessions = sessionsObj;
-        } catch (err) {
-          console.error("[Sync] Failed to load chats from IndexedDB:", err);
-        }
-      }
-      return localData;
-    }
-    /**
-     * PULL FROM CLOUD — Cloud is authoritative.
-     * Overwrites local Dexie/IndexedDB and chrome.storage.local entirely with cloud backup.
-     * Does NOT push anything to cloud.
-     */
-    async pullFromCloud(force = false) {
-      console.log(`[Sync Debug] ---> pullFromCloud started (force: ${force}, context: ${this._isPageContext() ? "Page" : "Background"})`);
-      if (this._isPageContext()) {
-        console.log(`[Sync Debug] Page context detected, delegating to Background worker...`);
-        return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: force });
-      }
-      if (this.isSyncing) {
-        console.log(`[Sync Debug] Sync already in progress, aborting concurrent pull.`);
-        return;
-      }
-      this.isSyncing = true;
-      this.notifyListeners("Syncing...", null);
-      try {
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
-          });
-        } catch (e) {
-        }
-        const initialToken = await this.getToken(!force);
-        if (!initialToken) throw new Error("Not authenticated");
-        const localSync = await chrome.storage.local.get(["last_sync_md5"]);
-        console.log(`[Sync Debug] Local stored last_sync_md5: ${localSync.last_sync_md5}`);
-        const { token, remoteFile, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, force);
-        if (!remoteFile || !fileId) {
-          console.warn(`[Sync Debug] No backup file found on Google Drive (remoteFile/fileId is null).`);
-          this.notifyListeners("No cloud data", null);
-          try {
-            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
-            });
-          } catch (e) {
-          }
-          return null;
-        }
-        console.log(`[Sync Debug] Remote file metadata:`, {
-          id: fileId,
-          name: remoteFile.name,
-          md5Checksum: remoteFile.md5Checksum,
-          size: remoteFile.size,
-          modifiedTime: remoteFile.modifiedTime
-        });
-        const currentLocalSummary = await this.gatherLocalData();
-        console.log(`[Sync Debug] ---> CURRENT LOCAL DATA SUMMARY:`, {
-          last_sync_md5: localSync.last_sync_md5,
-          chatSessionsCount: Object.keys(currentLocalSummary.lumina_chat_sessions || {}).length,
-          notesCount: (currentLocalSummary.lumina_notes_items || []).length,
-          collectionsCount: (currentLocalSummary.lumina_notes_collections || []).length,
-          storageKeys: Object.keys(currentLocalSummary)
-        }, currentLocalSummary);
-        if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
-          console.log(`[Sync Debug] MD5 checksum matched local (${remoteFile.md5Checksum}) and force=false. Skipping download! (Pass force=true or call LuminaSync.pullFromCloud(true) to force pull)`);
-          const now2 = Date.now();
-          this.notifyListeners("Synced just now", now2);
-          try {
-            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now2 }).catch(() => {
-            });
-          } catch (e) {
-          }
-          return now2;
-        }
-        const remoteBackup = await this.downloadBackup(token, fileId);
-        if (!remoteBackup || !remoteBackup.data) {
-          console.warn(`[Sync Debug] Downloaded backup contains empty data.`);
-          this.notifyListeners("No cloud data", null);
-          try {
-            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
-            });
-          } catch (e) {
-          }
-          return null;
-        }
-        const remoteData = remoteBackup.data;
-        console.log(`[Sync Debug] ---> DOWNLOADED REMOTE DATA FROM DRIVE:`, {
-          version: remoteBackup.version,
-          timestamp: remoteBackup.timestamp,
-          chatSessionsCount: Object.keys(remoteData.lumina_chat_sessions || {}).length,
-          notesCount: (remoteData.lumina_notes_items || []).length,
-          collectionsCount: (remoteData.lumina_notes_collections || []).length,
-          storageKeys: Object.keys(remoteData)
-        }, remoteData);
-        delete remoteData.attachments;
-        const currentLocal = await chrome.storage.local.get(null);
-        const keysToRemove = [];
-        for (const key of Object.keys(currentLocal)) {
-          if (isExcludedKey(key)) continue;
-          if (key.startsWith("lumina_session_") || key === "lumina_chat_sessions") continue;
-          if (key.startsWith("highlights_")) continue;
-          if (!(key in remoteData)) {
-            keysToRemove.push(key);
-          }
-        }
-        if (keysToRemove.length > 0) {
-          await chrome.storage.local.remove(keysToRemove);
-        }
-        const storageToSet = {};
-        for (const [k, v] of Object.entries(remoteData)) {
-          if (isExcludedKey(k)) continue;
-          if (k.startsWith("lumina_session_") || k === "lumina_chat_sessions") continue;
-          if (k.startsWith("highlights_")) continue;
-          storageToSet[k] = v;
-        }
-        if (Object.keys(storageToSet).length > 0) {
-          await chrome.storage.local.set(storageToSet);
-        }
-        if (typeof LuminaAnnotationDB !== "undefined") {
-          const currentHighlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
-          for (const key of Object.keys(currentHighlights)) {
-            if (!(key in remoteData)) {
-              await LuminaAnnotationDB.delete(key).catch(() => {
-              });
-            }
-          }
-          let countHighlights = 0;
-          for (const [k, v] of Object.entries(remoteData)) {
-            if (k.startsWith("highlights_")) {
-              await LuminaAnnotationDB.put(k, v).catch(() => {
-              });
-              countHighlights++;
-            }
-          }
-          console.log(`[Sync Debug] Applied ${countHighlights} highlights to LuminaAnnotationDB`);
-        }
-        const remoteSessions = remoteData.lumina_chat_sessions || {};
-        const activeAttachmentIds = /* @__PURE__ */ new Set();
-        if (typeof LuminaChatDB !== "undefined") {
-          try {
-            const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
-            for (const s of Object.values(currentSessions)) {
-              if (s && s.id && !remoteSessions[s.id]) {
-                await LuminaChatDB.deleteSession(s.id).catch(() => {
-                });
-              }
-            }
-            let sessionCount = 0;
-            let msgCount = 0;
-            for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
-              await LuminaChatDB.putSession(sessionMeta).catch(() => {
-              });
-              sessionCount++;
-              if (sessionMeta && sessionMeta.isDeleted) {
-                await LuminaChatDB.deleteSession(sid).catch(() => {
-                });
-              } else {
-                const sessionKey = `lumina_session_${sid}`;
-                const messages = remoteData[sessionKey];
-                if (Array.isArray(messages)) {
-                  await LuminaChatDB.putMessages(sid, messages).catch(() => {
-                  });
-                  msgCount += messages.length;
-                  for (const msg of messages) {
-                    if (msg && Array.isArray(msg.images)) {
-                      for (const img of msg.images) {
-                        if (img && typeof img === "object" && img.attachmentId) {
-                          activeAttachmentIds.add(img.attachmentId);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            console.log(`[Sync Debug] Applied ${sessionCount} chat sessions and ${msgCount} messages to LuminaChatDB`);
-          } catch (err) {
-            console.error("[Sync] Failed to apply chats from cloud:", err);
-          }
-        }
-        if (typeof NotesManager !== "undefined") {
-          try {
-            const remoteCollections = remoteData.lumina_notes_collections;
-            const remoteNotes = remoteData.lumina_notes_items;
-            const db = await NotesManager.getDB();
-            if (Array.isArray(remoteCollections)) {
-              const remoteColIds = new Set(remoteCollections.map((c) => c && c.id).filter(Boolean));
-              const currentCols = await NotesManager.getCollections().catch(() => []);
-              const txCol = db.transaction(NotesManager.STORE_COLLECTIONS, "readwrite");
-              const storeCol = txCol.objectStore(NotesManager.STORE_COLLECTIONS);
-              for (const c of currentCols) {
-                if (c && c.id && !remoteColIds.has(c.id)) {
-                  storeCol.delete(c.id);
-                }
-              }
-              for (const col of remoteCollections) {
-                if (col && col.id) storeCol.put(col);
-              }
-              console.log(`[Sync Debug] Applied ${remoteCollections.length} note collections`);
-            }
-            if (Array.isArray(remoteNotes)) {
-              const remoteNoteIds = new Set(remoteNotes.map((n) => n && n.id).filter(Boolean));
-              const currentNotes = await NotesManager.getNotes().catch(() => []);
-              const txNote = db.transaction(NotesManager.STORE_NOTES, "readwrite");
-              const storeNote = txNote.objectStore(NotesManager.STORE_NOTES);
-              for (const n of currentNotes) {
-                if (n && n.id && !remoteNoteIds.has(n.id)) {
-                  storeNote.delete(n.id);
-                }
-              }
-              for (const note of remoteNotes) {
-                if (note && note.id) storeNote.put(note);
-              }
-              console.log(`[Sync Debug] Applied ${remoteNotes.length} notes items`);
-            }
-          } catch (err) {
-            console.error("[Sync] Failed to apply notes from cloud:", err);
-          }
-        }
-        const activeTtsRecMap = /* @__PURE__ */ new Map();
-        let ttsUpdated = false;
-        if (typeof TTSDB !== "undefined" && Array.isArray(remoteData.lumina_tts_recordings)) {
-          try {
-            const remoteRecs = remoteData.lumina_tts_recordings;
-            const remoteRecIds = new Set(remoteRecs.map((r) => r && r.id).filter(Boolean));
-            const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
-            const currentMap = new Map(currentRecs.map((r) => [r.id, r]));
-            for (const r of currentRecs) {
-              if (r && r.id && !remoteRecIds.has(r.id)) {
-                await TTSDB.deleteRecording(r.id).catch(() => {
-                });
-                ttsUpdated = true;
-              }
-            }
-            for (const recMeta of remoteRecs) {
-              if (recMeta && recMeta.id) {
-                if (!recMeta.isDeleted) activeTtsRecMap.set(recMeta.id, recMeta);
-                const localRec = currentMap.get(recMeta.id);
-                await TTSDB.saveRecording({
-                  ...recMeta,
-                  audioBlob: localRec ? localRec.audioBlob : null
-                }).catch(() => {
-                });
-                ttsUpdated = true;
-              }
-            }
-          } catch (err) {
-            console.error("[Sync] Failed to apply TTS records from cloud:", err);
-          }
-        }
-        let actualDriveFiles = driveFiles;
-        if (!actualDriveFiles && (activeAttachmentIds.size > 0 || activeTtsRecMap.size > 0)) {
-          actualDriveFiles = await this.listAppDataFiles(token).catch(() => []);
-        }
-        const driveFileMap = new Map((actualDriveFiles || []).map((f) => [f.name, f]));
-        if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
-          const db = await LuminaAttachmentDB.init();
-          for (const [filename, fileObj] of driveFileMap.entries()) {
-            if (filename.startsWith("att_") && filename.endsWith(".bin")) {
-              const key = filename.slice(4, -4);
-              if (activeAttachmentIds.has(key)) {
-                const exists = await LuminaAttachmentDB.get(key).catch(() => null);
-                if (!exists) {
-                  try {
-                    const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
-                    if (downloadedBlob) {
-                      await LuminaAttachmentDB.put(key, downloadedBlob);
-                    }
-                  } catch (err) {
-                    console.warn(`[Sync] Failed to download attachment ${key}:`, err);
-                  }
-                }
-              }
-            }
-          }
-          try {
-            const metadata = await LuminaAttachmentDB.getAllMetadata();
-            for (const item of metadata) {
-              if (!activeAttachmentIds.has(item.key)) {
-                await LuminaAttachmentDB.delete(item.key);
-              }
-            }
-          } catch (cleanupErr) {
-          }
-        }
-        if (typeof TTSDB !== "undefined") {
-          let ttsAudioDownloaded = false;
-          const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
-          const localRecMap = new Map(currentRecs.map((r) => [r.id, r]));
-          for (const [filename, fileObj] of driveFileMap.entries()) {
-            if (filename.startsWith("tts_") && filename.endsWith(".bin")) {
-              const id = filename.slice(4, -4);
-              const localRec = localRecMap.get(id);
-              if (activeTtsRecMap.has(id) && localRec && !localRec.audioBlob) {
-                try {
-                  const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
-                  if (downloadedBlob) {
-                    localRec.audioBlob = downloadedBlob;
-                    await TTSDB.saveRecording(localRec);
-                    ttsAudioDownloaded = true;
-                  }
-                } catch (err) {
-                  console.warn(`[Sync] Failed to download TTS audio ${id}:`, err);
-                }
-              }
-            }
-          }
-          if (ttsAudioDownloaded) ttsUpdated = true;
-        }
-        const now = Date.now();
-        const cloudStats = {
-          chatsCount: Object.values(remoteSessions).filter((s) => s && !s.isDeleted).length,
-          notesCount: Array.isArray(remoteData.lumina_notes_items) ? remoteData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
-          collectionsCount: Array.isArray(remoteData.lumina_notes_collections) ? remoteData.lumina_notes_collections.length : 0,
-          highlightsCount: Object.keys(remoteData).filter((k) => k.startsWith("highlights_")).length,
-          ttsCount: Array.isArray(remoteData.lumina_tts_recordings) ? remoteData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
-          attachmentsCount: activeAttachmentIds.size
-        };
-        await chrome.storage.local.set({
-          last_sync_time: now,
-          last_sync_md5: remoteFile ? remoteFile.md5Checksum : null,
-          last_sync_size: remoteFile ? remoteFile.size : null,
-          last_cloud_stats: cloudStats
-        });
-        if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
-          });
-          chrome.runtime.sendMessage({ action: "lumina_notes_updated" }).catch(() => {
-          });
-          chrome.runtime.sendMessage({ action: "lumina_highlights_updated" }).catch(() => {
-          });
-          if (ttsUpdated) {
-            chrome.runtime.sendMessage({ action: "lumina_tts_updated" }).catch(() => {
-            });
-          }
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
-          });
-        } catch (e) {
-        }
-        this.notifyListeners("Synced just now", now);
-        return now;
-      } catch (error) {
-        console.error("[Sync] pullFromCloud error:", error);
-        this.notifyListeners("Sync failure", null);
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
-          });
-        } catch (e) {
-        }
-        throw error;
-      } finally {
-        this.isSyncing = false;
-      }
-    }
-    /**
-     * PUSH TO CLOUD — Uploads local data to Google Drive.
-     * Called after user actions (creating notes, changing settings, saving chat).
-     */
-    async pushToCloud() {
-      if (this._isPageContext()) {
-        return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
-      }
-      if (this.isSyncing) return;
-      this.isSyncing = true;
-      try {
-        const initialToken = await this.getToken(true);
-        if (!initialToken) throw new Error("Not authenticated");
-        let { token, fileId, driveFiles } = await this.getOrFindBackupFile(initialToken, false);
-        const localData = await this.gatherLocalData();
-        this.notifyListeners("Syncing...", null);
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
-          });
-        } catch (e) {
-        }
-        const dataToUpload = { ...localData };
-        const payload = {
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-          version: chrome.runtime.getManifest().version,
-          data: dataToUpload
-        };
-        let uploadRes;
-        try {
-          uploadRes = fileId ? await this.updateBackupFile(token, fileId, JSON.stringify(payload)) : await this.createBackupFile(token, JSON.stringify(payload));
-        } catch (err) {
-          if (fileId) {
-            const refreshed = await this.getOrFindBackupFile(token, true);
-            token = refreshed.token;
-            fileId = refreshed.fileId;
-            uploadRes = fileId ? await this.updateBackupFile(token, fileId, JSON.stringify(payload)) : await this.createBackupFile(token, JSON.stringify(payload));
-          } else {
-            throw err;
-          }
-        }
-        if (uploadRes && uploadRes.id) {
-          this.cachedBackupFileId = uploadRes.id;
-          chrome.storage.local.set({ drive_backup_file_id: uploadRes.id }).catch(() => {
-          });
-        }
-        const newUploadedMd5 = uploadRes && typeof uploadRes === "object" ? uploadRes.md5Checksum : uploadRes;
-        const newUploadedSize = uploadRes && typeof uploadRes === "object" ? uploadRes.size : null;
-        const storedBlobs = await chrome.storage.local.get(["drive_uploaded_blobs"]);
-        const uploadedBlobSet = new Set(storedBlobs.drive_uploaded_blobs || []);
-        let hasNewBlobs = false;
-        if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
-          const db = await LuminaAttachmentDB.init();
-          const localAttachments = await new Promise((resolve) => {
-            const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, "readonly");
-            const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
-            const req = store.openCursor();
-            const map = /* @__PURE__ */ new Map();
-            req.onsuccess = (e) => {
-              const cursor = e.target.result;
-              if (cursor) {
-                if (cursor.value instanceof Blob) map.set(cursor.key, cursor.value);
-                cursor.continue();
-              } else resolve(map);
-            };
-            req.onerror = () => resolve(map);
-          });
-          for (const [key, blob] of localAttachments.entries()) {
-            const filename = `att_${key}.bin`;
-            if (!uploadedBlobSet.has(filename) && blob) {
-              try {
-                await this.uploadBlobFile(token, filename, blob);
-                uploadedBlobSet.add(filename);
-                hasNewBlobs = true;
-              } catch (err) {
-                console.warn(`[Sync] Failed to upload attachment ${key}:`, err);
-              }
-            }
-          }
-        }
-        if (typeof TTSDB !== "undefined") {
-          const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
-          for (const rec of currentRecs) {
-            if (rec && rec.id && rec.audioBlob instanceof Blob) {
-              const filename = `tts_${rec.id}.bin`;
-              if (!uploadedBlobSet.has(filename)) {
-                try {
-                  await this.uploadBlobFile(token, filename, rec.audioBlob);
-                  uploadedBlobSet.add(filename);
-                  hasNewBlobs = true;
-                } catch (err) {
-                  console.warn(`[Sync] Failed to upload TTS audio ${rec.id}:`, err);
-                }
-              }
-            }
-          }
-        }
-        if (hasNewBlobs || !storedBlobs.drive_uploaded_blobs) {
-          await chrome.storage.local.set({ drive_uploaded_blobs: Array.from(uploadedBlobSet) });
-        }
-        const now = Date.now();
-        const cloudStats = {
-          chatsCount: Object.values(localData.lumina_chat_sessions || {}).filter((s) => s && !s.isDeleted).length,
-          notesCount: Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
-          collectionsCount: Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections.length : 0,
-          highlightsCount: Object.keys(localData).filter((k) => k.startsWith("highlights_")).length,
-          ttsCount: Array.isArray(localData.lumina_tts_recordings) ? localData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
-          attachmentsCount: Array.from(uploadedBlobSet).filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length
-        };
-        await chrome.storage.local.set({
-          last_sync_time: now,
-          last_sync_md5: newUploadedMd5,
-          last_sync_size: newUploadedSize,
-          last_cloud_stats: cloudStats
-        });
-        if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
-        this.notifyListeners("Synced just now", now);
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
-          });
-        } catch (e) {
-        }
-        return now;
-      } catch (error) {
-        console.error("[Sync] pushToCloud error:", error);
-        this.notifyListeners("Sync failure", null);
-        try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
-          });
-        } catch (e) {
-        }
-        throw error;
-      } finally {
-        this.isSyncing = false;
-      }
-    }
-    /**
-     * Cleans up duplicate files on Google Drive (keeps the latest, deletes older copies).
-     */
-    async cleanDriveDuplicates() {
-      if (this._isPageContext()) {
-        return await this._delegateSyncToBackground("lumina_clean_drive_duplicates");
-      }
-      const token = await this.getToken(true);
-      if (!token) return { success: false, error: "Not authenticated" };
-      const allFiles = await this.listAppDataFiles(token);
-      if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
-      const fileMap = /* @__PURE__ */ new Map();
-      for (const file of allFiles) {
-        if (!fileMap.has(file.name)) {
-          fileMap.set(file.name, []);
-        }
-        fileMap.get(file.name).push(file);
-      }
-      let deletedCount = 0;
-      for (const [name, files] of fileMap.entries()) {
-        if (files.length > 1) {
-          files.sort((a, b) => new Date(b.modifiedTime || 0) - new Date(a.modifiedTime || 0));
-          const toDelete = files.slice(1);
-          for (const f of toDelete) {
-            console.log(`[Sync] Deleting duplicate file on Drive: ${f.name} (id: ${f.id})`);
-            await this.deleteDriveFile(token, f.id);
-            deletedCount++;
-          }
-        }
-      }
-      const uniqueBlobNames = Array.from(fileMap.keys()).filter((n) => n.endsWith(".bin"));
-      await chrome.storage.local.set({ drive_uploaded_blobs: uniqueBlobNames });
-      console.log(`[Sync] Cleaned ${deletedCount} duplicate files on Google Drive.`);
-      return { success: true, deletedCount };
-    }
-    /**
-     * Prints a clean table of all files on Google Drive appDataFolder.
-     */
-    async showDriveFiles() {
-      const token = await this.getToken(true);
-      if (!token) {
-        console.warn("[Sync] Not authenticated");
-        return [];
-      }
-      const files = await this.listAppDataFiles(token);
-      console.table(files.map((f) => ({
-        Name: f.name,
-        Size: (f.size / 1024).toFixed(1) + " KB",
-        MD5: f.md5Checksum ? f.md5Checksum.slice(0, 10) + "..." : "N/A",
-        Modified: new Date(f.modifiedTime).toLocaleString(),
-        ID: f.id
-      })));
-      return files;
-    }
-    /**
-     * Cleans up orphaned blob files (att_*, blob_att_*, tts_*, blob_tts_*) on Google Drive that are no longer referenced in local data.
-     */
-    async cleanOrphanedDriveBlobs() {
-      const token = await this.getToken(true);
-      if (!token) return { success: false, error: "Not authenticated" };
-      const allFiles = await this.listAppDataFiles(token);
-      if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
-      const activeAttachmentKeys = /* @__PURE__ */ new Set();
-      if (typeof LuminaChatDB !== "undefined") {
-        try {
-          const sessions = await LuminaChatDB.getAllSessions(true).catch(() => ({}));
-          for (const sid of Object.keys(sessions)) {
-            const msgs = await LuminaChatDB.getMessages(sid).catch(() => []);
-            for (const m of msgs) {
-              if (Array.isArray(m.files)) {
-                for (const f of m.files) {
-                  if (f && f.attachmentId) activeAttachmentKeys.add(String(f.attachmentId));
-                }
-              }
-            }
-          }
-        } catch (e) {
-        }
-      }
-      const activeTtsIds = /* @__PURE__ */ new Set();
-      if (typeof TTSDB !== "undefined") {
-        try {
-          const recs = await TTSDB.getAllRecordings().catch(() => []);
-          for (const r of recs) {
-            if (r && r.id && !r.isDeleted) activeTtsIds.add(String(r.id));
-          }
-        } catch (e) {
-        }
-      }
-      let deletedCount = 0;
-      for (const file of allFiles) {
-        const name = file.name;
-        let isOrphan = false;
-        if (name.startsWith("att_") && name.endsWith(".bin")) {
-          const key = name.slice(4, -4);
-          if (!activeAttachmentKeys.has(key)) isOrphan = true;
-        } else if (name.startsWith("blob_att_")) {
-          isOrphan = true;
-          for (const key of activeAttachmentKeys) {
-            if (name.includes(key)) {
-              isOrphan = false;
-              break;
-            }
-          }
-        } else if (name.startsWith("tts_") && name.endsWith(".bin")) {
-          const id = name.slice(4, -4);
-          if (!activeTtsIds.has(id)) isOrphan = true;
-        } else if (name.startsWith("blob_tts_")) {
-          isOrphan = true;
-          for (const id of activeTtsIds) {
-            if (name.includes(id)) {
-              isOrphan = false;
-              break;
-            }
-          }
-        }
-        if (isOrphan) {
-          console.log(`[Sync] Deleting orphaned file on Drive: ${name} (id: ${file.id})`);
-          await this.deleteDriveFile(token, file.id);
-          deletedCount++;
-        }
-      }
-      const remainingFiles = await this.listAppDataFiles(token);
-      const uniqueBlobNames = (remainingFiles || []).map((f) => f.name).filter((n) => n.endsWith(".bin"));
-      await chrome.storage.local.set({ drive_uploaded_blobs: uniqueBlobNames });
-      console.log(`[Sync] Cleaned ${deletedCount} orphaned blob files on Google Drive.`);
-      return { success: true, deletedCount };
-    }
-    /**
-     * Downloads lumina_backup.json from Google Drive and saves it as a file on your computer.
-     */
-    async downloadBackupFileToComputer() {
-      const token = await this.getToken(true);
-      if (!token) throw new Error("Not authenticated");
-      const files = await this.listAppDataFiles(token);
-      const remoteFile = files.find((f) => f.name === this.FILENAME);
-      if (!remoteFile) throw new Error("lumina_backup.json not found on Google Drive");
-      const data = await this.downloadBackup(token, remoteFile.id);
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `lumina_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      console.log("[Sync] Backup downloaded successfully!");
-      return data;
-    }
-    /**
-     * Backward compatible sync entry point (1-way authoritative).
-     */
-    async syncData(isAuto = false) {
-      if (isAuto) {
-        return await this.pullFromCloud(false);
-      } else {
-        return await this.pushToCloud();
-      }
-    }
-  };
-  var LuminaAuth2 = new AuthService();
-  var LuminaSync2 = new SyncManager(LuminaAuth2);
-  if (typeof window !== "undefined") {
-    window.LuminaAuth = LuminaAuth2;
-    window.LuminaSync = LuminaSync2;
-  } else {
-    globalThis.LuminaAuth = LuminaAuth2;
-    globalThis.LuminaSync = LuminaSync2;
-  }
-
   // lib/core/highlight_db.js
   var LuminaAnnotationDB2 = {
     DB_NAME: "LuminaHighlightDB",
@@ -25496,421 +26572,6 @@ Output only the revised text.`;
   document.addEventListener("DOMContentLoaded", () => {
     window.luminaHistory = new LuminaHistory();
   });
-
-  // lib/core/token_utils.js
-  var LuminaToken2 = {
-    count: function(text) {
-      if (!text) return 0;
-      return Math.ceil(text.length / 2.5);
-    },
-    truncate: function(text, maxTokens) {
-      if (!text || maxTokens <= 0) return "";
-      return text.substring(0, Math.floor(maxTokens * 2.5));
-    }
-  };
-  if (typeof self !== "undefined") {
-    self.LuminaToken = LuminaToken2;
-  }
-
-  // src/pages/lumina/index.js
-  var import_memory = __toESM(require_memory());
-
-  // lib/core/gemini_live.js
-  var GeminiLiveClient2 = class {
-    constructor(options = {}) {
-      this.apiKey = options.apiKey || "";
-      this.modelName = options.modelName || "gemini-3.1-flash-live-preview";
-      this.voiceName = options.voiceName || "Puck";
-      this.ws = null;
-      this.inputAudioCtx = null;
-      this.outputAudioCtx = null;
-      this.mediaStream = null;
-      this.audioProcessor = null;
-      this.audioQueue = [];
-      this.isPlaying = false;
-      this.scheduledTime = 0;
-      this.activeSources = [];
-      this.isVisionEnabled = false;
-      this.visionTimer = null;
-      this.isManualDisconnect = false;
-      this.isReconnecting = false;
-      this.onStatusChange = options.onStatusChange || (() => {
-      });
-      this.onTranscript = options.onTranscript || (() => {
-      });
-      this.onVolumeWave = options.onVolumeWave || (() => {
-      });
-      this.onError = options.onError || (() => {
-      });
-    }
-    async connect() {
-      if (!this.apiKey) {
-        this.onError("API Key is missing. Please set your Gemini API Key in Lumina Settings.");
-        return false;
-      }
-      this.isManualDisconnect = false;
-      const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${this.apiKey}`;
-      this.onStatusChange("connecting", "Connecting to Gemini Live...");
-      try {
-        this.ws = new WebSocket(wsUrl);
-        this.ws.onopen = () => {
-          this.onStatusChange("connected", "Connected. Sending setup...");
-          this._sendSetupPayload();
-          if (!this.mediaStream) {
-            this._initMicrophone();
-          }
-        };
-        this.ws.onmessage = (event) => {
-          this._handleServerMessage(event.data);
-        };
-        this.ws.onerror = (err) => {
-          console.error("[Gemini Live WSS Error]", err);
-          this.onError("WebSocket connection error.");
-          this.onStatusChange("error", "Connection error");
-        };
-        this.ws.onclose = (ev) => {
-          console.log("[Gemini Live WSS Closed]", ev.code, ev.reason);
-          if ((ev.code === 1008 || ev.code === 1006) && !this.isManualDisconnect) {
-            this.onStatusChange("connecting", "Auto-reconnecting session...");
-            this._reconnectGracefully();
-            return;
-          }
-          this.onStatusChange("disconnected", "Disconnected");
-          this.disconnect(false);
-        };
-        return true;
-      } catch (e) {
-        console.error("[Gemini Live Connect Exception]", e);
-        this.onError(e.message);
-        return false;
-      }
-    }
-    _sendSetupPayload() {
-      const setupMessage = {
-        setup: {
-          model: `models/${this.modelName}`,
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: this.voiceName
-                }
-              }
-            }
-          },
-          outputAudioTranscription: {},
-          inputAudioTranscription: {}
-        }
-      };
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify(setupMessage));
-        this.onStatusChange("listening", "Listening...");
-      }
-    }
-    async _initMicrophone() {
-      try {
-        this.mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: 1,
-            sampleRate: 16e3,
-            echoCancellation: true,
-            noiseSuppression: true
-          }
-        });
-        this.inputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16e3 });
-        const source = this.inputAudioCtx.createMediaStreamSource(this.mediaStream);
-        const processAudioData = (inputData) => {
-          if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-          let sum = 0;
-          for (let i = 0; i < inputData.length; i++) {
-            sum += inputData[i] * inputData[i];
-          }
-          const rms = Math.sqrt(sum / inputData.length);
-          this.onVolumeWave(rms);
-          const pcm16 = new Int16Array(inputData.length);
-          for (let i = 0; i < inputData.length; i++) {
-            const s = Math.max(-1, Math.min(1, inputData[i]));
-            pcm16[i] = s < 0 ? s * 32768 : s * 32767;
-          }
-          const bytes = new Uint8Array(pcm16.buffer);
-          let binary = "";
-          for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          const base64Audio = btoa(binary);
-          const realtimeMsg = {
-            realtimeInput: {
-              audio: {
-                data: base64Audio,
-                mimeType: "audio/pcm;rate=16000"
-              }
-            }
-          };
-          this.ws.send(JSON.stringify(realtimeMsg));
-        };
-        let useWorklet = false;
-        if (this.inputAudioCtx.audioWorklet) {
-          try {
-            let workletUrl = "lib/core/pcm_processor.js";
-            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
-              workletUrl = chrome.runtime.getURL("lib/core/pcm_processor.js");
-            }
-            await this.inputAudioCtx.audioWorklet.addModule(workletUrl);
-            this.audioWorkletNode = new AudioWorkletNode(this.inputAudioCtx, "pcm-worklet-processor");
-            this.audioWorkletNode.port.onmessage = (e) => {
-              processAudioData(e.data);
-            };
-            source.connect(this.audioWorkletNode);
-            this.audioWorkletNode.connect(this.inputAudioCtx.destination);
-            useWorklet = true;
-          } catch (e) {
-            console.warn("[Gemini Live AudioWorklet Fallback to ScriptProcessor]", e);
-          }
-        }
-        if (!useWorklet) {
-          this.audioProcessor = this.inputAudioCtx.createScriptProcessor(512, 1, 1);
-          source.connect(this.audioProcessor);
-          this.audioProcessor.connect(this.inputAudioCtx.destination);
-          this.audioProcessor.onaudioprocess = (e) => {
-            processAudioData(e.inputBuffer.getChannelData(0));
-          };
-        }
-      } catch (err) {
-        console.error("[Gemini Live Mic Access Error]", err);
-        this.onError("Microphone access denied or unequipped: " + err.message);
-      }
-    }
-    async _handleServerMessage(rawData) {
-      try {
-        let textData = rawData;
-        if (rawData instanceof Blob) {
-          textData = await rawData.text();
-        } else if (rawData instanceof ArrayBuffer) {
-          textData = new TextDecoder().decode(rawData);
-        }
-        const msg = JSON.parse(textData);
-        if (msg.goAway) {
-          console.log("[Gemini Live GoAway received]", msg.goAway);
-          this.onStatusChange("connecting", "Renewing session...");
-          this._reconnectGracefully();
-          return;
-        }
-        if (msg.serverContent) {
-          const sc = msg.serverContent;
-          if (sc.interrupted) {
-            this._stopAudioPlayback();
-            this.onStatusChange("listening", "Listening...");
-          }
-          if (sc.modelTurn && sc.modelTurn.parts) {
-            for (const part of sc.modelTurn.parts) {
-              if (part.inlineData && part.inlineData.data) {
-                this.onStatusChange("speaking", "Gemini is speaking...");
-                this._playPcm24kChunk(part.inlineData.data);
-              }
-            }
-          }
-          if (sc.inputTranscription && sc.inputTranscription.text) {
-            this.onTranscript("user", sc.inputTranscription.text);
-          }
-          if (sc.outputTranscription && sc.outputTranscription.text) {
-            this.onTranscript("gemini", sc.outputTranscription.text);
-          }
-          if (sc.turnComplete) {
-            this.onStatusChange("listening", "Listening...");
-          }
-        }
-      } catch (err) {
-        console.error("[Gemini Live Parse Error]", err, rawData);
-      }
-    }
-    _playPcm24kChunk(base64Data) {
-      if (!this.outputAudioCtx) {
-        this.outputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24e3 });
-        this.scheduledTime = this.outputAudioCtx.currentTime;
-      }
-      if (this.outputAudioCtx.state === "suspended") {
-        this.outputAudioCtx.resume();
-      }
-      const binaryStr = atob(base64Data);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      const int16Array = new Int16Array(bytes.buffer);
-      const float32Array = new Float32Array(int16Array.length);
-      for (let i = 0; i < int16Array.length; i++) {
-        float32Array[i] = int16Array[i] / 32768;
-      }
-      const buffer = this.outputAudioCtx.createBuffer(1, float32Array.length, 24e3);
-      buffer.getChannelData(0).set(float32Array);
-      const source = this.outputAudioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.outputAudioCtx.destination);
-      const now = this.outputAudioCtx.currentTime;
-      if (this.scheduledTime < now) {
-        this.scheduledTime = now;
-      }
-      source.start(this.scheduledTime);
-      this.scheduledTime += buffer.duration;
-      this.activeSources.push(source);
-      source.onended = () => {
-        const idx = this.activeSources.indexOf(source);
-        if (idx !== -1) this.activeSources.splice(idx, 1);
-        if (this.activeSources.length === 0) {
-          this.onStatusChange("listening", "Listening...");
-        }
-      };
-    }
-    _stopAudioPlayback() {
-      for (const src of this.activeSources) {
-        try {
-          src.stop();
-        } catch (e) {
-        }
-      }
-      this.activeSources = [];
-      if (this.outputAudioCtx) {
-        this.scheduledTime = this.outputAudioCtx.currentTime;
-      }
-    }
-    sendTextMessage(text) {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        const msg = {
-          realtimeInput: {
-            text
-          }
-        };
-        this.ws.send(JSON.stringify(msg));
-      }
-    }
-    toggleVision(enable) {
-      this.isVisionEnabled = enable;
-      if (enable) {
-        this._startVisionStreaming();
-      } else {
-        this._stopVisionStreaming();
-      }
-    }
-    _startVisionStreaming() {
-      this._stopVisionStreaming();
-      this.visionTimer = setInterval(async () => {
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = 640;
-          canvas.height = 360;
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#111";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = "#4285f4";
-          ctx.font = "bold 24px sans-serif";
-          ctx.fillText("Lumina Live Vision", 30, 60);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
-          const base64Jpg = dataUrl.split(",")[1];
-          const msg = {
-            realtimeInput: {
-              video: {
-                data: base64Jpg,
-                mimeType: "image/jpeg"
-              }
-            }
-          };
-          this.ws.send(JSON.stringify(msg));
-        } catch (e) {
-          console.error("[Gemini Live Vision Error]", e);
-        }
-      }, 1e3);
-    }
-    _stopVisionStreaming() {
-      if (this.visionTimer) {
-        clearInterval(this.visionTimer);
-        this.visionTimer = null;
-      }
-    }
-    async _reconnectGracefully() {
-      if (this.isReconnecting) return;
-      this.isReconnecting = true;
-      if (this.ws) {
-        try {
-          this.ws.onopen = null;
-          this.ws.onmessage = null;
-          this.ws.onerror = null;
-          this.ws.onclose = null;
-          if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-            this.ws.close();
-          }
-        } catch (e) {
-        }
-        this.ws = null;
-      }
-      setTimeout(async () => {
-        this.isReconnecting = false;
-        if (!this.isManualDisconnect) {
-          await this.connect();
-        }
-      }, 300);
-    }
-    disconnect(isManual = true) {
-      if (isManual) {
-        this.isManualDisconnect = true;
-      }
-      this._stopVisionStreaming();
-      this._stopAudioPlayback();
-      if (this.audioWorkletNode) {
-        try {
-          this.audioWorkletNode.disconnect();
-        } catch (e) {
-        }
-        this.audioWorkletNode = null;
-      }
-      if (this.audioProcessor) {
-        try {
-          this.audioProcessor.disconnect();
-        } catch (e) {
-        }
-        this.audioProcessor = null;
-      }
-      if (this.inputAudioCtx) {
-        try {
-          this.inputAudioCtx.close();
-        } catch (e) {
-        }
-        this.inputAudioCtx = null;
-      }
-      if (this.outputAudioCtx) {
-        try {
-          this.outputAudioCtx.close();
-        } catch (e) {
-        }
-        this.outputAudioCtx = null;
-      }
-      if (this.mediaStream) {
-        this.mediaStream.getTracks().forEach((track) => track.stop());
-        this.mediaStream = null;
-      }
-      if (this.ws) {
-        try {
-          this.ws.onopen = null;
-          this.ws.onmessage = null;
-          this.ws.onerror = null;
-          this.ws.onclose = null;
-          if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-            this.ws.close();
-          }
-        } catch (e) {
-        }
-        this.ws = null;
-      }
-      this.onStatusChange("disconnected", "Disconnected");
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.GeminiLiveClient = GeminiLiveClient2;
-  }
-  if (typeof globalThis !== "undefined") {
-    globalThis.GeminiLiveClient = GeminiLiveClient2;
-  }
 
   // lib/core/notes_manager.js
   var NotesManager2 = class _NotesManager {
@@ -28014,784 +28675,6 @@ Output only the revised text.`;
   };
   if (typeof window !== "undefined") {
     window.NotesPanel = NotesPanel2;
-  }
-
-  // lib/core/tts_manager.js
-  var TTSDB2 = class _TTSDB {
-    static DB_NAME = "LuminaTTSDB";
-    static DB_VERSION = 1;
-    static STORE_RECORDINGS = "recordings";
-    static _db = null;
-    static async getDB() {
-      if (_TTSDB._db) return _TTSDB._db;
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(_TTSDB.DB_NAME, _TTSDB.DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(_TTSDB.STORE_RECORDINGS)) {
-            const store = db.createObjectStore(_TTSDB.STORE_RECORDINGS, { keyPath: "id" });
-            store.createIndex("createdAt", "createdAt", { unique: false });
-            store.createIndex("starred", "starred", { unique: false });
-            store.createIndex("mode", "mode", { unique: false });
-          }
-        };
-        request.onsuccess = (e) => {
-          _TTSDB._db = e.target.result;
-          _TTSDB._db.onclose = () => {
-            _TTSDB._db = null;
-          };
-          _TTSDB._db.onversionchange = () => {
-            if (_TTSDB._db) {
-              _TTSDB._db.close();
-              _TTSDB._db = null;
-            }
-          };
-          resolve(_TTSDB._db);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async getAllRecordings(includeDeleted = false) {
-      const db = await _TTSDB.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readonly");
-        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
-        const index = store.index("createdAt");
-        const request = index.getAll();
-        request.onsuccess = () => {
-          let list = (request.result || []).reverse();
-          if (!includeDeleted) {
-            list = list.filter((r) => r && !r.isDeleted);
-          }
-          resolve(list);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async getAllRecordingsRaw() {
-      return _TTSDB.getAllRecordings(true);
-    }
-    static async getRecording(id, includeDeleted = false) {
-      if (!id) return null;
-      const db = await _TTSDB.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readonly");
-        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
-        const request = store.get(id);
-        request.onsuccess = () => {
-          const item = request.result || null;
-          if (!item) return resolve(null);
-          if (item.isDeleted && !includeDeleted) return resolve(null);
-          resolve(item);
-        };
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async saveRecording(recData) {
-      const db = await _TTSDB.getDB();
-      const now = Date.now();
-      const item = {
-        id: recData.id || "tts_" + now + "_" + Math.random().toString(36).substr(2, 6),
-        title: (recData.title || "").trim() || (recData.script ? recData.script.slice(0, 50).trim() + "..." : "Untitled Audio"),
-        script: recData.script || "",
-        mode: recData.mode || "single",
-        voice: recData.voice || "Kore",
-        voice2: recData.voice2 || "Puck",
-        speaker1: recData.speaker1 || "Joe",
-        speaker2: recData.speaker2 || "Jane",
-        audioProfile: recData.audioProfile || "",
-        style: recData.style || "",
-        pace: recData.pace || "",
-        accent: recData.accent || "",
-        durationSeconds: recData.durationSeconds || 0,
-        audioBlob: recData.audioBlob,
-        alignment: recData.alignment || null,
-        starred: recData.starred ? 1 : 0,
-        isDeleted: !!recData.isDeleted,
-        createdAt: recData.createdAt || now,
-        updatedAt: recData.updatedAt || now
-      };
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
-        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
-        const request = store.put(item);
-        request.onsuccess = () => resolve(item);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async toggleStar(id) {
-      const item = await _TTSDB.getRecording(id);
-      if (!item) return null;
-      item.starred = item.starred ? 0 : 1;
-      item.updatedAt = Date.now();
-      const db = await _TTSDB.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
-        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
-        const request = store.put(item);
-        request.onsuccess = () => resolve(item);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async updateRecordingTitle(id, newTitle) {
-      const item = await _TTSDB.getRecording(id);
-      if (!item) return null;
-      item.title = (newTitle || "").trim() || "Untitled Audio";
-      item.updatedAt = Date.now();
-      const db = await _TTSDB.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
-        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
-        const request = store.put(item);
-        request.onsuccess = () => resolve(item);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async deleteRecording(id) {
-      const db = await _TTSDB.getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(_TTSDB.STORE_RECORDINGS, "readwrite");
-        const store = tx.objectStore(_TTSDB.STORE_RECORDINGS);
-        const request = store.delete(id);
-        request.onsuccess = () => resolve(true);
-        request.onerror = (e) => reject(e.target.error);
-      });
-    }
-    static async deleteRecordingHard(id) {
-      return _TTSDB.deleteRecording(id);
-    }
-  };
-  var TTSManager2 = class {
-    static MODEL = "gemini-3.1-flash-tts-preview";
-    static API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
-    static VOICES = [
-      { name: "Achernar", tone: "Soft", pitch: "Higher pitch", gender: "Female" },
-      { name: "Achird", tone: "Friendly", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Algenib", tone: "Gravelly", pitch: "Lower pitch", gender: "Male" },
-      { name: "Algieba", tone: "Smooth", pitch: "Lower pitch", gender: "Male" },
-      { name: "Alnilam", tone: "Firm", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Aoede", tone: "Breezy", pitch: "Middle pitch", gender: "Female" },
-      { name: "Autonoe", tone: "Bright", pitch: "Middle pitch", gender: "Female" },
-      { name: "Callirrhoe", tone: "Easy-going", pitch: "Middle pitch", gender: "Female" },
-      { name: "Charon", tone: "Informative", pitch: "Lower pitch", gender: "Male" },
-      { name: "Despina", tone: "Smooth", pitch: "Middle pitch", gender: "Female" },
-      { name: "Enceladus", tone: "Breathy", pitch: "Lower pitch", gender: "Male" },
-      { name: "Erinome", tone: "Clear", pitch: "Middle pitch", gender: "Female" },
-      { name: "Fenrir", tone: "Excitable", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Gacrux", tone: "Mature", pitch: "Middle pitch", gender: "Male" },
-      { name: "Iapetus", tone: "Clear", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Kore", tone: "Firm", pitch: "Middle pitch", gender: "Female" },
-      { name: "Laomedeia", tone: "Upbeat", pitch: "Higher pitch", gender: "Female" },
-      { name: "Leda", tone: "Youthful", pitch: "Higher pitch", gender: "Female" },
-      { name: "Orus", tone: "Firm", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Puck", tone: "Upbeat", pitch: "Middle pitch", gender: "Male" },
-      { name: "Pulcherrima", tone: "Forward", pitch: "Middle pitch", gender: "Female" },
-      { name: "Rasalgethi", tone: "Informative", pitch: "Middle pitch", gender: "Male" },
-      { name: "Sadachbia", tone: "Lively", pitch: "Lower pitch", gender: "Female" },
-      { name: "Sadaltager", tone: "Knowledgeable", pitch: "Middle pitch", gender: "Male" },
-      { name: "Schedar", tone: "Even", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Sulafat", tone: "Warm", pitch: "Middle pitch", gender: "Female" },
-      { name: "Umbriel", tone: "Easy-going", pitch: "Lower middle pitch", gender: "Male" },
-      { name: "Vindemiatrix", tone: "Gentle", pitch: "Middle pitch", gender: "Female" },
-      { name: "Zephyr", tone: "Bright", pitch: "Higher pitch", gender: "Female" },
-      { name: "Zubenelgenubi", tone: "Casual", pitch: "Lower middle pitch", gender: "Male" }
-    ];
-    static VOICE_TRAITS = [
-      "All",
-      "Soft",
-      "Friendly",
-      "Gravelly",
-      "Smooth",
-      "Firm",
-      "Breezy",
-      "Bright",
-      "Easy-going",
-      "Informative",
-      "Breathy",
-      "Clear",
-      "Excitable",
-      "Mature",
-      "Upbeat",
-      "Youthful",
-      "Forward",
-      "Lively",
-      "Knowledgeable",
-      "Even",
-      "Warm",
-      "Gentle",
-      "Casual",
-      "Female",
-      "Male",
-      "Higher pitch",
-      "Middle pitch",
-      "Lower middle pitch",
-      "Lower pitch"
-    ];
-    static STYLE_OPTIONS = [
-      { label: "Enthusiastic", value: "Enthusiastic and energetic" },
-      { label: "Casual / Natural", value: "Casual, relaxed, and conversational" },
-      { label: "Professional / Informative", value: "Authoritative, clear, and informative" },
-      { label: "Storyteller / Suspense", value: "Mysterious, cinematic, intimate storyteller" },
-      { label: "Cheerful / Upbeat", value: "Bright, cheerful, and sunny with a vocal smile" },
-      { label: "Calm / Gentle", value: "Soft, gentle, calm, and soothing" },
-      { label: "Tired / Bored", value: "Slow, tired, and unenthusiastic" }
-    ];
-    static PACE_OPTIONS = [
-      { label: "Natural / Steady", value: "Steady, conversational pace" },
-      { label: "Fast & Punchy", value: "Fast-paced, rapid energetic delivery" },
-      { label: "Very Fast", value: "Speak as fast as possible" },
-      { label: "Slow & Dramatic", value: "Slow tempo with dramatic pauses" },
-      { label: "Very Slow", value: "Very slow, measured delivery" }
-    ];
-    static ACCENT_OPTIONS = [
-      { label: "Standard English", value: "Standard English" },
-      { label: "British (London)", value: "British English accent as heard in London" },
-      { label: "British (Received Pronunciation)", value: "Classic British RP accent" },
-      { label: "British (Scottish)", value: "Scottish English accent" },
-      { label: "American (General)", value: "General American accent" },
-      { label: "American (Southern)", value: "Southern American drawl accent" },
-      { label: "American (New York)", value: "New York American accent" },
-      { label: "Vietnamese (Native Natural)", value: "Natural native Vietnamese accent" },
-      { label: "Vietnamese (Southern/Saigon)", value: "Southern Vietnamese Saigon accent" },
-      { label: "Vietnamese (Northern/Hanoi)", value: "Northern Vietnamese Hanoi accent" },
-      { label: "Australian", value: "Australian English accent" },
-      { label: "Canadian", value: "Canadian English accent" },
-      { label: "Irish", value: "Irish English accent" },
-      { label: "Indian English", value: "Indian English accent" },
-      { label: "Japanese Accent English", value: "Japanese accented English" },
-      { label: "French Accent English", value: "French accented English" },
-      { label: "German Accent English", value: "German accented English" },
-      { label: "Spanish Accent English", value: "Spanish accented English" }
-    ];
-    static async getAllApiKeys() {
-      const keysSet = /* @__PURE__ */ new Set();
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        try {
-          const res = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
-          if (res) {
-            if (res.geminiApiKey && typeof res.geminiApiKey === "string") {
-              res.geminiApiKey.split(",").forEach((k) => {
-                const trimmed = k.trim();
-                if (trimmed) keysSet.add(trimmed);
-              });
-            }
-            const providers = res.providers || [];
-            if (Array.isArray(providers)) {
-              providers.forEach((p) => {
-                const isGemini = p.id === "gemini" || p.id === "gemini-default" || p.type === "gemini" || typeof p.endpoint === "string" && p.endpoint.includes("generativelanguage.googleapis.com") || (p.name?.toLowerCase().includes("gemini") || p.id?.toLowerCase().includes("gemini"));
-                if (isGemini && p.apiKey && typeof p.apiKey === "string") {
-                  p.apiKey.split(",").forEach((k) => {
-                    const trimmed = k.trim();
-                    if (trimmed) keysSet.add(trimmed);
-                  });
-                }
-              });
-            }
-          }
-        } catch (err) {
-          console.warn("Error reading from chrome.storage.local:", err);
-        }
-      }
-      if (typeof ProfileManager !== "undefined" && typeof ProfileManager.getApiKey === "function") {
-        try {
-          const key = ProfileManager.getApiKey();
-          if (key && typeof key === "string") {
-            key.split(",").forEach((k) => {
-              const trimmed = k.trim();
-              if (trimmed) keysSet.add(trimmed);
-            });
-          }
-        } catch (_) {
-        }
-      }
-      ["lumina_gemini_api_key", "gemini_api_key", "geminiApiKey"].forEach((storageKey) => {
-        const val = localStorage.getItem(storageKey);
-        if (val && typeof val === "string") {
-          val.split(",").forEach((k) => {
-            const trimmed = k.trim();
-            if (trimmed) keysSet.add(trimmed);
-          });
-        }
-      });
-      if (window.__luminaGeminiApiKey) {
-        window.__luminaGeminiApiKey.split(",").forEach((k) => {
-          const trimmed = k.trim();
-          if (trimmed) keysSet.add(trimmed);
-        });
-      }
-      return Array.from(keysSet);
-    }
-    static getTodayString() {
-      const now = /* @__PURE__ */ new Date();
-      return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-    }
-    static async fetchWithRotation(keys, requestFn) {
-      if (!keys || keys.length === 0) {
-        throw new Error("Gemini API key not found. Please configure your API key in Settings.");
-      }
-      const groupKey = "rot_gemini_tts_" + keys.join(",").substring(0, 32).replace(/[^a-zA-Z0-9]/g, "");
-      const today = this.getTodayString();
-      let activeIndex = 0;
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        try {
-          const rotData = await new Promise((resolve) => chrome.storage.local.get([groupKey], resolve));
-          const state = rotData?.[groupKey];
-          if (state && state.date === today && state.index >= 0 && state.index < keys.length) {
-            activeIndex = state.index;
-          }
-        } catch (_) {
-        }
-      }
-      let lastError = null;
-      for (let attempts = 0; attempts < keys.length; attempts++) {
-        const currentIndex = (activeIndex + attempts) % keys.length;
-        const currentKey = keys[currentIndex];
-        try {
-          const result = await requestFn(currentKey);
-          if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-            try {
-              await chrome.storage.local.set({
-                [groupKey]: { date: today, index: currentIndex }
-              });
-            } catch (_) {
-            }
-          }
-          return result;
-        } catch (err) {
-          lastError = err;
-          console.warn(`[TTS] Key index ${currentIndex} failed: ${err.message}. Rotating to next key...`);
-          if (err.message && (err.message.includes("Please enter text") || err.message.includes("prompt classifier"))) {
-            throw err;
-          }
-        }
-      }
-      throw lastError || new Error("All Gemini API keys failed.");
-    }
-    static buildPrompt({ mode, script, audioProfile, style, pace, accent, speaker1Name = "Speaker 1", speaker2Name = "Speaker 2" }) {
-      let prompt2 = "";
-      if (audioProfile && audioProfile.trim()) {
-        prompt2 += `# AUDIO PROFILE
-${audioProfile.trim()}
-
-`;
-      }
-      const hasNotes = Boolean(style && style.trim() || pace && pace.trim() || accent && accent.trim());
-      if (hasNotes) {
-        prompt2 += `### DIRECTOR'S NOTES
-`;
-        if (style && style.trim()) prompt2 += `Style: ${style.trim()}
-`;
-        if (pace && pace.trim()) prompt2 += `Pacing: ${pace.trim()}
-`;
-        if (accent && accent.trim()) prompt2 += `Accent: ${accent.trim()}
-`;
-        prompt2 += `
-`;
-      }
-      if (mode === "multi") {
-        if (!prompt2) {
-          return `TTS the following conversation between ${speaker1Name} and ${speaker2Name}:
-${script}`;
-        }
-        prompt2 += `#### TRANSCRIPT
-TTS the following conversation between ${speaker1Name} and ${speaker2Name}:
-${script}`;
-      } else {
-        if (!prompt2) {
-          return script;
-        }
-        prompt2 += `#### TRANSCRIPT
-${script}`;
-      }
-      return prompt2;
-    }
-    static async generateSpeech({
-      mode = "single",
-      script = "",
-      voice = "Kore",
-      voice2 = "Puck",
-      speaker1 = "Speaker 1",
-      speaker2 = "Speaker 2",
-      audioProfile = "",
-      style = "",
-      pace = "",
-      accent = "",
-      apiKey = ""
-    }) {
-      if (!script || !script.trim()) {
-        throw new Error("Please enter text or transcript to generate speech.");
-      }
-      let keys = [];
-      if (apiKey && apiKey.trim()) {
-        keys = apiKey.split(",").map((k) => k.trim()).filter(Boolean);
-      } else {
-        keys = await this.getAllApiKeys();
-      }
-      if (keys.length === 0) {
-        throw new Error("Gemini API key not found. Please configure your API key in Settings.");
-      }
-      const promptText = this.buildPrompt({
-        mode,
-        script,
-        audioProfile,
-        style,
-        pace,
-        accent,
-        speaker1Name: speaker1,
-        speaker2Name: speaker2
-      });
-      let speechConfig = {};
-      if (mode === "multi") {
-        speechConfig = {
-          multiSpeakerVoiceConfig: {
-            speakerVoiceConfigs: [
-              {
-                speaker: speaker1.trim() || "Speaker 1",
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: voice }
-                }
-              },
-              {
-                speaker: speaker2.trim() || "Speaker 2",
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: voice2 }
-                }
-              }
-            ]
-          }
-        };
-      } else {
-        speechConfig = {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: voice }
-          }
-        };
-      }
-      const selectedModel = await this.getSelectedTtsModel();
-      const modelName = selectedModel || this.MODEL;
-      const payload = {
-        contents: [
-          {
-            parts: [
-              { text: promptText }
-            ]
-          }
-        ],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig
-        },
-        model: modelName
-      };
-      return await this.fetchWithRotation(keys, async (currentKey) => {
-        const url = `${this.API_ENDPOINT}/${modelName}:generateContent?key=${encodeURIComponent(currentKey)}`;
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-          let errorMsg = `Server returned error (${response.status})`;
-          try {
-            const errData = await response.json();
-            if (errData?.error?.message) {
-              errorMsg = errData.error.message;
-            }
-          } catch (_) {
-          }
-          throw new Error(errorMsg);
-        }
-        const resData = await response.json();
-        const candidate = resData.candidates?.[0];
-        if (!candidate) {
-          throw new Error("No candidate returned from Gemini TTS.");
-        }
-        const part = candidate.content?.parts?.[0];
-        const base64Audio = part?.inlineData?.data;
-        if (!base64Audio) {
-          if (part?.text) {
-            throw new Error(`The model returned text instead of audio: "${part.text.substring(0, 100)}...". Please try again.`);
-          }
-          throw new Error("No audio data received in response.");
-        }
-        const pcmBytes = this.base64ToUint8Array(base64Audio);
-        const durationSeconds = pcmBytes.length / (24e3 * 2);
-        const wavBlob = this.pcmToWav(pcmBytes, 1, 24e3, 16);
-        const audioUrl = URL.createObjectURL(wavBlob);
-        return {
-          blob: wavBlob,
-          wavBlob,
-          audioUrl,
-          sampleRate: 24e3,
-          durationSeconds
-        };
-      });
-    }
-    static base64ToUint8Array(base64) {
-      const binaryString = window.atob(base64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      return bytes;
-    }
-    static async pcmToWebmBlob(pcmBytes, sampleRate = 24e3) {
-      const numSamples = pcmBytes.length / 2;
-      const int16 = new Int16Array(pcmBytes.buffer, pcmBytes.byteOffset, numSamples);
-      const float32 = new Float32Array(numSamples);
-      for (let i = 0; i < numSamples; i++) {
-        float32[i] = int16[i] / 32768;
-      }
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
-      const audioBuffer = audioCtx.createBuffer(1, numSamples, sampleRate);
-      audioBuffer.copyToChannel(float32, 0);
-      const dest = audioCtx.createMediaStreamDestination();
-      const source = audioCtx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(dest);
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
-      return new Promise((resolve, reject) => {
-        try {
-          const recorder = mimeType ? new MediaRecorder(dest.stream, { mimeType }) : new MediaRecorder(dest.stream);
-          const chunks = [];
-          recorder.ondataavailable = (e) => {
-            if (e.data && e.data.size > 0) chunks.push(e.data);
-          };
-          recorder.onstop = () => {
-            const finalBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-            audioCtx.close().catch(() => {
-            });
-            resolve(finalBlob);
-          };
-          recorder.onerror = (e) => {
-            audioCtx.close().catch(() => {
-            });
-            reject(e.error || new Error("MediaRecorder error"));
-          };
-          recorder.start(10);
-          source.start(0);
-          const durationMs = numSamples / sampleRate * 1e3;
-          setTimeout(() => {
-            if (recorder.state !== "inactive") {
-              recorder.stop();
-            }
-          }, durationMs + 80);
-        } catch (err) {
-          audioCtx.close().catch(() => {
-          });
-          reject(err);
-        }
-      });
-    }
-    static pcmToWav(pcmData, numChannels = 1, sampleRate = 24e3, bitsPerSample = 16) {
-      const byteRate = sampleRate * numChannels * bitsPerSample / 8;
-      const blockAlign = numChannels * bitsPerSample / 8;
-      const dataLength = pcmData.length;
-      const bufferLength = 44 + dataLength;
-      const buffer = new ArrayBuffer(bufferLength);
-      const view = new DataView(buffer);
-      const writeString = (offset, string) => {
-        for (let i = 0; i < string.length; i++) {
-          view.setUint8(offset + i, string.charCodeAt(i));
-        }
-      };
-      writeString(0, "RIFF");
-      view.setUint32(4, 36 + dataLength, true);
-      writeString(8, "WAVE");
-      writeString(12, "fmt ");
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true);
-      view.setUint16(22, numChannels, true);
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, byteRate, true);
-      view.setUint16(32, blockAlign, true);
-      view.setUint16(34, bitsPerSample, true);
-      writeString(36, "data");
-      view.setUint32(40, dataLength, true);
-      const uint8View = new Uint8Array(buffer, 44);
-      uint8View.set(pcmData);
-      return new Blob([buffer], { type: "audio/wav" });
-    }
-    static _sampleCache = /* @__PURE__ */ new Map();
-    static async previewVoiceSample(voiceName) {
-      if (!this._sampleCache) {
-        this._sampleCache = /* @__PURE__ */ new Map();
-      }
-      if (this._sampleCache.has(voiceName)) {
-        return this._sampleCache.get(voiceName);
-      }
-      try {
-        const assetUrl = typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL ? chrome.runtime.getURL(`assets/audio/samples/${voiceName}.wav`) : `../../assets/audio/samples/${voiceName}.wav`;
-        const checkRes = await fetch(assetUrl, { method: "HEAD" });
-        if (checkRes.ok) {
-          const resObj = { audioUrl: assetUrl };
-          this._sampleCache.set(voiceName, resObj);
-          return resObj;
-        }
-      } catch (_) {
-      }
-      const sampleText = `Hello, I'm ${voiceName}. How can I help you today?`;
-      const result = await this.generateSpeech({
-        script: sampleText,
-        voice: voiceName,
-        mode: "single"
-      });
-      this._sampleCache.set(voiceName, result);
-      return result;
-    }
-    static async getSelectedTtsModel() {
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        try {
-          const res = await new Promise((resolve) => chrome.storage.local.get(["ttsModel"], resolve));
-          if (res && res.ttsModel) return res.ttsModel;
-        } catch (_) {
-        }
-      }
-      return "gemini-2.5-flash";
-    }
-    static downloadWav(blob, filename = "speech.wav") {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    }
-    static downloadMp3(blob, filename = "speech.mp3") {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    }
-  };
-  var GroqAligner2 = class {
-    static async getGroqApiKey() {
-      const keysSet = /* @__PURE__ */ new Set();
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        try {
-          const res = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
-          if (res) {
-            if (res.groqApiKey && typeof res.groqApiKey === "string") {
-              res.groqApiKey.split(",").forEach((k) => {
-                const trimmed = k.trim();
-                if (trimmed) keysSet.add(trimmed);
-              });
-            }
-            const providers = res.providers || [];
-            if (Array.isArray(providers)) {
-              providers.forEach((p) => {
-                const isGroq = p.id === "groq" || p.id === "groq-default" || typeof p.endpoint === "string" && p.endpoint.includes("groq.com") || (p.name?.toLowerCase().includes("groq") || p.id?.toLowerCase().includes("groq"));
-                if (isGroq && p.apiKey && typeof p.apiKey === "string") {
-                  p.apiKey.split(",").forEach((k) => {
-                    const trimmed = k.trim();
-                    if (trimmed) keysSet.add(trimmed);
-                  });
-                }
-              });
-            }
-          }
-        } catch (_) {
-        }
-      }
-      ["lumina_groq_api_key", "groq_api_key", "groqApiKey"].forEach((storageKey) => {
-        const val = localStorage.getItem(storageKey);
-        if (val && typeof val === "string") {
-          val.split(",").forEach((k) => {
-            const trimmed = k.trim();
-            if (trimmed) keysSet.add(trimmed);
-          });
-        }
-      });
-      const keys = Array.from(keysSet);
-      return keys.length > 0 ? keys[0] : "";
-    }
-    static async getSelectedSttModel() {
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        try {
-          const res = await new Promise((resolve) => chrome.storage.local.get(["sttModel"], resolve));
-          if (res && res.sttModel) return res.sttModel;
-        } catch (_) {
-        }
-      }
-      return "whisper-large-v3-turbo";
-    }
-    static async align(blob, originalScript = "") {
-      try {
-        const apiKey = await this.getGroqApiKey();
-        if (!apiKey) {
-          console.warn("[GroqAligner] No Groq API key found in settings. Skipping automatic transcription alignment.");
-          return null;
-        }
-        const model = await this.getSelectedSttModel();
-        const formData = new FormData();
-        const audioFile = new File([blob], "audio.mp3", { type: blob.type || "audio/mp3" });
-        formData.append("file", audioFile);
-        formData.append("model", model);
-        formData.append("response_format", "verbose_json");
-        formData.append("timestamp_granularities[]", "segment");
-        formData.append("timestamp_granularities[]", "word");
-        formData.append("language", "en");
-        const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`
-          },
-          body: formData
-        });
-        if (!response.ok) {
-          const errText = await response.text();
-          console.warn(`[GroqAligner] Groq STT failed (${response.status}):`, errText);
-          return null;
-        }
-        const data = await response.json();
-        const rawSegments = data.segments || [];
-        const rawWords = data.words || [];
-        const segments = rawSegments.map((s, idx) => ({
-          id: idx,
-          text: (s.text || "").trim(),
-          start: typeof s.start === "number" ? s.start : 0,
-          end: typeof s.end === "number" ? s.end : 0
-        })).filter((s) => s.text.length > 0);
-        const words = rawWords.map((w) => ({
-          word: (w.word || "").trim(),
-          start: typeof w.start === "number" ? w.start : 0,
-          end: typeof w.end === "number" ? w.end : 0
-        })).filter((w) => w.word.length > 0);
-        return {
-          text: data.text || "",
-          segments,
-          words
-        };
-      } catch (err) {
-        console.warn("[GroqAligner] Error during Groq transcription:", err);
-        return null;
-      }
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.TTSDB = TTSDB2;
-    window.TTSManager = TTSManager2;
-    window.GroqAligner = GroqAligner2;
-  }
-  if (typeof globalThis !== "undefined") {
-    globalThis.TTSDB = TTSDB2;
-    globalThis.TTSManager = TTSManager2;
-    globalThis.GroqAligner = GroqAligner2;
   }
 
   // lib/ui/tts_panel.js
