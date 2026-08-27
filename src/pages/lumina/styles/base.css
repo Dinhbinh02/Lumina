@@ -1,0 +1,58 @@
+* {
+  box-sizing: border-box;
+}
+
+:host,
+body,
+input,
+button,
+select,
+textarea {
+  font-family: var(--lumina-font-family) !important;
+  font-size: var(--lumina-fontSize, 13px);
+  font-weight: var(--lumina-weight-regular);
+  margin: 0;
+}
+
+html,
+body {
+  background-color: var(--lumina-ui-bg) !important;
+  color: var(--lumina-text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+.lumina-app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+.lumina-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--lumina-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lumina-scrollbar-thumb-hover);
+}
