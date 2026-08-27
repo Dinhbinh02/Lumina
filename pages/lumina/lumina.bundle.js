@@ -28882,6 +28882,91 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     window.ensureMarkedLoaded = ensureMarkedLoaded;
   }
 
+  // src/components/chat/dom_morph.js
+  var scheduledContainers = /* @__PURE__ */ new WeakMap();
+  function morphDOM(container2, newHTML) {
+    if (!container2) return;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<body>${newHTML}</body>`, "text/html");
+    const newRoot = doc.body;
+    function isSameNodeType(node1, node2) {
+      if (node1.nodeType !== node2.nodeType) return false;
+      if (node1.nodeType === Node.TEXT_NODE) return true;
+      if (node1.nodeType === Node.ELEMENT_NODE) {
+        return node1.tagName === node2.tagName;
+      }
+      return false;
+    }
+    function patch(parent, oldChild, newChild) {
+      if (!oldChild && newChild) {
+        parent.appendChild(newChild.cloneNode(true));
+        return;
+      }
+      if (oldChild && !newChild) {
+        parent.removeChild(oldChild);
+        return;
+      }
+      if (!isSameNodeType(oldChild, newChild)) {
+        parent.replaceChild(newChild.cloneNode(true), oldChild);
+        return;
+      }
+      if (oldChild.nodeType === Node.TEXT_NODE) {
+        if (oldChild.nodeValue !== newChild.nodeValue) {
+          oldChild.nodeValue = newChild.nodeValue;
+        }
+        return;
+      }
+      if (oldChild.nodeType === Node.ELEMENT_NODE) {
+        if (oldChild.tagName === "CANVAS" || oldChild.classList?.contains("lumina-interactive-frozen")) {
+          return;
+        }
+        for (let i = 0; i < newChild.attributes.length; i++) {
+          const attr = newChild.attributes[i];
+          if (oldChild.getAttribute(attr.name) !== attr.value) {
+            oldChild.setAttribute(attr.name, attr.value);
+          }
+        }
+        for (let i = oldChild.attributes.length - 1; i >= 0; i--) {
+          const attr = oldChild.attributes[i];
+          if (!newChild.hasAttribute(attr.name)) {
+            oldChild.removeAttribute(attr.name);
+          }
+        }
+        const oldChildren2 = Array.from(oldChild.childNodes);
+        const newChildren2 = Array.from(newChild.childNodes);
+        const maxLen2 = Math.max(oldChildren2.length, newChildren2.length);
+        for (let i = 0; i < maxLen2; i++) {
+          patch(oldChild, oldChildren2[i], newChildren2[i]);
+        }
+      }
+    }
+    const oldChildren = Array.from(container2.childNodes);
+    const newChildren = Array.from(newRoot.childNodes);
+    const maxLen = Math.max(oldChildren.length, newChildren.length);
+    for (let i = 0; i < maxLen; i++) {
+      patch(container2, oldChildren[i], newChildren[i]);
+    }
+  }
+  function scheduleMorphDOM(container2, newHTML) {
+    if (!container2) return;
+    if (scheduledContainers.has(container2)) {
+      scheduledContainers.set(container2, newHTML);
+      return;
+    }
+    scheduledContainers.set(container2, newHTML);
+    requestAnimationFrame(() => {
+      const latestHTML = scheduledContainers.get(container2);
+      scheduledContainers.delete(container2);
+      if (typeof latestHTML === "string") {
+        morphDOM(container2, latestHTML);
+      }
+    });
+  }
+  if (typeof window !== "undefined") {
+    window.morphDOM = morphDOM;
+    window.scheduleMorphDOM = scheduleMorphDOM;
+  }
+
   // src/components/chat/async_media_search.js
   async function searchGoogleImages2(query) {
     return new Promise((resolve) => {
@@ -28944,7 +29029,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   // src/components/chat/dynamic_media_processor.js
   var luminaResolvedYoutubeCache = /* @__PURE__ */ new Map();
   var luminaResolvedImagesCache = /* @__PURE__ */ new Map();
-  function processLuminaDynamicYoutubeElements2(rootNode) {
+  function processLuminaDynamicYoutubeElements(rootNode) {
     if (!rootNode) return;
     const yts = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
@@ -28995,7 +29080,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     });
   }
-  function processLuminaDynamicImageElements2(rootNode) {
+  function processLuminaDynamicImageElements(rootNode) {
     if (!rootNode) return;
     const found = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-async-image")) {
@@ -29059,8 +29144,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     });
   }
   if (typeof window !== "undefined") {
-    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements2;
-    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements2;
+    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements;
+    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements;
   }
 
   // src/components/chat/chart_renderer.js
@@ -29120,7 +29205,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     });
   }
-  function processLuminaChartElements2(rootNode) {
+  function processLuminaChartElements(rootNode) {
     if (!rootNode) return;
     const wrappers = [];
     if (rootNode.classList && rootNode.classList.contains("lumina-chartjs-wrapper")) {
@@ -29133,7 +29218,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   }
   if (typeof window !== "undefined") {
     window._renderChartJSWrapper = renderChartJSWrapper;
-    window.processLuminaChartElements = processLuminaChartElements2;
+    window.processLuminaChartElements = processLuminaChartElements;
   }
 
   // src/components/chat/chat_ui.js

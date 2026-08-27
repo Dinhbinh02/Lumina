@@ -1,4 +1,10 @@
+import { morphDOM, scheduleMorphDOM } from './dom_morph.js';
+import { streamSafeParse, completeIncompleteMarkdown, initMarkdownMath } from './markdown_math.js';
+import { renderChartJSWrapper, processLuminaChartElements } from './chart_renderer.js';
+import { processLuminaDynamicImageElements, processLuminaDynamicYoutubeElements } from './dynamic_media_processor.js';
+
 export class LuminaChatUI {
+
     static getDeepActiveElement() {
         let el = document.activeElement;
         while (el && el.shadowRoot && el.shadowRoot.activeElement) {

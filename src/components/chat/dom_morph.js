@@ -84,3 +84,8 @@ export function scheduleMorphDOM(container, newHTML) {
         }
     });
 }
+
+if (typeof window !== 'undefined') {
+    window.morphDOM = morphDOM;
+    window.scheduleMorphDOM = scheduleMorphDOM;
+}
