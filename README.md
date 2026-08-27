@@ -1,117 +1,242 @@
-<div align="center">
-  <img src="assets/icons/icon128.png" alt="Lumina" height="84" />
-  <h1><b>Lumina</b></h1>
-  <p><b>Fast, private, and flexible AI assistant for your browser.</b></p>
-  <p>
-    <a href="https://github.com/Dinhbinh02/Lumina">
-      <img src="https://img.shields.io/badge/status-active-brightgreen?logo=github" alt="Status" />
-    </a>
-    <a href="https://github.com/Dinhbinh02/Lumina/blob/main/LICENSE">
-      <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" />
-    </a>
-    <img src="https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4" alt="Manifest V3" />
-  </p>
-</div>
+# Lumina
 
-## Overview
+A modular, privacy-first AI browser extension and workspace built on Chrome Extension Manifest V3. Lumina integrates multi-provider large language model streaming, real-time multimodal audio, intelligent in-page text operations, custom agent runtime (Sparks), rich block-based notes, and local-first data persistence with Google Drive synchronization.
 
-Lumina is a modern, feature-rich Chrome Extension designed to seamlessly integrate AI assistance into your daily browsing experience. Whether you're researching, writing, studying, or building custom AI agents, Lumina provides an intuitive and elegant workspace right within Google Chrome.
-
-Built with performance, privacy, and aesthetic excellence in mind, Lumina stores data locally, supports multiple AI providers, offers shortcut-driven text actions, and features custom AI agents (**Sparks**).
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Manifest](https://img.shields.io/badge/Manifest-V3-brightgreen.svg)](manifest.json)
+[![Platform](https://img.shields.io/badge/Platform-Chromium-blue.svg)](https://developer.chrome.com/docs/extensions/)
+[![Bundler: esbuild](https://img.shields.io/badge/Bundler-esbuild-orange.svg)](https://esbuild.github.io/)
 
 ---
 
-## 🌟 Key Features
+## Architectural Overview
 
-### ⚡ AI Provider & Model Ecosystem
-- **Multi-provider Support** — Connect to Google Gemini, OpenAI, Claude, Groq, Cerebras, OpenRouter, and local models via Ollama.
-- **Model Chain & Selector** — Unified model selector dropdown across Topbar and Spark Preview with automatic fallback and prompt support detection.
-- **Key Rotation & Resilience** — Configure multiple API keys per provider to prevent rate-limit interruptions.
-- **Advanced Parameters & Thinking Levels** — Customize temperature, topP, maxTokens, and reasoning/thinking levels (Minimal, Low, Standard, Extended).
+Lumina is engineered around a domain-driven, multi-tier architecture designed to maintain strict separation of concerns across extension service workers, content script sandboxes, local storage engines, and user-facing presentation layers.
 
-### 🤖 Sparks System (Custom AI Assistants)
-- **Custom Agent Builder** — Create, edit, and personalize dedicated Sparks with custom avatars, descriptions, and instructions.
-- **Knowledge Attachments** — Upload files (text, code, CSV, PDF, etc.) for Sparks to reference as knowledge context.
-- **Isolated Spark Editor & Interactive Preview** — Resizable modal editor featuring live interactive preview chat with real-time model selection.
+```mermaid
+graph TD
+    subgraph Layer5["Layer 5: Presentation & Workspace UI"]
+        ChatUI["Chat Interface & Stream Renderer"]
+        SparksView["Sparks Agent Studio & Sandbox"]
+        NotesEditor["BlockNote Rich Text Editor"]
+        Modals["Settings, Search & History Modals"]
+    end
 
-### 🌐 Smart Browsing & Context Tools
-- **Selection Action Bar** — Highlight text on any web page to trigger instant explanation, translation, grammar correction, or custom prompts.
-- **Web Page Context Awareness** — Attach web page contents and live tab sources to your chat context.
-- **KaTeX & Code Formatting** — Rich markdown rendering with syntax highlighting, inline LaTeX math equations, and interactive charts.
-- **Web Search & Annotation** — Highlights and text annotation persistence across sessions.
+    subgraph Layer4["Layer 4: Core Services & Real-time Engines"]
+        AIService["Chat Stream & Token Service"]
+        AudioEngine["PCM 16-bit 24kHz Processor"]
+        TTSManager["TTS Queue & Voice Synthesis"]
+        AuthSync["Google Auth & Drive Sync"]
+    end
 
-### 🔐 Privacy & Cloud Sync
-- **Privacy-First Architecture** — API keys, local history, and custom Sparks are stored securely in your local browser storage.
-- **Google Drive Auto-Sync** — Seamlessly back up and sync settings, prompts, and chat history using Chrome's native OAuth identity.
+    subgraph Layer3["Layer 3: Persistence Layer (IndexedDB)"]
+        ChatDB["LuminaChatDB (Threads & Messages)"]
+        HighlightDB["LuminaHighlightDB (Web Annotations)"]
+        AttachmentDB["LuminaAttachmentDB (Files & Media)"]
+        AudioCache["LuminaAudioCacheDB"]
+    end
+
+    subgraph Layer2["Layer 2: Content Scripts & DOM Injections"]
+        ContentScript["Content Script Lifecycle"]
+        ActionBar["Selection Floating Action Bar"]
+        WebExtractors["DOM, PDF & YouTube Parsers"]
+    end
+
+    subgraph Layer1["Layer 1: Extension Runtime & Background Service Worker"]
+        ServiceWorker["Background Service Worker (MV3)"]
+        SidePanel["Side Panel Window Coordinator"]
+        OffscreenDoc["Offscreen Audio Processing"]
+    end
+
+    Layer5 --> Layer4
+    Layer4 --> Layer3
+    Layer5 --> Layer3
+    Layer2 <--> Layer1
+    Layer4 <--> Layer1
+```
+
+### Layer Breakdown
+
+1. **Extension Lifecycle & Background Layer (`src/background/`)**
+   - Implements the Manifest V3 background service worker (`scripts/background.bundle.js`).
+   - Manages Side Panel window attachments, offscreen audio document bridging, token bucket management, and unified long-lived messaging channels (`lumina-chat-stream`).
+   - Handles multi-provider model routing, automated API key rotation, concurrent auto-naming, and Google Drive debounced synchronization.
+
+2. **Content Script & In-Page Injection Layer (`src/content/`, `src/helpers/`)**
+   - Coordinates DOM selection events, in-page annotation highlighting, and contextual floating action bars.
+   - Houses document extractors for web context harvesting, YouTube transcript extraction, and local PDF/DOM text parsing.
+
+3. **Core Services & Engine Layer (`src/core/`)**
+   - Real-time bidirectional PCM audio processing (16-bit 24kHz) for low-latency voice streaming.
+   - Multimodal Gemini Live WebSocket connectivity and client-side TTS synthesis management.
+   - Token budgeting, memory indexing, and OAuth identity orchestration via Chrome Identity API.
+
+4. **Persistence & Data Storage Layer (`src/db/`)**
+   - Repository-based architecture backed by IndexedDB.
+   - Dedicated object stores for chat sessions and message threads (`LuminaChatDB`), highlights and annotations (`LuminaHighlightDB`), media attachments (`LuminaAttachmentDB`), and audio cache (`LuminaAudioCacheDB`).
+   - Migration pipelines ensuring schema backwards compatibility across extension revisions.
+
+5. **UI & Component Layer (`src/components/`, `src/pages/`, `src/popup/`)**
+   - Workspace interface supporting multi-tab management, split view layouts, responsive sidebars, and customizable theme design tokens.
+   - Sparks agent studio with dedicated system prompt overrides, knowledge attachment binding, and live interactive sandbox preview.
+   - BlockNote-powered rich document workspace integrated alongside chat streams.
 
 ---
 
-## 🛠️ Installation & Setup
+## Communication & Data Flow
 
-### Installation
-1. Clone or download the repository ZIP and extract it.
-2. Open Google Chrome and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked**.
-5. Select the `Lumina` project directory.
-
-### Initial Setup
-1. Open Lumina via the Chrome Extension popup or Side Panel.
-2. Open **Settings** (gear icon) -> **Providers** and add your API keys.
-3. (Optional) Under **Sync**, click **Sign in with Google** to enable automatic Google Drive backup.
+### AI Streaming Pipeline
+```
+[User Input in Workspace UI]
+           │
+           ▼
+  handleSubmit() in workspace.js
+           │
+           │  port.postMessage({ action: 'chat_stream', ... })
+           ▼
+[Background Port: 'lumina-chat-stream']
+           │
+           ▼
+  handleChatStream() in chat_stream_service.js
+           │
+           ├── Key Rotation & Model Chain Resolution
+           ├── Build Context & System Instructions
+           └── fetch(Provider API Endpoint, { stream: true })
+           │
+           ▼
+  ReadableStream Loop
+           │
+           │  broadcastToSession(sessionId, { action: 'chunk', chunk })
+           ▼
+[Workspace UI Port Listener]
+           │
+           ▼
+  chatUI.appendAssistantChunk() -> Marked Renderer -> DOM Update
+```
 
 ---
 
-## 📁 Project Structure
+## Key Capabilities
+
+### Multi-Provider AI Engine & Resilience
+- Native integration with Google Gemini, OpenAI, Anthropic Claude, Groq, Cerebras, OpenRouter, and local Ollama instances.
+- Provider fallback chains and key rotation protocols to mitigate rate limits and service interruptions.
+- Granular inference controls including temperature, top-p, token limits, and configurable reasoning/thinking budgets.
+
+### Sparks Custom Agent System
+- Create and isolate domain-specific AI agents with custom personas, system instructions, and knowledge files.
+- Knowledge base attachment support for structured text, markdown, code, and documents.
+- Real-time sandbox testing environment with live parameter inspection.
+
+### In-Page Context & Intelligence
+- Floating action bar for on-page text selection: translate, explain, summarize, or proofread.
+- Persistent web annotations with color categorization and comment anchoring.
+- Direct web context ingestion into active conversation threads without manual copying.
+
+### Document Workspace & Rich Notes
+- Block-based document editing powered by BlockNote and ProseMirror.
+- Markdown export, KaTeX LaTeX mathematical rendering, syntax highlighting, and Chart.js diagram generation.
+
+### Local-First Security & Cloud Sync
+- Local-first architecture: all conversation histories, tokens, and custom agents reside on the user device.
+- Optional client-side Google Drive synchronization via standard Chrome OAuth scopes (`drive.appdata` / `drive.file`).
+
+---
+
+## Repository Structure
 
 ```text
 Lumina/
-├── manifest.json            # Manifest V3 extension configuration
-├── build.py                 # Python build & bundle script (use --watch for dev)
-├── build.ps1                # PowerShell build script for Windows
-├── PROJECT_SYMBOLS.md       # Auto-generated index of classes, functions, and symbols
+├── manifest.json                  # Manifest V3 extension definition and permission scopes
+├── package.json                   # Dependencies, build scripts, and metadata
+├── build.js                       # esbuild build and watch compilation pipeline
+├── assets/                        # Static icons, fonts, and media files
+├── dist/                          # Compiled distribution artifacts
 ├── lib/
-│   ├── core/                # Core engines (auth/sync, chat_db, notes_manager, tts_manager, memory, etc.)
-│   ├── helpers/             # Utility modules (selection_utils, annotation_utils, file_processor, etc.)
-│   ├── parsers/             # Dictionary & text parsers
-│   ├── ui/                  # UI panels (notes_panel, tts_panel, history_panel, dictionary_popup)
-│   └── vendor/              # Third-party libraries (BlockNote, Marked, KaTeX, Highlight.js, etc.)
+│   └── vendor/                    # Third-party libraries (BlockNote, KaTeX, Marked, Highlight.js)
 ├── pages/
-│   ├── lumina/              # Main Lumina application (Chat, Notes, Sparks, Settings, Search)
-│   ├── popup/               # Extension popup launcher
-│   └── offscreen/           # Offscreen document for audio processing
-├── scripts/
-│   ├── background.js        # Background Service Worker
-│   └── content.js           # Web page content script for selection toolbar & annotations
-├── tools/                   # Developer & compilation tools (blocknote build, symbol generator)
-└── assets/                  # Icons, fonts, and audio assets
+│   ├── lumina/                    # Main Lumina workspace HTML and compiled bundle output
+│   ├── offscreen/                 # Offscreen audio capture and playback document
+│   └── popup/                     # Quick action extension popup interface
+├── scripts/                       # Output bundles for content scripts and service workers
+├── src/
+│   ├── background/                # Background service worker modules and streaming services
+│   ├── components/                # Modular UI components (chat, notes, sparks, modals, panels)
+│   ├── content/                   # Content scripts, floating action bar, and annotation DOM handlers
+│   ├── core/                      # Core runtime engines (audio, Gemini live, TTS, memory, auth)
+│   ├── db/                        # IndexedDB database schemas and repository wrappers
+│   ├── helpers/                   # Document extractors, YouTube parser, selection tools
+│   ├── pages/                     # Workspace view controllers, styles, and entrypoints
+│   ├── popup/                     # Popup view logic and quick launcher controllers
+│   └── shared/                    # Shared types, constants, and utilities
+└── tools/                         # BlockNote compilation entry and developer utilities
 ```
 
 ---
 
-## 🛠️ Development & Build Workflow
+## Build Pipeline
 
-Lumina uses a lightweight build script (`build.py`) to bundle source JS/CSS files into `lumina.bundle.js` and `lumina.bundle.css`.
+Lumina utilizes `esbuild` to compile and bundle modern JavaScript/JSX and CSS into high-performance targets compatible with the extension sandbox.
 
-### Development Mode (Auto-rebuild on file change)
-```bash
-python3 build.py --watch
-```
+### Compilation Matrix
 
-### Production Build
-```bash
-python3 build.py
-```
-
-### Updating Symbol Index
-To regenerate `PROJECT_SYMBOLS.md` after adding or changing functions:
-```bash
-node tools/generate_symbols.js
-```
+| Source Entrypoint | Target Bundle | Format | Target Environment |
+|---|---|---|---|
+| `src/pages/lumina/index.js` | `pages/lumina/lumina.bundle.js` | IIFE | Chrome 110+ |
+| `src/pages/lumina/styles/index.css` | `pages/lumina/lumina.bundle.css` | CSS Bundle | Chrome 110+ |
+| `src/background/index.js` | `scripts/background.bundle.js` | ESM | Chrome Service Worker |
+| `src/content/content_script.js` | `scripts/content.bundle.js` | IIFE | Chrome Content Script |
+| `tools/blocknote_entry.jsx` | `lib/vendor/blocknote.js` | ESM/JSX Bundle | Browser / Workspace |
 
 ---
 
-## 📄 License
+## Installation & Setup
 
-This project is licensed under the [MIT License](LICENSE).
+### Prerequisites
+- Google Chrome or any Chromium-based browser (v110+)
+- Node.js (v18.0.0 or higher)
+- npm (v9.0.0 or higher)
 
+### Build from Source
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Dinhbinh02/Lumina.git
+   cd Lumina
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Compile the production bundles:
+   ```bash
+   npm run build
+   ```
+
+4. For active development with hot compilation:
+   ```bash
+   npm run dev
+   ```
+
+### Loading into Chromium
+
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** via the toggle in the top-right corner.
+3. Click **Load unpacked**.
+4. Select the root `Lumina` directory containing `manifest.json`.
+
+---
+
+## Security & Privacy Model
+
+- **No Remote Telemetry**: Lumina does not operate intermediary servers. All API queries are dispatched directly from the client browser to the configured model provider endpoints.
+- **Key Isolation**: API keys are stored in `chrome.storage.local` with strict extension-origin access limits.
+- **Minimal Scopes**: Permissions requested in `manifest.json` are bounded strictly to user-initiated browser capabilities (`storage`, `offscreen`, `sidePanel`, `identity`).
+
+---
+
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).

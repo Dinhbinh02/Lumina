@@ -7536,17 +7536,25 @@ b .katex * {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  color: #fff;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.86em;
   font-weight: var(--lumina-weight-semibold);
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.2);
   transition: width 0.25s ease, height 0.25s ease, font-size 0.25s ease;
+  user-select: none;
+  overflow: hidden;
 }
 
 .sidebar-spark-item__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
   border: none;
   display: block;
 }
@@ -7616,6 +7624,7 @@ b .katex * {
   width: 100px;
   height: 100px;
   border-radius: 50%;
+  background: linear-gradient(135deg, #64748b, #475569);
   color: #fff;
   display: flex;
   align-items: center;
@@ -7623,6 +7632,17 @@ b .katex * {
   font-size: 3.14em;
   font-weight: var(--lumina-weight-semibold);
   margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  user-select: none;
+  overflow: hidden;
+}
+
+.spark-welcome__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .spark-avatar-editor {
@@ -7636,7 +7656,7 @@ b .katex * {
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  background: var(--lumina-primary-color, #007aff);
+  background: linear-gradient(135deg, #64748b, #475569);
   color: #fff;
   display: flex;
   align-items: center;
@@ -7645,13 +7665,17 @@ b .katex * {
   font-weight: var(--lumina-weight-semibold);
   cursor: pointer;
   overflow: hidden;
-  transition: opacity 0.2s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: opacity 0.2s, transform 0.2s;
+  user-select: none;
 }
 
 .spark-avatar-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .spark-avatar-overlay {
@@ -7734,6 +7758,15 @@ b .katex * {
   font-size: 0.71em;
   font-weight: var(--lumina-weight-semibold);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.spark-welcome__recent-item-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .spark-welcome__recent-item-title {

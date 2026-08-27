@@ -1,16 +1,23 @@
-const SPARK_COLORS = [
-    '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#4ade80',
-    '#34d399', '#22d3ee', '#38bdf8', '#60a5fa', '#818cf8',
-    '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb7185'
+const SPARK_GRADIENTS = [
+    'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    'linear-gradient(135deg, #3b82f6, #06b6d4)',
+    'linear-gradient(135deg, #0ea5e9, #10b981)',
+    'linear-gradient(135deg, #10b981, #84cc16)',
+    'linear-gradient(135deg, #f59e0b, #f97316)',
+    'linear-gradient(135deg, #ec4899, #f43f5e)',
+    'linear-gradient(135deg, #8b5cf6, #d946ef)',
+    'linear-gradient(135deg, #14b8a6, #3b82f6)',
+    'linear-gradient(135deg, #f43f5e, #fb923c)',
+    'linear-gradient(135deg, #0284c7, #6366f1)'
 ];
 
 export function getSparkColor(name) {
-    if (!name) return SPARK_COLORS[0];
+    if (!name) return SPARK_GRADIENTS[0];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return SPARK_COLORS[Math.abs(hash) % SPARK_COLORS.length];
+    return SPARK_GRADIENTS[Math.abs(hash) % SPARK_GRADIENTS.length];
 }
 
 export function buildSparkSystemPrompt(spark, memoryFacts = []) {

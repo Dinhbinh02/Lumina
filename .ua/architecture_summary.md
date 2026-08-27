@@ -1,91 +1,187 @@
 # Lumina Extension - Architectural Analysis Report (Understand-Anything)
 
-**Date**: 2026-08-27T02:55:12.370Z  
-**Total AST Nodes**: 287 | **Total Edges**: 261 | **Files Analyzed**: 50
+**Date**: 2026-08-27T15:05:00.000Z  
+**Total Source Files**: 83 | **Architecture Version**: 2.0 (Modular ESM + esbuild)  
+**Target Platform**: Google Chrome Extension (Manifest V3)
 
 ---
 
-## 1. Executive Summary & Problem Statement
+## 1. Executive Summary & Architectural Overview
 
-Codebase hiện tại của **Lumina** là một Chrome Extension Manifest V3 giàu tính năng (Gemini Live Audio, Streaming Chat, BlockNote Notes, Highlights, PDF/YouTube extraction, TTS), tuy nhiên đang gặp phải các vấn đề kiến trúc nghiêm trọng:
+Lumina is a privacy-first, multi-tier Chrome Extension (Manifest V3) providing an extensible AI workspace, multimodal audio streaming, in-page contextual actions, isolated custom agents (Sparks), block-based rich notes, and local-first data storage with Google Drive synchronization.
 
-1. **Monolithic Bundle qua Script Nối Chuỗi (`build.ps1`):**
-   - Không sử dụng module bundler thực thụ (như Vite/ESM).
-   - Toàn bộ các file trong `lib/` và `pages/` được nối chuỗi phẳng vào `lumina.bundle.js` và `lumina.bundle.css`.
-   - Tất cả các hàm, biến dùng chung đều biến thành **global variables** trên `window`, gây ô nhiễm scope và nguy cơ xung đột tên rất cao.
+The codebase has transitioned from a legacy monolithic script-concatenation pattern into a modern, domain-driven modular architecture built with **esbuild**, featuring strict separation between UI components, background service workers, audio processing pipelines, and data access repositories.
 
-2. **File Monolithic Quá Lớn:**
-   - `pages/lumina/lumina.js`: **6,000+ dòng code** chứa lẫn lộn: DOM Event listeners, UI rendering, WebSocket handling, API streaming, Markdown parsing, Speech synthesis triggering, Storage access, File upload handling.
-   - `pages/lumina/lumina.css`: **6,400+ dòng code** styling gộp chung không theo design tokens hay BEM/CSS modules.
-
-3. **Thiếu Phân Tách Tầng (Layered Separation):**
-   - Giao diện (View) gọi trực tiếp xuống tầng lưu trữ (IndexedDB/Storage) và khởi tạo API WebSocket ngay bên trong UI handler.
-   - Giao tiếp giữa `content.js` <-> `background.js` <-> `lumina.js` dùng raw JSON messages thiếu Type Definitions, khó debug và dễ gãy khi thêm tính năng mới.
+### Key Architectural Characteristics
+- **Modular Bundling with esbuild**: Automated bundling pipeline compiling JSX, modern ESM JavaScript, and CSS into isolated distribution targets (`lumina.bundle.js`, `background.bundle.js`, `content.bundle.js`, `lumina.bundle.css`).
+- **Domain-Driven Directory Structure**: Core business logic, persistence layers, background services, and UI components are organized into cohesive sub-packages under `src/`.
+- **Typed Message Passing & Reactive Streaming**: Long-lived Port connections (`lumina-chat-stream`) and structured runtime messaging decouple the browser background service worker from the workspace views.
+- **Local-First Data Sovereignty**: All session histories, API keys, Sparks configurations, and notes reside locally within client-side IndexedDB and `chrome.storage.local`.
 
 ---
 
-## 2. Bản Đồ Phân Tầng Hiện Tại (Current Layer Breakdown)
-
-### 🔹 Layer 1: Extension Lifecycle & Background (Entrypoints)
-- **`manifest.json`**: Định nghĩa permissions (storage, scripting, offscreen, tts, sidePanel), content security policy, commands (`open-lumina-chat`, `new-chat`, `toggle-side-panel`).
-- **`scripts/background.js`**: Quản lý Service Worker lifecycle, sidepanel opening, offscreen document audio context setup.
-- **`pages/offscreen/offscreen.js`**: Offscreen document hỗ trợ phát và thu âm thanh nền cho Manifest V3.
-
-### 🔹 Layer 2: Content Scripts & Web Page Injections
-- **`scripts/content.js`**: Lắng nghe sự kiện bôi đen (selection), click context menu, trigger popup dịch thuật / giải thích.
-- **`lib/helpers/selection_utils.js` & `lib/helpers/annotation_utils.js`**: Lấy tọa độ selection, highlight chữ trên web page.
-- **`lib/ui/dictionary_popup.js` & `lib/parsers/freedict_parser.js`**: Popup tra từ điển offline.
-- **`lib/helpers/youtube_utils.js` & `lib/helpers/file_processor.js`**: Bóc tách transcript video và file PDF/Docs.
-
-### 🔹 Layer 3: AI Engine & Realtime Audio Services
-- **`lib/core/gemini_live.js`**: WebSocket client giao tiếp realtime với Gemini Multimodal Live API.
-- **`lib/core/pcm_processor.js`**: Xử lý định dạng PCM 16-bit 24kHz âm thanh 2 chiều.
-- **`lib/core/tts_manager.js` & `lib/ui/tts_panel.js`**: Quản lý hàng đợi đọc giọng nói văn bản.
-- **`lib/core/token_utils.js` & `lib/core/memory.js`**: Quản lý bộ đệm token và context memory của AI.
-
-### 🔹 Layer 4: Storage & Data Persistence (IndexedDB)
-- **`lib/core/chat_db.js` & `lib/core/chat_history.js`**: Quản lý thread hội thoại và message history.
-- **`lib/core/highlight_db.js`**: Quản lý các đoạn bôi vàng trên web.
-- **`lib/core/attachment_db.js`**: Lưu trữ cache file đa phương tiện (ảnh, PDF).
-- **`lib/core/notes_manager.js`**: Quản lý ghi chú tích hợp BlockNote editor.
-- **`lib/core/migration.js`**: Di chuyển dữ liệu giữa các phiên bản extension.
-
-### 🔹 Layer 5: Presentation & Workspace UI
-- **`pages/lumina/lumina.html` / `lumina.js` / `lumina.css`**: Giao diện chat chính, action bar, markdown renderer, chat bubbles, sparks prompts.
-- **`pages/lumina/settings_modal.js`**: Modal cài đặt API key, model configurations, system prompts.
-- **`pages/lumina/search_modal.js`**: Modal tìm kiếm tin nhắn và ghi chú.
-
----
-
-## 3. Lộ Trình Module Hoá Cho Phase 2 Đến Phase 7
+## 2. Layered Architecture Breakdown
 
 ```mermaid
-graph LR
-    subgraph UI_Layer["UI Layer (ESM Components)"]
-        ChatView[Chat View Controller]
-        Sidepanel[Sidepanel View]
-        SettingsModal[Settings Modal]
-        NotesView[Notes BlockNote View]
+graph TD
+    subgraph Layer5["Layer 5: Presentation & Workspace UI"]
+        ChatUI["Chat Interface & Stream Renderer"]
+        SparksView["Sparks Agent Studio & Preview"]
+        NotesEditor["BlockNote Rich Text Editor"]
+        Modals["Settings, Search & History Modals"]
     end
 
-    subgraph Service_Layer["Service Layer (Singleton Services)"]
-        AIService[AI Streaming & Live Service]
-        TTSService[TTS Audio Service]
-        DocService[Document & Extraction Service]
-        MessagingBus[Typed IPC Messaging Bus]
+    subgraph Layer4["Layer 4: Core Services & Real-time Engines"]
+        AIService["Chat Stream & Token Service"]
+        AudioEngine["PCM 16-bit 24kHz Processor"]
+        TTSManager["TTS Queue & Voice Synthesis"]
+        AuthSync["Google Auth & Drive Sync"]
     end
 
-    subgraph Data_Layer["Data Layer (Repository Pattern)"]
-        ChatRepo[Chat Repository]
-        HighlightRepo[Highlight Repository]
-        NoteRepo[Note Repository]
-        DBClient[Unified IndexedDB & Storage Sync]
+    subgraph Layer3["Layer 3: Persistence Layer (IndexedDB)"]
+        ChatDB["LuminaChatDB (Threads & Messages)"]
+        HighlightDB["LuminaHighlightDB (Web Annotations)"]
+        AttachmentDB["LuminaAttachmentDB (Files & Media)"]
+        AudioCache["LuminaAudioCacheDB"]
     end
 
-    UI_Layer --> Service_Layer
-    Service_Layer --> Data_Layer
-    MessagingBus <--> UI_Layer
-    MessagingBus <--> Service_Layer
+    subgraph Layer2["Layer 2: Content Scripts & DOM Injections"]
+        ContentScript["Content Script Lifecycle"]
+        ActionBar["Selection Floating Action Bar"]
+        WebExtractors["DOM, PDF & YouTube Parsers"]
+    end
+
+    subgraph Layer1["Layer 1: Extension Runtime & Background Service Worker"]
+        ServiceWorker["Background Service Worker (MV3)"]
+        SidePanel["Side Panel Window Coordinator"]
+        OffscreenDoc["Offscreen Audio Processing"]
+    end
+
+    Layer5 --> Layer4
+    Layer4 --> Layer3
+    Layer5 --> Layer3
+    Layer2 <--> Layer1
+    Layer4 <--> Layer1
 ```
 
-Dựa trên kết quả Knowledge Graph thu được, dự án hoàn toàn sẵn sàng để bước sang **Phase 2: Thiết lập Modern Build Pipeline (Vite + TypeScript/ESM)** để thay thế hoàn toàn `build.ps1`.
+### Layer 1: Extension Lifecycle & Background Runtime (`src/background/`)
+- **`src/background/index.js`**: Service worker entry point initializing all background subsystems on startup.
+- **`src/background/chat_stream_service.js`**: Central AI streaming dispatcher. Handles multi-provider API requests (Gemini, OpenAI, Claude, Groq, OpenRouter, Ollama), API key rotation, concurrent auto-naming, and stream broadcast channels.
+- **`src/background/sidepanel_manager.js`**: Manages Chrome Side Panel states, window bindings, and tab transitions.
+- **`src/background/sync_handlers.js`**: Executes debounced Google Drive synchronization, backup serialization, and conflict resolution.
+- **`src/background/media_processor.js`**: Processes file attachments, base64 conversions, and image MIME-type normalization.
+- **`src/background/audio_fetcher.js`**: Background fetcher for remote pronunciations and audio streams.
+- **`src/background/storage_cleanup.js`**: Periodic cleanup routines for expired temporary cache entries.
+
+### Layer 2: Content Scripts & In-Page Injections (`src/content/`, `src/helpers/`)
+- **`src/content/content_script.js`**: Injected script capturing selection ranges, mouse events, and keyboard shortcuts.
+- **`src/content/selection_toolbar.js`**: Floating contextual action bar offering translation, definition lookup, summarization, and prompt execution.
+- **`src/content/annotation_manager.js`**: In-page highlighter injecting DOM spans with persistent color coding and note anchors.
+- **`src/helpers/selection_utils.js`**: DOM range calculation, scroll compensation, and viewport bounding logic.
+- **`src/helpers/youtube_utils.js`**: YouTube transcript extractor and timestamp synchronizer.
+- **`src/helpers/file_processor.js`**: Client-side parsing for PDF files, text documents, and code extracts.
+
+### Layer 3: Core Services & AI Engines (`src/core/`)
+- **`src/core/audio/pcm_processor.js`**: Handles raw PCM 16-bit 24kHz bidirectional audio conversion for low-latency voice streaming.
+- **`src/core/audio/gemini_live.js`**: WebSocket client managing real-time bidirectional multimodal interaction with Google Gemini Live API.
+- **`src/core/audio/tts_manager.js`**: Synthesizes and queues browser text-to-speech outputs with configurable rate, pitch, and voice profiles.
+- **`src/core/auth/google_auth.js`**: Chrome Identity API wrapper handling OAuth2 authentication, token refresh, and user profile retrieval.
+- **`src/core/memory/user_memory.js`**: Contextual memory indexing injecting user preferences and persistent facts into LLM system prompts.
+- **`src/core/tokens/token_utils.js`**: Token counting and context window trimming across diverse model tokenizers.
+
+### Layer 4: Storage & Persistence Repositories (`src/db/`)
+- **`src/db/chat_db.js`**: IndexedDB repository managing chat sessions, messages, version branching, and metadata tags.
+- **`src/db/highlight_db.js`**: Stores page URL mappings, annotation ranges, colors, and timestamps.
+- **`src/db/attachment_db.js`**: Manages binary blobs for uploaded knowledge files, images, and documents.
+- **`src/db/migration.js`**: Schema migration engine executing version upgrades safely without data loss.
+
+### Layer 5: Presentation & Workspace Layer (`src/components/`, `src/pages/`, `src/popup/`)
+- **`src/pages/lumina/workspace.js` & `index.js`**: Main workspace controller managing tab states, split pane layouts, prompt dispatching, and layout responsiveness.
+- **`src/components/chat/chat_ui.js`**: Chat interface controller handling message rendering, auto-scrolling, markdown parsing, and inline edit actions.
+- **`src/components/chat/chart_renderer.js`**: Dynamic Chart.js renderer converting JSON codeblocks into interactive data visualizations.
+- **`src/components/sparks/sparks.js`**: Sparks Studio for configuring custom personas, editing system prompts, uploading knowledge attachments, and live-preview testing.
+- **`src/components/notes/notes_manager.js`**: Integrated BlockNote document editor with rich-text formatting and markdown interoperability.
+- **`src/components/modals/`**: Modular overlays for Settings (`settings_modal.js`), Quick Search (`search_modal.js`), and History (`history_panel.js`).
+- **`src/pages/lumina/styles/`**: Modular CSS design system built on custom tokens (`tokens.css`, `base.css`, `layout.css`, `lumina.css`).
+
+---
+
+## 3. Communication & Data Flow Pipelines
+
+### AI Streaming Message Pipeline
+```
+[User Input in Workspace UI]
+           │
+           ▼
+  handleSubmit() in workspace.js
+           │
+           │  port.postMessage({ action: 'chat_stream', ... })
+           ▼
+[Background Port: 'lumina-chat-stream']
+           │
+           ▼
+  handleChatStream() in chat_stream_service.js
+           │
+           ├── Key Rotation & Model Chain Resolution
+           ├── Build Context & System Instructions
+           └── fetch(Provider API Endpoint, { stream: true })
+           │
+           ▼
+  ReadableStream Loop
+           │
+           │  broadcastToSession(sessionId, { action: 'chunk', chunk })
+           ▼
+[Workspace UI Port Listener]
+           │
+           ▼
+  chatUI.appendAssistantChunk() -> Marked Renderer -> DOM Update
+```
+
+### Auto-Naming & Session Lifecycle Flow
+```
+First User Message Sent
+           │
+           ├── Generate unique SessionID
+           ├── Initialize Session in Memory & Tabs
+           │
+           ├── Send Stream Request (chat_stream)
+           │
+           └── chrome.runtime.sendMessage({ action: 'generate_chat_title' })
+                      │
+                      ▼
+             Background Service Worker (chat_stream_service.js)
+                      │
+                      ├── Call lightweight LLM with Title Prompt
+                      └── Return response { success: true, title: "..." }
+                      │
+                      ▼
+             Update Tab Title & Persist in LuminaChatDB
+```
+
+---
+
+## 4. Build Pipeline Architecture
+
+```
+src/pages/lumina/index.js           ──(esbuild)──>  pages/lumina/lumina.bundle.js
+src/pages/lumina/styles/index.css   ──(esbuild)──>  pages/lumina/lumina.bundle.css
+src/background/index.js             ──(esbuild)──>  scripts/background.bundle.js
+src/content/content_script.js       ──(esbuild)──>  scripts/content.bundle.js
+tools/blocknote_entry.jsx           ──(esbuild)──>  lib/vendor/blocknote.js
+```
+
+---
+
+## 5. Architectural Quality Matrix
+
+| Dimension | Current Implementation | Rating |
+|---|---|---|
+| **Separation of Concerns** | Domain-separated layers (`background`, `core`, `db`, `components`, `helpers`). | High |
+| **Persistence Sovereignty** | Local-first IndexedDB with optional OAuth-backed cloud synchronization. | High |
+| **Extensibility** | Modular model adapter pattern; pluggable custom Sparks agents. | High |
+| **Resilience & Fault Tolerance** | Automatic API key rotation, provider fallback chains, and network reconnect logic. | High |
+| **Build Optimization** | High-speed bundle compilation via `esbuild` with hot-reload watch capabilities. | High |
+
+---
+
+*Report automatically compiled and formatted for architectural documentation.*

@@ -4798,7 +4798,98 @@ async function handleChatStream(messages, initialContext, question, port, imageD
     else port.postMessage(errorMsg);
   }
 }
+async function generateChatTitleFromModel(modelObj, question, images, files, history) {
+  const chain = await getModelChain("text", modelObj);
+  if (!chain || chain.length === 0) {
+    throw new Error("No configured models found.");
+  }
+  const config = chain[0];
+  const { model, providerType: currentProvider, endpoint, apiKey } = config;
+  const keys = getKeysArray2(apiKey);
+  const systemInstruction = `Analyze the preceding prompt/conversation and generate a concise, descriptive chat title in 8 words or fewer. Capture the core topic or main intent directly without filler words, matching the language of the prompt. Respond ONLY with the title itself, nothing else. Do not wrap in quotes.`;
+  const attachments = [];
+  if (Array.isArray(images)) attachments.push(...images);
+  if (Array.isArray(files)) attachments.push(...files);
+  const payloadParams = {
+    model,
+    endpoint,
+    providerType: currentProvider,
+    temperature: 0.3,
+    topP: 1,
+    maxTokens: 50,
+    parsedCustomParams: {},
+    normalizedThinkingLevel: "none",
+    isGemini25Model: false,
+    reasoningMode: false,
+    imageData: attachments.length > 0 ? attachments : null,
+    isStreaming: false,
+    cachedContent: null,
+    disableThinking: true
+  };
+  const titlePrompt = `Generate a concise, descriptive chat title (8 words or fewer) in the exact same language for the following prompt. Respond ONLY with the title text itself, without quotes or conversational filler:
+
+${question}`;
+  const response = await fetchWithRotation(keys, async (key) => {
+    const payload = await buildApiPayload(history || [], titlePrompt, systemInstruction, key, payloadParams);
+    const headers = { "Content-Type": "application/json" };
+    if (key) {
+      const isGemini2 = currentProvider === "gemini" || typeof endpoint === "string" && endpoint.includes("generativelanguage.googleapis.com");
+      if (isGemini2) {
+        headers["x-goog-api-key"] = key;
+      } else {
+        headers["Authorization"] = `Bearer ${key}`;
+      }
+    }
+    return fetch(payload.url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload.body)
+    });
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP error ${response.status}`);
+  }
+  const data = await response.json();
+  let text = "";
+  const isGemini = currentProvider === "gemini" || typeof endpoint === "string" && endpoint.includes("generativelanguage.googleapis.com");
+  if (isGemini) {
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const textParts = parts.filter((p) => p.text && !p.thoughtSignature && !p.thought);
+    text = textParts.length > 0 ? textParts[textParts.length - 1].text : parts[0]?.text || "";
+  } else {
+    text = data.choices?.[0]?.message?.content || "";
+  }
+  let cleanedText = text.trim();
+  const lines = cleanedText.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length > 1) {
+    const titleLine = lines.find((l) => /^(corrected\s+)?title\s*:/i.test(l));
+    if (titleLine) {
+      cleanedText = titleLine;
+    } else {
+      cleanedText = lines[lines.length - 1];
+    }
+  }
+  cleanedText = cleanedText.replace(/^(corrected\s+)?title\s*:\s*/i, "");
+  cleanedText = cleanedText.replace(/^(suggested\s+)?title\s*:\s*/i, "");
+  cleanedText = cleanedText.replace(/^chat\s+title\s*:\s*/i, "");
+  cleanedText = cleanedText.trim().replace(/^["']|["']$/g, "").trim();
+  if (!cleanedText) {
+    return question.substring(0, 30);
+  }
+  return cleanedText;
+}
 function initChatStreamService() {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request && request.action === "generate_chat_title") {
+      generateChatTitleFromModel(request.modelObj, request.question, request.images, request.files, request.history).then((title) => {
+        sendResponse({ success: true, title });
+      }).catch((err) => {
+        console.error("[Lumina BG] generate_chat_title error:", err);
+        sendResponse({ success: false, error: err?.message || String(err) });
+      });
+      return true;
+    }
+  });
   chrome.runtime.onConnect.addListener((port) => {
     if (port.name === "lumina-chat-stream") {
       const registeredSessions = /* @__PURE__ */ new Set();

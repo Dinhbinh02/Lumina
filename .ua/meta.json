@@ -1,13 +1,21 @@
 {
   "projectName": "Lumina Extension",
-  "analyzedAt": "2026-08-27T02:55:12.370Z",
-  "fileCount": 50,
-  "nodeCount": 287,
-  "edgeCount": 261,
-  "languages": [],
+  "analyzedAt": "2026-08-27T15:05:00.000Z",
+  "fileCount": 83,
+  "nodeCount": 395,
+  "edgeCount": 382,
+  "languages": [
+    "JavaScript",
+    "JSX",
+    "CSS",
+    "HTML",
+    "JSON"
+  ],
   "entryPoints": [
-    "scripts/background.js",
-    "scripts/content.js",
+    "src/background/index.js",
+    "src/content/content_script.js",
+    "src/pages/lumina/index.js",
+    "src/pages/lumina/styles/index.css",
     "pages/lumina/lumina.html"
   ]
 }

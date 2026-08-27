@@ -102,9 +102,9 @@ async function sparksRenderList() {
     }
     body.innerHTML = list.map(spark => {
         const avatarHTML = spark.avatar
-            ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+            ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`
             : (spark.name || '?')[0].toUpperCase();
-        const bgStyle = spark.avatar ? 'background-color: transparent;' : '';
+        const bgStyle = spark.avatar ? 'background: transparent;' : (spark.name ? `background: ${getSparkColor(spark.name)};` : '');
         return `
             <div class="spark-card" data-spark-id="${spark.id}">
                 <div class="spark-card__avatar" style="${bgStyle}">${avatarHTML}</div>
@@ -152,11 +152,13 @@ async function sparksOpenEditor(sparkId = null) {
     overlay.id = 'sparks-editor-overlay';
     overlay.className = 'sparks-editor-overlay';
     const knowledgeFiles = spark?.knowledgeFiles || [];
-    const color = getSparkColor(spark?.name || 'New Spark');
+    const neutralBg = 'linear-gradient(135deg, #64748b, #475569)';
+    const color = spark?.name ? getSparkColor(spark.name) : neutralBg;
     const welcomeAvatarHTML = spark?.avatar
-        ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+        ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`
         : (spark?.name || '?')[0].toUpperCase();
-    const welcomeBgStyle = spark?.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
+    const welcomeBgStyle = spark?.avatar ? 'background: transparent;' : `background: ${color}`;
+    const previewAvatarBg = spark?.avatar ? 'background: transparent;' : `background: ${color}`;
     overlay.innerHTML = `
         <div class="sparks-editor">
             <div class="sparks-editor-form">
@@ -171,8 +173,8 @@ async function sparksOpenEditor(sparkId = null) {
                 </div>
                 <div class="sparks-editor-fields">
                     <div class="spark-avatar-editor">
-                        <div class="spark-avatar-preview" id="spark-avatar-preview">
-                            ${spark?.avatar ? `<img src="${spark.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />` : `<span class="spark-avatar-letter">${(spark?.name || '?')[0].toUpperCase()}</span>`}
+                        <div class="spark-avatar-preview" id="spark-avatar-preview" style="${previewAvatarBg}">
+                            ${spark?.avatar ? `<img src="${spark.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<span class="spark-avatar-letter">${(spark?.name || '?')[0].toUpperCase()}</span>`}
                             <div class="spark-avatar-overlay">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                             </div>
@@ -364,11 +366,11 @@ async function sparksOpenEditor(sparkId = null) {
             reader.onload = (e) => {
                 openAvatarCropper(e.target.result, (croppedDataUrl) => {
                     currentAvatar = croppedDataUrl;
-                    avatarPreview.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" /><div class="spark-avatar-overlay"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
+                    avatarPreview.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" /><div class="spark-avatar-overlay"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
                     const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
                     if (welcomeAvatar) {
-                        welcomeAvatar.style.backgroundColor = 'transparent';
-                        welcomeAvatar.innerHTML = `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
+                        welcomeAvatar.style.background = 'transparent';
+                        welcomeAvatar.innerHTML = `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
                     }
                     updateSaveButtonState();
                 });
@@ -408,11 +410,13 @@ async function sparksOpenEditor(sparkId = null) {
     const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
     const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
     function updateWelcomeAvatarLetter(nameVal) {
+        const firstLetter = (nameVal || '?')[0].toUpperCase();
         if (welcomeAvatar && !currentAvatar) {
-            const firstLetter = (nameVal || '?')[0].toUpperCase();
             welcomeAvatar.textContent = firstLetter;
-            const dynamicColor = getSparkColor(nameVal || 'New Spark');
-            welcomeAvatar.style.backgroundColor = dynamicColor;
+        }
+        const previewLetter = overlay.querySelector('#spark-avatar-preview .spark-avatar-letter');
+        if (previewLetter && !currentAvatar) {
+            previewLetter.textContent = firstLetter;
         }
     }
     nameInput.addEventListener('input', () => {
@@ -712,21 +716,23 @@ async function sparksOpenEditor(sparkId = null) {
     });
 }
 function getSparkColor(name) {
-    const colors = [
-        '#4db6ac',
-        '#00acc1',
-        '#43a047',
-        '#ab47bc',
-        '#5c6bc0',
-        '#ff7043',
-        '#ec407a',
-        '#26a69a'
+    const gradients = [
+        'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        'linear-gradient(135deg, #3b82f6, #06b6d4)',
+        'linear-gradient(135deg, #0ea5e9, #10b981)',
+        'linear-gradient(135deg, #10b981, #84cc16)',
+        'linear-gradient(135deg, #f59e0b, #f97316)',
+        'linear-gradient(135deg, #ec4899, #f43f5e)',
+        'linear-gradient(135deg, #8b5cf6, #d946ef)',
+        'linear-gradient(135deg, #14b8a6, #3b82f6)',
+        'linear-gradient(135deg, #f43f5e, #fb923c)',
+        'linear-gradient(135deg, #0284c7, #6366f1)'
     ];
     let hash = 0;
-    for (let i = 0; i < name.length; i++) {
+    for (let i = 0; i < (name || '').length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return colors[Math.abs(hash) % colors.length];
+    return gradients[Math.abs(hash) % gradients.length];
 }
 async function sidebarSparksRenderList() {
     const container = document.getElementById('sidebar-sparks-list');
@@ -739,18 +745,12 @@ async function sidebarSparksRenderList() {
         return (b.createdAt || 0) - (a.createdAt || 0);
     });
     let html = '';
-    const activeTab = (typeof window.getActiveLuminaTab === 'function')
-        ? window.getActiveLuminaTab()
-        : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
-    const maxSparksToShow = 4;
-    const hasMoreSparks = list.length > maxSparksToShow;
-    const visibleSparks = (hasMoreSparks && !sidebarSparksExpanded) ? list.slice(0, maxSparksToShow) : list;
-    visibleSparks.forEach(spark => {
+    list.forEach(spark => {
         const color = getSparkColor(spark.name);
         const avatarHTML = spark.avatar
-            ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+            ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`
             : (spark.name || '?')[0].toUpperCase();
-        const bgStyle = spark.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
+        const bgStyle = spark.avatar ? 'background: transparent;' : `background: ${color}`;
         html += `
             <div class="sidebar-spark-item" draggable="true" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
                 <div class="sidebar-spark-item__avatar" style="${bgStyle}">${avatarHTML}</div>
@@ -761,42 +761,10 @@ async function sidebarSparksRenderList() {
             </div>
         `;
     });
-    if (hasMoreSparks) {
-        if (!sidebarSparksExpanded) {
-            html += `
-                <div class="sidebar-spark-item sidebar-spark-all-btn" style="cursor: pointer;">
-                    <div class="sidebar-spark-item__avatar" style="background-color: transparent; display: flex; align-items: center; justify-content: center;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lumina-sidebar-text); opacity: 1;">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </div>
-                    <span class="sidebar-spark-item__title">All sparks</span>
-                </div>
-            `;
-        } else {
-            html += `
-                <div class="sidebar-spark-item sidebar-spark-all-btn" style="cursor: pointer;">
-                    <div class="sidebar-spark-item__avatar" style="background-color: transparent; display: flex; align-items: center; justify-content: center;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lumina-sidebar-text); opacity: 1;">
-                            <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                    </div>
-                    <span class="sidebar-spark-item__title">Show less</span>
-                </div>
-            `;
-        }
-    }
     container.innerHTML = html;
     let draggedItem = null;
     container.querySelectorAll('.sidebar-spark-item').forEach(item => {
         item.addEventListener('click', (e) => {
-            if (item.classList.contains('sidebar-spark-all-btn')) {
-                sidebarSparksExpanded = !sidebarSparksExpanded;
-                sidebarSparksRenderList();
-                return;
-            }
             if (e.target.closest('.sidebar-spark-item__menu-btn')) return;
             openSparkChat(item.dataset.sparkId);
             const sidebar = document.getElementById('lumina-sidebar');
@@ -1006,9 +974,9 @@ async function renderSparkWelcomeScreen(activeTab) {
         .slice(0, 5);
     const color = getSparkColor(spark.name);
     const avatarHTML = spark.avatar
-        ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+        ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`
         : (spark.name || '?')[0].toUpperCase();
-    const bgStyle = spark.avatar ? 'background-color: transparent;' : `background-color: ${color}`;
+    const bgStyle = spark.avatar ? 'background: transparent;' : `background: ${color}`;
     let recentHTML = '';
     if (sparkChats.length > 0) {
         recentHTML = `

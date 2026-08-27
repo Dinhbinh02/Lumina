@@ -1093,6 +1093,7 @@ async function initTabs() {
             }
         });
     }
+    updateTopbarMenuVisibility();
     window.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
             e.preventDefault();
@@ -5626,6 +5627,11 @@ async function renderDropdownMenu() {
     if (!dropdown) return;
     const activeTab = tabs[activeTabIndex];
     const sessionId = activeTab?.sessionId || null;
+    if (!sessionId) {
+        dropdown.style.display = 'none';
+        if (typeof updateTopbarMenuVisibility === 'function') updateTopbarMenuVisibility();
+        return;
+    }
     let sessionMeta = null;
     if (sessionId) {
         sessionMeta = await LuminaChatDB.getSession(sessionId);
@@ -6315,6 +6321,16 @@ function getDynamicWelcomeTitle() {
 function updatePaneBlankState() {
 }
 
+function updateTopbarMenuVisibility() {
+    const menuContainer = document.querySelector('.topbar__menu-container');
+    if (!menuContainer) return;
+    const targetTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
+    const historyEl = targetTab ? targetTab.historyEl : document.getElementById('chat-history');
+    const hasEntries = historyEl && historyEl.querySelector('.lumina-entry, .lumina-translation-card, .lumina-chat-question, .lumina-chat-answer') !== null;
+    const hasActiveSession = !!(targetTab && targetTab.sessionId && (hasEntries || targetTab.isHistoryLoaded));
+    menuContainer.style.display = hasActiveSession ? '' : 'none';
+}
+
 function updateWelcomeScreenState() {
     const layout = document.getElementById('chat-layout');
     if (!layout) return;
@@ -6323,6 +6339,7 @@ function updateWelcomeScreenState() {
     if (!historyEl) return;
     if (targetTab && targetTab.sessionId && (!targetTab.isHistoryLoaded || targetTab.isLoadingHistory)) {
         updatePaneBlankState();
+        updateTopbarMenuVisibility();
         return;
     }
     const isSpark = targetTab && targetTab.sparkId;
@@ -6349,10 +6366,12 @@ function updateWelcomeScreenState() {
         }
     }
     updatePaneBlankState();
+    updateTopbarMenuVisibility();
 }
 
 if (typeof window !== 'undefined') {
     window.updateWelcomeScreenState = updateWelcomeScreenState;
+    window.updateTopbarMenuVisibility = updateTopbarMenuVisibility;
     window.renderTabs = renderTabs;
     window.saveTabsState = saveTabsState;
     if (typeof updateUrlSessionId === 'function') window.updateUrlSessionId = updateUrlSessionId;

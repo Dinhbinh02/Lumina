@@ -1203,6 +1203,19 @@ async function generateChatTitleFromModel(modelObj, question, images, files, his
 
 
 export function initChatStreamService() {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request && request.action === 'generate_chat_title') {
+            generateChatTitleFromModel(request.modelObj, request.question, request.images, request.files, request.history)
+                .then(title => {
+                    sendResponse({ success: true, title });
+                })
+                .catch(err => {
+                    console.error('[Lumina BG] generate_chat_title error:', err);
+                    sendResponse({ success: false, error: err?.message || String(err) });
+                });
+            return true;
+        }
+    });
 
     chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'lumina-chat-stream') {
