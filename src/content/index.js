@@ -286,4 +286,222 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
             }
         }
     }, true);
+
+    let modifierKeyPressedAlone = true;
+
+    function getSelectedTextForAudio() {
+        let text = '';
+        const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
+        const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+        if (isInput) {
+            const start = activeElement.selectionStart;
+            const end = activeElement.selectionEnd;
+            if (start !== undefined && end !== undefined && start !== end) {
+                text = activeElement.value.substring(start, end).trim();
+            }
+        }
+        if (!text) {
+            const selection = getActiveSelection();
+            text = getSmartSelectionText() || (selection ? selection.toString().trim() : '');
+        }
+        return text;
+    }
+
+    function isShortcutMatch(event, shortcut) {
+        if (!shortcut) return false;
+
+        if (shortcut.modifiers && Array.isArray(shortcut.modifiers)) {
+            const hasCtrl = shortcut.modifiers.includes('Ctrl') || shortcut.modifiers.includes('Control');
+            const hasAlt = shortcut.modifiers.includes('Alt');
+            const hasShift = shortcut.modifiers.includes('Shift');
+            const hasMeta = shortcut.modifiers.includes('Meta') || shortcut.modifiers.includes('Cmd') || shortcut.modifiers.includes('Command');
+
+            if (hasCtrl !== event.ctrlKey) return false;
+            if (hasAlt !== event.altKey) return false;
+            if (hasShift !== event.shiftKey) return false;
+            if (hasMeta !== event.metaKey) return false;
+
+            if (shortcut.key === 'Shift' || shortcut.key === 'Control' || shortcut.key === 'Alt' || shortcut.key === 'Meta') {
+                return event.key === shortcut.key;
+            }
+            if (shortcut.code && event.code === shortcut.code) return true;
+            return (event.key || '').toLowerCase() === (shortcut.key || '').toLowerCase();
+        }
+
+        const ctrlMatch = !!shortcut.ctrlKey === event.ctrlKey;
+        const altMatch = !!shortcut.altKey === event.altKey;
+        const shiftMatch = !!shortcut.shiftKey === event.shiftKey;
+        const metaMatch = !!shortcut.metaKey === event.metaKey;
+        if (!ctrlMatch || !altMatch || !shiftMatch || !metaMatch) return false;
+
+        if (shortcut.code && event.code === shortcut.code) return true;
+        if (shortcut.key && (event.key || '').toLowerCase() === (shortcut.key || '').toLowerCase()) return true;
+        return false;
+    }
+
+    function matchesShortcut(event, action) {
+        const shortcut = shortcuts[action];
+        if (!shortcut) return false;
+        const isModifierKey = shortcut.key === 'Shift' || shortcut.key === 'Control' || shortcut.key === 'Alt' || shortcut.key === 'Meta';
+        if (isModifierKey && (!shortcut.modifiers || shortcut.modifiers.length === 0)) {
+            if (event.type !== 'keyup' || event.key !== shortcut.key || !modifierKeyPressedAlone) return false;
+            const isSideSpecific = shortcut.code && (shortcut.code.endsWith('Left') || shortcut.code.endsWith('Right'));
+            if (isSideSpecific && shortcut.code !== event.code) return false;
+            return true;
+        }
+        if (event.type === 'keyup') return false;
+        return isShortcutMatch(event, shortcut);
+    }
+
+    function matchesAnnotationShortcut(event, shortcut) {
+        if (!shortcut) return false;
+        const target = shortcut.keyData || shortcut;
+        return isShortcutMatch(event, target);
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Shift' || event.key === 'Control' || event.key === 'Alt' || event.key === 'Meta') {
+            modifierKeyPressedAlone = true;
+        } else {
+            if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
+                modifierKeyPressedAlone = false;
+            }
+        }
+        if (isExtensionDisabled) return;
+
+        const audioShortcut = shortcuts['audio'];
+        const isModifierOnlyAudio = audioShortcut && ['Shift', 'Control', 'Alt', 'Meta'].includes(audioShortcut.key) && (!audioShortcut.modifiers || audioShortcut.modifiers.length === 0);
+
+        if (!isModifierOnlyAudio && matchesShortcut(event, 'audio')) {
+            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            const text = getSelectedTextForAudio();
+            event.preventDefault();
+            event.stopPropagation();
+            if (text) {
+                playCombinedAudio(text);
+            } else {
+                stopAudio();
+            }
+            return;
+        }
+
+        if (matchesShortcut(event, 'askLumina')) {
+            const selection = window.getSelection();
+            const text = selection ? selection.toString().trim() : '';
+            const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            if (text.length > 0 && range && window.LuminaSelection) {
+                event.preventDefault();
+                event.stopPropagation();
+                LuminaSelection.show(0, 0, text, range);
+                LuminaSelection.showInput();
+                return;
+            }
+        }
+
+        if (matchesShortcut(event, 'translate')) {
+            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            const selection = window.getSelection();
+            const text = selection ? selection.toString().trim() : '';
+            if (text.length > 0) {
+                event.preventDefault();
+                event.stopPropagation();
+                const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                if (window.LuminaSelection) LuminaSelection.hide();
+                triggerSidePanelQuery(text, text, 'translate', range);
+                return;
+            }
+        }
+
+        if (matchesShortcut(event, 'micToggle')) {
+            event.preventDefault();
+            event.stopPropagation();
+            chrome.storage.local.set({ pendingMicToggle: Date.now() });
+            safeRuntimeSendMessage({ action: 'open_sidepanel' });
+            return;
+        }
+
+        if (matchesShortcut(event, 'luminaChat')) {
+            event.preventDefault();
+            event.stopPropagation();
+            safeRuntimeSendMessage({ action: 'open_sidepanel' });
+            return;
+        }
+
+        const annotationShortcutsList = shortcuts['annotationShortcuts'] || [];
+        for (const shortcut of annotationShortcutsList) {
+            if (shortcut.enabled === false) continue;
+            if (matchesAnnotationShortcut(event, shortcut)) {
+                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+                const selection = window.getSelection();
+                const text = selection ? selection.toString().trim() : '';
+                if (text.length > 0 && selection.rangeCount > 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const range = selection.getRangeAt(0);
+                    const color = shortcut.color || '#FFFB78';
+                    if (window.LuminaAnnotation) {
+                        window.LuminaAnnotation.highlight(range, color);
+                    }
+                    if (selection) selection.removeAllRanges();
+                    if (window.LuminaSelection) LuminaSelection.hide();
+                    return;
+                }
+            }
+        }
+
+        if (questionMappings && questionMappings.length > 0) {
+            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+                const selection = window.getSelection();
+                const text = selection ? selection.toString().trim() : '';
+                if (text) {
+                    const mapping = questionMappings.find(m => {
+                        let config = m.keyData;
+                        if (!config && m.key) {
+                            config = { key: m.key, code: 'Key' + m.key.toUpperCase() };
+                            if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                        }
+                        if (!config) return false;
+                        return isShortcutMatch(event, config);
+                    });
+                    if (mapping) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        let displayQuestion = mapping.prompt;
+                        let fullQuestion = mapping.prompt;
+                        if (mapping.prompt.includes('$SelectedText') || mapping.prompt.includes('SelectedText')) {
+                            displayQuestion = mapping.prompt
+                                .replace(/\$SelectedText|SelectedText/gi, text)
+                                .replace(/\$Sentence/gi, () => getSentenceContext())
+                                .replace(/\$Paragraph/gi, () => getParagraphContext())
+                                .trim();
+                            fullQuestion = displayQuestion;
+                        } else {
+                            fullQuestion = `"${text}" ${mapping.prompt}`;
+                            displayQuestion = fullQuestion;
+                        }
+                        const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                        const shouldHighlight = (mapping.highlight !== false) && (mapping.enableHighlight !== false);
+                        triggerSidePanelQuery(fullQuestion, displayQuestion, 'qa', range, shouldHighlight);
+                        if (window.LuminaSelection) LuminaSelection.hide();
+                        return;
+                    }
+                }
+            }
+        }
+    }, true);
+
+    document.addEventListener('keyup', (event) => {
+        if (isExtensionDisabled) return;
+        if (matchesShortcut(event, 'audio')) {
+            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            const text = getSelectedTextForAudio();
+            event.preventDefault();
+            event.stopPropagation();
+            if (text) {
+                playCombinedAudio(text);
+            } else {
+                stopAudio();
+            }
+        }
+    }, true);
 })();

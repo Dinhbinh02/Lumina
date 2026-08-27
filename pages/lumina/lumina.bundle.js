@@ -24514,152 +24514,215 @@ Markets reached historic highs this morning following breakthroughs in artificia
       ];
       if (date.getFullYear() === now.getFullYear()) {
         return monthNames[date.getMonth()];
+      } else {
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
       }
-      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    }
+    static getHighlightHtml(text, query) {
+      const escapedQuery = this.escapeRegExp(query);
+      const regex = new RegExp(`(${escapedQuery})`, "gi");
+      const matchIdx = text.toLowerCase().indexOf(query.toLowerCase());
+      let displayText = text;
+      if (text.length > 100 && matchIdx !== -1) {
+        const start = Math.max(0, matchIdx - 40);
+        const end = Math.min(text.length, matchIdx + 60);
+        displayText = (start > 0 ? "..." : "") + text.substring(start, end) + (end < text.length ? "..." : "");
+      }
+      const tempDiv = document.createElement("div");
+      tempDiv.textContent = displayText;
+      const escapedText = tempDiv.innerHTML;
+      return escapedText.replace(regex, "<b>$1</b>");
     }
     static handleSearch() {
-      if (!this.resultsList) return;
-      const query = this.searchInput ? this.searchInput.value.trim() : "";
+      if (!this.searchInput || !this.resultsList) return;
+      const query = this.searchInput.value.trim().toLowerCase();
       this.resultsList.innerHTML = "";
-      const sessionList = Object.values(this.sessions || {}).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-      let matchedItems = [];
+      const historyData = Object.values(this.sessions || {}).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
       if (!query) {
-        sessionList.forEach((session) => {
-          let displayTitle = session.title || "Untitled Chat";
-          let displaySnippet = "";
-          let messageIndex = null;
-          let itemTimestamp = session.updatedAt || session.createdAt || Date.now();
-          if (session.questions && session.questions.length > 0) {
-            const latestQ = session.questions[session.questions.length - 1];
-            if (!session.isRenamed && !session.autoNamed) {
-              displayTitle = latestQ.text || displayTitle;
-            }
-            displaySnippet = latestQ.snippet || "";
-            messageIndex = latestQ.index;
-            itemTimestamp = latestQ.timestamp || itemTimestamp;
+        const grouped = {};
+        historyData.forEach((session) => {
+          const groupName = this.getTimeGroup(session.updatedAt || session.createdAt || Date.now());
+          if (!grouped[groupName]) {
+            grouped[groupName] = [];
           }
-          matchedItems.push({
-            sessionId: session.id,
-            session,
-            title: displayTitle,
-            snippet: displaySnippet,
-            messageIndex,
-            timestamp: itemTimestamp,
-            isEntry: true
+          grouped[groupName].push(session);
+        });
+        const groupOrder = ["Today", "Yesterday", "Previous 3 Days", "Previous 7 Days", "Previous 30 Days"];
+        const allGroups = Object.keys(grouped).sort((a, b) => {
+          const idxA = groupOrder.indexOf(a);
+          const idxB = groupOrder.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          const parseGroup = (g) => {
+            const parts = g.split(" ");
+            const monthIndex = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December"
+            ].indexOf(parts[0]);
+            const year = parts[1] ? parseInt(parts[1], 10) : (/* @__PURE__ */ new Date()).getFullYear();
+            return new Date(year, monthIndex, 1).getTime();
+          };
+          return parseGroup(b) - parseGroup(a);
+        });
+        allGroups.forEach((groupName) => {
+          const headerEl = document.createElement("div");
+          headerEl.className = "lumina-search-group-header";
+          headerEl.textContent = groupName;
+          this.resultsList.appendChild(headerEl);
+          grouped[groupName].forEach((session) => {
+            let displayTitle = session.title;
+            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+              displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+            }
+            if (!displayTitle) displayTitle = "Untitled Chat";
+            const activeSessionId = this.getActiveSessionId();
+            const isCurrent = activeSessionId === session.id;
+            const timeIndicatorHtml = isCurrent ? `<span class="lumina-search-item-current">current</span>` : `<span class="lumina-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
+            const itemEl = document.createElement("div");
+            itemEl.className = "lumina-search-item";
+            itemEl.innerHTML = `
+            <div class="lumina-search-item-content">
+              <div class="lumina-search-item-top">
+                <span class="lumina-search-item-title"></span>
+                ${timeIndicatorHtml}
+              </div>
+            </div>
+          `;
+            itemEl.querySelector(".lumina-search-item-title").textContent = displayTitle;
+            itemEl.addEventListener("click", () => this.openSession(session.id));
+            this.resultsList.appendChild(itemEl);
           });
         });
       } else {
+        const results = [];
         const escapedQuery = this.escapeRegExp(query);
-        const searchPattern = new RegExp(`(^|[^\\p{L}\\p{N}_])(${escapedQuery})([^\\p{L}\\p{N}_]|$)`, "iu");
-        sessionList.forEach((session) => {
-          let foundInQuestions = false;
+        const regex = new RegExp(escapedQuery, "i");
+        for (let i = 0; i < historyData.length; i++) {
+          const session = historyData[i];
+          let displayTitle = session.title;
+          if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+            displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+          }
+          if (!displayTitle) displayTitle = "Untitled Chat";
+          let matched = false;
+          if (displayTitle && regex.test(displayTitle)) {
+            results.push({
+              sessionId: session.id,
+              title: displayTitle,
+              snippet: displayTitle,
+              messageIndex: null,
+              timestamp: session.updatedAt || session.createdAt
+            });
+            matched = true;
+          }
           if (session.questions && session.questions.length > 0) {
             session.questions.forEach((q) => {
-              if (searchPattern.test(q.text)) {
-                foundInQuestions = true;
-                matchedItems.push({
+              if (q.text && regex.test(q.text) && !(matched && q.text === displayTitle)) {
+                results.push({
                   sessionId: session.id,
-                  session,
-                  title: q.text,
-                  snippet: q.snippet || "",
+                  title: displayTitle,
+                  snippet: q.text,
                   messageIndex: q.index,
-                  timestamp: q.timestamp || session.updatedAt || Date.now(),
-                  isEntry: true,
-                  matchedQuery: query
+                  timestamp: q.timestamp || session.updatedAt || session.createdAt
                 });
               }
             });
           }
-          if (!foundInQuestions) {
-            if (session.title && searchPattern.test(session.title) || session.searchIndex && searchPattern.test(session.searchIndex)) {
-              matchedItems.push({
-                sessionId: session.id,
-                session,
-                title: session.title || "Untitled Chat",
-                snippet: "",
-                messageIndex: null,
-                timestamp: session.updatedAt || session.createdAt || Date.now(),
-                isEntry: false,
-                matchedQuery: query
-              });
-            }
-          }
-        });
-      }
-      if (matchedItems.length === 0) {
-        this.resultsList.innerHTML = `<div class="lumina-search-empty">No results found for "${this.escapeHtml(query)}"</div>`;
-        return;
-      }
-      matchedItems.sort((a, b) => b.timestamp - a.timestamp);
-      const groups = {};
-      const groupOrder = [];
-      matchedItems.forEach((item) => {
-        const groupName = this.getTimeGroup(item.timestamp);
-        if (!groups[groupName]) {
-          groups[groupName] = [];
-          groupOrder.push(groupName);
+          if (results.length >= 20) break;
         }
-        groups[groupName].push(item);
-      });
-      groupOrder.forEach((groupName) => {
-        const groupHeader = document.createElement("div");
-        groupHeader.className = "lumina-search-group-header";
-        groupHeader.textContent = groupName;
-        this.resultsList.appendChild(groupHeader);
-        groups[groupName].forEach((item) => {
-          const el = this.createResultElement(item);
-          this.resultsList.appendChild(el);
+        const finalResults = results.slice(0, 20);
+        if (finalResults.length === 0) {
+          this.resultsList.innerHTML = `<div class="lumina-search-no-results">No chats found</div>`;
+          return;
+        }
+        finalResults.forEach((item) => {
+          const activeSessionId = this.getActiveSessionId();
+          const isCurrent = activeSessionId === item.sessionId;
+          const timeIndicatorHtml = isCurrent ? `<span class="lumina-search-item-current">current</span>` : `<span class="lumina-search-item-date">${this.formatDate(item.timestamp)}</span>`;
+          const itemEl = document.createElement("div");
+          itemEl.className = "lumina-search-item";
+          itemEl.innerHTML = `
+          <div class="lumina-search-item-content">
+            <div class="lumina-search-item-top">
+              <span class="lumina-search-item-title"></span>
+              ${timeIndicatorHtml}
+            </div>
+            <div class="lumina-search-item-snippet"></div>
+          </div>
+        `;
+          itemEl.querySelector(".lumina-search-item-title").textContent = item.title;
+          itemEl.querySelector(".lumina-search-item-snippet").innerHTML = this.getHighlightHtml(item.snippet, query);
+          itemEl.addEventListener("click", () => this.openSession(item.sessionId, item.messageIndex));
+          this.resultsList.appendChild(itemEl);
         });
-      });
-    }
-    static escapeHtml(str) {
-      return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-    static highlightMatch(text, query) {
-      if (!query) return this.escapeHtml(text);
-      const safeText = this.escapeHtml(text);
-      const escapedQuery = this.escapeRegExp(this.escapeHtml(query));
-      const regex = new RegExp(`(${escapedQuery})`, "gi");
-      return safeText.replace(regex, '<span class="lumina-search-highlight">$1</span>');
-    }
-    static createResultElement(item) {
-      const div = document.createElement("div");
-      div.className = "lumina-search-result-item";
-      const displayTitle = item.matchedQuery ? this.highlightMatch(item.title, item.matchedQuery) : this.escapeHtml(item.title);
-      let cleanSnippet = (item.snippet || "").replace(/\n/g, " ").trim();
-      if (cleanSnippet.length > 90) {
-        cleanSnippet = cleanSnippet.substring(0, 87) + "...";
       }
-      const displaySnippet = item.matchedQuery ? this.highlightMatch(cleanSnippet, item.matchedQuery) : this.escapeHtml(cleanSnippet);
-      div.innerHTML = `
-      <div class="lumina-search-result-icon">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-      </div>
-      <div class="lumina-search-result-content">
-        <div class="lumina-search-result-title">${displayTitle}</div>
-        ${cleanSnippet ? `<div class="lumina-search-result-snippet">${displaySnippet}</div>` : ""}
-      </div>
-    `;
-      div.addEventListener("click", () => {
-        this.openChat(item.sessionId, item.messageIndex);
-      });
-      return div;
     }
-    static async openChat(sessionId, messageIndex = null) {
+    static async openSession(sessionId, messageIndex = null) {
       const wasInPane = this.overlay ? this.overlay.classList.contains("in-pane") : false;
       this.isSelectingChat = true;
       this.hide();
+      this.isSelectingChat = false;
       const messages = await ChatHistoryManager2.getSessionMessages(sessionId);
-      if (!messages) {
-        alert("Could not load chat history.");
-        return;
+      const meta = this.sessions[sessionId] || { id: sessionId };
+      const listContainer = document.getElementById("sidebar-recent-chats");
+      if (listContainer) {
+        listContainer.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll("#sidebar-sparks-list .sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
+        const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sessionId}"]`);
+        if (targetSidebarItem) {
+          targetSidebarItem.classList.add("active");
+        }
       }
-      const meta = this.sessions && this.sessions[sessionId] || { id: sessionId };
       if (typeof window.loadHistoryIntoNewTab === "function") {
         window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
       }
+      const sidebar = document.getElementById("lumina-sidebar");
+      const backdrop = document.querySelector(".sidebar-backdrop");
+      if (sidebar) sidebar.classList.remove("active");
+      if (backdrop) backdrop.classList.remove("active");
+      document.body.classList.remove("sidebar-open");
+    }
+    static getActiveSessionId() {
+      const activeSidebarItem = document.querySelector("#sidebar-recent-chats .recent-chat-item.active");
+      if (activeSidebarItem) {
+        const sid = activeSidebarItem.getAttribute("data-session-id");
+        if (sid) return sid;
+      }
+      if (typeof window.LuminaSelectionScope !== "undefined") {
+        const tabs3 = window.LuminaSelectionScope.getTabs();
+        const activeIndex = window.LuminaSelectionScope.getActiveTabIndex();
+        if (tabs3 && activeIndex >= 0 && tabs3[activeIndex]) {
+          return tabs3[activeIndex].sessionId;
+        }
+      }
+      return null;
+    }
+    static formatDate(timestamp) {
+      if (!timestamp) return "";
+      const d = new Date(timestamp);
+      const today = /* @__PURE__ */ new Date();
+      const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday = d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear();
+      if (isToday || isYesterday) {
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const year = String(d.getFullYear()).slice(-2);
+      return `${month}/${day}/${year}`;
     }
   };
   if (typeof window !== "undefined") {

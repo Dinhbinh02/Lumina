@@ -1,29 +1,16 @@
 .lumina-search-dialog {
-  width: 640px;
-  max-width: 92vw;
-  height: 520px;
-  max-height: 80vh;
+  width: 700px;
+  max-width: 95vw;
+  height: 600px;
+  max-height: 85vh;
   background: var(--lumina-ui-bg);
-  border-radius: 16px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--lumina-ui-border);
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--lumina-ui-border);
-  animation: luminaSearchDialogIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes luminaSearchDialogIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .lumina-search-container {
@@ -31,40 +18,38 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  overflow: hidden;
 }
 
 .lumina-search-header {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--lumina-ui-border);
-  gap: 10px;
-  flex-shrink: 0;
+  gap: 12px;
 }
 
 .lumina-search-input-wrapper {
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 10px;
-  min-width: 0;
+  gap: 12px;
 }
 
 .lumina-search-bar-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--lumina-text-tertiary);
+  color: var(--lumina-text-secondary);
   flex-shrink: 0;
+  padding: 6px;
 }
 
 .lumina-search-input {
   border: none;
   background: transparent;
   outline: none;
-  font-family: var(--lumina-font-family, inherit);
-  font-size: 14px;
+  font-family: var(--lumina-font-family);
+  font-size: 1em;
   color: var(--lumina-text-primary);
   width: 100%;
   padding: 0;
@@ -77,17 +62,14 @@
 .lumina-search-close-btn {
   background: transparent;
   border: none;
-  color: var(--lumina-text-tertiary);
+  color: var(--lumina-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .lumina-search-close-btn:hover {
@@ -100,19 +82,17 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 8px 10px;
+  padding: 6px 6px;
   position: relative;
   overflow-y: auto;
 }
 
 .lumina-search-results-list {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+  flex: 1;
 }
 
 .lumina-search-results-section::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
 .lumina-search-results-section::-webkit-scrollbar-track {
@@ -129,16 +109,13 @@
   align-items: center;
   gap: 12px;
   background: transparent;
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 10px;
   cursor: pointer;
   user-select: none;
-  font-family: var(--lumina-font-family, inherit);
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--lumina-text-primary);
-  transition: background-color 0.15s ease;
-  margin-bottom: 4px;
+  font-family: var(--lumina-font-family);
+  font-size: 13px;
+  font-weight: var(--lumina-weight-regular);
 }
 
 .lumina-search-new-chat:hover {
@@ -146,10 +123,6 @@
 }
 
 .lumina-search-icon-wrapper {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--lumina-ui-bg-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,93 +131,93 @@
 }
 
 .lumina-search-group-header {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-tertiary);
-  margin: 12px 12px 4px 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+  margin: 8px 10px 4px 10px;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
 }
 
-.lumina-search-result-item,
 .lumina-search-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  padding: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s;
   user-select: none;
 }
 
-.lumina-search-result-item:hover,
 .lumina-search-item:hover {
   background-color: var(--lumina-ui-bg-light);
 }
 
-.lumina-search-result-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--lumina-ui-bg-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--lumina-text-secondary);
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-
-.lumina-search-result-item:hover .lumina-search-result-icon,
-.lumina-search-item:hover .lumina-search-result-icon {
-  color: var(--lumina-primary-color);
-}
-
-.lumina-search-result-content,
 .lumina-search-item-content {
   display: flex;
   flex-direction: column;
-  gap: 3px;
   flex: 1;
   min-width: 0;
 }
 
-.lumina-search-result-title,
+.lumina-search-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  width: 100%;
+}
+
 .lumina-search-item-title {
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.35;
+  flex: 1;
 }
 
-.lumina-search-result-snippet,
-.lumina-search-item-snippet {
+.lumina-search-item-date {
   font-size: 12px;
   color: var(--lumina-text-tertiary);
+  flex-shrink: 0;
+}
+
+.lumina-search-item-current {
+  font-size: 11px;
+  font-weight: var(--lumina-weight-semibold);
+  color: var(--lumina-primary-color);
+  background-color: rgba(10, 132, 255, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.lumina-search-item-snippet {
+  font-size: 12.5px;
+  color: var(--lumina-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  word-break: break-all;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.35;
 }
 
-.lumina-search-highlight {
-  color: var(--lumina-primary-color);
-  font-weight: 600;
-  background: rgba(10, 132, 255, 0.12);
-  padding: 1px 3px;
-  border-radius: 3px;
+.lumina-search-item-snippet b {
+  font-weight: var(--lumina-weight-bold);
+  color: var(--lumina-text-primary);
 }
 
-.lumina-search-empty,
 .lumina-search-no-results {
-  padding: 48px 24px;
+  padding: 40px 24px;
   text-align: center;
-  color: var(--lumina-text-tertiary);
-  font-size: 13.5px;
+  color: var(--lumina-text-secondary);
+  font-size: 14px;
 }
 
 .lumina-search-overlay-close-btn {
@@ -289,7 +262,7 @@
   height: 600px;
   max-width: 96%;
   max-height: 85vh;
-  border-radius: 16px;
+  border-radius: 20px;
 }
 
 .lumina-settings-overlay.in-pane .lumina-search-dialog .lumina-search-close-btn {

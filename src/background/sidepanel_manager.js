@@ -176,6 +176,7 @@ export function initSidePanelManager() {
     }
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (!request || !request.action) return false;
         if (request.action === 'open_sidepanel' || request.action === 'toggle_sidepanel') {
             const windowId = sender.tab ? sender.tab.windowId : (request.windowId || null);
             if (windowId) {
@@ -197,6 +198,38 @@ export function initSidePanelManager() {
                     }
                 });
             }
+            return true;
+        }
+
+        if (request.action === 'open_sidepanel_with_query') {
+            const windowIdQuery = sender.tab ? sender.tab.windowId : (request.windowId || null);
+            if (windowIdQuery) {
+                const queryId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/lumina/lumina.html');
+                const sourceTab = (sender.tab && !isInternal) ? {
+                    tabId: sender.tab.id,
+                    title: sender.tab.title,
+                    url: sender.tab.url
+                } : null;
+                const isCurrentlyOpen = sidePanelPorts.has(windowIdQuery);
+                const queryData = {
+                    query: request.query,
+                    displayQuery: request.displayQuery,
+                    queryId,
+                    mode: request.mode,
+                    sourceTab: sourceTab,
+                    isInternal: isInternal,
+                    createNewChat: !isCurrentlyOpen,
+                    timestamp: Date.now()
+                };
+                chrome.storage.local.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData }, () => {
+                    ensureSidePanelOpen(windowIdQuery);
+                    if (sidePanelPorts.has(windowIdQuery)) {
+                        chrome.runtime.sendMessage({ action: 'ask_sidepanel', windowId: windowIdQuery, ...queryData }).catch(() => { });
+                    }
+                });
+            }
+            sendResponse({ success: true });
             return true;
         }
     });

@@ -182,6 +182,7 @@ function initSidePanelManager() {
     });
   }
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (!request || !request.action) return false;
     if (request.action === "open_sidepanel" || request.action === "toggle_sidepanel") {
       const windowId = sender.tab ? sender.tab.windowId : request.windowId || null;
       if (windowId) {
@@ -203,6 +204,38 @@ function initSidePanelManager() {
           }
         });
       }
+      return true;
+    }
+    if (request.action === "open_sidepanel_with_query") {
+      const windowIdQuery = sender.tab ? sender.tab.windowId : request.windowId || null;
+      if (windowIdQuery) {
+        const queryId = Date.now() + "-" + Math.random().toString(36).substring(2, 9);
+        const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes("/pages/lumina/lumina.html");
+        const sourceTab = sender.tab && !isInternal ? {
+          tabId: sender.tab.id,
+          title: sender.tab.title,
+          url: sender.tab.url
+        } : null;
+        const isCurrentlyOpen = sidePanelPorts.has(windowIdQuery);
+        const queryData = {
+          query: request.query,
+          displayQuery: request.displayQuery,
+          queryId,
+          mode: request.mode,
+          sourceTab,
+          isInternal,
+          createNewChat: !isCurrentlyOpen,
+          timestamp: Date.now()
+        };
+        chrome.storage.local.set({ [`pending_sidepanel_query_${windowIdQuery}`]: queryData }, () => {
+          ensureSidePanelOpen(windowIdQuery);
+          if (sidePanelPorts.has(windowIdQuery)) {
+            chrome.runtime.sendMessage({ action: "ask_sidepanel", windowId: windowIdQuery, ...queryData }).catch(() => {
+            });
+          }
+        });
+      }
+      sendResponse({ success: true });
       return true;
     }
   });
@@ -1222,6 +1255,81 @@ async function fetchAudio(text, speed = 1, forcedLang = null) {
   }
   const googleChunks = await fetchGoogle();
   return { type: "google", chunks: googleChunks };
+}
+async function getAudioFromCache(text) {
+  try {
+    if (typeof LuminaAudioCacheDB2 !== "undefined") {
+      const key = text.trim().toLowerCase();
+      const entry = await LuminaAudioCacheDB2.get(key);
+      return entry;
+    }
+    return null;
+  } catch (e) {
+    console.error("[Lumina Audio] Cache read error:", e);
+    return null;
+  }
+}
+async function setAudioCache(text, type, data) {
+  try {
+    if (typeof LuminaAudioCacheDB2 !== "undefined") {
+      const key = text.trim().toLowerCase();
+      const entry = {
+        type,
+        data,
+        timestamp: Date.now()
+      };
+      await LuminaAudioCacheDB2.put(key, entry);
+    }
+  } catch (e) {
+    console.error("[Lumina Audio] Cache write error:", e);
+  }
+}
+function initAudioHandlers() {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (!request || !request.action) return false;
+    switch (request.action) {
+      case "fetchAudio":
+        fetchAudio(request.text, request.speed || 1, request.lang).then((result) => sendResponse(result)).catch(() => sendResponse({ type: null, chunks: [] }));
+        return true;
+      case "fetchAudioBase64":
+        (async () => {
+          try {
+            const response = await fetch(request.url);
+            if (!response.ok) throw new Error("HTTP error");
+            const arrayBuffer = await response.arrayBuffer();
+            if (arrayBuffer.byteLength < 100) throw new Error("Empty audio");
+            const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
+            sendResponse({ success: true, data: `data:audio/mpeg;base64,${base64}` });
+          } catch (err) {
+            sendResponse({ error: err.message });
+          }
+        })();
+        return true;
+      case "getAudioCache":
+        (async () => {
+          try {
+            const cached = await getAudioFromCache(request.text);
+            if (cached) sendResponse({ success: true, type: cached.type, data: cached.data });
+            else sendResponse({ success: false });
+          } catch (err) {
+            sendResponse({ success: false });
+          }
+        })();
+        return true;
+      case "setAudioCache":
+        setAudioCache(request.text, request.type, request.data).then(() => {
+          sendResponse({ success: true });
+        }).catch(() => {
+          sendResponse({ success: false });
+        });
+        return true;
+      case "stopGoogleOffscreenAudio":
+        stopGoogleAudioOffscreen().then((res) => sendResponse(res || { success: true })).catch(() => sendResponse({ success: true }));
+        return true;
+      default:
+        return false;
+    }
+  });
 }
 
 // src/db/highlight_db.js
@@ -5042,6 +5150,7 @@ initSidePanelManager();
 initHighlightHandlers();
 initSyncHandlers();
 initChatStreamService();
+initAudioHandlers();
 export {
   broadcastToSession,
   detectMediaType,
@@ -5049,6 +5158,7 @@ export {
   fetchAudio,
   getAmericanSpelling,
   getLemma,
+  initAudioHandlers,
   initChatStreamService,
   initHighlightHandlers,
   initSidePanelManager,

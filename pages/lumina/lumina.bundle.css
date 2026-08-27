@@ -1721,16 +1721,16 @@ body {
   mask-image: url('data:image/svg+xml,<svg id="Layer_1" height="512" viewBox="0 0 24 24" width="512" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1"><path d="m15 20h-10a5.006 5.006 0 0 1 -5-5v-10a5.006 5.006 0 0 1 5-5h10a5.006 5.006 0 0 1 5 5v10a5.006 5.006 0 0 1 -5 5zm9-1v-13a1 1 0 0 0 -2 0v13a3 3 0 0 1 -3 3h-13a1 1 0 0 0 0 2h13a5.006 5.006 0 0 0 5-5z"/></svg>');
 }
 .lumina-icon-plus {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0D%0A</g>%0D%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0D%0A</g>%0D%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0A</g>%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0A</g>%0A</svg>');
 }
 .lumina-icon-refresh {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0D%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0D%0A</g>%0D%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0D%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0D%0A</g>%0D%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0A</g>%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0A</g>%0A</svg>');
 }
 .lumina-icon-text-check {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
 }
 .lumina-icon-thumbtack {
   -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
@@ -14472,66 +14472,52 @@ mark.notes-search-highlight {
 
 /* src/pages/lumina/styles/modals/search.css */
 .lumina-search-dialog {
-  width: 640px;
-  max-width: 92vw;
-  height: 520px;
-  max-height: 80vh;
+  width: 700px;
+  max-width: 95vw;
+  height: 600px;
+  max-height: 85vh;
   background: var(--lumina-ui-bg);
-  border-radius: 16px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--lumina-ui-border);
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--lumina-ui-border);
-  animation: luminaSearchDialogIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes luminaSearchDialogIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 .lumina-search-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
-  overflow: hidden;
 }
 .lumina-search-header {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--lumina-ui-border);
-  gap: 10px;
-  flex-shrink: 0;
+  gap: 12px;
 }
 .lumina-search-input-wrapper {
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 10px;
-  min-width: 0;
+  gap: 12px;
 }
 .lumina-search-bar-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--lumina-text-tertiary);
+  color: var(--lumina-text-secondary);
   flex-shrink: 0;
+  padding: 6px;
 }
 .lumina-search-input {
   border: none;
   background: transparent;
   outline: none;
-  font-family: var(--lumina-font-family, inherit);
-  font-size: 14px;
+  font-family: var(--lumina-font-family);
+  font-size: 1em;
   color: var(--lumina-text-primary);
   width: 100%;
   padding: 0;
@@ -14542,17 +14528,14 @@ mark.notes-search-highlight {
 .lumina-search-close-btn {
   background: transparent;
   border: none;
-  color: var(--lumina-text-tertiary);
+  color: var(--lumina-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
 }
 .lumina-search-close-btn:hover {
   background-color: var(--lumina-ui-bg-light);
@@ -14563,17 +14546,15 @@ mark.notes-search-highlight {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 8px 10px;
+  padding: 6px 6px;
   position: relative;
   overflow-y: auto;
 }
 .lumina-search-results-list {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+  flex: 1;
 }
 .lumina-search-results-section::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 .lumina-search-results-section::-webkit-scrollbar-track {
   background: transparent;
@@ -14587,25 +14568,18 @@ mark.notes-search-highlight {
   align-items: center;
   gap: 12px;
   background: transparent;
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 10px;
   cursor: pointer;
   user-select: none;
-  font-family: var(--lumina-font-family, inherit);
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--lumina-text-primary);
-  transition: background-color 0.15s ease;
-  margin-bottom: 4px;
+  font-family: var(--lumina-font-family);
+  font-size: 13px;
+  font-weight: var(--lumina-weight-regular);
 }
 .lumina-search-new-chat:hover {
   background-color: var(--lumina-ui-bg-light);
 }
 .lumina-search-icon-wrapper {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--lumina-ui-bg-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14613,84 +14587,83 @@ mark.notes-search-highlight {
   flex-shrink: 0;
 }
 .lumina-search-group-header {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: var(--lumina-weight-medium);
   color: var(--lumina-text-tertiary);
-  margin: 12px 12px 4px 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+  margin: 8px 10px 4px 10px;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
 }
-.lumina-search-result-item,
 .lumina-search-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  padding: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s;
   user-select: none;
 }
-.lumina-search-result-item:hover,
 .lumina-search-item:hover {
   background-color: var(--lumina-ui-bg-light);
 }
-.lumina-search-result-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--lumina-ui-bg-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--lumina-text-secondary);
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-.lumina-search-result-item:hover .lumina-search-result-icon,
-.lumina-search-item:hover .lumina-search-result-icon {
-  color: var(--lumina-primary-color);
-}
-.lumina-search-result-content,
 .lumina-search-item-content {
   display: flex;
   flex-direction: column;
-  gap: 3px;
   flex: 1;
   min-width: 0;
 }
-.lumina-search-result-title,
+.lumina-search-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  width: 100%;
+}
 .lumina-search-item-title {
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--lumina-weight-regular);
   color: var(--lumina-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.35;
+  flex: 1;
 }
-.lumina-search-result-snippet,
-.lumina-search-item-snippet {
+.lumina-search-item-date {
   font-size: 12px;
   color: var(--lumina-text-tertiary);
+  flex-shrink: 0;
+}
+.lumina-search-item-current {
+  font-size: 11px;
+  font-weight: var(--lumina-weight-semibold);
+  color: var(--lumina-primary-color);
+  background-color: rgba(10, 132, 255, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.lumina-search-item-snippet {
+  font-size: 12.5px;
+  color: var(--lumina-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  word-break: break-all;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.35;
 }
-.lumina-search-highlight {
-  color: var(--lumina-primary-color);
-  font-weight: 600;
-  background: rgba(10, 132, 255, 0.12);
-  padding: 1px 3px;
-  border-radius: 3px;
+.lumina-search-item-snippet b {
+  font-weight: var(--lumina-weight-bold);
+  color: var(--lumina-text-primary);
 }
-.lumina-search-empty,
 .lumina-search-no-results {
-  padding: 48px 24px;
+  padding: 40px 24px;
   text-align: center;
-  color: var(--lumina-text-tertiary);
-  font-size: 13.5px;
+  color: var(--lumina-text-secondary);
+  font-size: 14px;
 }
 .lumina-search-overlay-close-btn {
   position: absolute;
@@ -14730,7 +14703,7 @@ mark.notes-search-highlight {
   height: 600px;
   max-width: 96%;
   max-height: 85vh;
-  border-radius: 16px;
+  border-radius: 20px;
 }
 .lumina-settings-overlay.in-pane .lumina-search-dialog .lumina-search-close-btn {
   display: none;
