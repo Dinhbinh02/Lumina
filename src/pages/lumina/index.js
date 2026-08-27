@@ -1,15 +1,12 @@
 import '../../shared/constants.js';
-import '../../db/index.js';
-import '../../core/index.js';
-import '../../helpers/index.js';
-import '../../components/index.js';
 import '../../../lib/vendor/marked.min.js';
 import '../../../lib/vendor/highlight.min.js';
 import '../../../lib/vendor/katex/katex.min.js';
 import '../../../lib/vendor/katex/auto-render.min.js';
 import '../../../lib/vendor/chart.min.js';
+import '../../db/index.js';
+import '../../core/index.js';
+import '../../helpers/index.js';
+import '../../components/index.js';
 import './controllers/index.js';
 import './workspace.js';
-
-
-

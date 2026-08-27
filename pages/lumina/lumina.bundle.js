@@ -33,12 +33,17 @@
   var require_marked_min = __commonJS({
     "lib/vendor/marked.min.js"(exports, module) {
       (function(g, f) {
+        var m = f();
+        if (typeof window !== "undefined") window.marked = m;
+        if (typeof globalThis !== "undefined") globalThis.marked = m;
         if (typeof exports == "object" && typeof module < "u") {
-          module.exports = f();
+          module.exports = m;
         } else if ("function" == typeof define && define.amd) {
-          define("marked", f);
+          define("marked", function() {
+            return m;
+          });
         } else {
-          g["marked"] = f();
+          g["marked"] = m;
         }
       })(typeof globalThis < "u" ? globalThis : typeof self < "u" ? self : exports, function() {
         var exports2 = {};
@@ -4565,6 +4570,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         }
         return He;
       })();
+      if (typeof window !== "undefined") window.hljs = hljs2;
+      if (typeof globalThis !== "undefined") globalThis.hljs = hljs2;
       "object" == typeof exports && "undefined" != typeof module && (module.exports = hljs2);
     }
   });
@@ -7774,7 +7781,18 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   var require_chart_min = __commonJS({
     "lib/vendor/chart.min.js"(exports, module) {
       !(function(t, e) {
-        "object" == typeof exports && "undefined" != typeof module ? module.exports = e() : "function" == typeof define && define.amd ? define(e) : (t = "undefined" != typeof globalThis ? globalThis : t || self).Chart = e();
+        var c = e();
+        if (typeof window !== "undefined") window.Chart = c;
+        if (typeof globalThis !== "undefined") globalThis.Chart = c;
+        if ("object" == typeof exports && "undefined" != typeof module) {
+          module.exports = c;
+        } else if ("function" == typeof define && define.amd) {
+          define(function() {
+            return c;
+          });
+        } else {
+          (t = "undefined" != typeof globalThis ? globalThis : t || self).Chart = c;
+        }
       })(exports, (function() {
         "use strict";
         function t() {
@@ -13293,6 +13311,13 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     globalThis.getTodayString = getTodayString;
     globalThis.getKeysArray = getKeysArray;
   }
+
+  // src/pages/lumina/index.js
+  var import_marked_min = __toESM(require_marked_min());
+  var import_highlight_min = __toESM(require_highlight_min());
+  var import_katex_min = __toESM(require_katex_min());
+  var import_auto_render_min = __toESM(require_auto_render_min());
+  var import_chart_min = __toESM(require_chart_min());
 
   // src/db/attachment_db.js
   var LuminaAttachmentDB2 = {
@@ -34082,13 +34107,6 @@ Output only the revised text.`;
   if (typeof window !== "undefined") {
     window.LuminaChatUI = LuminaChatUI2;
   }
-
-  // src/pages/lumina/index.js
-  var import_marked_min = __toESM(require_marked_min());
-  var import_highlight_min = __toESM(require_highlight_min());
-  var import_katex_min = __toESM(require_katex_min());
-  var import_auto_render_min = __toESM(require_auto_render_min());
-  var import_chart_min = __toESM(require_chart_min());
 
   // src/pages/lumina/controllers/view_controller.js
   var LuminaViewManager2 = {
