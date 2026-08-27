@@ -1,13 +1,16 @@
+const scheduledContainers = new WeakMap();
+
 export function morphDOM(container, newHTML) {
+    if (!container) return;
     const parser = new DOMParser();
     const doc = parser.parseFromString(`<body>${newHTML}</body>`, 'text/html');
     const newRoot = doc.body;
 
-    function isSameNode(node1, node2) {
+    function isSameNodeType(node1, node2) {
         if (node1.nodeType !== node2.nodeType) return false;
-        if (node1.nodeType === Node.TEXT_NODE) return node1.nodeValue === node2.nodeValue;
+        if (node1.nodeType === Node.TEXT_NODE) return true;
         if (node1.nodeType === Node.ELEMENT_NODE) {
-            return node1.tagName === node2.tagName && node1.getAttribute('data-index') === node2.getAttribute('data-index');
+            return node1.tagName === node2.tagName;
         }
         return false;
     }
@@ -21,7 +24,7 @@ export function morphDOM(container, newHTML) {
             parent.removeChild(oldChild);
             return;
         }
-        if (!isSameNode(oldChild, newChild)) {
+        if (!isSameNodeType(oldChild, newChild)) {
             parent.replaceChild(newChild.cloneNode(true), oldChild);
             return;
         }
@@ -32,6 +35,10 @@ export function morphDOM(container, newHTML) {
             return;
         }
         if (oldChild.nodeType === Node.ELEMENT_NODE) {
+            if (oldChild.tagName === 'CANVAS' || oldChild.classList?.contains('lumina-interactive-frozen')) {
+                return;
+            }
+
             for (let i = 0; i < newChild.attributes.length; i++) {
                 const attr = newChild.attributes[i];
                 if (oldChild.getAttribute(attr.name) !== attr.value) {
@@ -60,4 +67,20 @@ export function morphDOM(container, newHTML) {
     for (let i = 0; i < maxLen; i++) {
         patch(container, oldChildren[i], newChildren[i]);
     }
+}
+
+export function scheduleMorphDOM(container, newHTML) {
+    if (!container) return;
+    if (scheduledContainers.has(container)) {
+        scheduledContainers.set(container, newHTML);
+        return;
+    }
+    scheduledContainers.set(container, newHTML);
+    requestAnimationFrame(() => {
+        const latestHTML = scheduledContainers.get(container);
+        scheduledContainers.delete(container);
+        if (typeof latestHTML === 'string') {
+            morphDOM(container, latestHTML);
+        }
+    });
 }

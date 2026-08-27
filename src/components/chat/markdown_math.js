@@ -1,12 +1,63 @@
+export function completeIncompleteMarkdown(rawText) {
+    if (!rawText || typeof rawText !== 'string') return '';
+    let text = rawText;
+
+    const fenceMatches = text.match(/```/g);
+    if (fenceMatches && fenceMatches.length % 2 !== 0) {
+        text += '\n```';
+    }
+
+    const blockMathMatches = text.match(/\$\$/g);
+    if (blockMathMatches && blockMathMatches.length % 2 !== 0) {
+        text += '\n$$';
+    }
+
+    const inlineCodeMatches = text.replace(/```[\s\S]*?```/g, '').match(/`/g);
+    if (inlineCodeMatches && inlineCodeMatches.length % 2 !== 0) {
+        text += '`';
+    }
+
+    const boldMatches = text.replace(/```[\s\S]*?```/g, '').match(/\*\*/g);
+    if (boldMatches && boldMatches.length % 2 !== 0) {
+        text += '**';
+    }
+
+    const strikeMatches = text.replace(/```[\s\S]*?```/g, '').match(/~~/g);
+    if (strikeMatches && strikeMatches.length % 2 !== 0) {
+        text += '~~';
+    }
+
+    const unclosedLink = text.match(/\[([^\]]*)$/);
+    if (unclosedLink) {
+        text = text.slice(0, unclosedLink.index) + unclosedLink[1];
+    } else {
+        const unclosedHref = text.match(/(\[[^\]]+\])\(([^\)]*)$/);
+        if (unclosedHref) {
+            text += ')';
+        }
+    }
+
+    return text;
+}
+
+export function streamSafeParse(rawText) {
+    if (!rawText) return '';
+    const completed = completeIncompleteMarkdown(rawText);
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        return marked.parse(completed);
+    }
+    return completed;
+}
+
 export function initMarkdownMath() {
-    if (typeof marked === 'undefined') return;
+    if (typeof marked === 'undefined' || typeof marked.use !== 'function') return;
     marked.use({
         extensions: [
             {
                 name: 'inlineMath',
                 level: 'inline',
                 start(src) { return src.indexOf('$'); },
-                tokenizer(src, tokens) {
+                tokenizer(src) {
                     const match = src.match(/^\$((?:[^\$\\\n]|\\.)+?)\$/);
                     if (match) {
                         const content = match[1];
@@ -29,7 +80,7 @@ export function initMarkdownMath() {
                         try {
                             const math = (token.text || '').replace(/\\frac\{/g, '\\dfrac{');
                             return katex.renderToString(math, { displayMode: false, throwOnError: false, strict: 'ignore' });
-                        } catch (e) {
+                        } catch (_) {
                             return token.raw;
                         }
                     }
@@ -40,7 +91,7 @@ export function initMarkdownMath() {
                 name: 'blockMath',
                 level: 'block',
                 start(src) { return src.indexOf('$$'); },
-                tokenizer(src, tokens) {
+                tokenizer(src) {
                     const match = src.match(/^\$\$\n?([\s\S]+?)\n?\$\$/);
                     if (match) {
                         return {
@@ -54,7 +105,7 @@ export function initMarkdownMath() {
                     if (typeof katex !== 'undefined' && katex.renderToString) {
                         try {
                             return katex.renderToString(token.text, { displayMode: true, throwOnError: false, strict: 'ignore' });
-                        } catch (e) {
+                        } catch (_) {
                             return token.raw;
                         }
                     }
