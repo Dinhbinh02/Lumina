@@ -162,6 +162,7 @@ let tabCounter = 1;
 window.LuminaSelectionScope = {
     getTabs: () => tabs,
     getActiveTabIndex: () => activeTabIndex,
+    getSharedInputUI: () => sharedInputUI,
     resetChat: () => { if (typeof resetChat === 'function') resetChat(); },
     renderRecentChatsSidebar: () => { if (typeof renderRecentChatsSidebar === 'function') renderRecentChatsSidebar(); }
 };
@@ -193,6 +194,10 @@ let sidebarTargetTabId = null;
 
 window.getActiveLuminaTab = function () {
     return (typeof tabs !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
+};
+
+window.getSharedInputUI = function () {
+    return typeof sharedInputUI !== 'undefined' ? sharedInputUI : null;
 };
 
 function updatePaneHighlight() {

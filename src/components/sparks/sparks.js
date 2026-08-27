@@ -653,6 +653,10 @@ async function sparksOpenEditor(sparkId = null) {
                 if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
                     model = storageData.lastUsedModel.model;
                     providerId = storageData.lastUsedModel.providerId;
+                } else if (typeof window.getActiveLuminaTab === 'function' && window.getActiveLuminaTab()?.selectedModel) {
+                    const curTab = window.getActiveLuminaTab();
+                    model = curTab.selectedModel.model;
+                    providerId = curTab.selectedModel.providerId;
                 } else if (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && tabs[activeTabIndex]?.selectedModel) {
                     model = tabs[activeTabIndex].selectedModel.model;
                     providerId = tabs[activeTabIndex].selectedModel.providerId;
@@ -735,7 +739,9 @@ async function sidebarSparksRenderList() {
         return (b.createdAt || 0) - (a.createdAt || 0);
     });
     let html = '';
-    const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+    const activeTab = (typeof window.getActiveLuminaTab === 'function')
+        ? window.getActiveLuminaTab()
+        : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
     const maxSparksToShow = 4;
     const hasMoreSparks = list.length > maxSparksToShow;
     const visibleSparks = (hasMoreSparks && !sidebarSparksExpanded) ? list.slice(0, maxSparksToShow) : list;
@@ -899,13 +905,16 @@ async function openSparkChat(sparkId) {
     sparksClosePage();
     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
-    const targetIdx = activeTabIndex;
-    const activeTab = (typeof tabs !== 'undefined' && targetIdx >= 0) ? tabs[targetIdx] : null;
+    const activeTab = (typeof window.getActiveLuminaTab === 'function')
+        ? window.getActiveLuminaTab()
+        : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : (window.LuminaSelectionScope?.getTabs?.()?.[window.LuminaSelectionScope?.getActiveTabIndex?.()] ?? null));
     if (activeTab) {
         activeTab.sparkId = sparkId;
         if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
         const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
-        const targetSharedInputUI = sharedInputUI;
+        const targetSharedInputUI = (typeof window.getSharedInputUI === 'function')
+            ? window.getSharedInputUI()
+            : ((typeof sharedInputUI !== 'undefined') ? sharedInputUI : (activeTab?.chatUIInstance?.sharedInputUI || null));
         const settingsRes = await chrome.storage.local.get(['lumina_spark_last_settings']);
         const sparkSettings = (settingsRes.lumina_spark_last_settings || {})[sparkId];
         if (activeTab.selectedModel) {
@@ -1202,7 +1211,9 @@ function initSparks() {
         sidebarNewSparkBtn.addEventListener('click', () => sparksOpenEditor(null));
     }
     document.getElementById('sidebar-new-chat-btn')?.addEventListener('click', () => {
-        const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
+        const activeTab = (typeof window.getActiveLuminaTab === 'function')
+            ? window.getActiveLuminaTab()
+            : ((typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null));
         if (activeTab) {
             activeTab.sparkId = null;
             if (typeof renderTabs === 'function') renderTabs();
@@ -1212,7 +1223,9 @@ function initSparks() {
         sidebarSparksRenderList();
     });
     document.getElementById('topbar-new-chat-btn')?.addEventListener('click', () => {
-        const activeTab = (typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
+        const activeTab = (typeof window.getActiveLuminaTab === 'function')
+            ? window.getActiveLuminaTab()
+            : ((typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null));
         if (activeTab) {
             activeTab.sparkId = null;
             if (typeof renderTabs === 'function') renderTabs();

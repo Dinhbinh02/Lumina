@@ -28122,6 +28122,10 @@ ${fileContexts}`;
           if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
             model = storageData.lastUsedModel.model;
             providerId = storageData.lastUsedModel.providerId;
+          } else if (typeof window.getActiveLuminaTab === "function" && window.getActiveLuminaTab()?.selectedModel) {
+            const curTab = window.getActiveLuminaTab();
+            model = curTab.selectedModel.model;
+            providerId = curTab.selectedModel.providerId;
           } else if (typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" && tabs[activeTabIndex]?.selectedModel) {
             model = tabs[activeTabIndex].selectedModel.model;
             providerId = tabs[activeTabIndex].selectedModel.providerId;
@@ -28205,7 +28209,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
     let html = "";
-    const activeTab = typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+    const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
     const maxSparksToShow = 4;
     const hasMoreSparks = list.length > maxSparksToShow;
     const visibleSparks = hasMoreSparks && !sidebarSparksExpanded ? list.slice(0, maxSparksToShow) : list;
@@ -28367,13 +28371,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     sparksClosePage2();
     document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
     document.querySelectorAll(".sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
-    const targetIdx2 = activeTabIndex;
-    const activeTab = typeof tabs !== "undefined" && targetIdx2 >= 0 ? tabs[targetIdx2] : null;
+    const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : window.LuminaSelectionScope?.getTabs?.()?.[window.LuminaSelectionScope?.getActiveTabIndex?.()] ?? null;
     if (activeTab) {
       activeTab.sparkId = sparkId;
       if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
       const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
-      const targetSharedInputUI = sharedInputUI;
+      const targetSharedInputUI = typeof window.getSharedInputUI === "function" ? window.getSharedInputUI() : typeof sharedInputUI !== "undefined" ? sharedInputUI : activeTab?.chatUIInstance?.sharedInputUI || null;
       const settingsRes = await chrome.storage.local.get(["lumina_spark_last_settings"]);
       const sparkSettings = (settingsRes.lumina_spark_last_settings || {})[sparkId];
       if (activeTab.selectedModel) {
@@ -28665,7 +28668,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       sidebarNewSparkBtn.addEventListener("click", () => sparksOpenEditor(null));
     }
     document.getElementById("sidebar-new-chat-btn")?.addEventListener("click", () => {
-      const activeTab = typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+      const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
       if (activeTab) {
         activeTab.sparkId = null;
         if (typeof renderTabs === "function") renderTabs();
@@ -28675,7 +28678,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       sidebarSparksRenderList2();
     });
     document.getElementById("topbar-new-chat-btn")?.addEventListener("click", () => {
-      const activeTab = typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+      const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
       if (activeTab) {
         activeTab.sparkId = null;
         if (typeof renderTabs === "function") renderTabs();
@@ -34528,6 +34531,7 @@ Output only the revised text.`;
   window.LuminaSelectionScope = {
     getTabs: () => tabs2,
     getActiveTabIndex: () => activeTabIndex2,
+    getSharedInputUI: () => sharedInputUI2,
     resetChat: () => {
       if (typeof resetChat2 === "function") resetChat2();
     },
@@ -34550,6 +34554,9 @@ Output only the revised text.`;
   }
   window.getActiveLuminaTab = function() {
     return typeof tabs2 !== "undefined" && activeTabIndex2 >= 0 ? tabs2[activeTabIndex2] : null;
+  };
+  window.getSharedInputUI = function() {
+    return typeof sharedInputUI2 !== "undefined" ? sharedInputUI2 : null;
   };
   function updatePaneHighlight() {
   }
