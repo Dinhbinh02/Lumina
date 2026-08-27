@@ -29098,8 +29098,20 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     });
   }
+  function processLuminaChartElements2(rootNode) {
+    if (!rootNode) return;
+    const wrappers = [];
+    if (rootNode.classList && rootNode.classList.contains("lumina-chartjs-wrapper")) {
+      wrappers.push(rootNode);
+    }
+    if (rootNode.querySelectorAll) {
+      rootNode.querySelectorAll(".lumina-chartjs-wrapper").forEach((w) => wrappers.push(w));
+    }
+    wrappers.forEach((w) => renderChartJSWrapper(w));
+  }
   if (typeof window !== "undefined") {
     window._renderChartJSWrapper = renderChartJSWrapper;
+    window.processLuminaChartElements = processLuminaChartElements2;
   }
 
   // src/components/chat/chat_ui.js
