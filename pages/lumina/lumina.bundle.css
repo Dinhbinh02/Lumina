@@ -1162,7 +1162,7 @@ body {
   counter-reset: katexEqnNo mmlEqnNo;
 }
 
-/* pages/lumina/lumina.css */
+/* src/pages/lumina/styles/lumina.css */
 * {
   box-sizing: border-box;
 }
@@ -12847,7 +12847,7 @@ mark.notes-search-highlight {
   display: inline-flex !important;
 }
 
-/* pages/lumina/settings_modal.css */
+/* src/pages/lumina/styles/modals/settings.css */
 @keyframes lumina-settings-fade-in {
   from {
     opacity: 0;
@@ -14431,7 +14431,7 @@ mark.notes-search-highlight {
   text-overflow: ellipsis;
 }
 
-/* pages/lumina/search_modal.css */
+/* src/pages/lumina/styles/modals/search.css */
 .lumina-search-dialog {
   width: 700px;
   max-width: 95vw;

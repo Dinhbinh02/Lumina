@@ -29070,7 +29070,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     });
   }
 
-  // lib/ui/common.js
+  // src/components/chat/common_ui.js
   window.luminaLoadScript = function(url) {
     return new Promise((resolve, reject) => {
       const resolvedUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL && !url.startsWith("http") && !url.startsWith("chrome-extension:") ? chrome.runtime.getURL(url.replace(/^\.\.\/\.\.\//, "").replace(/^\//, "")) : url;
@@ -35041,7 +35041,7 @@ Output only the revised text.`;
     }
   };
 
-  // pages/lumina/lumina.js
+  // src/pages/lumina/workspace.js
   window._luminaWindowInstanceId = window._luminaWindowInstanceId || "win_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
   function getPaneActiveModel() {
     const model = sessionStorage.getItem("lumina_active_model");

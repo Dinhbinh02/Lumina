@@ -1,6 +1,6 @@
 @import "./tokens.css";
 @import "./base.css";
 @import "../../../../lib/vendor/katex/katex.min.css";
-@import "../../../../pages/lumina/lumina.css";
-@import "../../../../pages/lumina/settings_modal.css";
-@import "../../../../pages/lumina/search_modal.css";
+@import "./lumina.css";
+@import "./modals/settings.css";
+@import "./modals/search.css";
