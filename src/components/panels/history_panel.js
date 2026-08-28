@@ -1,23 +1,23 @@
 import { ChatHistoryManager } from '../../db/chat_history.js';
 
-export class LuminaHistory {
+export class NexusHistory {
     constructor() {
         this.isOpen = false;
         this.historyData = [];
         this.displayedCount = 0;
         this.PAGE_SIZE = 20;
-        this.sidebar = document.getElementById('lumina-history-sidebar');
-        this.overlay = document.getElementById('lumina-history-overlay');
-        this.toggleBtn = document.getElementById('lumina-history-toggle-btn');
-        this.closeBtn = document.getElementById('lumina-history-close-btn');
-        this.settingsBtn = document.getElementById('lumina-history-settings-btn');
-        this.searchInput = document.getElementById('lumina-history-search-input');
-        this.searchLoader = document.getElementById('lumina-history-loader');
-        this.listContainer = document.getElementById('lumina-history-list-container');
+        this.sidebar = document.getElementById('nexus-history-sidebar');
+        this.overlay = document.getElementById('nexus-history-overlay');
+        this.toggleBtn = document.getElementById('nexus-history-toggle-btn');
+        this.closeBtn = document.getElementById('nexus-history-close-btn');
+        this.settingsBtn = document.getElementById('nexus-history-settings-btn');
+        this.searchInput = document.getElementById('nexus-history-search-input');
+        this.searchLoader = document.getElementById('nexus-history-loader');
+        this.listContainer = document.getElementById('nexus-history-list-container');
         this.storageText = document.getElementById('storage-usage-text');
-        this.deleteAllBtn = document.getElementById('lumina-history-delete-all-btn');
+        this.deleteAllBtn = document.getElementById('nexus-history-delete-all-btn');
         this.topbarToggleBtn = document.getElementById('topbar-history-btn');
-        this.contextMenu = document.getElementById('lumina-history-context-menu');
+        this.contextMenu = document.getElementById('nexus-history-context-menu');
         this.menuRename = document.getElementById('menu-rename');
         this.menuDuplicate = document.getElementById('menu-duplicate');
         this.menuDelete = document.getElementById('menu-delete');
@@ -179,7 +179,7 @@ export class LuminaHistory {
             });
         }
         if (this.filteredData.length === 0) {
-            this.listContainer.innerHTML = `<div class="lumina-history-empty-state">No chat history found.</div>`;
+            this.listContainer.innerHTML = `<div class="nexus-history-empty-state">No chat history found.</div>`;
             return;
         }
         this.renderNextBatch();
@@ -216,7 +216,7 @@ export class LuminaHistory {
     ensureTooltip() {
         if (this.tooltip) return;
         this.tooltip = document.createElement('div');
-        this.tooltip.className = 'lumina-tooltip';
+        this.tooltip.className = 'nexus-tooltip';
         document.body.appendChild(this.tooltip);
     }
     showTooltip(text, target) {
@@ -259,15 +259,15 @@ export class LuminaHistory {
         div.textContent = prefix + displayText;
         let safeHTML = div.innerHTML;
         const highlightRegex = new RegExp(`(${this.escapeRegExp(matchText)})`, 'gi');
-        return safeHTML.replace(highlightRegex, '<span class="lumina-history-highlight">$1</span>');
+        return safeHTML.replace(highlightRegex, '<span class="nexus-history-highlight">$1</span>');
     }
     createHistoryElement(item) {
         const query = this.searchInput ? this.searchInput.value.trim() : '';
         const div = document.createElement('div');
-        div.className = 'lumina-history-item';
+        div.className = 'nexus-history-item';
         div.dataset.id = item.id;
         if (item.isEntry) div.dataset.messageIndex = item.messageIndex;
-        const titleClasses = (item.isRenamed && !query) ? 'lumina-history-item-title renamed' : 'lumina-history-item-title';
+        const titleClasses = (item.isRenamed && !query) ? 'nexus-history-item-title renamed' : 'nexus-history-item-title';
         const displayTitle = item.isEntry && query ? this.highlightAndCrop(item.title, query) : item.title;
         let cleanSnippet = (item.snippet || 'No messages yet').replace(/\n/g, ' ').trim();
         if (cleanSnippet.length > 100) {
@@ -275,12 +275,12 @@ export class LuminaHistory {
         }
         div.innerHTML = `
             <div class="${titleClasses}">${displayTitle}</div>
-            <div class="lumina-history-item-snippet">${cleanSnippet}</div>
-            <div class="lumina-history-item-meta">
+            <div class="nexus-history-item-snippet">${cleanSnippet}</div>
+            <div class="nexus-history-item-meta">
                 <span>${this.formatDate(item.updatedAt)}</span>
             </div>
         `;
-        const titleEl = div.querySelector('.lumina-history-item-title');
+        const titleEl = div.querySelector('.nexus-history-item-title');
         titleEl.addEventListener('mouseenter', (e) => this.showTooltip(item.title, e.target));
         titleEl.addEventListener('mouseleave', this.hideTooltip);
         div.addEventListener('click', () => {
@@ -294,7 +294,7 @@ export class LuminaHistory {
     }
     showContextMenu(e, sessionId, element) {
         if (!this.listContainer || !this.contextMenu) return;
-        const allItems = this.listContainer.querySelectorAll('.lumina-history-item');
+        const allItems = this.listContainer.querySelectorAll('.nexus-history-item');
         allItems.forEach(el => el.classList.remove('context-menu-active'));
         element.classList.add('context-menu-active');
         this.activeContextSessionId = sessionId;
@@ -315,21 +315,21 @@ export class LuminaHistory {
         this.contextMenu.style.display = 'none';
         this.activeContextSessionId = null;
         if (this.listContainer) {
-            const allItems = this.listContainer.querySelectorAll('.lumina-history-item');
+            const allItems = this.listContainer.querySelectorAll('.nexus-history-item');
             allItems.forEach(el => el.classList.remove('context-menu-active'));
         }
     }
     async renameItem(sessionId) {
         const item = this.historyData.find(i => i.id === sessionId);
         if (!item || !this.listContainer) return;
-        const el = this.listContainer.querySelector(`.lumina-history-item[data-id="${sessionId}"]`);
+        const el = this.listContainer.querySelector(`.nexus-history-item[data-id="${sessionId}"]`);
         if (!el) return;
-        const titleEl = el.querySelector('.lumina-history-item-title');
+        const titleEl = el.querySelector('.nexus-history-item-title');
         const oldTitle = item.title;
         const input = document.createElement('input');
         input.type = 'text';
         input.value = oldTitle;
-        input.className = 'lumina-history-rename-input';
+        input.className = 'nexus-history-rename-input';
         titleEl.textContent = '';
         titleEl.appendChild(input);
         input.focus();
@@ -416,14 +416,14 @@ export class LuminaHistory {
 }
 
 if (typeof window !== 'undefined') {
-    window.LuminaHistory = LuminaHistory;
+    window.NexusHistory = NexusHistory;
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            if (!window.luminaHistory && document.getElementById('lumina-history-sidebar')) {
-                window.luminaHistory = new LuminaHistory();
+            if (!window.nexusHistory && document.getElementById('nexus-history-sidebar')) {
+                window.nexusHistory = new NexusHistory();
             }
         });
-    } else if (!window.luminaHistory && document.getElementById('lumina-history-sidebar')) {
-        window.luminaHistory = new LuminaHistory();
+    } else if (!window.nexusHistory && document.getElementById('nexus-history-sidebar')) {
+        window.nexusHistory = new NexusHistory();
     }
 }

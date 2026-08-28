@@ -1,5 +1,5 @@
-export const LuminaAttachmentDB = {
-    DB_NAME: 'LuminaAttachmentDB',
+export const NexusAttachmentDB = {
+    DB_NAME: 'NexusAttachmentDB',
     DB_VERSION: 1,
     STORE_NAME: 'attachments',
     _db: null,
@@ -185,8 +185,8 @@ export const LuminaAttachmentDB = {
     }
 };
 
-export const LuminaImageCacheDB = {
-    DB_NAME: 'LuminaImageCacheDB',
+export const NexusImageCacheDB = {
+    DB_NAME: 'NexusImageCacheDB',
     DB_VERSION: 1,
     STORE_NAME: 'image_queries',
     _db: null,
@@ -305,8 +305,8 @@ export const LuminaImageCacheDB = {
     }
 };
 
-export const LuminaAudioCacheDB = {
-    DB_NAME: 'LuminaAudioCacheDB',
+export const NexusAudioCacheDB = {
+    DB_NAME: 'NexusAudioCacheDB',
     DB_VERSION: 1,
     STORE_NAME: 'audio_entries',
     _db: null,
@@ -335,7 +335,7 @@ export const LuminaAudioCacheDB = {
         if (entry && entry.data && Array.isArray(entry.data)) {
             dbValue.data = await Promise.all(entry.data.map(async base64 => {
                 if (typeof base64 !== 'string' || !base64.startsWith('data:')) return base64;
-                return (await LuminaAttachmentDB.dataURLtoBlobAsync(base64)) || base64;
+                return (await NexusAttachmentDB.dataURLtoBlobAsync(base64)) || base64;
             }));
         }
         return new Promise((resolve, reject) => {
@@ -364,7 +364,7 @@ export const LuminaAudioCacheDB = {
                             try {
                                 const base64Promises = entry.data.map(async (item) => {
                                     if (item instanceof Blob) {
-                                        return await LuminaAttachmentDB.blobToDataURL(item);
+                                        return await NexusAttachmentDB.blobToDataURL(item);
                                     }
                                     return item;
                                 });
@@ -463,7 +463,7 @@ export const LuminaAudioCacheDB = {
 };
 
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaAttachmentDB = LuminaAttachmentDB;
-    globalThis.LuminaImageCacheDB = LuminaImageCacheDB;
-    globalThis.LuminaAudioCacheDB = LuminaAudioCacheDB;
+    globalThis.NexusAttachmentDB = NexusAttachmentDB;
+    globalThis.NexusImageCacheDB = NexusImageCacheDB;
+    globalThis.NexusAudioCacheDB = NexusAudioCacheDB;
 }

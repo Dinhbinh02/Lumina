@@ -21,11 +21,11 @@ async function buildBlockNote() {
     });
 }
 
-async function buildLuminaWorkspace() {
-    const jsEntry = path.resolve(__dirname, 'src/pages/lumina/index.js');
-    const jsOut = path.resolve(__dirname, 'pages/lumina/lumina.bundle.js');
-    const cssEntry = path.resolve(__dirname, 'src/pages/lumina/styles/index.css');
-    const cssOut = path.resolve(__dirname, 'pages/lumina/lumina.bundle.css');
+async function buildNexusWorkspace() {
+    const jsEntry = path.resolve(__dirname, 'src/pages/nexus/index.js');
+    const jsOut = path.resolve(__dirname, 'pages/nexus/nexus.bundle.js');
+    const cssEntry = path.resolve(__dirname, 'src/pages/nexus/styles/index.css');
+    const cssOut = path.resolve(__dirname, 'pages/nexus/nexus.bundle.css');
 
     if (fs.existsSync(jsEntry)) {
         const jsContext = await esbuild.context({
@@ -149,21 +149,21 @@ async function run() {
         fs.mkdirSync(distDir, { recursive: true });
     }
 
-    console.log('[Lumina Build] Compiling packages...');
+    console.log('[Nexus Build] Compiling packages...');
     await buildBlockNote();
-    await buildLuminaWorkspace();
+    await buildNexusWorkspace();
     await buildBackground();
     await buildContent();
     await buildPopup();
-    console.log('[Lumina Build] Build completed successfully.');
+    console.log('[Nexus Build] Build completed successfully.');
 
     if (isWatch) {
-        console.log('[Lumina Build] Watching for file changes in src/ ...');
+        console.log('[Nexus Build] Watching for file changes in src/ ...');
     }
 }
 
 run().catch((err) => {
-    console.error('[Lumina Build Error]', err);
+    console.error('[Nexus Build Error]', err);
     process.exit(1);
 });
 

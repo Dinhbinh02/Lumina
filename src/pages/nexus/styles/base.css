@@ -8,21 +8,21 @@ input,
 button,
 select,
 textarea {
-  font-family: var(--lumina-font-family) !important;
-  font-size: var(--lumina-fontSize, 13px);
-  font-weight: var(--lumina-weight-regular);
+  font-family: var(--nexus-font-family) !important;
+  font-size: var(--nexus-fontSize, 13px);
+  font-weight: var(--nexus-weight-regular);
   margin: 0;
 }
 
 html,
 body {
-  background-color: var(--lumina-ui-bg) !important;
-  color: var(--lumina-text-primary);
+  background-color: var(--nexus-ui-bg) !important;
+  color: var(--nexus-text-primary);
   margin: 0;
   padding: 0;
 }
 
-.lumina-app-container {
+.nexus-app-container {
   display: flex;
   height: 100vh;
   width: 100vw;
@@ -30,7 +30,7 @@ body {
   position: relative;
 }
 
-.lumina-main-content {
+.nexus-main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -49,10 +49,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--lumina-scrollbar-thumb);
+  background: var(--nexus-scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--lumina-scrollbar-thumb-hover);
+  background: var(--nexus-scrollbar-thumb-hover);
 }

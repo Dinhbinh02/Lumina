@@ -1,5 +1,5 @@
 export class NotesManager {
-    static DB_NAME = 'LuminaNotesDB';
+    static DB_NAME = 'NexusNotesDB';
     static DB_VERSION = 1;
     static STORE_COLLECTIONS = 'collections';
     static STORE_NOTES = 'notes';
@@ -78,8 +78,8 @@ export class NotesManager {
             const store = tx.objectStore(NotesManager.STORE_COLLECTIONS);
             const request = store.put(newCol);
             request.onsuccess = () => {
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 resolve(newCol);
             };
@@ -102,8 +102,8 @@ export class NotesManager {
                 col.updatedAt = Date.now();
                 const putReq = store.put(col);
                 putReq.onsuccess = () => {
-                    if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                        LuminaSync.triggerDebouncedSync();
+                    if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                        NexusSync.triggerDebouncedSync();
                     }
                     resolve(col);
                 };
@@ -138,8 +138,8 @@ export class NotesManager {
             };
 
             tx.oncomplete = () => {
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 resolve(true);
             };
@@ -216,8 +216,8 @@ export class NotesManager {
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.put(newNote);
             request.onsuccess = () => {
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 resolve(newNote);
             };
@@ -241,8 +241,8 @@ export class NotesManager {
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.put(updatedNote);
             request.onsuccess = () => {
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 resolve(updatedNote);
             };
@@ -265,8 +265,8 @@ export class NotesManager {
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const request = store.put(note);
             request.onsuccess = () => {
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 resolve(note);
             };
@@ -286,8 +286,8 @@ export class NotesManager {
             const store = tx.objectStore(NotesManager.STORE_NOTES);
             const req = store.delete(noteId);
             req.onsuccess = () => {
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 resolve(true);
             };

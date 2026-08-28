@@ -1,7 +1,7 @@
-import { LuminaAnnotationDB } from './highlight_db.js';
-import { LuminaChatDB } from './chat_db.js';
+import { NexusAnnotationDB } from './highlight_db.js';
+import { NexusChatDB } from './chat_db.js';
 
-export async function runLuminaMigrations() {
+export async function runNexusMigrations() {
     try {
         const allLocalData = await chrome.storage.local.get(null);
         const keysToRemove = [];
@@ -26,12 +26,12 @@ export async function runLuminaMigrations() {
                     
                     if (flatHighlights.length > 0) {
                         try {
-                            const existing = await LuminaAnnotationDB.get(key);
+                            const existing = await NexusAnnotationDB.get(key);
                             if (!existing || existing.length === 0) {
-                                await LuminaAnnotationDB.put(key, flatHighlights);
+                                await NexusAnnotationDB.put(key, flatHighlights);
                             }
                         } catch (dbErr) {
-                            console.error(`[Lumina Migration] Failed to migrate highlights for key: ${key}`, dbErr);
+                            console.error(`[Nexus Migration] Failed to migrate highlights for key: ${key}`, dbErr);
                         }
                     }
                 }
@@ -46,8 +46,8 @@ export async function runLuminaMigrations() {
                 lowerKey.includes('monica') || 
                 lowerKey.includes('lynote') ||
                 key === 'audio_cache' ||
-                key.startsWith('lumina_img_cache_') ||
-                key.startsWith('lumina_img_query_')
+                key.startsWith('nexus_img_cache_') ||
+                key.startsWith('nexus_img_query_')
             ) {
                 keysToRemove.push(key);
             }
@@ -57,16 +57,16 @@ export async function runLuminaMigrations() {
             await chrome.storage.local.remove(keysToRemove);
         }
     } catch (err) {
-        console.error('[Lumina Migration] Standalone highlights/obsolete keys purge failed:', err);
+        console.error('[Nexus Migration] Standalone highlights/obsolete keys purge failed:', err);
     }
 
-    const MIGRATION_FLAG = 'lumina_session_migrated_v7';
+    const MIGRATION_FLAG = 'nexus_session_migrated_v7';
     const PREV_MIGRATION_FLAGS = [
-        'lumina_session_migrated_v2', 
-        'lumina_session_migrated_v3', 
-        'lumina_session_migrated_v4', 
-        'lumina_session_migrated_v5',
-        'lumina_session_migrated_v6'
+        'nexus_session_migrated_v2', 
+        'nexus_session_migrated_v3', 
+        'nexus_session_migrated_v4', 
+        'nexus_session_migrated_v5',
+        'nexus_session_migrated_v6'
     ];
     
     const flagResult = await chrome.storage.local.get([MIGRATION_FLAG]);
@@ -109,9 +109,9 @@ export async function runLuminaMigrations() {
                     const flatHighlights = legacyHighlights.map(serializeHighlight).filter(Boolean);
                     if (flatHighlights.length > 0) {
                         try {
-                            await LuminaAnnotationDB.put(key, flatHighlights);
+                            await NexusAnnotationDB.put(key, flatHighlights);
                         } catch (dbErr) {
-                            console.error(`[Lumina Migration] Failed to save highlights for key: ${key}`, dbErr);
+                            console.error(`[Nexus Migration] Failed to save highlights for key: ${key}`, dbErr);
                         }
                     }
                 }
@@ -119,7 +119,7 @@ export async function runLuminaMigrations() {
             }
         }
         
-        const sessionsKey = 'lumina_chat_sessions';
+        const sessionsKey = 'nexus_chat_sessions';
         let sessions = allData[sessionsKey] || {};
         let sessionsUpdated = false;
         
@@ -132,14 +132,14 @@ export async function runLuminaMigrations() {
                 delete sessions[sessionId];
                 sessionsUpdated = true;
                 
-                const oldSessionKey = `lumina_session_${sessionId}`;
-                const newSessionKey = `lumina_session_${newSessionId}`;
+                const oldSessionKey = `nexus_session_${sessionId}`;
+                const newSessionKey = `nexus_session_${newSessionId}`;
                 if (allData[oldSessionKey] && !allData[newSessionKey]) {
                     allData[newSessionKey] = allData[oldSessionKey];
                     keysToRemove.push(oldSessionKey);
                 }
-                const oldHistoryKey = `lumina_history_${sessionId}`;
-                const newHistoryKey = `lumina_history_${newSessionId}`;
+                const oldHistoryKey = `nexus_history_${sessionId}`;
+                const newHistoryKey = `nexus_history_${newSessionId}`;
                 if (allData[oldHistoryKey] && !allData[newHistoryKey]) {
                     allData[newHistoryKey] = allData[oldHistoryKey];
                     keysToRemove.push(oldHistoryKey);
@@ -148,16 +148,16 @@ export async function runLuminaMigrations() {
         }
         
         for (const key of Object.keys(allData)) {
-            if (key.startsWith('lumina_session_session_')) {
-                const oldSessionId = key.replace('lumina_session_', '');
+            if (key.startsWith('nexus_session_session_')) {
+                const oldSessionId = key.replace('nexus_session_', '');
                 const newSessionId = oldSessionId.replace('session_', '');
-                const newSessionKey = `lumina_session_${newSessionId}`;
+                const newSessionKey = `nexus_session_${newSessionId}`;
                 allData[newSessionKey] = allData[key];
                 keysToRemove.push(key);
                 
-                const oldHistoryKey = `lumina_history_${oldSessionId}`;
+                const oldHistoryKey = `nexus_history_${oldSessionId}`;
                 if (allData[oldHistoryKey]) {
-                    const newHistoryKey = `lumina_history_${newSessionId}`;
+                    const newHistoryKey = `nexus_history_${newSessionId}`;
                     allData[newHistoryKey] = allData[oldHistoryKey];
                     keysToRemove.push(oldHistoryKey);
                 }
@@ -178,25 +178,25 @@ export async function runLuminaMigrations() {
             const meta = sessions[sessionId];
             if (meta) {
                 const normId = sessionId.startsWith('session_') ? sessionId.replace('session_', '') : sessionId;
-                const messageKey = `lumina_session_${normId}`;
+                const messageKey = `nexus_session_${normId}`;
                 const messages = allData[messageKey] || meta.messages || [];
                 
                 try {
                     meta.id = normId;
-                    await LuminaChatDB.putSession(meta);
-                    await LuminaChatDB.putMessages(normId, messages);
+                    await NexusChatDB.putSession(meta);
+                    await NexusChatDB.putMessages(normId, messages);
                     migratedSessionIds.add(normId);
                     keysToRemove.push(messageKey);
-                    keysToRemove.push(`lumina_history_${normId}`);
+                    keysToRemove.push(`nexus_history_${normId}`);
                 } catch (chatDbErr) {
-                    console.error(`[Lumina Migration] Failed to migrate chat session ${normId} to IndexedDB:`, chatDbErr);
+                    console.error(`[Nexus Migration] Failed to migrate chat session ${normId} to IndexedDB:`, chatDbErr);
                 }
             }
         }
         
         for (const key of Object.keys(allData)) {
-            if (key.startsWith('lumina_session_')) {
-                const rawId = key.replace('lumina_session_', '');
+            if (key.startsWith('nexus_session_')) {
+                const rawId = key.replace('nexus_session_', '');
                 if (rawId === 'settings' || rawId === 'session_settings') continue;
                 
                 const normId = rawId.startsWith('session_') ? rawId.replace('session_', '') : rawId;
@@ -212,10 +212,10 @@ export async function runLuminaMigrations() {
                                 updatedAt: latestTimestamp,
                                 hasContent: true
                             };
-                            await LuminaChatDB.putSession(meta);
-                            await LuminaChatDB.putMessages(normId, messages);
+                            await NexusChatDB.putSession(meta);
+                            await NexusChatDB.putMessages(normId, messages);
                         } catch (recoveryErr) {
-                            console.error(`[Lumina Migration] Failed to recover standalone chat session ${normId}:`, recoveryErr);
+                            console.error(`[Nexus Migration] Failed to recover standalone chat session ${normId}:`, recoveryErr);
                         }
                     }
                     keysToRemove.push(key);
@@ -234,8 +234,8 @@ export async function runLuminaMigrations() {
             await chrome.storage.local.remove(keysToRemove);
         }
     } catch (error) {
-        console.error('[Lumina Migration] Fatal error during migration:', error);
+        console.error('[Nexus Migration] Fatal error during migration:', error);
     }
 }
 
-runLuminaMigrations();
+runNexusMigrations();

@@ -118,6 +118,6 @@ export function stopAudio() {
 }
 
 if (typeof window !== 'undefined') {
-    window.LuminaPlayAudio = playCombinedAudio;
-    window.LuminaStopAudio = stopAudio;
+    window.NexusPlayAudio = playCombinedAudio;
+    window.NexusStopAudio = stopAudio;
 }

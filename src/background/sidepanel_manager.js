@@ -12,7 +12,7 @@ export function broadcastToSession(sessionId, message) {
         try {
             port.postMessage(message);
         } catch (e) {
-            console.warn('[Lumina BG] Failed to broadcast to session port:', e);
+            console.warn('[Nexus BG] Failed to broadcast to session port:', e);
             ports.delete(port);
         }
     }
@@ -36,7 +36,7 @@ export function toggleSidePanel(windowId) {
                 chrome.sidePanel.setOptions({
                     windowId,
                     enabled: true,
-                    path: 'pages/lumina/lumina.html?sidepanel=1'
+                    path: 'pages/nexus/nexus.html?sidepanel=1'
                 });
             });
         }
@@ -70,7 +70,7 @@ export async function ensureSidePanelOpen(windowId) {
 export function updateDisplayMode(mode) {
     if (!chrome.sidePanel) return;
     chrome.sidePanel.setOptions({
-        path: 'pages/lumina/lumina.html?sidepanel=1',
+        path: 'pages/nexus/nexus.html?sidepanel=1',
         enabled: true
     });
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
@@ -88,7 +88,7 @@ export function initSidePanelManager() {
     });
 
     chrome.runtime.onConnect.addListener((port) => {
-        if (port.name === 'lumina-sidepanel') {
+        if (port.name === 'nexus-sidepanel') {
             let connectedWindowId = null;
             port.onMessage.addListener((msg) => {
                 if (msg.action === 'closing' && msg.windowId) {
@@ -129,11 +129,11 @@ export function initSidePanelManager() {
     }
 
     chrome.tabs.onRemoved.addListener((tabId) => {
-        chrome.storage.local.get(['lumina_tab_sessions'], result => {
-            const tabSessions = result.lumina_tab_sessions || {};
+        chrome.storage.local.get(['nexus_tab_sessions'], result => {
+            const tabSessions = result.nexus_tab_sessions || {};
             if (tabSessions[tabId]) {
                 delete tabSessions[tabId];
-                chrome.storage.local.set({ lumina_tab_sessions: tabSessions });
+                chrome.storage.local.set({ nexus_tab_sessions: tabSessions });
             }
         });
     });
@@ -150,7 +150,7 @@ export function initSidePanelManager() {
 
     if (chrome.commands && chrome.commands.onCommand) {
         chrome.commands.onCommand.addListener((command, tab) => {
-            if (command === 'toggle-side-panel' || command === 'open-lumina-chat') {
+            if (command === 'toggle-side-panel' || command === 'open-nexus-chat') {
                 if (tab && tab.windowId) {
                     toggleSidePanel(tab.windowId);
                 } else {
@@ -205,7 +205,7 @@ export function initSidePanelManager() {
             const windowIdQuery = sender.tab ? sender.tab.windowId : (request.windowId || null);
             if (windowIdQuery) {
                 const queryId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
-                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/lumina/lumina.html');
+                const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes('/pages/nexus/nexus.html');
                 const sourceTab = (sender.tab && !isInternal) ? {
                     tabId: sender.tab.id,
                     title: sender.tab.title,

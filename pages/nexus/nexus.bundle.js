@@ -13179,7 +13179,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   });
 
   // src/shared/constants.js
-  var LUMINA_DEFAULTS = {
+  var NEXUS_DEFAULTS = {
     provider: "groq",
     groqModel: "llama3-8b-8192",
     geminiModel: "gemini-2.5-flash-lite",
@@ -13190,7 +13190,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     readWebpage: true,
     reasoningMode: false
   };
-  var LUMINA_PROVIDERS = {
+  var NEXUS_PROVIDERS = {
     groq: {
       link: "https://console.groq.com/keys",
       modelsUrl: "https://api.groq.com/openai/v1/models",
@@ -13217,9 +13217,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       defaultModel: "mistral-small-latest"
     }
   };
-  var LUMINA_DEFAULT_SHORTCUTS = {
-    luminaChat: { key: "Space", modifiers: ["Alt"] },
-    askLumina: { key: "L", modifiers: ["Alt"] },
+  var NEXUS_DEFAULT_SHORTCUTS = {
+    nexusChat: { key: "Space", modifiers: ["Alt"] },
+    askNexus: { key: "L", modifiers: ["Alt"] },
     audio: { key: "Shift", modifiers: [] },
     translate: { key: "T", modifiers: ["Alt"] },
     micToggle: { key: "M", modifiers: ["Alt"] },
@@ -13295,14 +13295,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     "text/x-python-script": "text/x-python",
     "application/x-javascript": "text/javascript"
   };
-  var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "lumina_web_selection_";
+  var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "nexus_web_selection_";
   function isWebPageUrl(url) {
     return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") && url.includes("?sid="));
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
-    globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
-    globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
+    globalThis.NEXUS_DEFAULTS = NEXUS_DEFAULTS;
+    globalThis.NEXUS_PROVIDERS = NEXUS_PROVIDERS;
+    globalThis.NEXUS_DEFAULT_SHORTCUTS = NEXUS_DEFAULT_SHORTCUTS;
     globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
     globalThis.MIME_ALIASES = MIME_ALIASES;
     globalThis.WEB_SOURCE_SELECTION_STORAGE_PREFIX = WEB_SOURCE_SELECTION_STORAGE_PREFIX;
@@ -13312,7 +13312,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     globalThis.getKeysArray = getKeysArray;
   }
 
-  // src/pages/lumina/index.js
+  // src/pages/nexus/index.js
   var import_marked_min = __toESM(require_marked_min());
   var import_highlight_min = __toESM(require_highlight_min());
   var import_katex_min = __toESM(require_katex_min());
@@ -13320,8 +13320,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   var import_chart_min = __toESM(require_chart_min());
 
   // src/db/attachment_db.js
-  var LuminaAttachmentDB2 = {
-    DB_NAME: "LuminaAttachmentDB",
+  var NexusAttachmentDB2 = {
+    DB_NAME: "NexusAttachmentDB",
     DB_VERSION: 1,
     STORE_NAME: "attachments",
     _db: null,
@@ -13502,8 +13502,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       return { freed: freedBytes, remaining: totalBytes };
     }
   };
-  var LuminaImageCacheDB = {
-    DB_NAME: "LuminaImageCacheDB",
+  var NexusImageCacheDB = {
+    DB_NAME: "NexusImageCacheDB",
     DB_VERSION: 1,
     STORE_NAME: "image_queries",
     _db: null,
@@ -13629,8 +13629,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       });
     }
   };
-  var LuminaAudioCacheDB = {
-    DB_NAME: "LuminaAudioCacheDB",
+  var NexusAudioCacheDB = {
+    DB_NAME: "NexusAudioCacheDB",
     DB_VERSION: 1,
     STORE_NAME: "audio_entries",
     _db: null,
@@ -13666,7 +13666,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       if (entry && entry.data && Array.isArray(entry.data)) {
         dbValue.data = await Promise.all(entry.data.map(async (base64) => {
           if (typeof base64 !== "string" || !base64.startsWith("data:")) return base64;
-          return await LuminaAttachmentDB2.dataURLtoBlobAsync(base64) || base64;
+          return await NexusAttachmentDB2.dataURLtoBlobAsync(base64) || base64;
         }));
       }
       return new Promise((resolve, reject) => {
@@ -13696,7 +13696,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                 try {
                   const base64Promises = entry.data.map(async (item) => {
                     if (item instanceof Blob) {
-                      return await LuminaAttachmentDB2.blobToDataURL(item);
+                      return await NexusAttachmentDB2.blobToDataURL(item);
                     }
                     return item;
                   });
@@ -13794,14 +13794,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     }
   };
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaAttachmentDB = LuminaAttachmentDB2;
-    globalThis.LuminaImageCacheDB = LuminaImageCacheDB;
-    globalThis.LuminaAudioCacheDB = LuminaAudioCacheDB;
+    globalThis.NexusAttachmentDB = NexusAttachmentDB2;
+    globalThis.NexusImageCacheDB = NexusImageCacheDB;
+    globalThis.NexusAudioCacheDB = NexusAudioCacheDB;
   }
 
   // src/db/highlight_db.js
-  var LuminaAnnotationDB2 = {
-    DB_NAME: "LuminaHighlightDB",
+  var NexusAnnotationDB2 = {
+    DB_NAME: "NexusHighlightDB",
     DB_VERSION: 1,
     STORE_NAME: "highlights",
     _db: null,
@@ -13891,15 +13891,15 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       });
     }
   };
-  var LuminaHighlightDB = LuminaAnnotationDB2;
+  var NexusHighlightDB = NexusAnnotationDB2;
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaAnnotationDB = LuminaAnnotationDB2;
-    globalThis.LuminaHighlightDB = LuminaHighlightDB;
+    globalThis.NexusAnnotationDB = NexusAnnotationDB2;
+    globalThis.NexusHighlightDB = NexusHighlightDB;
   }
 
   // src/db/chat_db.js
-  var LuminaChatDB2 = {
-    DB_NAME: "LuminaChatDB",
+  var NexusChatDB2 = {
+    DB_NAME: "NexusChatDB",
     DB_VERSION: 1,
     SESSIONS_STORE: "sessions",
     MESSAGES_STORE: "messages",
@@ -14069,12 +14069,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     }
   };
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaChatDB = LuminaChatDB2;
+    globalThis.NexusChatDB = NexusChatDB2;
   }
 
   // src/db/notes_manager.js
   var NotesManager2 = class _NotesManager {
-    static DB_NAME = "LuminaNotesDB";
+    static DB_NAME = "NexusNotesDB";
     static DB_VERSION = 1;
     static STORE_COLLECTIONS = "collections";
     static STORE_NOTES = "notes";
@@ -14143,8 +14143,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
         const request = store.put(newCol);
         request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(newCol);
         };
@@ -14165,8 +14165,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           col.updatedAt = Date.now();
           const putReq = store.put(col);
           putReq.onsuccess = () => {
-            if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-              LuminaSync.triggerDebouncedSync();
+            if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+              NexusSync.triggerDebouncedSync();
             }
             resolve(col);
           };
@@ -14195,8 +14195,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           }
         };
         tx.oncomplete = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(true);
         };
@@ -14266,8 +14266,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const store = tx.objectStore(_NotesManager.STORE_NOTES);
         const request = store.put(newNote);
         request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(newNote);
         };
@@ -14288,8 +14288,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const store = tx.objectStore(_NotesManager.STORE_NOTES);
         const request = store.put(updatedNote);
         request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(updatedNote);
         };
@@ -14310,8 +14310,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const store = tx.objectStore(_NotesManager.STORE_NOTES);
         const request = store.put(note);
         request.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(note);
         };
@@ -14329,8 +14329,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const store = tx.objectStore(_NotesManager.STORE_NOTES);
         const req = store.delete(noteId);
         req.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(true);
         };
@@ -14345,8 +14345,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   // src/db/chat_render_utils.js
   (function() {
     const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
-    if (!globalObj.LuminaRawTextRegistry) {
-      globalObj.LuminaRawTextRegistry = /* @__PURE__ */ new WeakMap();
+    if (!globalObj.NexusRawTextRegistry) {
+      globalObj.NexusRawTextRegistry = /* @__PURE__ */ new WeakMap();
     }
     if (typeof Element !== "undefined" && Element.prototype) {
       const originalSetAttribute = Element.prototype.setAttribute;
@@ -14354,7 +14354,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       const originalRemoveAttribute = Element.prototype.removeAttribute;
       Element.prototype.setAttribute = function(name, value) {
         if (name === "data-raw-text") {
-          globalObj.LuminaRawTextRegistry.set(this, value);
+          globalObj.NexusRawTextRegistry.set(this, value);
           const truncated = typeof value === "string" && value.length > 1e3 ? value.substring(0, 1e3) + "... (truncated in DOM)" : value;
           return originalSetAttribute.call(this, name, truncated);
         }
@@ -14362,15 +14362,15 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       };
       Element.prototype.getAttribute = function(name) {
         if (name === "data-raw-text") {
-          if (globalObj.LuminaRawTextRegistry.has(this)) {
-            return globalObj.LuminaRawTextRegistry.get(this);
+          if (globalObj.NexusRawTextRegistry.has(this)) {
+            return globalObj.NexusRawTextRegistry.get(this);
           }
         }
         return originalGetAttribute.call(this, name);
       };
       Element.prototype.removeAttribute = function(name) {
         if (name === "data-raw-text") {
-          globalObj.LuminaRawTextRegistry.delete(this);
+          globalObj.NexusRawTextRegistry.delete(this);
         }
         return originalRemoveAttribute.call(this, name);
       };
@@ -14416,24 +14416,24 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 
   // src/db/chat_history.js
   var ChatHistoryManager2 = {
-    STORAGE_KEY: "lumina_chat_sessions",
+    STORAGE_KEY: "nexus_chat_sessions",
     LEGACY_KEY: "chat_history",
-    TEMP_POPUP_KEY: "lumina_popup_sessions",
+    TEMP_POPUP_KEY: "nexus_popup_sessions",
     MAX_HISTORIES: 999,
     RETENTION_DAYS: 180,
     currentSessionId: null,
     generateSessionId() {
       return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     },
-    async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null) {
+    async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null, suppressBroadcast = false) {
       if (!historyEl && typeof currentPopup !== "undefined" && currentPopup) {
-        historyEl = currentPopup.querySelector(".lumina-chat-history");
+        historyEl = currentPopup.querySelector(".nexus-chat-history");
       }
       if (!historyEl) return;
       const now = Date.now();
       if (!force && this._lastSaveTime && now - this._lastSaveTime < 500) {
         if (this._saveTimeout) clearTimeout(this._saveTimeout);
-        this._saveTimeout = setTimeout(() => this.saveCurrentChat(historyEl, optionalSessionId, sparkId, force, extraSettings), 500);
+        this._saveTimeout = setTimeout(() => this.saveCurrentChat(historyEl, optionalSessionId, sparkId, force, extraSettings, suppressBroadcast), 500);
         return;
       }
       this._lastSaveTime = now;
@@ -14474,8 +14474,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           }
           return msg;
         });
-        await LuminaChatDB2.putMessages(activeSessionId, optimizedMessages);
-        const existingSession = await LuminaChatDB2.getSession(activeSessionId) || {};
+        await NexusChatDB2.putMessages(activeSessionId, optimizedMessages);
+        const existingSession = await NexusChatDB2.getSession(activeSessionId) || {};
         const isRenamed = existingSession.isRenamed || false;
         const autoNamed = existingSession.autoNamed || false;
         const finalTitle = isRenamed || autoNamed ? existingSession.title : title;
@@ -14522,54 +14522,56 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           thinkingLevel: extraSettings && extraSettings.thinkingLevel || existingSession.thinkingLevel || null,
           archived: existingSession.archived || false
         };
-        await LuminaChatDB2.putSession(sessionMeta);
+        await NexusChatDB2.putSession(sessionMeta);
         if (sparkId) {
           const finalModel = extraSettings && extraSettings.selectedModel || existingSession.selectedModel || null;
           const finalThinking = extraSettings && extraSettings.thinkingLevel || existingSession.thinkingLevel || null;
           if (finalModel || finalThinking) {
-            const settingsRes = await chrome.storage.local.get(["lumina_spark_last_settings"]);
-            const sparkSettings = settingsRes.lumina_spark_last_settings || {};
+            const settingsRes = await chrome.storage.local.get(["nexus_spark_last_settings"]);
+            const sparkSettings = settingsRes.nexus_spark_last_settings || {};
             sparkSettings[sparkId] = {
               selectedModel: finalModel,
               thinkingLevel: finalThinking
             };
-            await chrome.storage.local.set({ lumina_spark_last_settings: sparkSettings });
+            await chrome.storage.local.set({ nexus_spark_last_settings: sparkSettings });
           }
         }
         if (typeof window !== "undefined") {
           window._localSavedSessions = window._localSavedSessions || {};
           window._localSavedSessions[activeSessionId] = Date.now();
         }
-        const senderInstanceId = typeof window !== "undefined" && window._luminaWindowInstanceId ? window._luminaWindowInstanceId : null;
-        chrome.runtime.sendMessage({ action: "lumina_session_updated", sessionId: activeSessionId, source: "local_save", senderInstanceId }).catch(() => {
-        });
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated", senderInstanceId }).catch(() => {
+        const senderInstanceId = typeof window !== "undefined" && window._nexusWindowInstanceId ? window._nexusWindowInstanceId : null;
+        if (!suppressBroadcast) {
+          chrome.runtime.sendMessage({ action: "nexus_session_updated", sessionId: activeSessionId, source: "local_save", senderInstanceId }).catch(() => {
+          });
+        }
+        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated", senderInstanceId }).catch(() => {
         });
       } catch (error) {
         console.error("Failed to save chat history:", error);
       }
     },
     createCompletedStepperHTML(query, sourcesCount) {
-      const checkIcon = '<svg class="lumina-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      const checkIcon = '<svg class="nexus-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
       return `
-            <div class="lumina-completed-step">
+            <div class="nexus-completed-step">
                 ${checkIcon}
-                <span class="lumina-step-text">Searched for: <strong>"${query}"</strong> (${sourcesCount} sources)</span>
+                <span class="nexus-step-text">Searched for: <strong>"${query}"</strong> (${sourcesCount} sources)</span>
             </div>
         `;
     },
     extractMessages(historyElement) {
       const messages = [];
       for (const child of historyElement.children) {
-        if (!child.classList.contains("lumina-entry")) continue;
+        if (!child.classList.contains("nexus-entry")) continue;
         const entryType = child.dataset.entryType;
         const fromCache = child.dataset.fromCache === "true";
         const timestamp = parseInt(child.dataset.timestamp) || Date.now();
-        const questionEl = child.querySelector(".lumina-chat-question");
-        const versionsContainer = child.querySelector(".lumina-answer-versions");
-        const answerEl = child.querySelector(".lumina-chat-answer");
+        const questionEl = child.querySelector(".nexus-chat-question");
+        const versionsContainer = child.querySelector(".nexus-answer-versions");
+        const answerEl = child.querySelector(".nexus-chat-answer");
         if (questionEl) {
-          let serializedImages = Array.isArray(questionEl._luminaImages) ? questionEl._luminaImages : Array.isArray(child._luminaImages) ? child._luminaImages : null;
+          let serializedImages = Array.isArray(questionEl._nexusImages) ? questionEl._nexusImages : Array.isArray(child._nexusImages) ? child._nexusImages : null;
           if (!serializedImages && questionEl.dataset.images) {
             try {
               const parsedImages = JSON.parse(questionEl.dataset.images);
@@ -14593,14 +14595,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           });
         }
         if (versionsContainer) {
-          const versions = Array.from(versionsContainer.querySelectorAll(".lumina-answer-version"));
-          const activeVersion = versionsContainer.querySelector(".lumina-answer-version.active");
+          const versions = Array.from(versionsContainer.querySelectorAll(".nexus-answer-version"));
+          const activeVersion = versionsContainer.querySelector(".nexus-answer-version.active");
           const activeIndex = activeVersion ? parseInt(activeVersion.dataset.versionIndex) || 0 : 0;
           const versionContents = versions.map((v) => {
-            const ans = v.querySelector(".lumina-chat-answer");
+            const ans = v.querySelector(".nexus-chat-answer");
             return ans ? ans.getAttribute("data-raw-text") || ans.innerHTML : "";
           });
-          const activeAnswerEl = activeVersion ? activeVersion.querySelector(".lumina-chat-answer") : versions[0] ? versions[0].querySelector(".lumina-chat-answer") : null;
+          const activeAnswerEl = activeVersion ? activeVersion.querySelector(".nexus-chat-answer") : versions[0] ? versions[0].querySelector(".nexus-chat-answer") : null;
           const webSearchData = activeAnswerEl?.dataset.webSearch ? JSON.parse(activeAnswerEl.dataset.webSearch) : null;
           messages.push({
             type: "answer",
@@ -14623,11 +14625,11 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       return messages;
     },
     generateChatTitle(historyElement) {
-      const allEntries = Array.from(historyElement.querySelectorAll(".lumina-entry"));
+      const allEntries = Array.from(historyElement.querySelectorAll(".nexus-entry"));
       if (allEntries.length === 0) return "New Chat";
       for (let i = allEntries.length - 1; i >= 0; i--) {
         const entry = allEntries[i];
-        const questionEl = entry.querySelector(".lumina-chat-question");
+        const questionEl = entry.querySelector(".nexus-chat-question");
         if (questionEl) {
           return questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim();
         }
@@ -14636,10 +14638,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     },
     async loadChat(sessionId) {
       try {
-        const chatMeta = await LuminaChatDB2.getSession(sessionId);
+        const chatMeta = await NexusChatDB2.getSession(sessionId);
         if (chatMeta) {
           this.currentSessionId = sessionId;
-          const messages = await LuminaChatDB2.getMessages(sessionId) || [];
+          const messages = await NexusChatDB2.getMessages(sessionId) || [];
           const chatData = {
             ...chatMeta,
             messages,
@@ -14661,17 +14663,17 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         showChatPopup("");
         overridePopupAnimation(currentPopup);
       }
-      const history = historyContainer || currentPopup.querySelector(".lumina-chat-history");
+      const history = historyContainer || currentPopup.querySelector(".nexus-chat-history");
       if (!history) return;
       const globalObj = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : {};
-      if (globalObj.LuminaActiveBlobUrls && globalObj.LuminaActiveBlobUrls.length > 0) {
-        globalObj.LuminaActiveBlobUrls.forEach((url) => {
+      if (globalObj.NexusActiveBlobUrls && globalObj.NexusActiveBlobUrls.length > 0) {
+        globalObj.NexusActiveBlobUrls.forEach((url) => {
           try {
             URL.revokeObjectURL(url);
           } catch (e) {
           }
         });
-        globalObj.LuminaActiveBlobUrls = [];
+        globalObj.NexusActiveBlobUrls = [];
       }
       const restoreId = Math.random().toString(36).substr(2, 9);
       history.__activeRestoreId = restoreId;
@@ -14680,25 +14682,25 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       let sparksMap = {};
       if (chatData.sparkId) {
         try {
-          const sparksRes = await chrome.storage.local.get(["lumina_sparks"]);
-          sparksMap = sparksRes.lumina_sparks || {};
+          const sparksRes = await chrome.storage.local.get(["nexus_sparks"]);
+          sparksMap = sparksRes.nexus_sparks || {};
         } catch (e) {
           console.error("Failed to load sparks in restoreChat", e);
         }
       }
       const processPromises = [];
-      if (typeof document !== "undefined" && !document.getElementById("lumina-lazy-load-styles")) {
+      if (typeof document !== "undefined" && !document.getElementById("nexus-lazy-load-styles")) {
         const style = document.createElement("style");
-        style.id = "lumina-lazy-load-styles";
+        style.id = "nexus-lazy-load-styles";
         style.textContent = `
-                .lumina-load-more-history {
+                .nexus-load-more-history {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     padding: 8px 12px;
                     margin: 8px auto;
                     height: 32px;
-                    color: var(--lumina-sidebar-text-muted);
+                    color: var(--nexus-sidebar-text-muted);
                     font-size: 11px;
                     cursor: pointer;
                     user-select: none;
@@ -14724,12 +14726,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           const msgIdx = item && typeof item === "object" && item.originalIndex !== void 0 ? item.originalIndex : i;
           if (msg.type === "question") {
             const entryDiv = document.createElement("div");
-            entryDiv.className = "lumina-entry";
+            entryDiv.className = "nexus-entry";
             entryDiv.dataset.entryId = msg.metadata?.entryId || "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
             entryDiv.dataset.entryType = msg.metadata?.entryType || "qa";
             if (msg.timestamp) entryDiv.dataset.timestamp = String(msg.timestamp);
             const questionDiv = document.createElement("div");
-            questionDiv.className = "lumina-chat-question";
+            questionDiv.className = "nexus-chat-question";
             questionDiv.dataset.messageIndex = msgIdx;
             questionDiv.dataset.entryType = entryDiv.dataset.entryType;
             questionDiv.setAttribute("data-raw-text", msg.content);
@@ -14740,8 +14742,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               return !imgItem.hiddenInPreview && !imgItem.parentAttachmentId;
             }) : [];
             if (visibleImages.length > 0) {
-              questionDiv._luminaImages = visibleImages;
-              entryDiv._luminaImages = visibleImages;
+              questionDiv._nexusImages = visibleImages;
+              entryDiv._nexusImages = visibleImages;
               questionDiv.dataset.images = JSON.stringify({
                 compact: true,
                 count: visibleImages.length,
@@ -14767,11 +14769,11 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                 })
               });
               const filesDiv = document.createElement("div");
-              filesDiv.className = "lumina-chat-question-files";
+              filesDiv.className = "nexus-chat-question-files";
               visibleImages.forEach((item2) => {
                 const isImage = item2.isImage || item2.mimeType && item2.mimeType.startsWith("image/");
                 const rawSrc = item2.objectUrl || item2.dataUrl || item2.previewUrl || (item2.mimeType && item2.data ? `data:${item2.mimeType};base64,${item2.data}` : "");
-                const src = isImage ? rawSrc.startsWith("data:") || rawSrc.startsWith("blob:") ? rawSrc : typeof LuminaChatUI !== "undefined" ? LuminaChatUI._resolveImagePreviewSrc(item2, rawSrc) : rawSrc : rawSrc;
+                const src = isImage ? rawSrc.startsWith("data:") || rawSrc.startsWith("blob:") ? rawSrc : typeof NexusChatUI !== "undefined" ? NexusChatUI._resolveImagePreviewSrc(item2, rawSrc) : rawSrc : rawSrc;
                 if (isImage) {
                   const img = document.createElement("img");
                   img.src = src;
@@ -14779,36 +14781,36 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                     img.dataset.attachmentId = item2.attachmentId;
                   }
                   if (item2.name) img.alt = item2.name;
-                  img.className = "lumina-clickable-image";
+                  img.className = "nexus-clickable-image";
                   img.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    if (typeof LuminaChatUI !== "undefined") {
-                      LuminaChatUI.showImagePreview(img.src, img.alt);
+                    if (typeof NexusChatUI !== "undefined") {
+                      NexusChatUI.showImagePreview(img.src, img.alt);
                     }
                   });
                   filesDiv.appendChild(img);
                 } else {
                   const fileName = item2.name || "File";
-                  const displayName = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getDisplayFileName(fileName) : fileName;
-                  const category = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.inferFileCategory(item2) : "other";
-                  const icon = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getFileIconByCategory(category) : "\u{1F4C4}";
-                  const typeLabel = typeof LuminaChatUI !== "undefined" ? LuminaChatUI.getFileTypeLabel(item2) : "";
+                  const displayName = typeof NexusChatUI !== "undefined" ? NexusChatUI.getDisplayFileName(fileName) : fileName;
+                  const category = typeof NexusChatUI !== "undefined" ? NexusChatUI.inferFileCategory(item2) : "other";
+                  const icon = typeof NexusChatUI !== "undefined" ? NexusChatUI.getFileIconByCategory(category) : "\u{1F4C4}";
+                  const typeLabel = typeof NexusChatUI !== "undefined" ? NexusChatUI.getFileTypeLabel(item2) : "";
                   const fileChip = document.createElement("div");
-                  fileChip.className = "lumina-preview-item is-file lumina-question-file-chip";
+                  fileChip.className = "nexus-preview-item is-file nexus-question-file-chip";
                   if (item2.attachmentId) {
                     fileChip.dataset.attachmentId = item2.attachmentId;
                   }
                   fileChip.title = fileName;
-                  fileChip.innerHTML = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${displayName || fileName}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${typeLabel}</span></div></div>`;
+                  fileChip.innerHTML = `<div class="nexus-file-preview-info"><span class="nexus-file-name">${displayName || fileName}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${typeLabel}</span></div></div>`;
                   filesDiv.appendChild(fileChip);
                 }
               });
               entryDiv.appendChild(filesDiv);
               visibleImages.forEach((imgItem) => {
                 if (imgItem && imgItem.attachmentId) {
-                  LuminaAttachmentDB2.get(imgItem.attachmentId).then(async (blob) => {
+                  NexusAttachmentDB2.get(imgItem.attachmentId).then(async (blob) => {
                     if (blob) {
-                      const dataUrl = await LuminaAttachmentDB2.blobToDataURL(blob);
+                      const dataUrl = await NexusAttachmentDB2.blobToDataURL(blob);
                       const imgEl = entryDiv.querySelector(`[data-attachment-id="${imgItem.attachmentId}"]`);
                       if (imgEl && dataUrl) {
                         imgEl.src = dataUrl;
@@ -14824,16 +14826,16 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               const contextText = cleanMsgContent.substring(9, closeBracketIdx).trim();
               const taglessText = cleanMsgContent.substring(closeBracketIdx + 1).trim();
               const tagContent = contextText ? `"${contextText}"` : "";
-              questionDiv.innerHTML = `<div class="lumina-question-content">${tagContent} ${taglessText}</div>`;
+              questionDiv.innerHTML = `<div class="nexus-question-content">${tagContent} ${taglessText}</div>`;
             } else {
-              questionDiv.innerHTML = `<div class="lumina-question-content">${cleanMsgContent}</div>`;
+              questionDiv.innerHTML = `<div class="nexus-question-content">${cleanMsgContent}</div>`;
             }
             const row = document.createElement("div");
-            row.className = "lumina-question-row";
+            row.className = "nexus-question-row";
             row.appendChild(questionDiv);
             entryDiv.appendChild(row);
-            if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.injectQuestionActions === "function") {
-              LuminaChatUI.injectQuestionActions(questionDiv);
+            if (typeof NexusChatUI !== "undefined" && typeof NexusChatUI.injectQuestionActions === "function") {
+              NexusChatUI.injectQuestionActions(questionDiv);
             }
             const nextItem = i + 1 < group.length ? group[i + 1] : null;
             const nextMsg = nextItem && typeof nextItem === "object" && nextItem.msg ? nextItem.msg : nextItem;
@@ -14850,14 +14852,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               }
               if (answerMsg.versions && answerMsg.versions.length > 1) {
                 const versionsContainer = document.createElement("div");
-                versionsContainer.className = "lumina-answer-versions";
+                versionsContainer.className = "nexus-answer-versions";
                 const activeIndex = answerMsg.versions.length - 1;
                 answerMsg.versions.forEach((versionContent, idx) => {
                   const versionDiv = document.createElement("div");
-                  versionDiv.className = "lumina-answer-version" + (idx === activeIndex ? " active" : "");
+                  versionDiv.className = "nexus-answer-version" + (idx === activeIndex ? " active" : "");
                   versionDiv.dataset.versionIndex = idx.toString();
                   const answerDiv = document.createElement("div");
-                  answerDiv.className = "lumina-chat-answer";
+                  answerDiv.className = "nexus-chat-answer";
                   answerDiv.setAttribute("data-raw-text", versionContent);
                   const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
                   if (displayContent.trim().startsWith("<")) {
@@ -14869,7 +14871,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                       const sources = answerMsg.metadata.webSearch.sources;
                       html = html.replace(/\[(\d+)\]/g, (match, num) => {
                         const sIdx = parseInt(num) - 1;
-                        if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                        if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="nexus-citation">${num}</a>`;
                         return match;
                       });
                     }
@@ -14881,21 +14883,21 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                     link.target = "_blank";
                     link.rel = "noopener noreferrer";
                   });
-                  if (typeof LuminaChatUI !== "undefined") {
-                    processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                  if (typeof NexusChatUI !== "undefined") {
+                    processPromises.push(NexusChatUI.processContainer(answerDiv));
                   }
                   if (chatData.sparkId && sparksMap[chatData.sparkId]) {
                     const spark = sparksMap[chatData.sparkId];
                     const headerDiv = document.createElement("div");
-                    headerDiv.className = "lumina-spark-message-header";
+                    headerDiv.className = "nexus-spark-message-header";
                     const nameSpan = document.createElement("span");
-                    nameSpan.className = "lumina-spark-name";
+                    nameSpan.className = "nexus-spark-name";
                     nameSpan.textContent = spark.name;
                     const sepSpan = document.createElement("span");
-                    sepSpan.className = "lumina-spark-separator";
+                    sepSpan.className = "nexus-spark-separator";
                     sepSpan.textContent = " \u2022 ";
                     const typeSpan = document.createElement("span");
-                    typeSpan.className = "lumina-spark-type";
+                    typeSpan.className = "nexus-spark-type";
                     typeSpan.textContent = "Custom Spark";
                     headerDiv.appendChild(nameSpan);
                     headerDiv.appendChild(sepSpan);
@@ -14906,11 +14908,11 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                   versionsContainer.appendChild(versionDiv);
                 });
                 const navContainer = document.createElement("div");
-                navContainer.className = "lumina-answer-nav";
+                navContainer.className = "nexus-answer-nav";
                 navContainer.innerHTML = `
-                                <button class="lumina-answer-nav-btn nav-prev" ${activeIndex === 0 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-                                <span class="lumina-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                                <button class="lumina-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+                                <button class="nexus-answer-nav-btn nav-prev" ${activeIndex === 0 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+                                <span class="nexus-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
+                                <button class="nexus-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
                             `;
                 versionsContainer.appendChild(navContainer);
                 if (typeof showAnswerVersion === "function") {
@@ -14920,28 +14922,28 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                 entryDiv.appendChild(versionsContainer);
               } else {
                 const answerDiv = document.createElement("div");
-                answerDiv.className = "lumina-chat-answer";
+                answerDiv.className = "nexus-chat-answer";
                 answerDiv.setAttribute("data-raw-text", answerMsg.content);
                 let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-                displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+                displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
                   const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                   const displayType = type.replace("code/", "").toUpperCase();
-                  return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-      <div class="lumina-canvas-card-left">
-        <div class="lumina-canvas-card-info">
-          <div class="lumina-canvas-card-title">${name}</div>
-          <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
+                  return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
+      <div class="nexus-canvas-card-left">
+        <div class="nexus-canvas-card-info">
+          <div class="nexus-canvas-card-title">${name}</div>
+          <div class="nexus-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
         </div>
       </div>
     </div>`;
                 });
-                displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+                displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
                   return `*\u{1F504} Canvas Updated: **${name}***`;
                 });
-                displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+                displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
                   return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
                 });
-                if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
+                if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
                   answerDiv.innerHTML = displayContent;
                 } else if (typeof marked !== "undefined") {
                   let content = displayContent;
@@ -14953,7 +14955,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                     const sources = answerMsg.metadata.webSearch.sources;
                     html = html.replace(/\[(\d+)\]/g, (match, num) => {
                       const sIdx = parseInt(num) - 1;
-                      if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                      if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="nexus-citation">${num}</a>`;
                       return match;
                     });
                   }
@@ -14965,21 +14967,21 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                   link.target = "_blank";
                   link.rel = "noopener noreferrer";
                 });
-                if (typeof LuminaChatUI !== "undefined") {
-                  processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                if (typeof NexusChatUI !== "undefined") {
+                  processPromises.push(NexusChatUI.processContainer(answerDiv));
                 }
                 if (chatData.sparkId && sparksMap[chatData.sparkId]) {
                   const spark = sparksMap[chatData.sparkId];
                   const headerDiv = document.createElement("div");
-                  headerDiv.className = "lumina-spark-message-header";
+                  headerDiv.className = "nexus-spark-message-header";
                   const nameSpan = document.createElement("span");
-                  nameSpan.className = "lumina-spark-name";
+                  nameSpan.className = "nexus-spark-name";
                   nameSpan.textContent = spark.name;
                   const sepSpan = document.createElement("span");
-                  sepSpan.className = "lumina-spark-separator";
+                  sepSpan.className = "nexus-spark-separator";
                   sepSpan.textContent = " \u2022 ";
                   const typeSpan = document.createElement("span");
-                  typeSpan.className = "lumina-spark-type";
+                  typeSpan.className = "nexus-spark-type";
                   typeSpan.textContent = "Custom Spark";
                   headerDiv.appendChild(nameSpan);
                   headerDiv.appendChild(sepSpan);
@@ -14994,7 +14996,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             if (typeof attachQuestionListeners === "function") attachQuestionListeners(questionDiv.querySelector("[contenteditable]"));
           } else if (msg.type === "answer") {
             const entryDiv = document.createElement("div");
-            entryDiv.className = "lumina-entry";
+            entryDiv.className = "nexus-entry";
             entryDiv.dataset.entryId = msg.metadata?.entryId || "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
             entryDiv.dataset.entryType = msg.metadata?.entryType || "qa";
             if (msg.metadata?.webSearch) {
@@ -15004,28 +15006,28 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               entryDiv.appendChild(stepperContainer.firstChild);
             }
             const answerDiv = document.createElement("div");
-            answerDiv.className = "lumina-chat-answer";
+            answerDiv.className = "nexus-chat-answer";
             answerDiv.setAttribute("data-raw-text", msg.content);
             let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-            displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+            displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
               const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
               const displayType = type.replace("code/", "").toUpperCase();
-              return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-      <div class="lumina-canvas-card-left">
-        <div class="lumina-canvas-card-info">
-          <div class="lumina-canvas-card-title">${name}</div>
-          <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
+              return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
+      <div class="nexus-canvas-card-left">
+        <div class="nexus-canvas-card-info">
+          <div class="nexus-canvas-card-title">${name}</div>
+          <div class="nexus-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
         </div>
       </div>
     </div>`;
             });
-            displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+            displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
               return `*\u{1F504} Canvas Updated: **${name}***`;
             });
-            displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+            displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
               return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
             });
-            if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
+            if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
               answerDiv.innerHTML = displayContent;
             } else if (typeof marked !== "undefined") {
               let c = displayContent;
@@ -15040,21 +15042,21 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               link.target = "_blank";
               link.rel = "noopener noreferrer";
             });
-            if (typeof LuminaChatUI !== "undefined") {
-              processPromises.push(LuminaChatUI.processContainer(answerDiv));
+            if (typeof NexusChatUI !== "undefined") {
+              processPromises.push(NexusChatUI.processContainer(answerDiv));
             }
             if (chatData.sparkId && sparksMap[chatData.sparkId]) {
               const spark = sparksMap[chatData.sparkId];
               const headerDiv = document.createElement("div");
-              headerDiv.className = "lumina-spark-message-header";
+              headerDiv.className = "nexus-spark-message-header";
               const nameSpan = document.createElement("span");
-              nameSpan.className = "lumina-spark-name";
+              nameSpan.className = "nexus-spark-name";
               nameSpan.textContent = spark.name;
               const sepSpan = document.createElement("span");
-              sepSpan.className = "lumina-spark-separator";
+              sepSpan.className = "nexus-spark-separator";
               sepSpan.textContent = " \u2022 ";
               const typeSpan = document.createElement("span");
-              typeSpan.className = "lumina-spark-type";
+              typeSpan.className = "nexus-spark-type";
               typeSpan.textContent = "Custom Spark";
               headerDiv.appendChild(nameSpan);
               headerDiv.appendChild(sepSpan);
@@ -15081,9 +15083,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         historyContainer.__remainingSessionId = chatData.sessionId;
         historyContainer.__loadedGroupsCount = initialPageSize;
         const loadMoreDiv = document.createElement("div");
-        loadMoreDiv.className = "lumina-load-more-history";
+        loadMoreDiv.className = "nexus-load-more-history";
         loadMoreDiv.innerHTML = `
-                <svg class="lumina-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px; animation: spin 0.8s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                <svg class="nexus-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px; animation: spin 0.8s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
             `;
         if (history.__activeRestoreId !== restoreId) return;
         history.appendChild(loadMoreDiv);
@@ -15094,10 +15096,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const loadNextChunk = async () => {
           if (loadMoreDiv.dataset.loading === "true") return;
           loadMoreDiv.dataset.loading = "true";
-          const spinner = loadMoreDiv.querySelector(".lumina-load-more-spinner");
+          const spinner = loadMoreDiv.querySelector(".nexus-load-more-spinner");
           if (spinner) spinner.style.display = "block";
           const loadedCount = historyContainer.__loadedGroupsCount || 10;
-          const allMessages = await LuminaChatDB2.getMessages(historyContainer.__remainingSessionId).catch(() => []);
+          const allMessages = await NexusChatDB2.getMessages(historyContainer.__remainingSessionId).catch(() => []);
           const allGroups = reconstructGroups(allMessages);
           const remaining = allGroups.slice(0, -loadedCount);
           if (remaining.length === 0) {
@@ -15134,8 +15136,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         loadMoreObserver.observe(loadMoreDiv);
         loadMoreDiv.addEventListener("click", loadNextChunk);
       }
-      const hasEntries = history.querySelector(".lumina-entry");
-      const regenBtn = document.getElementById("lumina-regenerate-btn") || document.querySelector(".lumina-regenerate-btn");
+      const hasEntries = history.querySelector(".nexus-entry");
+      const regenBtn = document.getElementById("nexus-regenerate-btn") || document.querySelector(".nexus-regenerate-btn");
       if (processPromises.length > 0) {
         if (historyContainer) {
           historyContainer.__processingPromises = processPromises;
@@ -15145,7 +15147,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       if (regenBtn) {
         regenBtn.style.display = hasEntries ? "flex" : "none";
       }
-      const wsContainers = history.querySelectorAll(".lumina-websource-container");
+      const wsContainers = history.querySelectorAll(".nexus-websource-container");
       if (wsContainers.length > 0) {
         wsContainers.forEach((container2) => {
           const iframe = container2.querySelector("iframe");
@@ -15199,11 +15201,11 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       }
     },
     async getAllHistories() {
-      return await LuminaChatDB2.getAllSessions();
+      return await NexusChatDB2.getAllSessions();
     },
     async deleteSessionWithAttachments(sessionId) {
       try {
-        const messages = await LuminaChatDB2.getMessages(sessionId);
+        const messages = await NexusChatDB2.getMessages(sessionId);
         if (Array.isArray(messages)) {
           for (const msg of messages) {
             const files = msg.files || msg.images;
@@ -15211,7 +15213,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               for (const file of files) {
                 if (file && file.attachmentId) {
                   try {
-                    await LuminaAttachmentDB2.delete(file.attachmentId);
+                    await NexusAttachmentDB2.delete(file.attachmentId);
                   } catch (e) {
                     console.error("Failed to delete attachment from DB:", file.attachmentId, e);
                   }
@@ -15223,7 +15225,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       } catch (e) {
         console.error("Error fetching messages for attachment cleanup:", e);
       }
-      await LuminaChatDB2.deleteSession(sessionId);
+      await NexusChatDB2.deleteSession(sessionId);
     },
     async deleteChat(sessionId) {
       try {
@@ -15236,12 +15238,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             });
           }
         });
-        chrome.runtime.sendMessage({ action: "lumina_sessions_deleted", deletedIds: [sessionId] }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sessions_deleted", deletedIds: [sessionId] }).catch(() => {
         });
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
         });
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         return true;
       } catch (error) {
@@ -15251,16 +15253,16 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     },
     async renameChat(sessionId, newTitle) {
       try {
-        const meta = await LuminaChatDB2.getSession(sessionId);
+        const meta = await NexusChatDB2.getSession(sessionId);
         if (meta) {
           meta.title = newTitle;
           meta.isRenamed = true;
           meta.updatedAt = Date.now();
-          await LuminaChatDB2.putSession(meta);
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          await NexusChatDB2.putSession(meta);
+          chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
           });
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           return true;
         }
@@ -15273,11 +15275,11 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     async updateSessionModelAndThinking(sessionId, selectedModel, thinkingLevel) {
       if (!sessionId || sessionId === "null") return false;
       try {
-        const meta = await LuminaChatDB2.getSession(sessionId);
+        const meta = await NexusChatDB2.getSession(sessionId);
         if (meta) {
           if (selectedModel !== void 0) meta.selectedModel = selectedModel;
           if (thinkingLevel !== void 0) meta.thinkingLevel = thinkingLevel;
-          await LuminaChatDB2.putSession(meta);
+          await NexusChatDB2.putSession(meta);
           return true;
         }
         return false;
@@ -15288,7 +15290,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     },
     async getStorageUsage() {
       try {
-        return await LuminaChatDB2.getStorageUsage();
+        return await NexusChatDB2.getStorageUsage();
       } catch (error) {
         console.error("Error calculating chat storage:", error);
         return 0;
@@ -15296,7 +15298,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     },
     async clearAllHistory() {
       try {
-        const sessions = await LuminaChatDB2.getAllSessions(true);
+        const sessions = await NexusChatDB2.getAllSessions(true);
         for (const sessionId of Object.keys(sessions)) {
           const session = sessions[sessionId];
           if (session && session.archived) {
@@ -15304,10 +15306,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           }
           await this.deleteSessionWithAttachments(sessionId);
         }
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
         });
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         return true;
       } catch (error) {
@@ -15328,7 +15330,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         if (months === 0) return;
         const retentionMs = months * 30 * 24 * 60 * 60 * 1e3;
         const cutoffTime = Date.now() - retentionMs;
-        const sessions = await LuminaChatDB2.getAllSessions();
+        const sessions = await NexusChatDB2.getAllSessions();
         const deletedSessionIds = [];
         for (const [id, session] of Object.entries(sessions)) {
           const sessionTime = session.updatedAt || session.createdAt || 0;
@@ -15339,22 +15341,22 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         }
         if (deletedSessionIds.length > 0) {
           chrome.runtime.sendMessage({ action: "cleanup_opfs_files" });
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
           });
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
         }
       } catch (error) {
-        console.error("[Lumina History] Error cleaning up history by age:", error);
+        console.error("[Nexus History] Error cleaning up history by age:", error);
       }
     },
     async getSessionMessages(sessionId) {
-      return await LuminaChatDB2.getMessages(sessionId) || [];
+      return await NexusChatDB2.getMessages(sessionId) || [];
     },
     async saveSessionMessages(sessionId, messages) {
-      const result = await LuminaChatDB2.putMessages(sessionId, messages);
-      if (typeof LuminaAttachmentDB2 !== "undefined" && LuminaAttachmentDB2.getAllMetadata) {
+      const result = await NexusChatDB2.putMessages(sessionId, messages);
+      if (typeof NexusAttachmentDB2 !== "undefined" && NexusAttachmentDB2.getAllMetadata) {
         (async () => {
           try {
             const activeIds = /* @__PURE__ */ new Set();
@@ -15370,12 +15372,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                 }
               }
             }
-            const metadata = await LuminaAttachmentDB2.getAllMetadata();
+            const metadata = await NexusAttachmentDB2.getAllMetadata();
             const sessionPrefix = `${sessionId}_`;
             for (const item of metadata) {
               if (item && item.key && item.key.startsWith(sessionPrefix)) {
                 if (!activeIds.has(item.key)) {
-                  await LuminaAttachmentDB2.delete(item.key).catch(() => {
+                  await NexusAttachmentDB2.delete(item.key).catch(() => {
                   });
                 }
               }
@@ -15388,21 +15390,21 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       return result;
     }
   };
-  var LuminaChatHistory = ChatHistoryManager2;
+  var NexusChatHistory = ChatHistoryManager2;
   if (typeof window !== "undefined") {
     if (window.location.protocol === "chrome-extension:") {
       ChatHistoryManager2.cleanupHistoryByAge();
     }
     window.ChatHistoryManager = ChatHistoryManager2;
-    window.LuminaChatHistory = LuminaChatHistory;
+    window.NexusChatHistory = NexusChatHistory;
   }
   if (typeof globalThis !== "undefined") {
     globalThis.ChatHistoryManager = ChatHistoryManager2;
-    globalThis.LuminaChatHistory = LuminaChatHistory;
+    globalThis.NexusChatHistory = NexusChatHistory;
   }
 
   // src/db/migration.js
-  async function runLuminaMigrations() {
+  async function runNexusMigrations() {
     try {
       const allLocalData = await chrome.storage.local.get(null);
       const keysToRemove = [];
@@ -15426,19 +15428,19 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             }).filter(Boolean);
             if (flatHighlights.length > 0) {
               try {
-                const existing = await LuminaAnnotationDB2.get(key);
+                const existing = await NexusAnnotationDB2.get(key);
                 if (!existing || existing.length === 0) {
-                  await LuminaAnnotationDB2.put(key, flatHighlights);
+                  await NexusAnnotationDB2.put(key, flatHighlights);
                 }
               } catch (dbErr) {
-                console.error(`[Lumina Migration] Failed to migrate highlights for key: ${key}`, dbErr);
+                console.error(`[Nexus Migration] Failed to migrate highlights for key: ${key}`, dbErr);
               }
             }
           }
           keysToRemove.push(key);
         }
         const lowerKey = key.toLowerCase();
-        if (key.startsWith("chatbox_") || lowerKey.includes("spotlight") || key === "tavilyApiKey" || lowerKey.includes("monica") || lowerKey.includes("lynote") || key === "audio_cache" || key.startsWith("lumina_img_cache_") || key.startsWith("lumina_img_query_")) {
+        if (key.startsWith("chatbox_") || lowerKey.includes("spotlight") || key === "tavilyApiKey" || lowerKey.includes("monica") || lowerKey.includes("lynote") || key === "audio_cache" || key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_")) {
           keysToRemove.push(key);
         }
       }
@@ -15446,15 +15448,15 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         await chrome.storage.local.remove(keysToRemove);
       }
     } catch (err) {
-      console.error("[Lumina Migration] Standalone highlights/obsolete keys purge failed:", err);
+      console.error("[Nexus Migration] Standalone highlights/obsolete keys purge failed:", err);
     }
-    const MIGRATION_FLAG = "lumina_session_migrated_v7";
+    const MIGRATION_FLAG = "nexus_session_migrated_v7";
     const PREV_MIGRATION_FLAGS = [
-      "lumina_session_migrated_v2",
-      "lumina_session_migrated_v3",
-      "lumina_session_migrated_v4",
-      "lumina_session_migrated_v5",
-      "lumina_session_migrated_v6"
+      "nexus_session_migrated_v2",
+      "nexus_session_migrated_v3",
+      "nexus_session_migrated_v4",
+      "nexus_session_migrated_v5",
+      "nexus_session_migrated_v6"
     ];
     const flagResult = await chrome.storage.local.get([MIGRATION_FLAG]);
     if (flagResult[MIGRATION_FLAG]) {
@@ -15487,16 +15489,16 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             const flatHighlights = legacyHighlights.map(serializeHighlight).filter(Boolean);
             if (flatHighlights.length > 0) {
               try {
-                await LuminaAnnotationDB2.put(key, flatHighlights);
+                await NexusAnnotationDB2.put(key, flatHighlights);
               } catch (dbErr) {
-                console.error(`[Lumina Migration] Failed to save highlights for key: ${key}`, dbErr);
+                console.error(`[Nexus Migration] Failed to save highlights for key: ${key}`, dbErr);
               }
             }
           }
           keysToRemove.push(key);
         }
       }
-      const sessionsKey = "lumina_chat_sessions";
+      const sessionsKey = "nexus_chat_sessions";
       let sessions = allData[sessionsKey] || {};
       let sessionsUpdated = false;
       for (const sessionId of Object.keys(sessions)) {
@@ -15507,14 +15509,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           sessions[newSessionId] = sessionMeta;
           delete sessions[sessionId];
           sessionsUpdated = true;
-          const oldSessionKey = `lumina_session_${sessionId}`;
-          const newSessionKey = `lumina_session_${newSessionId}`;
+          const oldSessionKey = `nexus_session_${sessionId}`;
+          const newSessionKey = `nexus_session_${newSessionId}`;
           if (allData[oldSessionKey] && !allData[newSessionKey]) {
             allData[newSessionKey] = allData[oldSessionKey];
             keysToRemove.push(oldSessionKey);
           }
-          const oldHistoryKey = `lumina_history_${sessionId}`;
-          const newHistoryKey = `lumina_history_${newSessionId}`;
+          const oldHistoryKey = `nexus_history_${sessionId}`;
+          const newHistoryKey = `nexus_history_${newSessionId}`;
           if (allData[oldHistoryKey] && !allData[newHistoryKey]) {
             allData[newHistoryKey] = allData[oldHistoryKey];
             keysToRemove.push(oldHistoryKey);
@@ -15522,15 +15524,15 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         }
       }
       for (const key of Object.keys(allData)) {
-        if (key.startsWith("lumina_session_session_")) {
-          const oldSessionId = key.replace("lumina_session_", "");
+        if (key.startsWith("nexus_session_session_")) {
+          const oldSessionId = key.replace("nexus_session_", "");
           const newSessionId = oldSessionId.replace("session_", "");
-          const newSessionKey = `lumina_session_${newSessionId}`;
+          const newSessionKey = `nexus_session_${newSessionId}`;
           allData[newSessionKey] = allData[key];
           keysToRemove.push(key);
-          const oldHistoryKey = `lumina_history_${oldSessionId}`;
+          const oldHistoryKey = `nexus_history_${oldSessionId}`;
           if (allData[oldHistoryKey]) {
-            const newHistoryKey = `lumina_history_${newSessionId}`;
+            const newHistoryKey = `nexus_history_${newSessionId}`;
             allData[newHistoryKey] = allData[oldHistoryKey];
             keysToRemove.push(oldHistoryKey);
           }
@@ -15548,23 +15550,23 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         const meta = sessions[sessionId];
         if (meta) {
           const normId = sessionId.startsWith("session_") ? sessionId.replace("session_", "") : sessionId;
-          const messageKey = `lumina_session_${normId}`;
+          const messageKey = `nexus_session_${normId}`;
           const messages = allData[messageKey] || meta.messages || [];
           try {
             meta.id = normId;
-            await LuminaChatDB2.putSession(meta);
-            await LuminaChatDB2.putMessages(normId, messages);
+            await NexusChatDB2.putSession(meta);
+            await NexusChatDB2.putMessages(normId, messages);
             migratedSessionIds.add(normId);
             keysToRemove.push(messageKey);
-            keysToRemove.push(`lumina_history_${normId}`);
+            keysToRemove.push(`nexus_history_${normId}`);
           } catch (chatDbErr) {
-            console.error(`[Lumina Migration] Failed to migrate chat session ${normId} to IndexedDB:`, chatDbErr);
+            console.error(`[Nexus Migration] Failed to migrate chat session ${normId} to IndexedDB:`, chatDbErr);
           }
         }
       }
       for (const key of Object.keys(allData)) {
-        if (key.startsWith("lumina_session_")) {
-          const rawId = key.replace("lumina_session_", "");
+        if (key.startsWith("nexus_session_")) {
+          const rawId = key.replace("nexus_session_", "");
           if (rawId === "settings" || rawId === "session_settings") continue;
           const normId = rawId.startsWith("session_") ? rawId.replace("session_", "") : rawId;
           if (!migratedSessionIds.has(normId)) {
@@ -15579,10 +15581,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                   updatedAt: latestTimestamp,
                   hasContent: true
                 };
-                await LuminaChatDB2.putSession(meta);
-                await LuminaChatDB2.putMessages(normId, messages);
+                await NexusChatDB2.putSession(meta);
+                await NexusChatDB2.putMessages(normId, messages);
               } catch (recoveryErr) {
-                console.error(`[Lumina Migration] Failed to recover standalone chat session ${normId}:`, recoveryErr);
+                console.error(`[Nexus Migration] Failed to recover standalone chat session ${normId}:`, recoveryErr);
               }
             }
             keysToRemove.push(key);
@@ -15598,13 +15600,13 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         await chrome.storage.local.remove(keysToRemove);
       }
     } catch (error) {
-      console.error("[Lumina Migration] Fatal error during migration:", error);
+      console.error("[Nexus Migration] Fatal error during migration:", error);
     }
   }
-  runLuminaMigrations();
+  runNexusMigrations();
 
   // src/core/ai/token_utils.js
-  var LuminaToken2 = {
+  var NexusToken2 = {
     count: function(text) {
       if (!text) return 0;
       return Math.ceil(text.length / 2.5);
@@ -15615,7 +15617,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     }
   };
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaToken = LuminaToken2;
+    globalThis.NexusToken = NexusToken2;
   }
 
   // src/core/ai/memory.js
@@ -15823,7 +15825,7 @@ ${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
     }
     async connect() {
       if (!this.apiKey) {
-        this.onError("API Key is missing. Please set your Gemini API Key in Lumina Settings.");
+        this.onError("API Key is missing. Please set your Gemini API Key in Nexus Settings.");
         return false;
       }
       this.isManualDisconnect = false;
@@ -16081,7 +16083,7 @@ ${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.fillStyle = "#4285f4";
           ctx.font = "bold 24px sans-serif";
-          ctx.fillText("Lumina Live Vision", 30, 60);
+          ctx.fillText("Nexus Live Vision", 30, 60);
           const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
           const base64Jpg = dataUrl.split(",")[1];
           const msg = {
@@ -16187,7 +16189,7 @@ ${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
 
   // src/core/audio/tts_manager.js
   var TTSDB2 = class _TTSDB {
-    static DB_NAME = "LuminaTTSDB";
+    static DB_NAME = "NexusTTSDB";
     static DB_VERSION = 1;
     static STORE_RECORDINGS = "recordings";
     static _db = null;
@@ -16473,7 +16475,7 @@ ${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
         } catch (_) {
         }
       }
-      ["lumina_gemini_api_key", "gemini_api_key", "geminiApiKey"].forEach((storageKey) => {
+      ["nexus_gemini_api_key", "gemini_api_key", "geminiApiKey"].forEach((storageKey) => {
         const val = localStorage.getItem(storageKey);
         if (val && typeof val === "string") {
           val.split(",").forEach((k) => {
@@ -16482,8 +16484,8 @@ ${facts.map((f) => `\u2022 ${f}`).join("\n")}`);
           });
         }
       });
-      if (typeof window !== "undefined" && window.__luminaGeminiApiKey) {
-        window.__luminaGeminiApiKey.split(",").forEach((k) => {
+      if (typeof window !== "undefined" && window.__nexusGeminiApiKey) {
+        window.__nexusGeminiApiKey.split(",").forEach((k) => {
           const trimmed = k.trim();
           if (trimmed) keysSet.add(trimmed);
         });
@@ -16877,7 +16879,7 @@ ${script}`;
         } catch (_) {
         }
       }
-      ["lumina_groq_api_key", "groq_api_key", "groqApiKey"].forEach((storageKey) => {
+      ["nexus_groq_api_key", "groq_api_key", "groqApiKey"].forEach((storageKey) => {
         const val = localStorage.getItem(storageKey);
         if (val && typeof val === "string") {
           val.split(",").forEach((k) => {
@@ -16997,22 +16999,22 @@ ${script}`;
     "sidepanel_secondary_tab_index",
     "sidepanel_is_split_mode",
     "sidepanel_split_ratio",
-    "lumina_active_tab_index",
-    "lumina_active_group_index",
-    "lumina_secondary_tab_index",
-    "lumina_is_split_mode",
-    "lumina_split_ratio",
-    "luminaWindowId",
+    "nexus_active_tab_index",
+    "nexus_active_group_index",
+    "nexus_secondary_tab_index",
+    "nexus_is_split_mode",
+    "nexus_split_ratio",
+    "nexusWindowId",
     "pendingMicToggle",
-    "luminaTemplatesV3",
-    "luminaBatchHistoryV3",
+    "nexusTemplatesV3",
+    "nexusBatchHistoryV3",
     "lastUsedGenAIModel",
     "lastUsedBatchSize",
     "lastUsedDeck",
     "lastUsedTemplateId",
     "ankiQuickNoteContent",
     "attachments"
-  ].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("lumina_img_cache_") || k.startsWith("lumina_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
+  ].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("nexus_img_cache_") || k.startsWith("nexus_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
 
   // src/core/auth/google_auth.js
   var WEB_OAUTH_CONFIG = {
@@ -17091,8 +17093,8 @@ ${script}`;
       this.notifyListeners(this.isAuthenticated, this.user);
       if (this.isAuthenticated && typeof window !== "undefined") {
         setTimeout(() => {
-          if (typeof LuminaSync !== "undefined") {
-            LuminaSync.checkAutoSync(true);
+          if (typeof NexusSync !== "undefined") {
+            NexusSync.checkAutoSync(true);
           }
         }, 100);
       }
@@ -17186,8 +17188,8 @@ ${script}`;
       try {
         const token = await this.getAuthToken(true);
         await this.fetchUserInfo(token);
-        if (typeof LuminaSync !== "undefined") {
-          await LuminaSync.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
+        if (typeof NexusSync !== "undefined") {
+          await NexusSync.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
         }
         return this.user;
       } catch (error) {
@@ -17216,7 +17218,7 @@ ${script}`;
         "google_user_info"
       ]);
       chrome.alarms.clear("tokenRefresh");
-      chrome.alarms.clear("luminaAutoSync");
+      chrome.alarms.clear("nexusAutoSync");
       this.user = null;
       this.isAuthenticated = false;
       this.notifyListeners();
@@ -17268,9 +17270,9 @@ ${script}`;
       this.listeners.forEach((cb) => cb(this.isAuthenticated, this.user));
     }
   };
-  var LuminaAuth2 = new AuthService();
+  var NexusAuth2 = new AuthService();
   if (typeof window !== "undefined") {
-    window.LuminaAuth = LuminaAuth2;
+    window.NexusAuth = NexusAuth2;
   }
 
   // src/core/auth/drive_sync.js
@@ -17278,7 +17280,7 @@ ${script}`;
     _isPageContext() {
       return typeof window !== "undefined";
     }
-    _delegateSyncToBackground(action = "lumina_drive_sync", params = {}) {
+    _delegateSyncToBackground(action = "nexus_drive_sync", params = {}) {
       this.notifyListeners("Syncing...", null);
       const wrapper = typeof document !== "undefined" ? document.getElementById("user-avatar-wrapper") : null;
       if (wrapper) wrapper.classList.add("is-syncing");
@@ -17307,7 +17309,7 @@ ${script}`;
     }
     constructor(authService) {
       this.authService = authService || new AuthService();
-      this.FILENAME = "lumina_backup.json";
+      this.FILENAME = "nexus_backup.json";
       this.listeners = [];
       this.isSyncing = false;
       const isBackground = typeof window === "undefined";
@@ -17331,7 +17333,7 @@ ${script}`;
             "google_oauth_token",
             "google_oauth_token_time",
             "google_user_info",
-            "lumina_cached_user",
+            "nexus_cached_user",
             "last_sync_time",
             "last_sync_hash",
             "last_sync_md5",
@@ -17345,11 +17347,11 @@ ${script}`;
             "optionsScrollPositions",
             "sidepanel_active_tab_index",
             "sidepanel_active_group_index",
-            "lumina_active_tab_index",
-            "lumina_active_group_index"
+            "nexus_active_tab_index",
+            "nexus_active_group_index"
           ];
           const hasSettingsKeys = keys.some(
-            (k) => !k.startsWith("lumina_session_") && !k.startsWith("google_") && !excludedKeys.includes(k)
+            (k) => !k.startsWith("nexus_session_") && !k.startsWith("google_") && !excludedKeys.includes(k)
           );
           if (hasSettingsKeys) {
             chrome.storage.local.set({ settings_last_updated: Date.now() });
@@ -17361,7 +17363,7 @@ ${script}`;
       if (!this.authService.isAuthenticated) return;
       if (this._isPageContext()) {
         try {
-          chrome.runtime.sendMessage({ action: "lumina_drive_sync_debounced", delayMs }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_drive_sync_debounced", delayMs }).catch(() => {
           });
         } catch (e) {
         }
@@ -17382,7 +17384,7 @@ ${script}`;
     async checkAutoSync(forceCheck = false) {
       if (!this.authService.isAuthenticated) return;
       if (this._isPageContext()) {
-        await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true });
+        await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: true });
         return;
       }
       try {
@@ -17399,11 +17401,11 @@ ${script}`;
       return await this.authService.getAuthToken(interactive);
     }
     async syncUp(isAuto = false) {
-      if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
+      if (this._isPageContext()) return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: false, forcePush: true });
       return await this.pushToCloud();
     }
     async syncDown() {
-      if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: true });
+      if (this._isPageContext()) return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: true, forcePull: true });
       return await this.pullFromCloud(true);
     }
     async downloadBackup(token, fileId) {
@@ -17527,7 +17529,7 @@ ${script}`;
           throw err;
         }
       }
-      const backupFiles = (driveFiles || []).filter((f) => f.name === this.FILENAME);
+      const backupFiles = (driveFiles || []).filter((f) => f.name === this.FILENAME || f.name === "lumina_backup.json");
       if (backupFiles.length === 0) {
         this.cachedBackupFileId = null;
         await chrome.storage.local.remove(["drive_backup_file_id"]).catch(() => {
@@ -17552,8 +17554,8 @@ ${script}`;
       const localData = await chrome.storage.local.get(null);
       if (typeof NotesManager !== "undefined") {
         try {
-          localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === "function" ? await NotesManager.getAllCollectionsRaw() : await NotesManager.getCollections(true);
-          localData.lumina_notes_items = typeof NotesManager.getAllNotesRaw === "function" ? await NotesManager.getAllNotesRaw() : await NotesManager.getNotes(null, true);
+          localData.nexus_notes_collections = typeof NotesManager.getAllCollectionsRaw === "function" ? await NotesManager.getAllCollectionsRaw() : await NotesManager.getCollections(true);
+          localData.nexus_notes_items = typeof NotesManager.getAllNotesRaw === "function" ? await NotesManager.getAllNotesRaw() : await NotesManager.getNotes(null, true);
         } catch (err) {
           console.error("[Sync] Failed to gather notes for sync:", err);
         }
@@ -17561,7 +17563,7 @@ ${script}`;
       if (typeof TTSDB !== "undefined") {
         try {
           const recordings = typeof TTSDB.getAllRecordingsRaw === "function" ? await TTSDB.getAllRecordingsRaw() : await TTSDB.getAllRecordings(true);
-          localData.lumina_tts_recordings = recordings.map((rec) => {
+          localData.nexus_tts_recordings = recordings.map((rec) => {
             const { audioBlob, ...meta } = rec;
             return meta;
           });
@@ -17569,27 +17571,27 @@ ${script}`;
           console.error("[Sync] Failed to gather TTS recordings for sync:", err);
         }
       }
-      if (typeof LuminaAnnotationDB !== "undefined") {
+      if (typeof NexusAnnotationDB !== "undefined") {
         try {
-          const highlights = await LuminaAnnotationDB.getAll();
+          const highlights = await NexusAnnotationDB.getAll();
           Object.assign(localData, highlights);
         } catch (err) {
           console.error("[Sync] Failed to load highlights from IndexedDB:", err);
         }
       }
-      if (typeof LuminaChatDB !== "undefined") {
+      if (typeof NexusChatDB !== "undefined") {
         try {
-          const sessions = typeof LuminaChatDB.getAllSessionsRaw === "function" ? await LuminaChatDB.getAllSessionsRaw() : await LuminaChatDB.getAllSessions(true);
+          const sessions = typeof NexusChatDB.getAllSessionsRaw === "function" ? await NexusChatDB.getAllSessionsRaw() : await NexusChatDB.getAllSessions(true);
           const sessionsObj = {};
           for (const s of Object.values(sessions)) {
             if (s && s.id) {
               sessionsObj[s.id] = s;
               if (!s.isDeleted) {
-                localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
+                localData[`nexus_session_${s.id}`] = await NexusChatDB.getMessages(s.id).catch(() => []);
               }
             }
           }
-          localData.lumina_chat_sessions = sessionsObj;
+          localData.nexus_chat_sessions = sessionsObj;
         } catch (err) {
           console.error("[Sync] Failed to load chats from IndexedDB:", err);
         }
@@ -17598,14 +17600,14 @@ ${script}`;
     }
     async pullFromCloud(force = false) {
       if (this._isPageContext()) {
-        return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: force });
+        return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: true, forcePull: force });
       }
       if (this.isSyncing) return;
       this.isSyncing = true;
       this.notifyListeners("Syncing...", null);
       try {
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "syncing" }).catch(() => {
           });
         } catch (e) {
         }
@@ -17616,14 +17618,14 @@ ${script}`;
         if (!remoteFile || !fileId) {
           this.notifyListeners("No cloud data", null);
           try {
-            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+            chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
             });
           } catch (e) {
           }
           return null;
         }
         if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
-          const localSessionData = typeof LuminaChatDB !== "undefined" ? await LuminaChatDB.getAllSessions().catch(() => ({})) : {};
+          const localSessionData = typeof NexusChatDB !== "undefined" ? await NexusChatDB.getAllSessions().catch(() => ({})) : {};
           const localSessionCount = Object.values(localSessionData).filter((s) => s && !s.isDeleted).length;
           const lastCloudStats = (await chrome.storage.local.get(["last_cloud_stats"])).last_cloud_stats;
           const cloudSessionCount = lastCloudStats ? lastCloudStats.chatsCount : -1;
@@ -17631,7 +17633,7 @@ ${script}`;
             const now2 = Date.now();
             this.notifyListeners("Synced just now", now2);
             try {
-              chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now2 }).catch(() => {
+              chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: now2 }).catch(() => {
               });
             } catch (e) {
             }
@@ -17642,7 +17644,7 @@ ${script}`;
         if (!remoteBackup || !remoteBackup.data) {
           this.notifyListeners("No cloud data", null);
           try {
-            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+            chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
             });
           } catch (e) {
           }
@@ -17654,7 +17656,7 @@ ${script}`;
         const keysToRemove = [];
         for (const key of Object.keys(currentLocal)) {
           if (isExcludedKey(key)) continue;
-          if (key.startsWith("lumina_session_") || key === "lumina_chat_sessions") continue;
+          if (key.startsWith("nexus_session_") || key === "nexus_chat_sessions") continue;
           if (key.startsWith("highlights_")) continue;
           if (!(key in remoteData)) {
             keysToRemove.push(key);
@@ -17666,51 +17668,59 @@ ${script}`;
         const storageToSet = {};
         for (const [k, v] of Object.entries(remoteData)) {
           if (isExcludedKey(k)) continue;
-          if (k.startsWith("lumina_session_") || k === "lumina_chat_sessions") continue;
+          if (k.startsWith("nexus_session_") || k.startsWith("lumina_session_") || k === "nexus_chat_sessions" || k === "lumina_chat_sessions") continue;
           if (k.startsWith("highlights_")) continue;
           storageToSet[k] = v;
+          if (k === "sparks" || k === "lumina_sparks") {
+            storageToSet.nexus_sparks = v;
+          }
+        }
+        if (remoteData.sparks || remoteData.lumina_sparks) {
+          storageToSet.nexus_sparks = remoteData.nexus_sparks || remoteData.lumina_sparks || remoteData.sparks;
         }
         if (Object.keys(storageToSet).length > 0) {
           await chrome.storage.local.set(storageToSet);
         }
-        if (typeof LuminaAnnotationDB !== "undefined") {
-          const currentHighlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+        if (typeof NexusAnnotationDB !== "undefined") {
+          const currentHighlights = await NexusAnnotationDB.getAll().catch(() => ({}));
           for (const key of Object.keys(currentHighlights)) {
             if (!(key in remoteData)) {
-              await LuminaAnnotationDB.delete(key).catch(() => {
+              await NexusAnnotationDB.delete(key).catch(() => {
               });
             }
           }
           for (const [k, v] of Object.entries(remoteData)) {
             if (k.startsWith("highlights_")) {
-              await LuminaAnnotationDB.put(k, v).catch(() => {
+              await NexusAnnotationDB.put(k, v).catch(() => {
               });
             }
           }
         }
-        const remoteSessions = remoteData.lumina_chat_sessions || {};
+        const remoteSessions = remoteData.nexus_chat_sessions || remoteData.lumina_chat_sessions || {};
         const activeAttachmentIds = /* @__PURE__ */ new Set();
-        if (typeof LuminaChatDB !== "undefined") {
+        const cloudUpdatedSessionIds = [];
+        if (typeof NexusChatDB !== "undefined") {
           try {
-            const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+            const currentSessions = await NexusChatDB.getAllSessions().catch(() => ({}));
             for (const s of Object.values(currentSessions)) {
               if (s && s.id && !remoteSessions[s.id]) {
-                await LuminaChatDB.deleteSession(s.id).catch(() => {
+                await NexusChatDB.deleteSession(s.id).catch(() => {
                 });
               }
             }
             for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
-              await LuminaChatDB.putSession(sessionMeta).catch(() => {
+              await NexusChatDB.putSession(sessionMeta).catch(() => {
               });
               if (sessionMeta && sessionMeta.isDeleted) {
-                await LuminaChatDB.deleteSession(sid).catch(() => {
+                await NexusChatDB.deleteSession(sid).catch(() => {
                 });
               } else {
-                const sessionKey = `lumina_session_${sid}`;
-                const messages = remoteData[sessionKey];
+                const sessionKey = `nexus_session_${sid}`;
+                const messages = remoteData[sessionKey] || remoteData[`lumina_session_${sid}`];
                 if (Array.isArray(messages)) {
-                  await LuminaChatDB.putMessages(sid, messages).catch(() => {
+                  await NexusChatDB.putMessages(sid, messages).catch(() => {
                   });
+                  cloudUpdatedSessionIds.push(sid);
                   for (const msg of messages) {
                     if (msg && Array.isArray(msg.images)) {
                       for (const img of msg.images) {
@@ -17729,8 +17739,8 @@ ${script}`;
         }
         if (typeof NotesManager !== "undefined") {
           try {
-            const remoteCollections = remoteData.lumina_notes_collections;
-            const remoteNotes = remoteData.lumina_notes_items;
+            const remoteCollections = remoteData.nexus_notes_collections || remoteData.lumina_notes_collections;
+            const remoteNotes = remoteData.nexus_notes_items || remoteData.lumina_notes_items;
             const db = await NotesManager.getDB();
             if (Array.isArray(remoteCollections)) {
               const remoteColIds = new Set(remoteCollections.map((c) => c && c.id).filter(Boolean));
@@ -17766,9 +17776,10 @@ ${script}`;
         }
         const activeTtsRecMap = /* @__PURE__ */ new Map();
         let ttsUpdated = false;
-        if (typeof TTSDB !== "undefined" && Array.isArray(remoteData.lumina_tts_recordings)) {
+        const remoteTtsList = remoteData.nexus_tts_recordings || remoteData.lumina_tts_recordings;
+        if (typeof TTSDB !== "undefined" && Array.isArray(remoteTtsList)) {
           try {
-            const remoteRecs = remoteData.lumina_tts_recordings;
+            const remoteRecs = remoteTtsList;
             const remoteRecIds = new Set(remoteRecs.map((r) => r && r.id).filter(Boolean));
             const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
             const currentMap = new Map(currentRecs.map((r) => [r.id, r]));
@@ -17800,18 +17811,18 @@ ${script}`;
           actualDriveFiles = await this.listAppDataFiles(token).catch(() => []);
         }
         const driveFileMap = new Map((actualDriveFiles || []).map((f) => [f.name, f]));
-        if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
-          const db = await LuminaAttachmentDB.init();
+        if (typeof NexusAttachmentDB !== "undefined" && NexusAttachmentDB.init) {
+          const db = await NexusAttachmentDB.init();
           for (const [filename, fileObj] of driveFileMap.entries()) {
             if (filename.startsWith("att_") && filename.endsWith(".bin")) {
               const key = filename.slice(4, -4);
               if (activeAttachmentIds.has(key)) {
-                const exists = await LuminaAttachmentDB.get(key).catch(() => null);
+                const exists = await NexusAttachmentDB.get(key).catch(() => null);
                 if (!exists) {
                   try {
                     const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
                     if (downloadedBlob) {
-                      await LuminaAttachmentDB.put(key, downloadedBlob);
+                      await NexusAttachmentDB.put(key, downloadedBlob);
                     }
                   } catch (err) {
                     console.warn(`[Sync] Failed to download attachment ${key}:`, err);
@@ -17821,10 +17832,10 @@ ${script}`;
             }
           }
           try {
-            const metadata = await LuminaAttachmentDB.getAllMetadata();
+            const metadata = await NexusAttachmentDB.getAllMetadata();
             for (const item of metadata) {
               if (!activeAttachmentIds.has(item.key)) {
-                await LuminaAttachmentDB.delete(item.key);
+                await NexusAttachmentDB.delete(item.key);
               }
             }
           } catch (cleanupErr) {
@@ -17857,10 +17868,10 @@ ${script}`;
         const now = Date.now();
         const cloudStats = {
           chatsCount: Object.values(remoteSessions).filter((s) => s && !s.isDeleted).length,
-          notesCount: Array.isArray(remoteData.lumina_notes_items) ? remoteData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
-          collectionsCount: Array.isArray(remoteData.lumina_notes_collections) ? remoteData.lumina_notes_collections.length : 0,
+          notesCount: Array.isArray(remoteData.nexus_notes_items) ? remoteData.nexus_notes_items.filter((n) => n && !n.isDeleted).length : 0,
+          collectionsCount: Array.isArray(remoteData.nexus_notes_collections) ? remoteData.nexus_notes_collections.length : 0,
           highlightsCount: Object.keys(remoteData).filter((k) => k.startsWith("highlights_")).length,
-          ttsCount: Array.isArray(remoteData.lumina_tts_recordings) ? remoteData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+          ttsCount: Array.isArray(remoteData.nexus_tts_recordings) ? remoteData.nexus_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
           attachmentsCount: activeAttachmentIds.size
         };
         await chrome.storage.local.set({
@@ -17871,17 +17882,23 @@ ${script}`;
         });
         if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
           });
-          chrome.runtime.sendMessage({ action: "lumina_notes_updated" }).catch(() => {
+          if (cloudUpdatedSessionIds && cloudUpdatedSessionIds.length > 0) {
+            for (const sid of cloudUpdatedSessionIds) {
+              chrome.runtime.sendMessage({ action: "nexus_session_updated", sessionId: sid, source: "cloud_sync" }).catch(() => {
+              });
+            }
+          }
+          chrome.runtime.sendMessage({ action: "nexus_notes_updated" }).catch(() => {
           });
-          chrome.runtime.sendMessage({ action: "lumina_highlights_updated" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_highlights_updated" }).catch(() => {
           });
           if (ttsUpdated) {
-            chrome.runtime.sendMessage({ action: "lumina_tts_updated" }).catch(() => {
+            chrome.runtime.sendMessage({ action: "nexus_tts_updated" }).catch(() => {
             });
           }
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: now }).catch(() => {
           });
         } catch (e) {
         }
@@ -17891,7 +17908,7 @@ ${script}`;
         console.error("[Sync] pullFromCloud error:", error);
         this.notifyListeners("Sync failure", null);
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "failure" }).catch(() => {
           });
         } catch (e) {
         }
@@ -17902,7 +17919,7 @@ ${script}`;
     }
     async pushToCloud() {
       if (this._isPageContext()) {
-        return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
+        return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: false, forcePush: true });
       }
       if (this.isSyncing) return;
       this.isSyncing = true;
@@ -17913,7 +17930,7 @@ ${script}`;
         const localData = await this.gatherLocalData();
         this.notifyListeners("Syncing...", null);
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "syncing" }).catch(() => {
           });
         } catch (e) {
         }
@@ -17946,11 +17963,11 @@ ${script}`;
         const storedBlobs = await chrome.storage.local.get(["drive_uploaded_blobs"]);
         const uploadedBlobSet = new Set(storedBlobs.drive_uploaded_blobs || []);
         let hasNewBlobs = false;
-        if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
-          const db = await LuminaAttachmentDB.init();
+        if (typeof NexusAttachmentDB !== "undefined" && NexusAttachmentDB.init) {
+          const db = await NexusAttachmentDB.init();
           const localAttachments = await new Promise((resolve) => {
-            const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, "readonly");
-            const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
+            const tx = db.transaction(NexusAttachmentDB.STORE_NAME, "readonly");
+            const store = tx.objectStore(NexusAttachmentDB.STORE_NAME);
             const req = store.openCursor();
             const map = /* @__PURE__ */ new Map();
             req.onsuccess = (e) => {
@@ -17997,11 +18014,11 @@ ${script}`;
         }
         const now = Date.now();
         const cloudStats = {
-          chatsCount: Object.values(localData.lumina_chat_sessions || {}).filter((s) => s && !s.isDeleted).length,
-          notesCount: Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
-          collectionsCount: Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections.length : 0,
+          chatsCount: Object.values(localData.nexus_chat_sessions || {}).filter((s) => s && !s.isDeleted).length,
+          notesCount: Array.isArray(localData.nexus_notes_items) ? localData.nexus_notes_items.filter((n) => n && !n.isDeleted).length : 0,
+          collectionsCount: Array.isArray(localData.nexus_notes_collections) ? localData.nexus_notes_collections.length : 0,
           highlightsCount: Object.keys(localData).filter((k) => k.startsWith("highlights_")).length,
-          ttsCount: Array.isArray(localData.lumina_tts_recordings) ? localData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+          ttsCount: Array.isArray(localData.nexus_tts_recordings) ? localData.nexus_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
           attachmentsCount: Array.from(uploadedBlobSet).filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length
         };
         await chrome.storage.local.set({
@@ -18013,7 +18030,7 @@ ${script}`;
         if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
         this.notifyListeners("Synced just now", now);
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: now }).catch(() => {
           });
         } catch (e) {
         }
@@ -18022,7 +18039,7 @@ ${script}`;
         console.error("[Sync] pushToCloud error:", error);
         this.notifyListeners("Sync failure", null);
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "failure" }).catch(() => {
           });
         } catch (e) {
         }
@@ -18033,7 +18050,7 @@ ${script}`;
     }
     async cleanDriveDuplicates() {
       if (this._isPageContext()) {
-        return await this._delegateSyncToBackground("lumina_clean_drive_duplicates");
+        return await this._delegateSyncToBackground("nexus_clean_drive_duplicates");
       }
       const token = await this.getToken(true);
       if (!token) return { success: false, error: "Not authenticated" };
@@ -18073,11 +18090,11 @@ ${script}`;
       const allFiles = await this.listAppDataFiles(token);
       if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
       const activeAttachmentKeys = /* @__PURE__ */ new Set();
-      if (typeof LuminaChatDB !== "undefined") {
+      if (typeof NexusChatDB !== "undefined") {
         try {
-          const sessions = await LuminaChatDB.getAllSessions(true).catch(() => ({}));
+          const sessions = await NexusChatDB.getAllSessions(true).catch(() => ({}));
           for (const sid of Object.keys(sessions)) {
-            const msgs = await LuminaChatDB.getMessages(sid).catch(() => []);
+            const msgs = await NexusChatDB.getMessages(sid).catch(() => []);
             for (const m of msgs) {
               if (Array.isArray(m.files)) {
                 for (const f of m.files) {
@@ -18141,19 +18158,50 @@ ${script}`;
       if (!token) throw new Error("Not authenticated");
       const files = await this.listAppDataFiles(token);
       const remoteFile = files.find((f) => f.name === this.FILENAME);
-      if (!remoteFile) throw new Error("lumina_backup.json not found on Google Drive");
+      if (!remoteFile) throw new Error("nexus_backup.json not found on Google Drive");
       const data = await this.downloadBackup(token, remoteFile.id);
       const jsonStr = JSON.stringify(data, null, 2);
       const blob = new Blob([jsonStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `lumina_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+      a.download = `nexus_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       return data;
+    }
+    async purgeLegacyLuminaCloudData() {
+      if (this._isPageContext()) {
+        return await this._delegateSyncToBackground("nexus_purge_legacy_cloud");
+      }
+      const token = await this.getToken(true);
+      if (!token) throw new Error("Not authenticated");
+      const driveFiles = await this.listAppDataFiles(token).catch(() => []);
+      let deletedLegacyFiles = 0;
+      for (const file of driveFiles) {
+        if (file.name === "lumina_backup.json" || file.name.startsWith("lumina_")) {
+          await this.deleteDriveFile(token, file.id).catch(() => {
+          });
+          deletedLegacyFiles++;
+        }
+      }
+      const localAll = await chrome.storage.local.get(null);
+      const legacyKeys = Object.keys(localAll).filter((k) => k.startsWith("lumina_") || k === "sparks");
+      if (legacyKeys.length > 0) {
+        await chrome.storage.local.remove(legacyKeys);
+      }
+      this.cachedBackupFileId = null;
+      await chrome.storage.local.remove(["drive_backup_file_id"]).catch(() => {
+      });
+      const pushResult = await this.pushToCloud();
+      return {
+        success: true,
+        deletedLegacyFiles,
+        removedLegacyLocalKeys: legacyKeys.length,
+        pushResult
+      };
     }
     async syncData(isAuto = false) {
       if (isAuto) {
@@ -18163,13 +18211,13 @@ ${script}`;
       }
     }
   };
-  var LuminaSync2 = new SyncManager(LuminaAuth2);
+  var NexusSync2 = new SyncManager(NexusAuth2);
   if (typeof window !== "undefined") {
-    window.LuminaSync = LuminaSync2;
+    window.NexusSync = NexusSync2;
   }
 
   // src/helpers/annotation_utils.js
-  var LuminaAnnotation2 = {
+  var NexusAnnotation2 = {
     highlightsMap: /* @__PURE__ */ new Map(),
     highlightObjects: /* @__PURE__ */ new Map(),
     styleElement: null,
@@ -18227,7 +18275,7 @@ ${script}`;
         range.setEnd(endNode, data.endOffset);
         return range;
       } catch (e) {
-        console.warn("[Lumina] Range recovery failed:", e);
+        console.warn("[Nexus] Range recovery failed:", e);
         return null;
       }
     },
@@ -18261,14 +18309,14 @@ ${script}`;
         comment: arr[8] || ""
       };
     },
-    isLuminaAndNotAnswer(range) {
-      if (typeof window !== "undefined" && window.location.href.includes("lumina.html")) {
+    isNexusAndNotAnswer(range) {
+      if (typeof window !== "undefined" && window.location.href.includes("nexus.html")) {
         if (!range) return true;
         let container2 = range.commonAncestorContainer;
         if (container2.nodeType !== Node.ELEMENT_NODE) {
           container2 = container2.parentNode;
         }
-        if (!container2 || !container2.closest(".lumina-chat-answer")) {
+        if (!container2 || !container2.closest(".nexus-chat-answer")) {
           return true;
         }
       }
@@ -18276,7 +18324,7 @@ ${script}`;
     },
     highlight(range, color = "#FFFB78", id = null, comment = "") {
       if (!range || range.collapsed) return null;
-      if (this.isLuminaAndNotAnswer(range)) return null;
+      if (this.isNexusAndNotAnswer(range)) return null;
       const highlightId = id || Date.now().toString();
       const rangeToHighlight = range.cloneRange();
       this.saveHighlight(rangeToHighlight, color, highlightId, comment);
@@ -18286,26 +18334,26 @@ ${script}`;
     injectHighlightCSS(color) {
       if (!this.styleElement) {
         this.styleElement = document.createElement("style");
-        this.styleElement.id = "lumina-highlight-styles";
+        this.styleElement.id = "nexus-highlight-styles";
         (document.head || document.documentElement).appendChild(this.styleElement);
       }
       if (color) {
         const cleanColor = color.toLowerCase().replace("#", "");
-        const styleRule = `::highlight(lumina-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }
+        const styleRule = `::highlight(nexus-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }
 `;
-        if (!this.styleElement.textContent.includes(`lumina-hl-${cleanColor}`)) {
+        if (!this.styleElement.textContent.includes(`nexus-hl-${cleanColor}`)) {
           this.styleElement.textContent += styleRule;
         }
       }
-      const commentRule = `::highlight(lumina-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }
+      const commentRule = `::highlight(nexus-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }
 `;
-      if (!this.styleElement.textContent.includes("lumina-comment-underline")) {
+      if (!this.styleElement.textContent.includes("nexus-comment-underline")) {
         this.styleElement.textContent += commentRule;
       }
     },
     applyHighlight(range, color, highlightId = null, comment = "") {
       if (!range || range.collapsed || !window.Highlight || !CSS.highlights) return;
-      if (this.isLuminaAndNotAnswer(range)) return;
+      if (this.isNexusAndNotAnswer(range)) return;
       this.injectHighlightCSS(color);
       if (color) {
         const normalizedColor = color.toLowerCase();
@@ -18314,7 +18362,7 @@ ${script}`;
           highlightObj = new Highlight();
           this.highlightObjects.set(normalizedColor, highlightObj);
           const cleanColor = normalizedColor.replace("#", "");
-          CSS.highlights.set(`lumina-hl-${cleanColor}`, highlightObj);
+          CSS.highlights.set(`nexus-hl-${cleanColor}`, highlightObj);
         }
         highlightObj.add(range);
       }
@@ -18323,7 +18371,7 @@ ${script}`;
         if (!commentObj) {
           commentObj = new Highlight();
           this.highlightObjects.set("comment-underline", commentObj);
-          CSS.highlights.set("lumina-comment-underline", commentObj);
+          CSS.highlights.set("nexus-comment-underline", commentObj);
         }
         commentObj.add(range);
       }
@@ -18352,7 +18400,7 @@ ${script}`;
       const url = window.location.href.split("#")[0].split("?")[0];
       if (url.startsWith("chrome-extension://")) {
         let tabId = null;
-        const scope = window.LuminaSelectionScope;
+        const scope = window.NexusSelectionScope;
         if (rangeOrNode && scope) {
           const node = rangeOrNode instanceof Range ? rangeOrNode.startContainer : rangeOrNode;
           let curr = node;
@@ -18362,7 +18410,7 @@ ${script}`;
               const tab = tabsList.find((t) => t.historyEl === curr);
               if (tab) {
                 if (tab.sessionId) {
-                  return `highlights_lumina_session_${tab.sessionId}`;
+                  return `highlights_nexus_session_${tab.sessionId}`;
                 }
                 tabId = tab.id;
                 break;
@@ -18377,12 +18425,12 @@ ${script}`;
           if (tabsList && typeof activeIdx !== "undefined" && tabsList[activeIdx]) {
             const tab = tabsList[activeIdx];
             if (tab.sessionId) {
-              return `highlights_lumina_session_${tab.sessionId}`;
+              return `highlights_nexus_session_${tab.sessionId}`;
             }
             tabId = tab.id;
           }
         }
-        return tabId ? `highlights_lumina_tab_${tabId}` : `highlights_lumina`;
+        return tabId ? `highlights_nexus_tab_${tabId}` : `highlights_nexus`;
       }
       return `highlights_${url}`;
     },
@@ -18400,7 +18448,7 @@ ${script}`;
       }
     },
     saveHighlight(range, color, id, comment = "") {
-      if (this.isLuminaAndNotAnswer(range)) return;
+      if (this.isNexusAndNotAnswer(range)) return;
       const storageKey = this.getStorageKey(range);
       const hData = {
         id,
@@ -18418,7 +18466,7 @@ ${script}`;
     },
     addComment(range, commentText, color = null, id = null) {
       if (!range || range.collapsed) return null;
-      if (this.isLuminaAndNotAnswer(range)) return null;
+      if (this.isNexusAndNotAnswer(range)) return null;
       const highlightId = id || Date.now().toString();
       const rangeToHighlight = range.cloneRange();
       this.saveHighlight(rangeToHighlight, color, highlightId, commentText);
@@ -18457,15 +18505,15 @@ ${script}`;
     },
     loadHighlights(tabId = null) {
       let storageKey = null;
-      if (tabId && window.LuminaSelectionScope) {
-        const tabsList = window.LuminaSelectionScope.getTabs();
+      if (tabId && window.NexusSelectionScope) {
+        const tabsList = window.NexusSelectionScope.getTabs();
         const tab = tabsList && tabsList.find((t) => t.id === tabId);
         if (tab && tab.sessionId) {
-          storageKey = `highlights_lumina_session_${tab.sessionId}`;
+          storageKey = `highlights_nexus_session_${tab.sessionId}`;
         }
       }
       if (!storageKey) {
-        storageKey = tabId ? `highlights_lumina_tab_${tabId}` : this.getStorageKey();
+        storageKey = tabId ? `highlights_nexus_tab_${tabId}` : this.getStorageKey();
       }
       chrome.runtime.sendMessage({
         action: "load_highlights",
@@ -18594,7 +18642,7 @@ ${script}`;
           newHighlightObj = new Highlight();
           this.highlightObjects.set(newColorNormalized, newHighlightObj);
           const cleanColor = newColorNormalized.replace("#", "");
-          CSS.highlights.set(`lumina-hl-${cleanColor}`, newHighlightObj);
+          CSS.highlights.set(`nexus-hl-${cleanColor}`, newHighlightObj);
           this.injectHighlightCSS(newColorNormalized);
         }
         newHighlightObj.add(data.range);
@@ -18618,7 +18666,7 @@ ${script}`;
           else {
             const newCommentObj = new Highlight();
             this.highlightObjects.set("comment-underline", newCommentObj);
-            CSS.highlights.set("lumina-comment-underline", newCommentObj);
+            CSS.highlights.set("nexus-comment-underline", newCommentObj);
             newCommentObj.add(data.range);
             this.injectHighlightCSS();
           }
@@ -18630,14 +18678,14 @@ ${script}`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaAnnotation = LuminaAnnotation2;
+    window.NexusAnnotation = NexusAnnotation2;
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaAnnotation = LuminaAnnotation2;
+    globalThis.NexusAnnotation = NexusAnnotation2;
   }
 
   // src/helpers/selection_utils.js
-  var LuminaSelection2 = {
+  var NexusSelection2 = {
     btn: null,
     inputPopup: null,
     inputField: null,
@@ -18664,12 +18712,12 @@ ${script}`;
         chrome.runtime.sendMessage(message, () => {
           const lastError = chrome.runtime.lastError;
           if (lastError) {
-            console.warn("[Lumina] runtime message dropped:", lastError.message);
+            console.warn("[Nexus] runtime message dropped:", lastError.message);
           }
         });
         return true;
       } catch (error) {
-        console.warn("[Lumina] runtime context unavailable:", error?.message || error);
+        console.warn("[Nexus] runtime context unavailable:", error?.message || error);
         return false;
       }
     },
@@ -18683,7 +18731,7 @@ ${script}`;
       }
     },
     getHighlightsInSelection(selectedRange) {
-      const annotationEngine = window.LuminaAnnotation || LuminaAnnotation2;
+      const annotationEngine = window.NexusAnnotation || NexusAnnotation2;
       if (!selectedRange || !annotationEngine) return [];
       const intersectingHighlights = [];
       for (const [id, data] of annotationEngine.highlightsMap.entries()) {
@@ -18698,18 +18746,18 @@ ${script}`;
       let html = "";
       if (this.annotationMode) {
         html += `
-                <div class="lumina-color-swatch lumina-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                <div class="nexus-color-swatch nexus-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
-                <div class="lumina-action-item lumina-action-comment" title="Edit/Add Comment">
+                <div class="nexus-action-item nexus-action-comment" title="Edit/Add Comment">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
         this.ANNOTATION_COLORS.forEach((color) => {
           const isActive = color.toLowerCase() === (this.currentHighlightColor || "").toLowerCase();
           html += `
-                    <div class="lumina-action-item lumina-action-highlight-btn ${isActive ? "active" : ""}" data-color="${color}" title="Change Color">
-                        <div class="lumina-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? "2px solid var(--lumina-ui-primary, #6366f1)" : "1px solid rgba(0,0,0,0.15)"};"></div>
+                    <div class="nexus-action-item nexus-action-highlight-btn ${isActive ? "active" : ""}" data-color="${color}" title="Change Color">
+                        <div class="nexus-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? "2px solid var(--nexus-ui-primary, #6366f1)" : "1px solid rgba(0,0,0,0.15)"};"></div>
                     </div>
                 `;
         });
@@ -18717,36 +18765,36 @@ ${script}`;
         const intersectingIds = this.getHighlightsInSelection(this.range);
         if (intersectingIds.length > 0) {
           html += `
-                    <div class="lumina-color-swatch lumina-clear-highlight" title="Clear All Highlights in Selection" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                    <div class="nexus-color-swatch nexus-clear-highlight" title="Clear All Highlights in Selection" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </div>
                 `;
         }
         html += `
-                <div class="lumina-action-item lumina-action-dict" title="Dictionary">
+                <div class="nexus-action-item nexus-action-dict" title="Dictionary">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                 </div>
-                <div class="lumina-action-item lumina-action-comment" title="Add Comment">
+                <div class="nexus-action-item nexus-action-comment" title="Add Comment">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block; opacity: 0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
         html += `
-                <div class="lumina-action-item lumina-action-highlight-btn" data-color="${this.currentHighlightColor}" title="Highlight text">
-                    <div class="lumina-action-highlight-color-preview" style="background-color: ${this.currentHighlightColor};"></div>
+                <div class="nexus-action-item nexus-action-highlight-btn" data-color="${this.currentHighlightColor}" title="Highlight text">
+                    <div class="nexus-action-highlight-color-preview" style="background-color: ${this.currentHighlightColor};"></div>
                 </div>
             `;
         const remainingColors = this.ANNOTATION_COLORS.filter((c) => c.toLowerCase() !== this.currentHighlightColor.toLowerCase());
         if (this.showExtraColors) {
           remainingColors.forEach((color) => {
             html += `
-                        <div class="lumina-action-item lumina-action-highlight-btn extra-color" data-color="${color}" title="Highlight text">
-                            <div class="lumina-action-highlight-color-preview" style="background-color: ${color};"></div>
+                        <div class="nexus-action-item nexus-action-highlight-btn extra-color" data-color="${color}" title="Highlight text">
+                            <div class="nexus-action-highlight-color-preview" style="background-color: ${color};"></div>
                         </div>
                     `;
           });
         } else {
           html += `
-                    <div class="lumina-action-item lumina-action-expand-colors" title="More colors">
+                    <div class="nexus-action-item nexus-action-expand-colors" title="More colors">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block; opacity: 0.7;"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
                 `;
@@ -18768,20 +18816,20 @@ ${script}`;
       this.onCommentAdded = options.onCommentAdded;
       this.cleanup();
       this.btn = document.createElement("div");
-      this.btn.id = "lumina-action-bar";
+      this.btn.id = "nexus-action-bar";
       this.btn.style.cssText = "pointer-events: auto; display: none; visibility: hidden;";
       this.renderDefaultActionBar();
       this.inputPopup = document.createElement("div");
-      this.inputPopup.id = "lumina-ask-input-popup";
+      this.inputPopup.id = "nexus-ask-input-popup";
       this.inputPopup.style.cssText = "pointer-events: auto; display: none; visibility: hidden;";
       this.inputPopup.innerHTML = `
-            <div class="lumina-ask-input-wrapper">
-                <textarea class="lumina-ask-input-field" placeholder="Add a comment..."></textarea>
+            <div class="nexus-ask-input-wrapper">
+                <textarea class="nexus-ask-input-field" placeholder="Add a comment..."></textarea>
             </div>
         `;
-      this.inputField = this.inputPopup.querySelector(".lumina-ask-input-field");
+      this.inputField = this.inputPopup.querySelector(".nexus-ask-input-field");
       this.hoverTooltip = document.createElement("div");
-      this.hoverTooltip.id = "lumina-comment-hover-tooltip";
+      this.hoverTooltip.id = "nexus-comment-hover-tooltip";
       this.hoverTooltip.style.cssText = "pointer-events: auto; display: none; visibility: hidden; position: fixed; z-index: 2147483647;";
       this.shadowRoot.appendChild(this.hoverTooltip);
       const markInteracting = () => {
@@ -18805,12 +18853,12 @@ ${script}`;
         e.preventDefault();
         e.stopPropagation();
         markInteracting();
-        const dictBtn = e.target.closest(".lumina-action-dict");
-        const commentBtn = e.target.closest(".lumina-action-comment");
-        const expandBtn = e.target.closest(".lumina-action-expand-colors");
-        const highlightBtn = e.target.closest(".lumina-action-highlight-btn");
-        const clearHighlightBtn = e.target.closest(".lumina-clear-highlight");
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation2;
+        const dictBtn = e.target.closest(".nexus-action-dict");
+        const commentBtn = e.target.closest(".nexus-action-comment");
+        const expandBtn = e.target.closest(".nexus-action-expand-colors");
+        const highlightBtn = e.target.closest(".nexus-action-highlight-btn");
+        const clearHighlightBtn = e.target.closest(".nexus-clear-highlight");
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation2;
         if (expandBtn) {
           this.showExtraColors = true;
           this.renderDefaultActionBar();
@@ -18863,7 +18911,7 @@ ${script}`;
       });
       const handleSaveComment = () => {
         const commentText = this.inputField.value.trim();
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation2;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation2;
         if (commentText) {
           if (this.annotationMode && this.currentAnnotationId) {
             if (annotationEngine) {
@@ -18894,13 +18942,13 @@ ${script}`;
         if (this.inputPopup && this.inputPopup.style.display === "flex") return;
         if (this.btn && this.btn.style.display === "flex") return;
         const targetEl = document.elementFromPoint(e.clientX, e.clientY);
-        if (targetEl && (targetEl.closest(".lumina-chat-input-container") || targetEl.closest(".topbar") || targetEl.closest(".header") || targetEl.closest(".lumina-header") || targetEl.closest("#lumina-action-bar"))) {
+        if (targetEl && (targetEl.closest(".nexus-chat-input-container") || targetEl.closest(".topbar") || targetEl.closest(".header") || targetEl.closest(".nexus-header") || targetEl.closest("#nexus-action-bar"))) {
           if (this.hoverTooltip && this.hoverTooltip.style.display === "block") {
             this.hideHoverTooltip();
           }
           return;
         }
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation2;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation2;
         const hData = annotationEngine ? annotationEngine.getHighlightAtCoords(e.clientX, e.clientY) : null;
         if (hData && hData.comment) {
           if (this._hoverHideTimer) {
@@ -18948,8 +18996,8 @@ ${script}`;
       if (!this.hoverTooltip || !hData || !hData.comment) return;
       this.currentHoveredAnnotationId = hData.id;
       this.hoverTooltip.innerHTML = `
-            <div class="lumina-comment-tooltip-card">
-                <span class="lumina-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
+            <div class="nexus-comment-tooltip-card">
+                <span class="nexus-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
             </div>
         `;
       this.hoverTooltip.style.display = "block";
@@ -18962,9 +19010,9 @@ ${script}`;
         startRect = rects.length > 0 ? rects[0] : hData.range.getBoundingClientRect();
       }
       if (startRect) {
-        const inputContainer = document.querySelector(".lumina-chat-input-container");
+        const inputContainer = document.querySelector(".nexus-chat-input-container");
         const inputTop = inputContainer ? inputContainer.getBoundingClientRect().top : window.innerHeight - 100;
-        const topBar = document.querySelector(".topbar, .header, .lumina-header");
+        const topBar = document.querySelector(".topbar, .header, .nexus-header");
         const headerBottom = topBar ? topBar.getBoundingClientRect().bottom : 50;
         if (startRect.bottom < headerBottom || startRect.top > inputTop) {
           this.hideHoverTooltip();
@@ -18986,7 +19034,7 @@ ${script}`;
       this.setScrollLock(false);
       this._unbindSelectionScrollTracking();
       if (this.shadowRoot) {
-        this.shadowRoot.querySelectorAll("#lumina-action-bar, #lumina-ask-input-popup, .lumina-overlay-backdrop").forEach((el) => el.remove());
+        this.shadowRoot.querySelectorAll("#nexus-action-bar, #nexus-ask-input-popup, .nexus-overlay-backdrop").forEach((el) => el.remove());
       }
     },
     updatePosition(element = this.btn) {
@@ -19065,7 +19113,7 @@ ${script}`;
       this.sourceEntry = null;
       if (range && range.startContainer) {
         const node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
-        this.sourceEntry = node ? node.closest(".lumina-entry") : null;
+        this.sourceEntry = node ? node.closest(".nexus-entry") : null;
       }
       this.annotationMode = false;
       this.showExtraColors = false;
@@ -19083,7 +19131,7 @@ ${script}`;
       this.inputPopup.style.visibility = "visible";
       if (this.inputField) {
         let existingComment = "";
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation2;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation2;
         if (this.annotationMode && this.currentAnnotationId && annotationEngine) {
           const data = annotationEngine.highlightsMap.get(this.currentAnnotationId);
           if (data) existingComment = data.comment || "";
@@ -19148,12 +19196,12 @@ ${script}`;
       if (this.onHide) this.onHide();
     },
     setScrollLock(lock) {
-      const isSpotlight = document.body.classList.contains("lumina-page") || window.location.pathname.includes("lumina.html");
+      const isSpotlight = document.body.classList.contains("nexus-page") || window.location.pathname.includes("nexus.html");
       if (isSpotlight) return;
       if (lock) {
         if (!this.inputBackdrop) {
           this.inputBackdrop = document.createElement("div");
-          this.inputBackdrop.className = "lumina-overlay-backdrop";
+          this.inputBackdrop.className = "nexus-overlay-backdrop";
           this.inputBackdrop.style.zIndex = "2147483646";
           this.inputBackdrop.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
           this.inputBackdrop.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
@@ -19165,11 +19213,11 @@ ${script}`;
         this.originalOverflowHtml = document.documentElement.style.overflow;
         document.body.style.overflow = "hidden";
         document.documentElement.style.overflow = "hidden";
-        document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+        document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
           el.style.overflow = "hidden";
         });
         this._scrollPreventer = (e) => {
-          if (e.target.closest(".lumina-ask-input-field") || e.target.closest(".lumina-tooltip")) {
+          if (e.target.closest(".nexus-ask-input-field") || e.target.closest(".nexus-tooltip")) {
             return;
           }
           e.preventDefault();
@@ -19179,7 +19227,7 @@ ${script}`;
       } else {
         document.body.style.overflow = this.originalOverflowBody || "";
         document.documentElement.style.overflow = this.originalOverflowHtml || "";
-        document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+        document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
           el.style.overflow = "auto";
         });
         if (this._scrollPreventer) {
@@ -19207,8 +19255,8 @@ ${script}`;
       return range.getBoundingClientRect();
     },
     getDeepActiveElement(root = document) {
-      if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.getDeepActiveElement === "function") {
-        return LuminaChatUI.getDeepActiveElement(root);
+      if (typeof NexusChatUI !== "undefined" && typeof NexusChatUI.getDeepActiveElement === "function") {
+        return NexusChatUI.getDeepActiveElement(root);
       }
       let active = root.activeElement;
       while (active && active.shadowRoot) {
@@ -19354,14 +19402,14 @@ ${script}`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaSelection = LuminaSelection2;
+    window.NexusSelection = NexusSelection2;
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaSelection = LuminaSelection2;
+    globalThis.NexusSelection = NexusSelection2;
   }
 
   // src/helpers/file_processor.js
-  var LuminaFileProcessor2 = {
+  var NexusFileProcessor2 = {
     createAttachmentId() {
       return `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     },
@@ -19475,17 +19523,17 @@ ${script}`;
     resolveImagePreviewSrc(item, src) {
       if (!src || typeof src !== "string") return src;
       if (!src.startsWith("data:image/")) return src;
-      if (item && typeof item === "object" && item._luminaBlobUrl) {
-        return item._luminaBlobUrl;
+      if (item && typeof item === "object" && item._nexusBlobUrl) {
+        return item._nexusBlobUrl;
       }
-      const blobUrl = LuminaFileProcessor2.createObjectUrlFromDataUrl(src);
+      const blobUrl = NexusFileProcessor2.createObjectUrlFromDataUrl(src);
       if (blobUrl && item && typeof item === "object") {
-        item._luminaBlobUrl = blobUrl;
+        item._nexusBlobUrl = blobUrl;
       }
       return blobUrl || src;
     },
     async prepareRawFileAttachment(file, createObjectUrlCallback) {
-      const dataUrl = await LuminaFileProcessor2.readFileAsDataUrl(file);
+      const dataUrl = await NexusFileProcessor2.readFileAsDataUrl(file);
       if (!dataUrl) return null;
       const mimeType = file.type;
       const isImage = mimeType.startsWith("image/");
@@ -19507,11 +19555,11 @@ ${script}`;
       return fileObj;
     },
     async extractPdfAsAttachments(file) {
-      if (typeof pdfjsLib === "undefined" && typeof window.luminaLoadScript === "function") {
+      if (typeof pdfjsLib === "undefined" && typeof window.nexusLoadScript === "function") {
         try {
-          await window.luminaLoadScript("../../lib/vendor/pdf.min.js");
+          await window.nexusLoadScript("../../lib/vendor/pdf.min.js");
         } catch (e) {
-          console.error("[Lumina] Failed to load pdf.min.js dynamically:", e);
+          console.error("[Nexus] Failed to load pdf.min.js dynamically:", e);
         }
       }
       if (typeof pdfjsLib === "undefined") {
@@ -19540,7 +19588,7 @@ ${script}`;
       const baseName = (file.name || "document").replace(/\.[^.]+$/, "");
       const attachments = [];
       if (text.trim()) {
-        const dataUrl = LuminaFileProcessor2.textToDataUrl(text, "text/plain");
+        const dataUrl = NexusFileProcessor2.textToDataUrl(text, "text/plain");
         attachments.push({
           mimeType: "text/plain",
           name: `${baseName}.txt`,
@@ -19552,13 +19600,13 @@ ${script}`;
       return attachments;
     },
     async extractXlsxAsAttachments(file) {
-      const entries = await LuminaFileProcessor2.readZipEntries(await file.arrayBuffer());
-      const workbookXml = LuminaFileProcessor2.decodeUtf8(entries["xl/workbook.xml"]);
+      const entries = await NexusFileProcessor2.readZipEntries(await file.arrayBuffer());
+      const workbookXml = NexusFileProcessor2.decodeUtf8(entries["xl/workbook.xml"]);
       if (!workbookXml) return [];
-      const workbookRelsXml = LuminaFileProcessor2.decodeUtf8(entries["xl/_rels/workbook.xml.rels"]);
-      const sharedStringsXml = LuminaFileProcessor2.decodeUtf8(entries["xl/sharedStrings.xml"]);
-      const sharedStrings = LuminaFileProcessor2.parseSharedStrings(sharedStringsXml);
-      const sheetPathByRelId = LuminaFileProcessor2.parseWorkbookRelationships(workbookRelsXml);
+      const workbookRelsXml = NexusFileProcessor2.decodeUtf8(entries["xl/_rels/workbook.xml.rels"]);
+      const sharedStringsXml = NexusFileProcessor2.decodeUtf8(entries["xl/sharedStrings.xml"]);
+      const sharedStrings = NexusFileProcessor2.parseSharedStrings(sharedStringsXml);
+      const sheetPathByRelId = NexusFileProcessor2.parseWorkbookRelationships(workbookRelsXml);
       const parser = new DOMParser();
       const workbookDoc = parser.parseFromString(workbookXml, "application/xml");
       const sheetNodes = Array.from(workbookDoc.getElementsByTagName("sheet"));
@@ -19569,13 +19617,13 @@ ${script}`;
         const targetPath = relId ? sheetPathByRelId[relId] : "";
         const fallbackPath = `xl/worksheets/sheet${idx + 1}.xml`;
         const sheetPath = targetPath && entries[targetPath] ? targetPath : fallbackPath;
-        const sheetXml = LuminaFileProcessor2.decodeUtf8(entries[sheetPath]);
+        const sheetXml = NexusFileProcessor2.decodeUtf8(entries[sheetPath]);
         if (!sheetXml) return;
         const sheetName = sheetNode.getAttribute("name") || `Sheet${idx + 1}`;
-        const csv = LuminaFileProcessor2.sheetXmlToCsv(sheetXml, sharedStrings);
+        const csv = NexusFileProcessor2.sheetXmlToCsv(sheetXml, sharedStrings);
         if (!csv) return;
         const csvName = `${baseName} - ${sheetName}.csv`.replace(/[\\/:*?"<>|]/g, "_");
-        const dataUrl = LuminaFileProcessor2.textToDataUrl(csv, "text/csv");
+        const dataUrl = NexusFileProcessor2.textToDataUrl(csv, "text/csv");
         const base64Data = dataUrl.split(",")[1] || "";
         attachments.push({
           mimeType: "text/csv",
@@ -19588,14 +19636,14 @@ ${script}`;
       return attachments;
     },
     async extractDocxAsAttachments(file) {
-      const entries = await LuminaFileProcessor2.readZipEntries(await file.arrayBuffer());
-      const docXml = LuminaFileProcessor2.decodeUtf8(entries["word/document.xml"]);
+      const entries = await NexusFileProcessor2.readZipEntries(await file.arrayBuffer());
+      const docXml = NexusFileProcessor2.decodeUtf8(entries["word/document.xml"]);
       const baseName = (file.name || "document").replace(/\.[^.]+$/, "");
       const attachments = [];
       if (docXml) {
-        const text = LuminaFileProcessor2.docxXmlToText(docXml);
+        const text = NexusFileProcessor2.docxXmlToText(docXml);
         if (text.trim()) {
-          const dataUrl = LuminaFileProcessor2.textToDataUrl(text, "text/plain");
+          const dataUrl = NexusFileProcessor2.textToDataUrl(text, "text/plain");
           attachments.push({
             mimeType: "text/plain",
             name: `${baseName}.txt`,
@@ -19607,10 +19655,10 @@ ${script}`;
       }
       Object.keys(entries).forEach((path) => {
         if (!path.startsWith("word/media/")) return;
-        const mimeType = LuminaFileProcessor2.mimeFromExtension(path);
+        const mimeType = NexusFileProcessor2.mimeFromExtension(path);
         if (!mimeType || !mimeType.startsWith("image/")) return;
         const bytes = entries[path];
-        const dataUrl = LuminaFileProcessor2.bytesToDataUrl(bytes, mimeType);
+        const dataUrl = NexusFileProcessor2.bytesToDataUrl(bytes, mimeType);
         const fileName = path.split("/").pop() || "image";
         attachments.push({
           mimeType,
@@ -19618,7 +19666,7 @@ ${script}`;
           isImage: true,
           dataUrl,
           data: dataUrl.split(",")[1] || "",
-          previewUrl: LuminaFileProcessor2.resolveImagePreviewSrc(null, dataUrl)
+          previewUrl: NexusFileProcessor2.resolveImagePreviewSrc(null, dataUrl)
         });
       });
       return attachments;
@@ -19671,8 +19719,8 @@ ${script}`;
           } else if (vNode) {
             value = vNode.textContent || "";
           }
-          const colIdx = LuminaFileProcessor2.columnRefToIndex(ref);
-          rowValues[colIdx] = LuminaFileProcessor2.escapeCsv(value);
+          const colIdx = NexusFileProcessor2.columnRefToIndex(ref);
+          rowValues[colIdx] = NexusFileProcessor2.escapeCsv(value);
         });
         let last = rowValues.length - 1;
         while (last >= 0 && (rowValues[last] === void 0 || rowValues[last] === "")) last -= 1;
@@ -19716,7 +19764,7 @@ ${script}`;
     async readZipEntries(arrayBuffer) {
       const bytes = new Uint8Array(arrayBuffer);
       const view = new DataView(arrayBuffer);
-      const eocdOffset = LuminaFileProcessor2.findEocdOffset(view);
+      const eocdOffset = NexusFileProcessor2.findEocdOffset(view);
       if (eocdOffset < 0) throw new Error("Invalid ZIP: EOCD not found");
       const centralDirSize = view.getUint32(eocdOffset + 12, true);
       const centralDirOffset = view.getUint32(eocdOffset + 16, true);
@@ -19743,7 +19791,7 @@ ${script}`;
         if (compression === 0) {
           entries[fileName] = new Uint8Array(compressedBytes);
         } else if (compression === 8) {
-          entries[fileName] = await LuminaFileProcessor2.inflateRaw(compressedBytes);
+          entries[fileName] = await NexusFileProcessor2.inflateRaw(compressedBytes);
         }
         ptr += 46 + nameLen + extraLen + commentLen;
       }
@@ -19782,11 +19830,11 @@ ${script}`;
       return btoa(binary);
     },
     bytesToDataUrl(bytes, mimeType) {
-      return `data:${mimeType};base64,${LuminaFileProcessor2.bytesToBase64(bytes)}`;
+      return `data:${mimeType};base64,${NexusFileProcessor2.bytesToBase64(bytes)}`;
     },
     textToDataUrl(text, mimeType) {
       const bytes = new TextEncoder().encode(text || "");
-      return LuminaFileProcessor2.bytesToDataUrl(bytes, mimeType || "text/plain");
+      return NexusFileProcessor2.bytesToDataUrl(bytes, mimeType || "text/plain");
     },
     mimeFromExtension(path) {
       const ext = (String(path || "").split(".").pop() || "").toLowerCase();
@@ -19806,10 +19854,10 @@ ${script}`;
     }
   };
   if (typeof self !== "undefined") {
-    self.LuminaFileProcessor = LuminaFileProcessor2;
+    self.NexusFileProcessor = NexusFileProcessor2;
   }
   if (typeof window !== "undefined") {
-    window.LuminaFileProcessor = LuminaFileProcessor2;
+    window.NexusFileProcessor = NexusFileProcessor2;
   }
 
   // src/helpers/freedict_parser.js
@@ -19972,7 +20020,7 @@ ${script}`;
         if (!transcriptData || transcriptData.length === 0) return null;
         return this._normalizeTranscript(transcriptData);
       } catch (e) {
-        console.error("[Lumina] Transcript extraction failed:", e);
+        console.error("[Nexus] Transcript extraction failed:", e);
         return null;
       }
     },
@@ -20125,24 +20173,24 @@ ${script}`;
   }
 
   // src/components/panels/history_panel.js
-  var LuminaHistory = class {
+  var NexusHistory = class {
     constructor() {
       this.isOpen = false;
       this.historyData = [];
       this.displayedCount = 0;
       this.PAGE_SIZE = 20;
-      this.sidebar = document.getElementById("lumina-history-sidebar");
-      this.overlay = document.getElementById("lumina-history-overlay");
-      this.toggleBtn = document.getElementById("lumina-history-toggle-btn");
-      this.closeBtn = document.getElementById("lumina-history-close-btn");
-      this.settingsBtn = document.getElementById("lumina-history-settings-btn");
-      this.searchInput = document.getElementById("lumina-history-search-input");
-      this.searchLoader = document.getElementById("lumina-history-loader");
-      this.listContainer = document.getElementById("lumina-history-list-container");
+      this.sidebar = document.getElementById("nexus-history-sidebar");
+      this.overlay = document.getElementById("nexus-history-overlay");
+      this.toggleBtn = document.getElementById("nexus-history-toggle-btn");
+      this.closeBtn = document.getElementById("nexus-history-close-btn");
+      this.settingsBtn = document.getElementById("nexus-history-settings-btn");
+      this.searchInput = document.getElementById("nexus-history-search-input");
+      this.searchLoader = document.getElementById("nexus-history-loader");
+      this.listContainer = document.getElementById("nexus-history-list-container");
       this.storageText = document.getElementById("storage-usage-text");
-      this.deleteAllBtn = document.getElementById("lumina-history-delete-all-btn");
+      this.deleteAllBtn = document.getElementById("nexus-history-delete-all-btn");
       this.topbarToggleBtn = document.getElementById("topbar-history-btn");
-      this.contextMenu = document.getElementById("lumina-history-context-menu");
+      this.contextMenu = document.getElementById("nexus-history-context-menu");
       this.menuRename = document.getElementById("menu-rename");
       this.menuDuplicate = document.getElementById("menu-duplicate");
       this.menuDelete = document.getElementById("menu-delete");
@@ -20304,7 +20352,7 @@ ${script}`;
         });
       }
       if (this.filteredData.length === 0) {
-        this.listContainer.innerHTML = `<div class="lumina-history-empty-state">No chat history found.</div>`;
+        this.listContainer.innerHTML = `<div class="nexus-history-empty-state">No chat history found.</div>`;
         return;
       }
       this.renderNextBatch();
@@ -20341,7 +20389,7 @@ ${script}`;
     ensureTooltip() {
       if (this.tooltip) return;
       this.tooltip = document.createElement("div");
-      this.tooltip.className = "lumina-tooltip";
+      this.tooltip.className = "nexus-tooltip";
       document.body.appendChild(this.tooltip);
     }
     showTooltip(text, target) {
@@ -20384,15 +20432,15 @@ ${script}`;
       div.textContent = prefix + displayText;
       let safeHTML = div.innerHTML;
       const highlightRegex = new RegExp(`(${this.escapeRegExp(matchText)})`, "gi");
-      return safeHTML.replace(highlightRegex, '<span class="lumina-history-highlight">$1</span>');
+      return safeHTML.replace(highlightRegex, '<span class="nexus-history-highlight">$1</span>');
     }
     createHistoryElement(item) {
       const query = this.searchInput ? this.searchInput.value.trim() : "";
       const div = document.createElement("div");
-      div.className = "lumina-history-item";
+      div.className = "nexus-history-item";
       div.dataset.id = item.id;
       if (item.isEntry) div.dataset.messageIndex = item.messageIndex;
-      const titleClasses = item.isRenamed && !query ? "lumina-history-item-title renamed" : "lumina-history-item-title";
+      const titleClasses = item.isRenamed && !query ? "nexus-history-item-title renamed" : "nexus-history-item-title";
       const displayTitle = item.isEntry && query ? this.highlightAndCrop(item.title, query) : item.title;
       let cleanSnippet = (item.snippet || "No messages yet").replace(/\n/g, " ").trim();
       if (cleanSnippet.length > 100) {
@@ -20400,12 +20448,12 @@ ${script}`;
       }
       div.innerHTML = `
             <div class="${titleClasses}">${displayTitle}</div>
-            <div class="lumina-history-item-snippet">${cleanSnippet}</div>
-            <div class="lumina-history-item-meta">
+            <div class="nexus-history-item-snippet">${cleanSnippet}</div>
+            <div class="nexus-history-item-meta">
                 <span>${this.formatDate(item.updatedAt)}</span>
             </div>
         `;
-      const titleEl = div.querySelector(".lumina-history-item-title");
+      const titleEl = div.querySelector(".nexus-history-item-title");
       titleEl.addEventListener("mouseenter", (e) => this.showTooltip(item.title, e.target));
       titleEl.addEventListener("mouseleave", this.hideTooltip);
       div.addEventListener("click", () => {
@@ -20419,7 +20467,7 @@ ${script}`;
     }
     showContextMenu(e, sessionId, element) {
       if (!this.listContainer || !this.contextMenu) return;
-      const allItems = this.listContainer.querySelectorAll(".lumina-history-item");
+      const allItems = this.listContainer.querySelectorAll(".nexus-history-item");
       allItems.forEach((el) => el.classList.remove("context-menu-active"));
       element.classList.add("context-menu-active");
       this.activeContextSessionId = sessionId;
@@ -20440,21 +20488,21 @@ ${script}`;
       this.contextMenu.style.display = "none";
       this.activeContextSessionId = null;
       if (this.listContainer) {
-        const allItems = this.listContainer.querySelectorAll(".lumina-history-item");
+        const allItems = this.listContainer.querySelectorAll(".nexus-history-item");
         allItems.forEach((el) => el.classList.remove("context-menu-active"));
       }
     }
     async renameItem(sessionId) {
       const item = this.historyData.find((i) => i.id === sessionId);
       if (!item || !this.listContainer) return;
-      const el = this.listContainer.querySelector(`.lumina-history-item[data-id="${sessionId}"]`);
+      const el = this.listContainer.querySelector(`.nexus-history-item[data-id="${sessionId}"]`);
       if (!el) return;
-      const titleEl = el.querySelector(".lumina-history-item-title");
+      const titleEl = el.querySelector(".nexus-history-item-title");
       const oldTitle = item.title;
       const input = document.createElement("input");
       input.type = "text";
       input.value = oldTitle;
-      input.className = "lumina-history-rename-input";
+      input.className = "nexus-history-rename-input";
       titleEl.textContent = "";
       titleEl.appendChild(input);
       input.focus();
@@ -20540,15 +20588,15 @@ ${script}`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaHistory = LuminaHistory;
+    window.NexusHistory = NexusHistory;
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", () => {
-        if (!window.luminaHistory && document.getElementById("lumina-history-sidebar")) {
-          window.luminaHistory = new LuminaHistory();
+        if (!window.nexusHistory && document.getElementById("nexus-history-sidebar")) {
+          window.nexusHistory = new NexusHistory();
         }
       });
-    } else if (!window.luminaHistory && document.getElementById("lumina-history-sidebar")) {
-      window.luminaHistory = new LuminaHistory();
+    } else if (!window.nexusHistory && document.getElementById("nexus-history-sidebar")) {
+      window.nexusHistory = new NexusHistory();
     }
   }
 
@@ -20617,7 +20665,7 @@ ${script}`;
     const escapedSnippet = escapeHtml3(snippet);
     const escapedQuery = escapeHtml3(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`(${escapedQuery})`, "gi");
-    return escapedSnippet.replace(regex, '<mark class="lumina-search-match">$1</mark>');
+    return escapedSnippet.replace(regex, '<mark class="nexus-search-match">$1</mark>');
   }
 
   // src/components/panels/notes_panel.js
@@ -20629,7 +20677,7 @@ ${script}`;
       this.autoSaveTimer = null;
       this.isInitialized = false;
       this.sortMode = "modified";
-      this.viewMode = localStorage.getItem("lumina_notes_view_mode") || "grid";
+      this.viewMode = localStorage.getItem("nexus_notes_view_mode") || "grid";
       this.isBatchMode = false;
       this.selectedNoteIds = /* @__PURE__ */ new Set();
       this._contextMenu = null;
@@ -20645,7 +20693,7 @@ ${script}`;
       }
       const urlParams = new URLSearchParams(window.location.search);
       const colFromUrl = targetColId || urlParams.get("colId");
-      const savedCol = localStorage.getItem("lumina_active_collection_id");
+      const savedCol = localStorage.getItem("nexus_active_collection_id");
       if (colFromUrl) {
         this.activeCollectionId = colFromUrl;
       } else if (savedCol) {
@@ -20670,7 +20718,7 @@ ${script}`;
       } else {
         this.showHubView();
       }
-      localStorage.setItem("lumina_active_collection_id", this.activeCollectionId);
+      localStorage.setItem("nexus_active_collection_id", this.activeCollectionId);
       await this.renderCollections();
       await this.renderNotesList();
     }
@@ -20689,7 +20737,7 @@ ${script}`;
         this.detailView.style.display = "none";
       }
       this.updateUrlParams();
-      document.title = "Notes - Lumina";
+      document.title = "Notes - Nexus";
       this.renderCollections();
       this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
     }
@@ -20764,7 +20812,6 @@ ${script}`;
       this.backBtn = document.getElementById("notes-back-btn");
       this.noteTitleInput = document.getElementById("note-title-input");
       this.editorContainer = document.getElementById("editorjs");
-      this.wordCountEl = document.getElementById("notes-word-count");
       this.colPickerWrapper = document.getElementById("notes-col-picker-wrapper");
       this.colPickerPill = document.getElementById("notes-col-picker-pill");
       this.colPickerLabel = document.getElementById("notes-col-picker-label");
@@ -20901,7 +20948,7 @@ ${script}`;
     }
     setViewMode(mode) {
       this.viewMode = mode;
-      localStorage.setItem("lumina_notes_view_mode", mode);
+      localStorage.setItem("nexus_notes_view_mode", mode);
       if (this.gridBtn) this.gridBtn.classList.toggle("active", mode === "grid");
       if (this.listBtn) this.listBtn.classList.toggle("active", mode === "list");
       this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
@@ -20953,15 +21000,15 @@ ${script}`;
       menu.style.position = "fixed";
       menu.style.zIndex = "120";
       let itemsHtml = `
-            <div class="notes-ctx-group-label" style="padding: 6px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--lumina-text-tertiary);">Move ${this.selectedNoteIds.size} notes to:</div>
-            <button class="notes-ctx-item notes-batch-target-col" data-col-id="all" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+            <div class="notes-ctx-group-label" style="padding: 6px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--nexus-text-tertiary);">Move ${this.selectedNoteIds.size} notes to:</div>
+            <button class="notes-ctx-item notes-batch-target-col" data-col-id="all" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                 General (Unassigned)
             </button>
         `;
       collections.forEach((col) => {
         itemsHtml += `
-                <button class="notes-ctx-item notes-batch-target-col" data-col-id="${col.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+                <button class="notes-ctx-item notes-batch-target-col" data-col-id="${col.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                     ${escapeHtml3(col.name)}
                 </button>
@@ -21004,26 +21051,26 @@ ${script}`;
         return notes.filter((n) => !n.isDeleted).length;
       }));
       let pillsHtml = `
-            <button type="button" class="lumina-hub-pill ${this.activeCollectionId === "all" ? "active" : ""}" data-col-id="all" role="tab">
+            <button type="button" class="nexus-hub-pill ${this.activeCollectionId === "all" ? "active" : ""}" data-col-id="all" role="tab">
                 <span>All Notes</span>
-                <span class="lumina-pill-count">${allCount}</span>
+                <span class="nexus-pill-count">${allCount}</span>
             </button>
         `;
       collections.forEach((col, idx) => {
         const isActive = this.activeCollectionId === col.id ? "active" : "";
         pillsHtml += `
-                <button type="button" class="lumina-hub-pill ${isActive}" data-col-id="${col.id}" role="tab" title="Right click or hold for options">
+                <button type="button" class="nexus-hub-pill ${isActive}" data-col-id="${col.id}" role="tab" title="Right click or hold for options">
                     <span>${escapeHtml3(col.name)}</span>
-                    <span class="lumina-pill-count">${colCounts[idx]}</span>
+                    <span class="nexus-pill-count">${colCounts[idx]}</span>
                 </button>
             `;
       });
       this.collectionsPills.innerHTML = pillsHtml;
-      this.collectionsPills.querySelectorAll(".lumina-hub-pill").forEach((pill) => {
+      this.collectionsPills.querySelectorAll(".nexus-hub-pill").forEach((pill) => {
         const colId = pill.getAttribute("data-col-id");
         pill.addEventListener("click", () => {
           this.activeCollectionId = colId;
-          localStorage.setItem("lumina_active_collection_id", colId);
+          localStorage.setItem("nexus_active_collection_id", colId);
           this.updateUrlParams();
           this.renderCollections();
           this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
@@ -21066,15 +21113,15 @@ ${script}`;
       menu.style.position = "fixed";
       menu.style.zIndex = "120";
       menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-col-rename" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+            <button class="notes-ctx-item" id="ctx-col-rename" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
                 </svg>
                 <span>Rename collection</span>
             </button>
-            <div style="height:1px;background:var(--lumina-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-col-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-danger-color);">
+            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
+            <button class="notes-ctx-item notes-ctx-danger" id="ctx-col-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6l-1 14H6L5 6"></path>
@@ -21172,7 +21219,7 @@ ${script}`;
       if (notes.length === 0) {
         if (this.emptyState) {
           this.emptyState.style.display = "flex";
-          const emptyText = this.emptyState.querySelector(".lumina-empty-text");
+          const emptyText = this.emptyState.querySelector(".nexus-empty-text");
           if (emptyText) {
             emptyText.textContent = searchTerm ? `No notes matching "${searchTerm}"` : "No notes yet in this collection";
           }
@@ -21197,25 +21244,25 @@ ${script}`;
         const titleHtml = highlightSnippet(rawTitle, searchTerm);
         const timeStr = timeAgo(note.updatedAt || note.createdAt);
         return `
-                <div class="lumina-hub-card ${isSelected ? "is-selected" : ""}" data-note-id="${note.id}" draggable="true">
-                    <div class="lumina-card-top">
-                        <div class="lumina-card-top-left">
-                            <input type="checkbox" class="lumina-card-checkbox" data-note-id="${note.id}" ${isSelected ? "checked" : ""} style="${this.isBatchMode ? "display:block;" : ""}">
-                            <span class="lumina-card-badge" title="Collection: ${escapeHtml3(colName)}">
+                <div class="nexus-hub-card ${isSelected ? "is-selected" : ""}" data-note-id="${note.id}" draggable="true">
+                    <div class="nexus-card-top">
+                        <div class="nexus-card-top-left">
+                            <input type="checkbox" class="nexus-card-checkbox" data-note-id="${note.id}" ${isSelected ? "checked" : ""} style="${this.isBatchMode ? "display:block;" : ""}">
+                            <span class="nexus-card-badge" title="Collection: ${escapeHtml3(colName)}">
                                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
                                 <span>${escapeHtml3(colName)}</span>
                             </span>
                         </div>
-                        <div class="lumina-card-top-right">
-                            <button type="button" class="lumina-card-pin-btn ${isPinned2 ? "pinned" : ""}" data-note-id="${note.id}" title="${isPinned2 ? "Unpin" : "Pin"}">
+                        <div class="nexus-card-top-right">
+                            <button type="button" class="nexus-card-pin-btn ${isPinned2 ? "pinned" : ""}" data-note-id="${note.id}" title="${isPinned2 ? "Unpin" : "Pin"}">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="${isPinned2 ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="17" x2="12" y2="22"></line>
                                     <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
                                 </svg>
                             </button>
-                            <button type="button" class="lumina-card-menu-btn" data-note-id="${note.id}" title="More options">
+                            <button type="button" class="nexus-card-menu-btn" data-note-id="${note.id}" title="More options">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
                                     <circle cx="12" cy="5" r="2"></circle>
                                     <circle cx="12" cy="12" r="2"></circle>
@@ -21224,22 +21271,22 @@ ${script}`;
                             </button>
                         </div>
                     </div>
-                    <div class="lumina-card-body">
-                        <h3 class="lumina-card-title">${titleHtml}</h3>
-                        <p class="lumina-card-snippet">${snippetHtml}</p>
+                    <div class="nexus-card-body">
+                        <h3 class="nexus-card-title">${titleHtml}</h3>
+                        <p class="nexus-card-snippet">${snippetHtml}</p>
                     </div>
-                    <div class="lumina-card-footer">
+                    <div class="nexus-card-footer">
                         <span>${timeStr}</span>
                     </div>
                 </div>
             `;
       };
-      const containerClass = this.viewMode === "list" ? "lumina-hub-list" : "lumina-hub-grid";
+      const containerClass = this.viewMode === "list" ? "nexus-hub-list" : "nexus-hub-grid";
       let html = "";
       if (pinned.length > 0) {
         html += `
-                <div class="lumina-section-block">
-                    <div class="lumina-section-header">
+                <div class="nexus-section-block">
+                    <div class="nexus-section-header">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                         <span>Pinned</span>
                     </div>
@@ -21252,8 +21299,8 @@ ${script}`;
       if (unpinned.length > 0) {
         if (pinned.length > 0) {
           html += `
-                    <div class="lumina-section-block">
-                        <div class="lumina-section-header">
+                    <div class="nexus-section-block">
+                        <div class="nexus-section-header">
                             <span>Other Notes</span>
                         </div>
                         <div class="${containerClass}">
@@ -21273,7 +21320,7 @@ ${script}`;
       this.bindCardInteractions(notes);
     }
     bindCardInteractions(notes) {
-      this.cardsContainer.querySelectorAll(".lumina-hub-card").forEach((card) => {
+      this.cardsContainer.querySelectorAll(".nexus-hub-card").forEach((card) => {
         const noteId = card.getAttribute("data-note-id");
         const note = notes.find((n) => n.id === noteId);
         card.addEventListener("dragstart", (e) => {
@@ -21285,11 +21332,11 @@ ${script}`;
           card.classList.remove("is-dragging");
         });
         card.addEventListener("click", (e) => {
-          if (e.target.closest(".lumina-card-top-right") || e.target.closest(".lumina-card-checkbox")) {
+          if (e.target.closest(".nexus-card-top-right") || e.target.closest(".nexus-card-checkbox")) {
             return;
           }
           if (this.isBatchMode) {
-            const chk = card.querySelector(".lumina-card-checkbox");
+            const chk = card.querySelector(".nexus-card-checkbox");
             if (chk) {
               chk.checked = !chk.checked;
               this.handleToggleCardSelection(noteId, chk.checked, card);
@@ -21298,14 +21345,14 @@ ${script}`;
           }
           this.loadNote(noteId);
         });
-        const checkbox = card.querySelector(".lumina-card-checkbox");
+        const checkbox = card.querySelector(".nexus-card-checkbox");
         if (checkbox) {
           checkbox.addEventListener("change", (e) => {
             e.stopPropagation();
             this.handleToggleCardSelection(noteId, checkbox.checked, card);
           });
         }
-        const pinBtn = card.querySelector(".lumina-card-pin-btn");
+        const pinBtn = card.querySelector(".nexus-card-pin-btn");
         if (pinBtn) {
           pinBtn.addEventListener("click", async (e) => {
             e.stopPropagation();
@@ -21314,7 +21361,7 @@ ${script}`;
             await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
           });
         }
-        const menuBtn = card.querySelector(".lumina-card-menu-btn");
+        const menuBtn = card.querySelector(".nexus-card-menu-btn");
         if (menuBtn) {
           menuBtn.addEventListener("click", async (e) => {
             e.stopPropagation();
@@ -21349,13 +21396,13 @@ ${script}`;
       const isPinned2 = !!note.pinned;
       const pinLabel = isPinned2 ? "Unpin note" : "Pin note";
       const moveItems = collections.filter((c) => c.id !== note.collectionId).map((c) => `
-                <button class="notes-ctx-item notes-ctx-move-item" data-col-id="${c.id}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+                <button class="notes-ctx-item notes-ctx-move-item" data-col-id="${c.id}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                     <span>${escapeHtml3(c.name)}</span>
                 </button>
             `).join("");
       menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-pin" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+            <button class="notes-ctx-item" id="ctx-pin" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned2 ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="17" x2="12" y2="22"></line>
                     <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
@@ -21363,12 +21410,12 @@ ${script}`;
                 <span>${pinLabel}</span>
             </button>
             ${moveItems.length ? `
-                <div style="height:1px;background:var(--lumina-ui-border);margin:4px 0;"></div>
-                <div style="padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--lumina-text-tertiary);">Move to</div>
+                <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
+                <div style="padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--nexus-text-tertiary);">Move to</div>
                 ${moveItems}
             ` : ""}
-            <div style="height:1px;background:var(--lumina-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-danger-color);">
+            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
+            <button class="notes-ctx-item notes-ctx-danger" id="ctx-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6l-1 14H6L5 6"></path>
@@ -21428,7 +21475,7 @@ ${script}`;
       if (name && typeof name === "string" && name.trim()) {
         const newCol = await NotesManager2.createCollection(name.trim());
         this.activeCollectionId = newCol.id;
-        localStorage.setItem("lumina_active_collection_id", newCol.id);
+        localStorage.setItem("nexus_active_collection_id", newCol.id);
         this.updateUrlParams();
         await this.renderCollections();
         await this.renderNotesList();
@@ -21460,8 +21507,6 @@ ${script}`;
       await this.updateCollectionPickerPill(note);
       await this.updatePinDetailBtn(note);
       await this.initEditorInstance(note.content);
-      const blocks = Array.isArray(note.content) ? note.content : [];
-      this.updateWordCount(blocks);
     }
     async updatePinDetailBtn(note) {
       if (!this.pinDetailBtn || !this.pinDetailLabel) return;
@@ -21480,21 +21525,21 @@ ${script}`;
       if (this.editorContainer) {
         this.editorContainer.innerHTML = "";
       }
-      if (!window.LuminaBlockNote) {
-        if (typeof window.luminaLoadScript === "function") {
+      if (!window.NexusBlockNote) {
+        if (typeof window.nexusLoadScript === "function") {
           try {
             const cssUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("lib/vendor/blocknote.css") : "../../lib/vendor/blocknote.css";
             const jsUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("lib/vendor/blocknote.js") : "../../lib/vendor/blocknote.js";
             await Promise.all([
-              window.luminaLoadCSS(cssUrl),
-              window.luminaLoadScript(jsUrl)
+              window.nexusLoadCSS(cssUrl),
+              window.nexusLoadScript(jsUrl)
             ]);
           } catch (e) {
             console.error("Failed to load BlockNote dynamic scripts:", e);
           }
         }
       }
-      if (!window.LuminaBlockNote) {
+      if (!window.NexusBlockNote) {
         console.error("BlockNote library is not loaded");
         return;
       }
@@ -21505,14 +21550,13 @@ ${script}`;
         } else if (initialData?.blocks && Array.isArray(initialData.blocks)) {
           initialBlocks = initialData.blocks;
         }
-        this.blocknoteInstance = window.LuminaBlockNote.mount(
+        this.blocknoteInstance = window.NexusBlockNote.mount(
           this.editorContainer,
           initialBlocks,
           (updatedBlocks) => {
             this.triggerAutoSave(updatedBlocks);
           }
         );
-        this._bindSelectionCount();
       } catch (err) {
         console.error("Failed to initialize BlockNote:", err);
       }
@@ -21521,7 +21565,6 @@ ${script}`;
       if (this.autoSaveTimer) {
         clearTimeout(this.autoSaveTimer);
       }
-      this.updateWordCount(blocksFromEvent || (this.blocknoteInstance ? this.blocknoteInstance.getBlocks() : []));
       this.autoSaveTimer = setTimeout(async () => {
         if (!this.activeNoteId || !this.blocknoteInstance) return;
         try {
@@ -21535,58 +21578,6 @@ ${script}`;
           console.warn("Auto-save error:", e);
         }
       }, 400);
-    }
-    updateWordCount(blocks, selectionText) {
-      if (!this.wordCountEl) return;
-      if (selectionText && selectionText.trim()) {
-        const words2 = selectionText.trim().split(/\s+/).filter(Boolean).length;
-        this.wordCountEl.textContent = `${words2} ${words2 === 1 ? "word" : "words"} selected`;
-        const bar2 = document.getElementById("notes-word-count-bar");
-        if (bar2) bar2.classList.add("has-selection");
-        return;
-      }
-      const bar = document.getElementById("notes-word-count-bar");
-      if (bar) bar.classList.remove("has-selection");
-      let fullText = "";
-      if (Array.isArray(blocks)) {
-        for (const block of blocks) {
-          if (block.content && Array.isArray(block.content)) {
-            fullText += block.content.map((i) => i.text || "").join(" ") + " ";
-          }
-          if (block.children && Array.isArray(block.children)) {
-            for (const child of block.children) {
-              if (child.content && Array.isArray(child.content)) {
-                fullText += child.content.map((i) => i.text || "").join(" ") + " ";
-              }
-            }
-          }
-        }
-      }
-      fullText = fullText.trim();
-      const words = fullText ? fullText.split(/\s+/).filter(Boolean).length : 0;
-      this.wordCountEl.textContent = `${words.toLocaleString()} ${words === 1 ? "word" : "words"}`;
-    }
-    _bindSelectionCount() {
-      if (this._selectionHandler) {
-        document.removeEventListener("selectionchange", this._selectionHandler);
-      }
-      this._selectionHandler = () => {
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed) {
-          if (this.blocknoteInstance) {
-            const blocks = this.blocknoteInstance.getBlocks ? this.blocknoteInstance.getBlocks() : [];
-            this.updateWordCount(blocks);
-          }
-          return;
-        }
-        const editorEl = this.editorContainer;
-        if (!editorEl) return;
-        const anchorNode = sel.anchorNode;
-        if (!editorEl.contains(anchorNode)) return;
-        const selectedText = sel.toString();
-        this.updateWordCount(null, selectedText);
-      };
-      document.addEventListener("selectionchange", this._selectionHandler);
     }
     initCollectionPickerPill() {
       if (!this.colPickerPill) return;
@@ -21888,7 +21879,7 @@ ${extractNoteText(note.content)}`;
     }
     loadLastVoiceSettings() {
       try {
-        const raw = localStorage.getItem("lumina_tts_last_settings");
+        const raw = localStorage.getItem("nexus_tts_last_settings");
         if (raw) {
           const settings = JSON.parse(raw);
           if (settings.mode) this.currentMode = settings.mode;
@@ -21915,7 +21906,7 @@ ${extractNoteText(note.content)}`;
           accent: this.selectedAccent,
           audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile
         };
-        localStorage.setItem("lumina_tts_last_settings", JSON.stringify(settings));
+        localStorage.setItem("nexus_tts_last_settings", JSON.stringify(settings));
       } catch (_) {
       }
     }
@@ -22195,8 +22186,8 @@ ${extractNoteText(note.content)}`;
             const newTitle = this.heroTitle.value.trim() || "Untitled Audio";
             await TTSDB2.updateRecordingTitle(this.currentRecordingId, newTitle);
             await this.loadRecordings();
-            if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-              LuminaSync.triggerDebouncedSync();
+            if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+              NexusSync.triggerDebouncedSync();
             }
           }
         });
@@ -22413,7 +22404,7 @@ ${extractNoteText(note.content)}`;
       }
       if (voices.length === 0) {
         this.voiceCardsContainer.innerHTML = `
-                <div style="padding: 16px; text-align: center; color: var(--lumina-text-muted, #94a3b8); font-size: 0.8rem;">
+                <div style="padding: 16px; text-align: center; color: var(--nexus-text-muted, #94a3b8); font-size: 0.8rem;">
                     No voices matching the selected filters.
                 </div>
             `;
@@ -22571,8 +22562,8 @@ ${extractNoteText(note.content)}`;
           const id = btn.dataset.id;
           await TTSDB2.toggleStar(id);
           await this.loadRecordings();
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
         });
       });
@@ -22781,8 +22772,8 @@ ${extractNoteText(note.content)}`;
       }
       this.showStatus("", false);
       this.renderRecordingsList();
-      if (typeof LuminaViewManager !== "undefined" && typeof LuminaViewManager.updateUrl === "function") {
-        LuminaViewManager.updateUrl("tts", { recordingId: rec.id });
+      if (typeof NexusViewManager !== "undefined" && typeof NexusViewManager.updateUrl === "function") {
+        NexusViewManager.updateUrl("tts", { recordingId: rec.id });
       }
       if (this.page) {
         this.page.classList.add("show-studio");
@@ -22812,8 +22803,8 @@ ${extractNoteText(note.content)}`;
       this.currentWavBlob = null;
       this.audioElement.pause();
       this.audioElement.src = "";
-      if (typeof LuminaViewManager !== "undefined" && typeof LuminaViewManager.updateUrl === "function") {
-        LuminaViewManager.updateUrl("tts", {});
+      if (typeof NexusViewManager !== "undefined" && typeof NexusViewManager.updateUrl === "function") {
+        NexusViewManager.updateUrl("tts", {});
       }
       if (this.modeSwitcher) this.modeSwitcher.style.display = "flex";
       if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "block";
@@ -22893,8 +22884,8 @@ ${extractNoteText(note.content)}`;
         this.resetStudioForNew();
       }
       await this.loadRecordings();
-      if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-        LuminaSync.triggerDebouncedSync();
+      if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+        NexusSync.triggerDebouncedSync();
       }
     }
     setMode(mode) {
@@ -22992,7 +22983,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
     async getCustomPresets() {
       try {
-        const raw = localStorage.getItem("lumina_tts_custom_presets");
+        const raw = localStorage.getItem("nexus_tts_custom_presets");
         return raw ? JSON.parse(raw) : [];
       } catch (_) {
         return [];
@@ -23000,7 +22991,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
     async saveCustomPresets(presets) {
       try {
-        localStorage.setItem("lumina_tts_custom_presets", JSON.stringify(presets));
+        localStorage.setItem("nexus_tts_custom_presets", JSON.stringify(presets));
         this.renderCustomPresets();
       } catch (_) {
       }
@@ -23147,8 +23138,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
             durationSeconds: result.durationSeconds,
             audioBlob: result.blob
           });
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           if (typeof GroqAligner !== "undefined") {
             this.triggerBackgroundGroqAlign(savedItem);
@@ -23241,7 +23232,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
   }
 
   // src/components/dictionary/dictionary_popup.js
-  var LuminaDictionaryPopup2 = {
+  var NexusDictionaryPopup2 = {
     instance: null,
     currentWord: "",
     currentSource: "dictionary",
@@ -23283,8 +23274,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
       const width = dimensions.dictPopupWidth || 420;
       const height = dimensions.dictPopupHeight || 460;
       const popup = document.createElement("div");
-      popup.id = "lumina-dictionary-popup";
-      popup.className = "lumina-dictionary-popup";
+      popup.id = "nexus-dictionary-popup";
+      popup.className = "nexus-dictionary-popup";
       let x = options.x || window.innerWidth / 2 - width / 2;
       let y = options.y || window.innerHeight / 2 - height / 2;
       const viewportWidth = window.innerWidth;
@@ -23298,24 +23289,24 @@ Markets reached historic highs this morning following breakthroughs in artificia
       popup.style.width = `${width}px`;
       popup.style.height = `${height}px`;
       popup.innerHTML = `
-            <div class="lumina-dict-body">
-                <div class="lumina-dict-scroll-area">
-                    <div class="lumina-dict-loading-state">
-                        <div class="lumina-loading-spinner"></div>
+            <div class="nexus-dict-body">
+                <div class="nexus-dict-scroll-area">
+                    <div class="nexus-dict-loading-state">
+                        <div class="nexus-loading-spinner"></div>
                     </div>
                 </div>
             </div>
-            <div class="lumina-dict-footer" style="${this.currentSource === "translate" ? "display: none !important;" : ""}">
-                <div class="lumina-dict-tabs">
-                    <button class="lumina-dict-tab-btn ${this.currentSource === "dictionary" ? "active" : ""}" data-source="dictionary">Dictionary</button>
-                    <button class="lumina-dict-tab-btn ${this.currentSource === "images" ? "active" : ""}" data-source="images">Images</button>
+            <div class="nexus-dict-footer" style="${this.currentSource === "translate" ? "display: none !important;" : ""}">
+                <div class="nexus-dict-tabs">
+                    <button class="nexus-dict-tab-btn ${this.currentSource === "dictionary" ? "active" : ""}" data-source="dictionary">Dictionary</button>
+                    <button class="nexus-dict-tab-btn ${this.currentSource === "images" ? "active" : ""}" data-source="images">Images</button>
                 </div>
             </div>
-            <div class="lumina-dict-resizer-right"></div>
-            <div class="lumina-dict-resizer-bottom"></div>
-            <div class="lumina-dict-resizer-corner"></div>
+            <div class="nexus-dict-resizer-right"></div>
+            <div class="nexus-dict-resizer-bottom"></div>
+            <div class="nexus-dict-resizer-corner"></div>
         `;
-      const shadowHost = document.getElementById("lumina-shadow-host");
+      const shadowHost = document.getElementById("nexus-shadow-host");
       if (shadowHost && shadowHost.shadowRoot) {
         shadowHost.shadowRoot.appendChild(popup);
       } else {
@@ -23327,7 +23318,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     },
     switchSource(source) {
       if (!this.instance || source === this.currentSource) return;
-      const tabs3 = this.instance.querySelectorAll(".lumina-dict-tab-btn");
+      const tabs3 = this.instance.querySelectorAll(".nexus-dict-tab-btn");
       const targetTab = Array.from(tabs3).find((t) => t.dataset.source === source);
       if (!targetTab) return;
       tabs3.forEach((t) => t.classList.remove("active"));
@@ -23340,16 +23331,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
     },
     setupEvents() {
       if (!this.instance) return;
-      const tabs3 = this.instance.querySelectorAll(".lumina-dict-tab-btn");
+      const tabs3 = this.instance.querySelectorAll(".nexus-dict-tab-btn");
       tabs3.forEach((tab) => {
         tab.onclick = () => {
           this.isManualSelection = true;
           this.switchSource(tab.dataset.source);
         };
       });
-      const cornerResizer = this.instance.querySelector(".lumina-dict-resizer-corner");
-      const rightResizer = this.instance.querySelector(".lumina-dict-resizer-right");
-      const bottomResizer = this.instance.querySelector(".lumina-dict-resizer-bottom");
+      const cornerResizer = this.instance.querySelector(".nexus-dict-resizer-corner");
+      const rightResizer = this.instance.querySelector(".nexus-dict-resizer-right");
+      const bottomResizer = this.instance.querySelector(".nexus-dict-resizer-bottom");
       let isResizing = false;
       let resizingMode = null;
       let startX, startY, startW, startH;
@@ -23396,7 +23387,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         if (!this.instance) return;
         const path = e.composedPath();
         const isInside = path.some(
-          (el) => el === this.instance || el.id === "lumina-dictionary-popup" || el.id === "lumina-shadow-host" || el.classList && el.classList.contains && el.classList.contains("lumina-dictionary-popup")
+          (el) => el === this.instance || el.id === "nexus-dictionary-popup" || el.id === "nexus-shadow-host" || el.classList && el.classList.contains && el.classList.contains("nexus-dictionary-popup")
         );
         if (!isInside) {
           this.hide();
@@ -23420,11 +23411,11 @@ Markets reached historic highs this morning following breakthroughs in artificia
     },
     showLoading(source) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!scrollArea) return;
       scrollArea.innerHTML = `
-            <div class="lumina-dict-loading-state">
-                <div class="lumina-loading-spinner"></div>
+            <div class="nexus-dict-loading-state">
+                <div class="nexus-loading-spinner"></div>
             </div>
         `;
     },
@@ -23495,7 +23486,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
           throw new Error(response?.error || "Failed to fetch");
         }
       } catch (err) {
-        console.error(`[Lumina Dict] Error in fetchData(${source}):`, err);
+        console.error(`[Nexus Dict] Error in fetchData(${source}):`, err);
         const errMessage = String(err?.message || err || "");
         const isForbidden = /\b403\b|HTTP Status 403|Forbidden/i.test(errMessage);
         const fallbackSource = isForbidden ? this.getFallbackSource(source) : null;
@@ -23504,7 +23495,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
           return;
         }
         if (source === this.currentSource) {
-          const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+          const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
           if (scrollArea) {
             let title = "Fetch Failed";
             let desc = err.message;
@@ -23515,11 +23506,11 @@ Markets reached historic highs this morning following breakthroughs in artificia
               icon = "\u{1F6AB}";
             }
             scrollArea.innerHTML = `
-                        <div class="lumina-dict-status-container status-error">
-                            <div class="lumina-dict-status-card">
-                                <div class="lumina-dict-status-icon">${icon}</div>
-                                <div class="lumina-dict-status-title">${title}</div>
-                                <div class="lumina-dict-status-desc">${desc}</div>
+                        <div class="nexus-dict-status-container status-error">
+                            <div class="nexus-dict-status-card">
+                                <div class="nexus-dict-status-icon">${icon}</div>
+                                <div class="nexus-dict-status-title">${title}</div>
+                                <div class="nexus-dict-status-desc">${desc}</div>
                             </div>
                         </div>
                     `;
@@ -23531,13 +23522,13 @@ Markets reached historic highs this morning following breakthroughs in artificia
     },
     renderImages(images) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!images || images.length === 0) {
         scrollArea.innerHTML = `
-                <div class="lumina-dict-status-container status-empty">
-                    <div class="lumina-dict-status-card">
-                        <div class="lumina-dict-status-icon">\u{1F4F8}</div>
-                        <div class="lumina-dict-status-title">No Results Found</div>
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">\u{1F4F8}</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
                     </div>
                 </div>
             `;
@@ -23545,19 +23536,19 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
       const displayImages = images.slice(0, 4);
       scrollArea.innerHTML = `
-            <div class="lumina-dict-images-grid">
+            <div class="nexus-dict-images-grid">
                 ${displayImages.map((img) => `
-                    <div class="lumina-dict-image-card">
-                        <div class="lumina-loading-spinner"></div>
+                    <div class="nexus-dict-image-card">
+                        <div class="nexus-loading-spinner"></div>
                         <img src="${img}" loading="lazy">
                     </div>
                 `).join("")}
             </div>
         `;
-      const cards = scrollArea.querySelectorAll(".lumina-dict-image-card");
+      const cards = scrollArea.querySelectorAll(".nexus-dict-image-card");
       cards.forEach((card) => {
         const img = card.querySelector("img");
-        const spinner = card.querySelector(".lumina-loading-spinner");
+        const spinner = card.querySelector(".nexus-loading-spinner");
         if (img) {
           img.onload = () => {
             if (spinner) spinner.style.setProperty("display", "none", "important");
@@ -23573,7 +23564,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     },
     renderTranslation(data) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!scrollArea) return;
       const escapeHTML = (str) => {
         if (!str) return "";
@@ -23585,54 +23576,54 @@ Markets reached historic highs this morning following breakthroughs in artificia
       let targetHTML = escapeHTML(data.translation || "");
       const isPreSplit = data.sentences && Array.isArray(data.sentences);
       if (isPreSplit) {
-        sourceHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || "")}</span>`).join(" ");
-        targetHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || "")}</span>`).join(" ");
+        sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || "")}</span>`).join(" ");
+        targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || "")}</span>`).join(" ");
       }
       scrollArea.innerHTML = `
-            <div class="lumina-dict-content-wrapper lumina-dict-translation-wrapper" style="padding: 12px;">
-                <div class="lumina-translation-container" style="margin: 0; width: 100%;">
-                    <div class="lumina-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ""}>
-                        <div class="lumina-translation-block" style="padding: 0 8px 0 0;">
-                            <div class="lumina-translation-source" data-copy-text="${safeOriginal}">
-                                <div class="lumina-translation-text">${sourceHTML}</div>
+            <div class="nexus-dict-content-wrapper nexus-dict-translation-wrapper" style="padding: 12px;">
+                <div class="nexus-translation-container" style="margin: 0; width: 100%;">
+                    <div class="nexus-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ""}>
+                        <div class="nexus-translation-block" style="padding: 0 8px 0 0;">
+                            <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
+                                <div class="nexus-translation-text">${sourceHTML}</div>
                             </div>
                         </div>
-                        <div class="lumina-translation-divider"></div>
-                        <div class="lumina-translation-block" style="padding: 0 0 0 8px;">
-                            <div class="lumina-translation-target" data-copy-text="${safeTranslation}">
-                                <div class="lumina-translation-text">${targetHTML}</div>
+                        <div class="nexus-translation-divider"></div>
+                        <div class="nexus-translation-block" style="padding: 0 0 0 8px;">
+                            <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
+                                <div class="nexus-translation-text">${targetHTML}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-      const cardContainer = scrollArea.querySelector(".lumina-translation-card");
-      if (cardContainer && typeof LuminaChatUI !== "undefined") {
-        LuminaChatUI._setupTranslationHighlight(cardContainer);
-        LuminaChatUI.balanceTranslationCard(cardContainer);
+      const cardContainer = scrollArea.querySelector(".nexus-translation-card");
+      if (cardContainer && typeof NexusChatUI !== "undefined") {
+        NexusChatUI._setupTranslationHighlight(cardContainer);
+        NexusChatUI.balanceTranslationCard(cardContainer);
       }
     },
     renderData(data) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!data || !data.entries || data.entries.length === 0) {
         scrollArea.innerHTML = `
-                <div class="lumina-dict-status-container status-empty">
-                    <div class="lumina-dict-status-card">
-                        <div class="lumina-dict-status-icon">\u{1F50D}</div>
-                        <div class="lumina-dict-status-title">No Results Found</div>
-                        <div class="lumina-dict-status-desc">Try checking spelling or choose another source.</div>
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">\u{1F50D}</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
+                        <div class="nexus-dict-status-desc">Try checking spelling or choose another source.</div>
                     </div>
                 </div>
             `;
         return;
       }
-      scrollArea.innerHTML = `<div class="lumina-dict-content-wrapper"></div>`;
-      const wrapper = scrollArea.querySelector(".lumina-dict-content-wrapper");
+      scrollArea.innerHTML = `<div class="nexus-dict-content-wrapper"></div>`;
+      const wrapper = scrollArea.querySelector(".nexus-dict-content-wrapper");
       data.entries.forEach((entry) => {
         const entryEl = document.createElement("div");
-        entryEl.className = "lumina-dict-popup-item";
+        entryEl.className = "nexus-dict-popup-item";
         entryEl.innerHTML = this.buildEntryHTML(entry, data.word);
         wrapper.appendChild(entryEl);
       });
@@ -23667,7 +23658,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
     },
     setupAudioListeners(container2) {
-      const audioBtns = container2.querySelectorAll(".lumina-dict-popup-audio");
+      const audioBtns = container2.querySelectorAll(".nexus-dict-popup-audio");
       let _audioCtx = null;
       const getAudioCtx = () => {
         if (!_audioCtx || _audioCtx.state === "closed") {
@@ -23803,55 +23794,55 @@ Markets reached historic highs this morning following breakthroughs in artificia
     buildEntryHTML(entry, word) {
       let senseMeaningIndex = 1;
       return `
-            <div class="lumina-dict-popup-meta">
-                <div class="lumina-dict-header-row">
-                    <span class="lumina-dict-popup-title">${entry.word || word}</span>
-                    ${entry.pos ? `<span class="lumina-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ""}
+            <div class="nexus-dict-popup-meta">
+                <div class="nexus-dict-header-row">
+                    <span class="nexus-dict-popup-title">${entry.word || word}</span>
+                    ${entry.pos ? `<span class="nexus-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ""}
                 </div>
-                <div class="lumina-dict-popup-prons">
+                <div class="nexus-dict-popup-prons">
                     ${entry.uk?.ipa || entry.uk?.audio ? `
-                        <div class="lumina-dict-pron-group uk">
-                            <span class="lumina-dict-lang">UK</span>
-                            <button class="lumina-dict-popup-audio"
+                        <div class="nexus-dict-pron-group uk">
+                            <span class="nexus-dict-lang">UK</span>
+                            <button class="nexus-dict-popup-audio"
                                 data-text="${entry.word || word}" data-lang="en-GB"
                                 ${entry.uk?.audio ? `data-url="${entry.uk.audio}"` : ""}>
                                 ${this.getSpeakerSVG()}
                             </button>
-                            ${entry.uk?.ipa ? `<span class="lumina-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
+                            ${entry.uk?.ipa ? `<span class="nexus-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
                         </div>
                     ` : ""}
                     ${entry.us?.ipa || entry.us?.audio ? `
-                        <div class="lumina-dict-pron-group us">
-                            <span class="lumina-dict-lang">US</span>
-                            <button class="lumina-dict-popup-audio"
+                        <div class="nexus-dict-pron-group us">
+                            <span class="nexus-dict-lang">US</span>
+                            <button class="nexus-dict-popup-audio"
                                 data-text="${entry.word || word}" data-lang="en-US"
                                 ${entry.us?.audio ? `data-url="${entry.us.audio}"` : ""}>
                                 ${this.getSpeakerSVG()}
                             </button>
-                            ${entry.us?.ipa ? `<span class="lumina-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
+                            ${entry.us?.ipa ? `<span class="nexus-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
                         </div>
                     ` : ""}
                 </div>
             </div>
-            <div class="lumina-dict-popup-senses">
+            <div class="nexus-dict-popup-senses">
                 ${(entry.senses || []).map((sense) => {
         return `
-                        <div class="lumina-dict-popup-sense">
-                            ${sense.indicator ? `<div class="lumina-dict-sense-indicator">${sense.indicator}</div>` : ""}
+                        <div class="nexus-dict-popup-sense">
+                            ${sense.indicator ? `<div class="nexus-dict-sense-indicator">${sense.indicator}</div>` : ""}
                             ${(sense.definitions || []).map((def) => {
           const html = `
-                                    <div class="lumina-dict-popup-meaning">
-                                        <div class="lumina-dict-meaning-header">
-                                            ${sense.definitions.length > 1 ? `<span class="lumina-dict-meaning-number">${senseMeaningIndex}.</span>` : ""}
-                                            <span class="lumina-dict-meaning-text">${def.meaning}</span>
+                                    <div class="nexus-dict-popup-meaning">
+                                        <div class="nexus-dict-meaning-header">
+                                            ${sense.definitions.length > 1 ? `<span class="nexus-dict-meaning-number">${senseMeaningIndex}.</span>` : ""}
+                                            <span class="nexus-dict-meaning-text">${def.meaning}</span>
                                         </div>
                                         ${def.examples && def.examples.length > 0 ? `
-                                            <div class="lumina-dict-popup-examples">
+                                            <div class="nexus-dict-popup-examples">
                                                 ${def.examples.map((ex) => {
             const escaped = (entry.word || word || "").replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
             const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, "gi");
             const highlighted = ex.replace(regex, "<strong>$1</strong>");
-            return `<div class="lumina-dict-popup-example">${highlighted}</div>`;
+            return `<div class="nexus-dict-popup-example">${highlighted}</div>`;
           }).join("")}
                                             </div>
                                         ` : ""}
@@ -23868,21 +23859,21 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaDictionaryPopup = LuminaDictionaryPopup2;
+    window.NexusDictionaryPopup = NexusDictionaryPopup2;
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaDictionaryPopup = LuminaDictionaryPopup2;
+    globalThis.NexusDictionaryPopup = NexusDictionaryPopup2;
   }
 
   // src/components/modals/search_modal.js
-  var LuminaSearchModal2 = class {
+  var NexusSearchModal2 = class {
     static init() {
-      this.overlay = document.getElementById("lumina-search-overlay");
-      this.searchInput = document.getElementById("lumina-search-input");
-      this.resultsList = document.getElementById("lumina-search-results-list");
-      this.closeBtn = document.getElementById("lumina-search-close-btn");
-      this.overlayCloseBtn = document.getElementById("lumina-search-overlay-close-btn");
-      this.newChatBtn = document.getElementById("lumina-search-new-chat");
+      this.overlay = document.getElementById("nexus-search-overlay");
+      this.searchInput = document.getElementById("nexus-search-input");
+      this.resultsList = document.getElementById("nexus-search-results-list");
+      this.closeBtn = document.getElementById("nexus-search-close-btn");
+      this.overlayCloseBtn = document.getElementById("nexus-search-overlay-close-btn");
+      this.newChatBtn = document.getElementById("nexus-search-new-chat");
       if (!this.overlay) return;
       if (this.initialized) return;
       this.overlay.addEventListener("click", (e) => {
@@ -24050,7 +24041,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         });
         allGroups.forEach((groupName) => {
           const headerEl = document.createElement("div");
-          headerEl.className = "lumina-search-group-header";
+          headerEl.className = "nexus-search-group-header";
           headerEl.textContent = groupName;
           this.resultsList.appendChild(headerEl);
           grouped[groupName].forEach((session) => {
@@ -24061,18 +24052,18 @@ Markets reached historic highs this morning following breakthroughs in artificia
             if (!displayTitle) displayTitle = "Untitled Chat";
             const activeSessionId = this.getActiveSessionId();
             const isCurrent = activeSessionId === session.id;
-            const timeIndicatorHtml = isCurrent ? `<span class="lumina-search-item-current">current</span>` : `<span class="lumina-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
+            const timeIndicatorHtml = isCurrent ? `<span class="nexus-search-item-current">current</span>` : `<span class="nexus-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
             const itemEl = document.createElement("div");
-            itemEl.className = "lumina-search-item";
+            itemEl.className = "nexus-search-item";
             itemEl.innerHTML = `
-            <div class="lumina-search-item-content">
-              <div class="lumina-search-item-top">
-                <span class="lumina-search-item-title"></span>
+            <div class="nexus-search-item-content">
+              <div class="nexus-search-item-top">
+                <span class="nexus-search-item-title"></span>
                 ${timeIndicatorHtml}
               </div>
             </div>
           `;
-            itemEl.querySelector(".lumina-search-item-title").textContent = displayTitle;
+            itemEl.querySelector(".nexus-search-item-title").textContent = displayTitle;
             itemEl.addEventListener("click", () => this.openSession(session.id));
             this.resultsList.appendChild(itemEl);
           });
@@ -24116,26 +24107,26 @@ Markets reached historic highs this morning following breakthroughs in artificia
         }
         const finalResults = results.slice(0, 20);
         if (finalResults.length === 0) {
-          this.resultsList.innerHTML = `<div class="lumina-search-no-results">No chats found</div>`;
+          this.resultsList.innerHTML = `<div class="nexus-search-no-results">No chats found</div>`;
           return;
         }
         finalResults.forEach((item) => {
           const activeSessionId = this.getActiveSessionId();
           const isCurrent = activeSessionId === item.sessionId;
-          const timeIndicatorHtml = isCurrent ? `<span class="lumina-search-item-current">current</span>` : `<span class="lumina-search-item-date">${this.formatDate(item.timestamp)}</span>`;
+          const timeIndicatorHtml = isCurrent ? `<span class="nexus-search-item-current">current</span>` : `<span class="nexus-search-item-date">${this.formatDate(item.timestamp)}</span>`;
           const itemEl = document.createElement("div");
-          itemEl.className = "lumina-search-item";
+          itemEl.className = "nexus-search-item";
           itemEl.innerHTML = `
-          <div class="lumina-search-item-content">
-            <div class="lumina-search-item-top">
-              <span class="lumina-search-item-title"></span>
+          <div class="nexus-search-item-content">
+            <div class="nexus-search-item-top">
+              <span class="nexus-search-item-title"></span>
               ${timeIndicatorHtml}
             </div>
-            <div class="lumina-search-item-snippet"></div>
+            <div class="nexus-search-item-snippet"></div>
           </div>
         `;
-          itemEl.querySelector(".lumina-search-item-title").textContent = item.title;
-          itemEl.querySelector(".lumina-search-item-snippet").innerHTML = this.getHighlightHtml(item.snippet, query);
+          itemEl.querySelector(".nexus-search-item-title").textContent = item.title;
+          itemEl.querySelector(".nexus-search-item-snippet").innerHTML = this.getHighlightHtml(item.snippet, query);
           itemEl.addEventListener("click", () => this.openSession(item.sessionId, item.messageIndex));
           this.resultsList.appendChild(itemEl);
         });
@@ -24160,7 +24151,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       if (typeof window.loadHistoryIntoNewTab === "function") {
         window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
       }
-      const sidebar = document.getElementById("lumina-sidebar");
+      const sidebar = document.getElementById("nexus-sidebar");
       const backdrop = document.querySelector(".sidebar-backdrop");
       if (sidebar) sidebar.classList.remove("active");
       if (backdrop) backdrop.classList.remove("active");
@@ -24172,9 +24163,9 @@ Markets reached historic highs this morning following breakthroughs in artificia
         const sid = activeSidebarItem.getAttribute("data-session-id");
         if (sid) return sid;
       }
-      if (typeof window.LuminaSelectionScope !== "undefined") {
-        const tabs3 = window.LuminaSelectionScope.getTabs();
-        const activeIndex = window.LuminaSelectionScope.getActiveTabIndex();
+      if (typeof window.NexusSelectionScope !== "undefined") {
+        const tabs3 = window.NexusSelectionScope.getTabs();
+        const activeIndex = window.NexusSelectionScope.getActiveTabIndex();
         if (tabs3 && activeIndex >= 0 && tabs3[activeIndex]) {
           return tabs3[activeIndex].sessionId;
         }
@@ -24199,22 +24190,22 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaSearchModal = LuminaSearchModal2;
+    window.NexusSearchModal = NexusSearchModal2;
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", () => {
-        if (document.getElementById("lumina-search-overlay")) {
-          LuminaSearchModal2.init();
+        if (document.getElementById("nexus-search-overlay")) {
+          NexusSearchModal2.init();
         }
       });
-    } else if (document.getElementById("lumina-search-overlay")) {
-      LuminaSearchModal2.init();
+    } else if (document.getElementById("nexus-search-overlay")) {
+      NexusSearchModal2.init();
     }
   }
 
   // src/components/modals/settings/dom_templates.js
   var SETTINGS_TEMPLATES = {
-    "lumina-providerItemTemplate": `
-    <div class="lumina-settings-provider-card provider-item">
+    "nexus-providerItemTemplate": `
+    <div class="nexus-settings-provider-card provider-item">
         <div class="provider-item-content">
             <div class="provider-logo-container"></div>
             <div class="provider-info">
@@ -24224,21 +24215,21 @@ Markets reached historic highs this morning following breakthroughs in artificia
         </div>
     </div>
   `,
-    "lumina-chainItemTemplate": `
-    <div class="lumina-settings-chain-card chain-item" draggable="true">
+    "nexus-chainItemTemplate": `
+    <div class="nexus-settings-chain-card chain-item" draggable="true">
         <span class="chain-number"></span>
         <div class="chain-details">
             <span class="chain-title"></span>
             <span class="chain-subtitle"></span>
         </div>
         <div class="chain-actions">
-            <button type="button" class="lumina-settings-icon-btn edit" title="Edit Model">
+            <button type="button" class="nexus-settings-icon-btn edit" title="Edit Model">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
             </button>
-            <button type="button" class="lumina-settings-icon-btn remove" title="Remove">
+            <button type="button" class="nexus-settings-icon-btn remove" title="Remove">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -24247,20 +24238,20 @@ Markets reached historic highs this morning following breakthroughs in artificia
         </div>
     </div>
   `,
-    "lumina-mappingRowTemplate": `
-    <div class="lumina-settings-chain-card chain-item">
+    "nexus-mappingRowTemplate": `
+    <div class="nexus-settings-chain-card chain-item">
         <span class="chain-number mapping-number"></span>
         <div class="chain-details">
             <span class="chain-title mapping-name"></span>
         </div>
         <div class="chain-actions">
-            <button type="button" class="lumina-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
+            <button type="button" class="nexus-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
             </button>
-            <button type="button" class="lumina-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
+            <button type="button" class="nexus-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -24269,20 +24260,20 @@ Markets reached historic highs this morning following breakthroughs in artificia
         </div>
     </div>
   `,
-    "lumina-userFactItemTemplate": `
-    <div class="lumina-settings-chain-card chain-item">
+    "nexus-userFactItemTemplate": `
+    <div class="nexus-settings-chain-card chain-item">
         <span class="chain-number fact-index"></span>
         <div class="chain-details">
             <span class="chain-title fact-text"></span>
         </div>
         <div class="chain-actions">
-            <button type="button" class="lumina-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
+            <button type="button" class="nexus-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
             </button>
-            <button type="button" class="lumina-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
+            <button type="button" class="nexus-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -24291,21 +24282,21 @@ Markets reached historic highs this morning following breakthroughs in artificia
         </div>
     </div>
   `,
-    "lumina-annotationRowTemplate": `
-    <div class="lumina-settings-chain-card chain-item">
+    "nexus-annotationRowTemplate": `
+    <div class="nexus-settings-chain-card chain-item">
         <span class="chain-number annotation-number"></span>
         <div class="chain-details annotation-details">
             <div class="annotation-color-preview"></div>
             <span class="chain-title annotation-shortcut-text font-medium"></span>
         </div>
         <div class="chain-actions">
-            <button type="button" class="lumina-settings-icon-btn edit annotation-edit-btn" title="Edit Highlight">
+            <button type="button" class="nexus-settings-icon-btn edit annotation-edit-btn" title="Edit Highlight">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
             </button>
-            <button type="button" class="lumina-settings-icon-btn remove annotation-delete-btn" title="Delete Highlight">
+            <button type="button" class="nexus-settings-icon-btn remove annotation-delete-btn" title="Delete Highlight">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -24358,15 +24349,15 @@ Markets reached historic highs this morning following breakthroughs in artificia
   }
 
   // src/components/modals/settings_modal.js
-  var LuminaSettingsModal2 = class _LuminaSettingsModal {
+  var NexusSettingsModal2 = class _NexusSettingsModal {
     static init() {
       this.injectDOMTemplates();
-      this.overlay = document.getElementById("lumina-settings-overlay");
-      this.closeBtn = document.getElementById("lumina-settings-close-btn");
-      this.navContainer = document.getElementById("lumina-settings-nav");
-      this.mainContainer = document.querySelector(".lumina-settings-main");
-      this.sections = document.querySelectorAll(".lumina-settings-section");
-      this.navItems = document.querySelectorAll(".lumina-settings-nav-item");
+      this.overlay = document.getElementById("nexus-settings-overlay");
+      this.closeBtn = document.getElementById("nexus-settings-close-btn");
+      this.navContainer = document.getElementById("nexus-settings-nav");
+      this.mainContainer = document.querySelector(".nexus-settings-main");
+      this.sections = document.querySelectorAll(".nexus-settings-section");
+      this.navItems = document.querySelectorAll(".nexus-settings-nav-item");
       if (!this.overlay) return;
       this.closeBtn.addEventListener("click", () => this.hide());
       this.overlay.addEventListener("click", (e) => {
@@ -24389,20 +24380,20 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.bindPersonalizationTab();
       this.bindKeyboardTab();
       this.bindAccountTab();
-      const toggleLuminaKeyBtn = document.getElementById("toggle-lumina-key-visibility");
-      const luminaApiKeyInput = document.getElementById("lumina-provider-form-apikey");
-      const luminaEyeOpen = document.getElementById("lumina-eye-open-icon");
-      const luminaEyeClosed = document.getElementById("lumina-eye-closed-icon");
-      if (toggleLuminaKeyBtn && luminaApiKeyInput) {
-        toggleLuminaKeyBtn.addEventListener("click", () => {
-          if (luminaApiKeyInput.type === "password") {
-            luminaApiKeyInput.type = "text";
-            luminaEyeOpen.style.display = "none";
-            luminaEyeClosed.style.display = "block";
+      const toggleNexusKeyBtn = document.getElementById("toggle-nexus-key-visibility");
+      const nexusApiKeyInput = document.getElementById("nexus-provider-form-apikey");
+      const nexusEyeOpen = document.getElementById("nexus-eye-open-icon");
+      const nexusEyeClosed = document.getElementById("nexus-eye-closed-icon");
+      if (toggleNexusKeyBtn && nexusApiKeyInput) {
+        toggleNexusKeyBtn.addEventListener("click", () => {
+          if (nexusApiKeyInput.type === "password") {
+            nexusApiKeyInput.type = "text";
+            nexusEyeOpen.style.display = "none";
+            nexusEyeClosed.style.display = "block";
           } else {
-            luminaApiKeyInput.type = "password";
-            luminaEyeOpen.style.display = "block";
-            luminaEyeClosed.style.display = "none";
+            nexusApiKeyInput.type = "password";
+            nexusEyeOpen.style.display = "block";
+            nexusEyeClosed.style.display = "none";
           }
         });
       }
@@ -24439,7 +24430,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         item.classList.toggle("active", item.getAttribute("data-section") === sectionId);
       });
       this.sections.forEach((section) => {
-        section.classList.toggle("active", section.id === `lumina-settings-sec-${sectionId}`);
+        section.classList.toggle("active", section.id === `nexus-settings-sec-${sectionId}`);
       });
       if (this.mainContainer) this.mainContainer.scrollTop = 0;
     }
@@ -24496,15 +24487,15 @@ Markets reached historic highs this morning following breakthroughs in artificia
         const accentVal = items.accentColor || "default";
         const fontFamilyVal = items.fontFamily || "default";
         const fontWeightVal = items.fontWeight || "400";
-        this.setDropdownValue("lumina-settings-theme", "lumina-settings-theme-menu", themeVal, "System");
-        this.setDropdownValue("lumina-settings-contrast", "lumina-settings-contrast-menu", contrastVal, "System");
-        this.setDropdownValue("lumina-settings-accent", "lumina-settings-accent-menu", accentVal, "Default");
-        this.setDropdownValue("lumina-settings-fontfamily", "lumina-settings-fontfamily-menu", fontFamilyVal, "Default");
+        this.setDropdownValue("nexus-settings-theme", "nexus-settings-theme-menu", themeVal, "System");
+        this.setDropdownValue("nexus-settings-contrast", "nexus-settings-contrast-menu", contrastVal, "System");
+        this.setDropdownValue("nexus-settings-accent", "nexus-settings-accent-menu", accentVal, "Default");
+        this.setDropdownValue("nexus-settings-fontfamily", "nexus-settings-fontfamily-menu", fontFamilyVal, "Default");
         const weightLabels = { "300": "Thin", "350": "Book", "400": "Normal", "450": "Medium", "500": "Semi-bold" };
-        this.setDropdownValue("lumina-settings-fontweight", "lumina-settings-fontweight-menu", fontWeightVal, weightLabels[fontWeightVal] || "Normal");
-        document.body.className = document.body.className.replace(/\blumina-font-\S+/g, "");
-        document.body.classList.add(`lumina-font-${fontFamilyVal}`);
-        document.documentElement.style.setProperty("--lumina-weight-base", fontWeightVal);
+        this.setDropdownValue("nexus-settings-fontweight", "nexus-settings-fontweight-menu", fontWeightVal, weightLabels[fontWeightVal] || "Normal");
+        document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
+        document.body.classList.add(`nexus-font-${fontFamilyVal}`);
+        document.documentElement.style.setProperty("--nexus-weight-base", fontWeightVal);
         let mode = themeVal === "auto" ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" : themeVal;
         if (typeof chrome !== "undefined" && chrome.extension && chrome.extension.inIncognitoContext) {
           mode = "dark";
@@ -24512,32 +24503,32 @@ Markets reached historic highs this morning following breakthroughs in artificia
         document.body.setAttribute("data-theme", mode);
         document.body.setAttribute("data-accent", accentVal);
         document.body.setAttribute("data-contrast", contrastVal);
-        this.setDropdownValue("lumina-settings-language", "lumina-settings-language-menu", items.language || "auto", "Auto-detect");
-        document.getElementById("lumina-settings-dictation-toggle").checked = items.dictationEnabled !== false;
-        this.setDropdownValue("lumina-settings-spoken-lang", "lumina-settings-spoken-lang-menu", items.spokenLanguage || "auto", "Auto-detect");
-        this.setDropdownValue("lumina-settings-voice-select", "lumina-settings-voice-select-menu", items.voice || "sol", "Sol");
-        document.getElementById("lumina-settings-separate-voice").checked = items.separateVoiceEnabled === true;
-        this.setDropdownValue("lumina-settings-tts-model", "lumina-settings-tts-model-menu", items.ttsModel || "gemini-2.5-flash", "Gemini 2.5 Flash");
-        this.setDropdownValue("lumina-settings-stt-model", "lumina-settings-stt-model-menu", items.sttModel || "whisper-large-v3-turbo", "Whisper Large V3 Turbo (Fastest)");
+        this.setDropdownValue("nexus-settings-language", "nexus-settings-language-menu", items.language || "auto", "Auto-detect");
+        document.getElementById("nexus-settings-dictation-toggle").checked = items.dictationEnabled !== false;
+        this.setDropdownValue("nexus-settings-spoken-lang", "nexus-settings-spoken-lang-menu", items.spokenLanguage || "auto", "Auto-detect");
+        this.setDropdownValue("nexus-settings-voice-select", "nexus-settings-voice-select-menu", items.voice || "sol", "Sol");
+        document.getElementById("nexus-settings-separate-voice").checked = items.separateVoiceEnabled === true;
+        this.setDropdownValue("nexus-settings-tts-model", "nexus-settings-tts-model-menu", items.ttsModel || "gemini-2.5-flash", "Gemini 2.5 Flash");
+        this.setDropdownValue("nexus-settings-stt-model", "nexus-settings-stt-model-menu", items.sttModel || "whisper-large-v3-turbo", "Whisper Large V3 Turbo (Fastest)");
         const fsVal = items.fontSize || 14;
-        const fsInput = document.getElementById("lumina-settings-fontsize");
+        const fsInput = document.getElementById("nexus-settings-fontsize");
         if (fsInput) fsInput.value = fsVal;
-        const toneInput = document.getElementById("lumina-settings-base-tone-input");
+        const toneInput = document.getElementById("nexus-settings-base-tone-input");
         if (toneInput) {
           const toneVal = items.baseTone || "default";
           toneInput.dataset.value = toneVal;
-          const toneMenu = document.getElementById("lumina-settings-base-tone-menu");
+          const toneMenu = document.getElementById("nexus-settings-base-tone-menu");
           const matchedDiv = toneMenu?.querySelector(`div[data-val="${toneVal}"]`);
           toneInput.value = matchedDiv ? matchedDiv.textContent : "Default";
           this.adjustInputWidthToContent(toneInput);
         }
-        document.getElementById("lumina-settings-char-warm").value = items.charWarm || 3;
-        document.getElementById("lumina-settings-char-enthusiastic").value = items.charEnthusiastic || 3;
-        document.getElementById("lumina-settings-char-headers").value = items.charHeaders || 3;
-        document.getElementById("lumina-settings-char-emoji").value = items.charEmoji || 3;
-        document.getElementById("lumina-settings-about-nickname").value = items.aboutNickname || "";
-        document.getElementById("lumina-settings-about-occupation").value = items.aboutOccupation || "";
-        const interestsTextarea = document.getElementById("lumina-settings-about-interests");
+        document.getElementById("nexus-settings-char-warm").value = items.charWarm || 3;
+        document.getElementById("nexus-settings-char-enthusiastic").value = items.charEnthusiastic || 3;
+        document.getElementById("nexus-settings-char-headers").value = items.charHeaders || 3;
+        document.getElementById("nexus-settings-char-emoji").value = items.charEmoji || 3;
+        document.getElementById("nexus-settings-about-nickname").value = items.aboutNickname || "";
+        document.getElementById("nexus-settings-about-occupation").value = items.aboutOccupation || "";
+        const interestsTextarea = document.getElementById("nexus-settings-about-interests");
         if (interestsTextarea) {
           interestsTextarea.value = items.aboutInterests || "";
           interestsTextarea.dispatchEvent(new Event("input"));
@@ -24551,7 +24542,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         this.annotationShortcuts = items.annotationShortcuts || [];
         this.renderAnnotationShortcuts();
         this.loadShortcutsKeys(items);
-        const retentionInput = document.getElementById("lumina-history-retention-input");
+        const retentionInput = document.getElementById("nexus-history-retention-input");
         const savedRet = items.historyRetentionMonths !== void 0 ? items.historyRetentionMonths : 3;
         const matchingOpt = [
           { label: "1 Week", value: "0.25" },
@@ -24579,28 +24570,28 @@ Markets reached historic highs this morning following breakthroughs in artificia
         return el ? parseInt(el.value, 10) : fallback;
       };
       const settings = {
-        theme: getDropdownVal("lumina-settings-theme", "auto"),
-        contrast: getDropdownVal("lumina-settings-contrast", "auto"),
-        accentColor: getDropdownVal("lumina-settings-accent", "default"),
-        fontFamily: getDropdownVal("lumina-settings-fontfamily", "default"),
-        fontWeight: getDropdownVal("lumina-settings-fontweight", "400"),
-        fontSize: parseFloat(getVal("lumina-settings-fontsize", "14")) || 14,
-        language: getDropdownVal("lumina-settings-language", "auto"),
-        dictationEnabled: document.getElementById("lumina-settings-dictation-toggle") ? getChecked("lumina-settings-dictation-toggle") : true,
-        spokenLanguage: getDropdownVal("lumina-settings-spoken-lang", "auto"),
-        voice: getDropdownVal("lumina-settings-voice-select", "sol"),
-        separateVoiceEnabled: getChecked("lumina-settings-separate-voice"),
-        ttsModel: getDropdownVal("lumina-settings-tts-model", "gemini-2.5-flash"),
-        sttModel: getDropdownVal("lumina-settings-stt-model", "whisper-large-v3-turbo"),
-        baseTone: document.getElementById("lumina-settings-base-tone-input")?.dataset.value || "default",
-        charWarm: getInt("lumina-settings-char-warm", 3),
-        charEnthusiastic: getInt("lumina-settings-char-enthusiastic", 3),
-        charHeaders: getInt("lumina-settings-char-headers", 3),
-        charEmoji: getInt("lumina-settings-char-emoji", 3),
-        aboutNickname: getVal("lumina-settings-about-nickname").trim(),
-        aboutOccupation: getVal("lumina-settings-about-occupation").trim(),
-        aboutInterests: getVal("lumina-settings-about-interests").trim(),
-        historyRetentionMonths: parseFloat(document.getElementById("lumina-history-retention-input")?.dataset.value || "3")
+        theme: getDropdownVal("nexus-settings-theme", "auto"),
+        contrast: getDropdownVal("nexus-settings-contrast", "auto"),
+        accentColor: getDropdownVal("nexus-settings-accent", "default"),
+        fontFamily: getDropdownVal("nexus-settings-fontfamily", "default"),
+        fontWeight: getDropdownVal("nexus-settings-fontweight", "400"),
+        fontSize: parseFloat(getVal("nexus-settings-fontsize", "14")) || 14,
+        language: getDropdownVal("nexus-settings-language", "auto"),
+        dictationEnabled: document.getElementById("nexus-settings-dictation-toggle") ? getChecked("nexus-settings-dictation-toggle") : true,
+        spokenLanguage: getDropdownVal("nexus-settings-spoken-lang", "auto"),
+        voice: getDropdownVal("nexus-settings-voice-select", "sol"),
+        separateVoiceEnabled: getChecked("nexus-settings-separate-voice"),
+        ttsModel: getDropdownVal("nexus-settings-tts-model", "gemini-2.5-flash"),
+        sttModel: getDropdownVal("nexus-settings-stt-model", "whisper-large-v3-turbo"),
+        baseTone: document.getElementById("nexus-settings-base-tone-input")?.dataset.value || "default",
+        charWarm: getInt("nexus-settings-char-warm", 3),
+        charEnthusiastic: getInt("nexus-settings-char-enthusiastic", 3),
+        charHeaders: getInt("nexus-settings-char-headers", 3),
+        charEmoji: getInt("nexus-settings-char-emoji", 3),
+        aboutNickname: getVal("nexus-settings-about-nickname").trim(),
+        aboutOccupation: getVal("nexus-settings-about-occupation").trim(),
+        aboutInterests: getVal("nexus-settings-about-interests").trim(),
+        historyRetentionMonths: parseFloat(document.getElementById("nexus-history-retention-input")?.dataset.value || "3")
       };
       chrome.storage.local.set(settings, () => {
         if (typeof applyTheme === "function") {
@@ -24614,20 +24605,20 @@ Markets reached historic highs this morning following breakthroughs in artificia
         }
         document.body.setAttribute("data-accent", settings.accentColor);
         document.body.setAttribute("data-contrast", settings.contrast);
-        document.body.className = document.body.className.replace(/\blumina-font-\S+/g, "");
-        document.body.classList.add(`lumina-font-${settings.fontFamily}`);
-        document.documentElement.style.setProperty("--lumina-weight-base", settings.fontWeight);
+        document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
+        document.body.classList.add(`nexus-font-${settings.fontFamily}`);
+        document.documentElement.style.setProperty("--nexus-weight-base", settings.fontWeight);
         if (typeof applyFontSize === "function") {
           applyFontSize(settings.fontSize);
         }
       });
     }
     static bindGeneralTab() {
-      const setupKeyInput = document.getElementById("lumina-setup-provider-key");
-      const setupEndpointInput = document.getElementById("lumina-setup-provider-endpoint");
-      const keyToggleBtn = document.getElementById("lumina-setup-key-toggle");
-      const eyeOpen = document.getElementById("lumina-setup-eye-open");
-      const eyeClosed = document.getElementById("lumina-setup-eye-closed");
+      const setupKeyInput = document.getElementById("nexus-setup-provider-key");
+      const setupEndpointInput = document.getElementById("nexus-setup-provider-endpoint");
+      const keyToggleBtn = document.getElementById("nexus-setup-key-toggle");
+      const eyeOpen = document.getElementById("nexus-setup-eye-open");
+      const eyeClosed = document.getElementById("nexus-setup-eye-closed");
       if (keyToggleBtn && setupKeyInput) {
         keyToggleBtn.addEventListener("click", (e) => {
           e.preventDefault();
@@ -24646,10 +24637,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
       if (setupEndpointInput) {
         setupEndpointInput.addEventListener("input", () => this.saveSelectedProviderKey());
       }
-      const cancelModelBtn = document.getElementById("lumina-cancel-model-btn");
-      const saveModelBtn = document.getElementById("lumina-save-model-btn");
-      const closeModelPopupBtn = document.getElementById("lumina-model-popup-close-btn");
-      const modelPopupOverlay = document.getElementById("lumina-model-popup-overlay");
+      const cancelModelBtn = document.getElementById("nexus-cancel-model-btn");
+      const saveModelBtn = document.getElementById("nexus-save-model-btn");
+      const closeModelPopupBtn = document.getElementById("nexus-model-popup-close-btn");
+      const modelPopupOverlay = document.getElementById("nexus-model-popup-overlay");
       if (cancelModelBtn) cancelModelBtn.addEventListener("click", () => this.hideModelForm());
       if (saveModelBtn) saveModelBtn.addEventListener("click", () => this.addModelToChain());
       if (closeModelPopupBtn) closeModelPopupBtn.addEventListener("click", () => this.hideModelForm());
@@ -24658,12 +24649,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (e.target === modelPopupOverlay) this.hideModelForm();
         });
       }
-      this.setupDropdownInputs("lumina-model-form-provider", "lumina-model-form-provider-list");
-      this.setupDropdownInputs("lumina-model-form-model", "lumina-model-form-model-list");
-      this.setupDropdownInputs("lumina-model-form-max-tokens", "lumina-model-form-max-tokens-list");
-      this.setupDropdownInputs("lumina-setup-provider-input", "lumina-setup-provider-menu");
-      this.setupDropdownInputs("lumina-settings-tts-model", "lumina-settings-tts-model-menu");
-      this.setupDropdownInputs("lumina-settings-stt-model", "lumina-settings-stt-model-menu");
+      this.setupDropdownInputs("nexus-model-form-provider", "nexus-model-form-provider-list");
+      this.setupDropdownInputs("nexus-model-form-model", "nexus-model-form-model-list");
+      this.setupDropdownInputs("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list");
+      this.setupDropdownInputs("nexus-setup-provider-input", "nexus-setup-provider-menu");
+      this.setupDropdownInputs("nexus-settings-tts-model", "nexus-settings-tts-model-menu");
+      this.setupDropdownInputs("nexus-settings-stt-model", "nexus-settings-stt-model-menu");
     }
     static getDefaultProviders() {
       return getDefaultProviders();
@@ -24709,10 +24700,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
       return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
     }
     static renderProviders() {
-      const menu = document.getElementById("lumina-setup-provider-menu");
+      const menu = document.getElementById("nexus-setup-provider-menu");
       if (!menu) return;
       menu.innerHTML = this.providers.map((p) => `<div data-val="${p.id}">${p.name}</div>`).join("");
-      const input = document.getElementById("lumina-setup-provider-input");
+      const input = document.getElementById("nexus-setup-provider-input");
       let currentId = input?.dataset.value;
       if (!currentId || !this.providers.some((p) => p.id === currentId)) {
         currentId = this.providers[0]?.id || "openai-default";
@@ -24720,11 +24711,11 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.selectProviderSetup(currentId);
     }
     static selectProviderSetup(providerId) {
-      const input = document.getElementById("lumina-setup-provider-input");
-      const keyInput = document.getElementById("lumina-setup-provider-key");
-      const badge = document.getElementById("lumina-setup-provider-badge");
-      const endpointRow = document.getElementById("lumina-setup-endpoint-row");
-      const endpointInput = document.getElementById("lumina-setup-provider-endpoint");
+      const input = document.getElementById("nexus-setup-provider-input");
+      const keyInput = document.getElementById("nexus-setup-provider-key");
+      const badge = document.getElementById("nexus-setup-provider-badge");
+      const endpointRow = document.getElementById("nexus-setup-endpoint-row");
+      const endpointInput = document.getElementById("nexus-setup-provider-endpoint");
       if (!input) return;
       const p = this.providers.find((prov) => prov.id === providerId) || this.providers[0];
       if (!p) return;
@@ -24733,7 +24724,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       if (keyInput) {
         keyInput.value = p.apiKey || "";
       }
-      const getKeyLink = document.getElementById("lumina-setup-get-key-link");
+      const getKeyLink = document.getElementById("nexus-setup-get-key-link");
       if (getKeyLink) {
         if (p.apiKeyUrl) {
           getKeyLink.href = p.apiKeyUrl;
@@ -24752,9 +24743,9 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static saveSelectedProviderKey() {
-      const input = document.getElementById("lumina-setup-provider-input");
-      const keyInput = document.getElementById("lumina-setup-provider-key");
-      const endpointInput = document.getElementById("lumina-setup-provider-endpoint");
+      const input = document.getElementById("nexus-setup-provider-input");
+      const keyInput = document.getElementById("nexus-setup-provider-key");
+      const endpointInput = document.getElementById("nexus-setup-provider-endpoint");
       const providerId = input?.dataset.value;
       if (!providerId) return;
       const p = this.providers.find((prov) => prov.id === providerId);
@@ -24768,7 +24759,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static populateProviderDropdowns() {
-      const chainProvList = document.getElementById("lumina-model-form-provider-list");
+      const chainProvList = document.getElementById("nexus-model-form-provider-list");
       const configuredProviders = this.providers.filter(
         (p) => p.apiKey && p.apiKey.trim().length > 0 || p.id.includes("ollama") || p.id.includes("lmstudio") || p.id.includes("vllm") || p.id.includes("localai") || p.id.includes("local")
       );
@@ -24776,10 +24767,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
         if (configuredProviders.length > 0) {
           chainProvList.innerHTML = configuredProviders.map((p) => `<div data-val="${p.id}">${p.name}</div>`).join("");
         } else {
-          chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
+          chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--nexus-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
         }
       }
-      const retentionMenu = document.getElementById("lumina-history-retention-menu");
+      const retentionMenu = document.getElementById("nexus-history-retention-menu");
       if (retentionMenu) {
         const opts = [
           { label: "1 Week", value: "0.25" },
@@ -24822,17 +24813,17 @@ Markets reached historic highs this morning following breakthroughs in artificia
         input.value = targetEl.textContent;
         input.dataset.value = targetEl.dataset.val || targetEl.textContent;
         menu.style.display = "none";
-        if (inputId === "lumina-setup-provider-input") {
+        if (inputId === "nexus-setup-provider-input") {
           this.selectProviderSetup(input.dataset.value);
         }
-        if (inputId === "lumina-settings-base-tone-input") {
+        if (inputId === "nexus-settings-base-tone-input") {
           this.adjustInputWidthToContent(input);
         }
-        if (inputId === "lumina-history-retention-input" || inputId === "lumina-settings-base-tone-input" || inputId === "lumina-settings-fontsize" || inputId === "lumina-settings-theme" || inputId === "lumina-settings-contrast" || inputId === "lumina-settings-accent" || inputId === "lumina-settings-fontfamily" || inputId === "lumina-settings-fontweight" || inputId === "lumina-settings-language" || inputId === "lumina-settings-spoken-lang" || inputId === "lumina-settings-voice-select" || inputId === "lumina-settings-tts-model" || inputId === "lumina-settings-stt-model") {
+        if (inputId === "nexus-history-retention-input" || inputId === "nexus-settings-base-tone-input" || inputId === "nexus-settings-fontsize" || inputId === "nexus-settings-theme" || inputId === "nexus-settings-contrast" || inputId === "nexus-settings-accent" || inputId === "nexus-settings-fontfamily" || inputId === "nexus-settings-fontweight" || inputId === "nexus-settings-language" || inputId === "nexus-settings-spoken-lang" || inputId === "nexus-settings-voice-select" || inputId === "nexus-settings-tts-model" || inputId === "nexus-settings-stt-model") {
           this.saveOptions();
         }
-        if (inputId === "lumina-model-form-provider") {
-          const modelInput = document.getElementById("lumina-model-form-model");
+        if (inputId === "nexus-model-form-provider") {
+          const modelInput = document.getElementById("nexus-model-form-model");
           if (modelInput) {
             modelInput.value = "";
             modelInput.dataset.value = "";
@@ -24844,13 +24835,13 @@ Markets reached historic highs this morning following breakthroughs in artificia
       input.addEventListener("click", (e) => {
         e.stopPropagation();
         const isCurrentlyOpen = menu.style.display === "block";
-        document.querySelectorAll(".lumina-settings-dropdown-menu").forEach((m) => {
+        document.querySelectorAll(".nexus-settings-dropdown-menu").forEach((m) => {
           m.style.display = "none";
         });
         if (!isCurrentlyOpen) {
-          if (inputId === "lumina-settings-tts-model") {
+          if (inputId === "nexus-settings-tts-model") {
             this.loadTtsModels().then(() => updateActiveItems(false));
-          } else if (inputId === "lumina-settings-stt-model") {
+          } else if (inputId === "nexus-settings-stt-model") {
             this.loadSttModels().then(() => updateActiveItems(false));
           }
           menu.style.display = "block";
@@ -24858,7 +24849,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         }
       });
       document.addEventListener("click", (e) => {
-        const wrapper = input.closest(".lumina-settings-dropdown-wrapper");
+        const wrapper = input.closest(".nexus-settings-dropdown-wrapper");
         if (wrapper && !wrapper.contains(e.target)) {
           menu.style.display = "none";
         }
@@ -24900,7 +24891,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         }
       };
       input.addEventListener("keydown", handleKeyDown);
-      if (inputId === "lumina-model-form-model" || inputId === "lumina-setup-provider-input" || inputId === "lumina-model-form-provider") {
+      if (inputId === "nexus-model-form-model" || inputId === "nexus-setup-provider-input" || inputId === "nexus-model-form-provider") {
         input.addEventListener("input", () => {
           const query = input.value.toLowerCase().trim();
           const items = menu.querySelectorAll("div");
@@ -24932,7 +24923,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
     static adjustInputWidthToContent(input) {
       if (!input) return;
-      const wrapper = input.closest(".lumina-settings-dropdown-wrapper");
+      const wrapper = input.closest(".nexus-settings-dropdown-wrapper");
       if (!wrapper) return;
       const tempSpan = document.createElement("span");
       tempSpan.style.visibility = "hidden";
@@ -24958,12 +24949,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
       el.addEventListener("input", adjust);
     }
     static async loadModelsForProvider(providerId) {
-      const menu = document.getElementById("lumina-model-form-model-list");
+      const menu = document.getElementById("nexus-model-form-model-list");
       if (!menu) return;
-      menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">Loading models...</div>';
+      menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">Loading models...</div>';
       const provider = this.providers.find((p) => p.id === providerId);
       if (!provider) {
-        menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">No provider selected</div>';
+        menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">No provider selected</div>';
         return;
       }
       try {
@@ -25043,7 +25034,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static async loadTtsModels() {
-      const menu = document.getElementById("lumina-settings-tts-model-menu");
+      const menu = document.getElementById("nexus-settings-tts-model-menu");
       if (!menu) return;
       const geminiProv = this.providers.find((p) => p.id === "gemini-default" || p.id.includes("gemini"));
       const apiKey = geminiProv?.apiKey?.trim() || "";
@@ -25071,7 +25062,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static async loadSttModels() {
-      const menu = document.getElementById("lumina-settings-stt-model-menu");
+      const menu = document.getElementById("nexus-settings-stt-model-menu");
       if (!menu) return;
       const groqProv = this.providers.find((p) => p.id === "groq-default" || p.id.includes("groq"));
       const apiKey = groqProv?.apiKey?.trim() || "";
@@ -25103,44 +25094,44 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static showProviderForm() {
-      const overlay = document.getElementById("lumina-provider-popup-overlay");
+      const overlay = document.getElementById("nexus-provider-popup-overlay");
       if (overlay) overlay.style.display = "flex";
-      document.getElementById("lumina-provider-form-id").value = "";
-      document.getElementById("lumina-provider-form-name").value = "";
-      document.getElementById("lumina-provider-form-endpoint").value = "";
-      document.getElementById("lumina-provider-form-apikey").value = "";
-      const statusEl = document.getElementById("lumina-dialog-status");
+      document.getElementById("nexus-provider-form-id").value = "";
+      document.getElementById("nexus-provider-form-name").value = "";
+      document.getElementById("nexus-provider-form-endpoint").value = "";
+      document.getElementById("nexus-provider-form-apikey").value = "";
+      const statusEl = document.getElementById("nexus-dialog-status");
       if (statusEl) {
         statusEl.innerHTML = "";
-        statusEl.className = "lumina-dialog-status hidden";
+        statusEl.className = "nexus-dialog-status hidden";
       }
     }
     static editProvider(id) {
       const p = this.providers.find((p2) => p2.id === id);
       if (!p) return;
-      const overlay = document.getElementById("lumina-provider-popup-overlay");
+      const overlay = document.getElementById("nexus-provider-popup-overlay");
       if (overlay) overlay.style.display = "flex";
-      document.getElementById("lumina-provider-form-id").value = p.id;
-      document.getElementById("lumina-provider-form-name").value = p.name;
-      document.getElementById("lumina-provider-form-endpoint").value = p.endpoint;
-      document.getElementById("lumina-provider-form-apikey").value = p.apiKey || "";
-      const statusEl = document.getElementById("lumina-dialog-status");
+      document.getElementById("nexus-provider-form-id").value = p.id;
+      document.getElementById("nexus-provider-form-name").value = p.name;
+      document.getElementById("nexus-provider-form-endpoint").value = p.endpoint;
+      document.getElementById("nexus-provider-form-apikey").value = p.apiKey || "";
+      const statusEl = document.getElementById("nexus-dialog-status");
       if (statusEl) {
         statusEl.innerHTML = "";
-        statusEl.className = "lumina-dialog-status hidden";
+        statusEl.className = "nexus-dialog-status hidden";
       }
     }
     static hideProviderForm() {
-      const overlay = document.getElementById("lumina-provider-popup-overlay");
+      const overlay = document.getElementById("nexus-provider-popup-overlay");
       if (overlay) overlay.style.display = "none";
     }
     static showModelForm(index = null) {
-      const overlay = document.getElementById("lumina-model-popup-overlay");
+      const overlay = document.getElementById("nexus-model-popup-overlay");
       if (overlay) overlay.style.display = "flex";
-      const indexInput = document.getElementById("lumina-model-form-index");
-      const providerInput = document.getElementById("lumina-model-form-provider");
-      const modelInput = document.getElementById("lumina-model-form-model");
-      const customNameInput = document.getElementById("lumina-model-form-name-custom");
+      const indexInput = document.getElementById("nexus-model-form-index");
+      const providerInput = document.getElementById("nexus-model-form-provider");
+      const modelInput = document.getElementById("nexus-model-form-model");
+      const customNameInput = document.getElementById("nexus-model-form-name-custom");
       this.populateProviderDropdowns();
       if (index !== null && index >= 0) {
         const item = this.models[index];
@@ -25151,7 +25142,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         modelInput.value = item.modelName;
         customNameInput.value = item.displayName || "";
         const tokenVal = item.maxTokens || 8192;
-        this.setDropdownValue("lumina-model-form-max-tokens", "lumina-model-form-max-tokens-list", String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
+        this.setDropdownValue("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list", String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
         this.loadModelsForProvider(item.providerId);
       } else {
         indexInput.value = "";
@@ -25159,15 +25150,15 @@ Markets reached historic highs this morning following breakthroughs in artificia
         providerInput.dataset.value = "";
         modelInput.value = "";
         customNameInput.value = "";
-        this.setDropdownValue("lumina-model-form-max-tokens", "lumina-model-form-max-tokens-list", "8192", "8,192 tokens (Default)");
+        this.setDropdownValue("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list", "8192", "8,192 tokens (Default)");
       }
       this.updateModelPopupFieldsState();
     }
     static updateModelPopupFieldsState() {
-      const provider = document.getElementById("lumina-model-form-provider").dataset.value;
-      const modelInput = document.getElementById("lumina-model-form-model");
-      const customNameInput = document.getElementById("lumina-model-form-name-custom");
-      const maxTokensInput = document.getElementById("lumina-model-form-max-tokens");
+      const provider = document.getElementById("nexus-model-form-provider").dataset.value;
+      const modelInput = document.getElementById("nexus-model-form-model");
+      const customNameInput = document.getElementById("nexus-model-form-name-custom");
+      const maxTokensInput = document.getElementById("nexus-model-form-max-tokens");
       const shouldDisable = !provider;
       if (modelInput) {
         modelInput.disabled = shouldDisable;
@@ -25201,17 +25192,17 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static hideModelForm() {
-      const overlay = document.getElementById("lumina-model-popup-overlay");
+      const overlay = document.getElementById("nexus-model-popup-overlay");
       if (overlay) overlay.style.display = "none";
     }
     static showMappingForm(index = null) {
-      const overlay = document.getElementById("lumina-mapping-popup-overlay");
+      const overlay = document.getElementById("nexus-mapping-popup-overlay");
       if (overlay) overlay.style.display = "flex";
-      const indexInput = document.getElementById("lumina-mapping-form-index");
-      const nameInput = document.getElementById("lumina-mapping-popup-name");
-      const shortcutBox = document.getElementById("lumina-mapping-popup-shortcut");
-      const promptInput = document.getElementById("lumina-mapping-popup-prompt");
-      const highlightInput = document.getElementById("lumina-mapping-popup-highlight");
+      const indexInput = document.getElementById("nexus-mapping-form-index");
+      const nameInput = document.getElementById("nexus-mapping-popup-name");
+      const shortcutBox = document.getElementById("nexus-mapping-popup-shortcut");
+      const promptInput = document.getElementById("nexus-mapping-popup-prompt");
+      const highlightInput = document.getElementById("nexus-mapping-popup-highlight");
       if (index !== null && index >= 0) {
         const item = this.questionMappings[index];
         indexInput.value = index;
@@ -25229,15 +25220,15 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static hideMappingForm() {
-      const overlay = document.getElementById("lumina-mapping-popup-overlay");
+      const overlay = document.getElementById("nexus-mapping-popup-overlay");
       if (overlay) overlay.style.display = "none";
     }
     static saveMapping() {
-      const indexInput = document.getElementById("lumina-mapping-form-index");
-      const nameInput = document.getElementById("lumina-mapping-popup-name");
-      const shortcutBox = document.getElementById("lumina-mapping-popup-shortcut");
-      const promptInput = document.getElementById("lumina-mapping-popup-prompt");
-      const highlightInput = document.getElementById("lumina-mapping-popup-highlight");
+      const indexInput = document.getElementById("nexus-mapping-form-index");
+      const nameInput = document.getElementById("nexus-mapping-popup-name");
+      const shortcutBox = document.getElementById("nexus-mapping-popup-shortcut");
+      const promptInput = document.getElementById("nexus-mapping-popup-prompt");
+      const highlightInput = document.getElementById("nexus-mapping-popup-highlight");
       const name = nameInput.value.trim();
       const prompt2 = this.serializePrompt(promptInput).trim();
       if (!name || !prompt2) {
@@ -25284,7 +25275,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         if (node.nodeType === Node.TEXT_NODE) {
           result += node.textContent;
         } else if (node.nodeType === Node.ELEMENT_NODE) {
-          if (node.classList.contains("lumina-variable-tag")) {
+          if (node.classList.contains("nexus-variable-tag")) {
             result += node.getAttribute("data-val") || node.textContent;
           } else if (node.tagName === "BR") {
             result += "\n";
@@ -25303,36 +25294,36 @@ Markets reached historic highs this morning following breakthroughs in artificia
       if (!text) return;
       const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const html = escaped.replace(/(\$SelectedText|\$Sentence|\$Paragraph)/g, (match) => {
-        return `<span class="lumina-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
+        return `<span class="nexus-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
       });
       const formattedHtml = html.replace(/\n/g, "<br>");
       el.innerHTML = formattedHtml;
     }
     static resetProvider() {
-      const id = document.getElementById("lumina-provider-form-id").value;
+      const id = document.getElementById("nexus-provider-form-id").value;
       if (!id) {
-        document.getElementById("lumina-provider-form-name").value = "";
-        document.getElementById("lumina-provider-form-endpoint").value = "";
-        document.getElementById("lumina-provider-form-apikey").value = "";
+        document.getElementById("nexus-provider-form-name").value = "";
+        document.getElementById("nexus-provider-form-endpoint").value = "";
+        document.getElementById("nexus-provider-form-apikey").value = "";
         return;
       }
       const defaults = this.getDefaultProviders();
       const defaultProv = defaults.find((d) => d.id === id);
       if (defaultProv) {
-        document.getElementById("lumina-provider-form-name").value = defaultProv.name;
-        document.getElementById("lumina-provider-form-endpoint").value = defaultProv.endpoint;
-        document.getElementById("lumina-provider-form-apikey").value = "";
+        document.getElementById("nexus-provider-form-name").value = defaultProv.name;
+        document.getElementById("nexus-provider-form-endpoint").value = defaultProv.endpoint;
+        document.getElementById("nexus-provider-form-apikey").value = "";
       } else {
-        document.getElementById("lumina-provider-form-name").value = "";
-        document.getElementById("lumina-provider-form-endpoint").value = "";
-        document.getElementById("lumina-provider-form-apikey").value = "";
+        document.getElementById("nexus-provider-form-name").value = "";
+        document.getElementById("nexus-provider-form-endpoint").value = "";
+        document.getElementById("nexus-provider-form-apikey").value = "";
       }
     }
     static saveProvider() {
-      const id = document.getElementById("lumina-provider-form-id").value || "custom-" + Date.now();
-      const name = document.getElementById("lumina-provider-form-name").value.trim();
-      const endpoint = document.getElementById("lumina-provider-form-endpoint").value.trim();
-      const apiKey = document.getElementById("lumina-provider-form-apikey").value.trim();
+      const id = document.getElementById("nexus-provider-form-id").value || "custom-" + Date.now();
+      const name = document.getElementById("nexus-provider-form-name").value.trim();
+      const endpoint = document.getElementById("nexus-provider-form-endpoint").value.trim();
+      const apiKey = document.getElementById("nexus-provider-form-apikey").value.trim();
       if (!name || !endpoint) {
         alert("Name and Endpoint are required.");
         return;
@@ -25351,25 +25342,25 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static checkApiKeys() {
-      const name = document.getElementById("lumina-provider-form-name").value.trim();
-      const endpoint = document.getElementById("lumina-provider-form-endpoint").value.trim();
-      const apiKey = document.getElementById("lumina-provider-form-apikey").value.trim();
+      const name = document.getElementById("nexus-provider-form-name").value.trim();
+      const endpoint = document.getElementById("nexus-provider-form-endpoint").value.trim();
+      const apiKey = document.getElementById("nexus-provider-form-apikey").value.trim();
       if (!endpoint || !apiKey) {
         alert("Endpoint and API Key are required to check status.");
         return;
       }
-      const statusEl = document.getElementById("lumina-dialog-status");
+      const statusEl = document.getElementById("nexus-dialog-status");
       if (!statusEl) return;
       statusEl.classList.remove("hidden");
-      statusEl.className = "lumina-dialog-status info";
+      statusEl.className = "nexus-dialog-status info";
       statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
-      const checkBtn = document.getElementById("lumina-check-apikeys-btn");
+      const checkBtn = document.getElementById("nexus-check-apikeys-btn");
       const originalText = checkBtn.textContent;
       checkBtn.textContent = "Checking...";
       checkBtn.disabled = true;
       const keysList = apiKey.split(",").map((k) => k.trim()).filter(Boolean);
       if (keysList.length === 0) {
-        statusEl.className = "lumina-dialog-status error";
+        statusEl.className = "nexus-dialog-status error";
         statusEl.innerHTML = "<strong>Error:</strong> No keys entered.";
         checkBtn.textContent = originalText;
         checkBtn.disabled = false;
@@ -25407,7 +25398,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         checkBtn.textContent = originalText;
         checkBtn.disabled = false;
         const allOk = results.every((r) => r.ok);
-        statusEl.className = "lumina-dialog-status " + (allOk ? "success" : results.some((r) => r.ok) ? "warning" : "error");
+        statusEl.className = "nexus-dialog-status " + (allOk ? "success" : results.some((r) => r.ok) ? "warning" : "error");
         if (results.length === 1) {
           const res = results[0];
           if (res.ok) {
@@ -25422,7 +25413,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
           results.forEach((res) => {
             html += `
             <li class="${res.ok ? "key-ok" : "key-fail"}" style="color: ${res.ok ? "#10b981" : "#ef4444"}; font-size: 12px; margin-top: 2px;">
-              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--lumina-text-primary); font-weight: 500;">${res.keyLabel}</span>:
+              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--nexus-text-primary); font-weight: 500;">${res.keyLabel}</span>:
               <strong>${res.ok ? "VALID" : res.status ? `FAILED (${res.status})` : `FAILED (${res.error})`}</strong>
             </li>
           `;
@@ -25433,11 +25424,11 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static addModelToChain() {
-      const indexStr = document.getElementById("lumina-model-form-index").value;
-      const provider = document.getElementById("lumina-model-form-provider").dataset.value;
-      const model = document.getElementById("lumina-model-form-model").value.trim();
-      const customName = document.getElementById("lumina-model-form-name-custom").value.trim();
-      const maxTokensInput = document.getElementById("lumina-model-form-max-tokens");
+      const indexStr = document.getElementById("nexus-model-form-index").value;
+      const provider = document.getElementById("nexus-model-form-provider").dataset.value;
+      const model = document.getElementById("nexus-model-form-model").value.trim();
+      const customName = document.getElementById("nexus-model-form-name-custom").value.trim();
+      const maxTokensInput = document.getElementById("nexus-model-form-max-tokens");
       const maxTokens = parseInt(maxTokensInput?.dataset?.value || "8192", 10);
       if (!provider || !model) {
         alert("Provider and Model are required.");
@@ -25464,24 +25455,24 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static renderChainList() {
-      const list = document.getElementById("lumina-model-list");
+      const list = document.getElementById("nexus-model-list");
       if (!list) return;
       list.innerHTML = "";
-      const addModelHeaderBtn = document.getElementById("lumina-open-add-model-btn");
+      const addModelHeaderBtn = document.getElementById("nexus-open-add-model-btn");
       if (addModelHeaderBtn && !addModelHeaderBtn.dataset.bound) {
         addModelHeaderBtn.dataset.bound = "true";
         addModelHeaderBtn.addEventListener("click", () => this.showModelForm());
       }
       if (this.models.length === 0) {
         const emptyState = document.createElement("div");
-        emptyState.className = "lumina-settings-empty-state";
+        emptyState.className = "nexus-settings-empty-state";
         emptyState.textContent = 'No models added yet. Click "Add model" above to start.';
         list.appendChild(emptyState);
       } else {
-        const temp = document.getElementById("lumina-chainItemTemplate");
+        const temp = document.getElementById("nexus-chainItemTemplate");
         this.models.forEach((item, index) => {
           const clone = temp.content.cloneNode(true);
-          const cardEl = clone.querySelector(".lumina-settings-chain-card");
+          const cardEl = clone.querySelector(".nexus-settings-chain-card");
           cardEl.dataset.index = index;
           clone.querySelector(".chain-number").textContent = index + 1;
           clone.querySelector(".chain-title").textContent = item.displayName || item.modelName;
@@ -25525,16 +25516,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static bindAppearanceTab() {
-      this.setupDropdownInputs("lumina-settings-theme", "lumina-settings-theme-menu");
-      this.setupDropdownInputs("lumina-settings-contrast", "lumina-settings-contrast-menu");
-      this.setupDropdownInputs("lumina-settings-accent", "lumina-settings-accent-menu");
-      this.setupDropdownInputs("lumina-settings-fontfamily", "lumina-settings-fontfamily-menu");
-      this.setupDropdownInputs("lumina-settings-fontweight", "lumina-settings-fontweight-menu");
-      this.setupDropdownInputs("lumina-settings-language", "lumina-settings-language-menu");
-      this.setupDropdownInputs("lumina-settings-spoken-lang", "lumina-settings-spoken-lang-menu");
-      this.setupDropdownInputs("lumina-settings-voice-select", "lumina-settings-voice-select-menu");
-      this.setupDropdownInputs("lumina-settings-fontsize", "lumina-settings-fontsize-menu");
-      const fsInput = document.getElementById("lumina-settings-fontsize");
+      this.setupDropdownInputs("nexus-settings-theme", "nexus-settings-theme-menu");
+      this.setupDropdownInputs("nexus-settings-contrast", "nexus-settings-contrast-menu");
+      this.setupDropdownInputs("nexus-settings-accent", "nexus-settings-accent-menu");
+      this.setupDropdownInputs("nexus-settings-fontfamily", "nexus-settings-fontfamily-menu");
+      this.setupDropdownInputs("nexus-settings-fontweight", "nexus-settings-fontweight-menu");
+      this.setupDropdownInputs("nexus-settings-language", "nexus-settings-language-menu");
+      this.setupDropdownInputs("nexus-settings-spoken-lang", "nexus-settings-spoken-lang-menu");
+      this.setupDropdownInputs("nexus-settings-voice-select", "nexus-settings-voice-select-menu");
+      this.setupDropdownInputs("nexus-settings-fontsize", "nexus-settings-fontsize-menu");
+      const fsInput = document.getElementById("nexus-settings-fontsize");
       if (fsInput) {
         fsInput.addEventListener("change", () => this.saveOptions());
         fsInput.addEventListener("keydown", (e) => {
@@ -25543,10 +25534,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
           }
         });
       }
-      document.getElementById("lumina-settings-dictation-toggle").addEventListener("change", () => this.saveOptions());
-      document.getElementById("lumina-settings-separate-voice").addEventListener("change", () => this.saveOptions());
-      document.getElementById("lumina-settings-voice-play-btn").addEventListener("click", () => {
-        const voice = document.getElementById("lumina-settings-voice-select").dataset.value || "sol";
+      document.getElementById("nexus-settings-dictation-toggle").addEventListener("change", () => this.saveOptions());
+      document.getElementById("nexus-settings-separate-voice").addEventListener("change", () => this.saveOptions());
+      document.getElementById("nexus-settings-voice-play-btn").addEventListener("click", () => {
+        const voice = document.getElementById("nexus-settings-voice-select").dataset.value || "sol";
         const audio = new Audio();
         audio.src = `../../assets/audio/voice_${voice}.mp3`;
         audio.play().catch(() => {
@@ -25555,31 +25546,31 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static bindPersonalizationTab() {
-      this.setupDropdownInputs("lumina-settings-base-tone-input", "lumina-settings-base-tone-menu");
+      this.setupDropdownInputs("nexus-settings-base-tone-input", "nexus-settings-base-tone-menu");
       const ranges = [
-        "lumina-settings-char-warm",
-        "lumina-settings-char-enthusiastic",
-        "lumina-settings-char-headers",
-        "lumina-settings-char-emoji"
+        "nexus-settings-char-warm",
+        "nexus-settings-char-enthusiastic",
+        "nexus-settings-char-headers",
+        "nexus-settings-char-emoji"
       ];
       ranges.forEach((id) => {
         document.getElementById(id).addEventListener("change", () => this.saveOptions());
       });
-      const inputs = ["lumina-settings-about-nickname", "lumina-settings-about-occupation", "lumina-settings-about-interests"];
+      const inputs = ["nexus-settings-about-nickname", "nexus-settings-about-occupation", "nexus-settings-about-interests"];
       inputs.forEach((id) => {
         document.getElementById(id).addEventListener("blur", () => this.saveOptions());
       });
-      const addInstructionBtn = document.getElementById("lumina-add-instruction-btn");
+      const addInstructionBtn = document.getElementById("nexus-add-instruction-btn");
       if (addInstructionBtn) {
         addInstructionBtn.addEventListener("click", () => {
           this.showInstructionForm();
         });
       }
-      const cancelInstBtn = document.getElementById("lumina-cancel-instruction-popup-btn");
-      const saveInstBtn = document.getElementById("lumina-save-instruction-popup-btn");
-      const closeInstPopupBtn = document.getElementById("lumina-instruction-popup-close-btn");
-      const instPopupOverlay = document.getElementById("lumina-instruction-popup-overlay");
-      const contentInputEl = document.getElementById("lumina-instruction-popup-content");
+      const cancelInstBtn = document.getElementById("nexus-cancel-instruction-popup-btn");
+      const saveInstBtn = document.getElementById("nexus-save-instruction-popup-btn");
+      const closeInstPopupBtn = document.getElementById("nexus-instruction-popup-close-btn");
+      const instPopupOverlay = document.getElementById("nexus-instruction-popup-overlay");
+      const contentInputEl = document.getElementById("nexus-instruction-popup-content");
       if (contentInputEl) {
         contentInputEl.addEventListener("input", () => {
           contentInputEl.style.height = "auto";
@@ -25596,10 +25587,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static showInstructionForm(index = null) {
-      const overlay = document.getElementById("lumina-instruction-popup-overlay");
-      const titleEl = document.getElementById("lumina-instruction-popup-title");
-      const indexInput = document.getElementById("lumina-instruction-popup-index");
-      const contentInput = document.getElementById("lumina-instruction-popup-content");
+      const overlay = document.getElementById("nexus-instruction-popup-overlay");
+      const titleEl = document.getElementById("nexus-instruction-popup-title");
+      const indexInput = document.getElementById("nexus-instruction-popup-index");
+      const contentInput = document.getElementById("nexus-instruction-popup-content");
       if (!overlay || !titleEl || !indexInput || !contentInput) return;
       if (index !== null && index >= 0 && index < this.userFacts.length) {
         titleEl.textContent = "Edit Custom Instruction";
@@ -25616,12 +25607,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
       setTimeout(() => contentInput.focus(), 50);
     }
     static hideInstructionForm() {
-      const overlay = document.getElementById("lumina-instruction-popup-overlay");
+      const overlay = document.getElementById("nexus-instruction-popup-overlay");
       if (overlay) overlay.style.display = "none";
     }
     static async saveInstructionPopup() {
-      const indexInput = document.getElementById("lumina-instruction-popup-index");
-      const contentInput = document.getElementById("lumina-instruction-popup-content");
+      const indexInput = document.getElementById("nexus-instruction-popup-index");
+      const contentInput = document.getElementById("nexus-instruction-popup-content");
       if (!indexInput || !contentInput) return;
       const val = contentInput.value.trim();
       if (!val) {
@@ -25641,14 +25632,14 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.hideInstructionForm();
     }
     static renderUserFacts() {
-      const list = document.getElementById("lumina-user-facts-list");
+      const list = document.getElementById("nexus-user-facts-list");
       if (!list) return;
       list.innerHTML = "";
       if (this.userFacts.length === 0) {
-        list.innerHTML = '<div class="lumina-settings-empty-state">No instructions added yet. Add one above.</div>';
+        list.innerHTML = '<div class="nexus-settings-empty-state">No instructions added yet. Add one above.</div>';
         return;
       }
-      const temp = document.getElementById("lumina-userFactItemTemplate");
+      const temp = document.getElementById("nexus-userFactItemTemplate");
       this.userFacts.forEach((fact, idx) => {
         const clone = temp.content.cloneNode(true);
         clone.querySelector(".fact-index").textContent = idx + 1;
@@ -25681,22 +25672,22 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static bindKeyboardTab() {
-      const configBtn = document.getElementById("lumina-config-shortcut-btn");
+      const configBtn = document.getElementById("nexus-config-shortcut-btn");
       if (configBtn) {
         configBtn.addEventListener("click", () => {
           chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
         });
       }
-      const addMappingBtn = document.getElementById("lumina-add-mapping-btn");
+      const addMappingBtn = document.getElementById("nexus-add-mapping-btn");
       if (addMappingBtn) {
         addMappingBtn.addEventListener("click", () => {
           this.showMappingForm();
         });
       }
-      const cancelMappingBtn = document.getElementById("lumina-cancel-mapping-btn");
-      const saveMappingBtn = document.getElementById("lumina-save-mapping-btn");
-      const closeMappingPopupBtn = document.getElementById("lumina-mapping-popup-close-btn");
-      const mappingPopupOverlay = document.getElementById("lumina-mapping-popup-overlay");
+      const cancelMappingBtn = document.getElementById("nexus-cancel-mapping-btn");
+      const saveMappingBtn = document.getElementById("nexus-save-mapping-btn");
+      const closeMappingPopupBtn = document.getElementById("nexus-mapping-popup-close-btn");
+      const mappingPopupOverlay = document.getElementById("nexus-mapping-popup-overlay");
       if (cancelMappingBtn) cancelMappingBtn.addEventListener("click", () => this.hideMappingForm());
       if (saveMappingBtn) saveMappingBtn.addEventListener("click", () => this.saveMapping());
       if (closeMappingPopupBtn) closeMappingPopupBtn.addEventListener("click", () => this.hideMappingForm());
@@ -25705,7 +25696,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (e.target === mappingPopupOverlay) this.hideMappingForm();
         });
       }
-      const mappingPopupShortcut = document.getElementById("lumina-mapping-popup-shortcut");
+      const mappingPopupShortcut = document.getElementById("nexus-mapping-popup-shortcut");
       if (mappingPopupShortcut) {
         mappingPopupShortcut.addEventListener("click", (e) => {
           e.preventDefault();
@@ -25714,21 +25705,21 @@ Markets reached historic highs this morning following breakthroughs in artificia
           this.recordShortcut(mappingPopupShortcut);
         });
       }
-      const referenceChipsContainer = document.getElementById("lumina-mapping-popup-reference-chips");
+      const referenceChipsContainer = document.getElementById("nexus-mapping-popup-reference-chips");
       if (referenceChipsContainer) {
-        referenceChipsContainer.querySelectorAll(".lumina-reference-chip").forEach((chip) => {
+        referenceChipsContainer.querySelectorAll(".nexus-reference-chip").forEach((chip) => {
           chip.addEventListener("click", (e) => {
             e.preventDefault();
             const val = chip.getAttribute("data-val");
             if (!val) return;
-            const promptInput = document.getElementById("lumina-mapping-popup-prompt");
+            const promptInput = document.getElementById("nexus-mapping-popup-prompt");
             if (promptInput) {
               const selection = window.getSelection();
               if (selection.rangeCount > 0) {
                 const range2 = selection.getRangeAt(0);
                 if (promptInput.contains(range2.commonAncestorContainer)) {
                   const span2 = document.createElement("span");
-                  span2.className = "lumina-variable-tag";
+                  span2.className = "nexus-variable-tag";
                   span2.contentEditable = "false";
                   span2.setAttribute("data-val", val);
                   span2.textContent = val;
@@ -25742,7 +25733,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
                 }
               }
               const span = document.createElement("span");
-              span.className = "lumina-variable-tag";
+              span.className = "nexus-variable-tag";
               span.contentEditable = "false";
               span.setAttribute("data-val", val);
               span.textContent = val;
@@ -25758,16 +25749,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
           });
         });
       }
-      const addAnnotationBtn = document.getElementById("lumina-add-annotation-shortcut-btn");
+      const addAnnotationBtn = document.getElementById("nexus-add-annotation-shortcut-btn");
       if (addAnnotationBtn) {
         addAnnotationBtn.addEventListener("click", () => {
           this.showAnnotationForm();
         });
       }
-      const cancelAnnotationBtn = document.getElementById("lumina-cancel-annotation-btn");
-      const saveAnnotationBtn = document.getElementById("lumina-save-annotation-btn");
-      const closeAnnotationPopupBtn = document.getElementById("lumina-annotation-popup-close-btn");
-      const annotationPopupOverlay = document.getElementById("lumina-annotation-popup-overlay");
+      const cancelAnnotationBtn = document.getElementById("nexus-cancel-annotation-btn");
+      const saveAnnotationBtn = document.getElementById("nexus-save-annotation-btn");
+      const closeAnnotationPopupBtn = document.getElementById("nexus-annotation-popup-close-btn");
+      const annotationPopupOverlay = document.getElementById("nexus-annotation-popup-overlay");
       if (cancelAnnotationBtn) cancelAnnotationBtn.addEventListener("click", () => this.hideAnnotationForm());
       if (saveAnnotationBtn) saveAnnotationBtn.addEventListener("click", () => this.saveAnnotation());
       if (closeAnnotationPopupBtn) closeAnnotationPopupBtn.addEventListener("click", () => this.hideAnnotationForm());
@@ -25776,7 +25767,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (e.target === annotationPopupOverlay) this.hideAnnotationForm();
         });
       }
-      const annotationPopupShortcut = document.getElementById("lumina-annotation-popup-shortcut");
+      const annotationPopupShortcut = document.getElementById("nexus-annotation-popup-shortcut");
       if (annotationPopupShortcut) {
         annotationPopupShortcut.addEventListener("click", (e) => {
           e.preventDefault();
@@ -25788,7 +25779,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.bindShortcutRecorders();
     }
     static bindShortcutRecorders() {
-      document.querySelectorAll(".lumina-settings-shortcut-box[data-action]").forEach((box) => {
+      document.querySelectorAll(".nexus-settings-shortcut-box[data-action]").forEach((box) => {
         box.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -25865,7 +25856,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.recordingHadInput = false;
       this.recordingPressedCodes = /* @__PURE__ */ new Set();
       box.classList.add("recording");
-      box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--lumina-text-secondary);">Recording...</span>';
+      box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--nexus-text-secondary);">Recording...</span>';
       const keydownHandler = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -26015,7 +26006,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
       const mousedownHandler = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const shortcutTarget = e.target.closest(".lumina-settings-shortcut-box");
+        const shortcutTarget = e.target.closest(".nexus-settings-shortcut-box");
         if (shortcutTarget !== box) {
           box.removeAttribute("data-key");
           delete box.dataset.key;
@@ -26128,7 +26119,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
     static loadShortcutsKeys(items) {
       const list = items.shortcuts || {};
-      document.querySelectorAll(".lumina-settings-shortcut-box[data-action]").forEach((box) => {
+      document.querySelectorAll(".nexus-settings-shortcut-box[data-action]").forEach((box) => {
         const action = box.dataset.action;
         const val = list[action];
         if (val && typeof val === "object") {
@@ -26141,17 +26132,17 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static renderQuestionMappings() {
-      const list = document.getElementById("lumina-question-mappings-list");
+      const list = document.getElementById("nexus-question-mappings-list");
       if (!list) return;
       list.innerHTML = "";
       if (this.questionMappings.length === 0) {
         const emptyState = document.createElement("div");
-        emptyState.className = "lumina-settings-empty-state";
+        emptyState.className = "nexus-settings-empty-state";
         emptyState.textContent = "No custom mappings added yet.";
         list.appendChild(emptyState);
         return;
       }
-      const temp = document.getElementById("lumina-mappingRowTemplate");
+      const temp = document.getElementById("nexus-mappingRowTemplate");
       this.questionMappings.forEach((mapping, idx) => {
         const clone = temp.content.cloneNode(true);
         const displayKey = mapping.keyData ? (mapping.keyData.metaKey ? "\u2318" : "") + (mapping.keyData.ctrlKey ? "Ctrl+" : "") + (mapping.keyData.altKey ? "Alt+" : "") + (mapping.keyData.shiftKey ? "Shift+" : "") + mapping.keyData.key.toUpperCase() : mapping.key ? mapping.key.toUpperCase() : "None";
@@ -26188,11 +26179,11 @@ Markets reached historic highs this morning following breakthroughs in artificia
       document.addEventListener("keydown", keydownHandler, true);
     }
     static showAnnotationForm(index = null) {
-      const overlay = document.getElementById("lumina-annotation-popup-overlay");
+      const overlay = document.getElementById("nexus-annotation-popup-overlay");
       if (overlay) overlay.style.display = "flex";
-      const indexInput = document.getElementById("lumina-annotation-form-index");
-      const shortcutBox = document.getElementById("lumina-annotation-popup-shortcut");
-      const palette = document.getElementById("lumina-annotation-popup-color-palette");
+      const indexInput = document.getElementById("nexus-annotation-form-index");
+      const shortcutBox = document.getElementById("nexus-annotation-popup-shortcut");
+      const palette = document.getElementById("nexus-annotation-popup-color-palette");
       const colors = [
         "#FFFB78",
         "#ffcc80",
@@ -26238,13 +26229,13 @@ Markets reached historic highs this morning following breakthroughs in artificia
       }
     }
     static hideAnnotationForm() {
-      const overlay = document.getElementById("lumina-annotation-popup-overlay");
+      const overlay = document.getElementById("nexus-annotation-popup-overlay");
       if (overlay) overlay.style.display = "none";
     }
     static saveAnnotation() {
-      const indexInput = document.getElementById("lumina-annotation-form-index");
-      const shortcutBox = document.getElementById("lumina-annotation-popup-shortcut");
-      const palette = document.getElementById("lumina-annotation-popup-color-palette");
+      const indexInput = document.getElementById("nexus-annotation-form-index");
+      const shortcutBox = document.getElementById("nexus-annotation-popup-shortcut");
+      const palette = document.getElementById("nexus-annotation-popup-color-palette");
       let keyData = null;
       if (shortcutBox.dataset.key) {
         try {
@@ -26277,17 +26268,17 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static renderAnnotationShortcuts() {
-      const list = document.getElementById("lumina-annotation-shortcuts-list");
+      const list = document.getElementById("nexus-annotation-shortcuts-list");
       if (!list) return;
       list.innerHTML = "";
       if (this.annotationShortcuts.length === 0) {
         const emptyState = document.createElement("div");
-        emptyState.className = "lumina-settings-empty-state";
+        emptyState.className = "nexus-settings-empty-state";
         emptyState.textContent = "No annotation shortcuts added yet.";
         list.appendChild(emptyState);
         return;
       }
-      const temp = document.getElementById("lumina-annotationRowTemplate");
+      const temp = document.getElementById("nexus-annotationRowTemplate");
       this.annotationShortcuts.forEach((shortcut, idx) => {
         const clone = temp.content.cloneNode(true);
         const displayKey = shortcut.keyData ? (shortcut.keyData.metaKey ? "\u2318" : "") + (shortcut.keyData.ctrlKey ? "Ctrl+" : "") + (shortcut.keyData.altKey ? "Alt+" : "") + (shortcut.keyData.shiftKey ? "Shift+" : "") + shortcut.keyData.key.toUpperCase() : shortcut.key ? shortcut.key.toUpperCase() : "None";
@@ -26306,18 +26297,18 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static bindAccountTab() {
-      const googleLoginBtn = document.getElementById("lumina-google-login-btn");
+      const googleLoginBtn = document.getElementById("nexus-google-login-btn");
       if (googleLoginBtn) {
         googleLoginBtn.addEventListener("click", async () => {
           try {
             googleLoginBtn.disabled = true;
             const originalHTML = googleLoginBtn.innerHTML;
             googleLoginBtn.innerHTML = "Signing In...";
-            if (typeof LuminaAuth !== "undefined") {
-              await LuminaAuth.login();
-              if (typeof LuminaSync !== "undefined") {
+            if (typeof NexusAuth !== "undefined") {
+              await NexusAuth.login();
+              if (typeof NexusSync !== "undefined") {
                 try {
-                  await LuminaSync.syncData();
+                  await NexusSync.syncData();
                 } catch (syncErr) {
                   console.error("Initial sync failed:", syncErr);
                 }
@@ -26333,24 +26324,24 @@ Markets reached historic highs this morning following breakthroughs in artificia
           }
         });
       }
-      const googleLogoutBtn = document.getElementById("lumina-google-logout-btn");
+      const googleLogoutBtn = document.getElementById("nexus-google-logout-btn");
       if (googleLogoutBtn) {
         googleLogoutBtn.addEventListener("click", async () => {
-          if (typeof LuminaAuth !== "undefined") {
-            await LuminaAuth.logout();
+          if (typeof NexusAuth !== "undefined") {
+            await NexusAuth.logout();
           }
         });
       }
-      const syncBtn = document.getElementById("lumina-sync-btn");
+      const syncBtn = document.getElementById("nexus-sync-btn");
       if (syncBtn) {
         syncBtn.addEventListener("click", async () => {
           syncBtn.disabled = true;
           const originalHTML = syncBtn.innerHTML;
           syncBtn.innerHTML = "Syncing...";
           try {
-            if (typeof LuminaSync !== "undefined") {
-              await LuminaSync.syncUp();
-              _LuminaSettingsModal.updateStorageUsage();
+            if (typeof NexusSync !== "undefined") {
+              await NexusSync.syncUp();
+              _NexusSettingsModal.updateStorageUsage();
             }
           } catch (e) {
             alert("Sync failed: " + e.message);
@@ -26360,12 +26351,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
           }
         });
       }
-      const authLoggedOut = document.getElementById("lumina-auth-logged-out");
-      const authLoggedIn = document.getElementById("lumina-auth-logged-in");
-      const userAvatar = document.getElementById("lumina-user-avatar");
-      const userName = document.getElementById("lumina-user-name");
-      const userEmail = document.getElementById("lumina-user-email");
-      const syncStatus = document.getElementById("lumina-sync-status");
+      const authLoggedOut = document.getElementById("nexus-auth-logged-out");
+      const authLoggedIn = document.getElementById("nexus-auth-logged-in");
+      const userAvatar = document.getElementById("nexus-user-avatar");
+      const userName = document.getElementById("nexus-user-name");
+      const userEmail = document.getElementById("nexus-user-email");
+      const syncStatus = document.getElementById("nexus-sync-status");
       function updateAuthUI(isAuthenticated, user) {
         if (isAuthenticated && user) {
           if (authLoggedOut) authLoggedOut.classList.add("hidden");
@@ -26377,16 +26368,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (authLoggedOut) authLoggedOut.classList.remove("hidden");
           if (authLoggedIn) authLoggedIn.classList.add("hidden");
         }
-        _LuminaSettingsModal.updateCloudSyncDashboard();
+        _NexusSettingsModal.updateCloudSyncDashboard();
       }
-      if (typeof LuminaAuth !== "undefined") {
-        LuminaAuth.addListener(updateAuthUI);
-        if (LuminaAuth.isAuthenticated) {
-          updateAuthUI(true, LuminaAuth.user);
+      if (typeof NexusAuth !== "undefined") {
+        NexusAuth.addListener(updateAuthUI);
+        if (NexusAuth.isAuthenticated) {
+          updateAuthUI(true, NexusAuth.user);
         }
       }
-      if (typeof LuminaSync !== "undefined") {
-        LuminaSync.addListener((status, timestamp) => {
+      if (typeof NexusSync !== "undefined") {
+        NexusSync.addListener((status, timestamp) => {
           if (syncStatus && status) {
             if (timestamp) {
               const timeStr = new Date(timestamp).toLocaleString();
@@ -26395,21 +26386,21 @@ Markets reached historic highs this morning following breakthroughs in artificia
               syncStatus.textContent = status;
             }
           }
-          _LuminaSettingsModal.updateCloudSyncDashboard();
+          _NexusSettingsModal.updateCloudSyncDashboard();
         });
-        if (typeof LuminaAuth !== "undefined" && LuminaAuth.isAuthenticated) {
-          LuminaSync.getLastSyncTime().then((time) => {
+        if (typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated) {
+          NexusSync.getLastSyncTime().then((time) => {
             if (syncStatus && time !== "Never") {
               syncStatus.textContent = `Last synced: ${time}`;
             }
           });
         }
       }
-      document.getElementById("lumina-export-settings-btn").addEventListener("click", async () => {
+      document.getElementById("nexus-export-settings-btn").addEventListener("click", async () => {
         try {
           let exportData;
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.gatherLocalData === "function") {
-            exportData = await LuminaSync.gatherLocalData();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.gatherLocalData === "function") {
+            exportData = await NexusSync.gatherLocalData();
           } else {
             exportData = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
           }
@@ -26417,7 +26408,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `lumina_backup_${Date.now()}.json`;
+          a.download = `nexus_backup_${Date.now()}.json`;
           a.click();
           URL.revokeObjectURL(url);
         } catch (err) {
@@ -26425,8 +26416,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
           alert("Failed to export data.");
         }
       });
-      const fileInput2 = document.getElementById("lumina-import-settings-file");
-      document.getElementById("lumina-import-settings-btn").addEventListener("click", () => fileInput2.click());
+      const fileInput2 = document.getElementById("nexus-import-settings-file");
+      document.getElementById("nexus-import-settings-btn").addEventListener("click", () => fileInput2.click());
       fileInput2.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -26435,9 +26426,9 @@ Markets reached historic highs this morning following breakthroughs in artificia
           try {
             const data = JSON.parse(evt.target.result);
             if (!data || typeof data !== "object") throw new Error("Invalid format");
-            if (typeof LuminaSync !== "undefined" && typeof LuminaSync.persistMergedData === "function") {
-              const sessionsObj = data.lumina_chat_sessions || {};
-              await LuminaSync.persistMergedData(data, sessionsObj, []);
+            if (typeof NexusSync !== "undefined" && typeof NexusSync.persistMergedData === "function") {
+              const sessionsObj = data.nexus_chat_sessions || {};
+              await NexusSync.persistMergedData(data, sessionsObj, []);
             } else {
               await new Promise((resolve) => {
                 chrome.storage.local.clear(() => {
@@ -26447,8 +26438,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
             }
             alert("Backup data successfully imported!");
             this.loadSettings();
-            _LuminaSettingsModal.updateStorageUsage();
-            const scope = window.LuminaSelectionScope;
+            _NexusSettingsModal.updateStorageUsage();
+            const scope = window.NexusSelectionScope;
             if (scope) {
               scope.renderRecentChatsSidebar();
             }
@@ -26461,7 +26452,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         };
         reader.readAsText(file);
       });
-      document.getElementById("lumina-delete-all-btn").addEventListener("click", async () => {
+      document.getElementById("nexus-delete-all-btn").addEventListener("click", async () => {
         if (typeof window.showCustomPopup === "function") {
           const confirmed = await window.showCustomPopup({
             title: "Delete All History",
@@ -26472,8 +26463,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (confirmed) {
             if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.clearAllHistory) {
               await ChatHistoryManager.clearAllHistory();
-              _LuminaSettingsModal.updateStorageUsage();
-              const scope = window.LuminaSelectionScope;
+              _NexusSettingsModal.updateStorageUsage();
+              const scope = window.NexusSelectionScope;
               if (scope) {
                 scope.renderRecentChatsSidebar();
                 scope.resetChat(false);
@@ -26485,8 +26476,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (confirm("Are you sure you want to delete your entire chat history? This action cannot be reversed.")) {
             if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.clearAllHistory) {
               await ChatHistoryManager.clearAllHistory();
-              _LuminaSettingsModal.updateStorageUsage();
-              const scope = window.LuminaSelectionScope;
+              _NexusSettingsModal.updateStorageUsage();
+              const scope = window.NexusSelectionScope;
               if (scope) {
                 scope.renderRecentChatsSidebar();
                 scope.resetChat(false);
@@ -26496,16 +26487,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
           }
         }
       });
-      this.setupDropdownInputs("lumina-history-retention-input", "lumina-history-retention-menu");
+      this.setupDropdownInputs("nexus-history-retention-input", "nexus-history-retention-menu");
     }
     static updateStorageUsage() {
-      const textEl = document.getElementById("lumina-storage-usage-text");
+      const textEl = document.getElementById("nexus-storage-usage-text");
       if (!textEl) return;
       chrome.storage.local.get(null, async (items) => {
         const now = Date.now();
         const expiredImgKeys = [];
         Object.keys(items).forEach((key) => {
-          if (key.startsWith("lumina_img_cache_") || key.startsWith("lumina_img_query_")) {
+          if (key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_")) {
             const item = items[key];
             if (item && item.timestamp && now - item.timestamp > 1 * 24 * 60 * 60 * 1e3) {
               expiredImgKeys.push(key);
@@ -26532,7 +26523,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         if (expiredImgKeys.length > 0) {
           chrome.storage.local.remove(expiredImgKeys);
         }
-        let dbSize = await LuminaChatDB.getStorageUsage();
+        let dbSize = await NexusChatDB.getStorageUsage();
         let configSize = 0;
         let cacheSize = 0;
         Object.keys(items).forEach((key) => {
@@ -26541,8 +26532,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
             return;
           }
           const isAnkiKey = key.startsWith("rot_") || [
-            "luminaTemplatesV3",
-            "luminaBatchHistoryV3",
+            "nexusTemplatesV3",
+            "nexusBatchHistoryV3",
             "lastUsedGenAIModel",
             "lastUsedBatchSize",
             "lastUsedDeck",
@@ -26552,9 +26543,9 @@ Markets reached historic highs this morning following breakthroughs in artificia
           if (isAnkiKey) return;
           const valueStr = JSON.stringify(items[key]);
           const sizeBytes = valueStr ? valueStr.length : 0;
-          if (key === "lumina_chat_sessions" || key.startsWith("lumina_session_") || key.startsWith("lumina_history_")) {
+          if (key === "nexus_chat_sessions" || key.startsWith("nexus_session_") || key.startsWith("nexus_history_")) {
             return;
-          } else if (key.startsWith("spotlight_history_") || key === "audio_cache" || key.startsWith("lumina_img_cache_") || key.startsWith("lumina_img_query_") || key.startsWith("yt_transcript_")) {
+          } else if (key.startsWith("spotlight_history_") || key === "audio_cache" || key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_") || key.startsWith("yt_transcript_")) {
             cacheSize += sizeBytes;
           } else {
             configSize += sizeBytes;
@@ -26579,9 +26570,9 @@ Markets reached historic highs this morning following breakthroughs in artificia
             return `${bytes} B`;
           };
           textEl.textContent = fmt(totalBytes);
-          const dbSizeEl = document.getElementById("lumina-storage-db-size");
-          const configSizeEl = document.getElementById("lumina-storage-config-size");
-          const cacheSizeEl = document.getElementById("lumina-storage-cache-size");
+          const dbSizeEl = document.getElementById("nexus-storage-db-size");
+          const configSizeEl = document.getElementById("nexus-storage-config-size");
+          const cacheSizeEl = document.getElementById("nexus-storage-cache-size");
           if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize + filesSize);
           if (configSizeEl) configSizeEl.textContent = fmt(configSize);
           if (cacheSizeEl) cacheSizeEl.textContent = fmt(totalCacheSize);
@@ -26589,23 +26580,23 @@ Markets reached historic highs this morning following breakthroughs in artificia
             const dbPct = ((dbSize + filesSize) / totalBytes * 100).toFixed(2);
             const configPct = (configSize / totalBytes * 100).toFixed(2);
             const cachePct = (totalCacheSize / totalBytes * 100).toFixed(2);
-            const barDb = document.getElementById("lumina-storage-bar-db");
-            const barConfig = document.getElementById("lumina-storage-bar-config");
-            const barCache = document.getElementById("lumina-storage-bar-cache");
+            const barDb = document.getElementById("nexus-storage-bar-db");
+            const barConfig = document.getElementById("nexus-storage-bar-config");
+            const barCache = document.getElementById("nexus-storage-bar-cache");
             requestAnimationFrame(() => {
               if (barDb) barDb.style.width = `${dbPct}%`;
               if (barConfig) barConfig.style.width = `${configPct}%`;
               if (barCache) barCache.style.width = `${cachePct}%`;
             });
           }
-          const sessionsListEl = document.getElementById("lumina-storage-sessions-list");
+          const sessionsListEl = document.getElementById("nexus-storage-sessions-list");
           if (sessionsListEl) {
-            const sessionsMetadata = await LuminaChatDB.getAllSessions();
+            const sessionsMetadata = await NexusChatDB.getAllSessions();
             const sessionList = [];
             for (const sessionId of Object.keys(sessionsMetadata)) {
               const meta = sessionsMetadata[sessionId];
               if (!meta) continue;
-              const sessionMessages = await LuminaChatDB.getMessages(sessionId);
+              const sessionMessages = await NexusChatDB.getMessages(sessionId);
               const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : "";
               const metaStr = JSON.stringify(meta);
               const messagesKeyStr = JSON.stringify(sessionId + "_messages");
@@ -26626,12 +26617,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
             sessionList.sort((a, b) => b.size - a.size);
             const top10 = sessionList.slice(0, 10);
             if (top10.length === 0) {
-              sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--lumina-text-muted);">No chat sessions found.</p>';
+              sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--nexus-text-muted);">No chat sessions found.</p>';
             } else {
               sessionsListEl.innerHTML = "";
               top10.forEach((session) => {
                 const itemEl = document.createElement("div");
-                itemEl.className = "lumina-storage-session-item";
+                itemEl.className = "nexus-storage-session-item";
                 itemEl.dataset.sessionId = session.id;
                 const formattedDate = new Date(session.timestamp).toLocaleDateString(void 0, {
                   month: "short",
@@ -26641,13 +26632,13 @@ Markets reached historic highs this morning following breakthroughs in artificia
                 });
                 const formattedSize = fmt(session.size);
                 itemEl.innerHTML = `
-                <div class="lumina-storage-session-info">
-                  <span class="lumina-storage-session-title" title="${session.title}">${session.title}</span>
-                  <span class="lumina-storage-session-date">${formattedDate}</span>
+                <div class="nexus-storage-session-info">
+                  <span class="nexus-storage-session-title" title="${session.title}">${session.title}</span>
+                  <span class="nexus-storage-session-date">${formattedDate}</span>
                 </div>
-                <div class="lumina-storage-session-right">
-                  <span class="lumina-storage-session-size">${formattedSize}</span>
-                  <button type="button" class="lumina-storage-session-delete" title="Delete Chat Thread">
+                <div class="nexus-storage-session-right">
+                  <span class="nexus-storage-session-size">${formattedSize}</span>
+                  <button type="button" class="nexus-storage-session-delete" title="Delete Chat Thread">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -26657,7 +26648,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
                   </button>
                 </div>
               `;
-                const deleteBtn = itemEl.querySelector(".lumina-storage-session-delete");
+                const deleteBtn = itemEl.querySelector(".nexus-storage-session-delete");
                 if (deleteBtn) {
                   deleteBtn.addEventListener("click", async (e) => {
                     e.stopPropagation();
@@ -26671,8 +26662,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
                       if (confirmed) {
                         if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.deleteChat) {
                           await ChatHistoryManager.deleteChat(session.id);
-                          _LuminaSettingsModal.updateStorageUsage();
-                          const scope = window.LuminaSelectionScope;
+                          _NexusSettingsModal.updateStorageUsage();
+                          const scope = window.NexusSelectionScope;
                           if (scope) {
                             scope.renderRecentChatsSidebar();
                             const tabsList = scope.getTabs();
@@ -26687,8 +26678,8 @@ Markets reached historic highs this morning following breakthroughs in artificia
                       if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
                         if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.deleteChat) {
                           await ChatHistoryManager.deleteChat(session.id);
-                          _LuminaSettingsModal.updateStorageUsage();
-                          const scope = window.LuminaSelectionScope;
+                          _NexusSettingsModal.updateStorageUsage();
+                          const scope = window.NexusSelectionScope;
                           if (scope) {
                             scope.renderRecentChatsSidebar();
                             const tabsList = scope.getTabs();
@@ -26704,12 +26695,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
                 }
                 itemEl.addEventListener("click", async () => {
                   const sid = session.id;
-                  _LuminaSettingsModal.hide();
-                  if (window.LuminaViewManager) {
-                    window.LuminaViewManager.switchView("chat", { sid });
+                  _NexusSettingsModal.hide();
+                  if (window.NexusViewManager) {
+                    window.NexusViewManager.switchView("chat", { sid });
                   }
-                  const messages = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getSessionMessages ? await ChatHistoryManager.getSessionMessages(sid) : await LuminaChatDB.getMessages(sid);
-                  const allSessions = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getAllHistories ? await ChatHistoryManager.getAllHistories() : await LuminaChatDB.getAllSessions();
+                  const messages = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getSessionMessages ? await ChatHistoryManager.getSessionMessages(sid) : await NexusChatDB.getMessages(sid);
+                  const allSessions = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getAllHistories ? await ChatHistoryManager.getAllHistories() : await NexusChatDB.getAllSessions();
                   const meta = allSessions[sid] || { id: sid, title: session.title };
                   const listContainer = document.getElementById("sidebar-recent-chats");
                   if (listContainer) {
@@ -26723,7 +26714,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
                   if (typeof window.loadHistoryIntoNewTab === "function") {
                     window.loadHistoryIntoNewTab(messages, meta, sid);
                   }
-                  const sidebar = document.getElementById("lumina-sidebar");
+                  const sidebar = document.getElementById("nexus-sidebar");
                   const backdrop = document.querySelector(".sidebar-backdrop");
                   if (sidebar) sidebar.classList.remove("active");
                   if (backdrop) backdrop.classList.remove("active");
@@ -26738,16 +26729,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
       this.updateCloudSyncDashboard();
     }
     static updateCloudSyncDashboard() {
-      const sizeEl = document.getElementById("lumina-cloud-stat-size");
-      const md5El = document.getElementById("lumina-cloud-stat-md5");
-      const timeEl = document.getElementById("lumina-cloud-stat-time");
-      const relativeEl = document.getElementById("lumina-cloud-stat-relative");
-      const itemsEl = document.getElementById("lumina-cloud-stat-items");
-      const breakdownEl = document.getElementById("lumina-cloud-stat-breakdown");
-      const mediaEl = document.getElementById("lumina-cloud-stat-media");
-      const mediaSubEl = document.getElementById("lumina-cloud-stat-media-sub");
+      const sizeEl = document.getElementById("nexus-cloud-stat-size");
+      const md5El = document.getElementById("nexus-cloud-stat-md5");
+      const timeEl = document.getElementById("nexus-cloud-stat-time");
+      const relativeEl = document.getElementById("nexus-cloud-stat-relative");
+      const itemsEl = document.getElementById("nexus-cloud-stat-items");
+      const breakdownEl = document.getElementById("nexus-cloud-stat-breakdown");
+      const mediaEl = document.getElementById("nexus-cloud-stat-media");
+      const mediaSubEl = document.getElementById("nexus-cloud-stat-media-sub");
       if (!sizeEl) return;
-      if (typeof LuminaAuth !== "undefined" && !LuminaAuth.isAuthenticated) {
+      if (typeof NexusAuth !== "undefined" && !NexusAuth.isAuthenticated) {
         sizeEl.textContent = "\u2014";
         if (md5El) md5El.textContent = "Not connected";
         timeEl.textContent = "Not signed in";
@@ -26758,7 +26749,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         if (mediaSubEl) mediaSubEl.textContent = "\u2014";
         return;
       }
-      chrome.storage.local.get(["last_sync_time", "last_sync_size", "last_sync_md5", "last_cloud_stats", "lumina_highlights", "drive_uploaded_blobs"], async (res) => {
+      chrome.storage.local.get(["last_sync_time", "last_sync_size", "last_sync_md5", "last_cloud_stats", "nexus_highlights", "drive_uploaded_blobs"], async (res) => {
         if (res.last_sync_size) {
           const bytes = parseInt(res.last_sync_size, 10);
           if (!isNaN(bytes)) {
@@ -26804,16 +26795,16 @@ Markets reached historic highs this morning following breakthroughs in artificia
             noteCount = cloudStats.notesCount || 0;
             highlightCount = cloudStats.highlightsCount || 0;
           } else if (res.last_sync_time) {
-            if (typeof LuminaChatDB !== "undefined") {
-              const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+            if (typeof NexusChatDB !== "undefined") {
+              const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
               sessionCount = Object.keys(sessions || {}).length;
             }
             if (typeof NotesManager !== "undefined") {
               const notes = await NotesManager.getNotes().catch(() => []);
               noteCount = notes.length;
             }
-            if (Array.isArray(res.lumina_highlights)) {
-              highlightCount = res.lumina_highlights.length;
+            if (Array.isArray(res.nexus_highlights)) {
+              highlightCount = res.nexus_highlights.length;
             }
           }
           if (itemsEl) {
@@ -26853,10 +26844,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
     }
   };
   document.addEventListener("DOMContentLoaded", () => {
-    LuminaSettingsModal2.init();
+    NexusSettingsModal2.init();
   });
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaSettingsModal = LuminaSettingsModal2;
+    globalThis.NexusSettingsModal = NexusSettingsModal2;
   }
 
   // src/components/sparks/default_sparks.js
@@ -27011,10 +27002,10 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
   };
 
   // src/components/sparks/sparks.js
-  var SPARKS_KEY = "lumina_sparks";
+  var SPARKS_KEY = "nexus_sparks";
   async function sparksLoad() {
-    const res = await chrome.storage.local.get([SPARKS_KEY]);
-    let sparks = res[SPARKS_KEY];
+    const res = await chrome.storage.local.get([SPARKS_KEY, "sparks", "lumina_sparks"]);
+    let sparks = res[SPARKS_KEY] || res["sparks"] || res["lumina_sparks"];
     if (!sparks) {
       sparks = {};
       for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
@@ -27029,6 +27020,8 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
           updatedAt: Date.now()
         };
       }
+      await sparksSave(sparks);
+    } else if (!res[SPARKS_KEY]) {
       await sparksSave(sparks);
     }
     return sparks;
@@ -27060,29 +27053,19 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
     return "spark_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
   }
   function sparksOpenPage() {
-    const chatLayout = document.getElementById("chat-layout");
-    const sparksPage = document.getElementById("sparks-page");
-    const topbar = document.getElementById("lumina-topbar");
-    if (chatLayout && sparksPage) {
-      chatLayout.style.display = "none";
-      if (topbar) topbar.style.display = "none";
-      sparksPage.style.display = "flex";
-      sparksRenderList2();
-      document.getElementById("sidebar-sparks-btn")?.classList.add("active");
-      document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+    if (typeof window.NexusViewManager !== "undefined") {
+      window.NexusViewManager.switchView("sparks");
     }
+    sparksRenderList2();
+    document.getElementById("sidebar-sparks-btn")?.classList.add("active");
+    document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
   }
   function sparksClosePage2() {
-    const chatLayout = document.getElementById("chat-layout");
-    const sparksPage = document.getElementById("sparks-page");
-    const topbar = document.getElementById("lumina-topbar");
-    if (chatLayout && sparksPage) {
-      sparksPage.style.display = "none";
-      if (topbar) topbar.style.display = "flex";
-      chatLayout.style.display = "flex";
-      document.getElementById("sidebar-sparks-btn")?.classList.remove("active");
-      document.getElementById("sparks-editor-overlay")?.remove();
+    if (typeof window.NexusViewManager !== "undefined") {
+      window.NexusViewManager.switchView("chat");
     }
+    document.getElementById("sidebar-sparks-btn")?.classList.remove("active");
+    document.getElementById("sparks-editor-overlay")?.remove();
   }
   async function sparksRenderList2() {
     const body = document.getElementById("sparks-page-body");
@@ -27195,11 +27178,11 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
                     <div class="sparks-field">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <label class="sparks-label">Instructions</label>
-                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--lumina-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ""}
+                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--nexus-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ""}
                         </div>
-                        <div class="lumina-input-container sparks-instructions-container">
-                            <div class="lumina-input-bar">
-                                <textarea id="spark-instructions-input" class="lumina-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || "")}</textarea>
+                        <div class="nexus-input-container sparks-instructions-container">
+                            <div class="nexus-input-bar">
+                                <textarea id="spark-instructions-input" class="nexus-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || "")}</textarea>
                             </div>
                         </div>
                     </div>
@@ -27232,14 +27215,14 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
                     <div class="sparks-editor-resizer-handle"></div>
                 </div>
                 <div class="sparks-preview-header">
-                    <div class="lumina-model-selector" id="sparks-preview-model-selector">
-                        <button class="lumina-model-btn" id="sparks-preview-model-btn">
-                            <span class="lumina-current-model" id="sparks-preview-model-label">Loading...</span>
+                    <div class="nexus-model-selector" id="sparks-preview-model-selector">
+                        <button class="nexus-model-btn" id="sparks-preview-model-btn">
+                            <span class="nexus-current-model" id="sparks-preview-model-label">Loading...</span>
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M6 9l6 6 6-6"/>
                             </svg>
                         </button>
-                        <div class="lumina-model-dropdown" id="sparks-preview-model-dropdown"></div>
+                        <div class="nexus-model-dropdown" id="sparks-preview-model-dropdown"></div>
                     </div>
                 </div>
                 <div class="sparks-preview-chat" id="sparks-preview-chat">
@@ -27247,25 +27230,25 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
                         <div class="spark-welcome">
                             <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
                             <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || "New Spark")}</h1>
-                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? "block" : "none"};">${escapeHtml(spark?.description || "")}</p>
+                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? "block" : "none"};">${escapeHtml(spark?.description || "")}</p>
                         </div>
                     </div>
-                    <div class="lumina-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
+                    <div class="nexus-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
                 </div>
-                <div class="lumina-chat-input-wrapper sparks-preview-input-area">
-                    <div class="lumina-input-container">
-                        <div class="lumina-input-bar">
-                            <div class="lumina-left-actions">
-                                 <button class="lumina-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
-                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <div class="nexus-chat-input-wrapper sparks-preview-input-area">
+                    <div class="nexus-input-container">
+                        <div class="nexus-input-bar">
+                            <div class="nexus-left-actions">
+                                 <button class="nexus-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                  </button>
                             </div>
-                            <textarea class="lumina-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark\u2026" rows="1" disabled></textarea>
-                            <div class="lumina-trailing-group">
-                                <button class="lumina-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
+                            <textarea class="nexus-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark\u2026" rows="1" disabled></textarea>
+                            <div class="nexus-trailing-group">
+                                <button class="nexus-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
                                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                                 </button>
-                                <button class="lumina-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
+                                <button class="nexus-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                                 </button>
                             </div>
@@ -27275,7 +27258,7 @@ When interacting with the user (brainstorming, evaluating outlines, or refining 
             </div>
         </div>
     `;
-    const mainContent = document.querySelector(".lumina-main-content");
+    const mainContent = document.querySelector(".nexus-main-content");
     if (mainContent) {
       mainContent.appendChild(overlay);
     } else {
@@ -27560,9 +27543,9 @@ ${fileContexts}`;
     function appendPreviewMessage(role, text) {
       if (role === "user") {
         const row = document.createElement("div");
-        row.className = "lumina-question-row";
+        row.className = "nexus-question-row";
         const qDiv = document.createElement("div");
-        qDiv.className = "lumina-chat-question";
+        qDiv.className = "nexus-chat-question";
         qDiv.textContent = text;
         row.appendChild(qDiv);
         messagesEl.appendChild(row);
@@ -27570,7 +27553,7 @@ ${fileContexts}`;
         return qDiv;
       } else {
         const aDiv = document.createElement("div");
-        aDiv.className = "lumina-chat-answer";
+        aDiv.className = "nexus-chat-answer";
         aDiv.textContent = text;
         messagesEl.appendChild(aDiv);
         messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -27585,7 +27568,7 @@ ${fileContexts}`;
       if (!btn || !dropdown || !label) return;
       const data = await chrome.storage.local.get(["providers", "advancedParamsByModel", "lastUsedModel", "promptSupport"]);
       const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-      const chain = window.LuminaModelHelper ? window.LuminaModelHelper.buildModelChain(data, promptSupport) : [];
+      const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data, promptSupport) : [];
       let currentModel = data.lastUsedModel?.model;
       let currentProviderId = data.lastUsedModel?.providerId;
       if (!currentModel && chain.length > 0) {
@@ -27601,15 +27584,15 @@ ${fileContexts}`;
         dropdown.innerHTML = chain.map((item) => {
           const isSelected = sparkSelectedModel && sparkSelectedModel.model === item.model && sparkSelectedModel.providerId === item.providerId;
           return `
-                    <div class="lumina-model-item ${isSelected ? "active" : ""}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
-                        <div class="lumina-model-item-info">
-                            <div class="lumina-model-name">${escapeHtml(item.displayName)}</div>
-                            <div class="lumina-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
+                    <div class="nexus-model-item ${isSelected ? "active" : ""}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
+                        <div class="nexus-model-item-info">
+                            <div class="nexus-model-name">${escapeHtml(item.displayName)}</div>
+                            <div class="nexus-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
                         </div>
                     </div>
                 `;
         }).join("");
-        dropdown.querySelectorAll(".lumina-model-item").forEach((el) => {
+        dropdown.querySelectorAll(".nexus-model-item").forEach((el) => {
           el.addEventListener("click", (e) => {
             e.stopPropagation();
             const m = el.dataset.model;
@@ -27624,7 +27607,7 @@ ${fileContexts}`;
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const isActive = dropdown.classList.contains("active");
-        document.querySelectorAll(".lumina-model-dropdown.active").forEach((d) => d.classList.remove("active"));
+        document.querySelectorAll(".nexus-model-dropdown.active").forEach((d) => d.classList.remove("active"));
         if (!isActive) {
           renderDropdown();
           dropdown.classList.add("active");
@@ -27650,7 +27633,7 @@ ${fileContexts}`;
       previewHistory.push({ role: "user", text });
       updatePreviewState();
       const aiDiv = appendPreviewMessage("assistant", "");
-      aiDiv.innerHTML = LuminaTemplates.thinkingDots();
+      aiDiv.innerHTML = NexusTemplates.thinkingDots();
       previewStreaming = true;
       previewSend.disabled = true;
       try {
@@ -27661,8 +27644,8 @@ ${fileContexts}`;
           if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
             model = storageData.lastUsedModel.model;
             providerId = storageData.lastUsedModel.providerId;
-          } else if (typeof window.getActiveLuminaTab === "function" && window.getActiveLuminaTab()?.selectedModel) {
-            const curTab = window.getActiveLuminaTab();
+          } else if (typeof window.getActiveNexusTab === "function" && window.getActiveNexusTab()?.selectedModel) {
+            const curTab = window.getActiveNexusTab();
             model = curTab.selectedModel.model;
             providerId = curTab.selectedModel.providerId;
           } else if (typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" && tabs[activeTabIndex]?.selectedModel) {
@@ -27770,7 +27753,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       item.addEventListener("click", (e) => {
         if (e.target.closest(".sidebar-spark-item__menu-btn")) return;
         openSparkChat2(item.dataset.sparkId);
-        const sidebar = document.getElementById("lumina-sidebar");
+        const sidebar = document.getElementById("nexus-sidebar");
         const backdrop = document.querySelector(".sidebar-backdrop");
         if (sidebar) sidebar.classList.remove("active");
         if (backdrop) backdrop.classList.remove("active");
@@ -27875,15 +27858,21 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   async function openSparkChat2(sparkId) {
     sparksClosePage2();
     document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-    document.querySelectorAll(".sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
-    const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : window.LuminaSelectionScope?.getTabs?.()?.[window.LuminaSelectionScope?.getActiveTabIndex?.()] ?? null;
+    document.querySelectorAll(".sidebar-spark-item").forEach((el) => {
+      if (el.dataset.sparkId === sparkId) el.classList.add("active");
+      else el.classList.remove("active");
+    });
+    document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+    document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+    document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+    const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : window.NexusSelectionScope?.getTabs?.()?.[window.NexusSelectionScope?.getActiveTabIndex?.()] ?? null;
     if (activeTab) {
       activeTab.sparkId = sparkId;
       if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
       const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
       const targetSharedInputUI = typeof window.getSharedInputUI === "function" ? window.getSharedInputUI() : typeof sharedInputUI !== "undefined" ? sharedInputUI : activeTab?.chatUIInstance?.sharedInputUI || null;
-      const settingsRes = await chrome.storage.local.get(["lumina_spark_last_settings"]);
-      const sparkSettings = (settingsRes.lumina_spark_last_settings || {})[sparkId];
+      const settingsRes = await chrome.storage.local.get(["nexus_spark_last_settings"]);
+      const sparkSettings = (settingsRes.nexus_spark_last_settings || {})[sparkId];
       if (activeTab.selectedModel) {
         if (targetChatUI) {
           targetChatUI.activeTabModel = { ...activeTab.selectedModel };
@@ -27999,7 +27988,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         <div class="spark-welcome">
             <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
             <h1 class="spark-welcome__title">${escapeHtml(spark.name)}</h1>
-            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ""}
+            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ""}
             ${recentHTML}
         </div>
     `;
@@ -28179,7 +28168,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       sidebarNewSparkBtn.addEventListener("click", () => sparksOpenEditor(null));
     }
     document.getElementById("sidebar-new-chat-btn")?.addEventListener("click", () => {
-      const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+      const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
       if (activeTab) {
         activeTab.sparkId = null;
         if (typeof renderTabs === "function") renderTabs();
@@ -28189,7 +28178,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       sidebarSparksRenderList2();
     });
     document.getElementById("topbar-new-chat-btn")?.addEventListener("click", () => {
-      const activeTab = typeof window.getActiveLuminaTab === "function" ? window.getActiveLuminaTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+      const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
       if (activeTab) {
         activeTab.sparkId = null;
         if (typeof renderTabs === "function") renderTabs();
@@ -28233,7 +28222,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   }
 
   // src/components/chat/model_helper.js
-  var LuminaModelHelper = {
+  var NexusModelHelper = {
     async getPromptSupport() {
       if (typeof window.getPromptApiSupport === "function") {
         return await window.getPromptApiSupport();
@@ -28286,21 +28275,21 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaModelHelper = LuminaModelHelper;
+    window.NexusModelHelper = NexusModelHelper;
   }
 
   // src/components/chat/templates.js
-  var LuminaTemplates2 = class _LuminaTemplates {
+  var NexusTemplates2 = class _NexusTemplates {
     static escapeHtml(str) {
       if (!str) return "";
       return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
     static modelItem(displayName, model) {
       const name = displayName || model;
-      return `<span class="model-name">${_LuminaTemplates.escapeHtml(name)}</span>`;
+      return `<span class="model-name">${_NexusTemplates.escapeHtml(name)}</span>`;
     }
     static thinkingDots() {
-      const temp = document.getElementById("lumina-thinkingIndicatorTemplate");
+      const temp = document.getElementById("nexus-thinkingIndicatorTemplate");
       if (temp) {
         const clone = temp.content.cloneNode(true);
         const dots = clone.querySelector(".thinking-dots");
@@ -28319,16 +28308,16 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     static sidebarContextMenu(items) {
       return items.map((item) => {
         if (item.type === "header") {
-          return `<div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">${_LuminaTemplates.escapeHtml(item.label)}</div>`;
+          return `<div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--nexus-sidebar-text-muted, #757575);padding-bottom:2px;">${_NexusTemplates.escapeHtml(item.label)}</div>`;
         }
         if (item.type === "divider") {
           return `<div class="sidebar-ctx-divider"></div>`;
         }
         const dangerClass = item.danger ? " sidebar-ctx-item--danger" : "";
         return `
-                <div class="sidebar-ctx-item${dangerClass}" data-action="${_LuminaTemplates.escapeHtml(item.action)}">
+                <div class="sidebar-ctx-item${dangerClass}" data-action="${_NexusTemplates.escapeHtml(item.action)}">
                     ${item.icon || ""}
-                    <span>${_LuminaTemplates.escapeHtml(item.label)}</span>
+                    <span>${_NexusTemplates.escapeHtml(item.label)}</span>
                 </div>
             `;
       }).join("");
@@ -28406,7 +28395,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
   }
   if (typeof window !== "undefined") {
-    window.LuminaTemplates = LuminaTemplates2;
+    window.NexusTemplates = NexusTemplates2;
     window.ensureKatexLoaded = ensureKatexLoaded;
     window.ensureChartLoaded = ensureChartLoaded;
     window.ensurePdfjsLoaded = ensurePdfjsLoaded;
@@ -28449,7 +28438,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         return;
       }
       if (oldChild.nodeType === Node.ELEMENT_NODE) {
-        if (oldChild.tagName === "CANVAS" || oldChild.classList?.contains("lumina-interactive-frozen")) {
+        if (oldChild.tagName === "CANVAS" || oldChild.classList?.contains("nexus-interactive-frozen")) {
           return;
         }
         for (let i = 0; i < newChild.attributes.length; i++) {
@@ -28505,7 +28494,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) return resolve([]);
       chrome.runtime.sendMessage({ action: "fetch_images", keyword: query }, (res) => {
         if (chrome.runtime.lastError) {
-          console.warn("[Lumina] fetch_images error:", chrome.runtime.lastError.message);
+          console.warn("[Nexus] fetch_images error:", chrome.runtime.lastError.message);
           resolve([]);
         } else if (res && res.success && res.images) {
           resolve(res.images);
@@ -28553,22 +28542,22 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       }
     } catch (e) {
-      console.warn("[Lumina] searchYoutubeVideo failed:", e);
+      console.warn("[Nexus] searchYoutubeVideo failed:", e);
     }
     return null;
   }
 
   // src/components/chat/dynamic_media_processor.js
-  var luminaResolvedYoutubeCache = /* @__PURE__ */ new Map();
-  var luminaResolvedImagesCache = /* @__PURE__ */ new Map();
-  function processLuminaDynamicYoutubeElements(rootNode) {
+  var nexusResolvedYoutubeCache = /* @__PURE__ */ new Map();
+  var nexusResolvedImagesCache = /* @__PURE__ */ new Map();
+  function processNexusDynamicYoutubeElements(rootNode) {
     if (!rootNode) return;
     const yts = [];
-    if (rootNode.classList && rootNode.classList.contains("lumina-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
+    if (rootNode.classList && rootNode.classList.contains("nexus-youtube-dynamic") && !rootNode.classList.contains("is-loading-started")) {
       yts.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-      const found = rootNode.querySelectorAll(".lumina-youtube-dynamic:not(.is-loading-started)");
+      const found = rootNode.querySelectorAll(".nexus-youtube-dynamic:not(.is-loading-started)");
       found.forEach((y) => yts.push(y));
     }
     yts.forEach(async (yt) => {
@@ -28577,11 +28566,11 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, " ");
       if (!cleanQuery) return;
       let resolvePromise;
-      if (luminaResolvedYoutubeCache.has(cleanQuery)) {
-        resolvePromise = luminaResolvedYoutubeCache.get(cleanQuery);
+      if (nexusResolvedYoutubeCache.has(cleanQuery)) {
+        resolvePromise = nexusResolvedYoutubeCache.get(cleanQuery);
       } else {
         resolvePromise = searchYoutubeVideo(cleanQuery);
-        luminaResolvedYoutubeCache.set(cleanQuery, resolvePromise);
+        nexusResolvedYoutubeCache.set(cleanQuery, resolvePromise);
       }
       try {
         const videoData = await resolvePromise;
@@ -28589,9 +28578,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         if (videoId) {
           const embedUrl = `https://www.youtube.com/embed/${videoId}?origin=https://www.youtube.com`;
           const text = yt.getAttribute("data-text") || "YouTube video player";
-          yt.innerHTML = `<iframe width="100%" height="315" src="${embedUrl}" title="${text}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe>`;
+          yt.innerHTML = `<iframe width="100%" height="315" src="${embedUrl}" title="${text}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="nexus-youtube-iframe"></iframe>`;
           yt.classList.remove("is-loading");
-          const answerDiv = yt.closest(".lumina-chat-answer");
+          const answerDiv = yt.closest(".nexus-chat-answer");
           if (answerDiv) {
             const originalHref = yt.getAttribute("data-original-href");
             const rawText = answerDiv.getAttribute("data-raw-text") || "";
@@ -28603,23 +28592,23 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             }
           }
         } else {
-          yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">Kh\xF4ng t\xECm th\u1EA5y video ph\xF9 h\u1EE3p tr\xEAn YouTube cho t\u1EEB kh\xF3a "${cleanQuery}"</div>`;
+          yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--nexus-text-secondary); background: var(--nexus-ui-bg-light); border-radius: 12px; font-family: var(--nexus-font-family); font-size: 13px;">Kh\xF4ng t\xECm th\u1EA5y video ph\xF9 h\u1EE3p tr\xEAn YouTube cho t\u1EEB kh\xF3a "${cleanQuery}"</div>`;
           yt.classList.remove("is-loading");
         }
       } catch (e) {
-        yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">L\u1ED7i t\u1EA3i video YouTube</div>`;
+        yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--nexus-text-secondary); background: var(--nexus-ui-bg-light); border-radius: 12px; font-family: var(--nexus-font-family); font-size: 13px;">L\u1ED7i t\u1EA3i video YouTube</div>`;
         yt.classList.remove("is-loading");
       }
     });
   }
-  function processLuminaDynamicImageElements(rootNode) {
+  function processNexusDynamicImageElements(rootNode) {
     if (!rootNode) return;
     const found = [];
-    if (rootNode.classList && rootNode.classList.contains("lumina-async-image")) {
+    if (rootNode.classList && rootNode.classList.contains("nexus-async-image")) {
       found.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-      rootNode.querySelectorAll(".lumina-async-image").forEach((i) => found.push(i));
+      rootNode.querySelectorAll(".nexus-async-image").forEach((i) => found.push(i));
     }
     const imgs = found.filter((img) => {
       if (img.classList.contains("is-loading-started")) return false;
@@ -28639,9 +28628,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       }
       if (!cleanQuery) return;
-      if (luminaResolvedImagesCache.has(cleanQuery)) {
+      if (nexusResolvedImagesCache.has(cleanQuery)) {
         try {
-          const cachedResult = await luminaResolvedImagesCache.get(cleanQuery);
+          const cachedResult = await nexusResolvedImagesCache.get(cleanQuery);
           if (cachedResult && cachedResult.fallbackUrls) {
             img.dataset.fallbackUrls = JSON.stringify(cachedResult.fallbackUrls);
           }
@@ -28662,7 +28651,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
         throw new Error("Google Image search failed");
       })();
-      luminaResolvedImagesCache.set(cleanQuery, loadPromise);
+      nexusResolvedImagesCache.set(cleanQuery, loadPromise);
       try {
         const result = await loadPromise;
         if (result && result.fallbackUrls) {
@@ -28676,8 +28665,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     });
   }
   if (typeof window !== "undefined") {
-    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements;
-    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements;
+    window.processNexusDynamicYoutubeElements = processNexusDynamicYoutubeElements;
+    window.processNexusDynamicImageElements = processNexusDynamicImageElements;
   }
 
   // src/components/chat/chart_renderer.js
@@ -28688,7 +28677,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       return;
     }
     if (wrapper.getAttribute("data-last-rendered-source") === configAttr) return;
-    const chatAnswer = wrapper.closest(".lumina-chat-answer");
+    const chatAnswer = wrapper.closest(".nexus-chat-answer");
     if (chatAnswer && chatAnswer.classList.contains("streaming")) return;
     const rawConfig = configAttr.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
     let config;
@@ -28737,24 +28726,24 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     });
   }
-  function processLuminaChartElements(rootNode) {
+  function processNexusChartElements(rootNode) {
     if (!rootNode) return;
     const wrappers = [];
-    if (rootNode.classList && rootNode.classList.contains("lumina-chartjs-wrapper")) {
+    if (rootNode.classList && rootNode.classList.contains("nexus-chartjs-wrapper")) {
       wrappers.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-      rootNode.querySelectorAll(".lumina-chartjs-wrapper").forEach((w) => wrappers.push(w));
+      rootNode.querySelectorAll(".nexus-chartjs-wrapper").forEach((w) => wrappers.push(w));
     }
     wrappers.forEach((w) => renderChartJSWrapper(w));
   }
   if (typeof window !== "undefined") {
     window._renderChartJSWrapper = renderChartJSWrapper;
-    window.processLuminaChartElements = processLuminaChartElements;
+    window.processNexusChartElements = processNexusChartElements;
   }
 
   // src/components/chat/chat_ui.js
-  var LuminaChatUI2 = class _LuminaChatUI {
+  var NexusChatUI2 = class _NexusChatUI {
     static getDeepActiveElement() {
       let el = document.activeElement;
       while (el && el.shadowRoot && el.shadowRoot.activeElement) {
@@ -28764,31 +28753,31 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     static injectQuestionActions(questionDiv) {
       if (!questionDiv) return;
-      const row = questionDiv.closest(".lumina-question-row");
+      const row = questionDiv.closest(".nexus-question-row");
       if (!row) return;
-      const existing = row.querySelector(".lumina-question-actions-row");
+      const existing = row.querySelector(".nexus-question-actions-row");
       if (existing) existing.remove();
       const actionsRow = document.createElement("div");
-      actionsRow.className = "lumina-actions lumina-question-actions-row";
+      actionsRow.className = "nexus-actions nexus-question-actions-row";
       actionsRow.innerHTML = `
-            <button class="lumina-answer-action-btn btn-undo" title="Undo">
+            <button class="nexus-answer-action-btn btn-undo" title="Undo">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
             </button>
-            <button class="lumina-answer-action-btn btn-copy" title="Copy">
+            <button class="nexus-answer-action-btn btn-copy" title="Copy">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-            <button class="lumina-answer-action-btn btn-edit" title="Edit">
+            <button class="nexus-answer-action-btn btn-edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
         `;
       const getChatUI = () => {
-        const histEl = questionDiv.closest(".lumina-chat-history, .lumina-chat-scroll-content");
+        const histEl = questionDiv.closest(".nexus-chat-history, .nexus-chat-scroll-content");
         return histEl?.__uiInstance || window.ui || window.currentPopup?.__uiInstance;
       };
       actionsRow.querySelector(".btn-undo").onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const entry = questionDiv.closest(".lumina-entry");
+        const entry = questionDiv.closest(".nexus-entry");
         const chatUI2 = getChatUI();
         if (chatUI2) chatUI2._undoEditAndTruncate(entry, "question", questionDiv, null);
       };
@@ -28811,29 +28800,29 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         if (chatUI2) chatUI2.enterQuestionEditMode(questionDiv);
       };
       row.appendChild(actionsRow);
-      _LuminaChatUI.checkQuestionOverflow(questionDiv);
+      _NexusChatUI.checkQuestionOverflow(questionDiv);
     }
     static checkQuestionOverflow(questionDiv) {
       if (!questionDiv) return;
-      const contentDiv = questionDiv.querySelector(".lumina-question-content");
+      const contentDiv = questionDiv.querySelector(".nexus-question-content");
       if (!contentDiv) return;
       if (contentDiv.scrollHeight === 0) {
-        requestAnimationFrame(() => _LuminaChatUI.checkQuestionOverflow(questionDiv));
+        requestAnimationFrame(() => _NexusChatUI.checkQuestionOverflow(questionDiv));
         return;
       }
       const hasOverflow = contentDiv.scrollHeight > contentDiv.clientHeight;
       if (hasOverflow) {
         questionDiv.classList.add("has-overflow");
-        let btn = questionDiv.querySelector(".lumina-question-expand-btn");
+        let btn = questionDiv.querySelector(".nexus-question-expand-btn");
         if (!btn) {
           btn = document.createElement("div");
-          btn.className = "lumina-question-expand-btn";
+          btn.className = "nexus-question-expand-btn";
           btn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
           questionDiv.appendChild(btn);
         }
       } else {
         questionDiv.classList.remove("has-overflow");
-        const btn = questionDiv.querySelector(".lumina-question-expand-btn");
+        const btn = questionDiv.querySelector(".nexus-question-expand-btn");
         if (btn) btn.remove();
       }
     }
@@ -28846,12 +28835,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         ...options
       };
       this.systemTokens = 150;
-      this.historyEl = container2.querySelector(".lumina-chat-history") || container2.querySelector(".lumina-chat-scroll-content");
+      this.historyEl = container2.querySelector(".nexus-chat-history") || container2.querySelector(".nexus-chat-scroll-content");
       if (this.historyEl) {
         this.historyEl.__uiInstance = this;
       }
-      this.inputEl = container2.querySelector(".lumina-chat-input") || (this.options.isSpotlight && !this.options.isPrimaryInput ? null : document.querySelector(".lumina-chat-input") || document.querySelector("#chat-input"));
-      this.filePreviewEl = container2.querySelector(".lumina-file-preview-container") || container2.querySelector(".lumina-image-preview-container") || container2.querySelector("#image-preview") || document.querySelector(".lumina-file-preview-container") || document.querySelector(".lumina-image-preview-container");
+      this.inputEl = container2.querySelector(".nexus-chat-input") || (this.options.isSpotlight && !this.options.isPrimaryInput ? null : document.querySelector(".nexus-chat-input") || document.querySelector("#chat-input"));
+      this.filePreviewEl = container2.querySelector(".nexus-file-preview-container") || container2.querySelector(".nexus-image-preview-container") || container2.querySelector("#image-preview") || document.querySelector(".nexus-file-preview-container") || document.querySelector(".nexus-image-preview-container");
       this.fileInputEl = container2.querySelector('input[type="file"]') || container2.querySelector("#file-input") || document.querySelector("#file-input");
       this.currentEntryDiv = null;
       this.loadingDiv = null;
@@ -28882,13 +28871,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this.container.addEventListener("wheel", (e) => {
           let target = e.target;
           while (target && target !== this.container) {
-            if (target.classList.contains("lumina-chat-scroll-content") || target.classList.contains("lumina-chat-history")) {
+            if (target.classList.contains("nexus-chat-scroll-content") || target.classList.contains("nexus-chat-history")) {
               if (scrollingTimeout) clearTimeout(scrollingTimeout);
-              if (!target.classList.contains("lumina-is-scrolling")) {
-                target.classList.add("lumina-is-scrolling");
+              if (!target.classList.contains("nexus-is-scrolling")) {
+                target.classList.add("nexus-is-scrolling");
               }
               scrollingTimeout = setTimeout(() => {
-                target.classList.remove("lumina-is-scrolling");
+                target.classList.remove("nexus-is-scrolling");
                 scrollingTimeout = null;
               }, 200);
               break;
@@ -28910,13 +28899,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     syncStateFromDOM() {
       if (!this.historyEl) return;
-      const entries = this.historyEl.querySelectorAll(".lumina-entry");
+      const entries = this.historyEl.querySelectorAll(".nexus-entry");
       if (entries.length > 0) {
         const lastEntry = entries[entries.length - 1];
         this.currentEntryDiv = lastEntry;
-        this.loadingDiv = lastEntry.querySelector(".lumina-loading-wrapper");
-        this.searchingDiv = lastEntry.querySelector(".lumina-loading-wrapper") || lastEntry.querySelector(".lumina-searching-indicator");
-        const answerDiv = lastEntry.querySelector(".lumina-chat-answer") || lastEntry.querySelector(".lumina-answer-versions");
+        this.loadingDiv = lastEntry.querySelector(".nexus-loading-wrapper");
+        this.searchingDiv = lastEntry.querySelector(".nexus-loading-wrapper") || lastEntry.querySelector(".nexus-searching-indicator");
+        const answerDiv = lastEntry.querySelector(".nexus-chat-answer") || lastEntry.querySelector(".nexus-answer-versions");
         this.currentAnswerDiv = answerDiv;
       } else {
         this.currentEntryDiv = null;
@@ -28929,13 +28918,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (!container2) return;
       this.historyEl = container2;
       this._setupHistoryDelegation(container2);
-      if (container2._luminaListenersAttached) return;
-      container2._luminaListenersAttached = true;
+      if (container2._nexusListenersAttached) return;
+      container2._nexusListenersAttached = true;
       container2.addEventListener("keydown", (e) => {
-        const editable = e.target.closest('.lumina-chat-question div[contenteditable="true"]');
+        const editable = e.target.closest('.nexus-chat-question div[contenteditable="true"]');
         if (editable && e.target === editable) {
           const isSelectAll = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a";
-          const tag = editable.querySelector(".lumina-selected-text-tag");
+          const tag = editable.querySelector(".nexus-selected-text-tag");
           if (isSelectAll && tag) {
             e.preventDefault();
             const selection = window.getSelection();
@@ -28963,7 +28952,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 const preRange = range.cloneRange();
                 preRange.selectNodeContents(editable);
                 preRange.setEnd(range.startContainer, range.startOffset);
-                if (preRange.toString().trim() === "" && preRange.cloneContents().querySelector(".lumina-selected-text-tag")) {
+                if (preRange.toString().trim() === "" && preRange.cloneContents().querySelector(".nexus-selected-text-tag")) {
                   e.preventDefault();
                   return;
                 }
@@ -28983,12 +28972,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       });
       container2.addEventListener("mouseover", (e) => {
-        const tag = e.target.closest(".lumina-selected-text-tag");
-        const commentHighlight = e.target.closest(".lumina-comment-highlight");
+        const tag = e.target.closest(".nexus-selected-text-tag");
+        const commentHighlight = e.target.closest(".nexus-comment-highlight");
         if (tag) {
           tag.removeAttribute("title");
-          const questionDiv = tag.closest(".lumina-chat-question");
-          const isInputField = tag.closest(".lumina-ask-input-field") || tag.closest(".lumina-chat-input");
+          const questionDiv = tag.closest(".nexus-chat-question");
+          const isInputField = tag.closest(".nexus-ask-input-field") || tag.closest(".nexus-chat-input");
           let context = "";
           if (questionDiv) {
             const rawText = questionDiv.getAttribute("data-raw-text") || "";
@@ -29003,19 +28992,19 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       });
       container2.addEventListener("mouseout", (e) => {
-        const tagOrComment = e.target.closest(".lumina-selected-text-tag, .lumina-comment-highlight");
+        const tagOrComment = e.target.closest(".nexus-selected-text-tag, .nexus-comment-highlight");
         if (tagOrComment) this._hideTagTooltip();
       });
       container2.addEventListener("mousedown", (e) => {
-        const bubble = e.target.closest(".lumina-chat-question, .lumina-chat-answer");
+        const bubble = e.target.closest(".nexus-chat-question, .nexus-chat-answer");
         if (bubble) {
-          if (e.target.closest(".lumina-question-pin-btn")) return;
-          const expandBtn = e.target.closest(".lumina-question-expand-btn");
+          if (e.target.closest(".nexus-question-pin-btn")) return;
+          const expandBtn = e.target.closest(".nexus-question-expand-btn");
           if (expandBtn) {
             e.preventDefault();
             e.stopPropagation();
             const isExpanded = bubble.classList.toggle("expanded");
-            const cDiv = bubble.querySelector(".lumina-question-content");
+            const cDiv = bubble.querySelector(".nexus-question-content");
             if (cDiv) {
               cDiv.scrollTop = 0;
               cDiv.scrollLeft = 0;
@@ -29027,7 +29016,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           }
           const editable = bubble.querySelector('[contenteditable="true"]');
           if (editable) {
-            if (!e.target.closest('.lumina-edit-btn, a, button, [contenteditable="true"]')) {
+            if (!e.target.closest('.nexus-edit-btn, a, button, [contenteditable="true"]')) {
               e.preventDefault();
               this._focusEditableAtEnd(editable);
             }
@@ -29036,7 +29025,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       });
       container2.addEventListener("input", (e) => {
-        const editable = e.target.closest('.lumina-chat-question div[contenteditable="true"]');
+        const editable = e.target.closest('.nexus-chat-question div[contenteditable="true"]');
         if (editable) e.stopPropagation();
       });
     }
@@ -29044,9 +29033,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (!historyEl) return;
       if (!this._historyDelegationClickHandler) {
         this._historyDelegationClickHandler = (e) => {
-          const actionBtn = e.target.closest(".lumina-answer-action-btn");
+          const actionBtn = e.target.closest(".nexus-answer-action-btn");
           if (actionBtn) {
-            const answerDiv = actionBtn.closest(".lumina-chat-answer");
+            const answerDiv = actionBtn.closest(".nexus-chat-answer");
             if (answerDiv) {
               e.preventDefault();
               e.stopPropagation();
@@ -29055,29 +29044,29 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               return;
             }
           }
-          const clickableImg = e.target.closest(".lumina-clickable-image");
+          const clickableImg = e.target.closest(".nexus-clickable-image");
           if (clickableImg && clickableImg.src) {
             e.stopPropagation();
             this.showImagePreview(clickableImg.src, clickableImg.alt || clickableImg.getAttribute("alt"));
           }
-          const fileChip = e.target.closest(".lumina-question-file-chip");
+          const fileChip = e.target.closest(".nexus-question-file-chip");
           if (fileChip) {
             e.stopPropagation();
-            const entry = fileChip.closest(".lumina-entry");
-            if (entry && entry._luminaImages) {
+            const entry = fileChip.closest(".nexus-entry");
+            if (entry && entry._nexusImages) {
               const fileName = fileChip.title;
-              const fileObj = entry._luminaImages.find((f) => f.name === fileName);
+              const fileObj = entry._nexusImages.find((f) => f.name === fileName);
               if (fileObj) {
                 this.showFilePreview(fileObj);
               }
             }
           }
-          const showCodeBtn = e.target.closest(".lumina-show-code-btn");
+          const showCodeBtn = e.target.closest(".nexus-show-code-btn");
           if (showCodeBtn) {
             e.stopPropagation();
-            const wrapper = showCodeBtn.closest(".lumina-python-chart-wrapper");
+            const wrapper = showCodeBtn.closest(".nexus-python-chart-wrapper");
             if (wrapper) {
-              const codeDisplay = wrapper.querySelector(".lumina-python-code-display");
+              const codeDisplay = wrapper.querySelector(".nexus-python-code-display");
               if (codeDisplay) {
                 const isHidden = codeDisplay.style.display === "none" || codeDisplay.style.getPropertyValue("display") === "none";
                 codeDisplay.style.setProperty("display", isHidden ? "block" : "none", isHidden ? "" : "important");
@@ -29085,7 +29074,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               }
             }
           }
-          const d2Wrapper = e.target.closest(".lumina-d2-wrapper.lumina-d2-rendered");
+          const d2Wrapper = e.target.closest(".nexus-d2-wrapper.nexus-d2-rendered");
           if (d2Wrapper) {
             e.stopPropagation();
             const svgEl = d2Wrapper.querySelector("svg");
@@ -29104,7 +29093,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               clonedSvg.removeAttribute("height");
               const svgStr = new XMLSerializer().serializeToString(clonedSvg);
               const dataUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr);
-              const sourceEl = d2Wrapper.querySelector('.lumina-d2-source, script[type="text/d2"]');
+              const sourceEl = d2Wrapper.querySelector('.nexus-d2-source, script[type="text/d2"]');
               const rawDef = sourceEl ? sourceEl.textContent : d2Wrapper.getAttribute("data-d2") || "";
               let caption = "Diagram";
               const lines = rawDef.split("\n");
@@ -29310,12 +29299,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     _ensureQuestionRow(questionDiv) {
       if (!questionDiv) return null;
-      const existingRow = questionDiv.closest(".lumina-question-row");
+      const existingRow = questionDiv.closest(".nexus-question-row");
       if (existingRow) return existingRow;
       const parent = questionDiv.parentElement;
       if (!parent) return null;
       const row = document.createElement("div");
-      row.className = "lumina-question-row";
+      row.className = "nexus-question-row";
       parent.insertBefore(row, questionDiv);
       row.appendChild(questionDiv);
       return row;
@@ -29337,8 +29326,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
     }
     appendQuestion(text, images = [], options = {}) {
-      const layout = this.historyEl.closest(".lumina-chat-layout, #chat-layout");
-      const welcome = (layout || this.historyEl.parentNode || this.historyEl).querySelector(".spark-welcome, .lumina-homepage-welcome");
+      const layout = this.historyEl.closest(".nexus-chat-layout, #chat-layout");
+      const welcome = (layout || this.historyEl.parentNode || this.historyEl).querySelector(".spark-welcome, .nexus-homepage-welcome");
       if (welcome) {
         welcome.remove();
       }
@@ -29356,10 +29345,10 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           const sessionId2 = this.historyEl?.dataset?.sessionId || typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.currentSessionId || "temp_session";
           const attachmentId = "img_" + Date.now() + "_" + index + "_" + Math.random().toString(36).substr(2, 5);
           const dbKey = `${sessionId2}_${attachmentId}_Image.png`;
-          const blob = LuminaAttachmentDB.dataURLtoBlob(item);
+          const blob = NexusAttachmentDB.dataURLtoBlob(item);
           let objectUrl = item;
           if (blob) {
-            LuminaAttachmentDB.put(dbKey, blob);
+            NexusAttachmentDB.put(dbKey, blob);
             objectUrl = URL.createObjectURL(blob);
           }
           const obj = {
@@ -29398,25 +29387,25 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           item.attachmentId = dbKey;
         }
         if (item.dataUrl && item.dataUrl.startsWith("data:")) {
-          const blob = LuminaAttachmentDB.dataURLtoBlob(item.dataUrl);
+          const blob = NexusAttachmentDB.dataURLtoBlob(item.dataUrl);
           if (blob && item.isImage) {
             item.objectUrl = URL.createObjectURL(blob);
           }
           const storeBlob = async () => {
             let dataUrlToUse = item.dataUrl;
             if (item.isImage && dataUrlToUse.length > 120 * 1024) {
-              dataUrlToUse = await LuminaFileProcessor.compressImage(dataUrlToUse, 2048, 2048, 0.9);
-              const compressedBlob = LuminaAttachmentDB.dataURLtoBlob(dataUrlToUse);
+              dataUrlToUse = await NexusFileProcessor.compressImage(dataUrlToUse, 2048, 2048, 0.9);
+              const compressedBlob = NexusAttachmentDB.dataURLtoBlob(dataUrlToUse);
               if (compressedBlob) {
                 if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
                 item.objectUrl = URL.createObjectURL(compressedBlob);
                 const imgInDom = this.currentEntryDiv?.querySelector(`img[data-attachment-id="${item.attachmentId}"]`);
                 if (imgInDom) imgInDom.src = item.objectUrl;
                 item.mimeType = "image/webp";
-                await LuminaAttachmentDB.put(item.attachmentId, compressedBlob);
+                await NexusAttachmentDB.put(item.attachmentId, compressedBlob);
               }
             } else if (blob) {
-              await LuminaAttachmentDB.put(item.attachmentId, blob);
+              await NexusAttachmentDB.put(item.attachmentId, blob);
             }
           };
           storeBlob();
@@ -29425,12 +29414,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }) : [];
       this.currentAnswerDiv = null;
       this.currentEntryDiv = document.createElement("div");
-      this.currentEntryDiv.className = "lumina-entry";
+      this.currentEntryDiv.className = "nexus-entry";
       this.currentEntryDiv.dataset.entryType = entryType;
       this.currentEntryDiv.dataset.entryId = "entry-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
       if (visibleImages.length > 0) {
         const filesDiv = document.createElement("div");
-        filesDiv.className = "lumina-chat-question-files";
+        filesDiv.className = "nexus-chat-question-files";
         visibleImages.forEach((item) => {
           const isImage = item.isImage || item.mimeType && item.mimeType.startsWith("image/");
           const rawSrc = item.objectUrl || item.dataUrl || item.previewUrl || (item.mimeType && item.data ? `data:${item.mimeType};base64,${item.data}` : "");
@@ -29442,7 +29431,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               img.dataset.attachmentId = item.attachmentId;
             }
             if (item.name) img.alt = item.name;
-            img.className = "lumina-clickable-image";
+            img.className = "nexus-clickable-image";
             img.addEventListener("click", (e) => {
               e.stopPropagation();
               this.showImagePreview(img.src, img.alt);
@@ -29450,28 +29439,28 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             filesDiv.appendChild(img);
           } else {
             const fileName = item.name || "File";
-            const displayName = _LuminaChatUI.getDisplayFileName(fileName);
-            const category = _LuminaChatUI.inferFileCategory(item);
-            const icon = _LuminaChatUI.getFileIconByCategory(category);
-            const typeLabel = _LuminaChatUI.getFileTypeLabel(item);
+            const displayName = _NexusChatUI.getDisplayFileName(fileName);
+            const category = _NexusChatUI.inferFileCategory(item);
+            const icon = _NexusChatUI.getFileIconByCategory(category);
+            const typeLabel = _NexusChatUI.getFileTypeLabel(item);
             const fileChip = document.createElement("div");
-            fileChip.className = "lumina-preview-item is-file lumina-question-file-chip";
+            fileChip.className = "nexus-preview-item is-file nexus-question-file-chip";
             if (item.attachmentId) {
               fileChip.dataset.attachmentId = item.attachmentId;
             }
             fileChip.title = fileName;
-            fileChip.innerHTML = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
+            fileChip.innerHTML = `<div class="nexus-file-preview-info"><span class="nexus-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
             filesDiv.appendChild(fileChip);
           }
         });
         this.currentEntryDiv.appendChild(filesDiv);
       }
       const questionDiv = document.createElement("div");
-      questionDiv.className = `lumina-chat-question${entryType !== "qa" ? ` ${entryType}-question` : ""}`;
+      questionDiv.className = `nexus-chat-question${entryType !== "qa" ? ` ${entryType}-question` : ""}`;
       questionDiv.dataset.entryType = entryType;
       if (visibleImages.length > 0) {
-        questionDiv._luminaImages = visibleImages;
-        this.currentEntryDiv._luminaImages = visibleImages;
+        questionDiv._nexusImages = visibleImages;
+        this.currentEntryDiv._nexusImages = visibleImages;
         questionDiv.dataset.images = JSON.stringify({
           compact: true,
           count: visibleImages.length,
@@ -29512,14 +29501,14 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         questionDiv.setAttribute("data-raw-text", text);
         this.currentEntryDiv.dataset.timestamp = String(Date.now());
         const contentDiv = document.createElement("div");
-        contentDiv.className = "lumina-question-content";
+        contentDiv.className = "nexus-question-content";
         contentDiv.innerHTML = displayText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
         questionDiv.appendChild(contentDiv);
       }
       const scrollContainer = this.getScrollContainer();
       const preAppendScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       const row = document.createElement("div");
-      row.className = "lumina-question-row";
+      row.className = "nexus-question-row";
       row.appendChild(questionDiv);
       this.currentEntryDiv.appendChild(row);
       this.historyEl.appendChild(this.currentEntryDiv);
@@ -29534,7 +29523,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           this.setInitialEntryHeight(this.currentEntryDiv, true, preAppendScroll, false);
         });
       }
-      _LuminaChatUI.injectQuestionActions(questionDiv);
+      _NexusChatUI.injectQuestionActions(questionDiv);
       return questionDiv;
     }
     createAnswerDiv() {
@@ -29543,22 +29532,22 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
       this._clearCommentInteractions();
       const applyProofreadStyles = (div2) => {
-        div2.classList.add("lumina-can-comment");
+        div2.classList.add("nexus-can-comment");
         if (this.currentEntryDiv && this.currentEntryDiv.dataset.entryType === "proofread") {
           div2.spellcheck = false;
           div2.style.outline = "none";
           div2.style.borderRadius = "8px";
-          div2.style.backgroundColor = "var(--lumina-bg-secondary)";
-          div2.classList.add("lumina-proofread-editable");
+          div2.style.backgroundColor = "var(--nexus-bg-secondary)";
+          div2.classList.add("nexus-proofread-editable");
         }
       };
       if (this.currentEntryDiv) {
-        const activeVersion = this.currentEntryDiv.querySelector(".lumina-answer-version.active");
+        const activeVersion = this.currentEntryDiv.querySelector(".nexus-answer-version.active");
         if (activeVersion) {
-          let innerDiv = activeVersion.querySelector(".lumina-chat-answer");
+          let innerDiv = activeVersion.querySelector(".nexus-chat-answer");
           if (!innerDiv) {
             innerDiv = document.createElement("div");
-            innerDiv.className = "lumina-chat-answer";
+            innerDiv.className = "nexus-chat-answer";
             activeVersion.appendChild(innerDiv);
           }
           applyProofreadStyles(innerDiv);
@@ -29566,10 +29555,10 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       }
       const div = document.createElement("div");
-      div.className = "lumina-chat-answer";
+      div.className = "nexus-chat-answer";
       applyProofreadStyles(div);
       if (this.currentEntryDiv) {
-        const existingAnswer = this.currentEntryDiv.querySelector(".lumina-chat-answer");
+        const existingAnswer = this.currentEntryDiv.querySelector(".nexus-chat-answer");
         if (existingAnswer) {
           this.currentEntryDiv.insertBefore(div, existingAnswer.nextSibling);
         } else {
@@ -29577,7 +29566,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
       } else {
         this.currentEntryDiv = document.createElement("div");
-        this.currentEntryDiv.className = "lumina-entry";
+        this.currentEntryDiv.className = "nexus-entry";
         this.currentEntryDiv.appendChild(div);
         this.historyEl.appendChild(this.currentEntryDiv);
       }
@@ -29587,21 +29576,21 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
       if (this.sparkId) {
         const sparkId = this.sparkId;
-        chrome.storage.local.get(["lumina_sparks"]).then((res) => {
-          const sparks = res.lumina_sparks || {};
+        chrome.storage.local.get(["nexus_sparks"]).then((res) => {
+          const sparks = res.nexus_sparks || {};
           const spark = sparks[sparkId];
           if (spark && spark.name) {
-            if (!div.querySelector(".lumina-spark-message-header")) {
+            if (!div.querySelector(".nexus-spark-message-header")) {
               const headerDiv = document.createElement("div");
-              headerDiv.className = "lumina-spark-message-header";
+              headerDiv.className = "nexus-spark-message-header";
               const nameSpan = document.createElement("span");
-              nameSpan.className = "lumina-spark-name";
+              nameSpan.className = "nexus-spark-name";
               nameSpan.textContent = spark.name;
               const sepSpan = document.createElement("span");
-              sepSpan.className = "lumina-spark-separator";
+              sepSpan.className = "nexus-spark-separator";
               sepSpan.textContent = " \u2022 ";
               const typeSpan = document.createElement("span");
-              typeSpan.className = "lumina-spark-type";
+              typeSpan.className = "nexus-spark-type";
               typeSpan.textContent = "Custom Spark";
               headerDiv.appendChild(nameSpan);
               headerDiv.appendChild(sepSpan);
@@ -29620,14 +29609,14 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const currentText = this.currentAnswerDiv.getAttribute("data-raw-text") || "";
       const newText = currentText + chunk;
       this.currentAnswerDiv.setAttribute("data-raw-text", newText);
-      if (typeof window !== "undefined" && window.LuminaCanvas) {
-        window.LuminaCanvas.handleStream(newText);
+      if (typeof window !== "undefined" && window.NexusCanvas) {
+        window.NexusCanvas.handleStream(newText);
       }
       this._throttledUpdateTokenCount();
-      let answerContentDiv = this.currentAnswerDiv.querySelector(".lumina-answer-content");
+      let answerContentDiv = this.currentAnswerDiv.querySelector(".nexus-answer-content");
       if (!answerContentDiv) {
         answerContentDiv = document.createElement("div");
-        answerContentDiv.className = "lumina-answer-content";
+        answerContentDiv.className = "nexus-answer-content";
         this.currentAnswerDiv.appendChild(answerContentDiv);
         answerContentDiv.__isRich = false;
       }
@@ -29685,28 +29674,28 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (answerDiv.__lastRenderedText === newText && !isFinished) return;
       answerDiv.__lastRenderedText = newText;
       let displayText = newText;
-      displayText = displayText.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+      displayText = displayText.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
         const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const displayType = type.replace("code/", "").toUpperCase();
-        return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-  <div class="lumina-canvas-card-left">
-    <div class="lumina-canvas-card-info">
-      <div class="lumina-canvas-card-title">${name}</div>
-      <div class="lumina-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
+        return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
+  <div class="nexus-canvas-card-left">
+    <div class="nexus-canvas-card-info">
+      <div class="nexus-canvas-card-title">${name}</div>
+      <div class="nexus-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
     </div>
   </div>
 </div>`;
       });
-      displayText = displayText.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+      displayText = displayText.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
         return `*\u{1F504} Canvas Updated: **${name}***`;
       });
-      displayText = displayText.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+      displayText = displayText.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
         return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
       });
-      const isProofreadAnswer = answerDiv.classList.contains("lumina-proofread-editable");
+      const isProofreadAnswer = answerDiv.classList.contains("nexus-proofread-editable");
       if (isProofreadAnswer) {
         displayText = displayText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-        const existing = answerDiv.querySelector(".lumina-thinking-steps");
+        const existing = answerDiv.querySelector(".nexus-thinking-steps");
         if (existing) existing.remove();
       }
       if (this.webSearchSources && this.webSearchSources.length > 0) {
@@ -29734,7 +29723,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               this.updateStatusText(statusWrapper, lastHeading);
             }
           }
-          const existingSteps = answerDiv.querySelector(".lumina-thinking-steps");
+          const existingSteps = answerDiv.querySelector(".nexus-thinking-steps");
           if (existingSteps) existingSteps.remove();
           this.removeLoading();
           this.removeSearching();
@@ -29758,21 +29747,21 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (thinkMatch) {
         isThinkingComplete = lastThinkEnd > lastThinkStart;
       }
-      let answerContentDiv = answerDiv.querySelector(".lumina-answer-content");
+      let answerContentDiv = answerDiv.querySelector(".nexus-answer-content");
       if (!answerContentDiv) {
         answerContentDiv = document.createElement("div");
-        answerContentDiv.className = "lumina-answer-content";
+        answerContentDiv.className = "nexus-answer-content";
         answerDiv.appendChild(answerContentDiv);
       }
       if (actualAnswer.trim() || isThinkingComplete) {
-        if (actualAnswer.trim().startsWith("<") && !actualAnswer.trim().startsWith('<div class="lumina-canvas-card"')) {
-          const offsets = window.LuminaSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
+        if (actualAnswer.trim().startsWith("<") && !actualAnswer.trim().startsWith('<div class="nexus-canvas-card"')) {
+          const offsets = window.NexusSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
           if (answerContentDiv.childNodes.length === 0) {
             answerContentDiv.innerHTML = actualAnswer;
           } else {
             morphDOM(answerContentDiv, actualAnswer);
           }
-          if (offsets) window.LuminaSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
+          if (offsets) window.NexusSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
         } else if (typeof marked !== "undefined") {
           let content = actualAnswer;
           content = content.replace(/!\[([^\]]*)\]\((image-search:\/\/[^)]*)\)/g, (match, alt, url) => {
@@ -29784,18 +29773,18 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               const sourceIndex = parseInt(num) - 1;
               const source = this.webSearchSources[sourceIndex];
               if (source) {
-                return `<a href="${source.link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                return `<a href="${source.link}" target="_blank" rel="noopener noreferrer" class="nexus-citation">${num}</a>`;
               }
               return match;
             });
           }
-          const offsets = window.LuminaSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
+          const offsets = window.NexusSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
           if (answerContentDiv.childNodes.length === 0) {
             answerContentDiv.innerHTML = htmlContent;
           } else {
             morphDOM(answerContentDiv, htmlContent);
           }
-          if (offsets) window.LuminaSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
+          if (offsets) window.NexusSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
           answerContentDiv.__isRich = true;
         } else {
           answerContentDiv.textContent = actualAnswer;
@@ -29832,8 +29821,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const answerDivSnapshot = this.currentAnswerDiv;
       const sourcesSnapshot = Array.isArray(this.webSearchSources) ? [...this.webSearchSources] : [];
       const rawText = answerDivSnapshot ? answerDivSnapshot.getAttribute("data-raw-text") || "" : "";
-      if (typeof window !== "undefined" && window.LuminaCanvas) {
-        window.LuminaCanvas.handleDone(rawText);
+      if (typeof window !== "undefined" && window.NexusCanvas) {
+        window.NexusCanvas.handleDone(rawText);
       }
       const isProofreadEntry = this.currentEntryDiv?.dataset?.entryType === "proofread";
       const shouldStickBottom = !this.disableStreamAutoFollow && !skipScroll && this._isNearBottom();
@@ -29855,18 +29844,18 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               answerDivSnapshot.dataset.webSearch = JSON.stringify({
                 sourcesCount: sourcesSnapshot.length
               });
-              if (!answerDivSnapshot.querySelector(".lumina-sources")) {
+              if (!answerDivSnapshot.querySelector(".nexus-sources")) {
                 const sourcesDiv = document.createElement("div");
-                sourcesDiv.className = "lumina-sources";
+                sourcesDiv.className = "nexus-sources";
                 sourcesDiv.innerHTML = `
-                                <div class="lumina-sources-title">Sources</div>
-                                <div class="lumina-sources-list">
+                                <div class="nexus-sources-title">Sources</div>
+                                <div class="nexus-sources-list">
                                     ${sourcesSnapshot.map((source, idx) => `
-                                        <a href="${source.link}" target="_blank" rel="noopener noreferrer" class="lumina-source-item">
-                                            <span class="lumina-source-num">${idx + 1}</span>
-                                            <div class="lumina-source-info">
-                                                <div class="lumina-source-name">${source.title || "Source"}</div>
-                                                <div class="lumina-source-domain">${source.displayLink || new URL(source.link).hostname}</div>
+                                        <a href="${source.link}" target="_blank" rel="noopener noreferrer" class="nexus-source-item">
+                                            <span class="nexus-source-num">${idx + 1}</span>
+                                            <div class="nexus-source-info">
+                                                <div class="nexus-source-name">${source.title || "Source"}</div>
+                                                <div class="nexus-source-domain">${source.displayLink || new URL(source.link).hostname}</div>
                                             </div>
                                         </a>
                                     `).join("")}
@@ -29875,9 +29864,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 answerDivSnapshot.appendChild(sourcesDiv);
               }
             }
-            await _LuminaChatUI.processContainer(answerDivSnapshot);
+            await _NexusChatUI.processContainer(answerDivSnapshot);
           } catch (e) {
-            console.error("[Lumina] post-answer processing error:", e);
+            console.error("[Nexus] post-answer processing error:", e);
           } finally {
             this.webSearchSources = previousSources;
             if (scrollContainer && !shouldStickBottom) {
@@ -29906,7 +29895,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     static getViewportStats(container2, inputWrapper) {
       const containerHeight = container2.clientHeight || container2.offsetHeight;
       const inputHeight = inputWrapper ? inputWrapper.offsetHeight || 0 : 0;
-      const isSpotlight = document.body.classList.contains("lumina-page");
+      const isSpotlight = document.body.classList.contains("nexus-page");
       return {
         containerHeight,
         inputHeight,
@@ -29933,9 +29922,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     adjustEntryMargin(entry, behavior = "none") {
       if (!entry) return;
       const run = () => {
-        const container2 = this.container.querySelector(".lumina-chat-container") || this.container;
-        const inputWrapper = this.container.querySelector(".lumina-chat-input-wrapper") || document.body.querySelector(".lumina-chat-input-wrapper");
-        _LuminaChatUI.applyViewportMinHeight(entry, container2, inputWrapper);
+        const container2 = this.container.querySelector(".nexus-chat-container") || this.container;
+        const inputWrapper = this.container.querySelector(".nexus-chat-input-wrapper") || document.body.querySelector(".nexus-chat-input-wrapper");
+        _NexusChatUI.applyViewportMinHeight(entry, container2, inputWrapper);
         this._marginTimer = null;
       };
       const isSpotlight = this.options.isSpotlight;
@@ -29950,7 +29939,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this._marginTimer = setTimeout(run, 50);
       }
     }
-    clearEntryMargins(excludeEntry = null) {
+    updateEntryMinHeight(excludeEntry = null) {
       if (!this.historyEl) return;
       if (this._lastActiveEntry && this._lastActiveEntry !== excludeEntry) {
         try {
@@ -29958,13 +29947,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         } catch (e) {
         }
       }
-      const allEntries = this.historyEl.querySelectorAll(".lumina-entry");
+      const allEntries = this.historyEl.querySelectorAll(".nexus-entry");
       allEntries.forEach((e) => {
         if (e !== excludeEntry) {
           e.style.removeProperty("min-height");
         }
       });
-      this._lastActiveEntry = excludeEntry && excludeEntry.classList.contains("lumina-entry") ? excludeEntry : null;
+      this._lastActiveEntry = excludeEntry && excludeEntry.classList.contains("nexus-entry") ? excludeEntry : null;
     }
     _extractContext(rawText) {
       if (!rawText) return "";
@@ -29974,8 +29963,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     _showTagTooltip(target, content, isHtml = false) {
       if (!this.sharedTooltip) {
         this.sharedTooltip = document.createElement("div");
-        this.sharedTooltip.id = "lumina-chat-tag-tooltip";
-        this.sharedTooltip.className = "lumina-tooltip";
+        this.sharedTooltip.id = "nexus-chat-tag-tooltip";
+        this.sharedTooltip.className = "nexus-tooltip";
         this.sharedTooltip.style.position = "fixed";
         this.sharedTooltip.style.zIndex = "2147483647";
         this.sharedTooltip.style.pointerEvents = "none";
@@ -30039,16 +30028,16 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (!entry || !this.container) return;
       const scrollContainer = this.getScrollContainer();
       if (!scrollContainer) return;
-      const container2 = this.container.querySelector(".lumina-chat-container") || this.container;
+      const container2 = this.container.querySelector(".nexus-chat-container") || this.container;
       if (container2.offsetParent === null && (window.getComputedStyle(container2).display === "none" || !document.body.contains(container2))) {
         return;
       }
-      const inputWrapper = this.container.querySelector(".lumina-chat-input-wrapper") || document.body.querySelector(".lumina-chat-input-wrapper");
-      if (_LuminaChatUI.applyViewportMinHeight(entry, container2, inputWrapper)) {
-        this.clearEntryMargins(entry);
+      const inputWrapper = this.container.querySelector(".nexus-chat-input-wrapper") || document.body.querySelector(".nexus-chat-input-wrapper");
+      if (_NexusChatUI.applyViewportMinHeight(entry, container2, inputWrapper)) {
+        this.updateEntryMinHeight(entry);
         if (!skipScroll && (!this.disableAutoScroll || forceScroll)) {
-          const targetScrollTop = _LuminaChatUI.calculateInitialScrollTarget(entry, scrollContainer, this.historyEl);
-          const { viewportHeight } = _LuminaChatUI.getViewportStats(container2, inputWrapper);
+          const targetScrollTop = _NexusChatUI.calculateInitialScrollTarget(entry, scrollContainer, this.historyEl);
+          const { viewportHeight } = _NexusChatUI.getViewportStats(container2, inputWrapper);
           const maxScroll = scrollContainer.scrollHeight - viewportHeight;
           const finalScrollTop = Math.min(targetScrollTop, maxScroll);
           scrollContainer.scrollTop = finalScrollTop;
@@ -30066,7 +30055,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const isStopped = text && (text.includes("BodyStreamBuffer") || text.includes("aborted"));
       if (isStopped) {
         const entry = this.currentEntryDiv || this.historyEl.lastElementChild;
-        if (entry && entry.querySelector(".lumina-chat-answer.is-stopped")) {
+        if (entry && entry.querySelector(".nexus-chat-answer.is-stopped")) {
           return;
         }
       }
@@ -30074,26 +30063,26 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       let isNewDiv = false;
       if (!targetDiv) {
         targetDiv = document.createElement("div");
-        targetDiv.className = "lumina-chat-answer";
+        targetDiv.className = "nexus-chat-answer";
         isNewDiv = true;
       }
-      let answerContentDiv = targetDiv.querySelector(".lumina-answer-content");
+      let answerContentDiv = targetDiv.querySelector(".nexus-answer-content");
       if (!answerContentDiv) {
         answerContentDiv = document.createElement("div");
-        answerContentDiv.className = "lumina-answer-content";
+        answerContentDiv.className = "nexus-answer-content";
         targetDiv.appendChild(answerContentDiv);
       }
       const errorDiv = document.createElement("div");
       if (isStopped) {
         targetDiv.classList.add("is-stopped");
-        errorDiv.className = "lumina-error-message";
+        errorDiv.className = "nexus-error-message";
         errorDiv.textContent = "You stopped this response";
         errorDiv.style.opacity = "0.6";
         errorDiv.style.fontSize = "0.9em";
         errorDiv.style.marginTop = "8px";
       } else {
-        errorDiv.className = "lumina-error-message";
-        errorDiv.style.setProperty("color", "var(--lumina-error)", "important");
+        errorDiv.className = "nexus-error-message";
+        errorDiv.style.setProperty("color", "var(--nexus-error)", "important");
         errorDiv.style.marginTop = "8px";
         errorDiv.textContent = text;
       }
@@ -30106,26 +30095,26 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           this.historyEl.appendChild(targetDiv);
         }
       }
-      _LuminaChatUI.injectAnswerActions(targetDiv);
+      _NexusChatUI.injectAnswerActions(targetDiv);
       this.scrollToBottom();
       this.currentAnswerDiv = null;
     }
     updateStatusText(statusWrapper, text) {
       if (!statusWrapper) return;
-      const textSpan = statusWrapper.querySelector(".lumina-status-text");
+      const textSpan = statusWrapper.querySelector(".nexus-status-text");
       if (!textSpan) return;
       if (textSpan.textContent === text) return;
       textSpan.textContent = text;
     }
     getLoadingHTML() {
-      return `<div class="lumina-thinking"><div class="lumina-dots-loader"><span></span><span></span><span></span></div><span class="lumina-status-text"></span></div>`;
+      return `<div class="nexus-thinking"><div class="nexus-dots-loader"><span></span><span></span><span></span></div><span class="nexus-status-text"></span></div>`;
     }
     getTranslationSkeletonHTML() {
       return `
-            <div class="lumina-translation-skeleton">
-                <div class="lumina-skeleton-line long"></div>
-                <div class="lumina-skeleton-line long"></div>
-                <div class="lumina-skeleton-line medium"></div>
+            <div class="nexus-translation-skeleton">
+                <div class="nexus-skeleton-line long"></div>
+                <div class="nexus-skeleton-line long"></div>
+                <div class="nexus-skeleton-line medium"></div>
             </div>
         `;
     }
@@ -30137,14 +30126,14 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (!this.currentAnswerDiv) {
         this.currentAnswerDiv = this.createAnswerDiv();
       }
-      let answerContentDiv = this.currentAnswerDiv.querySelector(".lumina-answer-content");
+      let answerContentDiv = this.currentAnswerDiv.querySelector(".nexus-answer-content");
       if (!answerContentDiv) {
         answerContentDiv = document.createElement("div");
-        answerContentDiv.className = "lumina-answer-content";
+        answerContentDiv.className = "nexus-answer-content";
         this.currentAnswerDiv.appendChild(answerContentDiv);
       }
       this.loadingDiv = document.createElement("div");
-      this.loadingDiv.className = "lumina-loading-wrapper";
+      this.loadingDiv.className = "nexus-loading-wrapper";
       this.loadingDiv.innerHTML = this.getLoadingHTML();
       answerContentDiv.appendChild(this.loadingDiv);
       if (!skipScroll) {
@@ -30157,17 +30146,17 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this.loadingDiv = null;
       }
       if (this.historyEl) {
-        const extraLoading = this.historyEl.querySelectorAll(".lumina-loading-wrapper");
+        const extraLoading = this.historyEl.querySelectorAll(".nexus-loading-wrapper");
         extraLoading.forEach((el) => el.remove());
       }
     }
     clearAnswer(entryDiv) {
       if (!entryDiv) return;
-      const answers = entryDiv.querySelectorAll(".lumina-chat-answer, .lumina-answer-versions, .lumina-answer-nav");
+      const answers = entryDiv.querySelectorAll(".nexus-chat-answer, .nexus-answer-versions, .nexus-answer-nav");
       answers.forEach((el) => el.remove());
-      const loading = entryDiv.querySelectorAll(".lumina-loading-wrapper");
+      const loading = entryDiv.querySelectorAll(".nexus-loading-wrapper");
       loading.forEach((el) => el.remove());
-      const searching = entryDiv.querySelectorAll(".lumina-searching-indicator");
+      const searching = entryDiv.querySelectorAll(".nexus-searching-indicator");
       searching.forEach((el) => el.remove());
       this.currentAnswerDiv = null;
     }
@@ -30175,12 +30164,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const text = query ? `Searching for ${query}` : "Searching";
       const statusWrapper = this.loadingDiv || this.searchingDiv;
       if (statusWrapper) {
-        const thinkingEl = statusWrapper.querySelector(".lumina-thinking");
+        const thinkingEl = statusWrapper.querySelector(".nexus-thinking");
         if (thinkingEl) {
-          let textSpan = thinkingEl.querySelector(".lumina-status-text");
+          let textSpan = thinkingEl.querySelector(".nexus-status-text");
           if (!textSpan) {
             textSpan = document.createElement("span");
-            textSpan.className = "lumina-status-text";
+            textSpan.className = "nexus-status-text";
             thinkingEl.appendChild(textSpan);
           }
           this.updateStatusText(statusWrapper, text);
@@ -30193,15 +30182,15 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (!this.currentAnswerDiv) {
         this.currentAnswerDiv = this.createAnswerDiv();
       }
-      let answerContentDiv = this.currentAnswerDiv.querySelector(".lumina-answer-content");
+      let answerContentDiv = this.currentAnswerDiv.querySelector(".nexus-answer-content");
       if (!answerContentDiv) {
         answerContentDiv = document.createElement("div");
-        answerContentDiv.className = "lumina-answer-content";
+        answerContentDiv.className = "nexus-answer-content";
         this.currentAnswerDiv.appendChild(answerContentDiv);
       }
       this.searchingDiv = document.createElement("div");
-      this.searchingDiv.className = "lumina-loading-wrapper";
-      this.searchingDiv.innerHTML = `<div class="lumina-thinking"><div class="lumina-dots-loader"><span></span><span></span><span></span></div><span class="lumina-status-text">${text}</span></div>`;
+      this.searchingDiv.className = "nexus-loading-wrapper";
+      this.searchingDiv.innerHTML = `<div class="nexus-thinking"><div class="nexus-dots-loader"><span></span><span></span><span></span></div><span class="nexus-status-text">${text}</span></div>`;
       answerContentDiv.appendChild(this.searchingDiv);
       this.scrollToBottom(true);
     }
@@ -30211,13 +30200,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this.searchingDiv = null;
       }
       if (this.historyEl) {
-        const extraSearching = this.historyEl.querySelectorAll(".lumina-loading-wrapper, .lumina-searching-indicator");
+        const extraSearching = this.historyEl.querySelectorAll(".nexus-loading-wrapper, .nexus-searching-indicator");
         extraSearching.forEach((el) => el.remove());
       }
     }
     _clearCommentInteractions() {
       if (!this.historyEl) return;
-      const buttons = this.historyEl.querySelectorAll(".lumina-send-comment-btn");
+      const buttons = this.historyEl.querySelectorAll(".nexus-send-comment-btn");
       buttons.forEach((btn) => btn.remove());
     }
     handleWebSearchStatus(msg) {
@@ -30240,8 +30229,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     async addFile(file) {
       if (!file) return false;
-      if (LuminaFileProcessor.isPdfFile(file)) {
-        const sourceAttachmentId = LuminaFileProcessor.createAttachmentId();
+      if (NexusFileProcessor.isPdfFile(file)) {
+        const sourceAttachmentId = NexusFileProcessor.createAttachmentId();
         const placeholder = {
           attachmentId: sourceAttachmentId,
           name: file.name,
@@ -30258,7 +30247,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this._updateContainerState();
         setTimeout(async () => {
           try {
-            const rawPdf = await LuminaFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
+            const rawPdf = await NexusFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
             if (rawPdf) {
               rawPdf.attachmentId = sourceAttachmentId;
               rawPdf.isPDF = false;
@@ -30267,7 +30256,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 this.attachedFiles[idx2] = rawPdf;
               }
             }
-            const derivedFiles = await LuminaFileProcessor.extractPdfAsAttachments(file);
+            const derivedFiles = await NexusFileProcessor.extractPdfAsAttachments(file);
             derivedFiles.forEach((prepared, idx2) => {
               prepared.attachmentId = `${sourceAttachmentId}:derived:${idx2 + 1}`;
               prepared.parentAttachmentId = sourceAttachmentId;
@@ -30279,7 +30268,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               delete this.attachedFiles[idx].status;
             }
           } catch (error) {
-            console.warn("[Lumina] PDF extraction failed; keeping raw PDF attach:", error);
+            console.warn("[Nexus] PDF extraction failed; keeping raw PDF attach:", error);
             const idx = this.attachedFiles.findIndex((f) => f.attachmentId === sourceAttachmentId);
             if (idx !== -1) {
               delete this.attachedFiles[idx].status;
@@ -30291,8 +30280,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }, 50);
         return true;
       }
-      if (LuminaFileProcessor.isDocxFile(file)) {
-        const sourceAttachmentId = LuminaFileProcessor.createAttachmentId();
+      if (NexusFileProcessor.isDocxFile(file)) {
+        const sourceAttachmentId = NexusFileProcessor.createAttachmentId();
         const placeholder = {
           attachmentId: sourceAttachmentId,
           name: file.name,
@@ -30309,7 +30298,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this._updateContainerState();
         setTimeout(async () => {
           try {
-            const rawDocx = await LuminaFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
+            const rawDocx = await NexusFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
             if (rawDocx) {
               rawDocx.attachmentId = sourceAttachmentId;
               const idx = this.attachedFiles.findIndex((f) => f.attachmentId === sourceAttachmentId);
@@ -30317,7 +30306,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 this.attachedFiles[idx] = rawDocx;
               }
             }
-            const derivedFiles = await LuminaFileProcessor.extractDocxAsAttachments(file);
+            const derivedFiles = await NexusFileProcessor.extractDocxAsAttachments(file);
             derivedFiles.forEach((prepared, idx) => {
               prepared.attachmentId = `${sourceAttachmentId}:derived:${idx + 1}`;
               prepared.parentAttachmentId = sourceAttachmentId;
@@ -30325,7 +30314,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               this._addPreparedFile(prepared);
             });
           } catch (error) {
-            console.warn("[Lumina] DOCX extraction failed; keeping raw DOCX attach:", error);
+            console.warn("[Nexus] DOCX extraction failed; keeping raw DOCX attach:", error);
             const idx = this.attachedFiles.findIndex((f) => f.attachmentId === sourceAttachmentId);
             if (idx !== -1) {
               delete this.attachedFiles[idx].status;
@@ -30337,8 +30326,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }, 50);
         return true;
       }
-      if (LuminaFileProcessor.isXlsxFile(file)) {
-        const sourceAttachmentId = LuminaFileProcessor.createAttachmentId();
+      if (NexusFileProcessor.isXlsxFile(file)) {
+        const sourceAttachmentId = NexusFileProcessor.createAttachmentId();
         const placeholder = {
           attachmentId: sourceAttachmentId,
           name: file.name,
@@ -30355,7 +30344,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         this._updateContainerState();
         setTimeout(async () => {
           try {
-            const rawXlsx = await LuminaFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
+            const rawXlsx = await NexusFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
             if (rawXlsx) {
               rawXlsx.attachmentId = sourceAttachmentId;
               const idx = this.attachedFiles.findIndex((f) => f.attachmentId === sourceAttachmentId);
@@ -30363,7 +30352,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 this.attachedFiles[idx] = rawXlsx;
               }
             }
-            const derivedFiles = await LuminaFileProcessor.extractXlsxAsAttachments(file);
+            const derivedFiles = await NexusFileProcessor.extractXlsxAsAttachments(file);
             derivedFiles.forEach((prepared, idx) => {
               prepared.attachmentId = `${sourceAttachmentId}:derived:${idx + 1}`;
               prepared.parentAttachmentId = sourceAttachmentId;
@@ -30371,7 +30360,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               this._addPreparedFile(prepared);
             });
           } catch (error) {
-            console.warn("[Lumina] XLSX extraction failed; keeping raw XLSX attach:", error);
+            console.warn("[Nexus] XLSX extraction failed; keeping raw XLSX attach:", error);
             const idx = this.attachedFiles.findIndex((f) => f.attachmentId === sourceAttachmentId);
             if (idx !== -1) {
               delete this.attachedFiles[idx].status;
@@ -30392,7 +30381,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           return true;
         }
       } catch (error) {
-        console.warn("[Lumina] Office parsing failed, falling back to raw file attach:", error);
+        console.warn("[Nexus] Office parsing failed, falling back to raw file attach:", error);
       }
       return await new Promise((resolve) => {
         const reader = new FileReader();
@@ -30427,12 +30416,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     _addPreparedFile(fileObj) {
       if (!fileObj || typeof fileObj !== "object") return;
       if (!fileObj.attachmentId) {
-        fileObj.attachmentId = LuminaFileProcessor.createAttachmentId();
+        fileObj.attachmentId = NexusFileProcessor.createAttachmentId();
       }
       const isCompressing = fileObj.isImage && fileObj.dataUrl && fileObj.dataUrl.length > 120 * 1024;
       fileObj.status = isCompressing ? "compressing" : "done";
       if (fileObj.isImage && !fileObj.previewUrl && fileObj.dataUrl) {
-        fileObj.previewUrl = LuminaFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
+        fileObj.previewUrl = NexusFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
       }
       if (fileObj.isImage && fileObj.dataUrl && !fileObj.previewUrl) {
         fileObj.previewUrl = fileObj.dataUrl;
@@ -30445,14 +30434,14 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (isCompressing) {
         (async () => {
           try {
-            const compressedDataUrl = await LuminaFileProcessor.compressImage(fileObj.dataUrl, 2048, 2048, 0.9);
+            const compressedDataUrl = await NexusFileProcessor.compressImage(fileObj.dataUrl, 2048, 2048, 0.9);
             fileObj.dataUrl = compressedDataUrl;
             fileObj.mimeType = "image/webp";
             fileObj.name = (fileObj.name || "Pasted Image.png").replace(/\.[a-zA-Z0-9]+$/, "") + ".webp";
             if (fileObj.previewUrl && fileObj.previewUrl.startsWith("blob:")) {
               this._revokeObjectUrl(fileObj.previewUrl);
             }
-            fileObj.previewUrl = LuminaFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
+            fileObj.previewUrl = NexusFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
           } catch (err) {
             console.error("[Immediate Compress] Failed to compress image:", err);
           }
@@ -30539,10 +30528,10 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         return;
       }
       const listDiv = document.createElement("div");
-      listDiv.className = "lumina-file-list lumina-image-list";
+      listDiv.className = "nexus-file-list nexus-image-list";
       visibleEntries.forEach(({ file, index }) => {
         const itemDiv = document.createElement("div");
-        itemDiv.className = `lumina-preview-item ${file.isImage ? "is-image" : "is-file"} ${file.status === "uploading" || file.status === "compressing" ? "is-uploading" : ""}`;
+        itemDiv.className = `nexus-preview-item ${file.isImage ? "is-image" : "is-file"} ${file.status === "uploading" || file.status === "compressing" ? "is-uploading" : ""}`;
         itemDiv.title = file.name;
         let content = "";
         if (file.isImage) {
@@ -30551,18 +30540,18 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           const fileName = file.name || "File";
           const rawExt = fileName.includes(".") ? fileName.split(".").pop() : "";
           const ext = (rawExt || "").toLowerCase();
-          const category = _LuminaChatUI.inferFileCategory(ext, file.mimeType || "");
-          const icon = _LuminaChatUI.getFileIconByCategory(category);
-          const displayName = _LuminaChatUI.getDisplayFileName(fileName);
-          const typeLabel = _LuminaChatUI.getFileTypeLabel(file);
-          content = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
+          const category = _NexusChatUI.inferFileCategory(ext, file.mimeType || "");
+          const icon = _NexusChatUI.getFileIconByCategory(category);
+          const displayName = _NexusChatUI.getDisplayFileName(fileName);
+          const typeLabel = _NexusChatUI.getFileTypeLabel(file);
+          content = `<div class="nexus-file-preview-info"><span class="nexus-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
         }
         itemDiv.innerHTML = content;
         itemDiv.onclick = () => {
           this.showFilePreview(file);
         };
         const removeBtn = document.createElement("div");
-        removeBtn.className = "lumina-file-remove lumina-image-remove";
+        removeBtn.className = "nexus-file-remove nexus-image-remove";
         removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         removeBtn.onclick = (e) => {
           e.stopPropagation();
@@ -30622,27 +30611,27 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     appendPartialTranslation(text) {
       this._clearCommentInteractions();
-      this.clearEntryMargins();
+      this.updateEntryMinHeight();
       const safeText = this.escapeHTMLAttr(text);
       const div = document.createElement("div");
-      div.className = "lumina-entry";
+      div.className = "nexus-entry";
       div.dataset.entryType = "translation";
       div.dataset.partial = "true";
       div.innerHTML = `
-            <div class="lumina-chat-question translation-question">Translate</div>
-            <div class="lumina-translation-container">
-                <div class="lumina-translation-card">
+            <div class="nexus-chat-question translation-question">Translate</div>
+            <div class="nexus-translation-container">
+                <div class="nexus-translation-card">
                     <!-- Source Block (left) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-source" data-copy-text="${safeText}">
-                            <div class="lumina-translation-text">${text}</div>
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-source" data-copy-text="${safeText}">
+                            <div class="nexus-translation-text">${text}</div>
                         </div>
                     </div>
                     <!-- Vertical Divider -->
-                    <div class="lumina-translation-divider"></div>
+                    <div class="nexus-translation-divider"></div>
                     <!-- Target Block (right) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-target">
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-target">
                             ${this.getTranslationSkeletonHTML()}
                         </div>
                     </div>
@@ -30654,8 +30643,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       this.historyEl.appendChild(div);
       this.scrollToBottom();
       requestAnimationFrame(() => {
-        const sourceText = div.querySelector(".lumina-translation-text");
-        const targetContainer = div.querySelector(".lumina-translation-target");
+        const sourceText = div.querySelector(".nexus-translation-text");
+        const targetContainer = div.querySelector(".nexus-translation-target");
         if (sourceText && targetContainer) {
           const styles = window.getComputedStyle(sourceText);
           const lineHeight = parseFloat(styles.lineHeight) || 20;
@@ -30664,9 +30653,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           let linesHTML = "";
           for (let i = 0; i < exactLines; i++) {
             const type = i === exactLines - 1 ? "medium" : "long";
-            linesHTML += `<div class="lumina-skeleton-line ${type}"></div>`;
+            linesHTML += `<div class="nexus-skeleton-line ${type}"></div>`;
           }
-          targetContainer.innerHTML = `<div class="lumina-translation-skeleton">${linesHTML}</div>`;
+          targetContainer.innerHTML = `<div class="nexus-translation-skeleton">${linesHTML}</div>`;
         }
         this.setInitialEntryHeight(div, false, preAppendScroll, true);
       });
@@ -30678,7 +30667,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         data = { translation: data, type: "sentence" };
       }
       if (!data.original) {
-        const sourceDiv = element.querySelector(".lumina-translation-source");
+        const sourceDiv = element.querySelector(".nexus-translation-source");
         if (sourceDiv) {
           data.original = sourceDiv.getAttribute("data-copy-text") || sourceDiv.textContent.trim();
         }
@@ -30690,27 +30679,27 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       let targetHTML = data.translation || "";
       if (data.sentences && Array.isArray(data.sentences)) {
         element.dataset.isPreSplit = "true";
-        sourceHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.src || "")}</span>`).join(" ");
-        targetHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.tgt || "")}</span>`).join(" ");
+        sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.src || "")}</span>`).join(" ");
+        targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.tgt || "")}</span>`).join(" ");
       } else {
         delete element.dataset.isPreSplit;
       }
       element.innerHTML = `
-            <div class="lumina-chat-question translation-question">Translate</div>
-            <div class="lumina-translation-container">
-                <div class="lumina-translation-card">
+            <div class="nexus-chat-question translation-question">Translate</div>
+            <div class="nexus-translation-container">
+                <div class="nexus-translation-card">
                     <!-- Source Block (left) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-source" data-copy-text="${safeOriginal}">
-                            <div class="lumina-translation-text">${sourceHTML}</div>
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
+                            <div class="nexus-translation-text">${sourceHTML}</div>
                         </div>
                     </div>
                     <!-- Vertical Divider -->
-                    <div class="lumina-translation-divider"></div>
+                    <div class="nexus-translation-divider"></div>
                     <!-- Target Block (right) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-target" data-copy-text="${safeTranslation}">
-                            <div class="lumina-translation-text">${targetHTML}</div>
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
+                            <div class="nexus-translation-text">${targetHTML}</div>
                         </div>
                     </div>
                 </div>
@@ -30719,9 +30708,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       delete element.dataset.partial;
       this.adjustEntryMargin(element);
       this._throttledUpdateTokenCount();
-      requestAnimationFrame(() => _LuminaChatUI._setupTranslationHighlight(element));
-      _LuminaChatUI.balanceTranslationCard(element);
-      const regenBtn = this.container.querySelector("#lumina-regenerate-btn") || this.container.querySelector(".lumina-regenerate-btn") || document.getElementById("lumina-regenerate-btn") || document.querySelector(".lumina-regenerate-btn");
+      requestAnimationFrame(() => _NexusChatUI._setupTranslationHighlight(element));
+      _NexusChatUI.balanceTranslationCard(element);
+      const regenBtn = this.container.querySelector("#nexus-regenerate-btn") || this.container.querySelector(".nexus-regenerate-btn") || document.getElementById("nexus-regenerate-btn") || document.querySelector(".nexus-regenerate-btn");
       if (regenBtn) {
         regenBtn.style.display = "flex";
       }
@@ -30745,7 +30734,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           throw new Error(response?.error || "Failed to fetch dictionary");
         }
       } catch (err) {
-        console.error("[Lumina] Dictionary lookup failed:", err);
+        console.error("[Nexus] Dictionary lookup failed:", err);
         this.updatePartialDictionary(entryDiv, { word, error: err.message });
       }
     }
@@ -30767,16 +30756,16 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     appendPartialDictionary(word) {
       this._clearCommentInteractions();
-      this.clearEntryMargins();
+      this.updateEntryMinHeight();
       const div = document.createElement("div");
-      div.className = "lumina-entry";
+      div.className = "nexus-entry";
       div.dataset.entryType = "lookup";
       div.dataset.partial = "true";
       div.dataset.word = word;
       div.innerHTML = `
-            <div class="lumina-chat-question lookup-question">Define: ${word}</div>
-            <div class="lumina-chat-answer">
-                <div class="lumina-dict-loading">
+            <div class="nexus-chat-question lookup-question">Define: ${word}</div>
+            <div class="nexus-chat-answer">
+                <div class="nexus-dict-loading">
                     ${this.getLoadingHTML()}
                 </div>
             </div>
@@ -30792,17 +30781,17 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     updatePartialDictionary(element, data) {
       if (!element) return;
-      const answerEl = element.querySelector(".lumina-chat-answer");
+      const answerEl = element.querySelector(".nexus-chat-answer");
       if (!answerEl) return;
       if (data.error && !data.entries) {
         if (data.error.includes("BodyStreamBuffer") || data.error.includes("aborted")) {
-          answerEl.innerHTML = `<div class="lumina-error-message is-stopped">You stopped this response</div>`;
+          answerEl.innerHTML = `<div class="nexus-error-message is-stopped">You stopped this response</div>`;
         } else {
-          answerEl.innerHTML = `<div class="lumina-error-message" style="color: var(--lumina-error) !important;">${data.error}</div>`;
+          answerEl.innerHTML = `<div class="nexus-error-message" style="color: var(--nexus-error) !important;">${data.error}</div>`;
         }
       } else {
         answerEl.innerHTML = this.renderDictionaryEntry(data);
-        answerEl.querySelectorAll(".lumina-dict-audio-btn").forEach((btn) => {
+        answerEl.querySelectorAll(".nexus-dict-audio-btn").forEach((btn) => {
           btn.onclick = () => this.playAudio(btn.dataset.url);
         });
       }
@@ -30814,56 +30803,56 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     renderDictionaryEntry(data) {
       if (!data || !data.entries || data.entries.length === 0) {
-        return `<div class="lumina-error-message">No entries found for "${data.word}"</div>`;
+        return `<div class="nexus-error-message">No entries found for "${data.word}"</div>`;
       }
       let html = `
-            <div class="lumina-dict-card">
-                <div class="lumina-dict-header">
-                    <span class="lumina-dict-word">${data.word}</span>
+            <div class="nexus-dict-card">
+                <div class="nexus-dict-header">
+                    <span class="nexus-dict-word">${data.word}</span>
                 </div>
         `;
       data.entries.forEach((entry) => {
         html += `
-                <div class="lumina-dict-item">
-                    <div class="lumina-dict-meta">
-                        ${entry.pos ? `<span class="lumina-dict-pos">${entry.pos}</span>` : ""}
+                <div class="nexus-dict-item">
+                    <div class="nexus-dict-meta">
+                        ${entry.pos ? `<span class="nexus-dict-pos">${entry.pos}</span>` : ""}
                         ${entry.uk?.ipa ? `
-                            <span class="lumina-dict-ipa-group">
-                                <span class="lumina-dict-region">UK</span>
-                                <span class="lumina-dict-ipa">/${entry.uk.ipa}/</span>
-                                ${entry.uk.audio ? `<button class="lumina-dict-audio-btn" data-url="${entry.uk.audio}" title="Play UK Audio">
+                            <span class="nexus-dict-ipa-group">
+                                <span class="nexus-dict-region">UK</span>
+                                <span class="nexus-dict-ipa">/${entry.uk.ipa}/</span>
+                                ${entry.uk.audio ? `<button class="nexus-dict-audio-btn" data-url="${entry.uk.audio}" title="Play UK Audio">
                                     <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
                                 </button>` : ""}
                             </span>
                         ` : ""}
                         ${entry.us?.ipa ? `
-                            <span class="lumina-dict-ipa-group">
-                                <span class="lumina-dict-region">US</span>
-                                <span class="lumina-dict-ipa">/${entry.us.ipa}/</span>
-                                ${entry.us.audio ? `<button class="lumina-dict-audio-btn" data-url="${entry.us.audio}" title="Play US Audio">
+                            <span class="nexus-dict-ipa-group">
+                                <span class="nexus-dict-region">US</span>
+                                <span class="nexus-dict-ipa">/${entry.us.ipa}/</span>
+                                ${entry.us.audio ? `<button class="nexus-dict-audio-btn" data-url="${entry.us.audio}" title="Play US Audio">
                                     <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
                                 </button>` : ""}
                             </span>
                         ` : ""}
                     </div>
-                    <div class="lumina-dict-senses">
+                    <div class="nexus-dict-senses">
             `;
         entry.senses.forEach((sense) => {
-          html += `<div class="lumina-dict-sense">`;
+          html += `<div class="nexus-dict-sense">`;
           if (sense.indicator) {
-            html += `<div class="lumina-dict-indicator">${sense.indicator}</div>`;
+            html += `<div class="nexus-dict-indicator">${sense.indicator}</div>`;
           }
           sense.definitions.forEach((def) => {
             html += `
-                        <div class="lumina-dict-def-block">
-                            <div class="lumina-dict-meaning-text">${def.meaning}</div>
-                            ${def.translation ? `<div class="lumina-dict-translation">${def.translation}</div>` : ""}
+                        <div class="nexus-dict-def-block">
+                            <div class="nexus-dict-meaning-text">${def.meaning}</div>
+                            ${def.translation ? `<div class="nexus-dict-translation">${def.translation}</div>` : ""}
                             ${def.examples && def.examples.length > 0 ? (() => {
               const ex = def.examples[0];
               const escaped = (entry.word || data.word || "").replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
               const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, "gi");
               const highlighted = ex.replace(regex, "<strong>$1</strong>");
-              return `<div class="lumina-dict-example">"${highlighted}"</div>`;
+              return `<div class="nexus-dict-example">"${highlighted}"</div>`;
             })() : ""}
                         </div>
                     `;
@@ -30884,7 +30873,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         const audio = new Audio(url);
         await audio.play();
       } catch (err) {
-        console.error("[Lumina] Failed to play audio:", err);
+        console.error("[Nexus] Failed to play audio:", err);
       }
     }
     static _setupTranslationHighlight(element) {
@@ -30914,9 +30903,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     collectComments(entry) {
       if (!entry) return { instructions: "", draft: "" };
-      const answerEl = entry.querySelector(".lumina-chat-answer");
+      const answerEl = entry.querySelector(".nexus-chat-answer");
       if (!answerEl) return { instructions: "", draft: "" };
-      const highlights = answerEl.querySelectorAll(".lumina-comment-highlight");
+      const highlights = answerEl.querySelectorAll(".nexus-comment-highlight");
       if (highlights.length === 0) return { instructions: "", draft: "" };
       let instructions = "";
       highlights.forEach((h, index) => {
@@ -30934,21 +30923,21 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
     gatherMessages(untilEntryId = null, ignoreLimit = false, targetThinkingLevel = "none") {
       let messages = [];
-      const entries = this.historyEl.querySelectorAll(".lumina-entry");
+      const entries = this.historyEl.querySelectorAll(".nexus-entry");
       for (const entry of entries) {
         const entryType = entry.dataset.entryType || "qa";
         const isTargetEntry = untilEntryId && entry.dataset.entryId === untilEntryId;
         if (isTargetEntry) break;
-        const questionEl = entry.querySelector(".lumina-chat-question");
+        const questionEl = entry.querySelector(".nexus-chat-question");
         let answerEl = null;
-        const versionsContainer = entry.querySelector(".lumina-answer-versions");
+        const versionsContainer = entry.querySelector(".nexus-answer-versions");
         if (versionsContainer) {
-          const activeVersion = versionsContainer.querySelector(".lumina-answer-version.active");
+          const activeVersion = versionsContainer.querySelector(".nexus-answer-version.active");
           if (activeVersion) {
-            answerEl = activeVersion.querySelector(".lumina-chat-answer");
+            answerEl = activeVersion.querySelector(".nexus-chat-answer");
           }
         } else {
-          answerEl = entry.querySelector(".lumina-chat-answer");
+          answerEl = entry.querySelector(".nexus-chat-answer");
         }
         if (questionEl) {
           let questionText = questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim();
@@ -30981,7 +30970,7 @@ Output only the revised text.`;
               questionText = prompt2;
             }
           }
-          let images = Array.isArray(questionEl._luminaImages) ? questionEl._luminaImages : Array.isArray(entry._luminaImages) ? entry._luminaImages : [];
+          let images = Array.isArray(questionEl._nexusImages) ? questionEl._nexusImages : Array.isArray(entry._nexusImages) ? entry._nexusImages : [];
           if (!images.length && questionEl.dataset.images) {
             try {
               const parsed = JSON.parse(questionEl.dataset.images);
@@ -31001,7 +30990,7 @@ Output only the revised text.`;
           });
         }
         if (answerEl) {
-          let answerText = answerEl.classList.contains("lumina-answer-editing") ? ((answerEl.querySelector(".lumina-answer-content") || answerEl).innerText || (answerEl.querySelector(".lumina-answer-content") || answerEl).textContent || "").trim() : answerEl.getAttribute("data-raw-text") || answerEl.textContent.trim();
+          let answerText = answerEl.classList.contains("nexus-answer-editing") ? ((answerEl.querySelector(".nexus-answer-content") || answerEl).innerText || (answerEl.querySelector(".nexus-answer-content") || answerEl).textContent || "").trim() : answerEl.getAttribute("data-raw-text") || answerEl.textContent.trim();
           if (answerText) {
             const normLevel = typeof targetThinkingLevel === "string" ? targetThinkingLevel.trim().toLowerCase() : "none";
             if (normLevel === "none" || normLevel === "minimal" || normLevel === "") {
@@ -31016,9 +31005,9 @@ Output only the revised text.`;
         if (isTargetEntry) break;
       }
       if (!ignoreLimit && this.tokenLimit && this.tokenLimit > 0) {
-        const inputEl = this.container ? this.container.querySelector(".lumina-chat-input") : null;
+        const inputEl = this.container ? this.container.querySelector(".nexus-chat-input") : null;
         const inputText = inputEl ? inputEl.value : "";
-        const inputTokens = typeof LuminaToken !== "undefined" ? LuminaToken.count(inputText) : Math.ceil(inputText.length / 2);
+        const inputTokens = typeof NexusToken !== "undefined" ? NexusToken.count(inputText) : Math.ceil(inputText.length / 2);
         let attachmentTokens = 0;
         if (this.attachedFiles && this.attachedFiles.length > 0) {
           this.attachedFiles.forEach((file) => {
@@ -31027,7 +31016,7 @@ Output only the revised text.`;
               if (matches) {
                 try {
                   const decoded = this._decodeBase64Utf8(matches[2]);
-                  attachmentTokens += typeof LuminaToken !== "undefined" ? LuminaToken.count(decoded) : Math.ceil(decoded.length / 2);
+                  attachmentTokens += typeof NexusToken !== "undefined" ? NexusToken.count(decoded) : Math.ceil(decoded.length / 2);
                 } catch (e) {
                 }
               }
@@ -31039,7 +31028,7 @@ Output only the revised text.`;
         let contextTokens = 0;
         const webChipsGroup = this.container ? this.container.querySelector("#web-chips-group") : null;
         if (webChipsGroup) {
-          const activeChips = webChipsGroup.querySelectorAll(".lumina-web-chip.is-active");
+          const activeChips = webChipsGroup.querySelectorAll(".nexus-web-chip.is-active");
           activeChips.forEach((chip) => {
             const tokens = parseInt(chip.dataset.tokens || "0");
             if (tokens > 0) contextTokens += tokens;
@@ -31054,7 +31043,7 @@ Output only the revised text.`;
           const slicedMessages = [];
           for (let i = messages.length - 1; i >= 0; i--) {
             const m = messages[i];
-            const mTokens = typeof LuminaToken !== "undefined" ? LuminaToken.count(m.text || "") : Math.ceil((m.text || "").length / 2);
+            const mTokens = typeof NexusToken !== "undefined" ? NexusToken.count(m.text || "") : Math.ceil((m.text || "").length / 2);
             if (currentHistoryTokens + mTokens <= budget) {
               slicedMessages.unshift(m);
               currentHistoryTokens += mTokens;
@@ -31097,39 +31086,39 @@ Output only the revised text.`;
     static getChatInputHTML(autofocus = false) {
       const isSidePanel2 = typeof document !== "undefined" && (document.body.classList.contains("is-sidepanel") || new URLSearchParams(window.location.search).get("sidepanel") === "1");
       return `
-          <div class="lumina-chat-input-wrapper">
-            <div class="lumina-input-meta-container" id="input-meta-container">
-                ${isSidePanel2 ? "" : '<div class="lumina-web-chips" id="web-chips-group"></div>'}
-                <div class="lumina-redirect-group" id="redirect-chips-group"></div>
+          <div class="nexus-chat-input-wrapper">
+            <div class="nexus-input-meta-container" id="input-meta-container">
+                ${isSidePanel2 ? "" : '<div class="nexus-web-chips" id="web-chips-group"></div>'}
+                <div class="nexus-redirect-group" id="redirect-chips-group"></div>
             </div>
-            <div class="lumina-input-container">
-                <div class="lumina-file-preview-container lumina-image-preview-container"></div>
-                <div class="lumina-input-bar" id="input-bar">
-                    <div class="lumina-left-actions">
-                         <button class="lumina-upload-btn" id="upload-btn" title="Upload File">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <div class="nexus-input-container">
+                <div class="nexus-file-preview-container nexus-image-preview-container"></div>
+                <div class="nexus-input-bar" id="input-bar">
+                    <div class="nexus-left-actions">
+                         <button class="nexus-upload-btn" id="upload-btn" title="Upload File">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                          </button>
-                         ${isSidePanel2 ? '<div class="lumina-web-chips" id="web-chips-group"></div>' : ""}
+                         <div class="nexus-model-selector" id="model-selector">
+                             <button class="nexus-model-btn" id="model-btn">
+                                 <span class="nexus-current-model" id="model-label">Loading...</span>
+                                 <svg class="nexus-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" style="opacity: 0.85;"><path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                             </button>
+                             <div class="nexus-model-dropdown" id="model-dropdown"></div>
+                         </div>
+                         ${isSidePanel2 ? '<div class="nexus-web-chips" id="web-chips-group"></div>' : ""}
                     </div>
-                    <textarea id="chat-input" class="lumina-chat-input" placeholder="Ask anything..." rows="1"></textarea>
-                    <div class="lumina-trailing-group">
-                        <div class="lumina-model-selector" id="model-selector">
-                            <button class="lumina-model-btn" id="model-btn">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" style="opacity: 0.6;"><path d="M18 9l-6 6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 12 12)"/></svg>
-                                <span class="lumina-current-model" id="model-label">Loading...</span>
-                            </button>
-                            <div class="lumina-model-dropdown" id="model-dropdown"></div>
-                        </div>
-                        <button class="lumina-mic-btn" id="mic-btn" title="Voice Input">
+                    <textarea id="chat-input" class="nexus-chat-input" placeholder="Ask anything..." rows="1"></textarea>
+                    <div class="nexus-trailing-group">
+                        <button class="nexus-mic-btn" id="mic-btn" title="Voice Input">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                         </button>
-                        <button class="lumina-action-btn send" id="action-btn" title="Send" disabled>
+                        <button class="nexus-action-btn send" id="action-btn" title="Send" disabled>
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                         </button>
                     </div>
                 </div>
             </div>
-            <div class="lumina-hover-trigger"></div>
+            <div class="nexus-hover-trigger"></div>
           </div>`;
     }
     setupInputBar() {
@@ -31141,7 +31130,7 @@ Output only the revised text.`;
         if (!text) return;
         const isTable = text.includes("	") && (text.includes("\n") || text.includes("\r"));
         const isLongText = text.length > 1e4 || text.split(/\r?\n/).length > 50 && text.length > 2e3;
-        if ((isTable || isLongText) && typeof LuminaFileProcessor !== "undefined") {
+        if ((isTable || isLongText) && typeof NexusFileProcessor !== "undefined") {
           e.preventDefault();
           const filename = isTable ? "Pasted table.tsv" : "Pasted text.txt";
           const mimeType = isTable ? "text/tab-separated-values" : "text/plain";
@@ -31150,7 +31139,7 @@ Output only the revised text.`;
         }
       });
       const queryInPopup = (selector) => popup.querySelector(selector) || document.querySelector(selector);
-      const inputBar = queryInPopup(".lumina-input-bar") || queryInPopup("#input-bar");
+      const inputBar = queryInPopup(".nexus-input-bar") || queryInPopup("#input-bar");
       this.isProofreadMode = this.isProofreadMode || false;
       this.isTranslateMode = this.isTranslateMode || false;
       const getModes = () => ({ pr: this.isProofreadMode, tr: this.isTranslateMode });
@@ -31160,7 +31149,7 @@ Output only the revised text.`;
       const setTranslate = (v) => {
         this.isTranslateMode = v;
       };
-      const history = queryInPopup(".lumina-chat-history") || queryInPopup(".lumina-chat-scroll-content");
+      const history = queryInPopup(".nexus-chat-history") || queryInPopup(".nexus-chat-scroll-content");
       this.refreshSystemTokens();
       chrome.storage.onChanged.addListener((changes) => {
         if (changes.reasoningMode || changes.responseLanguage) {
@@ -31176,10 +31165,10 @@ Output only the revised text.`;
         const chipsObserver = new MutationObserver(() => this._throttledUpdateTokenCount());
         chipsObserver.observe(webChips, { childList: true });
       }
-      const inputWrapper = queryInPopup(".lumina-chat-input-wrapper");
+      const inputWrapper = queryInPopup(".nexus-chat-input-wrapper");
       if (inputWrapper) {
         inputWrapper.addEventListener("mousedown", (e) => {
-          const interactiveSelector = "button, textarea, input, a, .lumina-model-dropdown, .lumina-tools-dropdown, .lumina-mention-popup";
+          const interactiveSelector = "button, textarea, input, a, .nexus-model-dropdown, .nexus-tools-dropdown, .nexus-mention-popup";
           const isInteractive = e.target.closest(interactiveSelector);
           if (!isInteractive) {
             e.preventDefault();
@@ -31225,7 +31214,7 @@ Output only the revised text.`;
               this.currentPageTitle = tabs3[0].title || "Current Page";
             }
           });
-        } else if (typeof document !== "undefined" && document.title && document.title !== "Lumina") {
+        } else if (typeof document !== "undefined" && document.title && document.title !== "Nexus") {
           this.currentPageTitle = document.title;
         }
       };
@@ -31239,7 +31228,7 @@ Output only the revised text.`;
       };
       this._checkExpand = checkExpand;
       if (typeof ResizeObserver !== "undefined") {
-        const resizeTarget = queryInPopup(".lumina-input-container") || inputBar;
+        const resizeTarget = queryInPopup(".nexus-input-container") || inputBar;
         if (resizeTarget) {
           const ro = new ResizeObserver(() => {
             requestAnimationFrame(() => debouncedCheckExpand());
@@ -31278,7 +31267,7 @@ Output only the revised text.`;
               toolsToggle.classList.add("active");
               toolsToggle.classList.add("active-translate");
             }
-            const toggle = queryInPopup("#translate-toggle") || queryInPopup(".lumina-translate-toggle");
+            const toggle = queryInPopup("#translate-toggle") || queryInPopup(".nexus-translate-toggle");
             if (toggle) {
               toggle.style.display = "flex";
               toggle.classList.add("active");
@@ -31304,7 +31293,7 @@ Output only the revised text.`;
               toolsToggle.classList.add("active");
               toolsToggle.classList.add("active-proofread");
             }
-            const toggle = queryInPopup("#proofread-toggle") || queryInPopup(".lumina-proofread-toggle");
+            const toggle = queryInPopup("#proofread-toggle") || queryInPopup(".nexus-proofread-toggle");
             if (toggle) {
               toggle.style.display = "flex";
               toggle.classList.add("active");
@@ -31321,7 +31310,7 @@ Output only the revised text.`;
             if (sourceKw) {
               removeActiveModes();
               this._pendingWebSource = source;
-              const websourceToggle = queryInPopup("#websource-toggle") || queryInPopup(".lumina-websource-toggle");
+              const websourceToggle = queryInPopup("#websource-toggle") || queryInPopup(".nexus-websource-toggle");
               if (websourceToggle) {
                 const label = websourceToggle.querySelector(".tool-label");
                 if (label) label.textContent = source.name;
@@ -31342,19 +31331,19 @@ Output only the revised text.`;
         this._throttledUpdateTokenCount();
       });
       input.addEventListener("keydown", async (e) => {
-        const isMentionActive = this.container.querySelector(".lumina-mention-popup.active");
+        const isMentionActive = this.container.querySelector(".nexus-mention-popup.active");
         if (e.key === "Enter" && !e.shiftKey && !e.defaultPrevented && !isMentionActive) {
           e.preventDefault();
           const text = input.value.trim();
           if (!text && this.selectedImages.length === 0) return;
-          const inputContainer = queryInPopup(".lumina-input-container");
+          const inputContainer = queryInPopup(".nexus-input-container");
           if (inputContainer) {
-            inputContainer.classList.remove("lumina-sending");
+            inputContainer.classList.remove("nexus-sending");
             void inputContainer.offsetWidth;
-            inputContainer.classList.add("lumina-sending");
-            setTimeout(() => inputContainer.classList.remove("lumina-sending"), 900);
+            inputContainer.classList.add("nexus-sending");
+            setTimeout(() => inputContainer.classList.remove("nexus-sending"), 900);
           }
-          if (this.historyEl && !this.historyEl._luminaListenersAttached) {
+          if (this.historyEl && !this.historyEl._nexusListenersAttached) {
             this.initListeners(this.historyEl);
           }
           const { pr, tr } = getModes();
@@ -31390,13 +31379,13 @@ Output only the revised text.`;
         }
         this._updateContainerState();
       });
-      const toolsWrapper = queryInPopup("#tools-wrapper") || queryInPopup(".lumina-actions-dropdown-wrapper");
-      const toolsToggle = queryInPopup("#tools-toggle") || queryInPopup(".lumina-plus-toggle");
-      const toolsDropdown = queryInPopup("#tools-dropdown") || queryInPopup(".lumina-tools-dropdown");
+      const toolsWrapper = queryInPopup("#tools-wrapper") || queryInPopup(".nexus-actions-dropdown-wrapper");
+      const toolsToggle = queryInPopup("#tools-toggle") || queryInPopup(".nexus-plus-toggle");
+      const toolsDropdown = queryInPopup("#tools-dropdown") || queryInPopup(".nexus-tools-dropdown");
       if (toolsWrapper && toolsToggle && !toolsToggle.dataset.setupDone) {
         toolsToggle.dataset.setupDone = "true";
         const toggleTools = (show) => {
-          const modelDropdown = queryInPopup(".lumina-model-dropdown");
+          const modelDropdown = queryInPopup(".nexus-model-dropdown");
           const modelWasActive = modelDropdown && modelDropdown.classList.contains("active");
           if (modelDropdown) modelDropdown.classList.remove("active");
           const isActive = toolsWrapper.classList.contains("active") || toolsDropdown && toolsDropdown.classList.contains("active");
@@ -31442,14 +31431,14 @@ Output only the revised text.`;
           toolsToggle.classList.remove("active-proofread");
           toolsToggle.classList.remove("active-translate");
         }
-        ["#proofread-toggle", "#translate-toggle", ".lumina-proofread-toggle", ".lumina-translate-toggle"].forEach((sel) => {
+        ["#proofread-toggle", "#translate-toggle", ".nexus-proofread-toggle", ".nexus-translate-toggle"].forEach((sel) => {
           const el = queryInPopup(sel);
           if (el) {
             el.style.display = "none";
             el.classList.remove("active");
           }
         });
-        popup.querySelectorAll(".lumina-tool-item").forEach((el) => el.classList.remove("active"));
+        popup.querySelectorAll(".nexus-tool-item").forEach((el) => el.classList.remove("active"));
         checkExpand();
       };
       this._removeActiveModes = removeActiveModes;
@@ -31460,7 +31449,7 @@ Output only the revised text.`;
           removeActiveModes();
           modeSetter();
           item.classList.add("active");
-          const activeToolsToggle = queryInPopup("#tools-toggle") || queryInPopup(".lumina-plus-toggle");
+          const activeToolsToggle = queryInPopup("#tools-toggle") || queryInPopup(".nexus-plus-toggle");
           if (activeToolsToggle) {
             const label = activeToolsToggle.querySelector(".tool-label");
             if (label) label.textContent = modename;
@@ -31485,7 +31474,7 @@ Output only the revised text.`;
       setupTool('[data-action="translate"]', "#translate-toggle", "Translate", () => {
         setTranslate(true);
       }, "Enter text to translate...");
-      ["#proofread-toggle", "#translate-toggle", ".lumina-proofread-toggle", ".lumina-translate-toggle"].forEach((sel) => {
+      ["#proofread-toggle", "#translate-toggle", ".nexus-proofread-toggle", ".nexus-translate-toggle"].forEach((sel) => {
         const toggle = queryInPopup(sel);
         if (toggle) toggle.addEventListener("click", (e) => {
           e.preventDefault();
@@ -31504,8 +31493,8 @@ Output only the revised text.`;
           this.fileInputEl.click();
         });
       }
-      if (this.fileInputEl && !this.fileInputEl._luminaSetup) {
-        this.fileInputEl._luminaSetup = true;
+      if (this.fileInputEl && !this.fileInputEl._nexusSetup) {
+        this.fileInputEl._nexusSetup = true;
         this.fileInputEl.addEventListener("change", async (e) => {
           for (const file of e.target.files) this.addFile(file);
           this.fileInputEl.value = "";
@@ -31513,23 +31502,23 @@ Output only the revised text.`;
       }
       const dropTarget = this.options.isSpotlight ? document.body : popup;
       this._setupFileDragDrop(dropTarget, input);
-      const micBtn = queryInPopup("#mic-btn") || queryInPopup(".lumina-mic-btn");
+      const micBtn = queryInPopup("#mic-btn") || queryInPopup(".nexus-mic-btn");
       if (micBtn) this._setupMicButton(micBtn, input);
-      const actionBtn = queryInPopup("#action-btn") || queryInPopup(".lumina-action-btn");
+      const actionBtn = queryInPopup("#action-btn") || queryInPopup(".nexus-action-btn");
       if (actionBtn) this._setupActionButton(actionBtn, input);
       this._updateActionBtnState();
     }
     _setupFileDragDrop(dropZone, input) {
-      if (!dropZone || dropZone.dataset.luminaDropSetup === "true") return;
-      dropZone.dataset.luminaDropSetup = "true";
+      if (!dropZone || dropZone.dataset.nexusDropSetup === "true") return;
+      dropZone.dataset.nexusDropSetup = "true";
       let dragDepth = 0;
       const hasFiles = (dt) => !!dt && Array.from(dt.types || []).includes("Files");
-      const inputContainer = this.container ? this.container.querySelector(".lumina-input-container") : null;
+      const inputContainer = this.container ? this.container.querySelector(".nexus-input-container") : null;
       const setDragState = (active) => {
-        dropZone.classList.toggle("lumina-drag-over", active);
+        dropZone.classList.toggle("nexus-drag-over", active);
         if (inputContainer) {
-          inputContainer.classList.toggle("lumina-drag-over", active);
-          if (!active) inputContainer.classList.remove("lumina-drag-hover-direct");
+          inputContainer.classList.toggle("nexus-drag-over", active);
+          if (!active) inputContainer.classList.remove("nexus-drag-hover-direct");
         }
       };
       dropZone.addEventListener("dragenter", (e) => {
@@ -31559,7 +31548,7 @@ Output only the revised text.`;
         e.stopPropagation();
         dragDepth = 0;
         setDragState(false);
-        if (inputContainer) inputContainer.classList.remove("lumina-drag-hover-direct");
+        if (inputContainer) inputContainer.classList.remove("nexus-drag-hover-direct");
         const files = Array.from(e.dataTransfer.files || []);
         if (!files.length) return;
         await this._handleDroppedFiles(files, input);
@@ -31569,28 +31558,28 @@ Output only the revised text.`;
         inputContainer.addEventListener("dragenter", (e) => {
           if (!hasFiles(e.dataTransfer)) return;
           containerDragDepth += 1;
-          inputContainer.classList.add("lumina-drag-hover-direct");
+          inputContainer.classList.add("nexus-drag-hover-direct");
         });
         inputContainer.addEventListener("dragover", (e) => {
           if (!hasFiles(e.dataTransfer)) return;
-          inputContainer.classList.add("lumina-drag-hover-direct");
+          inputContainer.classList.add("nexus-drag-hover-direct");
         });
         inputContainer.addEventListener("dragleave", (e) => {
           if (!hasFiles(e.dataTransfer)) return;
           containerDragDepth = Math.max(0, containerDragDepth - 1);
           if (containerDragDepth === 0) {
-            inputContainer.classList.remove("lumina-drag-hover-direct");
+            inputContainer.classList.remove("nexus-drag-hover-direct");
           }
         });
       }
-      if (this.options.isSpotlight && !window.__luminaSpotlightDropGuardInstalled) {
+      if (this.options.isSpotlight && !window.__nexusSpotlightDropGuardInstalled) {
         const globalDropGuard = (e) => {
           if (!hasFiles(e.dataTransfer)) return;
           e.preventDefault();
         };
         window.addEventListener("dragover", globalDropGuard);
         window.addEventListener("drop", globalDropGuard);
-        window.__luminaSpotlightDropGuardInstalled = true;
+        window.__nexusSpotlightDropGuardInstalled = true;
       }
     }
     async _handleDroppedFiles(files, input) {
@@ -31633,7 +31622,7 @@ Output only the revised text.`;
       this.inputEl.placeholder = state.placeholder || "Ask anything...";
       if (state.isProofreadMode) {
         this.isProofreadMode = true;
-        const toggle = queryInPopup("#proofread-toggle") || queryInPopup(".lumina-proofread-toggle");
+        const toggle = queryInPopup("#proofread-toggle") || queryInPopup(".nexus-proofread-toggle");
         if (toggle) {
           toggle.style.display = "flex";
           toggle.classList.add("active");
@@ -31642,7 +31631,7 @@ Output only the revised text.`;
         if (toolItem) toolItem.classList.add("active");
       } else if (state.isTranslateMode) {
         this.isTranslateMode = true;
-        const toggle = queryInPopup("#translate-toggle") || queryInPopup(".lumina-translate-toggle");
+        const toggle = queryInPopup("#translate-toggle") || queryInPopup(".nexus-translate-toggle");
         if (toggle) {
           toggle.style.display = "flex";
           toggle.classList.add("active");
@@ -31658,7 +31647,7 @@ Output only the revised text.`;
     }
     _updateContainerState() {
       const queryInPopup = (selector) => this.container.querySelector(selector) || document.querySelector(selector);
-      const container2 = queryInPopup(".lumina-input-container");
+      const container2 = queryInPopup(".nexus-input-container");
       if (container2) {
         if (this.inputEl && (this.inputEl.value.trim().length > 0 || this.selectedImages.length > 0)) container2.classList.add("has-content");
         else container2.classList.remove("has-content");
@@ -31667,9 +31656,9 @@ Output only the revised text.`;
       }
     }
     _setupModelSelector(popup) {
-      const selector = popup.querySelector(".lumina-model-selector");
+      const selector = popup.querySelector(".nexus-model-selector");
       if (!selector) return;
-      const btn = selector.querySelector(".lumina-model-btn"), label = selector.querySelector(".lumina-current-model"), dropdown = selector.querySelector(".lumina-model-dropdown");
+      const btn = selector.querySelector(".nexus-model-btn"), label = selector.querySelector(".nexus-current-model"), dropdown = selector.querySelector(".nexus-model-dropdown");
       if (!btn || !dropdown) return;
       const self2 = this;
       if (typeof window.getPromptApiNamespace === "undefined") {
@@ -31706,7 +31695,7 @@ Output only the revised text.`;
       }
       const render = (data) => {
         const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-        const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
+        const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
         let currentModel = self2.activeTabModel?.model;
         let currentProviderId = self2.activeTabModel?.providerId;
         const lastUsed = data.lastUsedModel;
@@ -31720,41 +31709,44 @@ Output only the revised text.`;
           currentProviderId = chain[0].providerId;
           if (!self2.activeTabModel) self2.activeTabModel = { model: currentModel, providerId: currentProviderId };
         }
-        if (currentModel && label) label.textContent = currentModel;
+        const activeChainItem = chain.find((c) => c.model === currentModel && c.providerId === currentProviderId) || chain.find((c) => c.model === currentModel);
+        const activeDisplayName = activeChainItem?.displayName || activeChainItem?.name || currentModel;
+        if (activeDisplayName && label) label.textContent = activeDisplayName;
         dropdown.innerHTML = "";
         if (chain.length === 0) {
-          dropdown.innerHTML = '<div style="padding:8px;font-size:11px;">No models</div>';
+          dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--nexus-text-secondary);">No models</div>';
           return;
         }
         chain.forEach((item) => {
           const el = document.createElement("button");
           const isActive = item.model === currentModel && item.providerId === currentProviderId;
-          el.className = `lumina-model-item ${isActive ? "active" : ""}`;
-          el.innerHTML = `<div class="model-info"><span class="model-name">${item.model}</span></div>`;
+          const displayName = item.displayName || item.name || item.model;
+          el.className = `nexus-model-item ${isActive ? "active" : ""}`;
+          el.innerHTML = `<div class="model-info"><span class="model-name">${displayName}</span></div>`;
           el.onclick = (e) => {
             e.stopPropagation();
-            if (label) label.textContent = item.model;
+            if (label) label.textContent = displayName;
             dropdown.classList.remove("active");
-            dropdown.querySelectorAll(".lumina-model-item").forEach((b) => b.classList.remove("active"));
+            dropdown.querySelectorAll(".nexus-model-item").forEach((b) => b.classList.remove("active"));
             el.classList.add("active");
             self2.activeTabModel = { model: item.model, providerId: item.providerId };
             chrome.storage.local.set({ lastUsedModel: self2.activeTabModel });
             const sid = self2.historyEl?.dataset?.sessionId || null;
             const sidKey = sid || "null";
-            chrome.storage.local.get(["lumina_session_settings", "advancedParamsByModel"], (res) => {
-              const settings = res.lumina_session_settings || {};
+            chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
+              const settings = res.nexus_session_settings || {};
               if (!settings[sidKey]) settings[sidKey] = {};
               settings[sidKey].selectedModel = self2.activeTabModel;
               const advancedParamsByModel2 = res.advancedParamsByModel || {};
               const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
               const modelParams = item.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !item.providerId ? advancedParamsByModel2[item.model] || {} : {};
-              const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
+              const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
               const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
               self2.thinkingLevel = newThinkingLevel;
               settings[sidKey].thinkingLevel = newThinkingLevel;
-              chrome.storage.local.set({ lumina_session_settings: settings }, () => {
-                if (typeof window.LuminaChatHistory?.updateSessionModelAndThinking === "function" && sid) {
-                  window.LuminaChatHistory.updateSessionModelAndThinking(sid, self2.activeTabModel, newThinkingLevel);
+              chrome.storage.local.set({ nexus_session_settings: settings }, () => {
+                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && sid) {
+                  window.NexusChatHistory.updateSessionModelAndThinking(sid, self2.activeTabModel, newThinkingLevel);
                 }
                 if (typeof self2.refreshReasoningSelector === "function") {
                   self2.refreshReasoningSelector();
@@ -31762,7 +31754,7 @@ Output only the revised text.`;
               });
             });
             self2._updateTokenLimitFromModel();
-            selector.dispatchEvent(new CustomEvent("lumina:model-change", {
+            selector.dispatchEvent(new CustomEvent("nexus:model-change", {
               bubbles: true,
               detail: { model: item.model, providerId: item.providerId }
             }));
@@ -31770,10 +31762,10 @@ Output only the revised text.`;
           dropdown.appendChild(el);
         });
         const divider = document.createElement("div");
-        divider.className = "lumina-model-divider";
+        divider.className = "nexus-model-divider";
         dropdown.appendChild(divider);
         const thinkingItem = document.createElement("div");
-        thinkingItem.className = "lumina-model-item lumina-thinking-parent-item";
+        thinkingItem.className = "nexus-model-item nexus-thinking-parent-item";
         thinkingItem.style.position = "relative";
         thinkingItem.style.display = "flex";
         thinkingItem.style.alignItems = "center";
@@ -31788,31 +31780,31 @@ Output only the revised text.`;
           "none": "None"
         };
         thinkingItem.innerHTML = `
-                <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
-                    <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
-                    <span style="font-size:11px; color:var(--lumina-text-secondary);">${titleMap[currentLevel] || "None"}</span>
+                <div class="model-info">
+                    <span class="model-name">Thinking level</span>
+                    <span class="model-desc">${titleMap[currentLevel] || "None"}</span>
                 </div>
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
             `;
         const submenu = document.createElement("div");
-        submenu.className = "lumina-thinking-submenu";
-        const options = window.LuminaModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
+        submenu.className = "nexus-thinking-submenu";
+        const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
         options.forEach((opt) => {
           const optEl = document.createElement("button");
           const isActive = currentLevel === opt.value;
-          optEl.className = `lumina-thinking-opt-item ${isActive ? "active" : ""}`;
+          optEl.className = `nexus-thinking-opt-item ${isActive ? "active" : ""}`;
           const checkmarkIcon = isActive ? `
-                    <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--lumina-primary);">
+                    <span class="reasoning-checkmark">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </span>
                 ` : `
-                    <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px;"></span>
+                    <span class="reasoning-checkmark"></span>
                 `;
           optEl.innerHTML = `
                     ${checkmarkIcon}
-                    <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
-                        <span class="reasoning-title" style="font-size:13px; font-weight:500;">${opt.title}</span>
-                        <span class="reasoning-desc" style="font-size:11px; color:var(--lumina-text-secondary);">${opt.desc}</span>
+                    <div class="reasoning-info">
+                        <span class="reasoning-title">${opt.title}</span>
+                        <span class="reasoning-desc">${opt.desc}</span>
                     </div>
                 `;
           optEl.onclick = (e) => {
@@ -31820,13 +31812,13 @@ Output only the revised text.`;
             self2.thinkingLevel = opt.value;
             const sid = self2.historyEl?.dataset?.sessionId || null;
             const sidKey = sid || "null";
-            chrome.storage.local.get(["lumina_session_settings"], (res) => {
-              const settings = res.lumina_session_settings || {};
+            chrome.storage.local.get(["nexus_session_settings"], (res) => {
+              const settings = res.nexus_session_settings || {};
               if (!settings[sidKey]) settings[sidKey] = {};
               settings[sidKey].thinkingLevel = opt.value;
-              chrome.storage.local.set({ lumina_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                if (typeof window.LuminaChatHistory?.updateSessionModelAndThinking === "function" && sid) {
-                  window.LuminaChatHistory.updateSessionModelAndThinking(sid, void 0, opt.value);
+              chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
+                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && sid) {
+                  window.NexusChatHistory.updateSessionModelAndThinking(sid, void 0, opt.value);
                 }
                 if (typeof self2.refreshSystemTokens === "function") {
                   self2.refreshSystemTokens();
@@ -31846,10 +31838,10 @@ Output only the revised text.`;
       const fetchAndRender = () => {
         const sid = self2.historyEl?.dataset?.sessionId || null;
         const sidKey = sid || "null";
-        chrome.storage.local.get(["providers", "modelChains", "lastUsedModel", "lumina_session_settings", "advancedParamsByModel"], async (data) => {
+        chrome.storage.local.get(["providers", "models", "modelChains", "lastUsedModel", "nexus_session_settings", "advancedParamsByModel"], async (data) => {
           const support = await window.getPromptApiSupport();
           data.promptSupport = support;
-          const settings = data.lumina_session_settings || {};
+          const settings = data.nexus_session_settings || {};
           const saved = settings[sidKey] || {};
           if (!self2.activeTabModel && saved.selectedModel) {
             self2.activeTabModel = { ...saved.selectedModel };
@@ -31859,7 +31851,7 @@ Output only the revised text.`;
             const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
             const advancedParamsByModel2 = data.advancedParamsByModel || {};
             const modelParams = modelObj.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !modelObj.providerId ? advancedParamsByModel2[modelObj.model] || {} : {};
-            const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
+            const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
             self2.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
           }
           render(data);
@@ -31875,7 +31867,7 @@ Output only the revised text.`;
         if (dropdown.classList.contains("active")) {
           dropdown.classList.remove("active");
         } else {
-          const toolsDropdown = popup.querySelector(".lumina-tools-dropdown");
+          const toolsDropdown = popup.querySelector(".nexus-tools-dropdown");
           if (toolsDropdown) toolsDropdown.classList.remove("active");
           if (!dropdown.classList.contains("active")) fetchAndRender();
           dropdown.classList.add("active");
@@ -31949,7 +31941,7 @@ Output only the revised text.`;
           recognition.onerror = (event) => {
             console.error("Speech recognition error", event.error);
             if (event.error === "not-allowed") {
-              if (confirm("Lumina c\u1EA7n quy\u1EC1n truy c\u1EADp Microphone \u0111\u1EC3 nh\u1EADn di\u1EC7n gi\u1ECDng n\xF3i.\n\nDo h\u1EA1n ch\u1EBF c\u1EE7a tr\xECnh duy\u1EC7t, b\u1EA1n c\u1EA7n c\u1EA5p quy\u1EC1n n\xE0y \u1EDF tab c\xE0i \u0111\u1EB7t. M\u1EDF trang c\xE0i \u0111\u1EB7t ngay?")) {
+              if (confirm("Nexus c\u1EA7n quy\u1EC1n truy c\u1EADp Microphone \u0111\u1EC3 nh\u1EADn di\u1EC7n gi\u1ECDng n\xF3i.\n\nDo h\u1EA1n ch\u1EBF c\u1EE7a tr\xECnh duy\u1EC7t, b\u1EA1n c\u1EA7n c\u1EA5p quy\u1EC1n n\xE0y \u1EDF tab c\xE0i \u0111\u1EB7t. M\u1EDF trang c\xE0i \u0111\u1EB7t ngay?")) {
                 chrome.runtime.sendMessage({ action: "open_options", section: "general", requestMic: true });
               }
             }
@@ -31964,7 +31956,7 @@ Output only the revised text.`;
         } catch (err) {
           console.error(err);
           if (err.name === "NotAllowedError" || err.name === "PermissionDismissedError") {
-            if (confirm("Lumina c\u1EA7n quy\u1EC1n truy c\u1EADp Microphone \u0111\u1EC3 nh\u1EADn di\u1EC7n gi\u1ECDng n\xF3i.\n\nDo h\u1EA1n ch\u1EBF c\u1EE7a tr\xECnh duy\u1EC7t, b\u1EA1n c\u1EA7n c\u1EA5p quy\u1EC1n n\xE0y \u1EDF tab c\xE0i \u0111\u1EB7t. M\u1EDF trang c\xE0i \u0111\u1EB7t ngay?")) {
+            if (confirm("Nexus c\u1EA7n quy\u1EC1n truy c\u1EADp Microphone \u0111\u1EC3 nh\u1EADn di\u1EC7n gi\u1ECDng n\xF3i.\n\nDo h\u1EA1n ch\u1EBF c\u1EE7a tr\xECnh duy\u1EC7t, b\u1EA1n c\u1EA7n c\u1EA5p quy\u1EC1n n\xE0y \u1EDF tab c\xE0i \u0111\u1EB7t. M\u1EDF trang c\xE0i \u0111\u1EB7t ngay?")) {
               chrome.runtime.sendMessage({ action: "open_options", section: "general", requestMic: true });
             }
           } else {
@@ -31990,7 +31982,7 @@ Output only the revised text.`;
     }
     _getMaxTokens() {
       let maxTokens = null;
-      const modelLabel = this.container ? this.container.querySelector(".lumina-current-model") : null;
+      const modelLabel = this.container ? this.container.querySelector(".nexus-current-model") : null;
       const currentModel = modelLabel ? modelLabel.textContent : this.options.isSpotlight ? "gpt-4o" : "";
       if (this.advancedParamsByModel && currentModel) {
         for (const key in this.advancedParamsByModel) {
@@ -32009,17 +32001,17 @@ Output only the revised text.`;
       const text = isRegenerate ? "" : this.inputEl.value.trim();
       if (!text && !isRegenerate) return;
       if (this.attachedFiles.some((f) => f.status === "uploading" || f.status === "compressing")) {
-        console.warn("[Lumina] Cannot submit: files are still processing");
+        console.warn("[Nexus] Cannot submit: files are still processing");
         return;
       }
       this.isGenerating = true;
       this._updateActionBtnState();
-      const inputContainer = this.container ? this.container.querySelector(".lumina-input-container") : null;
+      const inputContainer = this.container ? this.container.querySelector(".nexus-input-container") : null;
       if (inputContainer) {
-        inputContainer.classList.remove("lumina-sending");
+        inputContainer.classList.remove("nexus-sending");
         void inputContainer.offsetWidth;
-        inputContainer.classList.add("lumina-sending");
-        setTimeout(() => inputContainer.classList.remove("lumina-sending"), 900);
+        inputContainer.classList.add("nexus-sending");
+        setTimeout(() => inputContainer.classList.remove("nexus-sending"), 900);
       }
       const readPage = !!this.readWebpageEnabled;
       const pageTitle = this.currentPageTitle || "Current Page";
@@ -32040,39 +32032,39 @@ Output only the revised text.`;
       if (!actionBtn) return;
       const val = this.inputEl ? this.inputEl.value.trim() : "";
       if (this.isGenerating) {
-        actionBtn.className = "lumina-action-btn active pause";
+        actionBtn.className = "nexus-action-btn active pause";
         actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>`;
         actionBtn.title = "Pause";
         actionBtn.removeAttribute("disabled");
       } else if (val) {
-        actionBtn.className = "lumina-action-btn active send";
+        actionBtn.className = "nexus-action-btn active send";
         actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
         actionBtn.title = "Send";
         actionBtn.removeAttribute("disabled");
       } else {
-        actionBtn.className = "lumina-action-btn send";
+        actionBtn.className = "nexus-action-btn send";
         actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
         actionBtn.title = "Send";
         actionBtn.setAttribute("disabled", "true");
       }
     }
     _isDocxFile(file) {
-      return typeof LuminaFileProcessor !== "undefined" && LuminaFileProcessor.isDocxFile ? LuminaFileProcessor.isDocxFile(file) : (file?.name || "").toLowerCase().endsWith(".docx");
+      return typeof NexusFileProcessor !== "undefined" && NexusFileProcessor.isDocxFile ? NexusFileProcessor.isDocxFile(file) : (file?.name || "").toLowerCase().endsWith(".docx");
     }
     _isXlsxFile(file) {
-      return typeof LuminaFileProcessor !== "undefined" && LuminaFileProcessor.isXlsxFile ? LuminaFileProcessor.isXlsxFile(file) : (file?.name || "").toLowerCase().endsWith(".xlsx");
+      return typeof NexusFileProcessor !== "undefined" && NexusFileProcessor.isXlsxFile ? NexusFileProcessor.isXlsxFile(file) : (file?.name || "").toLowerCase().endsWith(".xlsx");
     }
     _fileToDataURL(file) {
-      return LuminaFileProcessor.fileToDataURL(file);
+      return NexusFileProcessor.fileToDataURL(file);
     }
     static _resolveImagePreviewSrc(item, src) {
-      return LuminaFileProcessor.resolveImagePreviewSrc(item, src);
+      return NexusFileProcessor.resolveImagePreviewSrc(item, src);
     }
     static _createObjectUrlFromDataUrl(dataUrl) {
-      return LuminaFileProcessor.createObjectUrlFromDataUrl(dataUrl);
+      return NexusFileProcessor.createObjectUrlFromDataUrl(dataUrl);
     }
     _resolveImagePreviewSrc(item, src) {
-      return LuminaFileProcessor.resolveImagePreviewSrc(item, src);
+      return NexusFileProcessor.resolveImagePreviewSrc(item, src);
     }
     _createObjectUrlFromDataUrl(dataUrl) {
       if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) return null;
@@ -32098,8 +32090,8 @@ Output only the revised text.`;
     _createObjectUrl(blobOrFile) {
       if (!blobOrFile || !URL?.createObjectURL) return null;
       const objectUrl = URL.createObjectURL(blobOrFile);
-      if (!this._luminaPreviewObjectUrls) this._luminaPreviewObjectUrls = /* @__PURE__ */ new Set();
-      this._luminaPreviewObjectUrls.add(objectUrl);
+      if (!this._nexusPreviewObjectUrls) this._nexusPreviewObjectUrls = /* @__PURE__ */ new Set();
+      this._nexusPreviewObjectUrls.add(objectUrl);
       return objectUrl;
     }
     _revokeObjectUrl(url) {
@@ -32108,7 +32100,7 @@ Output only the revised text.`;
         URL.revokeObjectURL(url);
       } catch (_) {
       }
-      if (this._luminaPreviewObjectUrls) this._luminaPreviewObjectUrls.delete(url);
+      if (this._nexusPreviewObjectUrls) this._nexusPreviewObjectUrls.delete(url);
     }
     showStopButton(onStop = null) {
       this.isGenerating = true;
@@ -32116,10 +32108,10 @@ Output only the revised text.`;
       this._updateActionBtnState();
       let stopBtn = null;
       if (this.container) {
-        stopBtn = this.container.querySelector("#lumina-stop-btn") || this.container.querySelector(".lumina-stop-btn");
+        stopBtn = this.container.querySelector("#nexus-stop-btn") || this.container.querySelector(".nexus-stop-btn");
       }
       if (!stopBtn && typeof document !== "undefined") {
-        stopBtn = document.getElementById("lumina-stop-btn") || document.querySelector(".lumina-stop-btn");
+        stopBtn = document.getElementById("nexus-stop-btn") || document.querySelector(".nexus-stop-btn");
       }
       if (stopBtn) {
         stopBtn.style.display = "flex";
@@ -32138,7 +32130,7 @@ Output only the revised text.`;
       this._updateActionBtnState();
       let stopBtn = null;
       if (this.container) {
-        stopBtn = this.container.querySelector("#lumina-stop-btn") || this.container.querySelector(".lumina-stop-btn");
+        stopBtn = this.container.querySelector("#nexus-stop-btn") || this.container.querySelector(".nexus-stop-btn");
       }
       if (stopBtn) {
         stopBtn.style.display = "none";
@@ -32146,17 +32138,17 @@ Output only the revised text.`;
     }
     _initContextMenu() {
       if (!this.container) return;
-      const existing = document.querySelector(".lumina-context-menu");
+      const existing = document.querySelector(".nexus-context-menu");
       if (existing) existing.remove();
       this.contextMenu = document.createElement("div");
-      this.contextMenu.className = "lumina-context-menu";
+      this.contextMenu.className = "nexus-context-menu";
       this.contextMenu.innerHTML = `
-            <button class="lumina-context-menu-item" data-action="copy">
-                <span class="lumina-svg-icon lumina-icon-copy" aria-hidden="true"></span>
+            <button class="nexus-context-menu-item" data-action="copy">
+                <span class="nexus-svg-icon nexus-icon-copy" aria-hidden="true"></span>
                 Copy
             </button>
-            <button class="lumina-context-menu-item" data-action="regenerate">
-                <span class="lumina-svg-icon lumina-icon-refresh" aria-hidden="true"></span>
+            <button class="nexus-context-menu-item" data-action="regenerate">
+                <span class="nexus-svg-icon nexus-icon-refresh" aria-hidden="true"></span>
                 Regenerate
             </button>
         `;
@@ -32167,7 +32159,7 @@ Output only the revised text.`;
         }
       });
       this.contextMenu.addEventListener("click", (e) => {
-        const item = e.target.closest(".lumina-context-menu-item");
+        const item = e.target.closest(".nexus-context-menu-item");
         if (!item) return;
         const action = item.dataset.action;
         const targetAnswer = this.contextMenu.__targetAnswer;
@@ -32181,7 +32173,7 @@ Output only the revised text.`;
       this.contextMenu.__targetAnswer = targetAnswer;
       if (!this.contextMenuBackdrop) {
         this.contextMenuBackdrop = document.createElement("div");
-        this.contextMenuBackdrop.className = "lumina-overlay-backdrop";
+        this.contextMenuBackdrop.className = "nexus-overlay-backdrop";
         this.contextMenuBackdrop.style.zIndex = "99999";
         this.contextMenuBackdrop.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
         this.contextMenuBackdrop.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
@@ -32223,14 +32215,14 @@ Output only the revised text.`;
       }
     }
     async _handleContextMenuAction(action, answer) {
-      const entry = answer.closest(".lumina-entry");
+      const entry = answer.closest(".nexus-entry");
       if (!entry) return;
       const rawText = answer.getAttribute("data-raw-text") || answer.innerText || "";
       switch (action) {
         case "copy": {
           let plain = rawText.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
           const clone = answer.cloneNode(true);
-          clone.querySelectorAll(".lumina-actions, .lumina-answer-versions, .lumina-answer-nav, .lumina-thinking-steps, .lumina-thinking").forEach((el) => el.remove());
+          clone.querySelectorAll(".nexus-actions, .nexus-answer-versions, .nexus-answer-nav, .nexus-thinking-steps, .nexus-thinking").forEach((el) => el.remove());
           clone.querySelectorAll(".katex").forEach((katexEl) => {
             const annotation = katexEl.querySelector("annotation");
             if (annotation) {
@@ -32344,7 +32336,7 @@ Output only the revised text.`;
       if (!this.contextMenu) return;
       this.contextMenu.__targetAnswer = answerDiv;
       this.contextMenu.innerHTML = `
-            <button class="lumina-context-menu-item" data-action="edit">
+            <button class="nexus-context-menu-item" data-action="edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 Edit
             </button>
@@ -32360,8 +32352,8 @@ Output only the revised text.`;
       this.contextMenu.classList.add("visible");
     }
     _handleQuestionRecheck(userInput, editable, isRegenerate = false) {
-      const questionDiv = editable.closest(".lumina-chat-question");
-      const entry = editable.closest(".lumina-entry");
+      const questionDiv = editable.closest(".nexus-chat-question");
+      const entry = editable.closest(".nexus-entry");
       if (!entry) return;
       entry.dataset.timestamp = Date.now().toString();
       const userTextOnly = userInput.replace(/^SelectedText\s*/, "").trim();
@@ -32383,7 +32375,7 @@ Output only the revised text.`;
         if (currentTab) {
           const otherTabs = window.tabs.filter((t) => t !== currentTab && t.sessionId === currentTab.sessionId && t.historyEl);
           otherTabs.forEach((ot) => {
-            const otherEntry = ot.historyEl.querySelector(`.lumina-entry[data-entry-id="${entryId}"]`);
+            const otherEntry = ot.historyEl.querySelector(`.nexus-entry[data-entry-id="${entryId}"]`);
             if (otherEntry && ot.chatUIInstance) {
               let next2 = otherEntry.nextElementSibling;
               while (next2) {
@@ -32391,7 +32383,7 @@ Output only the revised text.`;
                 next2 = next2.nextElementSibling;
                 toRemove.remove();
               }
-              otherEntry.querySelectorAll(".lumina-chat-answer, .lumina-web-search").forEach((el) => el.remove());
+              otherEntry.querySelectorAll(".nexus-chat-answer, .nexus-web-search").forEach((el) => el.remove());
               ot.chatUIInstance.currentEntryDiv = otherEntry;
               ot.chatUIInstance.currentAnswerDiv = null;
             }
@@ -32404,7 +32396,7 @@ Output only the revised text.`;
         next = next.nextElementSibling;
         toRemove.remove();
       }
-      entry.querySelectorAll(".lumina-chat-answer, .lumina-web-search").forEach((el) => el.remove());
+      entry.querySelectorAll(".nexus-chat-answer, .nexus-web-search").forEach((el) => el.remove());
       const scrollContainer = this.getScrollContainer();
       if (isRegenerate) {
         this._regenScrollLocked = true;
@@ -32423,10 +32415,10 @@ Output only the revised text.`;
         const entryId2 = entry.dataset.entryId;
         const entryType = entry.dataset.entryType || "chat";
         let originalImages = [];
-        if (questionDiv && Array.isArray(questionDiv._luminaImages)) {
-          originalImages = questionDiv._luminaImages;
-        } else if (entry && Array.isArray(entry._luminaImages)) {
-          originalImages = entry._luminaImages;
+        if (questionDiv && Array.isArray(questionDiv._nexusImages)) {
+          originalImages = questionDiv._nexusImages;
+        } else if (entry && Array.isArray(entry._nexusImages)) {
+          originalImages = entry._nexusImages;
         } else if (questionDiv && questionDiv.dataset.images) {
           try {
             const parsed = JSON.parse(questionDiv.dataset.images);
@@ -32458,7 +32450,7 @@ Output only the revised text.`;
           selection.removeAllRanges();
           selection.addRange(range);
           el.scrollTop = el.scrollHeight;
-          const parentDiv = el.closest(".lumina-chat-question");
+          const parentDiv = el.closest(".nexus-chat-question");
           if (parentDiv) {
             parentDiv.scrollTop = parentDiv.scrollHeight;
           }
@@ -32472,24 +32464,24 @@ Output only the revised text.`;
     }
     regenerateEntry(entry) {
       if (!entry) return;
-      const questionDiv = entry.querySelector(".lumina-chat-question");
+      const questionDiv = entry.querySelector(".nexus-chat-question");
       if (!questionDiv) return;
-      const questionContent = questionDiv.querySelector(".lumina-question-content") || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
+      const questionContent = questionDiv.querySelector(".nexus-question-content") || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
       const rawQuestion = questionDiv.getAttribute("data-raw-text") || questionContent.innerText || questionContent.textContent || "";
       if (!rawQuestion.trim()) return;
       this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true);
     }
     enterQuestionEditMode(questionDiv) {
-      if (!questionDiv || questionDiv.classList.contains("lumina-question-editing")) return;
+      if (!questionDiv || questionDiv.classList.contains("nexus-question-editing")) return;
       this._hideContextMenu();
       this.cancelAllQuestionEdits();
-      const row = questionDiv.closest(".lumina-question-row");
-      let contentDiv = questionDiv.querySelector(".lumina-question-content") || questionDiv.querySelector('div[contenteditable="true"]');
+      const row = questionDiv.closest(".nexus-question-row");
+      let contentDiv = questionDiv.querySelector(".nexus-question-content") || questionDiv.querySelector('div[contenteditable="true"]');
       if (!contentDiv) {
         const originalHTML = questionDiv.innerHTML;
         questionDiv.innerHTML = "";
         contentDiv = document.createElement("div");
-        contentDiv.className = "lumina-question-content";
+        contentDiv.className = "nexus-question-content";
         contentDiv.innerHTML = originalHTML;
         questionDiv.appendChild(contentDiv);
       }
@@ -32497,24 +32489,24 @@ Output only the revised text.`;
       questionDiv.__originalHTML = contentDiv.innerHTML;
       questionDiv.__originalRaw = questionDiv.getAttribute("data-raw-text") || contentDiv.innerText || "";
       questionDiv.__questionEditOriginalClassName = contentDiv.className;
-      questionDiv.classList.add("is-editing", "lumina-question-editing");
+      questionDiv.classList.add("is-editing", "nexus-question-editing");
       questionDiv.classList.remove("has-overflow", "expanded");
-      const expandBtn = questionDiv.querySelector(".lumina-question-expand-btn");
+      const expandBtn = questionDiv.querySelector(".nexus-question-expand-btn");
       if (expandBtn) expandBtn.remove();
-      if (row) row.classList.add("lumina-question-row-editing");
-      contentDiv.className = "lumina-answer-content";
+      if (row) row.classList.add("nexus-question-row-editing");
+      contentDiv.className = "nexus-answer-content";
       contentDiv.contentEditable = "plaintext-only";
       contentDiv.spellcheck = false;
       const toolbar = document.createElement("div");
-      toolbar.className = "lumina-edit-toolbar lumina-question-edit-toolbar";
+      toolbar.className = "nexus-edit-toolbar nexus-question-edit-toolbar";
       toolbar.contentEditable = "false";
       toolbar.innerHTML = `
-            <button class="lumina-edit-btn lumina-edit-cancel" title="Cancel">Cancel</button>
-            <button class="lumina-edit-btn lumina-edit-save" title="Update" disabled>Update</button>
+            <button class="nexus-edit-btn nexus-edit-cancel" title="Cancel">Cancel</button>
+            <button class="nexus-edit-btn nexus-edit-save" title="Update" disabled>Update</button>
         `;
       toolbar.onmousedown = (e) => e.preventDefault();
-      const saveBtn = toolbar.querySelector(".lumina-edit-save");
-      const cancelBtn = toolbar.querySelector(".lumina-edit-cancel");
+      const saveBtn = toolbar.querySelector(".nexus-edit-save");
+      const cancelBtn = toolbar.querySelector(".nexus-edit-cancel");
       cancelBtn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -32579,7 +32571,7 @@ Output only the revised text.`;
         if (currentTab) {
           const otherTabs = window.tabs.filter((t) => t !== currentTab && t.sessionId === currentTab.sessionId && t.historyEl);
           otherTabs.forEach((ot) => {
-            const otherEntry = ot.historyEl.querySelector(`.lumina-entry[data-entry-id="${entryId}"]`);
+            const otherEntry = ot.historyEl.querySelector(`.nexus-entry[data-entry-id="${entryId}"]`);
             if (otherEntry && ot.chatUIInstance) {
               let next2 = otherEntry.nextElementSibling;
               while (next2) {
@@ -32590,14 +32582,14 @@ Output only the revised text.`;
               const otPrevEntry = otherEntry.previousElementSibling;
               ot.chatUIInstance.currentEntryDiv = otPrevEntry;
               if (otPrevEntry) {
-                ot.chatUIInstance.currentAnswerDiv = otPrevEntry.querySelector(".lumina-chat-answer") || otPrevEntry.querySelector(".lumina-answer-versions");
+                ot.chatUIInstance.currentAnswerDiv = otPrevEntry.querySelector(".nexus-chat-answer") || otPrevEntry.querySelector(".nexus-answer-versions");
               } else {
                 ot.chatUIInstance.currentAnswerDiv = null;
               }
               otherEntry.remove();
               ot.chatUIInstance._updateActionBtnState();
               if (otPrevEntry) {
-                ot.chatUIInstance.clearEntryMargins(otPrevEntry);
+                ot.chatUIInstance.updateEntryMinHeight(otPrevEntry);
                 ot.chatUIInstance.adjustEntryMargin(otPrevEntry, "immediate");
               }
             }
@@ -32613,14 +32605,14 @@ Output only the revised text.`;
       const prevEntry = entry.previousElementSibling;
       this.currentEntryDiv = prevEntry;
       if (prevEntry) {
-        this.currentAnswerDiv = prevEntry.querySelector(".lumina-chat-answer") || prevEntry.querySelector(".lumina-answer-versions");
+        this.currentAnswerDiv = prevEntry.querySelector(".nexus-chat-answer") || prevEntry.querySelector(".nexus-answer-versions");
       } else {
         this.currentAnswerDiv = null;
       }
       entry.remove();
       this._updateActionBtnState();
       if (prevEntry) {
-        this.clearEntryMargins(prevEntry);
+        this.updateEntryMinHeight(prevEntry);
         this.adjustEntryMargin(prevEntry, "immediate");
         const scrollContainer = this.getScrollContainer();
         if (scrollContainer) {
@@ -32637,21 +32629,21 @@ Output only the revised text.`;
         }
       }
       if (this.historyEl) {
-        this.historyEl.dispatchEvent(new CustomEvent("lumina:history-changed", {
+        this.historyEl.dispatchEvent(new CustomEvent("nexus:history-changed", {
           bubbles: true,
           detail: { force: true }
         }));
       }
     }
     exitQuestionEditMode(questionDiv, save = false) {
-      if (!questionDiv || !questionDiv.classList.contains("lumina-question-editing")) return;
+      if (!questionDiv || !questionDiv.classList.contains("nexus-question-editing")) return;
       if (questionDiv.__outsideClickListener) {
         document.removeEventListener("mousedown", questionDiv.__outsideClickListener);
         delete questionDiv.__outsideClickListener;
       }
-      const contentDiv = questionDiv.__questionEditContentDiv || questionDiv.querySelector(".lumina-question-content") || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
-      const toolbar = questionDiv.__questionEditToolbar || questionDiv.querySelector(".lumina-question-edit-toolbar");
-      const row = questionDiv.closest(".lumina-question-row");
+      const contentDiv = questionDiv.__questionEditContentDiv || questionDiv.querySelector(".nexus-question-content") || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
+      const toolbar = questionDiv.__questionEditToolbar || questionDiv.querySelector(".nexus-question-edit-toolbar");
+      const row = questionDiv.closest(".nexus-question-row");
       const originalHTML = questionDiv.__originalHTML;
       const originalRaw = questionDiv.__originalRaw || "";
       if (questionDiv.__questionEditClickListener) {
@@ -32679,14 +32671,14 @@ Output only the revised text.`;
           questionDiv.scrollTop = 0;
           questionDiv.scrollLeft = 0;
         }
-        questionDiv.classList.remove("is-editing", "lumina-question-editing");
-        if (row) row.classList.remove("lumina-question-row-editing");
+        questionDiv.classList.remove("is-editing", "nexus-question-editing");
+        if (row) row.classList.remove("nexus-question-row-editing");
         if (toolbar) toolbar.remove();
         if (contentDiv) contentDiv.contentEditable = "false";
         const isRegenerate = newText === originalRaw;
         this._handleQuestionRecheck(newText, contentDiv || questionDiv, isRegenerate);
-        _LuminaChatUI.injectQuestionActions(questionDiv);
-        _LuminaChatUI.checkQuestionOverflow(questionDiv);
+        _NexusChatUI.injectQuestionActions(questionDiv);
+        _NexusChatUI.checkQuestionOverflow(questionDiv);
       } else {
         if (contentDiv && typeof originalHTML === "string") {
           contentDiv.innerHTML = originalHTML;
@@ -32703,12 +32695,12 @@ Output only the revised text.`;
           questionDiv.scrollLeft = 0;
         }
         questionDiv.setAttribute("data-raw-text", originalRaw);
-        questionDiv.classList.remove("is-editing", "lumina-question-editing");
-        if (row) row.classList.remove("lumina-question-row-editing");
+        questionDiv.classList.remove("is-editing", "nexus-question-editing");
+        if (row) row.classList.remove("nexus-question-row-editing");
         if (contentDiv) contentDiv.contentEditable = "false";
         if (toolbar) toolbar.remove();
-        _LuminaChatUI.injectQuestionActions(questionDiv);
-        _LuminaChatUI.checkQuestionOverflow(questionDiv);
+        _NexusChatUI.injectQuestionActions(questionDiv);
+        _NexusChatUI.checkQuestionOverflow(questionDiv);
       }
       delete questionDiv.__originalHTML;
       delete questionDiv.__originalRaw;
@@ -32721,21 +32713,21 @@ Output only the revised text.`;
     }
     cancelAllQuestionEdits() {
       if (!this.historyEl) return;
-      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".lumina-chat-question.lumina-question-editing"));
+      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question.nexus-question-editing"));
       editingQuestions.forEach((questionDiv) => {
         this.exitQuestionEditMode(questionDiv, false);
       });
     }
     enterAnswerEditMode(answerDiv) {
-      if (!answerDiv || answerDiv.classList.contains("lumina-answer-editing")) return;
+      if (!answerDiv || answerDiv.classList.contains("nexus-answer-editing")) return;
       this._hideContextMenu();
       answerDiv.contentEditable = "false";
-      let contentDiv = answerDiv.querySelector(".lumina-answer-content");
+      let contentDiv = answerDiv.querySelector(".nexus-answer-content");
       if (!contentDiv) {
         const originalHTML = answerDiv.innerHTML;
         answerDiv.innerHTML = "";
         contentDiv = document.createElement("div");
-        contentDiv.className = "lumina-answer-content";
+        contentDiv.className = "nexus-answer-content";
         contentDiv.innerHTML = originalHTML;
         answerDiv.appendChild(contentDiv);
       }
@@ -32743,37 +32735,37 @@ Output only the revised text.`;
       answerDiv.__originalHTML = contentDiv.innerHTML;
       answerDiv.__originalRaw = originalRaw;
       contentDiv.innerHTML = answerDiv.__originalHTML;
-      answerDiv.classList.add("is-editing", "lumina-answer-editing");
+      answerDiv.classList.add("is-editing", "nexus-answer-editing");
       contentDiv.contentEditable = "plaintext-only";
       this._focusEditableAtEnd(contentDiv);
       const toolbar = document.createElement("div");
-      toolbar.className = "lumina-edit-toolbar lumina-answer-edit-toolbar";
+      toolbar.className = "nexus-edit-toolbar nexus-answer-edit-toolbar";
       toolbar.contentEditable = "false";
       toolbar.innerHTML = `
-            <button class="lumina-edit-btn lumina-edit-undo" title="Undo">Undo</button>
-            <div class="lumina-edit-toolbar-spacer"></div>
-            <button class="lumina-edit-btn lumina-edit-cancel" title="Cancel">Cancel</button>
-            <button class="lumina-edit-btn lumina-edit-save" title="Save">Save</button>
+            <button class="nexus-edit-btn nexus-edit-undo" title="Undo">Undo</button>
+            <div class="nexus-edit-toolbar-spacer"></div>
+            <button class="nexus-edit-btn nexus-edit-cancel" title="Cancel">Cancel</button>
+            <button class="nexus-edit-btn nexus-edit-save" title="Save">Save</button>
         `;
       toolbar.onmousedown = (e) => e.preventDefault();
-      toolbar.querySelector(".lumina-edit-undo").onclick = (e) => {
+      toolbar.querySelector(".nexus-edit-undo").onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const entry2 = answerDiv.closest(".lumina-entry");
+        const entry2 = answerDiv.closest(".nexus-entry");
         this._undoEditAndTruncate(entry2, "answer", null, answerDiv);
       };
-      toolbar.querySelector(".lumina-edit-cancel").onclick = (e) => {
+      toolbar.querySelector(".nexus-edit-cancel").onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         this.exitAnswerEditMode(answerDiv, false);
       };
-      toolbar.querySelector(".lumina-edit-save").onclick = (e) => {
+      toolbar.querySelector(".nexus-edit-save").onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         this.exitAnswerEditMode(answerDiv, true);
       };
       answerDiv.appendChild(toolbar);
-      const entry = answerDiv.closest(".lumina-entry");
+      const entry = answerDiv.closest(".nexus-entry");
       if (entry) {
         requestAnimationFrame(() => {
           const scrollContainer = this.getScrollContainer();
@@ -32794,7 +32786,7 @@ Output only the revised text.`;
       };
       contentDiv.addEventListener("keydown", keyHandler);
       setTimeout(() => {
-        if (!answerDiv.classList.contains("lumina-answer-editing")) return;
+        if (!answerDiv.classList.contains("nexus-answer-editing")) return;
         const outsideClickListener = (e) => {
           if (!answerDiv.contains(e.target)) {
             this.exitAnswerEditMode(answerDiv, false);
@@ -32805,25 +32797,25 @@ Output only the revised text.`;
       }, 10);
     }
     exitAnswerEditMode(answerDiv, save = false) {
-      if (!answerDiv || !answerDiv.classList.contains("lumina-answer-editing")) return;
+      if (!answerDiv || !answerDiv.classList.contains("nexus-answer-editing")) return;
       if (answerDiv.__outsideClickListener) {
         document.removeEventListener("mousedown", answerDiv.__outsideClickListener);
         delete answerDiv.__outsideClickListener;
       }
-      const contentDiv = answerDiv.querySelector(".lumina-answer-content") || answerDiv;
-      const toolbar = answerDiv.querySelector(".lumina-answer-edit-toolbar");
+      const contentDiv = answerDiv.querySelector(".nexus-answer-content") || answerDiv;
+      const toolbar = answerDiv.querySelector(".nexus-answer-edit-toolbar");
       if (save) {
         const newText = contentDiv.innerText.trim();
         answerDiv.setAttribute("data-raw-text", newText);
         answerDiv.__lastRenderedText = "";
         this._doRender(answerDiv, true);
-        console.log("[Lumina] Answer saved:", newText);
-        const entry = answerDiv.closest(".lumina-entry");
+        console.log("[Nexus] Answer saved:", newText);
+        const entry = answerDiv.closest(".nexus-entry");
         if (entry) {
           entry.dataset.timestamp = Date.now().toString();
         }
         if (this.historyEl) {
-          this.historyEl.dispatchEvent(new CustomEvent("lumina:history-changed", {
+          this.historyEl.dispatchEvent(new CustomEvent("nexus:history-changed", {
             bubbles: true,
             detail: { force: true }
           }));
@@ -32832,7 +32824,7 @@ Output only the revised text.`;
         contentDiv.innerHTML = answerDiv.__originalHTML;
         answerDiv.setAttribute("data-raw-text", answerDiv.__originalRaw);
       }
-      answerDiv.classList.remove("is-editing", "lumina-answer-editing");
+      answerDiv.classList.remove("is-editing", "nexus-answer-editing");
       contentDiv.contentEditable = "false";
       if (toolbar) toolbar.remove();
       delete answerDiv.__originalHTML;
@@ -32840,7 +32832,7 @@ Output only the revised text.`;
     }
     cancelAllAnswerEdits() {
       if (!this.historyEl) return;
-      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".lumina-chat-answer.lumina-answer-editing"));
+      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer.nexus-answer-editing"));
       editingAnswers.forEach((answerDiv) => {
         this.exitAnswerEditMode(answerDiv, false);
       });
@@ -32848,48 +32840,48 @@ Output only the revised text.`;
     serializeHistoryHTML() {
       if (!this.historyEl) return "";
       const clonedHistory = this.historyEl.cloneNode(true);
-      const liveAnswers = Array.from(this.historyEl.querySelectorAll(".lumina-chat-answer"));
-      const clonedAnswers = Array.from(clonedHistory.querySelectorAll(".lumina-chat-answer"));
-      const liveQuestions = Array.from(this.historyEl.querySelectorAll(".lumina-chat-question"));
-      const clonedQuestions = Array.from(clonedHistory.querySelectorAll(".lumina-chat-question"));
-      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".lumina-chat-answer.lumina-answer-editing"));
+      const liveAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer"));
+      const clonedAnswers = Array.from(clonedHistory.querySelectorAll(".nexus-chat-answer"));
+      const liveQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question"));
+      const clonedQuestions = Array.from(clonedHistory.querySelectorAll(".nexus-chat-question"));
+      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer.nexus-answer-editing"));
       editingAnswers.forEach((liveAnswer) => {
         const answerIndex = liveAnswers.indexOf(liveAnswer);
         const clonedAnswer = answerIndex >= 0 ? clonedAnswers[answerIndex] : null;
         if (!clonedAnswer) return;
-        const clonedContent = clonedAnswer.querySelector(".lumina-answer-content") || clonedAnswer;
+        const clonedContent = clonedAnswer.querySelector(".nexus-answer-content") || clonedAnswer;
         if (typeof liveAnswer.__originalHTML === "string") {
           clonedContent.innerHTML = liveAnswer.__originalHTML;
         }
-        clonedAnswer.classList.remove("lumina-answer-editing");
+        clonedAnswer.classList.remove("nexus-answer-editing");
         clonedAnswer.contentEditable = "false";
         clonedContent.contentEditable = "false";
-        const clonedToolbar = clonedAnswer.querySelector(".lumina-answer-edit-toolbar");
+        const clonedToolbar = clonedAnswer.querySelector(".nexus-answer-edit-toolbar");
         if (clonedToolbar) clonedToolbar.remove();
       });
-      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".lumina-chat-question.lumina-question-editing"));
+      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question.nexus-question-editing"));
       editingQuestions.forEach((liveQuestion) => {
         const questionIndex = liveQuestions.indexOf(liveQuestion);
         const clonedQuestion = questionIndex >= 0 ? clonedQuestions[questionIndex] : null;
         if (!clonedQuestion) return;
-        const clonedRow = clonedQuestion.closest(".lumina-question-row");
-        const clonedContent = clonedQuestion.querySelector(".lumina-question-content") || clonedQuestion.querySelector('div[contenteditable="true"]') || clonedQuestion;
+        const clonedRow = clonedQuestion.closest(".nexus-question-row");
+        const clonedContent = clonedQuestion.querySelector(".nexus-question-content") || clonedQuestion.querySelector('div[contenteditable="true"]') || clonedQuestion;
         if (typeof liveQuestion.__originalHTML === "string") {
           clonedContent.innerHTML = liveQuestion.__originalHTML;
         } else if (typeof liveQuestion.getAttribute("data-raw-text") === "string") {
           clonedContent.textContent = liveQuestion.getAttribute("data-raw-text");
         }
-        clonedQuestion.classList.remove("lumina-question-editing", "lumina-answer-editing");
-        if (clonedRow) clonedRow.classList.remove("lumina-question-row-editing");
+        clonedQuestion.classList.remove("nexus-question-editing", "nexus-answer-editing");
+        if (clonedRow) clonedRow.classList.remove("nexus-question-row-editing");
         clonedContent.contentEditable = "false";
-        const clonedToolbar = clonedQuestion.querySelector(".lumina-question-edit-toolbar");
+        const clonedToolbar = clonedQuestion.querySelector(".nexus-question-edit-toolbar");
         if (clonedToolbar) clonedToolbar.remove();
       });
-      clonedHistory.querySelectorAll(".lumina-entry").forEach((entry) => {
+      clonedHistory.querySelectorAll(".nexus-entry").forEach((entry) => {
         entry.style.removeProperty("min-height");
       });
-      clonedHistory.querySelectorAll(".lumina-actions").forEach((el) => el.remove());
-      clonedHistory.querySelectorAll(".lumina-code-copy-btn").forEach((el) => el.remove());
+      clonedHistory.querySelectorAll(".nexus-actions").forEach((el) => el.remove());
+      clonedHistory.querySelectorAll(".nexus-code-copy-btn").forEach((el) => el.remove());
       clonedHistory.querySelectorAll("img").forEach((img) => {
         if (img.dataset.attachmentId) {
           img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -32915,8 +32907,8 @@ Output only the revised text.`;
       return clonedHistory.innerHTML;
     }
     static async processContainer(container2) {
-      if (!container2 || container2.__luminaProcessed) return;
-      container2.__luminaProcessed = true;
+      if (!container2 || container2.__nexusProcessed) return;
+      container2.__nexusProcessed = true;
       const yieldToMain = () => new Promise((resolve) => {
         if (typeof window !== "undefined" && window.requestIdleCallback) {
           window.requestIdleCallback(() => resolve(), { timeout: 30 });
@@ -32951,14 +32943,14 @@ Output only the revised text.`;
           }
         }
       }
-      const hasPlaceholders = container2.querySelector(".lumina-math-inline-placeholder, .lumina-math-block-placeholder");
+      const hasPlaceholders = container2.querySelector(".nexus-math-inline-placeholder, .nexus-math-block-placeholder");
       const htmlContent = container2.innerHTML;
       if (hasPlaceholders || htmlContent.includes("\\(") || htmlContent.includes("\\[") || htmlContent.includes("\\begin")) {
         try {
           await window.ensureKatexLoaded();
           if (typeof katex !== "undefined") {
             await yieldToMain();
-            container2.querySelectorAll(".lumina-math-inline-placeholder").forEach((el) => {
+            container2.querySelectorAll(".nexus-math-inline-placeholder").forEach((el) => {
               const math = decodeURIComponent(el.getAttribute("data-math") || "").replace(/\\frac\{/g, "\\dfrac{");
               try {
                 const html = katex.renderToString(math, { displayMode: false, throwOnError: false, strict: "ignore" });
@@ -32967,7 +32959,7 @@ Output only the revised text.`;
                 el.replaceWith(document.createTextNode(el.textContent));
               }
             });
-            container2.querySelectorAll(".lumina-math-block-placeholder").forEach((el) => {
+            container2.querySelectorAll(".nexus-math-block-placeholder").forEach((el) => {
               const math = decodeURIComponent(el.getAttribute("data-math") || "");
               try {
                 const html = katex.renderToString(math, { displayMode: true, throwOnError: false, strict: "ignore" });
@@ -32996,59 +32988,59 @@ Output only the revised text.`;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
       });
-      await _LuminaChatUI.injectCopyButtons(container2);
+      await _NexusChatUI.injectCopyButtons(container2);
       await yieldToMain();
-      container2.querySelectorAll(".lumina-thinking-container").forEach((c) => {
-        const header = c.querySelector(".lumina-thinking-header");
+      container2.querySelectorAll(".nexus-thinking-container").forEach((c) => {
+        const header = c.querySelector(".nexus-thinking-header");
         if (header && !header.__thinkingToggleBound) {
           header.__thinkingToggleBound = true;
           header.addEventListener("click", () => c.classList.toggle("collapsed"));
         }
       });
       await yieldToMain();
-      container2.querySelectorAll(".lumina-translation-card").forEach((card) => {
-        const entry = card.closest(".lumina-entry");
+      container2.querySelectorAll(".nexus-translation-card").forEach((card) => {
+        const entry = card.closest(".nexus-entry");
         if (entry && !entry.__translationHighlightDone) {
-          _LuminaChatUI._setupTranslationHighlight(entry);
-          _LuminaChatUI.balanceTranslationCard(entry, false);
+          _NexusChatUI._setupTranslationHighlight(entry);
+          _NexusChatUI.balanceTranslationCard(entry, false);
           entry.__translationHighlightDone = true;
         }
       });
       await yieldToMain();
-      let answerEls = Array.from(container2.querySelectorAll(".lumina-chat-answer"));
-      if (container2.classList.contains("lumina-chat-answer")) {
+      let answerEls = Array.from(container2.querySelectorAll(".nexus-chat-answer"));
+      if (container2.classList.contains("nexus-chat-answer")) {
         answerEls.push(container2);
       }
       for (const ans of answerEls) {
-        _LuminaChatUI.injectAnswerActions(ans);
+        _NexusChatUI.injectAnswerActions(ans);
       }
       await yieldToMain();
-      processLuminaDynamicImageElements(container2);
-      processLuminaDynamicYoutubeElements(container2);
-      processLuminaChartElements(container2);
+      processNexusDynamicImageElements(container2);
+      processNexusDynamicYoutubeElements(container2);
+      processNexusChartElements(container2);
     }
     static async injectCopyButtons(container2) {
       if (!container2) return;
-      _LuminaChatUI.wrapTables(container2);
+      _NexusChatUI.wrapTables(container2);
       const yieldToMain = () => new Promise((resolve) => setTimeout(resolve, 10));
       const COPY_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
       const CHECK_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
       const preBlocks = Array.from(container2.querySelectorAll("pre"));
       for (const pre of preBlocks) {
-        if (pre.classList.contains("lumina-d2-source") || pre.style.display === "none") {
+        if (pre.classList.contains("nexus-d2-source") || pre.style.display === "none") {
           continue;
         }
         await yieldToMain();
-        let wrapper = pre.parentElement && pre.parentElement.classList.contains("lumina-code-block-wrap") ? pre.parentElement : null;
+        let wrapper = pre.parentElement && pre.parentElement.classList.contains("nexus-code-block-wrap") ? pre.parentElement : null;
         if (!wrapper) {
           wrapper = document.createElement("div");
-          wrapper.className = "lumina-code-block-wrap";
+          wrapper.className = "nexus-code-block-wrap";
           pre.parentNode.insertBefore(wrapper, pre);
           wrapper.appendChild(pre);
         }
-        pre.querySelectorAll(".lumina-code-copy-btn").forEach((old) => old.remove());
-        wrapper.querySelectorAll(".lumina-code-copy-btn").forEach((old) => old.remove());
-        wrapper.querySelectorAll(".lumina-code-header").forEach((old) => old.remove());
+        pre.querySelectorAll(".nexus-code-copy-btn").forEach((old) => old.remove());
+        wrapper.querySelectorAll(".nexus-code-copy-btn").forEach((old) => old.remove());
+        wrapper.querySelectorAll(".nexus-code-header").forEach((old) => old.remove());
         let lang = "Code";
         const codeEl = pre.querySelector("code");
         if (codeEl) {
@@ -33071,14 +33063,14 @@ Output only the revised text.`;
           }
         }
         const header = document.createElement("div");
-        header.className = "lumina-code-header";
+        header.className = "nexus-code-header";
         const langLabel = document.createElement("span");
-        langLabel.className = "lumina-code-lang";
+        langLabel.className = "nexus-code-lang";
         langLabel.textContent = lang;
         const actionsDiv = document.createElement("div");
-        actionsDiv.className = "lumina-code-actions";
+        actionsDiv.className = "nexus-code-actions";
         const downloadBtn = document.createElement("button");
-        downloadBtn.className = "lumina-code-download-btn";
+        downloadBtn.className = "nexus-code-download-btn";
         downloadBtn.title = "Download Code";
         downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
         downloadBtn.addEventListener("click", (e) => {
@@ -33108,7 +33100,7 @@ Output only the revised text.`;
           URL.revokeObjectURL(url);
         });
         const btn = document.createElement("button");
-        btn.className = "lumina-code-copy-btn";
+        btn.className = "nexus-code-copy-btn";
         btn.title = "Copy Code";
         btn.innerHTML = COPY_SVG;
         const showSuccess = () => {
@@ -33150,8 +33142,8 @@ Output only the revised text.`;
       }
     }
     static injectAnswerActions(answerDiv) {
-      if (!answerDiv || answerDiv.querySelector(".lumina-actions")) return;
-      const entry = answerDiv.closest(".lumina-entry");
+      if (!answerDiv || answerDiv.querySelector(".nexus-actions")) return;
+      const entry = answerDiv.closest(".nexus-entry");
       if (entry) {
         const type = entry.dataset.entryType;
         if (type && type !== "qa" && type !== "chat") {
@@ -33159,15 +33151,15 @@ Output only the revised text.`;
         }
       }
       const actionsDiv = document.createElement("div");
-      actionsDiv.className = "lumina-actions";
+      actionsDiv.className = "nexus-actions";
       actionsDiv.innerHTML = `
-            <button class="lumina-answer-action-btn" data-action="regenerate" title="Regenerate">
+            <button class="nexus-answer-action-btn" data-action="regenerate" title="Regenerate">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
             </button>
-            <button class="lumina-answer-action-btn" data-action="copy" title="Copy">
+            <button class="nexus-answer-action-btn" data-action="copy" title="Copy">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-            <button class="lumina-answer-action-btn" data-action="edit" title="Edit">
+            <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
         `;
@@ -33176,11 +33168,11 @@ Output only the revised text.`;
     static wrapTables(container2) {
       if (!container2) return;
       container2.querySelectorAll("table").forEach((table) => {
-        if (table.parentElement && table.parentElement.classList.contains("lumina-table-wrap")) {
+        if (table.parentElement && table.parentElement.classList.contains("nexus-table-wrap")) {
           return;
         }
         const wrapper = document.createElement("div");
-        wrapper.className = "lumina-table-wrap";
+        wrapper.className = "nexus-table-wrap";
         table.parentNode.insertBefore(wrapper, table);
         wrapper.appendChild(table);
       });
@@ -33231,26 +33223,26 @@ Output only the revised text.`;
           }
         }
       }
-      const existing = document.querySelector(".lumina-preview-container.fixed-preview");
+      const existing = document.querySelector(".nexus-preview-container.fixed-preview");
       if (existing) existing.remove();
       const overlay = document.createElement("div");
-      overlay.className = "lumina-preview-container fixed-preview";
+      overlay.className = "nexus-preview-container fixed-preview";
       const controls = document.createElement("div");
-      controls.className = "lumina-preview-controls-bar";
+      controls.className = "nexus-preview-controls-bar";
       const content = document.createElement("div");
-      content.className = "lumina-preview-content";
+      content.className = "nexus-preview-content";
       let windowBody = content;
       let header = null;
       if (fileObj.isImage) {
         controls.innerHTML = `
-                <button class="lumina-preview-btn zoom-out-btn" title="Zoom Out">
+                <button class="nexus-preview-btn zoom-out-btn" title="Zoom Out">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                 </button>
-                <span class="lumina-preview-scale">100%</span>
-                <button class="lumina-preview-btn zoom-in-btn" title="Zoom In">
+                <span class="nexus-preview-scale">100%</span>
+                <button class="nexus-preview-btn zoom-in-btn" title="Zoom In">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                 </button>
-                <button class="lumina-preview-btn close-btn" title="Close (Esc)">
+                <button class="nexus-preview-btn close-btn" title="Close (Esc)">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             `;
@@ -33266,15 +33258,15 @@ Output only the revised text.`;
         } else if (fileObj.isAudio) {
           typeClass = "is-audio";
         }
-        previewWindow.className = `lumina-preview-window ${typeClass}`;
+        previewWindow.className = `nexus-preview-window ${typeClass}`;
         const closeBtn2 = document.createElement("button");
-        closeBtn2.className = "lumina-preview-window-close";
+        closeBtn2.className = "nexus-preview-window-close";
         closeBtn2.title = "Close (Esc)";
         closeBtn2.innerHTML = `
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             `;
         windowBody = document.createElement("div");
-        windowBody.className = "lumina-preview-window-body";
+        windowBody.className = "nexus-preview-window-body";
         previewWindow.appendChild(closeBtn2);
         previewWindow.appendChild(windowBody);
         content.appendChild(previewWindow);
@@ -33298,7 +33290,7 @@ Output only the revised text.`;
       if (fileObj.isImage) {
         const img = document.createElement("img");
         img.alt = fileObj.name || "Image Preview";
-        img.className = "lumina-preview-img";
+        img.className = "nexus-preview-img";
         let baseWidth = 0;
         let baseHeight = 0;
         const initSize = () => {
@@ -33320,7 +33312,7 @@ Output only the revised text.`;
         let captionText = fileObj.name;
         if (captionText && captionText !== "diagram" && captionText !== "Image Preview") {
           const caption = document.createElement("div");
-          caption.className = "lumina-preview-caption";
+          caption.className = "nexus-preview-caption";
           caption.addEventListener("click", (e) => e.stopPropagation());
           let sourceDomain = "";
           try {
@@ -33343,10 +33335,10 @@ Output only the revised text.`;
         let startX = 0, startY = 0;
         let translateX = 0, translateY = 0;
         const srcKey = fileObj.previewUrl || fileObj.dataUrl;
-        if (window._luminaPreviewStates && window._luminaPreviewStates[srcKey]) {
-          scale = window._luminaPreviewStates[srcKey].scale || 1;
-          translateX = window._luminaPreviewStates[srcKey].translateX || 0;
-          translateY = window._luminaPreviewStates[srcKey].translateY || 0;
+        if (window._nexusPreviewStates && window._nexusPreviewStates[srcKey]) {
+          scale = window._nexusPreviewStates[srcKey].scale || 1;
+          translateX = window._nexusPreviewStates[srcKey].translateX || 0;
+          translateY = window._nexusPreviewStates[srcKey].translateY || 0;
         }
         const updateTransform = () => {
           if (baseWidth && baseHeight) {
@@ -33354,11 +33346,11 @@ Output only the revised text.`;
             img.style.height = `${baseHeight * scale}px`;
           }
           img.style.transform = `translate(${translateX}px, ${translateY}px)`;
-          const scalePct = overlay.querySelector(".lumina-preview-scale");
+          const scalePct = overlay.querySelector(".nexus-preview-scale");
           if (scalePct) scalePct.textContent = `${Math.round(scale * 100)}%`;
           img.classList.toggle("zoomed", scale !== 1);
-          if (!window._luminaPreviewStates) window._luminaPreviewStates = {};
-          window._luminaPreviewStates[srcKey] = { scale, translateX, translateY };
+          if (!window._nexusPreviewStates) window._nexusPreviewStates = {};
+          window._nexusPreviewStates[srcKey] = { scale, translateX, translateY };
         };
         updateTransform();
         const zoom = (factor, centerX, centerY) => {
@@ -33431,7 +33423,7 @@ Output only the revised text.`;
         });
       } else if (fileObj.isPDF) {
         const pdfContainer = document.createElement("div");
-        pdfContainer.className = "lumina-preview-pdf-container";
+        pdfContainer.className = "nexus-preview-pdf-container";
         windowBody.appendChild(pdfContainer);
         const renderPdf = async () => {
           try {
@@ -33445,7 +33437,7 @@ Output only the revised text.`;
             const arrayBuffer = await response.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             const counter = document.createElement("div");
-            counter.className = "lumina-preview-pdf-counter-wrapper";
+            counter.className = "nexus-preview-pdf-counter-wrapper";
             counter.innerHTML = `
                         <span class="pdf-page-indicator">1 / ${pdf.numPages}</span>
                         <span class="pdf-counter-divider">|</span>
@@ -33459,7 +33451,7 @@ Output only the revised text.`;
             const zoomPercentText = counter.querySelector(".pdf-zoom-percent");
             let zoomPercent = 100;
             const updateZoom = () => {
-              const pages = pdfContainer.querySelectorAll(".lumina-preview-pdf-page");
+              const pages = pdfContainer.querySelectorAll(".nexus-preview-pdf-page");
               pages.forEach((page) => {
                 page.style.width = `${zoomPercent}%`;
                 page.style.maxWidth = "none";
@@ -33481,13 +33473,13 @@ Output only the revised text.`;
               }
             });
             pdfContainer.addEventListener("dblclick", (e) => {
-              if (e.target.classList.contains("lumina-preview-pdf-page")) {
+              if (e.target.classList.contains("nexus-preview-pdf-page")) {
                 zoomPercent = zoomPercent === 100 ? 150 : 100;
                 updateZoom();
               }
             });
             pdfContainer.addEventListener("scroll", () => {
-              const pages = pdfContainer.querySelectorAll(".lumina-preview-pdf-page");
+              const pages = pdfContainer.querySelectorAll(".nexus-preview-pdf-page");
               let currentPage = 1;
               let minDiff = Infinity;
               const containerRect = pdfContainer.getBoundingClientRect();
@@ -33508,7 +33500,7 @@ Output only the revised text.`;
               const page = await pdf.getPage(pageNum);
               const viewport = page.getViewport({ scale: 1.5 });
               const canvas = document.createElement("canvas");
-              canvas.className = "lumina-preview-pdf-page";
+              canvas.className = "nexus-preview-pdf-page";
               canvas.height = viewport.height;
               canvas.width = viewport.width;
               pdfContainer.appendChild(canvas);
@@ -33516,32 +33508,32 @@ Output only the revised text.`;
               await page.render({ canvasContext: ctx, viewport }).promise;
             }
           } catch (e) {
-            console.error("[Lumina] PDF Preview render error:", e);
+            console.error("[Nexus] PDF Preview render error:", e);
             pdfContainer.innerHTML = `<div style="color:red; padding:20px; text-align:center;">Failed to load PDF preview: ${e.message}</div>`;
           }
         };
         renderPdf();
       } else if (fileObj.isVideo) {
         const video = document.createElement("video");
-        video.className = "lumina-preview-video";
+        video.className = "nexus-preview-video";
         video.src = fileObj.dataUrl;
         video.controls = true;
         video.autoplay = true;
         windowBody.appendChild(video);
       } else if (fileObj.isAudio) {
         const audioWrapper = document.createElement("div");
-        audioWrapper.className = "lumina-preview-audio-wrapper";
+        audioWrapper.className = "nexus-preview-audio-wrapper";
         audioWrapper.innerHTML = `
-                <div class="lumina-preview-audio-art">
+                <div class="nexus-preview-audio-art">
                     <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                 </div>
-                <div class="lumina-preview-audio-info">
-                    <div class="lumina-preview-audio-title">${this.escapeHTMLAttr(fileObj.name || "Audio Track")}</div>
-                    <div class="lumina-preview-audio-artist">Lumina Media Player</div>
+                <div class="nexus-preview-audio-info">
+                    <div class="nexus-preview-audio-title">${this.escapeHTMLAttr(fileObj.name || "Audio Track")}</div>
+                    <div class="nexus-preview-audio-artist">Nexus Media Player</div>
                 </div>
             `;
         const audio = document.createElement("audio");
-        audio.className = "lumina-preview-audio";
+        audio.className = "nexus-preview-audio";
         audio.src = fileObj.dataUrl;
         audio.controls = true;
         audio.autoplay = true;
@@ -33600,9 +33592,9 @@ Output only the revised text.`;
             }
           }
           const tableContainer = document.createElement("div");
-          tableContainer.className = "lumina-preview-sheets-container";
+          tableContainer.className = "nexus-preview-sheets-container";
           const tableEl = document.createElement("table");
-          tableEl.className = "lumina-preview-sheets-table";
+          tableEl.className = "nexus-preview-sheets-table";
           rows.forEach((row, rowIndex) => {
             const tr = document.createElement("tr");
             row.forEach((cell) => {
@@ -33617,7 +33609,7 @@ Output only the revised text.`;
           windowBody.classList.add("is-sheets-layout");
         } else {
           const textContainer = document.createElement("div");
-          textContainer.className = "lumina-preview-text-container";
+          textContainer.className = "nexus-preview-text-container";
           const codeEl = document.createElement("code");
           codeEl.style.cssText = "white-space:pre-wrap; display:block;";
           const preEl = document.createElement("pre");
@@ -33635,14 +33627,14 @@ Output only the revised text.`;
               }
               hljs.highlightElement(codeEl);
             } catch (e) {
-              console.warn("[Lumina] Syntax highlighting error:", e);
+              console.warn("[Nexus] Syntax highlighting error:", e);
             }
           }
         }
       } else if (this._isDocxFile(fileObj) || this._isXlsxFile(fileObj)) {
         const derived = this.attachedFiles ? this.attachedFiles.filter((f) => f.parentAttachmentId === fileObj.attachmentId) : [];
         const docContainer = document.createElement("div");
-        docContainer.className = "lumina-preview-docx-xlsx-container";
+        docContainer.className = "nexus-preview-docx-xlsx-container";
         windowBody.appendChild(docContainer);
         windowBody.classList.add("is-text-layout");
         if (derived.length === 0) {
@@ -33650,12 +33642,12 @@ Output only the revised text.`;
         } else {
           derived.forEach((d) => {
             const sheetTitle = document.createElement("h4");
-            sheetTitle.className = "lumina-preview-sheet-title";
+            sheetTitle.className = "nexus-preview-sheet-title";
             sheetTitle.textContent = d.name || "";
             docContainer.appendChild(sheetTitle);
             const txt = this._decodeDataUrlText(d.dataUrl);
             const pre = document.createElement("pre");
-            pre.className = "lumina-preview-pre";
+            pre.className = "nexus-preview-pre";
             const code = document.createElement("code");
             code.textContent = txt;
             if (d.name && d.name.endsWith(".csv") && typeof hljs !== "undefined") {
@@ -33676,21 +33668,21 @@ Output only the revised text.`;
           });
         }
       } else {
-        windowBody.className = "lumina-preview-window-body is-fallback-layout";
+        windowBody.className = "nexus-preview-window-body is-fallback-layout";
         const ext = (fileObj.name || "").split(".").pop().toLowerCase();
-        const category = typeof _LuminaChatUI !== "undefined" ? _LuminaChatUI.inferFileCategory(ext, fileObj.mimeType || "") : "file";
-        const iconSymbol = typeof _LuminaChatUI !== "undefined" ? _LuminaChatUI.getFileIconByCategory(category) : "\u{1F4CE}";
-        const sizeLabel = typeof _LuminaChatUI !== "undefined" ? _LuminaChatUI.getFileTypeLabel(fileObj) : fileObj.mimeType || "Unknown Type";
+        const category = typeof _NexusChatUI !== "undefined" ? _NexusChatUI.inferFileCategory(ext, fileObj.mimeType || "") : "file";
+        const iconSymbol = typeof _NexusChatUI !== "undefined" ? _NexusChatUI.getFileIconByCategory(category) : "\u{1F4CE}";
+        const sizeLabel = typeof _NexusChatUI !== "undefined" ? _NexusChatUI.getFileTypeLabel(fileObj) : fileObj.mimeType || "Unknown Type";
         windowBody.innerHTML = `
-                <div class="lumina-preview-fallback-icon file-${category}">
+                <div class="nexus-preview-fallback-icon file-${category}">
                     ${iconSymbol}
                 </div>
-                <div class="lumina-preview-fallback-name">${this.escapeHTMLAttr(fileObj.name || "Unknown File")}</div>
-                <div class="lumina-preview-fallback-meta">${this.escapeHTMLAttr(sizeLabel)}</div>
-                <div class="lumina-preview-fallback-desc">This file type cannot be previewed visually, but it will be attached and sent to the assistant.</div>
+                <div class="nexus-preview-fallback-name">${this.escapeHTMLAttr(fileObj.name || "Unknown File")}</div>
+                <div class="nexus-preview-fallback-meta">${this.escapeHTMLAttr(sizeLabel)}</div>
+                <div class="nexus-preview-fallback-desc">This file type cannot be previewed visually, but it will be attached and sent to the assistant.</div>
             `;
       }
-      const closeBtn = fileObj.isImage ? overlay.querySelector(".close-btn") : overlay.querySelector(".lumina-preview-window-close");
+      const closeBtn = fileObj.isImage ? overlay.querySelector(".close-btn") : overlay.querySelector(".nexus-preview-window-close");
       if (closeBtn) {
         closeBtn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -33717,11 +33709,11 @@ Output only the revised text.`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaChatUI = LuminaChatUI2;
+    window.NexusChatUI = NexusChatUI2;
   }
 
-  // src/pages/lumina/controllers/view_controller.js
-  var LuminaViewManager2 = {
+  // src/pages/nexus/controllers/view_controller.js
+  var NexusViewManager2 = {
     currentView: "chat",
     views: {
       chat: {
@@ -33731,6 +33723,10 @@ Output only the revised text.`;
         onOpen: () => {
           document.getElementById("sidebar-notes-btn")?.classList.remove("active");
           document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+          const topBar = document.getElementById("nexus-topbar");
+          if (topBar) {
+            topBar.style.removeProperty("display");
+          }
         }
       },
       notes: {
@@ -33742,11 +33738,11 @@ Output only the revised text.`;
           document.getElementById("sidebar-tts-btn")?.classList.remove("active");
           document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
           document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-          if (!window.luminaNotesPanelInstance && typeof NotesPanel !== "undefined") {
-            window.luminaNotesPanelInstance = new NotesPanel();
+          if (!window.nexusNotesPanelInstance && typeof NotesPanel !== "undefined") {
+            window.nexusNotesPanelInstance = new NotesPanel();
           }
-          if (window.luminaNotesPanelInstance) {
-            window.luminaNotesPanelInstance.init(params?.noteId, params?.colId);
+          if (window.nexusNotesPanelInstance) {
+            window.nexusNotesPanelInstance.init(params?.noteId, params?.colId);
           }
         }
       },
@@ -33759,11 +33755,11 @@ Output only the revised text.`;
           document.getElementById("sidebar-notes-btn")?.classList.remove("active");
           document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
           document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-          if (!window.luminaTTSPanelInstance && typeof TTSPanel !== "undefined") {
-            window.luminaTTSPanelInstance = new TTSPanel();
+          if (!window.nexusTTSPanelInstance && typeof TTSPanel !== "undefined") {
+            window.nexusTTSPanelInstance = new TTSPanel();
           }
-          if (window.luminaTTSPanelInstance && typeof window.luminaTTSPanelInstance.init === "function") {
-            window.luminaTTSPanelInstance.init(params?.recordingId);
+          if (window.nexusTTSPanelInstance && typeof window.nexusTTSPanelInstance.init === "function") {
+            window.nexusTTSPanelInstance.init(params?.recordingId);
           }
         }
       },
@@ -33787,7 +33783,7 @@ Output only the revised text.`;
       this.currentView = targetView;
       const initStyle = document.getElementById("view-init-style");
       if (initStyle) initStyle.remove();
-      const mainContent = document.querySelector(".lumina-main-content");
+      const mainContent = document.querySelector(".nexus-main-content");
       if (mainContent) {
         mainContent.setAttribute("data-active-view", targetView);
       }
@@ -33798,7 +33794,11 @@ Output only the revised text.`;
       } else if (targetView === "sparks") {
         document.title = "Sparks";
       } else {
-        document.title = "Lumina";
+        document.title = "Nexus";
+      }
+      if (targetView !== "chat") {
+        document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll(".sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
       }
       this.updateUrl(targetView, params);
       if (this.views[targetView].onOpen) {
@@ -33848,8 +33848,12 @@ Output only the revised text.`;
         urlParams.delete("view");
         urlParams.delete("noteId");
         urlParams.delete("colId");
-        urlParams.delete("sparkId");
         urlParams.delete("recordingId");
+        if (params.sparkId) {
+          urlParams.set("sparkId", params.sparkId);
+        } else if (!params.preserveSparkId) {
+          urlParams.delete("sparkId");
+        }
         const primaryTab = typeof window.tabs !== "undefined" && typeof window.activeTabIndex !== "undefined" ? window.tabs[window.activeTabIndex] : null;
         const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : "");
         if (sidVal) {
@@ -33859,32 +33863,36 @@ Output only the revised text.`;
         }
       }
       const newUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
-      window.history.pushState({ view: viewName, ...params }, "", newUrl);
+      if (params.replaceState) {
+        window.history.replaceState({ view: viewName, ...params }, "", newUrl);
+      } else {
+        window.history.pushState({ view: viewName, ...params }, "", newUrl);
+      }
     }
   };
   function updateNotesUrl(noteId, colId) {
-    LuminaViewManager2.updateUrl("notes", { noteId, colId });
+    NexusViewManager2.updateUrl("notes", { noteId, colId });
   }
   function notesOpenPage(noteIdToLoad, colIdToLoad) {
-    LuminaViewManager2.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
+    NexusViewManager2.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
   }
   function notesClosePage() {
-    LuminaViewManager2.switchView("chat");
+    NexusViewManager2.switchView("chat");
   }
   function sparksOpenPage2(sparkId) {
-    LuminaViewManager2.switchView("sparks", { sparkId });
+    NexusViewManager2.switchView("sparks", { sparkId });
   }
   function sparksClosePage3() {
-    LuminaViewManager2.switchView("chat");
+    NexusViewManager2.switchView("chat");
   }
   function ttsOpenPage() {
-    LuminaViewManager2.switchView("tts");
+    NexusViewManager2.switchView("tts");
   }
   function ttsClosePage() {
-    LuminaViewManager2.switchView("chat");
+    NexusViewManager2.switchView("chat");
   }
   if (typeof window !== "undefined") {
-    window.LuminaViewManager = LuminaViewManager2;
+    window.NexusViewManager = NexusViewManager2;
     window.updateNotesUrl = updateNotesUrl;
     window.notesOpenPage = notesOpenPage;
     window.notesClosePage = notesClosePage;
@@ -33896,20 +33904,20 @@ Output only the revised text.`;
       const urlParams = new URLSearchParams(window.location.search);
       const view = urlParams.get("view");
       if (view === "notes") {
-        LuminaViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
+        NexusViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
       } else if (view === "sparks") {
-        LuminaViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
+        NexusViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
       } else if (view === "tts") {
-        LuminaViewManager2.switchView("tts", { recordingId: urlParams.get("recordingId") });
+        NexusViewManager2.switchView("tts", { recordingId: urlParams.get("recordingId") });
       }
     });
   }
 
-  // src/pages/lumina/workspace.js
-  window._luminaWindowInstanceId = window._luminaWindowInstanceId || "win_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+  // src/pages/nexus/workspace.js
+  window._nexusWindowInstanceId = window._nexusWindowInstanceId || "win_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
   function getPaneActiveModel() {
-    const model = sessionStorage.getItem("lumina_active_model");
-    const providerId = sessionStorage.getItem("lumina_active_provider");
+    const model = sessionStorage.getItem("nexus_active_model");
+    const providerId = sessionStorage.getItem("nexus_active_provider");
     if (model) {
       return { model, providerId };
     }
@@ -33917,43 +33925,43 @@ Output only the revised text.`;
   }
   function setPaneActiveModel(modelObj) {
     if (modelObj && modelObj.model) {
-      sessionStorage.setItem("lumina_active_model", modelObj.model);
+      sessionStorage.setItem("nexus_active_model", modelObj.model);
       if (modelObj.providerId) {
-        sessionStorage.setItem("lumina_active_provider", modelObj.providerId);
+        sessionStorage.setItem("nexus_active_provider", modelObj.providerId);
       } else {
-        sessionStorage.removeItem("lumina_active_provider");
+        sessionStorage.removeItem("nexus_active_provider");
       }
     } else {
-      sessionStorage.removeItem("lumina_active_model");
-      sessionStorage.removeItem("lumina_active_provider");
+      sessionStorage.removeItem("nexus_active_model");
+      sessionStorage.removeItem("nexus_active_provider");
     }
   }
   function getPaneActiveThinking() {
-    return sessionStorage.getItem("lumina_active_thinking") || null;
+    return sessionStorage.getItem("nexus_active_thinking") || null;
   }
   function setPaneActiveThinking(level) {
     if (level) {
-      sessionStorage.setItem("lumina_active_thinking", level);
+      sessionStorage.setItem("nexus_active_thinking", level);
     } else {
-      sessionStorage.removeItem("lumina_active_thinking");
+      sessionStorage.removeItem("nexus_active_thinking");
     }
   }
-  var container = document.querySelector(".lumina-chat-container");
+  var container = document.querySelector(".nexus-chat-container");
   var fileInput = document.getElementById("file-input");
   function bindContainerWheelForward(containerEl) {
-    if (!containerEl || containerEl.__luminaWheelBound) return;
-    containerEl.__luminaWheelBound = true;
+    if (!containerEl || containerEl.__nexusWheelBound) return;
+    containerEl.__nexusWheelBound = true;
     let cachedScrollable = null;
     function attachScrollContentBlocker(scrollable) {
-      if (!scrollable || scrollable.__luminaWheelStop) return;
-      scrollable.__luminaWheelStop = true;
+      if (!scrollable || scrollable.__nexusWheelStop) return;
+      scrollable.__nexusWheelStop = true;
       scrollable.addEventListener("wheel", (e) => {
         e.stopPropagation();
       }, { passive: true });
     }
     containerEl.addEventListener("wheel", (e) => {
       if (!cachedScrollable || cachedScrollable.style.display === "none") {
-        cachedScrollable = containerEl.querySelector('.lumina-chat-scroll-content:not([style*="display: none"])');
+        cachedScrollable = containerEl.querySelector('.nexus-chat-scroll-content:not([style*="display: none"])');
         if (cachedScrollable) attachScrollContentBlocker(cachedScrollable);
       }
       if (!cachedScrollable) return;
@@ -33963,7 +33971,7 @@ Output only the revised text.`;
       else if (e.deltaMode === 2) delta *= cachedScrollable.clientHeight;
       cachedScrollable.scrollBy({ top: delta, behavior: "instant" });
     }, { passive: false });
-    const existing = containerEl.querySelector(".lumina-chat-scroll-content");
+    const existing = containerEl.querySelector(".nexus-chat-scroll-content");
     if (existing) attachScrollContentBlocker(existing);
   }
   var isWebApp = new URLSearchParams(window.location.search).get("webapp") === "1";
@@ -33976,9 +33984,11 @@ Output only the revised text.`;
     const urlParams = new URLSearchParams(window.location.search);
     const primaryTab = typeof tabs2 !== "undefined" && typeof activeTabIndex2 !== "undefined" ? tabs2[activeTabIndex2] : null;
     const sidVal = primaryTab && primaryTab.sessionId ? primaryTab.sessionId : "";
+    const sparkIdVal = primaryTab && primaryTab.sparkId ? primaryTab.sparkId : "";
     if (urlParams.has("session_id")) {
       urlParams.delete("session_id");
     }
+    let changed = false;
     const currentUrlSid = urlParams.get("sid") || "";
     if (currentUrlSid !== sidVal) {
       if (!sidVal) {
@@ -33986,11 +33996,23 @@ Output only the revised text.`;
       } else {
         urlParams.set("sid", sidVal);
       }
+      changed = true;
+    }
+    const currentSparkId = urlParams.get("sparkId") || "";
+    if (currentSparkId !== sparkIdVal) {
+      if (!sparkIdVal) {
+        urlParams.delete("sparkId");
+      } else {
+        urlParams.set("sparkId", sparkIdVal);
+      }
+      changed = true;
+    }
+    if (changed) {
       const newUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
       if (isPopStateNavigating) {
-        window.history.replaceState({ path: newUrl, sid: sidVal }, "", newUrl);
+        window.history.replaceState({ path: newUrl, sid: sidVal, sparkId: sparkIdVal }, "", newUrl);
       } else {
-        window.history.pushState({ path: newUrl, sid: sidVal }, "", newUrl);
+        window.history.pushState({ path: newUrl, sid: sidVal, sparkId: sparkIdVal }, "", newUrl);
       }
     }
   }
@@ -34029,14 +34051,14 @@ Output only the revised text.`;
     }
   });
   var instanceId = (() => {
-    let instId = sessionStorage.getItem("lumina_lumina_instance_id");
+    let instId = sessionStorage.getItem("nexus_nexus_instance_id");
     if (!instId) {
       instId = "inst_" + Date.now() + Math.random().toString(36).substr(2, 5);
-      sessionStorage.setItem("lumina_lumina_instance_id", instId);
+      sessionStorage.setItem("nexus_nexus_instance_id", instId);
     }
     return instId;
   })();
-  var STORAGE_PREFIX = isSidePanel ? "sidepanel" : "lumina";
+  var STORAGE_PREFIX = isSidePanel ? "sidepanel" : "nexus";
   var GLOBAL_KEYS = {
     tabs: `${STORAGE_PREFIX}_tabs`,
     tabCounter: `${STORAGE_PREFIX}_tab_counter`,
@@ -34052,7 +34074,7 @@ Output only the revised text.`;
   var sparksCache = {};
   var activeTabIndex2 = -1;
   var tabCounter = 1;
-  window.LuminaSelectionScope = {
+  window.NexusSelectionScope = {
     getTabs: () => tabs2,
     getActiveTabIndex: () => activeTabIndex2,
     getSharedInputUI: () => sharedInputUI2,
@@ -34076,7 +34098,7 @@ Output only the revised text.`;
     }
     return sharedInputUI2?.inputEl;
   }
-  window.getActiveLuminaTab = function() {
+  window.getActiveNexusTab = function() {
     return typeof tabs2 !== "undefined" && activeTabIndex2 >= 0 ? tabs2[activeTabIndex2] : null;
   };
   window.getSharedInputUI = function() {
@@ -34098,7 +34120,7 @@ Output only the revised text.`;
   var webTabPickerOutsideHandler = null;
   var webTabPickerKeyHandler = null;
   var minHeightReflowRaf = null;
-  var luminaAskSourcePane = "primary";
+  var nexusAskSourcePane = "primary";
   var isInitializing = false;
   var handledQueryIds = /* @__PURE__ */ new Set();
   var myWindowId = null;
@@ -34108,23 +34130,23 @@ Output only the revised text.`;
   var lastSubmitText = "";
   var readWebpageEnabled = false;
   function applyFontSize2(size) {
-    if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.applyFontSize === "function") {
-      LuminaChatUI.applyFontSize(null, size);
+    if (typeof NexusChatUI !== "undefined" && typeof NexusChatUI.applyFontSize === "function") {
+      NexusChatUI.applyFontSize(null, size);
     } else {
       document.body.style.setProperty("font-size", size + "px", "important");
-      document.documentElement.style.setProperty("--lumina-fontSize", size + "px", "important");
+      document.documentElement.style.setProperty("--nexus-fontSize", size + "px", "important");
     }
   }
-  var WEB_SOURCE_SELECTION_STORAGE_PREFIX2 = "lumina_web_source_selection_";
+  var WEB_SOURCE_SELECTION_STORAGE_PREFIX2 = "nexus_web_source_selection_";
   var currentBrowserTabTokens = /* @__PURE__ */ new Map();
-  function getLuminaTabIdForPane(container2) {
+  function getNexusTabIdForPane(container2) {
     return activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null;
   }
-  function getWebSelectionScopeKey(luminaTabId) {
-    if (luminaTabId == null || !currentBrowserTab) return null;
-    return `${String(luminaTabId)}_${String(currentBrowserTab.tabId)}`;
+  function getWebSelectionScopeKey(nexusTabId) {
+    if (nexusTabId == null || !currentBrowserTab) return null;
+    return `${String(nexusTabId)}_${String(currentBrowserTab.tabId)}`;
   }
-  function getCurrentLuminaTabId() {
+  function getCurrentNexusTabId() {
     const tab = activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2] : null;
     return tab ? tab.id : null;
   }
@@ -34161,14 +34183,14 @@ Output only the revised text.`;
       localStorage.removeItem(key);
     }
   }
-  function getWebSelectionForScope(luminaTabId) {
-    const scopeKey = getWebSelectionScopeKey(luminaTabId);
+  function getWebSelectionForScope(nexusTabId) {
+    const scopeKey = getWebSelectionScopeKey(nexusTabId);
     if (!scopeKey) return [];
     webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(scopeKey);
     return webSourceSelectionsByPageTabId[scopeKey] || [];
   }
-  function saveWebSelectionForScope(luminaTabId, selection) {
-    const scopeKey = getWebSelectionScopeKey(luminaTabId);
+  function saveWebSelectionForScope(nexusTabId, selection) {
+    const scopeKey = getWebSelectionScopeKey(nexusTabId);
     if (!scopeKey) return;
     const normalizedSelection = (selection || []).filter((source) => source && isWebPageUrl2(source.url)).map((source) => ({
       tabId: source.tabId,
@@ -34179,18 +34201,18 @@ Output only the revised text.`;
     webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
     writeWebSelectionToStorage(scopeKey, normalizedSelection);
     if (normalizedSelection.length > 0) {
-      refreshWebSourceTokens(luminaTabId, normalizedSelection);
+      refreshWebSourceTokens(nexusTabId, normalizedSelection);
     }
   }
   async function ensureContentScriptsInjected(tabId) {
     try {
       const checkResults = await chrome.scripting.executeScript({
         target: { tabId },
-        func: () => typeof window.luminaExtractMainContent === "function"
+        func: () => typeof window.nexusExtractMainContent === "function"
       }).catch(() => null);
       const isAlreadyInjected = checkResults && checkResults[0] && checkResults[0].result === true;
       if (!isAlreadyInjected) {
-        console.log(`[Lumina] Re-injecting content scripts into tab ${tabId}...`);
+        console.log(`[Nexus] Re-injecting content scripts into tab ${tabId}...`);
         const manifest = chrome.runtime.getManifest();
         const contentScriptFiles = manifest.content_scripts?.[0]?.js || [];
         if (contentScriptFiles.length > 0) {
@@ -34201,7 +34223,7 @@ Output only the revised text.`;
         }
       }
     } catch (e) {
-      console.warn(`[Lumina] Failed to inject content scripts into tab ${tabId}:`, e);
+      console.warn(`[Nexus] Failed to inject content scripts into tab ${tabId}:`, e);
     }
   }
   async function fetchFreshWebContent(tabId) {
@@ -34232,7 +34254,7 @@ Output only the revised text.`;
           }
         }
       } catch (e) {
-        console.error("[Lumina WebSource] Failed to fetch Lumina tab content:", e);
+        console.error("[Nexus WebSource] Failed to fetch Nexus tab content:", e);
       }
       return null;
     }
@@ -34241,7 +34263,7 @@ Output only the revised text.`;
     try {
       const results = await chrome.scripting.executeScript({
         target: { tabId: parseInt(tabId), allFrames: true },
-        func: () => typeof window.luminaExtractMainContent === "function" ? window.luminaExtractMainContent(document, true) : null
+        func: () => typeof window.nexusExtractMainContent === "function" ? window.nexusExtractMainContent(document, true) : null
       });
       if (!results) return null;
       const texts = [];
@@ -34268,31 +34290,31 @@ Output only the revised text.`;
       }
       return texts.length > 0 ? texts.join("\n\n") : null;
     } catch (e) {
-      console.warn(`[Lumina WebSource] executeScript failed for tab ${tabId}:`, e);
+      console.warn(`[Nexus WebSource] executeScript failed for tab ${tabId}:`, e);
       return null;
     }
   }
-  async function refreshWebSourceTokens(luminaTabId, selection) {
+  async function refreshWebSourceTokens(nexusTabId, selection) {
     if (!selection || selection.length === 0) return;
     let updated = false;
     for (const source of selection) {
       try {
         const text = await fetchFreshWebContent(source.tabId);
         if (!text || text.length < 200) continue;
-        const count = typeof LuminaToken !== "undefined" ? LuminaToken.count(text) : Math.ceil(text.length / 4);
+        const count = typeof NexusToken !== "undefined" ? NexusToken.count(text) : Math.ceil(text.length / 4);
         if (count < 10) continue;
         if (source.tokens !== count) {
           source.tokens = count;
           updated = true;
         }
       } catch (e) {
-        console.warn(`[Lumina WebSource] Token refresh failed for tab ${source.tabId}:`, e);
+        console.warn(`[Nexus WebSource] Token refresh failed for tab ${source.tabId}:`, e);
         if (!source.tokens) source.tokens = 0;
       }
     }
     if (updated) {
-      if (luminaTabId) {
-        const scopeKey = getWebSelectionScopeKey(luminaTabId);
+      if (nexusTabId) {
+        const scopeKey = getWebSelectionScopeKey(nexusTabId);
         if (scopeKey) {
           webSourceSelectionsByPageTabId[scopeKey] = selection;
           writeWebSelectionToStorage(scopeKey, selection);
@@ -34301,14 +34323,14 @@ Output only the revised text.`;
       updateWebChips();
     }
   }
-  function saveCurrentWebSelection(luminaTabId = null) {
-    const targetTabId = luminaTabId || (activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null);
+  function saveCurrentWebSelection(nexusTabId = null) {
+    const targetTabId = nexusTabId || (activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null);
     if (!targetTabId) return;
     const scopedSelection = getWebSelectionForScope(targetTabId);
     saveWebSelectionForScope(targetTabId, scopedSelection);
   }
-  function loadCurrentWebSelection(luminaTabId = null) {
-    const targetTabId = luminaTabId || (activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null);
+  function loadCurrentWebSelection(nexusTabId = null) {
+    const targetTabId = nexusTabId || (activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null);
     if (!targetTabId) {
       pinnedWebSources = [];
       return;
@@ -34359,18 +34381,18 @@ Output only the revised text.`;
       (key) => key.startsWith(WEB_SOURCE_SELECTION_STORAGE_PREFIX2)
     );
     storageKeys.forEach((storageKey) => {
-      const luminaTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX2.length);
-      const selection = readWebSelectionFromStorage(luminaTabId);
+      const nexusTabId = storageKey.slice(WEB_SOURCE_SELECTION_STORAGE_PREFIX2.length);
+      const selection = readWebSelectionFromStorage(nexusTabId);
       const matches = selection.filter((s) => String(s.tabId) === stringTabId);
       if (matches.length > 0) {
-        refreshWebSourceTokens(luminaTabId, matches);
+        refreshWebSourceTokens(nexusTabId, matches);
       }
     });
     if (currentBrowserTab && String(currentBrowserTab.tabId) === stringTabId) {
       (async () => {
         const text = await fetchFreshWebContent(stringTabId);
         if (text) {
-          const count = typeof LuminaToken !== "undefined" ? LuminaToken.count(text) : Math.ceil(text.length / 4);
+          const count = typeof NexusToken !== "undefined" ? NexusToken.count(text) : Math.ceil(text.length / 4);
           currentBrowserTabTokens.set(stringTabId, count);
           updateWebChips();
         } else {
@@ -34381,10 +34403,10 @@ Output only the revised text.`;
     }
   }
   function bindHistoryScroll(tab) {
-    if (!tab || !tab.historyEl || tab.historyEl.__luminaScrollBound) return;
-    tab.historyEl.__luminaScrollBound = true;
+    if (!tab || !tab.historyEl || tab.historyEl.__nexusScrollBound) return;
+    tab.historyEl.__nexusScrollBound = true;
     let saveTimer = null;
-    tab.historyEl.addEventListener("lumina:history-changed", (e) => {
+    tab.historyEl.addEventListener("nexus:history-changed", (e) => {
       const force = e.detail && e.detail.force;
       saveTabsState2(force);
     });
@@ -34406,7 +34428,7 @@ Output only the revised text.`;
         tab.userScrolledUp = true;
         if (tab.chatUIInstance) tab.chatUIInstance.disableAutoScroll = true;
       }
-      const entries = tab.historyEl.querySelectorAll(".lumina-entry");
+      const entries = tab.historyEl.querySelectorAll(".nexus-entry");
       if (entries.length > 0) {
         if (nearBottom) {
           if (saveTimer) clearTimeout(saveTimer);
@@ -34467,7 +34489,7 @@ Output only the revised text.`;
   }
   function restoreScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
-    const entries = tab.historyEl.querySelectorAll(".lumina-entry");
+    const entries = tab.historyEl.querySelectorAll(".nexus-entry");
     if (entries.length === 0) return;
     if (tab.scrollTop != null && tab.scrollTop !== -1) {
       tab.historyEl.scrollTop = tab.scrollTop;
@@ -34479,20 +34501,20 @@ Output only the revised text.`;
     }
     if (tab.scrollAnchorIndex != null && tab.scrollAnchorIndex < entries.length) {
       const anchor = entries[tab.scrollAnchorIndex];
-      const baseTarget = LuminaChatUI.calculateInitialScrollTarget(anchor, tab.historyEl);
+      const baseTarget = NexusChatUI.calculateInitialScrollTarget(anchor, tab.historyEl);
       tab.historyEl.scrollTop = baseTarget + (tab.scrollAnchorOffset || 0);
     }
   }
   function restoreLatestScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
-    const entries = tab.historyEl.querySelectorAll(".lumina-entry");
+    const entries = tab.historyEl.querySelectorAll(".nexus-entry");
     if (entries.length === 0) return;
     const latestEntry = entries[entries.length - 1];
-    if (tab.chatUIInstance && typeof tab.chatUIInstance.clearEntryMargins === "function") {
-      tab.chatUIInstance.clearEntryMargins(latestEntry);
+    if (tab.chatUIInstance && typeof tab.chatUIInstance.updateEntryMinHeight === "function") {
+      tab.chatUIInstance.updateEntryMinHeight(latestEntry);
       tab.chatUIInstance.adjustEntryMargin(latestEntry, "immediate");
     }
-    const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
+    const targetScrollTop = NexusChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl);
     tab.historyEl.scrollTop = targetScrollTop;
     tab.scrollTop = targetScrollTop;
   }
@@ -34581,9 +34603,9 @@ Output only the revised text.`;
               }
             } else {
               const historyEl = document.createElement("div");
-              historyEl.className = "lumina-chat-scroll-content";
+              historyEl.className = "nexus-chat-scroll-content";
               historyEl.style.display = "none";
-              const primaryContainer = document.querySelector(".lumina-chat-container") || container;
+              const primaryContainer = document.querySelector(".nexus-chat-container") || container;
               primaryContainer.appendChild(historyEl);
               const newTab = {
                 id: meta.id,
@@ -34591,7 +34613,7 @@ Output only the revised text.`;
                 sessionId: meta.sessionId,
                 sparkId: meta.sparkId || null,
                 historyEl,
-                chatUIInstance: new LuminaChatUI(container, {
+                chatUIInstance: new NexusChatUI(container, {
                   isSpotlight: true,
                   skipInputSetup: true,
                   onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
@@ -34660,15 +34682,15 @@ Output only the revised text.`;
             };
             await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
             normalizeRestoredHistory(tab.historyEl);
-            const allEntries = tab.historyEl.querySelectorAll(".lumina-entry");
+            const allEntries = tab.historyEl.querySelectorAll(".nexus-entry");
             if (allEntries.length > 0 && tab.chatUIInstance) {
               const lastEntry = allEntries[allEntries.length - 1];
-              tab.chatUIInstance.clearEntryMargins(lastEntry);
+              tab.chatUIInstance.updateEntryMinHeight(lastEntry);
               tab.chatUIInstance.adjustEntryMargin(lastEntry, "immediate");
             }
             scheduleScrollRestore(tab);
-            if (window.LuminaAnnotation) {
-              LuminaAnnotation.loadHighlights(tab.id);
+            if (window.NexusAnnotation) {
+              NexusAnnotation.loadHighlights(tab.id);
             }
           }
         } catch (e) {
@@ -34694,22 +34716,18 @@ Output only the revised text.`;
     return tab.loadingPromise;
   }
   async function initTabs() {
-    const topBar = document.getElementById("lumina-topbar");
+    const topBar = document.getElementById("nexus-topbar");
     if (topBar) {
-      if (typeof LuminaViewManager !== "undefined" && LuminaViewManager.currentView !== "chat") {
-        topBar.style.setProperty("display", "none", "important");
-      } else {
-        topBar.style.display = "flex";
-      }
+      topBar.style.removeProperty("display");
     }
-    const mainContainer = document.querySelector(".lumina-chat-container") || container;
+    const mainContainer = document.querySelector(".nexus-chat-container") || container;
     if (mainContainer) {
-      mainContainer.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => el.remove());
+      mainContainer.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => el.remove());
     }
     tabs2 = [];
     const initialHistory = document.createElement("div");
     initialHistory.id = "chat-history";
-    initialHistory.className = "lumina-chat-scroll-content";
+    initialHistory.className = "nexus-chat-scroll-content";
     initialHistory.style.display = "none";
     if (mainContainer) mainContainer.appendChild(initialHistory);
     try {
@@ -34743,12 +34761,14 @@ Output only the revised text.`;
       const data = await chrome.storage.local.get([
         KEYS.tabs,
         KEYS.activeTabIndex,
-        "lumina_youtube_trigger",
-        "lumina_session_settings",
-        "lumina_sparks"
+        "nexus_youtube_trigger",
+        "nexus_session_settings",
+        "nexus_sparks",
+        "lumina_sparks",
+        "sparks"
       ]);
-      sessionSettings = data.lumina_session_settings || {};
-      sparksCache = data.lumina_sparks || {};
+      sessionSettings = data.nexus_session_settings || {};
+      sparksCache = data.nexus_sparks || data.lumina_sparks || data.sparks || {};
       const urlParams = new URLSearchParams(window.location.search);
       const sidParam = urlParams.get("sid") || urlParams.get("session_id");
       const urlSessionIds = sidParam ? sidParam.split(",") : [];
@@ -34784,7 +34804,7 @@ Output only the revised text.`;
         id: "tab-1",
         title: tabTitle,
         sessionId,
-        sparkId: shouldStartNewChat ? null : urlSessionId ? meta.sparkId || null : isWebApp ? null : savedTab?.sparkId || null,
+        sparkId: shouldStartNewChat ? null : urlSessionId ? meta.sparkId || null : urlParams.get("sparkId") || (isWebApp ? null : savedTab?.sparkId || null),
         scrollTop: savedTab?.scrollTop ?? -1,
         scrollAnchorIndex: savedTab?.scrollAnchorIndex ?? null,
         scrollAnchorOffset: savedTab?.scrollAnchorOffset ?? null,
@@ -34793,7 +34813,7 @@ Output only the revised text.`;
         historyEl: initialHistory,
         selectedModel: activeModel,
         thinkingLevel: activeThinking,
-        chatUIInstance: new LuminaChatUI(container, {
+        chatUIInstance: new NexusChatUI(container, {
           isSpotlight: true,
           skipInputSetup: true,
           onSubmit: (text, images, extra) => handleSubmit(text, images, extra, singleTab)
@@ -34826,13 +34846,13 @@ Output only the revised text.`;
         singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel;
         setPaneActiveThinking(singleTab.thinkingLevel);
       }
-      if (data.lumina_youtube_trigger) {
-        setTimeout(() => handleYouTubeTrigger(data.lumina_youtube_trigger), 100);
+      if (data.nexus_youtube_trigger) {
+        setTimeout(() => handleYouTubeTrigger(data.nexus_youtube_trigger), 100);
       }
     } catch (e) {
       console.error("[Spotlight] initTabs failed:", e);
     }
-    const primaryC = document.querySelector(".lumina-chat-container") || container;
+    const primaryC = document.querySelector(".nexus-chat-container") || container;
     bindContainerWheelForward(primaryC);
     const newTabBtn = document.getElementById("new-tab-btn");
     if (newTabBtn) {
@@ -34870,9 +34890,9 @@ Output only the revised text.`;
     window.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.syncData === "function") {
-          LuminaSync.syncData(false).catch((err) => {
-            console.error("[Lumina] Manual sync via shortcut failed:", err);
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.syncData === "function") {
+          NexusSync.syncData(false).catch((err) => {
+            console.error("[Nexus] Manual sync via shortcut failed:", err);
           });
         }
         return;
@@ -34914,7 +34934,7 @@ Output only the revised text.`;
     activeTabIndex2 = targetIndex;
     const activeTab = tabs2[activeTabIndex2];
     ensureTabHistoryLoaded(activeTab);
-    const mainContainer = document.querySelector(".lumina-chat-container") || container;
+    const mainContainer = document.querySelector(".nexus-chat-container") || container;
     if (activeTab.historyEl && !mainContainer.contains(activeTab.historyEl)) {
       mainContainer.appendChild(activeTab.historyEl);
     }
@@ -34945,9 +34965,9 @@ Output only the revised text.`;
     if (activeTab && activeTab.sessionId) {
       updateUrlSessionId2(activeTab.sessionId);
     }
-    if (window.LuminaAnnotation) {
-      LuminaAnnotation.clearAllHighlights();
-      LuminaAnnotation.loadHighlights(activeTab.id);
+    if (window.NexusAnnotation) {
+      NexusAnnotation.clearAllHighlights();
+      NexusAnnotation.loadHighlights(activeTab.id);
     }
   }
   function syncTabUI(tab, skipScrollRestore = false) {
@@ -34955,7 +34975,7 @@ Output only the revised text.`;
     if (tab.scrollTop !== -1) {
       tab.historyEl.scrollTop = tab.scrollTop;
     }
-    const allEntries = tab.historyEl.querySelectorAll(".lumina-entry");
+    const allEntries = tab.historyEl.querySelectorAll(".nexus-entry");
     if (allEntries.length > 0) {
       const lastEntry = allEntries[allEntries.length - 1];
       requestAnimationFrame(() => {
@@ -34964,9 +34984,9 @@ Output only the revised text.`;
         }
       });
     }
-    const regenBtn = document.getElementById("lumina-regenerate-btn");
+    const regenBtn = document.getElementById("nexus-regenerate-btn");
     if (regenBtn) {
-      const hasEntry = tab.historyEl.querySelector(".lumina-entry, .lumina-translation-card");
+      const hasEntry = tab.historyEl.querySelector(".nexus-entry, .nexus-translation-card");
       regenBtn.style.display = hasEntry ? "flex" : "none";
     }
     if (!skipScrollRestore) {
@@ -34980,7 +35000,7 @@ Output only the revised text.`;
     tabs2.splice(tabIndex, 1);
     if (tabToRemove.historyEl) tabToRemove.historyEl.remove();
     if (tabToRemove.sessionId) {
-      chrome.storage.local.remove([`lumina_history_${tabToRemove.sessionId}`]);
+      chrome.storage.local.remove([`nexus_history_${tabToRemove.sessionId}`]);
     }
     const storageKeys = Object.keys(localStorage).filter(
       (key) => key.startsWith(`${WEB_SOURCE_SELECTION_STORAGE_PREFIX2}${tabId}_`)
@@ -35028,16 +35048,18 @@ Output only the revised text.`;
     });
     window._localSavedSessions = window._localSavedSessions || {};
     const activeTab = activeTabIndex2 >= 0 ? tabs2[activeTabIndex2] : null;
+    const isStreaming = !!(streamingTab && streamingTab.sessionId);
     const savedSessionIds = /* @__PURE__ */ new Set();
     if (saveHistory && activeTab && activeTab.sessionId && activeTab.historyEl) {
       savedSessionIds.add(activeTab.sessionId);
       window._localSavedSessions[activeTab.sessionId] = Date.now();
       window._lastSavingHistoryEl = activeTab.historyEl;
+      const suppressBroadcast = isStreaming && streamingTab.sessionId === activeTab.sessionId;
       if (typeof ChatHistoryManager !== "undefined") {
         ChatHistoryManager.saveCurrentChat(activeTab.historyEl, activeTab.sessionId, activeTab.sparkId, forceSaveChat, {
           selectedModel: activeTab.selectedModel,
           thinkingLevel: activeTab.thinkingLevel
-        });
+        }, suppressBroadcast);
       }
     }
     tabs2.forEach((tab) => {
@@ -35047,53 +35069,54 @@ Output only the revised text.`;
         }
         savedSessionIds.add(tab.sessionId);
         window._localSavedSessions[tab.sessionId] = Date.now();
+        const suppressBroadcast = isStreaming && streamingTab.sessionId === tab.sessionId;
         if (typeof ChatHistoryManager !== "undefined") {
           ChatHistoryManager.saveCurrentChat(tab.historyEl, tab.sessionId, tab.sparkId, forceSaveChat, {
             selectedModel: tab.selectedModel,
             thinkingLevel: tab.thinkingLevel
-          });
+          }, suppressBroadcast);
         }
       }
     });
   }
   function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
-    historyEl.querySelectorAll(".lumina-entry").forEach((entry) => {
+    historyEl.querySelectorAll(".nexus-entry").forEach((entry) => {
       if (entry.__normalized) return;
       entry.__normalized = true;
       entry.style.removeProperty("min-height");
-      let questionEl = entry.querySelector(".lumina-chat-question") || entry.querySelector("[data-entry-type]");
+      let questionEl = entry.querySelector(".nexus-chat-question") || entry.querySelector("[data-entry-type]");
       if (!questionEl) return;
-      const row = questionEl.closest(".lumina-question-row");
+      const row = questionEl.closest(".nexus-question-row");
       const entryType = entry.dataset.entryType || "qa";
-      const pinBtn = row ? row.querySelector(".lumina-question-pin-btn") : null;
+      const pinBtn = row ? row.querySelector(".nexus-question-pin-btn") : null;
       const wasPinned = questionEl.classList.contains("is-pinned-question") || pinBtn && (pinBtn.classList.contains("is-active") || pinBtn.getAttribute("aria-pressed") === "true");
       if (pinBtn) pinBtn.remove();
       const rawText = questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim();
-      questionEl.className = `lumina-chat-question${entryType !== "qa" ? ` ${entryType}-question` : ""}`;
+      questionEl.className = `nexus-chat-question${entryType !== "qa" ? ` ${entryType}-question` : ""}`;
       questionEl.dataset.entryType = entryType;
       questionEl.removeAttribute("contenteditable");
-      questionEl.classList.remove("lumina-question-editing", "lumina-answer-editing");
+      questionEl.classList.remove("nexus-question-editing", "nexus-answer-editing");
       if (wasPinned) {
         questionEl.classList.add("is-pinned-question");
       }
-      const existingToolbar = questionEl.querySelector(".lumina-question-edit-toolbar, .lumina-answer-edit-toolbar");
+      const existingToolbar = questionEl.querySelector(".nexus-question-edit-toolbar, .nexus-answer-edit-toolbar");
       if (existingToolbar) existingToolbar.remove();
       const contentDiv = document.createElement("div");
-      contentDiv.className = "lumina-question-content";
+      contentDiv.className = "nexus-question-content";
       contentDiv.innerHTML = rawText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
       questionEl.innerHTML = "";
       questionEl.appendChild(contentDiv);
-      if (row) row.classList.remove("lumina-question-row-editing");
+      if (row) row.classList.remove("nexus-question-row-editing");
       if (pinBtn) {
         pinBtn.classList.toggle("is-active", !!wasPinned);
         pinBtn.setAttribute("aria-pressed", wasPinned ? "true" : "false");
         pinBtn.style.display = "";
       }
-      if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.injectQuestionActions === "function") {
-        LuminaChatUI.injectQuestionActions(questionEl);
+      if (typeof NexusChatUI !== "undefined" && typeof NexusChatUI.injectQuestionActions === "function") {
+        NexusChatUI.injectQuestionActions(questionEl);
       }
-      const nav = entry.querySelector(".lumina-answer-nav");
+      const nav = entry.querySelector(".nexus-answer-nav");
       if (nav) {
         const prevBtn = nav.querySelector(".nav-prev");
         const nextBtn = nav.querySelector(".nav-next");
@@ -35128,7 +35151,7 @@ Output only the revised text.`;
         if (parsedImages && Array.isArray(parsedImages.files) && parsedImages.files.length > 0) {
           parsedImages.files.forEach((file) => {
             if (file && file.attachmentId) {
-              const p = LuminaAttachmentDB.get(file.attachmentId).then(async (blob) => {
+              const p = NexusAttachmentDB.get(file.attachmentId).then(async (blob) => {
                 if (blob) {
                   if (file.isImage) {
                     const objectUrl = URL.createObjectURL(blob);
@@ -35144,7 +35167,7 @@ Output only the revised text.`;
                       };
                     }
                   }
-                  const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                  const dataUrl = await NexusAttachmentDB.blobToDataURL(blob);
                   if (dataUrl) {
                     file.dataUrl = dataUrl;
                   }
@@ -35164,7 +35187,7 @@ Output only the revised text.`;
           imgs.forEach((img) => {
             const attachmentId = img.dataset.attachmentId;
             if (attachmentId) {
-              const p = LuminaAttachmentDB.get(attachmentId).then(async (blob) => {
+              const p = NexusAttachmentDB.get(attachmentId).then(async (blob) => {
                 if (blob) {
                   const objectUrl = URL.createObjectURL(blob);
                   img.src = objectUrl;
@@ -35175,7 +35198,7 @@ Output only the revised text.`;
                       tab.chatUIInstance.showImagePreview(objectUrl, img.alt);
                     }
                   };
-                  const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                  const dataUrl = await NexusAttachmentDB.blobToDataURL(blob);
                   if (dataUrl) {
                     const fileObj = {
                       name: img.alt || "Image",
@@ -35197,8 +35220,8 @@ Output only the revised text.`;
         if (promises.length > 0) {
           Promise.all(promises).then(() => {
             if (hydratedFiles.length > 0) {
-              questionEl._luminaImages = hydratedFiles;
-              entry._luminaImages = hydratedFiles;
+              questionEl._nexusImages = hydratedFiles;
+              entry._nexusImages = hydratedFiles;
               questionEl.dataset.images = JSON.stringify({
                 compact: true,
                 count: hydratedFiles.length,
@@ -35218,18 +35241,18 @@ Output only the revised text.`;
     tabs2.forEach((tab, index) => {
       const tabEl = document.createElement("div");
       const isActive = index === activeTabIndex2;
-      tabEl.className = `lumina-tab ${isActive ? "active" : ""}`;
+      tabEl.className = `nexus-tab ${isActive ? "active" : ""}`;
       tabEl.dataset.tabIndex = index;
       tabEl.dataset.tabId = tab.id;
-      const temp = document.getElementById("lumina-tabItemTemplate");
+      const temp = document.getElementById("nexus-tabItemTemplate");
       if (temp && temp.content) {
         const clone = temp.content.cloneNode(true);
-        const subTabEl = clone.querySelector(".lumina-tab-sub") || clone.firstElementChild;
+        const subTabEl = clone.querySelector(".nexus-tab-sub") || clone.firstElementChild;
         if (subTabEl) {
           subTabEl.dataset.tabId = tab.id;
-          const titleSpan = subTabEl.querySelector(".lumina-tab-title");
+          const titleSpan = subTabEl.querySelector(".nexus-tab-title");
           if (titleSpan) titleSpan.textContent = tab.title;
-          const closeBtn = subTabEl.querySelector(".lumina-tab-close");
+          const closeBtn = subTabEl.querySelector(".nexus-tab-close");
           if (closeBtn) {
             closeBtn.title = "Close tab";
             closeBtn.onclick = (e) => {
@@ -35238,7 +35261,7 @@ Output only the revised text.`;
             };
           }
           subTabEl.onmousedown = (e) => {
-            if (e.target.closest(".lumina-tab-close")) return;
+            if (e.target.closest(".nexus-tab-close")) return;
             if (e.button !== 0) return;
             if (index !== activeTabIndex2) {
               switchTab(index);
@@ -35266,12 +35289,12 @@ Output only the revised text.`;
     document.addEventListener("mousemove", (e) => {
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
-      if (window.LuminaSelection) {
-        LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+      if (window.NexusSelection) {
+        NexusSelection.mouseCoords = { x: e.clientX, y: e.clientY };
       }
     }, { passive: true });
-    if (window.LuminaSelection) {
-      LuminaSelection.init({
+    if (window.NexusSelection) {
+      NexusSelection.init({
         shadowRoot: null,
         onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
           if (isAudio) {
@@ -35289,7 +35312,7 @@ Output only the revised text.`;
             if (text) {
               const finalRange = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
               const rect = finalRange ? finalRange.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
-              LuminaDictionaryPopup.show(text, {
+              NexusDictionaryPopup.show(text, {
                 x: rect.left,
                 y: rect.bottom + 5,
                 source: "cambridge"
@@ -35297,8 +35320,8 @@ Output only the revised text.`;
               return;
             }
           }
-          if (window.LuminaAnnotation && range) {
-            window.LuminaAnnotation.highlight(range);
+          if (window.NexusAnnotation && range) {
+            window.NexusAnnotation.highlight(range);
           }
           const targetTab = tabs2[activeTabIndex2];
           handleSubmit(query, [], { mode: isDictionary ? "dictionary" : "qa" }, targetTab || null, displayQuery);
@@ -35309,13 +35332,13 @@ Output only the revised text.`;
         },
         onCommentAdded: (span, entry, commentText) => {
           if (!entry) return;
-          let btn = entry.querySelector(".lumina-send-comment-btn");
+          let btn = entry.querySelector(".nexus-send-comment-btn");
           if (!btn) {
             btn = document.createElement("button");
             btn.type = "button";
-            btn.className = "lumina-send-comment-btn";
+            btn.className = "nexus-send-comment-btn";
             btn.innerHTML = `
-                        <span class="lumina-svg-icon lumina-icon-send" aria-hidden="true"></span>
+                        <span class="nexus-svg-icon nexus-icon-send" aria-hidden="true"></span>
                         <span>Send comment</span>
                     `;
             entry.appendChild(btn);
@@ -35327,43 +35350,43 @@ Output only the revised text.`;
       });
     }
     document.addEventListener("mouseup", (e) => {
-      if (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
+      if (window.NexusSelection && NexusSelection.isInteractingWithActionBar) return;
       const path = e.composedPath();
-      const isInsideLumina = path.some((el) => el.id === "lumina-action-bar" || el.id === "lumina-ask-input-popup" || el.id === "lumina-shadow-host" || el.tagName && el.tagName.toLowerCase() === "lumina-shadow-host");
-      if (isInsideLumina) return;
+      const isInsideNexus = path.some((el) => el.id === "nexus-action-bar" || el.id === "nexus-ask-input-popup" || el.id === "nexus-shadow-host" || el.tagName && el.tagName.toLowerCase() === "nexus-shadow-host");
+      if (isInsideNexus) return;
       setTimeout(() => {
         const targetEl = e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") ? e.target : e.target && e.target.closest ? e.target.closest("input, textarea") : null;
-        const activeElement = targetEl || (window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null);
+        const activeElement = targetEl || (window.NexusSelection && NexusSelection.isInsideEditable() ? NexusSelection.getDeepActiveElement() : null);
         const isTextareaOrInput = activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA");
         if (isTextareaOrInput) {
-          if (window.LuminaSelection) LuminaSelection.hide();
+          if (window.NexusSelection) NexusSelection.hide();
           return;
         }
         const sel = window.getSelection();
         const text = sel ? sel.toString().trim() : "";
         const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
         if (!range || text.length === 0) {
-          const isHighlight = e.target.closest(".lumina-highlight") || window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
-          if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+          const isHighlight = e.target.closest(".nexus-highlight") || window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+          if (window.NexusSelection && !isHighlight) NexusSelection.hide();
           return;
         }
         const commonNode = range.commonAncestorContainer;
-        const isInsideAnswer = commonNode && (commonNode.nodeType === 1 && commonNode.closest(".lumina-chat-answer") || commonNode.parentNode && commonNode.parentNode.closest(".lumina-chat-answer"));
+        const isInsideAnswer = commonNode && (commonNode.nodeType === 1 && commonNode.closest(".nexus-chat-answer") || commonNode.parentNode && commonNode.parentNode.closest(".nexus-chat-answer"));
         if (!isInsideAnswer) {
-          const isHighlight = e.target.closest(".lumina-highlight") || window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
-          if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+          const isHighlight = e.target.closest(".nexus-highlight") || window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+          if (window.NexusSelection && !isHighlight) NexusSelection.hide();
           return;
         }
-        const isInsideProofread = range && (range.startContainer.parentElement?.closest(".lumina-proofread-editable") || range.startContainer.closest?.(".lumina-proofread-editable"));
+        const isInsideProofread = range && (range.startContainer.parentElement?.closest(".nexus-proofread-editable") || range.startContainer.closest?.(".nexus-proofread-editable"));
         if (!askSelectionPopupEnabled && !isInsideProofread || text.length === 0) {
-          const isHighlight = e.target.closest(".lumina-highlight") || window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
-          if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+          const isHighlight = e.target.closest(".nexus-highlight") || window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+          if (window.NexusSelection && !isHighlight) NexusSelection.hide();
           return;
         }
         const secondaryPane = document.getElementById("pane-secondary");
-        luminaAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
-        if (window.LuminaSelection) {
-          LuminaSelection.show(e.clientX, e.clientY, text, range);
+        nexusAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
+        if (window.NexusSelection) {
+          NexusSelection.show(e.clientX, e.clientY, text, range);
         }
       }, 10);
     });
@@ -35371,7 +35394,7 @@ Output only the revised text.`;
       const selectionKeys = ["Shift", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
       if (!selectionKeys.includes(e.key)) return;
       setTimeout(() => {
-        const activeElement = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") ? document.activeElement : window.LuminaSelection && LuminaSelection.isInsideEditable() ? LuminaSelection.getDeepActiveElement() : null;
+        const activeElement = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") ? document.activeElement : window.NexusSelection && NexusSelection.isInsideEditable() ? NexusSelection.getDeepActiveElement() : null;
         const isTextareaOrInput = activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA");
         if (isTextareaOrInput) return;
         const sel = window.getSelection();
@@ -35379,51 +35402,51 @@ Output only the revised text.`;
         const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
         if (!range || text.length === 0) return;
         const commonNode = range.commonAncestorContainer;
-        const isInsideAnswer = commonNode && (commonNode.nodeType === 1 && commonNode.closest(".lumina-chat-answer") || commonNode.parentNode && commonNode.parentNode.closest(".lumina-chat-answer"));
+        const isInsideAnswer = commonNode && (commonNode.nodeType === 1 && commonNode.closest(".nexus-chat-answer") || commonNode.parentNode && commonNode.parentNode.closest(".nexus-chat-answer"));
         if (!isInsideAnswer) return;
-        const isInsideProofread = range && (range.startContainer.parentElement?.closest(".lumina-proofread-editable") || range.startContainer.closest?.(".lumina-proofread-editable"));
+        const isInsideProofread = range && (range.startContainer.parentElement?.closest(".nexus-proofread-editable") || range.startContainer.closest?.(".nexus-proofread-editable"));
         if (!askSelectionPopupEnabled && !isInsideProofread) return;
         const secondaryPane = document.getElementById("pane-secondary");
-        luminaAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
-        if (window.LuminaSelection) {
-          if (LuminaSelection.btn && LuminaSelection.btn.style.display === "flex") {
-            LuminaSelection.show(void 0, void 0, text, range, false);
+        nexusAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
+        if (window.NexusSelection) {
+          if (NexusSelection.btn && NexusSelection.btn.style.display === "flex") {
+            NexusSelection.show(void 0, void 0, text, range, false);
           } else {
-            LuminaSelection.show(lastMouseX, lastMouseY, text, range, true);
+            NexusSelection.show(lastMouseX, lastMouseY, text, range, true);
           }
         }
       }, 10);
     });
     document.addEventListener("click", (e) => {
       const path = e.composedPath();
-      const isInsideLumina = path.some((el) => el.id === "lumina-action-bar" || el.id === "lumina-ask-input-popup" || el.id === "lumina-shadow-host" || el.id === "lumina-comment-hover-tooltip" || el.tagName && el.tagName.toLowerCase() === "lumina-shadow-host");
-      if (isInsideLumina || window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
-      if (window.LuminaAnnotation) {
-        const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+      const isInsideNexus = path.some((el) => el.id === "nexus-action-bar" || el.id === "nexus-ask-input-popup" || el.id === "nexus-shadow-host" || el.id === "nexus-comment-hover-tooltip" || el.tagName && el.tagName.toLowerCase() === "nexus-shadow-host");
+      if (isInsideNexus || window.NexusSelection && NexusSelection.isInteractingWithActionBar) return;
+      if (window.NexusAnnotation) {
+        const hData = NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
         if (hData) {
           e.preventDefault();
           e.stopPropagation();
-          if (window.LuminaSelection) {
-            LuminaSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
+          if (window.NexusSelection) {
+            NexusSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
           }
         }
       }
     }, true);
   }
   function handleCommentSubmission(entry) {
-    console.log("[Lumina DEBUG] handleCommentSubmission called", { entry });
+    console.log("[Nexus DEBUG] handleCommentSubmission called", { entry });
     try {
-      const highlights = entry.querySelectorAll(".lumina-comment-highlight");
-      console.log("[Lumina DEBUG] Highlights found:", highlights.length);
+      const highlights = entry.querySelectorAll(".nexus-comment-highlight");
+      console.log("[Nexus DEBUG] Highlights found:", highlights.length);
       if (highlights.length === 0) {
-        console.warn("[Lumina] No highlights found in entry for comment submission");
+        console.warn("[Nexus] No highlights found in entry for comment submission");
         return;
       }
       let constructedPrompt = "The user has provided feedback on the following parts of the text:\n\n";
       highlights.forEach((h, idx) => {
         const originalText = h.textContent.trim();
         const comment = h.dataset.comment;
-        console.log(`[Lumina DEBUG] Highlight ${idx}: "${originalText}" -> "${comment}"`);
+        console.log(`[Nexus DEBUG] Highlight ${idx}: "${originalText}" -> "${comment}"`);
         constructedPrompt += `- Text: "${originalText}"
   Comment: "${comment}"
 `;
@@ -35431,20 +35454,20 @@ Output only the revised text.`;
       constructedPrompt += "\nPlease revise the content accordingly.";
       let targetTab = activeTabIndex2 >= 0 ? tabs2[activeTabIndex2] : null;
       if (!targetTab) {
-        console.warn("[Lumina DEBUG] No targetTab found by index, searching tabs array...");
+        console.warn("[Nexus DEBUG] No targetTab found by index, searching tabs array...");
         targetTab = tabs2.find((t) => t && t.chatUIInstance) || null;
       }
-      console.log("[Lumina DEBUG] Resolved targetTab:", targetTab ? targetTab.title : "NULL");
+      console.log("[Nexus DEBUG] Resolved targetTab:", targetTab ? targetTab.title : "NULL");
       if (typeof handleSubmit === "function") {
-        console.log("[Lumina DEBUG] Calling handleSubmit...");
-        handleSubmit(constructedPrompt, [], { mode: "proofread" }, targetTab, "Sent comments").then(() => console.log("[Lumina DEBUG] handleSubmit finished")).catch((e) => console.error("[Lumina DEBUG] handleSubmit error:", e));
+        console.log("[Nexus DEBUG] Calling handleSubmit...");
+        handleSubmit(constructedPrompt, [], { mode: "proofread" }, targetTab, "Sent comments").then(() => console.log("[Nexus DEBUG] handleSubmit finished")).catch((e) => console.error("[Nexus DEBUG] handleSubmit error:", e));
       } else {
-        console.error("[Lumina DEBUG] handleSubmit is NOT a function!");
+        console.error("[Nexus DEBUG] handleSubmit is NOT a function!");
       }
-      const btn = entry.querySelector(".lumina-send-comment-btn");
+      const btn = entry.querySelector(".nexus-send-comment-btn");
       if (btn) btn.remove();
     } catch (err) {
-      console.error("[Lumina] Error in handleCommentSubmission:", err);
+      console.error("[Nexus] Error in handleCommentSubmission:", err);
     }
   }
   function setupWebSourceTracking() {
@@ -35495,7 +35518,7 @@ Output only the revised text.`;
         if (activeTab.url.includes("?sid=")) {
           currentBrowserTab = {
             tabId: activeTab.id,
-            title: activeTab.title || "Lumina Chat",
+            title: activeTab.title || "Nexus Chat",
             url: activeTab.url,
             favIconUrl: activeTab.favIconUrl
           };
@@ -35582,7 +35605,7 @@ Output only the revised text.`;
     closeWebTabPicker();
     openWebTabPicker(anchorEl);
   }
-  function openWebTabPicker(anchorEl, luminaTabId = null) {
+  function openWebTabPicker(anchorEl, nexusTabId = null) {
     if (!anchorEl) return;
     if (webTabPickerEl && webTabPickerAnchorEl === anchorEl) {
       closeWebTabPicker();
@@ -35596,56 +35619,56 @@ Output only the revised text.`;
         url: tab.url,
         isActive: !!tab.active
       }));
-      const activeLuminaTabId = luminaTabId || getCurrentLuminaTabId();
-      const selectedSources = activeLuminaTabId ? getWebSelectionForScope(activeLuminaTabId) : [];
+      const activeNexusTabId = nexusTabId || getCurrentNexusTabId();
+      const selectedSources = activeNexusTabId ? getWebSelectionForScope(activeNexusTabId) : [];
       const selectedIds = new Set(selectedSources.map((source) => source.tabId));
       const picker = document.createElement("div");
-      picker.className = "lumina-web-tab-picker";
+      picker.className = "nexus-web-tab-picker";
       const header = document.createElement("div");
-      header.className = "lumina-web-tab-picker-header";
+      header.className = "nexus-web-tab-picker-header";
       header.textContent = "Select tabs";
       picker.appendChild(header);
       const list = document.createElement("div");
-      list.className = "lumina-web-tab-picker-list";
+      list.className = "nexus-web-tab-picker-list";
       if (availableTabs.length === 0) {
         const empty = document.createElement("div");
-        empty.className = "lumina-web-tab-picker-empty";
+        empty.className = "nexus-web-tab-picker-empty";
         empty.textContent = "No readable web tabs available";
         list.appendChild(empty);
       } else {
         availableTabs.forEach((tab) => {
           const row = document.createElement("label");
-          row.className = "lumina-web-tab-picker-item";
+          row.className = "nexus-web-tab-picker-item";
           const checkbox = document.createElement("input");
           checkbox.type = "checkbox";
-          checkbox.className = "lumina-web-tab-picker-checkbox";
+          checkbox.className = "nexus-web-tab-picker-checkbox";
           checkbox.value = String(tab.tabId);
           checkbox.checked = selectedIds.has(tab.tabId);
           checkbox.addEventListener("change", () => {
             const selectedSet = new Set(
-              Array.from(list.querySelectorAll(".lumina-web-tab-picker-checkbox:checked")).map((item) => Number(item.value))
+              Array.from(list.querySelectorAll(".nexus-web-tab-picker-checkbox:checked")).map((item) => Number(item.value))
             );
             const nextSelection = availableTabs.filter((item) => selectedSet.has(item.tabId)).map((item) => ({
               tabId: item.tabId,
               title: item.title,
               url: item.url
             }));
-            if (activeLuminaTabId) {
-              saveWebSelectionForScope(activeLuminaTabId, nextSelection);
-              const primaryTabId = getCurrentLuminaTabId();
-              if (String(activeLuminaTabId) === String(primaryTabId)) {
+            if (activeNexusTabId) {
+              saveWebSelectionForScope(activeNexusTabId, nextSelection);
+              const primaryTabId = getCurrentNexusTabId();
+              if (String(activeNexusTabId) === String(primaryTabId)) {
                 pinnedWebSources = nextSelection.map((item) => ({ ...item }));
               }
             }
             updateWebChips();
           });
           const textWrap = document.createElement("div");
-          textWrap.className = "lumina-web-tab-picker-item-text";
+          textWrap.className = "nexus-web-tab-picker-item-text";
           const titleEl = document.createElement("div");
-          titleEl.className = "lumina-web-tab-picker-item-title";
+          titleEl.className = "nexus-web-tab-picker-item-title";
           titleEl.textContent = tab.title;
           const urlEl = document.createElement("div");
-          urlEl.className = "lumina-web-tab-picker-item-url";
+          urlEl.className = "nexus-web-tab-picker-item-url";
           urlEl.textContent = tab.url;
           textWrap.appendChild(titleEl);
           textWrap.appendChild(urlEl);
@@ -35656,20 +35679,20 @@ Output only the revised text.`;
       }
       picker.appendChild(list);
       const actions = document.createElement("div");
-      actions.className = "lumina-web-tab-picker-actions";
+      actions.className = "nexus-web-tab-picker-actions";
       const clearBtn = document.createElement("button");
       clearBtn.type = "button";
-      clearBtn.className = "lumina-web-tab-picker-btn is-ghost";
+      clearBtn.className = "nexus-web-tab-picker-btn is-ghost";
       clearBtn.textContent = "Clear";
       clearBtn.addEventListener("click", () => {
-        if (activeLuminaTabId) {
-          saveWebSelectionForScope(activeLuminaTabId, []);
-          const primaryTabId = getCurrentLuminaTabId();
-          if (String(activeLuminaTabId) === String(primaryTabId)) {
+        if (activeNexusTabId) {
+          saveWebSelectionForScope(activeNexusTabId, []);
+          const primaryTabId = getCurrentNexusTabId();
+          if (String(activeNexusTabId) === String(primaryTabId)) {
             pinnedWebSources = [];
           }
         }
-        list.querySelectorAll(".lumina-web-tab-picker-checkbox").forEach((checkbox) => {
+        list.querySelectorAll(".nexus-web-tab-picker-checkbox").forEach((checkbox) => {
           checkbox.checked = false;
         });
         updateWebChips();
@@ -35677,10 +35700,10 @@ Output only the revised text.`;
       });
       const selectAllBtn = document.createElement("button");
       selectAllBtn.type = "button";
-      selectAllBtn.className = "lumina-web-tab-picker-btn is-primary";
+      selectAllBtn.className = "nexus-web-tab-picker-btn is-primary";
       selectAllBtn.textContent = "Select All";
       selectAllBtn.addEventListener("click", () => {
-        const checkboxList = list.querySelectorAll(".lumina-web-tab-picker-checkbox");
+        const checkboxList = list.querySelectorAll(".nexus-web-tab-picker-checkbox");
         checkboxList.forEach((checkbox) => {
           checkbox.checked = true;
         });
@@ -35689,10 +35712,10 @@ Output only the revised text.`;
           title: item.title,
           url: item.url
         }));
-        if (activeLuminaTabId) {
-          saveWebSelectionForScope(activeLuminaTabId, nextSelection);
-          const primaryTabId = getCurrentLuminaTabId();
-          if (String(activeLuminaTabId) === String(primaryTabId)) {
+        if (activeNexusTabId) {
+          saveWebSelectionForScope(activeNexusTabId, nextSelection);
+          const primaryTabId = getCurrentNexusTabId();
+          if (String(activeNexusTabId) === String(primaryTabId)) {
             pinnedWebSources = nextSelection.map((item) => ({ ...item }));
           }
         }
@@ -35703,7 +35726,7 @@ Output only the revised text.`;
       picker.appendChild(actions);
       document.body.appendChild(picker);
       const rect = anchorEl.getBoundingClientRect();
-      const wrapper = anchorEl.closest(".lumina-chat-input-wrapper") || anchorEl.closest(".lumina-input-container");
+      const wrapper = anchorEl.closest(".nexus-chat-input-wrapper") || anchorEl.closest(".nexus-input-container");
       const preferredWidth = Math.min(wrapper ? wrapper.getBoundingClientRect().width : rect.width, window.innerWidth - 20);
       picker.style.width = `${preferredWidth}px`;
       const pickerHeight = picker.offsetHeight;
@@ -35736,7 +35759,7 @@ Output only the revised text.`;
   function getDomainDisplayName(url) {
     if (!url) return "";
     if (url.startsWith("chrome-extension://")) {
-      return "Lumina";
+      return "Nexus";
     }
     try {
       let hostname = new URL(url).hostname;
@@ -35753,13 +35776,13 @@ Output only the revised text.`;
       return "";
     }
   }
-  function createWebChipElement(source, selectedSources, luminaTabId) {
+  function createWebChipElement(source, selectedSources, nexusTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
-    const temp = document.getElementById("lumina-webChipTemplate");
+    const temp = document.getElementById("nexus-webChipTemplate");
     const clone = temp.content.cloneNode(true);
-    const chip = clone.querySelector(".lumina-web-chip");
-    chip.className = `lumina-web-chip ${source.isActive ? "is-active" : ""} ${isGhost ? "is-ghost" : ""}`;
+    const chip = clone.querySelector(".nexus-web-chip");
+    chip.className = `nexus-web-chip ${source.isActive ? "is-active" : ""} ${isGhost ? "is-ghost" : ""}`;
     chip.removeAttribute("title");
     if (source.isSummary) {
       const totalTokens = selectedSources.reduce((sum, s) => sum + (parseInt(s.tokens) || 0), 0);
@@ -35800,42 +35823,42 @@ Output only the revised text.`;
     titleSpan.textContent = displayName || (hasMultipleTabs ? source.title : formatHeadTailTitle(source.title || "Untitled"));
     chip.addEventListener("click", (event) => {
       event.stopPropagation();
-      const container2 = chip.closest(".lumina-web-chips");
+      const container2 = chip.closest(".nexus-web-chips");
       if (container2) container2.dataset.muteTooltips = "true";
-      if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === "function") {
+      if (window.NexusChatUI && typeof NexusChatUI.prototype._hideTagTooltip === "function") {
         try {
-          LuminaChatUI.prototype._hideTagTooltip();
+          NexusChatUI.prototype._hideTagTooltip();
         } catch (e) {
         }
       }
       if (source.isSummary) {
-        saveWebSelectionForScope(luminaTabId, []);
+        saveWebSelectionForScope(nexusTabId, []);
         const activeId = activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null;
-        if (String(luminaTabId) === String(activeId)) {
+        if (String(nexusTabId) === String(activeId)) {
           pinnedWebSources = [];
         }
         updateWebChips();
         return;
       }
       if (isGhost) {
-        toggleWebSourcePin(source, true, luminaTabId);
+        toggleWebSourcePin(source, true, nexusTabId);
       } else {
-        toggleWebSourcePin(source, null, luminaTabId);
+        toggleWebSourcePin(source, null, nexusTabId);
       }
     });
     return chip;
   }
   function updateWebChips() {
-    if (window.LuminaChatUI && typeof LuminaChatUI.prototype._hideTagTooltip === "function") {
+    if (window.NexusChatUI && typeof NexusChatUI.prototype._hideTagTooltip === "function") {
       try {
-        LuminaChatUI.prototype._hideTagTooltip();
+        NexusChatUI.prototype._hideTagTooltip();
       } catch (e) {
       }
     }
-    const containers = document.querySelectorAll(".lumina-web-chips");
+    const containers = document.querySelectorAll(".nexus-web-chips");
     containers.forEach((container2) => {
-      const luminaTabId = getLuminaTabIdForPane(container2);
-      if (!luminaTabId) {
+      const nexusTabId = getNexusTabIdForPane(container2);
+      if (!nexusTabId) {
         container2.style.display = "none";
         return;
       }
@@ -35846,7 +35869,7 @@ Output only the revised text.`;
         });
         container2.dataset.muteHandlerSet = "true";
       }
-      const selectedSources = getWebSelectionForScope(luminaTabId);
+      const selectedSources = getWebSelectionForScope(nexusTabId);
       const onValidWebPage = currentBrowserTab && isWebPageUrl2(currentBrowserTab.url);
       let newFingerprint = "";
       if (onValidWebPage) {
@@ -35872,7 +35895,7 @@ Output only the revised text.`;
             isGhost: false,
             tokens
           };
-          container2.appendChild(createWebChipElement(activeData, selectedSources, luminaTabId));
+          container2.appendChild(createWebChipElement(activeData, selectedSources, nexusTabId));
         } else {
           const ghostData = {
             tabId: currentBrowserTab.tabId,
@@ -35883,7 +35906,7 @@ Output only the revised text.`;
             isGhost: true,
             tokens
           };
-          container2.appendChild(createWebChipElement(ghostData, selectedSources, luminaTabId));
+          container2.appendChild(createWebChipElement(ghostData, selectedSources, nexusTabId));
         }
       }
     });
@@ -35907,18 +35930,18 @@ Output only the revised text.`;
       visibleTabIndexes.forEach((index) => {
         const tab = tabs2[index];
         if (!tab?.historyEl || typeof tab.chatUIInstance?.setInitialEntryHeight !== "function") return;
-        const allEntries = tab.historyEl.querySelectorAll(".lumina-entry");
+        const allEntries = tab.historyEl.querySelectorAll(".nexus-entry");
         if (!allEntries.length) return;
         const latestEntry = allEntries[allEntries.length - 1];
         tab.chatUIInstance.setInitialEntryHeight(latestEntry, true);
       });
     });
   }
-  function toggleWebSourcePin(source, forceState = null, luminaTabId = null) {
+  function toggleWebSourcePin(source, forceState = null, nexusTabId = null) {
     if (!source || !isWebPageUrl2(source.url)) return;
-    const targetLuminaTabId = luminaTabId || getCurrentLuminaTabId();
-    if (!targetLuminaTabId) return;
-    const currentSelection = getWebSelectionForScope(targetLuminaTabId);
+    const targetNexusTabId = nexusTabId || getCurrentNexusTabId();
+    if (!targetNexusTabId) return;
+    const currentSelection = getWebSelectionForScope(targetNexusTabId);
     const idx = currentSelection.findIndex((p) => String(p.tabId) === String(source.tabId));
     if (idx > -1) {
       if (forceState === true) {
@@ -35927,7 +35950,7 @@ Output only the revised text.`;
           title: source.title || currentSelection[idx].title || "Untitled",
           url: source.url || currentSelection[idx].url
         };
-        saveWebSelectionForScope(targetLuminaTabId, currentSelection);
+        saveWebSelectionForScope(targetNexusTabId, currentSelection);
         updateWebChips();
         return;
       }
@@ -35940,9 +35963,9 @@ Output only the revised text.`;
         url: source.url
       });
     }
-    saveWebSelectionForScope(targetLuminaTabId, currentSelection);
+    saveWebSelectionForScope(targetNexusTabId, currentSelection);
     const activeTabId = activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2].id : null;
-    if (String(targetLuminaTabId) === String(activeTabId)) {
+    if (String(targetNexusTabId) === String(activeTabId)) {
       pinnedWebSources = currentSelection.map((item) => ({ ...item }));
     }
     updateWebChips();
@@ -35954,10 +35977,10 @@ Output only the revised text.`;
       if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.getCurrent) {
         chrome.tabs.getCurrent((tab) => {
           if (tab && tab.id) {
-            const storedTabId = sessionStorage.getItem("lumina_tab_id");
+            const storedTabId = sessionStorage.getItem("nexus_tab_id");
             if (storedTabId && storedTabId !== String(tab.id)) {
               const newInstId = "inst_" + Date.now() + Math.random().toString(36).substr(2, 5);
-              sessionStorage.setItem("lumina_lumina_instance_id", newInstId);
+              sessionStorage.setItem("nexus_nexus_instance_id", newInstId);
               KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
               KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
               KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -35965,16 +35988,16 @@ Output only the revised text.`;
               KEYS.activeGroupIndex = `${STORAGE_PREFIX}_active_group_index_${newInstId}`;
               KEYS.groupCounter = `${STORAGE_PREFIX}_group_counter_${newInstId}`;
             }
-            sessionStorage.setItem("lumina_tab_id", String(tab.id));
+            sessionStorage.setItem("nexus_tab_id", String(tab.id));
             resolve();
           } else if (chrome.windows && chrome.windows.getCurrent) {
             chrome.windows.getCurrent((win) => {
               if (win && win.id) {
                 myWindowId = win.id;
-                const storedWinId = sessionStorage.getItem("lumina_window_id");
+                const storedWinId = sessionStorage.getItem("nexus_window_id");
                 if (storedWinId && storedWinId !== String(win.id)) {
                   const newInstId = "inst_" + Date.now() + Math.random().toString(36).substr(2, 5);
-                  sessionStorage.setItem("lumina_lumina_instance_id", newInstId);
+                  sessionStorage.setItem("nexus_nexus_instance_id", newInstId);
                   KEYS.tabs = `${STORAGE_PREFIX}_tabs_${newInstId}`;
                   KEYS.tabCounter = `${STORAGE_PREFIX}_tab_counter_${newInstId}`;
                   KEYS.activeTabIndex = `${STORAGE_PREFIX}_active_tab_index_${newInstId}`;
@@ -35982,7 +36005,7 @@ Output only the revised text.`;
                   KEYS.activeGroupIndex = `${STORAGE_PREFIX}_active_group_index_${newInstId}`;
                   KEYS.groupCounter = `${STORAGE_PREFIX}_group_counter_${newInstId}`;
                 }
-                sessionStorage.setItem("lumina_window_id", String(win.id));
+                sessionStorage.setItem("nexus_window_id", String(win.id));
               }
               resolve();
             });
@@ -35994,17 +36017,17 @@ Output only the revised text.`;
         resolve();
       }
     });
-    if (window.LuminaSelection?.hide) {
+    if (window.NexusSelection?.hide) {
       try {
-        window.LuminaSelection.hide();
+        window.NexusSelection.hide();
       } catch (e) {
         console.warn("[Spotlight] Failed to hide stale selection popup:", e);
       }
     }
-    document.querySelectorAll(".lumina-overlay-backdrop").forEach((el) => el.remove());
+    document.querySelectorAll(".nexus-overlay-backdrop").forEach((el) => el.remove());
     document.body.style.overflow = "";
     document.documentElement.style.overflow = "";
-    document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+    document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
       if (el.style.overflow === "hidden") {
         el.style.overflow = "";
       }
@@ -36017,7 +36040,7 @@ Output only the revised text.`;
       }
     });
     const mutationObserver = new MutationObserver(() => {
-      document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+      document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
         if (!el.__observedForScrollbar) {
           el.__observedForScrollbar = true;
           observer.observe(el);
@@ -36027,7 +36050,7 @@ Output only the revised text.`;
       });
     });
     mutationObserver.observe(document.body, { childList: true, subtree: true });
-    document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+    document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
       if (!el.__observedForScrollbar) {
         el.__observedForScrollbar = true;
         observer.observe(el);
@@ -36038,8 +36061,8 @@ Output only the revised text.`;
     initSpotlightAskSelection();
     const inputArea = document.getElementById("input-area");
     if (inputArea) {
-      inputArea.innerHTML = LuminaChatUI.getChatInputHTML(true);
-      sharedInputUI2 = new LuminaChatUI(inputArea, {
+      inputArea.innerHTML = NexusChatUI.getChatInputHTML(true);
+      sharedInputUI2 = new NexusChatUI(inputArea, {
         isSpotlight: true,
         isPrimaryInput: true,
         alwaysExpanded: true,
@@ -36055,11 +36078,11 @@ Output only the revised text.`;
       if (win && win.id) {
         myWindowId = win.id;
         const key = `pending_sidepanel_query_${win.id}`;
-        const storageData = await chrome.storage.local.get([key, "luminaWindowId"]);
+        const storageData = await chrome.storage.local.get([key, "nexusWindowId"]);
         if (storageData[key] && storageData[key].createNewChat) {
           shouldStartNewChat = true;
         }
-        if (!isSidePanel && win.id !== storageData.luminaWindowId) {
+        if (!isSidePanel && win.id !== storageData.nexusWindowId) {
           isWebApp = true;
         }
       }
@@ -36116,9 +36139,9 @@ Output only the revised text.`;
       document.body.setAttribute("data-theme", mode);
       document.body.setAttribute("data-accent", accentVal);
       document.body.setAttribute("data-contrast", contrastVal);
-      document.body.className = document.body.className.replace(/\blumina-font-\S+/g, "");
-      document.body.classList.add(`lumina-font-${fontFamilyVal}`);
-      document.documentElement.style.setProperty("--lumina-weight-base", fontWeightVal);
+      document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
+      document.body.classList.add(`nexus-font-${fontFamilyVal}`);
+      document.documentElement.style.setProperty("--nexus-weight-base", fontWeightVal);
       const size = items.fontSize || items.globalDefaults && items.globalDefaults.fontSize;
       if (size) {
         applyFontSize2(size);
@@ -36147,19 +36170,19 @@ Output only the revised text.`;
         }
         if (changes.fontFamily) {
           const fontFamilyVal = changes.fontFamily.newValue || "default";
-          document.body.className = document.body.className.replace(/\blumina-font-\S+/g, "");
-          document.body.classList.add(`lumina-font-${fontFamilyVal}`);
+          document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
+          document.body.classList.add(`nexus-font-${fontFamilyVal}`);
         }
         if (changes.fontWeight) {
           const fontWeightVal = changes.fontWeight.newValue || "400";
-          document.documentElement.style.setProperty("--lumina-weight-base", fontWeightVal);
+          document.documentElement.style.setProperty("--nexus-weight-base", fontWeightVal);
         }
         if (changes.shortcuts) shortcuts = changes.shortcuts.newValue || {};
         if (changes.annotationShortcuts) annotationShortcuts = changes.annotationShortcuts.newValue || [];
         if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
         if (changes.askSelectionPopupEnabled) {
           askSelectionPopupEnabled = changes.askSelectionPopupEnabled.newValue ?? false;
-          if (!askSelectionPopupEnabled && window.LuminaSelection) LuminaSelection.hide();
+          if (!askSelectionPopupEnabled && window.NexusSelection) NexusSelection.hide();
         }
         if (changes.readWebpage) readWebpageEnabled = !!changes.readWebpage.newValue;
         if (changes.advancedParamsByModel) advancedParamsByModel = changes.advancedParamsByModel.newValue || {};
@@ -36202,7 +36225,7 @@ Output only the revised text.`;
       };
       checkReady();
     }
-    document.addEventListener("lumina:model-change", (e) => {
+    document.addEventListener("nexus:model-change", (e) => {
       const activeTab = tabs2[activeTabIndex2];
       if (activeTab && e.detail) {
         activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
@@ -36213,19 +36236,19 @@ Output only the revised text.`;
           sharedInputUI2.activeTabModel = { ...activeTab.selectedModel };
         }
         const sidKey = activeTab.sessionId || "null";
-        chrome.storage.local.get(["lumina_session_settings"], (res) => {
-          const settings = res.lumina_session_settings || {};
+        chrome.storage.local.get(["nexus_session_settings"], (res) => {
+          const settings = res.nexus_session_settings || {};
           if (!settings[sidKey]) settings[sidKey] = {};
           settings[sidKey].selectedModel = activeTab.selectedModel;
-          chrome.storage.local.set({ lumina_session_settings: settings });
+          chrome.storage.local.set({ nexus_session_settings: settings });
         });
         chrome.storage.local.set({ lastUsedModel: activeTab.selectedModel });
       }
     });
     chrome.runtime.onMessage.addListener((request) => {
-      if (request.action === "lumina_session_updated") {
+      if (request.action === "nexus_session_updated") {
         const sid = request.sessionId;
-        if (request.senderInstanceId && request.senderInstanceId === window._luminaWindowInstanceId) {
+        if (request.senderInstanceId && request.senderInstanceId === window._nexusWindowInstanceId) {
           return;
         }
         const affected = tabs2.filter((t) => t.sessionId === sid);
@@ -36235,8 +36258,8 @@ Output only the revised text.`;
             const isGeneratingLocally = sharedInputUI2 && sharedInputUI2.isGenerating && streamingTab && streamingTab.sessionId === sid || sharedInputUISecondary && sharedInputUISecondary.isGenerating && streamingTab && streamingTab.sessionId === sid;
             if (!isGeneratingLocally) {
               Promise.all([
-                LuminaChatDB.getMessages(sid),
-                LuminaChatDB.getSession(sid)
+                NexusChatDB.getMessages(sid),
+                NexusChatDB.getSession(sid)
               ]).then(([messages, meta]) => {
                 if (messages) {
                   const chatData = {
@@ -36247,19 +36270,41 @@ Output only the revised text.`;
                   };
                   affected.forEach(async (tab) => {
                     if (tab.historyEl) {
-                      const currentEntries = tab.historyEl.querySelectorAll(".lumina-entry");
+                      const lastMsg = messages[messages.length - 1];
+                      if (!lastMsg || lastMsg.type === "question") return;
+                      const currentEntries = Array.from(tab.historyEl.querySelectorAll(".nexus-entry"));
                       const expectedQuestions = messages.filter((m) => m.type === "question");
-                      if (isRecentLocalSave && currentEntries.length === expectedQuestions.length) {
-                        return;
+                      if (currentEntries.length > 0 && currentEntries.length === expectedQuestions.length) {
+                        const lastEntry2 = currentEntries[currentEntries.length - 1];
+                        const lastMsgAnswer = messages.filter((m) => m.type === "answer").pop();
+                        if (lastEntry2 && lastMsgAnswer) {
+                          let ansDiv = lastEntry2.querySelector(".nexus-chat-answer");
+                          if (ansDiv) {
+                            const rawContent = lastMsgAnswer.content || "";
+                            const displayContent = rawContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
+                            if (ansDiv.getAttribute("data-raw-text") !== rawContent) {
+                              ansDiv.setAttribute("data-raw-text", rawContent);
+                              if (typeof marked !== "undefined") {
+                                ansDiv.innerHTML = marked.parse(displayContent);
+                              } else {
+                                ansDiv.textContent = displayContent;
+                              }
+                              if (window.NexusChatUI && typeof window.NexusChatUI.processContainer === "function") {
+                                window.NexusChatUI.processContainer(ansDiv);
+                              }
+                            }
+                            return;
+                          }
+                        }
                       }
                       const savedScrollTop = tab.historyEl.scrollTop;
                       await ChatHistoryManager.restoreChat(chatData, tab.historyEl);
                       normalizeRestoredHistory(tab.historyEl);
                       if (tab.chatUIInstance) tab.chatUIInstance.syncStateFromDOM();
-                      const entries = tab.historyEl.querySelectorAll(".lumina-entry");
-                      const lastEntry = entries[entries.length - 1];
+                      const newEntries = tab.historyEl.querySelectorAll(".nexus-entry");
+                      const lastEntry = newEntries[newEntries.length - 1];
                       if (lastEntry && tab.chatUIInstance) {
-                        tab.chatUIInstance.clearEntryMargins(lastEntry);
+                        tab.chatUIInstance.updateEntryMinHeight(lastEntry);
                         tab.chatUIInstance.adjustEntryMargin(lastEntry, "immediate");
                       }
                       tab.historyEl.scrollTop = savedScrollTop;
@@ -36270,7 +36315,7 @@ Output only the revised text.`;
             }
           }
         }
-      } else if (request.action === "lumina_sessions_deleted") {
+      } else if (request.action === "nexus_sessions_deleted") {
         const deletedIds = request.deletedIds || [];
         if (deletedIds.length > 0) {
           let updated = false;
@@ -36279,7 +36324,7 @@ Output only the revised text.`;
               const isActive = index === activeTabIndex2;
               if (isActive) {
                 if (sharedInputUI2 && sharedInputUI2.isGenerating) {
-                  console.log("[Lumina] Suppressing resetChat on active generation for tab:", tab.sessionId);
+                  console.log("[Nexus] Suppressing resetChat on active generation for tab:", tab.sessionId);
                 } else {
                   resetChat2();
                   updated = true;
@@ -36304,15 +36349,15 @@ Output only the revised text.`;
             saveTabsState2();
           }
         }
-      } else if (request.action === "lumina_sessions_index_updated") {
+      } else if (request.action === "nexus_sessions_index_updated") {
         if (typeof renderRecentChatsSidebar === "function") {
           renderRecentChatsSidebar();
         }
-        if (typeof LuminaChatDB !== "undefined" && Array.isArray(tabs2)) {
+        if (typeof NexusChatDB !== "undefined" && Array.isArray(tabs2)) {
           let tabsUpdated = false;
           Promise.all(tabs2.map(async (tab) => {
             if (tab && tab.sessionId) {
-              const meta = await LuminaChatDB.getSession(tab.sessionId).catch(() => null);
+              const meta = await NexusChatDB.getSession(tab.sessionId).catch(() => null);
               if (meta && (meta.isRenamed || meta.autoNamed) && meta.title && tab.title !== meta.title) {
                 tab.title = meta.title;
                 tabsUpdated = true;
@@ -36325,18 +36370,18 @@ Output only the revised text.`;
             }
           });
         }
-      } else if (request.action === "lumina_notes_updated") {
-        if (typeof luminaNotesPanelInstance !== "undefined" && luminaNotesPanelInstance) {
-          if (typeof luminaNotesPanelInstance.renderCollections === "function") luminaNotesPanelInstance.renderCollections();
-          if (typeof luminaNotesPanelInstance.renderNotesList === "function") luminaNotesPanelInstance.renderNotesList();
+      } else if (request.action === "nexus_notes_updated") {
+        if (typeof nexusNotesPanelInstance !== "undefined" && nexusNotesPanelInstance) {
+          if (typeof nexusNotesPanelInstance.renderCollections === "function") nexusNotesPanelInstance.renderCollections();
+          if (typeof nexusNotesPanelInstance.renderNotesList === "function") nexusNotesPanelInstance.renderNotesList();
         }
-      } else if (request.action === "lumina_tts_updated") {
-        if (typeof luminaTTSPanelInstance !== "undefined" && luminaTTSPanelInstance) {
-          if (typeof luminaTTSPanelInstance.loadRecordings === "function") luminaTTSPanelInstance.loadRecordings();
+      } else if (request.action === "nexus_tts_updated") {
+        if (typeof nexusTTSPanelInstance !== "undefined" && nexusTTSPanelInstance) {
+          if (typeof nexusTTSPanelInstance.loadRecordings === "function") nexusTTSPanelInstance.loadRecordings();
         }
-      } else if (request.action === "lumina_highlights_updated") {
-        if (typeof window.LuminaAnnotationUI !== "undefined" && typeof window.LuminaAnnotationUI.reload === "function") {
-          window.LuminaAnnotationUI.reload();
+      } else if (request.action === "nexus_highlights_updated") {
+        if (typeof window.NexusAnnotationUI !== "undefined" && typeof window.NexusAnnotationUI.reload === "function") {
+          window.NexusAnnotationUI.reload();
         }
       } else if (request.action === "settings_updated") {
         const size = request.settings.fontSize || request.settings.globalDefaults?.fontSize;
@@ -36371,7 +36416,7 @@ Output only the revised text.`;
             toggleWebSourcePin(request.source, true);
           }
         });
-      } else if (request.action === "lumina_active_session_changed") {
+      } else if (request.action === "nexus_active_session_changed") {
         if (isSidePanel) {
           chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabsList) => {
             const activeTab = tabsList && tabsList[0];
@@ -36385,7 +36430,7 @@ Output only the revised text.`;
               }
               currentBrowserTab = {
                 tabId: activeTab.id,
-                title: "Lumina",
+                title: "Nexus",
                 url: newUrl,
                 favIconUrl: activeTab.favIconUrl
               };
@@ -36412,7 +36457,7 @@ Output only the revised text.`;
       chrome.windows.getCurrent((win) => {
         if (win && win.id) {
           myWindowId = win.id;
-          const port2 = chrome.runtime.connect({ name: "lumina-sidepanel" });
+          const port2 = chrome.runtime.connect({ name: "nexus-sidepanel" });
           port2.postMessage({ windowId: win.id });
           port2.onMessage.addListener((msg) => {
             if (msg.action === "content_updated") {
@@ -36428,7 +36473,7 @@ Output only the revised text.`;
     function ensureFocus() {
       const targetInput = getHoveredInputEl();
       if (!targetInput) return;
-      const sidebar = document.getElementById("lumina-sidebar");
+      const sidebar = document.getElementById("nexus-sidebar");
       if (sidebar && sidebar.classList.contains("active")) return;
       const setCursorToEnd = (el) => {
         try {
@@ -36440,12 +36485,12 @@ Output only the revised text.`;
       };
       setCursorToEnd(targetInput);
       setTimeout(() => {
-        const sidebar2 = document.getElementById("lumina-sidebar");
+        const sidebar2 = document.getElementById("nexus-sidebar");
         const el = getHoveredInputEl();
         if (el && (!sidebar2 || !sidebar2.classList.contains("active"))) setCursorToEnd(el);
       }, 50);
       setTimeout(() => {
-        const sidebar2 = document.getElementById("lumina-sidebar");
+        const sidebar2 = document.getElementById("nexus-sidebar");
         const el = getHoveredInputEl();
         if (el && (!sidebar2 || !sidebar2.classList.contains("active"))) setCursorToEnd(el);
       }, 150);
@@ -36453,7 +36498,7 @@ Output only the revised text.`;
     ensureFocus();
     window.addEventListener("focus", () => {
       const selection = window.getSelection().toString().trim();
-      if (selection && (selection.includes("--lumina-") || selection.includes("var(--lumina"))) {
+      if (selection && (selection.includes("--nexus-") || selection.includes("var(--nexus"))) {
         window.getSelection().removeAllRanges();
         ensureFocus();
         return;
@@ -36487,18 +36532,18 @@ Output only the revised text.`;
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("settings") === "1" || urlParams.get("section")) {
       setTimeout(() => {
-        if (typeof LuminaSettingsModal !== "undefined") {
-          LuminaSettingsModal.show();
+        if (typeof NexusSettingsModal !== "undefined") {
+          NexusSettingsModal.show();
           const section = urlParams.get("section");
           if (section) {
-            LuminaSettingsModal.switchSection(section);
+            NexusSettingsModal.switchSection(section);
           }
         }
       }, 300);
     }
   }
   function initSidebar() {
-    const sidebar = document.getElementById("lumina-sidebar");
+    const sidebar = document.getElementById("nexus-sidebar");
     const toggleBtn = document.getElementById("sidebar-toggle-btn");
     const closeBtn = document.getElementById("sidebar-close-btn");
     const newChatBtn = document.getElementById("sidebar-new-chat-btn");
@@ -36510,7 +36555,7 @@ Output only the revised text.`;
       backdrop.className = "sidebar-backdrop";
       document.body.appendChild(backdrop);
     }
-    const isCollapsed = localStorage.getItem("lumina_sidebar_collapsed") === "true";
+    const isCollapsed = localStorage.getItem("nexus_sidebar_collapsed") === "true";
     if (isCollapsed && sidebar && !isSidePanel) {
       sidebar.classList.add("sidebar-collapsed");
     }
@@ -36531,7 +36576,7 @@ Output only the revised text.`;
             }
           } else {
             sidebar.classList.toggle("sidebar-collapsed");
-            localStorage.setItem("lumina_sidebar_collapsed", sidebar.classList.contains("sidebar-collapsed"));
+            localStorage.setItem("nexus_sidebar_collapsed", sidebar.classList.contains("sidebar-collapsed"));
           }
         });
       });
@@ -36543,7 +36588,7 @@ Output only the revised text.`;
         if (!clickedInteractive) {
           if (sidebar.classList.contains("sidebar-collapsed")) {
             sidebar.classList.remove("sidebar-collapsed");
-            localStorage.setItem("lumina_sidebar_collapsed", "false");
+            localStorage.setItem("nexus_sidebar_collapsed", "false");
           }
         }
       });
@@ -36580,7 +36625,7 @@ Output only the revised text.`;
           closeMobileSidebar();
         } else {
           sidebar.classList.add("sidebar-collapsed");
-          localStorage.setItem("lumina_sidebar_collapsed", "true");
+          localStorage.setItem("nexus_sidebar_collapsed", "true");
         }
       });
     }
@@ -36641,8 +36686,8 @@ Output only the revised text.`;
     }
     if (settingsBtn) {
       settingsBtn.addEventListener("click", () => {
-        if (typeof LuminaSettingsModal !== "undefined") {
-          LuminaSettingsModal.show();
+        if (typeof NexusSettingsModal !== "undefined") {
+          NexusSettingsModal.show();
         } else {
           chrome.runtime.openOptionsPage();
         }
@@ -36651,8 +36696,8 @@ Output only the revised text.`;
     }
     if (searchBtn) {
       searchBtn.addEventListener("click", () => {
-        if (typeof LuminaSearchModal !== "undefined") {
-          LuminaSearchModal.show();
+        if (typeof NexusSearchModal !== "undefined") {
+          NexusSearchModal.show();
         }
         closeMobileSidebar();
       });
@@ -36668,9 +36713,9 @@ Output only the revised text.`;
           ctxMenu.id = "user-profile-context-menu";
           ctxMenu.className = "sidebar-chat-context-menu";
           ctxMenu.style.display = "none";
-          const currentName2 = typeof LuminaAuth !== "undefined" && LuminaAuth.isAuthenticated && LuminaAuth.user ? LuminaAuth.user.name || "User" : "Lumina User";
-          const isAuth2 = typeof LuminaAuth !== "undefined" && LuminaAuth.isAuthenticated;
-          ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
+          const currentName2 = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated && NexusAuth.user ? NexusAuth.user.name || "User" : "Nexus User";
+          const isAuth2 = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated;
+          ctxMenu.innerHTML = NexusTemplates.sidebarContextMenu([
             { type: "header", label: currentName2 },
             { type: "divider" },
             { action: "sync", label: "Sync now", icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>' },
@@ -36682,23 +36727,23 @@ Output only the revised text.`;
               const action = item.dataset.action;
               ctxMenu.style.display = "none";
               if (action === "sync") {
-                if (typeof LuminaSync !== "undefined") {
-                  LuminaSync.syncUp().catch((err) => console.error("Sync failed:", err));
+                if (typeof NexusSync !== "undefined") {
+                  NexusSync.syncUp().catch((err) => console.error("Sync failed:", err));
                 }
               } else if (action === "logout") {
-                if (typeof LuminaAuth !== "undefined") {
-                  if (LuminaAuth.isAuthenticated) {
-                    LuminaAuth.logout();
+                if (typeof NexusAuth !== "undefined") {
+                  if (NexusAuth.isAuthenticated) {
+                    NexusAuth.logout();
                   } else {
-                    LuminaAuth.login();
+                    NexusAuth.login();
                   }
                 }
               }
             });
           });
         }
-        const isAuth = typeof LuminaAuth !== "undefined" && LuminaAuth.isAuthenticated;
-        const currentName = isAuth && LuminaAuth.user ? LuminaAuth.user.name || "User" : "Lumina User";
+        const isAuth = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated;
+        const currentName = isAuth && NexusAuth.user ? NexusAuth.user.name || "User" : "Nexus User";
         const nameHeader = ctxMenu.querySelector(".sidebar-ctx-header-name");
         if (nameHeader) {
           nameHeader.textContent = currentName;
@@ -36730,12 +36775,12 @@ Output only the revised text.`;
         if (changes[ChatHistoryManager.STORAGE_KEY]) {
           renderRecentChatsSidebar();
         }
-        if (changes.lumina_sparks) {
-          sparksCache = changes.lumina_sparks.newValue || {};
+        if (changes.nexus_sparks) {
+          sparksCache = changes.nexus_sparks.newValue || {};
           updateInputPlaceholder();
         }
-        if (changes.lumina_session_settings) {
-          sessionSettings = changes.lumina_session_settings.newValue || {};
+        if (changes.nexus_session_settings) {
+          sessionSettings = changes.nexus_session_settings.newValue || {};
           const activeTab = activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2] : null;
           if (activeTab) {
             const sidKey = activeTab.sessionId || "null";
@@ -36751,7 +36796,7 @@ Output only the revised text.`;
                   const modelObj = saved.selectedModel;
                   const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
                   const modelParams = modelObj.providerId && advParams[compositeKey] ? advParams[compositeKey] : !modelObj.providerId ? advParams[modelObj.model] || {} : {};
-                  const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
+                  const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                   const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
                   activeTab.thinkingLevel = newThinkingLevel;
                   if (activeTab.chatUIInstance) {
@@ -36779,7 +36824,7 @@ Output only the revised text.`;
     });
   }
   function updateRecentChatsActiveState() {
-    if (typeof LuminaViewManager !== "undefined" && LuminaViewManager.currentView !== "chat") {
+    if (typeof NexusViewManager !== "undefined" && NexusViewManager.currentView !== "chat") {
       document.querySelectorAll("#sidebar-recent-chats .recent-chat-item, #sidebar-archived-chats .recent-chat-item").forEach((item) => {
         item.classList.remove("active");
       });
@@ -36819,13 +36864,15 @@ Output only the revised text.`;
     });
     const recentData = historyData.filter((s) => !s.archived);
     const archivedData = historyData.filter((s) => !!s.archived);
-    const sparksRes = await chrome.storage.local.get(["lumina_sparks"]);
-    const sparksMap = sparksRes.lumina_sparks || {};
+    const sparksRes = await chrome.storage.local.get(["nexus_sparks"]);
+    const sparksMap = sparksRes.nexus_sparks || {};
     let html = "";
+    const currentView = window.NexusViewManager?.currentView || document.querySelector(".nexus-main-content")?.getAttribute("data-active-view") || "chat";
+    const isChatView = currentView === "chat";
     const activeTab = tabs2[activeTabIndex2];
-    const activeSessionId = activeTab ? activeTab.sessionId : null;
+    const activeSessionId = isChatView && activeTab ? activeTab.sessionId : null;
     if (recentData.length === 0) {
-      html = '<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-sidebar-text-muted); text-align: center;">No recent chats</div>';
+      html = '<div style="padding: 8px 12px; font-size: 12px; color: var(--nexus-sidebar-text-muted); text-align: center;">No recent chats</div>';
     } else {
       let activeIndex = -1;
       if (activeSessionId) {
@@ -36973,14 +37020,14 @@ Output only the revised text.`;
     };
     attachScroll(listContainer.closest(".sidebar-scrollable-wrapper"));
     attachScroll(listContainer.closest(".sidebar-scrollable-content"));
-    attachScroll(listContainer.closest(".lumina-sidebar"));
+    attachScroll(listContainer.closest(".nexus-sidebar"));
     let ctxMenu = document.getElementById("sidebar-chat-context-menu");
     if (!ctxMenu) {
       ctxMenu = document.createElement("div");
       ctxMenu.id = "sidebar-chat-context-menu";
       ctxMenu.className = "sidebar-chat-context-menu";
       ctxMenu.style.display = "none";
-      ctxMenu.innerHTML = LuminaTemplates.sidebarContextMenu([
+      ctxMenu.innerHTML = NexusTemplates.sidebarContextMenu([
         { action: "pin", label: "Pin", icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>' },
         { action: "rename", label: "Rename", icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' },
         { action: "generate_title", label: "Generate title", icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>' },
@@ -37003,7 +37050,7 @@ Output only the revised text.`;
           document.querySelectorAll(".recent-chat-item.ctx-active").forEach((el) => el.classList.remove("ctx-active"));
           if (!sid) return;
           if (action === "pin") {
-            const session = await LuminaChatDB.getSession(sid);
+            const session = await NexusChatDB.getSession(sid);
             if (session) {
               const currentlyPinned = !!session.pinned;
               if (!currentlyPinned) {
@@ -37028,11 +37075,11 @@ Output only the revised text.`;
                 session.pinned = false;
               }
               session.updatedAt = Date.now();
-              await LuminaChatDB.putSession(session);
-              chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+              await NexusChatDB.putSession(session);
+              chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
               });
-              if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-                LuminaSync.triggerDebouncedSync();
+              if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                NexusSync.triggerDebouncedSync();
               }
               if (session.isRenamed) {
                 const activeTab2 = tabs2[activeTabIndex2];
@@ -37044,7 +37091,7 @@ Output only the revised text.`;
               renderRecentChatsSidebar();
             }
           } else if (action === "rename") {
-            const meta = await LuminaChatDB.getSession(sid);
+            const meta = await NexusChatDB.getSession(sid);
             let currentTitle = meta?.title || "Untitled Chat";
             if (!meta?.isRenamed && !meta?.autoNamed && meta?.questions?.length > 0) {
               currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
@@ -37060,14 +37107,14 @@ Output only the revised text.`;
               await ChatHistoryManager.renameChat(sid, newTitle.trim());
             }
           } else if (action === "generate_title") {
-            const session = await LuminaChatDB.getSession(sid);
+            const session = await NexusChatDB.getSession(sid);
             if (!session || !session.questions || session.questions.length === 0) {
-              if (typeof LuminaToast !== "undefined") LuminaToast.show("No chat content to generate title.", "info");
+              if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to generate title.", "info");
               return;
             }
             const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
             if (chatItemEl) chatItemEl.classList.add("is-naming");
-            if (typeof LuminaToast !== "undefined") LuminaToast.show("\u2728 Generating chat title...", "info");
+            if (typeof NexusToast !== "undefined") NexusToast.show("\u2728 Generating chat title...", "info");
             let fullText = session.questions.map((q) => {
               let text = `User: ${q.text || ""}`;
               if (q.answers) {
@@ -37077,7 +37124,7 @@ AI: ${ans.text}`;
               }
               return text;
             }).join("\n\n");
-            const currentModel = typeof LuminaModelSelector !== "undefined" ? LuminaModelSelector.getSelectedModel("text") : null;
+            const currentModel = typeof NexusModelSelector !== "undefined" ? NexusModelSelector.getSelectedModel("text") : null;
             chrome.runtime.sendMessage({
               action: "generate_chat_title",
               modelObj: currentModel,
@@ -37090,35 +37137,35 @@ AI: ${ans.text}`;
               if (res && res.success && res.title) {
                 const newTitle = res.title.trim();
                 await ChatHistoryManager.renameChat(sid, newTitle);
-                const updatedSession = await LuminaChatDB.getSession(sid);
+                const updatedSession = await NexusChatDB.getSession(sid);
                 if (updatedSession) {
                   updatedSession.autoNamed = true;
                   updatedSession.isRenamed = true;
                   updatedSession.updatedAt = Date.now();
-                  await LuminaChatDB.putSession(updatedSession);
-                  if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-                    LuminaSync.triggerDebouncedSync();
+                  await NexusChatDB.putSession(updatedSession);
+                  if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                    NexusSync.triggerDebouncedSync();
                   }
                 }
-                if (typeof LuminaToast !== "undefined") LuminaToast.show(`Title updated: "${newTitle}"`, "success");
+                if (typeof NexusToast !== "undefined") NexusToast.show(`Title updated: "${newTitle}"`, "success");
                 renderRecentChatsSidebar();
                 renderTabs2();
               } else {
-                if (typeof LuminaToast !== "undefined") LuminaToast.show("Failed to generate title: " + (res?.error || "Unknown error"), "error");
+                if (typeof NexusToast !== "undefined") NexusToast.show("Failed to generate title: " + (res?.error || "Unknown error"), "error");
               }
             });
           } else if (action === "archive") {
-            const meta = await LuminaChatDB.getSession(sid);
+            const meta = await NexusChatDB.getSession(sid);
             if (meta) {
               const isArchived = !!meta.archived;
               if (isArchived) {
                 meta.archived = false;
                 meta.updatedAt = Date.now();
-                await LuminaChatDB.putSession(meta);
-                chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+                await NexusChatDB.putSession(meta);
+                chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
                 });
-                if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-                  LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                  NexusSync.triggerDebouncedSync();
                 }
                 renderRecentChatsSidebar();
               } else {
@@ -37140,11 +37187,11 @@ AI: ${ans.text}`;
                   }
                   meta.archived = true;
                   meta.updatedAt = Date.now();
-                  await LuminaChatDB.putSession(meta);
-                  chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+                  await NexusChatDB.putSession(meta);
+                  chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
                   });
-                  if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-                    LuminaSync.triggerDebouncedSync();
+                  if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                    NexusSync.triggerDebouncedSync();
                   }
                   renderRecentChatsSidebar();
                 }
@@ -37180,7 +37227,7 @@ AI: ${ans.text}`;
           ctxMenu.dataset.sessionId = sid;
           const pinItem = ctxMenu.querySelector('[data-action="pin"]');
           if (pinItem) {
-            LuminaChatDB.getSession(sid).then((session) => {
+            NexusChatDB.getSession(sid).then((session) => {
               const isPinned2 = !!session?.pinned;
               const textEl = pinItem.querySelector("span");
               if (textEl) textEl.textContent = isPinned2 ? "Unpin" : "Pin";
@@ -37198,7 +37245,7 @@ AI: ${ans.text}`;
           }
           const archiveItem = ctxMenu.querySelector('[data-action="archive"]');
           if (archiveItem) {
-            LuminaChatDB.getSession(sid).then((session) => {
+            NexusChatDB.getSession(sid).then((session) => {
               const isArchived = !!session?.archived;
               const textEl = archiveItem.querySelector("span");
               if (textEl) textEl.textContent = isArchived ? "Unarchive" : "Archive";
@@ -37229,10 +37276,15 @@ AI: ${ans.text}`;
       container2.querySelectorAll(".recent-chat-item").forEach((item) => {
         item.addEventListener("click", async (e) => {
           if (e.target.closest(".recent-chat-item__menu-btn")) return;
+          const sid = item.dataset.sessionId;
+          if (typeof window.NexusViewManager !== "undefined") {
+            window.NexusViewManager.switchView("chat", { sid });
+          } else if (typeof NexusViewManager !== "undefined") {
+            NexusViewManager.switchView("chat", { sid });
+          }
           document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
           document.querySelectorAll("#sidebar-sparks-list .sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
           item.classList.add("active");
-          const sid = item.dataset.sessionId;
           const activeTab2 = typeof tabs2 !== "undefined" && activeTabIndex2 >= 0 ? tabs2[activeTabIndex2] : null;
           if (activeTab2) {
             activeTab2.sessionId = sid;
@@ -37245,15 +37297,15 @@ AI: ${ans.text}`;
           const chatLayout = document.getElementById("chat-layout");
           if (chatLayout) {
             chatLayout.classList.remove("new-chat-homepage");
-            chatLayout.querySelector(".lumina-homepage-welcome")?.remove();
+            chatLayout.querySelector(".nexus-homepage-welcome")?.remove();
           }
-          if (window.LuminaViewManager) {
-            window.LuminaViewManager.switchView("chat", { sid });
+          if (window.NexusViewManager) {
+            window.NexusViewManager.switchView("chat", { sid });
           }
           const messages = await ChatHistoryManager.getSessionMessages(sid);
           const meta = sessions[sid] || { id: sid };
           window.loadHistoryIntoNewTab(messages, meta, sid);
-          const sidebar = document.getElementById("lumina-sidebar");
+          const sidebar = document.getElementById("nexus-sidebar");
           const backdrop = document.querySelector(".sidebar-backdrop");
           if (sidebar) sidebar.classList.remove("active");
           if (backdrop) backdrop.classList.remove("active");
@@ -37271,7 +37323,7 @@ AI: ${ans.text}`;
   }
   function setupPort() {
     try {
-      port = chrome.runtime.connect({ name: "lumina-chat-stream" });
+      port = chrome.runtime.connect({ name: "nexus-chat-stream" });
       syncSessionsWithBackground();
       port.onMessage.addListener((msg) => {
         let affectedTabs = [];
@@ -37283,7 +37335,7 @@ AI: ${ans.text}`;
           affectedTabs = [tabs2[activeTabIndex2]];
         }
         if (msg.error) {
-          console.error("[Lumina Stream] error", {
+          console.error("[Nexus Stream] error", {
             tabId: streamingTab?.id || null,
             sessionId: streamingTab?.sessionId || null,
             error: msg.error
@@ -37303,73 +37355,79 @@ AI: ${ans.text}`;
           return;
         }
         if (msg.action === "web_search_status") {
-          affectedTabs.forEach((tab) => {
-            tab.chatUIInstance.handleWebSearchStatus(msg);
-          });
+          if (streamingTab && (!msg.sessionId || streamingTab.sessionId === msg.sessionId)) {
+            affectedTabs.forEach((tab) => {
+              tab.chatUIInstance.handleWebSearchStatus(msg);
+            });
+          }
           return;
         }
         if (msg.action === "chunk" && msg.chunk) {
-          affectedTabs.forEach((tab) => {
-            tab.chatUIInstance.appendChunk(msg.chunk, tab.id !== streamingTab?.id);
-          });
+          if (streamingTab && (!msg.sessionId || streamingTab.sessionId === msg.sessionId)) {
+            affectedTabs.forEach((tab) => {
+              tab.chatUIInstance.appendChunk(msg.chunk, tab.id !== streamingTab?.id);
+            });
+          }
         }
         if (msg.action === "done") {
           const sid = msg.sessionId || streamingTab?.sessionId;
-          affectedTabs.forEach((tab) => {
-            const targetUI = tab.chatUIInstance;
-            const answerDiv = targetUI.currentAnswerDiv;
-            const isRegen = !!targetUI._regenScrollLocked;
-            const skipScroll = isRegen || tab.id !== streamingTab?.id;
-            const skipMargin = isRegen;
-            targetUI.finishAnswer(skipMargin, skipScroll);
-            if (isRegen && targetUI._regenScrollContainer) {
-              const lockedContainer = targetUI._regenScrollContainer;
-              requestAnimationFrame(() => {
+          if (streamingTab && (!msg.sessionId || streamingTab.sessionId === msg.sessionId)) {
+            affectedTabs.forEach((tab) => {
+              const targetUI = tab.chatUIInstance;
+              const answerDiv = targetUI.currentAnswerDiv;
+              const isRegen = !!targetUI._regenScrollLocked;
+              const skipScroll = isRegen || tab.id !== streamingTab?.id;
+              const skipMargin = isRegen;
+              targetUI.finishAnswer(skipMargin, skipScroll);
+              if (isRegen && targetUI._regenScrollContainer) {
+                const lockedContainer = targetUI._regenScrollContainer;
                 requestAnimationFrame(() => {
-                  lockedContainer.style.overflowAnchor = "";
-                  targetUI._regenScrollLocked = false;
-                  targetUI._regenScrollContainer = null;
-                  targetUI._regenScrollPosition = null;
-                  const sh = lockedContainer.scrollHeight;
-                  const vh = lockedContainer.clientHeight;
-                  const pos = lockedContainer.scrollTop;
-                  const nearBottom = sh - (pos + vh) <= 20;
-                  targetUI.disableAutoScroll = !nearBottom;
+                  requestAnimationFrame(() => {
+                    lockedContainer.style.overflowAnchor = "";
+                    targetUI._regenScrollLocked = false;
+                    targetUI._regenScrollContainer = null;
+                    targetUI._regenScrollPosition = null;
+                    const sh = lockedContainer.scrollHeight;
+                    const vh = lockedContainer.clientHeight;
+                    const pos = lockedContainer.scrollTop;
+                    const nearBottom = sh - (pos + vh) <= 20;
+                    targetUI.disableAutoScroll = !nearBottom;
+                  });
                 });
-              });
-            }
-            requestAnimationFrame(() => {
-              if (sharedInputUI2) {
-                sharedInputUI2.isGenerating = false;
-                sharedInputUI2._updateActionBtnState();
               }
-              if (answerDiv) {
-                const entry = answerDiv.closest(".lumina-entry");
-                if (entry) {
-                  const nav = entry.querySelector(".lumina-answer-nav");
-                  if (nav) nav.style.display = "flex";
-                  if (targetUI._regenEntryType === "translation" && targetUI._regenSourceText) {
-                    const latestTranslation = answerDiv.textContent.trim();
-                    chrome.runtime.sendMessage({
-                      action: "update_translation_cache",
-                      text: targetUI._regenSourceText,
-                      translation: latestTranslation,
-                      targetLang: "vi"
-                    }).catch(() => {
-                    });
+              requestAnimationFrame(() => {
+                if (sharedInputUI2) {
+                  sharedInputUI2.isGenerating = false;
+                  sharedInputUI2._updateActionBtnState();
+                }
+                if (answerDiv) {
+                  const entry = answerDiv.closest(".nexus-entry");
+                  if (entry) {
+                    const nav = entry.querySelector(".nexus-answer-nav");
+                    if (nav) nav.style.display = "flex";
+                    if (targetUI._regenEntryType === "translation" && targetUI._regenSourceText) {
+                      const latestTranslation = answerDiv.textContent.trim();
+                      chrome.runtime.sendMessage({
+                        action: "update_translation_cache",
+                        text: targetUI._regenSourceText,
+                        translation: latestTranslation,
+                        targetLang: "vi"
+                      }).catch(() => {
+                      });
+                    }
                   }
                 }
-              }
+              });
             });
-          });
-          (async () => {
-            await saveTabsState2(true, true);
-            streamingTab = null;
-            streamDebugState = null;
-            if (typeof LuminaSync !== "undefined") {
-              LuminaSync.syncUp(true).catch((err) => console.error("[Lumina] Post-answer sync failed:", err));
-            }
-          })();
+            (async () => {
+              streamingTab = null;
+              streamDebugState = null;
+              await saveTabsState2(true, true);
+              if (typeof NexusSync !== "undefined") {
+                NexusSync.syncUp(true).catch((err) => console.error("[Nexus] Post-answer sync failed:", err));
+              }
+            })();
+          }
         }
       });
       port.onDisconnect.addListener(() => {
@@ -37430,20 +37488,20 @@ AI: ${ans.text}`;
       updateUrlSessionId2(newSessionId);
       const currentModel = currentTab.selectedModel;
       const currentThinking = currentTab.thinkingLevel;
-      chrome.storage.local.get(["lumina_session_settings"], (res) => {
-        const settings = res.lumina_session_settings || {};
+      chrome.storage.local.get(["nexus_session_settings"], (res) => {
+        const settings = res.nexus_session_settings || {};
         settings[newSessionId] = {
           selectedModel: currentModel,
           thinkingLevel: currentThinking
         };
-        chrome.storage.local.set({ lumina_session_settings: settings });
+        chrome.storage.local.set({ nexus_session_settings: settings });
       });
     }
     const now = Date.now();
     const isVeryClose = lastSubmitTime && now - lastSubmitTime < 250;
     const isDuplicateText = lastSubmitTime && now - lastSubmitTime < 1e3 && lastSubmitText === text;
     if (isVeryClose || isDuplicateText) {
-      console.warn("[Lumina] Rapid submission suppressed:", { text, diff: now - lastSubmitTime });
+      console.warn("[Nexus] Rapid submission suppressed:", { text, diff: now - lastSubmitTime });
       return;
     }
     lastSubmitTime = now;
@@ -37477,9 +37535,9 @@ AI: ${ans.text}`;
         }
       });
       renderTabs2();
+      streamingTab = currentTab;
       saveTabsState2();
     }
-    streamingTab = currentTab;
     streamDebugState = {
       tabId: currentTab.id,
       sessionId: currentTab.sessionId,
@@ -37526,7 +37584,7 @@ AI: ${ans.text}`;
     if (extra.isRecheck || extra.isRegenerate) {
       untilEntryId = extra.entryId;
       if (!untilEntryId) {
-        const lastEntry = targetChatUI.historyEl.querySelector(".lumina-entry:last-child");
+        const lastEntry = targetChatUI.historyEl.querySelector(".nexus-entry:last-child");
         untilEntryId = lastEntry ? lastEntry.dataset.entryId : null;
       }
     }
@@ -37537,9 +37595,9 @@ AI: ${ans.text}`;
     const conversationHistory = targetChatUI.gatherMessages(untilEntryId, false, currentTab?.thinkingLevel || activeInputUI?.thinkingLevel || "none");
     let apiText = text;
     if (extra.isRegenerate && !text) {
-      const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.lumina-entry[data-entry-id="${untilEntryId}"]`) : null;
+      const targetEntry = untilEntryId ? targetChatUI.historyEl.querySelector(`.nexus-entry[data-entry-id="${untilEntryId}"]`) : null;
       if (targetEntry) {
-        const questionEl = targetEntry.querySelector(".lumina-chat-question");
+        const questionEl = targetEntry.querySelector(".nexus-chat-question");
         if (questionEl) {
           text = questionEl.getAttribute("data-raw-text") || questionEl.textContent.trim();
           apiText = text;
@@ -37570,7 +37628,7 @@ AI: ${ans.text}`;
           ui.initListeners(t.historyEl);
           ui.syncStateFromDOM();
         }
-        const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.lumina-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
+        const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.nexus-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
         if (targetEntry) {
           ui.clearAnswer(targetEntry);
           ui.showLoading(targetEntry, skipMargin);
@@ -37642,14 +37700,14 @@ AI: ${ans.text}`;
                   const ctxList = [{
                     content: formattedChat,
                     url: source.url,
-                    title: source.title || "Lumina Chat"
+                    title: source.title || "Nexus Chat"
                   }];
                   pageContextCache.set(cacheKey, ctxList);
                   return ctxList;
                 }
               }
             } catch (e) {
-              console.error("[Spotlight] Failed to read Lumina tab:", e);
+              console.error("[Spotlight] Failed to read Nexus tab:", e);
             }
             return [];
           }
@@ -37657,7 +37715,7 @@ AI: ${ans.text}`;
             const tabResults = await chrome.scripting.executeScript({
               target: { tabId: source.tabId, allFrames: true },
               func: () => {
-                return typeof window.luminaExtractMainContent === "function" ? window.luminaExtractMainContent(document, true) : null;
+                return typeof window.nexusExtractMainContent === "function" ? window.nexusExtractMainContent(document, true) : null;
               }
             });
             const ctxList = tabResults ? tabResults.map((tr) => tr.result).filter(Boolean) : [];
@@ -37726,8 +37784,8 @@ ${ctx.content}`;
       }
     };
     if (currentTab && currentTab.sparkId) {
-      const sparksRes = await chrome.storage.local.get(["lumina_sparks"]);
-      const sparks = sparksRes.lumina_sparks || {};
+      const sparksRes = await chrome.storage.local.get(["nexus_sparks"]);
+      const sparks = sparksRes.nexus_sparks || {};
       const spark = sparks[currentTab.sparkId];
       if (spark) {
         let sys = spark.instructions || "";
@@ -37831,20 +37889,20 @@ ${fileContexts}`;
     document.addEventListener("keydown", (event) => {
       if (document.querySelector(".recording")) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
-        if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+        if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
         const activeElement2 = document.activeElement;
         const isInput = activeElement2 && (activeElement2.tagName === "INPUT" || activeElement2.tagName === "TEXTAREA" || activeElement2.isContentEditable);
         if (!isInput) {
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
-          if (window.LuminaAnnotation) LuminaAnnotation.undoLastHighlight();
+          if (window.NexusAnnotation) NexusAnnotation.undoLastHighlight();
           return;
         }
       }
-      const searchOverlay = document.getElementById("lumina-search-overlay");
+      const searchOverlay = document.getElementById("nexus-search-overlay");
       if (searchOverlay && searchOverlay.style.display === "flex") {
-        const searchInput = document.getElementById("lumina-search-input");
+        const searchInput = document.getElementById("nexus-search-input");
         if (searchInput && document.activeElement !== searchInput) {
           const selection2 = window.getSelection().toString().trim();
           const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
@@ -37882,7 +37940,7 @@ ${fileContexts}`;
         const activeEl = document.activeElement;
         const isEditingLocal = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable);
         if (isEditingLocal) {
-          if (activeEl.__luminaTranslating) return;
+          if (activeEl.__nexusTranslating) return;
           let textToTranslate = "";
           let hasSelection = false;
           let selectionStart = 0;
@@ -37944,7 +38002,7 @@ ${fileContexts}`;
               const g = Math.round(defaultRGB[1] + (115 - defaultRGB[1]) * pulseFactor);
               const b = Math.round(defaultRGB[2] + (232 - defaultRGB[2]) * pulseFactor);
               styleEl.textContent = `
-                          .lumina-pulse-active::selection {
+                          .nexus-pulse-active::selection {
                             background-color: transparent !important;
                             color: rgb(${r}, ${g}, ${b}) !important;
                           }
@@ -37955,7 +38013,7 @@ ${fileContexts}`;
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
-            activeEl.__luminaTranslating = true;
+            activeEl.__nexusTranslating = true;
             let targetEl = activeEl;
             if (activeEl.isContentEditable) {
               if (hasSelection) {
@@ -37983,13 +38041,13 @@ ${fileContexts}`;
             const defaultColorStyle = window.getComputedStyle(activeEl).color || "rgb(0,0,0)";
             const rgbMatch = defaultColorStyle.match(/\d+/g);
             const defaultRGB = rgbMatch ? rgbMatch.slice(0, 3).map(Number) : [0, 0, 0];
-            let styleEl = document.getElementById("lumina-pulse-style");
+            let styleEl = document.getElementById("nexus-pulse-style");
             if (!styleEl) {
               styleEl = document.createElement("style");
-              styleEl.id = "lumina-pulse-style";
+              styleEl.id = "nexus-pulse-style";
               document.head.appendChild(styleEl);
             }
-            activeEl.classList.add("lumina-pulse-active");
+            activeEl.classList.add("nexus-pulse-active");
             let isPulsing = true;
             const startTime = Date.now();
             requestAnimationFrame(smoothPulse2);
@@ -37999,11 +38057,11 @@ ${fileContexts}`;
                 text: textToTranslate
               }, (response) => {
                 isPulsing = false;
-                activeEl.classList.remove("lumina-pulse-active");
+                activeEl.classList.remove("nexus-pulse-active");
                 if (styleEl) styleEl.textContent = "";
                 setTimeout(() => {
                   activeEl.style.pointerEvents = originalPointerEvents;
-                  activeEl.__luminaTranslating = false;
+                  activeEl.__nexusTranslating = false;
                 }, 600);
                 if (response && response.translatedText) {
                   if (activeEl.isContentEditable) {
@@ -38037,13 +38095,13 @@ ${fileContexts}`;
               });
             } catch (err) {
               isPulsing = false;
-              activeEl.classList.remove("lumina-pulse-active");
+              activeEl.classList.remove("nexus-pulse-active");
               if (styleEl) styleEl.textContent = "";
               setTimeout(() => {
                 activeEl.style.pointerEvents = originalPointerEvents;
-                activeEl.__luminaTranslating = false;
+                activeEl.__nexusTranslating = false;
               }, 600);
-              console.error("[Lumina Spotlight] translateInput failed:", err);
+              console.error("[Nexus Spotlight] translateInput failed:", err);
             }
           }
           return;
@@ -38066,8 +38124,8 @@ ${fileContexts}`;
           const isOverridingShortcut = action === "micToggle" || action === "audio";
           if (!hasModifier && !isOverridingShortcut) continue;
         }
-        if ((action === "translate" || action === "askLumina" || action === "audio") && !selection) {
-          if (action === "audio" && _luminaCurrentAudio) {
+        if ((action === "translate" || action === "askNexus" || action === "audio") && !selection) {
+          if (action === "audio" && _nexusCurrentAudio) {
           } else {
             continue;
           }
@@ -38078,7 +38136,7 @@ ${fileContexts}`;
         return;
       }
       if (selection && questionMappings && questionMappings.length > 0) {
-        if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+        if (window.NexusSelection && !NexusSelection.isInsideEditable()) {
           for (const mapping of questionMappings) {
             if (!mapping.prompt) continue;
             let isMatch = false;
@@ -38095,17 +38153,17 @@ ${fileContexts}`;
               event.stopImmediatePropagation();
               const displayQuestion = mapping.prompt.replace(/\$SelectedText|SelectedText/gi, selection).replace(/\$Sentence/gi, selection).replace(/\$Paragraph/gi, selection).trim();
               const fullQuestion = displayQuestion;
-              const targetTabIdx = luminaAskSourcePane === "secondary" && isSplitMode ? secondaryActiveTabIndex : activeTabIndex2;
+              const targetTabIdx = nexusAskSourcePane === "secondary" && isSplitMode ? secondaryActiveTabIndex : activeTabIndex2;
               const targetTab = tabs2[targetTabIdx];
               const sel = window.getSelection();
               const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
               const shouldHighlight = mapping.highlight !== false && mapping.enableHighlight !== false;
-              if (shouldHighlight && window.LuminaAnnotation && range) {
-                window.LuminaAnnotation.highlight(range);
+              if (shouldHighlight && window.NexusAnnotation && range) {
+                window.NexusAnnotation.highlight(range);
               }
               handleSubmit(fullQuestion, [], { mode: "qa" }, targetTab || null, displayQuestion);
               window.getSelection().removeAllRanges();
-              if (window.LuminaSelection) LuminaSelection.hide();
+              if (window.NexusSelection) NexusSelection.hide();
               return;
             }
           }
@@ -38138,7 +38196,7 @@ ${fileContexts}`;
         if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
           return;
         }
-        const sidebar = document.getElementById("lumina-history-sidebar");
+        const sidebar = document.getElementById("nexus-history-sidebar");
         if (sidebar && sidebar.classList.contains("open")) return;
         const inputEl2 = getHoveredInputEl();
         if (inputEl2) {
@@ -38154,7 +38212,7 @@ ${fileContexts}`;
         if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
           return;
         }
-        const sidebar = document.getElementById("lumina-history-sidebar");
+        const sidebar = document.getElementById("nexus-history-sidebar");
         if (sidebar && sidebar.classList.contains("open")) return;
         const inputEl2 = getHoveredInputEl();
         if (inputEl2) {
@@ -38166,22 +38224,22 @@ ${fileContexts}`;
         return;
       }
       if (matchesShortcut(event, "audio", shortcuts)) {
-        if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+        if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
         event.preventDefault();
         event.stopPropagation();
         if (selection) {
           stopSpotlightAudio();
-          _luminaAudioAborted = false;
+          _nexusAudioAborted = false;
           playSpotlightAudio(selection);
         } else {
           const sel = window.getSelection();
           const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-          if (range && window.LuminaSelection) {
+          if (range && window.NexusSelection) {
             const commonNode = range.commonAncestorContainer;
             const secondaryPane = document.getElementById("pane-secondary");
-            luminaAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
-            LuminaSelection.show(0, 0, selection, range);
-            LuminaSelection.showInput();
+            nexusAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
+            NexusSelection.show(0, 0, selection, range);
+            NexusSelection.showInput();
             window.getSelection().removeAllRanges();
             return;
           }
@@ -38189,19 +38247,19 @@ ${fileContexts}`;
         }
         return;
       }
-      if (selection && (window.LuminaSelection && !LuminaSelection.isInsideEditable())) {
-        if (matchesShortcut(event, "askLumina", shortcuts)) {
+      if (selection && (window.NexusSelection && !NexusSelection.isInsideEditable())) {
+        if (matchesShortcut(event, "askNexus", shortcuts)) {
           event.preventDefault();
           event.stopPropagation();
           const sel = window.getSelection();
           const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-          if (range && window.LuminaSelection) {
+          if (range && window.NexusSelection) {
             const text = selection;
             const commonNode = range.commonAncestorContainer;
             const secondaryPane = document.getElementById("pane-secondary");
-            luminaAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
-            LuminaSelection.show(0, 0, text, range);
-            LuminaSelection.showInput();
+            nexusAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
+            NexusSelection.show(0, 0, text, range);
+            NexusSelection.showInput();
             window.getSelection().removeAllRanges();
             return;
           }
@@ -38211,7 +38269,7 @@ ${fileContexts}`;
           event.stopPropagation();
           handleTranslation(selection);
           window.getSelection().removeAllRanges();
-          if (window.LuminaSelection) LuminaSelection.hide();
+          if (window.NexusSelection) NexusSelection.hide();
           return;
         }
       }
@@ -38220,7 +38278,7 @@ ${fileContexts}`;
         if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
           return;
         }
-        const sidebar = document.getElementById("lumina-history-sidebar");
+        const sidebar = document.getElementById("nexus-history-sidebar");
         if (sidebar && sidebar.classList.contains("open")) return;
         if (inputEl) inputEl.focus();
         return;
@@ -38229,7 +38287,7 @@ ${fileContexts}`;
         if (shortcut.enabled === false) continue;
         const matched = matchesAnnotationShortcut(event, shortcut);
         if (matched) {
-          if (window.LuminaSelection && LuminaSelection.isInsideEditable()) {
+          if (window.NexusSelection && NexusSelection.isInsideEditable()) {
             continue;
           }
           const sel = window.getSelection();
@@ -38241,19 +38299,19 @@ ${fileContexts}`;
             const range = sel.getRangeAt(0);
             const highlightId = "lh_" + Date.now();
             const color = shortcut.color || "#ffeb3b";
-            if (window.LuminaAnnotation) {
-              LuminaAnnotation.saveHighlight(range, color, highlightId);
-              LuminaAnnotation.applyHighlight(range, color, highlightId);
+            if (window.NexusAnnotation) {
+              NexusAnnotation.saveHighlight(range, color, highlightId);
+              NexusAnnotation.applyHighlight(range, color, highlightId);
             }
             window.getSelection().removeAllRanges();
-            if (window.LuminaSelection) LuminaSelection.hide();
+            if (window.NexusSelection) NexusSelection.hide();
             return;
           }
         }
       }
       if (["Control", "Shift", "Alt", "Meta", "Tab", "CapsLock", "Escape"].includes(event.key)) return;
       if (!isEditing && inputEl) {
-        const sidebar = document.getElementById("lumina-history-sidebar");
+        const sidebar = document.getElementById("nexus-history-sidebar");
         if (sidebar && sidebar.classList.contains("open")) return;
         const isTypeable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
         if (selection && !isTypeable) {
@@ -38316,14 +38374,14 @@ ${fileContexts}`;
             selectedModel: currentModel,
             thinkingLevel: currentThinking
           };
-          chrome.storage.local.get(["lumina_session_settings"], (res) => {
-            const settings = res.lumina_session_settings || {};
+          chrome.storage.local.get(["nexus_session_settings"], (res) => {
+            const settings = res.nexus_session_settings || {};
             settings[sidKey] = {
               ...settings[sidKey] || {},
               selectedModel: currentModel,
               thinkingLevel: currentThinking
             };
-            chrome.storage.local.set({ lumina_session_settings: settings });
+            chrome.storage.local.set({ nexus_session_settings: settings });
           });
         }
         if (typeof sidebarSparksRenderList === "function") {
@@ -38365,11 +38423,11 @@ ${fileContexts}`;
     }
     updateWelcomeScreenState2("primary");
     updateInputPlaceholder();
-    const regenBtn = document.getElementById("lumina-regenerate-btn");
+    const regenBtn = document.getElementById("nexus-regenerate-btn");
     if (regenBtn) regenBtn.style.display = "none";
   }
   function setupRegenerateButtons() {
-    const buttons = document.querySelectorAll("#lumina-regenerate-btn");
+    const buttons = document.querySelectorAll("#nexus-regenerate-btn");
     buttons.forEach((btn) => {
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
@@ -38402,20 +38460,20 @@ ${fileContexts}`;
     if (typeof tabs2 !== "undefined" && Array.isArray(tabs2) && typeof activeTabIndex2 !== "undefined" && activeTabIndex2 >= 0) {
       const activeTab = tabs2[activeTabIndex2];
       if (activeTab && activeTab.historyEl && activeTab.chatUIInstance) {
-        const entries = activeTab.historyEl.querySelectorAll(".lumina-entry");
+        const entries = activeTab.historyEl.querySelectorAll(".nexus-entry");
         const lastEntry = entries[entries.length - 1];
         if (lastEntry) {
-          activeTab.chatUIInstance.clearEntryMargins(lastEntry);
+          activeTab.chatUIInstance.updateEntryMinHeight(lastEntry);
           activeTab.chatUIInstance.adjustEntryMargin(lastEntry, "immediate");
         }
       }
       if (typeof isSplitMode !== "undefined" && isSplitMode && typeof secondaryActiveTabIndex !== "undefined" && secondaryActiveTabIndex >= 0) {
         const secTab = tabs2[secondaryActiveTabIndex];
         if (secTab && secTab.historyEl && secTab.chatUIInstance) {
-          const entries = secTab.historyEl.querySelectorAll(".lumina-entry");
+          const entries = secTab.historyEl.querySelectorAll(".nexus-entry");
           const lastEntry = entries[entries.length - 1];
           if (lastEntry) {
-            secTab.chatUIInstance.clearEntryMargins(lastEntry);
+            secTab.chatUIInstance.updateEntryMinHeight(lastEntry);
             secTab.chatUIInstance.adjustEntryMargin(lastEntry, "immediate");
           }
         }
@@ -38499,11 +38557,11 @@ ${fileContexts}`;
     const history = tUI?.historyEl;
     if (!history) return;
     const lastEntry = history.lastElementChild;
-    if (!lastEntry || !lastEntry.classList.contains("lumina-entry")) return;
+    if (!lastEntry || !lastEntry.classList.contains("nexus-entry")) return;
     const entryType = lastEntry.dataset.entryType;
     let originalQuestion = null;
     if (entryType === "translation") {
-      const transSource = lastEntry.querySelector(".lumina-translation-source .lumina-translation-text");
+      const transSource = lastEntry.querySelector(".nexus-translation-source .nexus-translation-text");
       if (transSource) {
         const sourceText = transSource.textContent.trim();
         originalQuestion = `Translate this text: "${sourceText}"`;
@@ -38513,17 +38571,17 @@ ${fileContexts}`;
         }
       }
     } else if (entryType === "lookup" || entryType === "entry") {
-      const wordEl = lastEntry.querySelector(".lumina-dict-word");
+      const wordEl = lastEntry.querySelector(".nexus-dict-word");
       if (wordEl) {
         const word = wordEl.textContent.trim();
         originalQuestion = `Look up and explain the meaning of: "${word}"`;
       }
     }
     if (!originalQuestion) {
-      const questionEl = lastEntry.querySelector(".lumina-chat-question");
+      const questionEl = lastEntry.querySelector(".nexus-chat-question");
       if (questionEl) {
         originalQuestion = questionEl.textContent.trim();
-        const contextEl = lastEntry.querySelector(".lumina-chat-context");
+        const contextEl = lastEntry.querySelector(".nexus-chat-context");
         if (contextEl) {
           const ctxText = contextEl.dataset.fullText || contextEl.textContent.trim();
           if (ctxText) {
@@ -38538,7 +38596,7 @@ ${fileContexts}`;
     if (tUI) tUI._handleQuestionRecheck(originalQuestion, lastEntry, true);
   }
   function showAnswerVersion2(entryElement, direction) {
-    const versions = Array.from(entryElement.querySelectorAll(".lumina-answer-version"));
+    const versions = Array.from(entryElement.querySelectorAll(".nexus-answer-version"));
     const activeIndex = versions.findIndex((v) => v.classList.contains("active"));
     if (activeIndex === -1) return;
     let newIndex = activeIndex;
@@ -38551,9 +38609,9 @@ ${fileContexts}`;
     }
   }
   function updateVersionNav(entryElement, activeIndex, totalCount) {
-    const nav = entryElement.querySelector(".lumina-answer-nav");
+    const nav = entryElement.querySelector(".nexus-answer-nav");
     if (!nav) return;
-    const counter = nav.querySelector(".lumina-answer-nav-counter");
+    const counter = nav.querySelector(".nexus-answer-nav-counter");
     const prevBtn = nav.querySelector(".nav-prev");
     const nextBtn = nav.querySelector(".nav-next");
     counter.textContent = `${activeIndex + 1} / ${totalCount}`;
@@ -38606,22 +38664,22 @@ ${fileContexts}`;
       const selection = window.getSelection().toString().trim();
       if (selection) {
         stopSpotlightAudio();
-        _luminaAudioAborted = false;
+        _nexusAudioAborted = false;
         playSpotlightAudio(selection);
       } else {
         stopSpotlightAudio();
       }
-    } else if (action === "luminaChat") {
-    } else if (action === "askLumina") {
+    } else if (action === "nexusChat") {
+    } else if (action === "askNexus") {
       const sel = window.getSelection();
       const text = sel ? sel.toString().trim() : "";
       const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-      if (!text || !range || !window.LuminaSelection) return;
+      if (!text || !range || !window.NexusSelection) return;
       const commonNode = range.commonAncestorContainer;
       const secondaryPane = document.getElementById("pane-secondary");
-      luminaAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
-      LuminaSelection.show(0, 0, text, range);
-      LuminaSelection.showInput();
+      nexusAskSourcePane = isSplitMode && secondaryPane && secondaryPane.contains(commonNode) ? "secondary" : "primary";
+      NexusSelection.show(0, 0, text, range);
+      NexusSelection.showInput();
       sel.removeAllRanges();
     } else if (action === "resetChat") {
       resetChat2();
@@ -38646,7 +38704,7 @@ ${fileContexts}`;
       } else {
         promptSupport = { supported: false, status: "no", reason: "Prompt API not loaded" };
       }
-      const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
+      const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
       if (chain.length <= 1) return;
       let currentModel = currentActiveTab.selectedModel?.model;
       let currentProviderId = currentActiveTab.selectedModel?.providerId;
@@ -38666,14 +38724,14 @@ ${fileContexts}`;
         label.textContent = nextItem.displayName || nextItem.model;
       }
       const sidKey = currentActiveTab.sessionId || "null";
-      chrome.storage.local.get(["lumina_session_settings", "advancedParamsByModel"], (res) => {
-        const settings = res.lumina_session_settings || {};
+      chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
+        const settings = res.nexus_session_settings || {};
         if (!settings[sidKey]) settings[sidKey] = {};
         settings[sidKey].selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
         const advancedParamsByModel2 = res.advancedParamsByModel || {};
         const compositeKey = nextItem.providerId ? `${nextItem.providerId}:${nextItem.model}` : nextItem.model;
         const modelParams = nextItem.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !nextItem.providerId ? advancedParamsByModel2[nextItem.model] || {} : {};
-        const defaultThinking = window.LuminaModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
+        const defaultThinking = window.NexusModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
         const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
         currentActiveTab.thinkingLevel = newThinkingLevel;
         setPaneActiveThinking(newThinkingLevel);
@@ -38682,7 +38740,7 @@ ${fileContexts}`;
           currentActiveTab.chatUIInstance.thinkingLevel = newThinkingLevel;
         }
         chrome.storage.local.set({
-          lumina_session_settings: settings,
+          nexus_session_settings: settings,
           lastUsedModel: { model: nextItem.model, providerId: nextItem.providerId }
         }, () => {
           if (sharedInputUI2 && typeof sharedInputUI2.refreshReasoningSelector === "function") {
@@ -38733,25 +38791,25 @@ ${fileContexts}`;
       console.error("[Spotlight] Play audio failed:", err);
     }
   }
-  var _luminaAudioCtx = null;
+  var _nexusAudioCtx = null;
   function getSpotlightAudioCtx() {
-    if (!_luminaAudioCtx || _luminaAudioCtx.state === "closed") {
-      _luminaAudioCtx = new AudioContext();
+    if (!_nexusAudioCtx || _nexusAudioCtx.state === "closed") {
+      _nexusAudioCtx = new AudioContext();
     }
-    return _luminaAudioCtx;
+    return _nexusAudioCtx;
   }
-  var _luminaCurrentAudio = null;
-  var _luminaAudioAborted = false;
+  var _nexusCurrentAudio = null;
+  var _nexusAudioAborted = false;
   function stopSpotlightAudio() {
-    _luminaAudioAborted = true;
-    if (_luminaCurrentAudio) {
-      _luminaCurrentAudio.pause();
-      _luminaCurrentAudio = null;
+    _nexusAudioAborted = true;
+    if (_nexusCurrentAudio) {
+      _nexusCurrentAudio.pause();
+      _nexusCurrentAudio = null;
     }
   }
   function playBase64Audio(base64Data, speed = 1) {
     return new Promise(async (resolve, reject) => {
-      if (_luminaAudioAborted) {
+      if (_nexusAudioAborted) {
         resolve();
         return;
       }
@@ -38774,7 +38832,7 @@ ${fileContexts}`;
           }
         } catch (e) {
         }
-        if (_luminaAudioAborted) {
+        if (_nexusAudioAborted) {
           resolve();
           return;
         }
@@ -38784,14 +38842,14 @@ ${fileContexts}`;
         const audio = new Audio(blobUrl);
         audio.playbackRate = speed;
         if (silenceOffset > 0) audio.currentTime = silenceOffset;
-        _luminaCurrentAudio = audio;
+        _nexusCurrentAudio = audio;
         audio.onended = () => {
-          _luminaCurrentAudio = null;
+          _nexusCurrentAudio = null;
           URL.revokeObjectURL(blobUrl);
           resolve();
         };
         audio.onerror = (e) => {
-          _luminaCurrentAudio = null;
+          _nexusCurrentAudio = null;
           URL.revokeObjectURL(blobUrl);
           reject(e);
         };
@@ -38800,13 +38858,13 @@ ${fileContexts}`;
         try {
           const audio = new Audio(base64Data);
           audio.playbackRate = speed;
-          _luminaCurrentAudio = audio;
+          _nexusCurrentAudio = audio;
           audio.onended = () => {
-            _luminaCurrentAudio = null;
+            _nexusCurrentAudio = null;
             resolve();
           };
           audio.onerror = (err) => {
-            _luminaCurrentAudio = null;
+            _nexusCurrentAudio = null;
             reject(err);
           };
           audio.play().catch(reject);
@@ -38821,15 +38879,15 @@ ${fileContexts}`;
       clearTimeout(window.mouseupTimer);
     }
     const path = e.composedPath();
-    const isInsideAskBtn = path.some((el) => el.id === "lumina-action-bar");
-    const isInsideAskInput = path.some((el) => el.id === "lumina-ask-input-popup");
-    const isInsideDictLauncher = path.some((el) => el.classList && el.classList.contains && el.classList.contains("lumina-dict-launcher"));
-    const isInsideDictPopup = document.getElementById("lumina-dict-popup")?.contains(e.target) || path.some((el) => el.id === "lumina-dict-popup" || el.classList && el.classList.contains && el.classList.contains("lumina-mode-dictionary"));
+    const isInsideAskBtn = path.some((el) => el.id === "nexus-action-bar");
+    const isInsideAskInput = path.some((el) => el.id === "nexus-ask-input-popup");
+    const isInsideDictLauncher = path.some((el) => el.classList && el.classList.contains && el.classList.contains("nexus-dict-launcher"));
+    const isInsideDictPopup = document.getElementById("nexus-dict-popup")?.contains(e.target) || path.some((el) => el.id === "nexus-dict-popup" || el.classList && el.classList.contains && el.classList.contains("nexus-mode-dictionary"));
     if (!isInsideAskBtn && !isInsideAskInput) {
-      if (window.LuminaSelection) LuminaSelection.hide();
+      if (window.NexusSelection) NexusSelection.hide();
     }
     if (!isInsideDictLauncher && !isInsideDictPopup) {
-      document.getElementById("lumina-dict-popup")?.remove();
+      document.getElementById("nexus-dict-popup")?.remove();
     }
   }, true);
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -38840,10 +38898,10 @@ ${fileContexts}`;
       if (changes.askSelectionPopupEnabled) {
         askSelectionPopupEnabled = !!changes.askSelectionPopupEnabled.newValue;
       }
-      if (changes.lumina_youtube_trigger && changes.lumina_youtube_trigger.newValue) {
-        handleYouTubeTrigger(changes.lumina_youtube_trigger.newValue);
+      if (changes.nexus_youtube_trigger && changes.nexus_youtube_trigger.newValue) {
+        handleYouTubeTrigger(changes.nexus_youtube_trigger.newValue);
       }
-      if (changes.lumina_sparks) {
+      if (changes.nexus_sparks) {
         if (typeof sidebarSparksRenderList === "function") {
           sidebarSparksRenderList();
         }
@@ -38873,7 +38931,7 @@ ${fileContexts}`;
         };
         console.log("[Spotlight YT] Pinning to active tab:", activeTab.id);
         toggleWebSourcePin(currentBrowserTab, true, activeTab.id);
-        chrome.storage.local.remove("lumina_youtube_trigger");
+        chrome.storage.local.remove("nexus_youtube_trigger");
       } else {
         console.warn("[Spotlight YT] Could not find any corresponding YouTube tab.");
       }
@@ -38946,14 +39004,14 @@ ${fileContexts}`;
       const modelObj = activeTab.selectedModel;
       const compositeKey = modelObj ? modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model : "";
       const modelParams = advParams[compositeKey] || advParams[modelObj?.model] || {};
-      const defaultThinking = modelObj ? window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId) : "none";
+      const defaultThinking = modelObj ? window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId) : "none";
       activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
     }
     activeTab.sparkId = meta.sparkId || null;
     if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = activeTab.sparkId;
     try {
-      const res = await chrome.storage.local.get(["lumina_session_settings"]);
-      const settings = res.lumina_session_settings || {};
+      const res = await chrome.storage.local.get(["nexus_session_settings"]);
+      const settings = res.nexus_session_settings || {};
       if (!settings[sidKey]) settings[sidKey] = {};
       if (activeTab.selectedModel) {
         settings[sidKey].selectedModel = activeTab.selectedModel;
@@ -38961,7 +39019,7 @@ ${fileContexts}`;
       if (activeTab.thinkingLevel) {
         settings[sidKey].thinkingLevel = activeTab.thinkingLevel;
       }
-      await chrome.storage.local.set({ lumina_session_settings: settings });
+      await chrome.storage.local.set({ nexus_session_settings: settings });
       sessionSettings = settings;
     } catch (e) {
       console.error("Failed to sync session settings", e);
@@ -39006,18 +39064,18 @@ ${fileContexts}`;
         updateTopbarSparkTitle();
       }
       syncTabUI(activeTab, false, true);
-      if (window.LuminaAnnotation) {
-        LuminaAnnotation.clearAllHighlights();
+      if (window.NexusAnnotation) {
+        NexusAnnotation.clearAllHighlights();
         const pTab = tabs2[activeTabIndex2];
-        if (pTab) LuminaAnnotation.loadHighlights(pTab.id);
+        if (pTab) NexusAnnotation.loadHighlights(pTab.id);
       }
       if (targetIndex !== null && messages && messages[targetIndex]) {
         setTimeout(() => {
-          const targetNode = activeTab.historyEl.querySelector(`.lumina-chat-question[data-message-index="${targetIndex}"]`);
+          const targetNode = activeTab.historyEl.querySelector(`.nexus-chat-question[data-message-index="${targetIndex}"]`);
           if (targetNode) {
-            const targetEntry = targetNode.closest(".lumina-entry");
+            const targetEntry = targetNode.closest(".nexus-entry");
             if (targetEntry) {
-              const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(targetEntry, activeTab.historyEl);
+              const targetScrollTop = NexusChatUI.calculateInitialScrollTarget(targetEntry, activeTab.historyEl);
               const maxScroll = Math.max(0, activeTab.historyEl.scrollHeight - activeTab.historyEl.clientHeight);
               const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScroll));
               activeTab.historyEl.scrollTo({
@@ -39050,14 +39108,14 @@ ${fileContexts}`;
             }
             activeTab.historyEl.__processingPromises = null;
           }
-          const entries = activeTab.historyEl.querySelectorAll(".lumina-entry");
+          const entries = activeTab.historyEl.querySelectorAll(".nexus-entry");
           if (entries.length > 0) {
             const latestEntry = entries[entries.length - 1];
-            if (activeTab.chatUIInstance && typeof activeTab.chatUIInstance.clearEntryMargins === "function") {
-              activeTab.chatUIInstance.clearEntryMargins(latestEntry);
+            if (activeTab.chatUIInstance && typeof activeTab.chatUIInstance.updateEntryMinHeight === "function") {
+              activeTab.chatUIInstance.updateEntryMinHeight(latestEntry);
               activeTab.chatUIInstance.adjustEntryMargin(latestEntry, "immediate");
             }
-            const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(latestEntry, activeTab.historyEl);
+            const targetScrollTop = NexusChatUI.calculateInitialScrollTarget(latestEntry, activeTab.historyEl);
             activeTab.historyEl.scrollTop = targetScrollTop;
             activeTab.scrollTop = targetScrollTop;
           } else {
@@ -39088,7 +39146,7 @@ ${fileContexts}`;
     }
     let sessionMeta = null;
     if (sessionId) {
-      sessionMeta = await LuminaChatDB.getSession(sessionId);
+      sessionMeta = await NexusChatDB.getSession(sessionId);
     }
     const isPinned2 = sessionMeta?.pinned || false;
     const isArchived = sessionMeta?.archived || false;
@@ -39124,7 +39182,7 @@ ${fileContexts}`;
     };
     dropdown.querySelector("#dropdown-pin-btn")?.addEventListener("click", async () => {
       if (!sessionId) return;
-      const session = await LuminaChatDB.getSession(sessionId);
+      const session = await NexusChatDB.getSession(sessionId);
       if (session) {
         const currentlyPinned = !!session.pinned;
         if (!currentlyPinned) {
@@ -39152,11 +39210,11 @@ ${fileContexts}`;
           session.pinned = false;
         }
         session.updatedAt = Date.now();
-        await LuminaChatDB.putSession(session);
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        await NexusChatDB.putSession(session);
+        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
         });
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         if (session.isRenamed) {
           const currentActiveTab = tabs2[targetIdx];
@@ -39175,11 +39233,11 @@ ${fileContexts}`;
       if (isArchived2) {
         sessionMeta.archived = false;
         sessionMeta.updatedAt = Date.now();
-        await LuminaChatDB.putSession(sessionMeta);
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        await NexusChatDB.putSession(sessionMeta);
+        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
         });
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         renderRecentChatsSidebar();
       } else {
@@ -39201,11 +39259,11 @@ ${fileContexts}`;
           }
           sessionMeta.archived = true;
           sessionMeta.updatedAt = Date.now();
-          await LuminaChatDB.putSession(sessionMeta);
-          chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+          await NexusChatDB.putSession(sessionMeta);
+          chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
           });
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           renderRecentChatsSidebar();
         }
@@ -39257,7 +39315,7 @@ ${text}`);
         }
         fullText = blocks.join("\n\n---\n\n");
       } else {
-        const session = await LuminaChatDB.getSession(sessionId);
+        const session = await NexusChatDB.getSession(sessionId);
         if (session && session.questions && session.questions.length > 0) {
           fullText = session.questions.map((q) => {
             let text = `User:
@@ -39277,16 +39335,16 @@ ${selectedAns.text}`;
         }
       }
       if (!fullText) {
-        if (typeof LuminaToast !== "undefined") LuminaToast.show("No chat content to copy.", "info");
+        if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to copy.", "info");
         hide();
         return;
       }
       try {
         await navigator.clipboard.writeText(fullText);
-        if (typeof LuminaToast !== "undefined") LuminaToast.show("Copied entire chat to clipboard!", "success");
+        if (typeof NexusToast !== "undefined") NexusToast.show("Copied entire chat to clipboard!", "success");
       } catch (err) {
         console.error("Failed to copy chat:", err);
-        if (typeof LuminaToast !== "undefined") LuminaToast.show("Failed to copy chat.", "error");
+        if (typeof NexusToast !== "undefined") NexusToast.show("Failed to copy chat.", "error");
       }
       hide();
     });
@@ -39309,14 +39367,14 @@ ${selectedAns.text}`;
       hide();
     });
     dropdown.querySelector("#dropdown-continue-btn")?.addEventListener("click", () => {
-      let url = chrome.runtime.getURL("pages/lumina/lumina.html");
+      let url = chrome.runtime.getURL("pages/nexus/nexus.html");
       if (sessionId) url += `?session_id=${sessionId}`;
       chrome.tabs.create({ url });
       hide();
     });
     dropdown.querySelector("#dropdown-settings-btn")?.addEventListener("click", () => {
-      if (typeof LuminaSettingsModal !== "undefined") {
-        LuminaSettingsModal.show();
+      if (typeof NexusSettingsModal !== "undefined") {
+        NexusSettingsModal.show();
       } else {
         chrome.runtime.openOptionsPage();
       }
@@ -39339,7 +39397,7 @@ ${selectedAns.text}`;
     btn.dataset.initializedModelSelector = "true";
     const render = (data) => {
       const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-      const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
+      const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
       const activeTab = tabs2[activeTabIndex2];
       let currentModel = activeTab?.selectedModel?.model;
       let currentProviderId = activeTab?.selectedModel?.providerId;
@@ -39378,8 +39436,8 @@ ${selectedAns.text}`;
       chain.forEach((item) => {
         const el = document.createElement("button");
         const isActive = item.model === currentModel && item.providerId === currentProviderId;
-        el.className = `lumina-model-item${isActive ? " active" : ""}`;
-        const temp = document.getElementById("lumina-modelItemTemplate");
+        el.className = `nexus-model-item${isActive ? " active" : ""}`;
+        const temp = document.getElementById("nexus-modelItemTemplate");
         const clone = temp.content.cloneNode(true);
         clone.querySelector(".model-name").textContent = item.displayName || item.model;
         clone.querySelector(".model-id").style.display = "none";
@@ -39388,7 +39446,7 @@ ${selectedAns.text}`;
           e.stopPropagation();
           if (label) label.textContent = item.displayName || item.model;
           dropdown.classList.remove("active");
-          dropdown.querySelectorAll(".lumina-model-item").forEach((b) => b.classList.remove("active"));
+          dropdown.querySelectorAll(".nexus-model-item").forEach((b) => b.classList.remove("active"));
           el.classList.add("active");
           const currentActiveTab = tabs2[activeTabIndex2];
           const tabsToUpdate = [currentActiveTab];
@@ -39404,14 +39462,14 @@ ${selectedAns.text}`;
           });
           if (currentActiveTab) {
             const sidKey = currentActiveTab.sessionId || "null";
-            chrome.storage.local.get(["lumina_session_settings", "advancedParamsByModel"], (res) => {
-              const settings = res.lumina_session_settings || {};
+            chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
+              const settings = res.nexus_session_settings || {};
               if (!settings[sidKey]) settings[sidKey] = {};
               settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
               const advancedParamsByModel2 = res.advancedParamsByModel || {};
               const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
               const modelParams = item.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !item.providerId ? advancedParamsByModel2[item.model] || {} : {};
-              const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
+              const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
               const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
               tabsToUpdate.forEach((tab) => {
                 tab.thinkingLevel = newThinkingLevel;
@@ -39424,9 +39482,9 @@ ${selectedAns.text}`;
                   sharedInputUI2.thinkingLevel = newThinkingLevel;
                 }
               });
-              chrome.storage.local.set({ lumina_session_settings: settings }, () => {
-                if (typeof window.LuminaChatHistory?.updateSessionModelAndThinking === "function" && currentActiveTab?.sessionId) {
-                  window.LuminaChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, { model: item.model, providerId: item.providerId }, newThinkingLevel);
+              chrome.storage.local.set({ nexus_session_settings: settings }, () => {
+                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && currentActiveTab?.sessionId) {
+                  window.NexusChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, { model: item.model, providerId: item.providerId }, newThinkingLevel);
                 }
                 tabsToUpdate.forEach((tab) => {
                   if (sharedInputUI2 && typeof sharedInputUI2.refreshReasoningSelector === "function") {
@@ -39447,10 +39505,10 @@ ${selectedAns.text}`;
         dropdown.appendChild(el);
       });
       const divider = document.createElement("div");
-      divider.className = "lumina-model-divider";
+      divider.className = "nexus-model-divider";
       dropdown.appendChild(divider);
       const thinkingItem = document.createElement("div");
-      thinkingItem.className = "lumina-model-item lumina-thinking-parent-item";
+      thinkingItem.className = "nexus-model-item nexus-thinking-parent-item";
       thinkingItem.style.position = "relative";
       thinkingItem.style.display = "flex";
       thinkingItem.style.alignItems = "center";
@@ -39467,19 +39525,19 @@ ${selectedAns.text}`;
       thinkingItem.innerHTML = `
             <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
                 <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
-                <span style="font-size:11px; color:var(--lumina-text-secondary);">${titleMap[currentLevel] || "None"}</span>
+                <span style="font-size:11px; color:var(--nexus-text-secondary);">${titleMap[currentLevel] || "None"}</span>
             </div>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
         `;
       const submenu = document.createElement("div");
-      submenu.className = "lumina-thinking-submenu";
-      const options = window.LuminaModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
+      submenu.className = "nexus-thinking-submenu";
+      const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
       options.forEach((opt) => {
         const optEl = document.createElement("button");
         const isActive = currentLevel === opt.value;
-        optEl.className = `lumina-thinking-opt-item ${isActive ? "active" : ""}`;
+        optEl.className = `nexus-thinking-opt-item ${isActive ? "active" : ""}`;
         const checkmarkIcon = isActive ? `
-                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--lumina-primary);">
+                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--nexus-primary);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </span>
             ` : `
@@ -39489,7 +39547,7 @@ ${selectedAns.text}`;
                 ${checkmarkIcon}
                 <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
                     <span class="reasoning-title" style="font-size:13px; font-weight:500;">${opt.title}</span>
-                    <span class="reasoning-desc" style="font-size:11px; color:var(--lumina-text-secondary);">${opt.desc}</span>
+                    <span class="reasoning-desc" style="font-size:11px; color:var(--nexus-text-secondary);">${opt.desc}</span>
                 </div>
             `;
         optEl.onclick = (e) => {
@@ -39508,13 +39566,13 @@ ${selectedAns.text}`;
           });
           if (currentActiveTab) {
             const sidKey = currentActiveTab.sessionId || "null";
-            chrome.storage.local.get(["lumina_session_settings", "advancedParamsByModel"], (res) => {
-              const settings = res.lumina_session_settings || {};
+            chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
+              const settings = res.nexus_session_settings || {};
               if (!settings[sidKey]) settings[sidKey] = {};
               settings[sidKey].thinkingLevel = opt.value;
-              chrome.storage.local.set({ lumina_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                if (typeof window.LuminaChatHistory?.updateSessionModelAndThinking === "function" && currentActiveTab?.sessionId) {
-                  window.LuminaChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, void 0, opt.value);
+              chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
+                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && currentActiveTab?.sessionId) {
+                  window.NexusChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, void 0, opt.value);
                 }
                 tabsToUpdate.forEach((tab) => {
                   if (sharedInputUI2 && typeof sharedInputUI2.refreshSystemTokens === "function") {
@@ -39537,13 +39595,13 @@ ${selectedAns.text}`;
     const fetchAndRender = () => {
       const activeTab = tabs2[activeTabIndex2];
       const sidKey = activeTab?.sessionId || "null";
-      chrome.storage.local.get(["providers", "models", "lastUsedModel", "lumina_session_settings", "advancedParamsByModel"], async (data) => {
+      chrome.storage.local.get(["providers", "models", "lastUsedModel", "nexus_session_settings", "advancedParamsByModel"], async (data) => {
         if (typeof window.getPromptApiSupport === "function") {
           data.promptSupport = await window.getPromptApiSupport();
         } else {
           data.promptSupport = { supported: false, status: "no", reason: "Prompt API not loaded" };
         }
-        const settings = data.lumina_session_settings || {};
+        const settings = data.nexus_session_settings || {};
         const saved = settings[sidKey] || {};
         if (activeTab && !activeTab.selectedModel && saved.selectedModel) {
           activeTab.selectedModel = { ...saved.selectedModel };
@@ -39554,7 +39612,7 @@ ${selectedAns.text}`;
             const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
             const advancedParamsByModel2 = data.advancedParamsByModel || {};
             const modelParams = modelObj.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !modelObj.providerId ? advancedParamsByModel2[modelObj.model] || {} : {};
-            const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
+            const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
             activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
           }
         }
@@ -39585,8 +39643,22 @@ ${selectedAns.text}`;
     fetchAndRender();
   }
   function updateTopbarSparkTitle() {
-    const selectorEl = document.getElementById("topbar-model-selector");
-    if (selectorEl) selectorEl.style.display = "block";
+    const topbar = document.getElementById("nexus-topbar");
+    if (!topbar) return;
+    const activeTab = typeof tabs2 !== "undefined" && typeof activeTabIndex2 !== "undefined" ? tabs2[activeTabIndex2] : null;
+    let titleEl = topbar.querySelector(".topbar-spark-title");
+    if (activeTab && activeTab.sparkId && sparksCache[activeTab.sparkId]) {
+      const spark = sparksCache[activeTab.sparkId];
+      if (!titleEl) {
+        titleEl = document.createElement("span");
+        titleEl.className = "topbar-spark-title";
+        topbar.appendChild(titleEl);
+      }
+      titleEl.textContent = spark.name || "";
+      titleEl.style.display = "block";
+    } else if (titleEl) {
+      titleEl.style.display = "none";
+    }
   }
   window.updateTopbarSparkTitle = updateTopbarSparkTitle;
   function updateInputPlaceholder() {
@@ -39609,7 +39681,7 @@ ${selectedAns.text}`;
     const loginBtn = document.getElementById("sidebar-login-btn");
     if (isAuthenticated && user) {
       try {
-        localStorage.setItem("lumina_cached_user", JSON.stringify({ name: user.name, picture: user.picture }));
+        localStorage.setItem("nexus_cached_user", JSON.stringify({ name: user.name, picture: user.picture }));
       } catch (e) {
       }
       if (profileEl) {
@@ -39628,7 +39700,7 @@ ${selectedAns.text}`;
       }
     } else {
       try {
-        localStorage.removeItem("lumina_cached_user");
+        localStorage.removeItem("nexus_cached_user");
       } catch (e) {
       }
       if (profileEl) profileEl.style.display = "none";
@@ -39639,8 +39711,8 @@ ${selectedAns.text}`;
             loginBtn.disabled = true;
             const textEl = loginBtn.querySelector(".gsi-material-button-contents");
             if (textEl) textEl.textContent = "Signing in...";
-            if (typeof LuminaAuth !== "undefined" && typeof LuminaAuth.login === "function") {
-              await LuminaAuth.login();
+            if (typeof NexusAuth !== "undefined" && typeof NexusAuth.login === "function") {
+              await NexusAuth.login();
             }
           } catch (e) {
             console.error("Sign in failed:", e);
@@ -39652,13 +39724,13 @@ ${selectedAns.text}`;
         };
       }
     }
-    if (isAuthenticated && lastSyncEl && typeof LuminaSync !== "undefined") {
+    if (isAuthenticated && lastSyncEl && typeof NexusSync !== "undefined") {
       const updateSyncDisplay = (status, lastSyncTime) => {
         if (lastSyncTime) {
           const timeStr = new Date(lastSyncTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           lastSyncEl.textContent = `Last synced: ${timeStr}`;
         } else {
-          LuminaSync.getLastSyncTime().then((time) => {
+          NexusSync.getLastSyncTime().then((time) => {
             if (time && time !== "Never") {
               const parsedDate = new Date(time);
               const timeStr = isNaN(parsedDate.getTime()) ? time : parsedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -39672,9 +39744,9 @@ ${selectedAns.text}`;
         }
       };
       updateSyncDisplay();
-      if (!window.__luminaUserLastSyncListenerBound) {
-        window.__luminaUserLastSyncListenerBound = true;
-        LuminaSync.addListener((status, lastSync) => {
+      if (!window.__nexusUserLastSyncListenerBound) {
+        window.__nexusUserLastSyncListenerBound = true;
+        NexusSync.addListener((status, lastSync) => {
           updateSyncDisplay(status, lastSync);
           if (status === "Synced just now" || status === "Synced" || lastSync) {
             if (typeof renderRecentChatsSidebar === "function") {
@@ -39695,16 +39767,16 @@ ${selectedAns.text}`;
       }
     }
   }
-  if (typeof LuminaAuth !== "undefined") {
-    LuminaAuth.addListener(updateSidebarUserProfile);
-    updateSidebarUserProfile(LuminaAuth.isAuthenticated, LuminaAuth.user);
+  if (typeof NexusAuth !== "undefined") {
+    NexusAuth.addListener(updateSidebarUserProfile);
+    updateSidebarUserProfile(NexusAuth.isAuthenticated, NexusAuth.user);
   }
   function getDynamicWelcomeTitle() {
     const now = /* @__PURE__ */ new Date();
     const hour = now.getHours();
     let nameSuffix = "";
-    if (typeof LuminaAuth !== "undefined" && LuminaAuth.isAuthenticated && LuminaAuth.user && LuminaAuth.user.name) {
-      const fullName = LuminaAuth.user.name;
+    if (typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated && NexusAuth.user && NexusAuth.user.name) {
+      const fullName = NexusAuth.user.name;
       if (fullName) {
         nameSuffix = `, ${fullName}`;
       }
@@ -39776,7 +39848,7 @@ ${selectedAns.text}`;
     if (!menuContainer) return;
     const targetTab = typeof tabs2 !== "undefined" && typeof activeTabIndex2 !== "undefined" && activeTabIndex2 >= 0 ? tabs2[activeTabIndex2] : null;
     const historyEl = targetTab ? targetTab.historyEl : document.getElementById("chat-history");
-    const hasEntries = historyEl && historyEl.querySelector(".lumina-entry, .lumina-translation-card, .lumina-chat-question, .lumina-chat-answer") !== null;
+    const hasEntries = historyEl && historyEl.querySelector(".nexus-entry, .nexus-translation-card, .nexus-chat-question, .nexus-chat-answer") !== null;
     const hasActiveSession = !!(targetTab && targetTab.sessionId && (hasEntries || targetTab.isHistoryLoaded));
     menuContainer.style.display = hasActiveSession ? "" : "none";
   }
@@ -39792,15 +39864,15 @@ ${selectedAns.text}`;
       return;
     }
     const isSpark = targetTab && targetTab.sparkId;
-    const hasEntries = historyEl.querySelector(".lumina-entry, .lumina-translation-card, .lumina-chat-question, .lumina-chat-answer") !== null;
-    const chatContainer = layout.querySelector(".lumina-chat-container");
+    const hasEntries = historyEl.querySelector(".nexus-entry, .nexus-translation-card, .nexus-chat-question, .nexus-chat-answer") !== null;
+    const chatContainer = layout.querySelector(".nexus-chat-container");
     if (!chatContainer) return;
-    let welcomeEl = chatContainer.querySelector(".lumina-homepage-welcome");
+    let welcomeEl = chatContainer.querySelector(".nexus-homepage-welcome");
     if (!hasEntries && !isSpark) {
       layout.classList.add("new-chat-homepage");
       if (!welcomeEl) {
         welcomeEl = document.createElement("div");
-        welcomeEl.className = "lumina-homepage-welcome";
+        welcomeEl.className = "nexus-homepage-welcome";
         welcomeEl.innerHTML = `<div class="welcome-title">${escapeHtml4(getDynamicWelcomeTitle())}</div>`;
         if (historyEl && historyEl.parentNode === chatContainer) {
           chatContainer.insertBefore(welcomeEl, historyEl);
@@ -39827,8 +39899,8 @@ ${selectedAns.text}`;
     if (typeof resetChat2 === "function") window.resetChat = resetChat2;
     if (typeof renderRecentChatsSidebar === "function") window.renderRecentChatsSidebar = renderRecentChatsSidebar;
   }
-  if (typeof LuminaSync !== "undefined") {
-    LuminaSync.addListener((status) => {
+  if (typeof NexusSync !== "undefined") {
+    NexusSync.addListener((status) => {
       const wrapper = document.getElementById("user-avatar-wrapper");
       if (wrapper) {
         wrapper.classList.toggle("is-syncing", status === "Syncing...");
@@ -39837,7 +39909,7 @@ ${selectedAns.text}`;
   }
   if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((request) => {
-      if (request.action === "lumina_sync_status") {
+      if (request.action === "nexus_sync_status") {
         const wrapper = document.getElementById("user-avatar-wrapper");
         if (wrapper) {
           if (request.status === "syncing") {
@@ -39848,11 +39920,11 @@ ${selectedAns.text}`;
             }, 400);
           }
         }
-        if (typeof LuminaSync !== "undefined") {
+        if (typeof NexusSync !== "undefined") {
           if (request.status === "done") {
-            LuminaSync.notifyListeners("Synced just now", request.timestamp);
+            NexusSync.notifyListeners("Synced just now", request.timestamp);
           } else if (request.status === "failure") {
-            LuminaSync.notifyListeners("Sync failure", null);
+            NexusSync.notifyListeners("Sync failure", null);
           }
         }
       }
@@ -39866,8 +39938,8 @@ ${selectedAns.text}`;
       const awayDuration = now - lastTabActiveTime;
       lastTabActiveTime = now;
       if (awayDuration >= IDLE_SYNC_THRESHOLD_MS) {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaAuth !== "undefined" && LuminaAuth.isAuthenticated) {
-          LuminaSync.checkAutoSync(false);
+        if (typeof NexusSync !== "undefined" && typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated) {
+          NexusSync.checkAutoSync(false);
         }
       }
     } else {
@@ -39879,27 +39951,27 @@ ${selectedAns.text}`;
   window.showCustomPopup = function({ title, body, isInput = false, defaultValue = "", placeholder = "", confirmLabel = "Confirm", isDanger = false }) {
     return new Promise((resolve) => {
       const overlay = document.createElement("div");
-      overlay.className = "lumina-custom-popup-overlay";
+      overlay.className = "nexus-custom-popup-overlay";
       let inputHtml = "";
       if (isInput) {
-        inputHtml = `<input type="text" class="lumina-custom-popup-input" placeholder="${placeholder}" value="${defaultValue.replace(/"/g, "&quot;")}">`;
+        inputHtml = `<input type="text" class="nexus-custom-popup-input" placeholder="${placeholder}" value="${defaultValue.replace(/"/g, "&quot;")}">`;
       }
-      const primaryBtnClass = isDanger ? "lumina-custom-popup-btn-danger" : "lumina-custom-popup-btn-primary";
-      const bodyHtml = body ? `<div class="lumina-custom-popup-body">${body}</div>` : "";
+      const primaryBtnClass = isDanger ? "nexus-custom-popup-btn-danger" : "nexus-custom-popup-btn-primary";
+      const bodyHtml = body ? `<div class="nexus-custom-popup-body">${body}</div>` : "";
       overlay.innerHTML = `
-            <div class="lumina-custom-popup-box">
-                <h3 class="lumina-custom-popup-title">${title}</h3>
+            <div class="nexus-custom-popup-box">
+                <h3 class="nexus-custom-popup-title">${title}</h3>
                 ${bodyHtml}
                 ${inputHtml}
-                <div class="lumina-custom-popup-actions">
-                    <button class="lumina-custom-popup-btn btn-cancel">Cancel</button>
-                    <button class="lumina-custom-popup-btn ${primaryBtnClass} btn-confirm">${confirmLabel}</button>
+                <div class="nexus-custom-popup-actions">
+                    <button class="nexus-custom-popup-btn btn-cancel">Cancel</button>
+                    <button class="nexus-custom-popup-btn ${primaryBtnClass} btn-confirm">${confirmLabel}</button>
                 </div>
             </div>
         `;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add("active"));
-      const inputEl = overlay.querySelector(".lumina-custom-popup-input");
+      const inputEl = overlay.querySelector(".nexus-custom-popup-input");
       if (inputEl) {
         inputEl.focus();
         inputEl.select();
@@ -39966,14 +40038,14 @@ ${selectedAns.text}`;
           if (typeof renderTabs2 === "function") renderTabs2();
         }
         const tryWriteTitle = async (attemptsLeft) => {
-          const session = await LuminaChatDB.getSession(sessionId);
+          const session = await NexusChatDB.getSession(sessionId);
           console.log("[AutoNaming] tryWriteTitle check:", { sessionId, sessionExists: !!session, attemptsLeft });
           if (session) {
             session.title = cleanTitle;
             session.autoNamed = true;
-            await LuminaChatDB.putSession(session);
+            await NexusChatDB.putSession(session);
             console.log("[AutoNaming] Successfully wrote title to DB for:", sessionId);
-            chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+            chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
             });
           } else if (attemptsLeft > 0) {
             setTimeout(() => tryWriteTitle(attemptsLeft - 1), 400);
@@ -40002,7 +40074,7 @@ ${selectedAns.text}`;
       if (!titleText) return;
       if (!sidebarTooltipEl) {
         sidebarTooltipEl = document.createElement("div");
-        sidebarTooltipEl.className = "lumina-sidebar-tooltip";
+        sidebarTooltipEl.className = "nexus-sidebar-tooltip";
         document.body.appendChild(sidebarTooltipEl);
       }
       sidebarTooltipEl.textContent = titleText;
@@ -40029,7 +40101,7 @@ ${selectedAns.text}`;
         hideSidebarTooltip(e);
       }
     });
-    window.LuminaCanvas = {
+    window.NexusCanvas = {
       currentDoc: {
         name: "",
         type: "",
@@ -40037,7 +40109,7 @@ ${selectedAns.text}`;
         comments: []
       },
       handleStream(text) {
-        const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-create>|$)/i;
+        const createRegex = /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-create>|$)/i;
         const createMatch = text.match(createRegex);
         if (createMatch) {
           const name = createMatch[1];
@@ -40047,7 +40119,7 @@ ${selectedAns.text}`;
           this.setDocument(name, type, content);
           return;
         }
-        const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/lumina-canvas-update>|$)/i;
+        const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-update>|$)/i;
         const updateMatch = text.match(updateRegex);
         if (updateMatch) {
           const name = updateMatch[1];
@@ -40062,7 +40134,7 @@ ${selectedAns.text}`;
         }
       },
       handleDone(text) {
-        const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/lumina-canvas-update>/gi;
+        const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi;
         let match;
         while ((match = updateRegex.exec(text)) !== null) {
           const name = match[1];
@@ -40090,13 +40162,13 @@ ${selectedAns.text}`;
         this.currentDoc.name = name;
         this.currentDoc.type = type;
         this.currentDoc.content = content;
-        const titleInput = document.getElementById("lumina-canvas-title");
-        const typeBadge = document.getElementById("lumina-canvas-type-badge");
-        const editorTextarea = document.getElementById("lumina-canvas-editor");
-        const documentView = document.getElementById("lumina-canvas-document");
-        const codeTabBtn = document.getElementById("lumina-canvas-tab-code");
-        const previewTabBtn = document.getElementById("lumina-canvas-tab-preview");
-        const container2 = document.querySelector(".lumina-canvas-container");
+        const titleInput = document.getElementById("nexus-canvas-title");
+        const typeBadge = document.getElementById("nexus-canvas-type-badge");
+        const editorTextarea = document.getElementById("nexus-canvas-editor");
+        const documentView = document.getElementById("nexus-canvas-document");
+        const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
+        const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
+        const container2 = document.querySelector(".nexus-canvas-container");
         if (titleInput) titleInput.value = name;
         if (typeBadge) {
           typeBadge.textContent = type.replace("code/", "").toUpperCase();
@@ -40155,16 +40227,16 @@ ${selectedAns.text}`;
             const regex = new RegExp(pattern, "g");
             newContent = currentContent.replace(regex, replacement);
           } catch (e) {
-            console.error("[Lumina Canvas] Regex error:", e);
+            console.error("[Nexus Canvas] Regex error:", e);
           }
         }
         this.currentDoc.content = newContent;
-        const editorTextarea = document.getElementById("lumina-canvas-editor");
+        const editorTextarea = document.getElementById("nexus-canvas-editor");
         if (editorTextarea) {
           editorTextarea.value = newContent;
         }
         this.syncHighlighting(newContent);
-        const documentView = document.getElementById("lumina-canvas-document");
+        const documentView = document.getElementById("nexus-canvas-document");
         if (documentView && this.currentDoc.type === "document") {
           window.ensureMarkedLoaded().then(() => {
             if (typeof marked !== "undefined") {
@@ -40181,7 +40253,7 @@ ${selectedAns.text}`;
         }
       },
       updatePreview() {
-        const previewFrame = document.getElementById("lumina-canvas-preview-frame");
+        const previewFrame = document.getElementById("nexus-canvas-preview-frame");
         if (!previewFrame) return;
         let content = this.currentDoc.content;
         if (this.currentDoc.type === "code/react") {
@@ -40214,15 +40286,15 @@ ${selectedAns.text}`;
           doc.write(content);
           doc.close();
         } catch (e) {
-          console.error("[Lumina Canvas] Preview injection error:", e);
+          console.error("[Nexus Canvas] Preview injection error:", e);
         }
       },
       switchTab(tabId) {
-        const codeTabBtn = document.getElementById("lumina-canvas-tab-code");
-        const previewTabBtn = document.getElementById("lumina-canvas-tab-preview");
-        const codePanel = document.getElementById("lumina-canvas-code-panel");
-        const documentPanel = document.getElementById("lumina-canvas-document-panel");
-        const previewPanel = document.getElementById("lumina-canvas-preview-panel");
+        const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
+        const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
+        const codePanel = document.getElementById("nexus-canvas-code-panel");
+        const documentPanel = document.getElementById("nexus-canvas-document-panel");
+        const previewPanel = document.getElementById("nexus-canvas-preview-panel");
         if (codePanel) codePanel.classList.remove("active");
         if (documentPanel) documentPanel.classList.remove("active");
         if (previewPanel) previewPanel.classList.remove("active");
@@ -40235,7 +40307,7 @@ ${selectedAns.text}`;
           if (previewTabBtn) previewTabBtn.classList.add("active");
           if (this.currentDoc.type === "document") {
             if (documentPanel) documentPanel.classList.add("active");
-            const documentView = document.getElementById("lumina-canvas-document");
+            const documentView = document.getElementById("nexus-canvas-document");
             if (documentView) {
               window.ensureMarkedLoaded().then(() => {
                 if (typeof marked !== "undefined") {
@@ -40254,7 +40326,7 @@ ${selectedAns.text}`;
         }
       },
       syncHighlighting(code) {
-        const codeEl = document.getElementById("lumina-canvas-highlight-code");
+        const codeEl = document.getElementById("nexus-canvas-highlight-code");
         if (codeEl) {
           const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
           codeEl.innerHTML = escaped.endsWith("\n") ? escaped + " " : escaped;
@@ -40269,29 +40341,29 @@ ${selectedAns.text}`;
         }
       },
       init() {
-        const closeBtn = document.getElementById("lumina-canvas-btn-close");
+        const closeBtn = document.getElementById("nexus-canvas-btn-close");
         if (closeBtn) {
           closeBtn.onclick = () => this.hideCanvas();
         }
-        const codeTabBtn = document.getElementById("lumina-canvas-tab-code");
+        const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
         if (codeTabBtn) {
           codeTabBtn.onclick = () => this.switchTab("code");
         }
-        const previewTabBtn = document.getElementById("lumina-canvas-tab-preview");
+        const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
         if (previewTabBtn) {
           previewTabBtn.onclick = () => this.switchTab("preview");
         }
         const saveLocalDoc = () => {
           const activeTab = tabs2[activeTabIndex2];
           const sessionId = activeTab ? activeTab.sessionId : "global";
-          const key = `lumina-canvas-${sessionId}-${this.currentDoc.name}`;
+          const key = `nexus-canvas-${sessionId}-${this.currentDoc.name}`;
           localStorage.setItem(key, JSON.stringify({
             name: this.currentDoc.name,
             type: this.currentDoc.type,
             content: this.currentDoc.content
           }));
         };
-        const titleInput = document.getElementById("lumina-canvas-title");
+        const titleInput = document.getElementById("nexus-canvas-title");
         if (titleInput) {
           titleInput.oninput = () => {
             const oldName = this.currentDoc.name;
@@ -40299,12 +40371,12 @@ ${selectedAns.text}`;
             this.currentDoc.name = newName;
             const activeTab = tabs2[activeTabIndex2];
             const sessionId = activeTab ? activeTab.sessionId : "global";
-            localStorage.removeItem(`lumina-canvas-${sessionId}-${oldName}`);
+            localStorage.removeItem(`nexus-canvas-${sessionId}-${oldName}`);
             saveLocalDoc();
           };
         }
-        const textarea = document.getElementById("lumina-canvas-editor");
-        const pre = document.getElementById("lumina-canvas-highlight-block");
+        const textarea = document.getElementById("nexus-canvas-editor");
+        const pre = document.getElementById("nexus-canvas-highlight-block");
         if (textarea && pre) {
           textarea.onscroll = () => {
             pre.scrollTop = textarea.scrollTop;
@@ -40320,11 +40392,11 @@ ${selectedAns.text}`;
         }
       },
       loadVersionFromCard(card) {
-        const cardTitle = card.querySelector(".lumina-canvas-card-title")?.textContent || "";
+        const cardTitle = card.querySelector(".nexus-canvas-card-title")?.textContent || "";
         if (!cardTitle) return;
         const activeTab = tabs2[activeTabIndex2];
         const sessionId = activeTab ? activeTab.sessionId : "global";
-        const localSaved = localStorage.getItem(`lumina-canvas-${sessionId}-${cardTitle}`);
+        const localSaved = localStorage.getItem(`nexus-canvas-${sessionId}-${cardTitle}`);
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
@@ -40332,18 +40404,18 @@ ${selectedAns.text}`;
             this.setDocument(parsed.name, parsed.type, parsed.content);
             return;
           } catch (e) {
-            console.error("[Lumina Canvas] Error loading local saved doc:", e);
+            console.error("[Nexus Canvas] Error loading local saved doc:", e);
           }
         }
         const chatHistory = document.getElementById("chat-history") || document.getElementById("chat-history-secondary");
         if (!chatHistory) return;
-        const allAnswers = Array.from(chatHistory.querySelectorAll(".lumina-chat-answer"));
+        const allAnswers = Array.from(chatHistory.querySelectorAll(".nexus-chat-answer"));
         let docName = "";
         let docType = "";
         let docContent = "";
         allAnswers.forEach((ans) => {
           const rawText = ans.getAttribute("data-raw-text") || "";
-          const createRegex = /<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/lumina-canvas-create>/gi;
+          const createRegex = /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/nexus-canvas-create>/gi;
           let createMatch;
           while ((createMatch = createRegex.exec(rawText)) !== null) {
             if (createMatch[1] === cardTitle) {
@@ -40352,7 +40424,7 @@ ${selectedAns.text}`;
               docContent = createMatch[3];
             }
           }
-          const updateRegex = /<lumina-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/lumina-canvas-update>/gi;
+          const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi;
           let updateMatch;
           while ((updateMatch = updateRegex.exec(rawText)) !== null) {
             if (updateMatch[1] === cardTitle) {
@@ -40370,7 +40442,7 @@ ${selectedAns.text}`;
                     const regex = new RegExp(pattern, "g");
                     docContent = docContent.replace(regex, replacement);
                   } catch (e) {
-                    console.error("[Lumina Canvas] Regex history parse error:", e);
+                    console.error("[Nexus Canvas] Regex history parse error:", e);
                   }
                 }
               }
@@ -40383,37 +40455,37 @@ ${selectedAns.text}`;
         }
       }
     };
-    window.LuminaCanvas.init();
+    window.NexusCanvas.init();
     document.addEventListener("click", (e) => {
-      const card = e.target.closest(".lumina-canvas-card");
+      const card = e.target.closest(".nexus-canvas-card");
       if (card) {
         const paneSec = document.getElementById("pane-secondary");
         const isActive = paneSec && paneSec.classList.contains("canvas-active") && isSplitMode;
         if (isActive) {
-          const currentTitleInput = document.getElementById("lumina-canvas-title");
-          const cardTitle = card.querySelector(".lumina-canvas-card-title")?.textContent || "";
+          const currentTitleInput = document.getElementById("nexus-canvas-title");
+          const cardTitle = card.querySelector(".nexus-canvas-card-title")?.textContent || "";
           if (currentTitleInput && currentTitleInput.value === cardTitle) {
-            window.LuminaCanvas.hideCanvas();
+            window.NexusCanvas.hideCanvas();
             return;
           }
         }
-        window.LuminaCanvas.loadVersionFromCard(card);
+        window.NexusCanvas.loadVersionFromCard(card);
       }
     });
     let currentGeminiLiveClient = null;
     function initGeminiLiveModal2() {
-      const modal = document.getElementById("lumina-live-modal");
+      const modal = document.getElementById("nexus-live-modal");
       if (!modal) return;
       modal.style.display = "flex";
       const statusDot = modal.querySelector(".live-status-dot");
-      const statusText = document.getElementById("lumina-live-status-text");
-      const closeBtn = document.getElementById("lumina-live-close-btn");
-      const micBtn = document.getElementById("lumina-live-mic-toggle");
-      const visionBtn = document.getElementById("lumina-live-vision-toggle");
-      const endBtn = document.getElementById("lumina-live-end-btn");
-      const voiceSelect = document.getElementById("lumina-live-voice-select");
-      const transcriptBox = document.getElementById("lumina-live-transcript-box");
-      const sphere = document.getElementById("lumina-live-sphere");
+      const statusText = document.getElementById("nexus-live-status-text");
+      const closeBtn = document.getElementById("nexus-live-close-btn");
+      const micBtn = document.getElementById("nexus-live-mic-toggle");
+      const visionBtn = document.getElementById("nexus-live-vision-toggle");
+      const endBtn = document.getElementById("nexus-live-end-btn");
+      const voiceSelect = document.getElementById("nexus-live-voice-select");
+      const transcriptBox = document.getElementById("nexus-live-transcript-box");
+      const sphere = document.getElementById("nexus-live-sphere");
       if (transcriptBox) {
         transcriptBox.innerHTML = '<div class="transcript-placeholder">Start talking to Gemini Live...</div>';
       }
@@ -40436,7 +40508,7 @@ ${selectedAns.text}`;
         if (!apiKey) {
           alert("Vui l\xF2ng c\xE0i \u0111\u1EB7t Gemini API Key trong Settings tr\u01B0\u1EDBc khi s\u1EED d\u1EE5ng Gemini Live!");
           modal.style.display = "none";
-          if (typeof LuminaSettingsModal !== "undefined") LuminaSettingsModal.show();
+          if (typeof NexusSettingsModal !== "undefined") NexusSettingsModal.show();
           return;
         }
         const selectedVoice = voiceSelect ? voiceSelect.value : "Puck";
@@ -40528,8 +40600,8 @@ ${selectedAns.text}`;
           }
         };
       }
-      const textForm = document.getElementById("lumina-live-text-form");
-      const textInput = document.getElementById("lumina-live-text-input");
+      const textForm = document.getElementById("nexus-live-text-form");
+      const textInput = document.getElementById("nexus-live-text-input");
       if (textForm && textInput) {
         textForm.onsubmit = (e) => {
           e.preventDefault();
@@ -40552,180 +40624,6 @@ ${selectedAns.text}`;
       }
     }
     window.initGeminiLiveModal = initGeminiLiveModal2;
-    let luminaNotesPanelInstance2 = null;
-    let luminaTTSPanelInstance2 = null;
-    const LuminaViewManager3 = {
-      currentView: "chat",
-      views: {
-        chat: {
-          onOpen: () => {
-            document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-            document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-            document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-          }
-        },
-        notes: {
-          onOpen: (params) => {
-            document.getElementById("sidebar-notes-btn")?.classList.add("active");
-            document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-            document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-            document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-            document.querySelectorAll(".sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
-            if (!luminaNotesPanelInstance2 && typeof NotesPanel !== "undefined") {
-              luminaNotesPanelInstance2 = new NotesPanel();
-            }
-            if (luminaNotesPanelInstance2) {
-              luminaNotesPanelInstance2.init(params?.noteId, params?.colId);
-            }
-          }
-        },
-        tts: {
-          onOpen: (params) => {
-            document.getElementById("sidebar-tts-btn")?.classList.add("active");
-            document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-            document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-            document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-            document.querySelectorAll(".sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
-            if (!luminaTTSPanelInstance2 && typeof TTSPanel !== "undefined") {
-              luminaTTSPanelInstance2 = new TTSPanel();
-            }
-            if (luminaTTSPanelInstance2 && typeof luminaTTSPanelInstance2.init === "function") {
-              luminaTTSPanelInstance2.init(params?.recordingId);
-            }
-          }
-        },
-        sparks: {
-          onOpen: (params) => {
-            document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-            document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-            document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-            document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-            if (params && params.sparkId && typeof window.sparksLoadSpark === "function") {
-              window.sparksLoadSpark(params.sparkId);
-            }
-          }
-        }
-      },
-      switchView(targetView, params = {}) {
-        if (!this.views[targetView]) return;
-        this.currentView = targetView;
-        const initStyle = document.getElementById("view-init-style");
-        if (initStyle) initStyle.remove();
-        const mainContent = document.querySelector(".lumina-main-content");
-        if (mainContent) {
-          mainContent.setAttribute("data-active-view", targetView);
-        }
-        if (targetView === "tts") {
-          document.title = "TTS Studio";
-        } else if (targetView === "notes") {
-          document.title = "Notes";
-        } else if (targetView === "sparks") {
-          document.title = "Sparks";
-        } else {
-          document.title = "Lumina";
-        }
-        this.updateUrl(targetView, params);
-        if (this.views[targetView].onOpen) {
-          this.views[targetView].onOpen(params);
-        }
-      },
-      updateUrl(viewName, params = {}) {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (viewName === "notes") {
-          urlParams.delete("sid");
-          urlParams.delete("sparkId");
-          urlParams.delete("recordingId");
-          urlParams.set("view", "notes");
-          if (params.noteId) {
-            urlParams.set("noteId", params.noteId);
-          } else {
-            urlParams.delete("noteId");
-          }
-          if (params.colId && params.colId !== "all") {
-            urlParams.set("colId", params.colId);
-          } else {
-            urlParams.delete("colId");
-          }
-        } else if (viewName === "sparks") {
-          urlParams.delete("sid");
-          urlParams.delete("noteId");
-          urlParams.delete("colId");
-          urlParams.delete("recordingId");
-          urlParams.set("view", "sparks");
-          if (params.sparkId) {
-            urlParams.set("sparkId", params.sparkId);
-          } else {
-            urlParams.delete("sparkId");
-          }
-        } else if (viewName === "tts") {
-          urlParams.delete("sid");
-          urlParams.delete("noteId");
-          urlParams.delete("colId");
-          urlParams.delete("sparkId");
-          urlParams.set("view", "tts");
-          if (params.recordingId) {
-            urlParams.set("recordingId", params.recordingId);
-          } else {
-            urlParams.delete("recordingId");
-          }
-        } else {
-          urlParams.delete("view");
-          urlParams.delete("noteId");
-          urlParams.delete("colId");
-          urlParams.delete("sparkId");
-          urlParams.delete("recordingId");
-          const primaryTab = typeof tabs2 !== "undefined" && typeof activeTabIndex2 !== "undefined" ? tabs2[activeTabIndex2] : null;
-          const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : "");
-          if (sidVal) {
-            urlParams.set("sid", sidVal);
-          } else {
-            urlParams.delete("sid");
-          }
-        }
-        const newUrl = window.location.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
-        window.history.pushState({ view: viewName, ...params }, "", newUrl);
-      }
-    };
-    function updateNotesUrl2(noteId, colId) {
-      LuminaViewManager3.updateUrl("notes", { noteId, colId });
-    }
-    function notesOpenPage2(noteIdToLoad, colIdToLoad) {
-      LuminaViewManager3.switchView("notes", { noteId: noteIdToLoad, colId: colIdToLoad });
-    }
-    function notesClosePage2() {
-      LuminaViewManager3.switchView("chat");
-    }
-    function sparksOpenPage3(sparkId) {
-      LuminaViewManager3.switchView("sparks", { sparkId });
-    }
-    function sparksClosePage4() {
-      LuminaViewManager3.switchView("chat");
-    }
-    function ttsOpenPage2() {
-      LuminaViewManager3.switchView("tts");
-    }
-    function ttsClosePage2() {
-      LuminaViewManager3.switchView("chat");
-    }
-    window.LuminaViewManager = LuminaViewManager3;
-    window.updateNotesUrl = updateNotesUrl2;
-    window.notesOpenPage = notesOpenPage2;
-    window.notesClosePage = notesClosePage2;
-    window.sparksOpenPage = sparksOpenPage3;
-    window.sparksClosePage = sparksClosePage4;
-    window.ttsOpenPage = ttsOpenPage2;
-    window.ttsClosePage = ttsClosePage2;
-    document.addEventListener("DOMContentLoaded", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const view = urlParams.get("view");
-      if (view === "notes") {
-        LuminaViewManager3.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
-      } else if (view === "sparks") {
-        LuminaViewManager3.switchView("sparks", { sparkId: urlParams.get("sparkId") });
-      } else if (view === "tts") {
-        LuminaViewManager3.switchView("tts", { recordingId: urlParams.get("recordingId") });
-      }
-    });
   })();
 
   // src/core/auth/sync_debugger.js
@@ -40740,13 +40638,13 @@ ${selectedAns.text}`;
     };
     const allLocal = await chrome.storage.local.get(null);
     for (const [k, v] of Object.entries(allLocal)) {
-      if (isExcludedKey(k) || k.startsWith("lumina_session_")) continue;
+      if (isExcludedKey(k) || k.startsWith("nexus_session_")) continue;
       const size = JSON.stringify(v).length;
       stats.storage[k] = { size, preview: JSON.stringify(v).slice(0, 80) };
     }
-    if (typeof LuminaChatDB !== "undefined") {
+    if (typeof NexusChatDB !== "undefined") {
       try {
-        const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+        const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
         const sessionList = Object.values(sessions).filter((s) => s && !s.isDeleted);
         stats.chats.sessionCount = sessionList.length;
         stats.chats.sessions = sessionList.map((s) => ({
@@ -40769,9 +40667,9 @@ ${selectedAns.text}`;
         stats.notes.error = e.message;
       }
     }
-    if (typeof LuminaAnnotationDB !== "undefined") {
+    if (typeof NexusAnnotationDB !== "undefined") {
       try {
-        const highlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+        const highlights = await NexusAnnotationDB.getAll().catch(() => ({}));
         stats.highlights.urlCount = Object.keys(highlights).filter((k) => k.startsWith("highlights_")).length;
       } catch (e) {
         stats.highlights.error = e.message;
@@ -40785,9 +40683,9 @@ ${selectedAns.text}`;
         stats.tts.error = e.message;
       }
     }
-    if (typeof LuminaAttachmentDB !== "undefined") {
+    if (typeof NexusAttachmentDB !== "undefined") {
       try {
-        const meta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
+        const meta = await NexusAttachmentDB.getAllMetadata().catch(() => []);
         stats.attachments.count = meta.length;
       } catch (e) {
         stats.attachments.error = e.message;
@@ -40805,7 +40703,7 @@ ${selectedAns.text}`;
       attachments: { count: 0 },
       driveFiles: []
     };
-    const { token: activeToken, remoteFile, fileId, driveFiles } = await LuminaSync2.getOrFindBackupFile(token, true);
+    const { token: activeToken, remoteFile, fileId, driveFiles } = await NexusSync2.getOrFindBackupFile(token, true);
     stats.driveFiles = (driveFiles || []).map((f) => ({
       name: f.name,
       size: f.size,
@@ -40822,10 +40720,10 @@ ${selectedAns.text}`;
       size: parseInt(remoteFile.size || 0),
       modifiedTime: remoteFile.modifiedTime
     };
-    const backup = await LuminaSync2.downloadBackup(activeToken, fileId);
+    const backup = await NexusSync2.downloadBackup(activeToken, fileId);
     if (!backup || !backup.data) return { stats, activeToken };
     const data = backup.data;
-    const cloudSessions = data.lumina_chat_sessions || {};
+    const cloudSessions = data.nexus_chat_sessions || {};
     const activeCloudSessions = Object.values(cloudSessions).filter((s) => s && !s.isDeleted);
     stats.chats.sessionCount = activeCloudSessions.length;
     stats.chats.sessions = activeCloudSessions.map((s) => ({
@@ -40834,12 +40732,12 @@ ${selectedAns.text}`;
       updatedAt: s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "?",
       messageCount: s.messageCount || "?"
     }));
-    const cloudNotes = data.lumina_notes_items || [];
-    const cloudCols = data.lumina_notes_collections || [];
+    const cloudNotes = data.nexus_notes_items || [];
+    const cloudCols = data.nexus_notes_collections || [];
     stats.notes.notesCount = cloudNotes.filter((n) => n && !n.isDeleted).length;
     stats.notes.collectionsCount = cloudCols.length;
     stats.highlights.urlCount = Object.keys(data).filter((k) => k.startsWith("highlights_")).length;
-    const cloudTts = data.lumina_tts_recordings || [];
+    const cloudTts = data.nexus_tts_recordings || [];
     stats.tts.recordingsCount = cloudTts.filter((r) => r && !r.isDeleted).length;
     const attFiles = (driveFiles || []).filter((f) => f.name.startsWith("att_") && f.name.endsWith(".bin"));
     stats.attachments.count = attFiles.length;
@@ -40859,7 +40757,7 @@ ${selectedAns.text}`;
     return { onlyLocal, onlyCloud, inBoth };
   }
   async function debugSync() {
-    console.group("%c\u{1F50D} LUMINA SYNC DEBUGGER", "color: #a78bfa; font-weight: bold; font-size: 15px;");
+    console.group("%c\u{1F50D} NEXUS SYNC DEBUGGER", "color: #a78bfa; font-weight: bold; font-size: 15px;");
     console.log("%cGathering local data...", "color: #6ee7b7");
     let localStats;
     try {
@@ -40877,11 +40775,11 @@ ${selectedAns.text}`;
       "drive_backup_file_id",
       "google_user_info"
     ]);
-    const isAuthenticated = typeof LuminaAuth !== "undefined" ? LuminaAuth.isAuthenticated : !!syncStorageData.google_user_info;
+    const isAuthenticated = typeof NexusAuth !== "undefined" ? NexusAuth.isAuthenticated : !!syncStorageData.google_user_info;
     let token = null;
     if (isAuthenticated) {
       try {
-        token = await LuminaSync2.getToken(false);
+        token = await NexusSync2.getToken(false);
       } catch (e) {
         console.warn("[SyncDebug] Could not get token:", e.message);
       }
@@ -40980,7 +40878,7 @@ ${selectedAns.text}`;
       "Sessions in both": chatDiff.inBoth.length
     });
     if (!isMd5Match) {
-      console.warn("%c\u{1F449} MD5 mismatch detected. Run LuminaSync.syncData() or force push/pull to fix.", "color: #f87171");
+      console.warn("%c\u{1F449} MD5 mismatch detected. Run NexusSync.syncData() or force push/pull to fix.", "color: #f87171");
     } else if (chatDiff.onlyLocal.length === 0 && chatDiff.onlyCloud.length === 0) {
       console.log("%c\u2705 Everything looks in sync!", "color: #6ee7b7; font-weight: bold");
     }

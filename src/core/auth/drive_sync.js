@@ -1,11 +1,11 @@
 import { compressData, decompressData, sha256Hash, isExcludedKey } from './crypto_utils.js';
-import { LuminaAuth, AuthService } from './google_auth.js';
+import { NexusAuth, AuthService } from './google_auth.js';
 
 export class SyncManager {
     _isPageContext() {
         return typeof window !== 'undefined';
     }
-    _delegateSyncToBackground(action = 'lumina_drive_sync', params = {}) {
+    _delegateSyncToBackground(action = 'nexus_drive_sync', params = {}) {
         this.notifyListeners('Syncing...', null);
         const wrapper = (typeof document !== 'undefined') ? document.getElementById('user-avatar-wrapper') : null;
         if (wrapper) wrapper.classList.add('is-syncing');
@@ -35,7 +35,7 @@ export class SyncManager {
     }
     constructor(authService) {
         this.authService = authService || new AuthService();
-        this.FILENAME = 'lumina_backup.json';
+        this.FILENAME = 'nexus_backup.json';
         this.listeners = [];
         this.isSyncing = false;
 
@@ -59,14 +59,14 @@ export class SyncManager {
                 const keys = Object.keys(changes);
                 const excludedKeys = [
                     'google_oauth_token', 'google_oauth_token_time',
-                    'google_user_info', 'lumina_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size', 'last_cloud_stats',
+                    'google_user_info', 'nexus_cached_user', 'last_sync_time', 'last_sync_hash', 'last_sync_md5', 'last_sync_size', 'last_cloud_stats',
                     'drive_uploaded_blobs', 'drive_backup_file_id',
                     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
                     'sidepanel_active_tab_index', 'sidepanel_active_group_index',
-                    'lumina_active_tab_index', 'lumina_active_group_index'
+                    'nexus_active_tab_index', 'nexus_active_group_index'
                 ];
                 const hasSettingsKeys = keys.some(k =>
-                    !k.startsWith('lumina_session_') &&
+                    !k.startsWith('nexus_session_') &&
                     !k.startsWith('google_') &&
                     !excludedKeys.includes(k)
                 );
@@ -81,7 +81,7 @@ export class SyncManager {
         if (!this.authService.isAuthenticated) return;
         if (this._isPageContext()) {
             try {
-                chrome.runtime.sendMessage({ action: 'lumina_drive_sync_debounced', delayMs }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_drive_sync_debounced', delayMs }).catch(() => {});
             } catch (e) {}
             return;
         }
@@ -102,7 +102,7 @@ export class SyncManager {
     async checkAutoSync(forceCheck = false) {
         if (!this.authService.isAuthenticated) return;
         if (this._isPageContext()) {
-            await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true });
+            await this._delegateSyncToBackground('nexus_drive_sync', { isAuto: true });
             return;
         }
         try {
@@ -122,12 +122,12 @@ export class SyncManager {
     }
 
     async syncUp(isAuto = false) {
-        if (this._isPageContext()) return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: false, forcePush: true });
+        if (this._isPageContext()) return await this._delegateSyncToBackground('nexus_drive_sync', { isAuto: false, forcePush: true });
         return await this.pushToCloud();
     }
 
     async syncDown() {
-        if (this._isPageContext()) return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true, forcePull: true });
+        if (this._isPageContext()) return await this._delegateSyncToBackground('nexus_drive_sync', { isAuto: true, forcePull: true });
         return await this.pullFromCloud(true);
     }
 
@@ -265,7 +265,7 @@ export class SyncManager {
             }
         }
 
-        const backupFiles = (driveFiles || []).filter(f => f.name === this.FILENAME);
+        const backupFiles = (driveFiles || []).filter(f => f.name === this.FILENAME || f.name === 'lumina_backup.json');
         if (backupFiles.length === 0) {
             this.cachedBackupFileId = null;
             await chrome.storage.local.remove(['drive_backup_file_id']).catch(() => {});
@@ -292,10 +292,10 @@ export class SyncManager {
 
         if (typeof NotesManager !== 'undefined') {
             try {
-                localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === 'function'
+                localData.nexus_notes_collections = typeof NotesManager.getAllCollectionsRaw === 'function'
                     ? await NotesManager.getAllCollectionsRaw()
                     : await NotesManager.getCollections(true);
-                localData.lumina_notes_items = typeof NotesManager.getAllNotesRaw === 'function'
+                localData.nexus_notes_items = typeof NotesManager.getAllNotesRaw === 'function'
                     ? await NotesManager.getAllNotesRaw()
                     : await NotesManager.getNotes(null, true);
             } catch (err) {
@@ -308,7 +308,7 @@ export class SyncManager {
                 const recordings = typeof TTSDB.getAllRecordingsRaw === 'function'
                     ? await TTSDB.getAllRecordingsRaw()
                     : await TTSDB.getAllRecordings(true);
-                localData.lumina_tts_recordings = recordings.map(rec => {
+                localData.nexus_tts_recordings = recordings.map(rec => {
                     const { audioBlob, ...meta } = rec;
                     return meta;
                 });
@@ -317,30 +317,30 @@ export class SyncManager {
             }
         }
 
-        if (typeof LuminaAnnotationDB !== 'undefined') {
+        if (typeof NexusAnnotationDB !== 'undefined') {
             try {
-                const highlights = await LuminaAnnotationDB.getAll();
+                const highlights = await NexusAnnotationDB.getAll();
                 Object.assign(localData, highlights);
             } catch (err) {
                 console.error('[Sync] Failed to load highlights from IndexedDB:', err);
             }
         }
 
-        if (typeof LuminaChatDB !== 'undefined') {
+        if (typeof NexusChatDB !== 'undefined') {
             try {
-                const sessions = typeof LuminaChatDB.getAllSessionsRaw === 'function'
-                    ? await LuminaChatDB.getAllSessionsRaw()
-                    : await LuminaChatDB.getAllSessions(true);
+                const sessions = typeof NexusChatDB.getAllSessionsRaw === 'function'
+                    ? await NexusChatDB.getAllSessionsRaw()
+                    : await NexusChatDB.getAllSessions(true);
                 const sessionsObj = {};
                 for (const s of Object.values(sessions)) {
                     if (s && s.id) {
                         sessionsObj[s.id] = s;
                         if (!s.isDeleted) {
-                            localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
+                            localData[`nexus_session_${s.id}`] = await NexusChatDB.getMessages(s.id).catch(() => []);
                         }
                     }
                 }
-                localData.lumina_chat_sessions = sessionsObj;
+                localData.nexus_chat_sessions = sessionsObj;
             } catch (err) {
                 console.error('[Sync] Failed to load chats from IndexedDB:', err);
             }
@@ -351,13 +351,13 @@ export class SyncManager {
 
     async pullFromCloud(force = false) {
         if (this._isPageContext()) {
-            return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: true, forcePull: force });
+            return await this._delegateSyncToBackground('nexus_drive_sync', { isAuto: true, forcePull: force });
         }
         if (this.isSyncing) return;
         this.isSyncing = true;
         this.notifyListeners('Syncing...', null);
         try {
-            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
+            try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
             const initialToken = await this.getToken(!force);
             if (!initialToken) throw new Error('Not authenticated');
 
@@ -366,13 +366,13 @@ export class SyncManager {
 
             if (!remoteFile || !fileId) {
                 this.notifyListeners('No cloud data', null);
-                try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
+                try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
                 return null;
             }
 
             if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
-                const localSessionData = typeof LuminaChatDB !== 'undefined'
-                    ? await LuminaChatDB.getAllSessions().catch(() => ({}))
+                const localSessionData = typeof NexusChatDB !== 'undefined'
+                    ? await NexusChatDB.getAllSessions().catch(() => ({}))
                     : {};
                 const localSessionCount = Object.values(localSessionData).filter(s => s && !s.isDeleted).length;
                 const lastCloudStats = (await chrome.storage.local.get(['last_cloud_stats'])).last_cloud_stats;
@@ -380,7 +380,7 @@ export class SyncManager {
                 if (localSessionCount >= cloudSessionCount) {
                     const now = Date.now();
                     this.notifyListeners('Synced just now', now);
-                    try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
+                    try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
                     return now;
                 }
             }
@@ -389,7 +389,7 @@ export class SyncManager {
 
             if (!remoteBackup || !remoteBackup.data) {
                 this.notifyListeners('No cloud data', null);
-                try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
+                try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'done', timestamp: Date.now() }).catch(() => {}); } catch (e) {}
                 return null;
             }
 
@@ -400,7 +400,7 @@ export class SyncManager {
             const keysToRemove = [];
             for (const key of Object.keys(currentLocal)) {
                 if (isExcludedKey(key)) continue;
-                if (key.startsWith('lumina_session_') || key === 'lumina_chat_sessions') continue;
+                if (key.startsWith('nexus_session_') || key === 'nexus_chat_sessions') continue;
                 if (key.startsWith('highlights_')) continue;
                 if (!(key in remoteData)) {
                     keysToRemove.push(key);
@@ -413,48 +413,56 @@ export class SyncManager {
             const storageToSet = {};
             for (const [k, v] of Object.entries(remoteData)) {
                 if (isExcludedKey(k)) continue;
-                if (k.startsWith('lumina_session_') || k === 'lumina_chat_sessions') continue;
+                if (k.startsWith('nexus_session_') || k.startsWith('lumina_session_') || k === 'nexus_chat_sessions' || k === 'lumina_chat_sessions') continue;
                 if (k.startsWith('highlights_')) continue;
                 storageToSet[k] = v;
+                if (k === 'sparks' || k === 'lumina_sparks') {
+                    storageToSet.nexus_sparks = v;
+                }
+            }
+            if (remoteData.sparks || remoteData.lumina_sparks) {
+                storageToSet.nexus_sparks = remoteData.nexus_sparks || remoteData.lumina_sparks || remoteData.sparks;
             }
             if (Object.keys(storageToSet).length > 0) {
                 await chrome.storage.local.set(storageToSet);
             }
 
-            if (typeof LuminaAnnotationDB !== 'undefined') {
-                const currentHighlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+            if (typeof NexusAnnotationDB !== 'undefined') {
+                const currentHighlights = await NexusAnnotationDB.getAll().catch(() => ({}));
                 for (const key of Object.keys(currentHighlights)) {
                     if (!(key in remoteData)) {
-                        await LuminaAnnotationDB.delete(key).catch(() => {});
+                        await NexusAnnotationDB.delete(key).catch(() => {});
                     }
                 }
                 for (const [k, v] of Object.entries(remoteData)) {
                     if (k.startsWith('highlights_')) {
-                        await LuminaAnnotationDB.put(k, v).catch(() => {});
+                        await NexusAnnotationDB.put(k, v).catch(() => {});
                     }
                 }
             }
 
-            const remoteSessions = remoteData.lumina_chat_sessions || {};
+            const remoteSessions = remoteData.nexus_chat_sessions || remoteData.lumina_chat_sessions || {};
             const activeAttachmentIds = new Set();
+            const cloudUpdatedSessionIds = [];
 
-            if (typeof LuminaChatDB !== 'undefined') {
+            if (typeof NexusChatDB !== 'undefined') {
                 try {
-                    const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+                    const currentSessions = await NexusChatDB.getAllSessions().catch(() => ({}));
                     for (const s of Object.values(currentSessions)) {
                         if (s && s.id && !remoteSessions[s.id]) {
-                            await LuminaChatDB.deleteSession(s.id).catch(() => {});
+                            await NexusChatDB.deleteSession(s.id).catch(() => {});
                         }
                     }
                     for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
-                        await LuminaChatDB.putSession(sessionMeta).catch(() => {});
+                        await NexusChatDB.putSession(sessionMeta).catch(() => {});
                         if (sessionMeta && sessionMeta.isDeleted) {
-                            await LuminaChatDB.deleteSession(sid).catch(() => {});
+                            await NexusChatDB.deleteSession(sid).catch(() => {});
                         } else {
-                            const sessionKey = `lumina_session_${sid}`;
-                            const messages = remoteData[sessionKey];
+                            const sessionKey = `nexus_session_${sid}`;
+                            const messages = remoteData[sessionKey] || remoteData[`lumina_session_${sid}`];
                             if (Array.isArray(messages)) {
-                                await LuminaChatDB.putMessages(sid, messages).catch(() => {});
+                                await NexusChatDB.putMessages(sid, messages).catch(() => {});
+                                cloudUpdatedSessionIds.push(sid);
                                 for (const msg of messages) {
                                     if (msg && Array.isArray(msg.images)) {
                                         for (const img of msg.images) {
@@ -474,8 +482,8 @@ export class SyncManager {
 
             if (typeof NotesManager !== 'undefined') {
                 try {
-                    const remoteCollections = remoteData.lumina_notes_collections;
-                    const remoteNotes = remoteData.lumina_notes_items;
+                    const remoteCollections = remoteData.nexus_notes_collections || remoteData.lumina_notes_collections;
+                    const remoteNotes = remoteData.nexus_notes_items || remoteData.lumina_notes_items;
                     const db = await NotesManager.getDB();
 
                     if (Array.isArray(remoteCollections)) {
@@ -514,9 +522,10 @@ export class SyncManager {
 
             const activeTtsRecMap = new Map();
             let ttsUpdated = false;
-            if (typeof TTSDB !== 'undefined' && Array.isArray(remoteData.lumina_tts_recordings)) {
+            const remoteTtsList = remoteData.nexus_tts_recordings || remoteData.lumina_tts_recordings;
+            if (typeof TTSDB !== 'undefined' && Array.isArray(remoteTtsList)) {
                 try {
-                    const remoteRecs = remoteData.lumina_tts_recordings;
+                    const remoteRecs = remoteTtsList;
                     const remoteRecIds = new Set(remoteRecs.map(r => r && r.id).filter(Boolean));
                     const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
                     const currentMap = new Map(currentRecs.map(r => [r.id, r]));
@@ -550,18 +559,18 @@ export class SyncManager {
             }
             const driveFileMap = new Map((actualDriveFiles || []).map(f => [f.name, f]));
 
-            if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.init) {
-                const db = await LuminaAttachmentDB.init();
+            if (typeof NexusAttachmentDB !== 'undefined' && NexusAttachmentDB.init) {
+                const db = await NexusAttachmentDB.init();
                 for (const [filename, fileObj] of driveFileMap.entries()) {
                     if (filename.startsWith('att_') && filename.endsWith('.bin')) {
                         const key = filename.slice(4, -4);
                         if (activeAttachmentIds.has(key)) {
-                            const exists = await LuminaAttachmentDB.get(key).catch(() => null);
+                            const exists = await NexusAttachmentDB.get(key).catch(() => null);
                             if (!exists) {
                                 try {
                                     const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
                                     if (downloadedBlob) {
-                                        await LuminaAttachmentDB.put(key, downloadedBlob);
+                                        await NexusAttachmentDB.put(key, downloadedBlob);
                                     }
                                 } catch (err) {
                                     console.warn(`[Sync] Failed to download attachment ${key}:`, err);
@@ -572,10 +581,10 @@ export class SyncManager {
                 }
 
                 try {
-                    const metadata = await LuminaAttachmentDB.getAllMetadata();
+                    const metadata = await NexusAttachmentDB.getAllMetadata();
                     for (const item of metadata) {
                         if (!activeAttachmentIds.has(item.key)) {
-                            await LuminaAttachmentDB.delete(item.key);
+                            await NexusAttachmentDB.delete(item.key);
                         }
                     }
                 } catch (cleanupErr) {}
@@ -610,10 +619,10 @@ export class SyncManager {
             const now = Date.now();
             const cloudStats = {
                 chatsCount: Object.values(remoteSessions).filter(s => s && !s.isDeleted).length,
-                notesCount: Array.isArray(remoteData.lumina_notes_items) ? remoteData.lumina_notes_items.filter(n => n && !n.isDeleted).length : 0,
-                collectionsCount: Array.isArray(remoteData.lumina_notes_collections) ? remoteData.lumina_notes_collections.length : 0,
+                notesCount: Array.isArray(remoteData.nexus_notes_items) ? remoteData.nexus_notes_items.filter(n => n && !n.isDeleted).length : 0,
+                collectionsCount: Array.isArray(remoteData.nexus_notes_collections) ? remoteData.nexus_notes_collections.length : 0,
                 highlightsCount: Object.keys(remoteData).filter(k => k.startsWith('highlights_')).length,
-                ttsCount: Array.isArray(remoteData.lumina_tts_recordings) ? remoteData.lumina_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
+                ttsCount: Array.isArray(remoteData.nexus_tts_recordings) ? remoteData.nexus_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
                 attachmentsCount: activeAttachmentIds.size
             };
             await chrome.storage.local.set({
@@ -625,13 +634,18 @@ export class SyncManager {
             if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
 
             try {
-                chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
-                chrome.runtime.sendMessage({ action: 'lumina_notes_updated' }).catch(() => {});
-                chrome.runtime.sendMessage({ action: 'lumina_highlights_updated' }).catch(() => {});
-                if (ttsUpdated) {
-                    chrome.runtime.sendMessage({ action: 'lumina_tts_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                if (cloudUpdatedSessionIds && cloudUpdatedSessionIds.length > 0) {
+                    for (const sid of cloudUpdatedSessionIds) {
+                        chrome.runtime.sendMessage({ action: 'nexus_session_updated', sessionId: sid, source: 'cloud_sync' }).catch(() => {});
+                    }
                 }
-                chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_notes_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_highlights_updated' }).catch(() => {});
+                if (ttsUpdated) {
+                    chrome.runtime.sendMessage({ action: 'nexus_tts_updated' }).catch(() => {});
+                }
+                chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'done', timestamp: now }).catch(() => {});
             } catch (e) {}
 
             this.notifyListeners('Synced just now', now);
@@ -639,7 +653,7 @@ export class SyncManager {
         } catch (error) {
             console.error('[Sync] pullFromCloud error:', error);
             this.notifyListeners('Sync failure', null);
-            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
+            try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
             throw error;
         } finally {
             this.isSyncing = false;
@@ -648,7 +662,7 @@ export class SyncManager {
 
     async pushToCloud() {
         if (this._isPageContext()) {
-            return await this._delegateSyncToBackground('lumina_drive_sync', { isAuto: false, forcePush: true });
+            return await this._delegateSyncToBackground('nexus_drive_sync', { isAuto: false, forcePush: true });
         }
         if (this.isSyncing) return;
         this.isSyncing = true;
@@ -660,7 +674,7 @@ export class SyncManager {
             const localData = await this.gatherLocalData();
 
             this.notifyListeners('Syncing...', null);
-            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
+            try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'syncing' }).catch(() => {}); } catch (e) {}
 
             const dataToUpload = { ...localData };
             const payload = {
@@ -699,11 +713,11 @@ export class SyncManager {
             const uploadedBlobSet = new Set(storedBlobs.drive_uploaded_blobs || []);
             let hasNewBlobs = false;
 
-            if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.init) {
-                const db = await LuminaAttachmentDB.init();
+            if (typeof NexusAttachmentDB !== 'undefined' && NexusAttachmentDB.init) {
+                const db = await NexusAttachmentDB.init();
                 const localAttachments = await new Promise((resolve) => {
-                    const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, 'readonly');
-                    const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
+                    const tx = db.transaction(NexusAttachmentDB.STORE_NAME, 'readonly');
+                    const store = tx.objectStore(NexusAttachmentDB.STORE_NAME);
                     const req = store.openCursor();
                     const map = new Map();
                     req.onsuccess = (e) => {
@@ -754,11 +768,11 @@ export class SyncManager {
 
             const now = Date.now();
             const cloudStats = {
-                chatsCount: Object.values(localData.lumina_chat_sessions || {}).filter(s => s && !s.isDeleted).length,
-                notesCount: Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items.filter(n => n && !n.isDeleted).length : 0,
-                collectionsCount: Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections.length : 0,
+                chatsCount: Object.values(localData.nexus_chat_sessions || {}).filter(s => s && !s.isDeleted).length,
+                notesCount: Array.isArray(localData.nexus_notes_items) ? localData.nexus_notes_items.filter(n => n && !n.isDeleted).length : 0,
+                collectionsCount: Array.isArray(localData.nexus_notes_collections) ? localData.nexus_notes_collections.length : 0,
                 highlightsCount: Object.keys(localData).filter(k => k.startsWith('highlights_')).length,
-                ttsCount: Array.isArray(localData.lumina_tts_recordings) ? localData.lumina_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
+                ttsCount: Array.isArray(localData.nexus_tts_recordings) ? localData.nexus_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
                 attachmentsCount: Array.from(uploadedBlobSet).filter(n => n.startsWith('att_') || n.startsWith('blob_att_')).length
             };
             await chrome.storage.local.set({
@@ -771,12 +785,12 @@ export class SyncManager {
             if (typeof globalThis !== 'undefined') globalThis._lastDriveSyncAt = now;
 
             this.notifyListeners('Synced just now', now);
-            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
+            try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'done', timestamp: now }).catch(() => {}); } catch (e) {}
             return now;
         } catch (error) {
             console.error('[Sync] pushToCloud error:', error);
             this.notifyListeners('Sync failure', null);
-            try { chrome.runtime.sendMessage({ action: 'lumina_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
+            try { chrome.runtime.sendMessage({ action: 'nexus_sync_status', status: 'failure' }).catch(() => {}); } catch (e) {}
             throw error;
         } finally {
             this.isSyncing = false;
@@ -785,7 +799,7 @@ export class SyncManager {
 
     async cleanDriveDuplicates() {
         if (this._isPageContext()) {
-            return await this._delegateSyncToBackground('lumina_clean_drive_duplicates');
+            return await this._delegateSyncToBackground('nexus_clean_drive_duplicates');
         }
         const token = await this.getToken(true);
         if (!token) return { success: false, error: 'Not authenticated' };
@@ -834,11 +848,11 @@ export class SyncManager {
         if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
 
         const activeAttachmentKeys = new Set();
-        if (typeof LuminaChatDB !== 'undefined') {
+        if (typeof NexusChatDB !== 'undefined') {
             try {
-                const sessions = await LuminaChatDB.getAllSessions(true).catch(() => ({}));
+                const sessions = await NexusChatDB.getAllSessions(true).catch(() => ({}));
                 for (const sid of Object.keys(sessions)) {
-                    const msgs = await LuminaChatDB.getMessages(sid).catch(() => []);
+                    const msgs = await NexusChatDB.getMessages(sid).catch(() => []);
                     for (const m of msgs) {
                         if (Array.isArray(m.files)) {
                             for (const f of m.files) {
@@ -901,19 +915,54 @@ export class SyncManager {
         if (!token) throw new Error('Not authenticated');
         const files = await this.listAppDataFiles(token);
         const remoteFile = files.find(f => f.name === this.FILENAME);
-        if (!remoteFile) throw new Error('lumina_backup.json not found on Google Drive');
+        if (!remoteFile) throw new Error('nexus_backup.json not found on Google Drive');
         const data = await this.downloadBackup(token, remoteFile.id);
         const jsonStr = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `lumina_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `nexus_backup_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         return data;
+    }
+
+    async purgeLegacyLuminaCloudData() {
+        if (this._isPageContext()) {
+            return await this._delegateSyncToBackground('nexus_purge_legacy_cloud');
+        }
+        const token = await this.getToken(true);
+        if (!token) throw new Error('Not authenticated');
+
+        const driveFiles = await this.listAppDataFiles(token).catch(() => []);
+        let deletedLegacyFiles = 0;
+
+        for (const file of driveFiles) {
+            if (file.name === 'lumina_backup.json' || file.name.startsWith('lumina_')) {
+                await this.deleteDriveFile(token, file.id).catch(() => {});
+                deletedLegacyFiles++;
+            }
+        }
+
+        const localAll = await chrome.storage.local.get(null);
+        const legacyKeys = Object.keys(localAll).filter(k => k.startsWith('lumina_') || k === 'sparks');
+        if (legacyKeys.length > 0) {
+            await chrome.storage.local.remove(legacyKeys);
+        }
+
+        this.cachedBackupFileId = null;
+        await chrome.storage.local.remove(['drive_backup_file_id']).catch(() => {});
+        const pushResult = await this.pushToCloud();
+
+        return {
+            success: true,
+            deletedLegacyFiles,
+            removedLegacyLocalKeys: legacyKeys.length,
+            pushResult
+        };
     }
 
     async syncData(isAuto = false) {
@@ -925,7 +974,7 @@ export class SyncManager {
     }
 }
 
-export const LuminaSync = new SyncManager(LuminaAuth);
+export const NexusSync = new SyncManager(NexusAuth);
 if (typeof window !== 'undefined') {
-    window.LuminaSync = LuminaSync;
+    window.NexusSync = NexusSync;
 }

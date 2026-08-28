@@ -1,6 +1,6 @@
 import { FreeDictParser } from '../../helpers/freedict_parser.js';
 
-export const LuminaDictionaryPopup = {
+export const NexusDictionaryPopup = {
     instance: null,
     currentWord: '',
     currentSource: 'dictionary',
@@ -42,8 +42,8 @@ export const LuminaDictionaryPopup = {
         const width = dimensions.dictPopupWidth || 420;
         const height = dimensions.dictPopupHeight || 460;
         const popup = document.createElement('div');
-        popup.id = 'lumina-dictionary-popup';
-        popup.className = 'lumina-dictionary-popup';
+        popup.id = 'nexus-dictionary-popup';
+        popup.className = 'nexus-dictionary-popup';
         let x = options.x || (window.innerWidth / 2 - width / 2);
         let y = options.y || (window.innerHeight / 2 - height / 2);
         const viewportWidth = window.innerWidth;
@@ -57,24 +57,24 @@ export const LuminaDictionaryPopup = {
         popup.style.width = `${width}px`;
         popup.style.height = `${height}px`;
         popup.innerHTML = `
-            <div class="lumina-dict-body">
-                <div class="lumina-dict-scroll-area">
-                    <div class="lumina-dict-loading-state">
-                        <div class="lumina-loading-spinner"></div>
+            <div class="nexus-dict-body">
+                <div class="nexus-dict-scroll-area">
+                    <div class="nexus-dict-loading-state">
+                        <div class="nexus-loading-spinner"></div>
                     </div>
                 </div>
             </div>
-            <div class="lumina-dict-footer" style="${this.currentSource === 'translate' ? 'display: none !important;' : ''}">
-                <div class="lumina-dict-tabs">
-                    <button class="lumina-dict-tab-btn ${this.currentSource === 'dictionary' ? 'active' : ''}" data-source="dictionary">Dictionary</button>
-                    <button class="lumina-dict-tab-btn ${this.currentSource === 'images' ? 'active' : ''}" data-source="images">Images</button>
+            <div class="nexus-dict-footer" style="${this.currentSource === 'translate' ? 'display: none !important;' : ''}">
+                <div class="nexus-dict-tabs">
+                    <button class="nexus-dict-tab-btn ${this.currentSource === 'dictionary' ? 'active' : ''}" data-source="dictionary">Dictionary</button>
+                    <button class="nexus-dict-tab-btn ${this.currentSource === 'images' ? 'active' : ''}" data-source="images">Images</button>
                 </div>
             </div>
-            <div class="lumina-dict-resizer-right"></div>
-            <div class="lumina-dict-resizer-bottom"></div>
-            <div class="lumina-dict-resizer-corner"></div>
+            <div class="nexus-dict-resizer-right"></div>
+            <div class="nexus-dict-resizer-bottom"></div>
+            <div class="nexus-dict-resizer-corner"></div>
         `;
-        const shadowHost = document.getElementById('lumina-shadow-host');
+        const shadowHost = document.getElementById('nexus-shadow-host');
         if (shadowHost && shadowHost.shadowRoot) {
             shadowHost.shadowRoot.appendChild(popup);
         } else {
@@ -86,7 +86,7 @@ export const LuminaDictionaryPopup = {
     },
     switchSource(source) {
         if (!this.instance || source === this.currentSource) return;
-        const tabs = this.instance.querySelectorAll('.lumina-dict-tab-btn');
+        const tabs = this.instance.querySelectorAll('.nexus-dict-tab-btn');
         const targetTab = Array.from(tabs).find(t => t.dataset.source === source);
         if (!targetTab) return;
         tabs.forEach(t => t.classList.remove('active'));
@@ -99,16 +99,16 @@ export const LuminaDictionaryPopup = {
     },
     setupEvents() {
         if (!this.instance) return;
-        const tabs = this.instance.querySelectorAll('.lumina-dict-tab-btn');
+        const tabs = this.instance.querySelectorAll('.nexus-dict-tab-btn');
         tabs.forEach(tab => {
             tab.onclick = () => {
                 this.isManualSelection = true;
                 this.switchSource(tab.dataset.source);
             };
         });
-        const cornerResizer = this.instance.querySelector('.lumina-dict-resizer-corner');
-        const rightResizer = this.instance.querySelector('.lumina-dict-resizer-right');
-        const bottomResizer = this.instance.querySelector('.lumina-dict-resizer-bottom');
+        const cornerResizer = this.instance.querySelector('.nexus-dict-resizer-corner');
+        const rightResizer = this.instance.querySelector('.nexus-dict-resizer-right');
+        const bottomResizer = this.instance.querySelector('.nexus-dict-resizer-bottom');
         let isResizing = false;
         let resizingMode = null;
         let startX, startY, startW, startH;
@@ -156,9 +156,9 @@ export const LuminaDictionaryPopup = {
             const path = e.composedPath();
             const isInside = path.some(el =>
                 el === this.instance ||
-                (el.id === 'lumina-dictionary-popup') ||
-                (el.id === 'lumina-shadow-host') ||
-                (el.classList && el.classList.contains && el.classList.contains('lumina-dictionary-popup'))
+                (el.id === 'nexus-dictionary-popup') ||
+                (el.id === 'nexus-shadow-host') ||
+                (el.classList && el.classList.contains && el.classList.contains('nexus-dictionary-popup'))
             );
             if (!isInside) {
                 this.hide();
@@ -182,11 +182,11 @@ export const LuminaDictionaryPopup = {
     },
     showLoading(source) {
         if (!this.instance) return;
-        const scrollArea = this.instance.querySelector('.lumina-dict-scroll-area');
+        const scrollArea = this.instance.querySelector('.nexus-dict-scroll-area');
         if (!scrollArea) return;
         scrollArea.innerHTML = `
-            <div class="lumina-dict-loading-state">
-                <div class="lumina-loading-spinner"></div>
+            <div class="nexus-dict-loading-state">
+                <div class="nexus-loading-spinner"></div>
             </div>
         `;
     },
@@ -257,7 +257,7 @@ export const LuminaDictionaryPopup = {
                 throw new Error(response?.error || 'Failed to fetch');
             }
         } catch (err) {
-            console.error(`[Lumina Dict] Error in fetchData(${source}):`, err);
+            console.error(`[Nexus Dict] Error in fetchData(${source}):`, err);
             const errMessage = String(err?.message || err || '');
             const isForbidden = /\b403\b|HTTP Status 403|Forbidden/i.test(errMessage);
             const fallbackSource = isForbidden ? this.getFallbackSource(source) : null;
@@ -266,7 +266,7 @@ export const LuminaDictionaryPopup = {
                 return;
             }
             if (source === this.currentSource) {
-                const scrollArea = this.instance.querySelector('.lumina-dict-scroll-area');
+                const scrollArea = this.instance.querySelector('.nexus-dict-scroll-area');
                 if (scrollArea) {
                     let title = "Fetch Failed";
                     let desc = err.message;
@@ -277,11 +277,11 @@ export const LuminaDictionaryPopup = {
                         icon = "🚫";
                     }
                     scrollArea.innerHTML = `
-                        <div class="lumina-dict-status-container status-error">
-                            <div class="lumina-dict-status-card">
-                                <div class="lumina-dict-status-icon">${icon}</div>
-                                <div class="lumina-dict-status-title">${title}</div>
-                                <div class="lumina-dict-status-desc">${desc}</div>
+                        <div class="nexus-dict-status-container status-error">
+                            <div class="nexus-dict-status-card">
+                                <div class="nexus-dict-status-icon">${icon}</div>
+                                <div class="nexus-dict-status-title">${title}</div>
+                                <div class="nexus-dict-status-desc">${desc}</div>
                             </div>
                         </div>
                     `;
@@ -293,13 +293,13 @@ export const LuminaDictionaryPopup = {
     },
     renderImages(images) {
         if (!this.instance) return;
-        const scrollArea = this.instance.querySelector('.lumina-dict-scroll-area');
+        const scrollArea = this.instance.querySelector('.nexus-dict-scroll-area');
         if (!images || images.length === 0) {
             scrollArea.innerHTML = `
-                <div class="lumina-dict-status-container status-empty">
-                    <div class="lumina-dict-status-card">
-                        <div class="lumina-dict-status-icon">📸</div>
-                        <div class="lumina-dict-status-title">No Results Found</div>
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">📸</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
                     </div>
                 </div>
             `;
@@ -307,19 +307,19 @@ export const LuminaDictionaryPopup = {
         }
         const displayImages = images.slice(0, 4);
         scrollArea.innerHTML = `
-            <div class="lumina-dict-images-grid">
+            <div class="nexus-dict-images-grid">
                 ${displayImages.map(img => `
-                    <div class="lumina-dict-image-card">
-                        <div class="lumina-loading-spinner"></div>
+                    <div class="nexus-dict-image-card">
+                        <div class="nexus-loading-spinner"></div>
                         <img src="${img}" loading="lazy">
                     </div>
                 `).join('')}
             </div>
         `;
-        const cards = scrollArea.querySelectorAll('.lumina-dict-image-card');
+        const cards = scrollArea.querySelectorAll('.nexus-dict-image-card');
         cards.forEach(card => {
             const img = card.querySelector('img');
-            const spinner = card.querySelector('.lumina-loading-spinner');
+            const spinner = card.querySelector('.nexus-loading-spinner');
             if (img) {
                 img.onload = () => {
                     if (spinner) spinner.style.setProperty('display', 'none', 'important');
@@ -335,7 +335,7 @@ export const LuminaDictionaryPopup = {
     },
     renderTranslation(data) {
         if (!this.instance) return;
-        const scrollArea = this.instance.querySelector('.lumina-dict-scroll-area');
+        const scrollArea = this.instance.querySelector('.nexus-dict-scroll-area');
         if (!scrollArea) return;
         const escapeHTML = (str) => {
             if (!str) return '';
@@ -352,54 +352,54 @@ export const LuminaDictionaryPopup = {
         let targetHTML = escapeHTML(data.translation || '');
         const isPreSplit = data.sentences && Array.isArray(data.sentences);
         if (isPreSplit) {
-            sourceHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || '')}</span>`).join(' ');
-            targetHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || '')}</span>`).join(' ');
+            sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || '')}</span>`).join(' ');
+            targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || '')}</span>`).join(' ');
         }
         scrollArea.innerHTML = `
-            <div class="lumina-dict-content-wrapper lumina-dict-translation-wrapper" style="padding: 12px;">
-                <div class="lumina-translation-container" style="margin: 0; width: 100%;">
-                    <div class="lumina-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ''}>
-                        <div class="lumina-translation-block" style="padding: 0 8px 0 0;">
-                            <div class="lumina-translation-source" data-copy-text="${safeOriginal}">
-                                <div class="lumina-translation-text">${sourceHTML}</div>
+            <div class="nexus-dict-content-wrapper nexus-dict-translation-wrapper" style="padding: 12px;">
+                <div class="nexus-translation-container" style="margin: 0; width: 100%;">
+                    <div class="nexus-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ''}>
+                        <div class="nexus-translation-block" style="padding: 0 8px 0 0;">
+                            <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
+                                <div class="nexus-translation-text">${sourceHTML}</div>
                             </div>
                         </div>
-                        <div class="lumina-translation-divider"></div>
-                        <div class="lumina-translation-block" style="padding: 0 0 0 8px;">
-                            <div class="lumina-translation-target" data-copy-text="${safeTranslation}">
-                                <div class="lumina-translation-text">${targetHTML}</div>
+                        <div class="nexus-translation-divider"></div>
+                        <div class="nexus-translation-block" style="padding: 0 0 0 8px;">
+                            <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
+                                <div class="nexus-translation-text">${targetHTML}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        const cardContainer = scrollArea.querySelector('.lumina-translation-card');
-        if (cardContainer && typeof LuminaChatUI !== 'undefined') {
-            LuminaChatUI._setupTranslationHighlight(cardContainer);
-            LuminaChatUI.balanceTranslationCard(cardContainer);
+        const cardContainer = scrollArea.querySelector('.nexus-translation-card');
+        if (cardContainer && typeof NexusChatUI !== 'undefined') {
+            NexusChatUI._setupTranslationHighlight(cardContainer);
+            NexusChatUI.balanceTranslationCard(cardContainer);
         }
     },
     renderData(data) {
         if (!this.instance) return;
-        const scrollArea = this.instance.querySelector('.lumina-dict-scroll-area');
+        const scrollArea = this.instance.querySelector('.nexus-dict-scroll-area');
         if (!data || !data.entries || data.entries.length === 0) {
             scrollArea.innerHTML = `
-                <div class="lumina-dict-status-container status-empty">
-                    <div class="lumina-dict-status-card">
-                        <div class="lumina-dict-status-icon">🔍</div>
-                        <div class="lumina-dict-status-title">No Results Found</div>
-                        <div class="lumina-dict-status-desc">Try checking spelling or choose another source.</div>
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">🔍</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
+                        <div class="nexus-dict-status-desc">Try checking spelling or choose another source.</div>
                     </div>
                 </div>
             `;
             return;
         }
-        scrollArea.innerHTML = `<div class="lumina-dict-content-wrapper"></div>`;
-        const wrapper = scrollArea.querySelector('.lumina-dict-content-wrapper');
+        scrollArea.innerHTML = `<div class="nexus-dict-content-wrapper"></div>`;
+        const wrapper = scrollArea.querySelector('.nexus-dict-content-wrapper');
         data.entries.forEach(entry => {
             const entryEl = document.createElement('div');
-            entryEl.className = 'lumina-dict-popup-item';
+            entryEl.className = 'nexus-dict-popup-item';
             entryEl.innerHTML = this.buildEntryHTML(entry, data.word);
             wrapper.appendChild(entryEl);
         });
@@ -434,7 +434,7 @@ export const LuminaDictionaryPopup = {
         return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
     },
     setupAudioListeners(container) {
-        const audioBtns = container.querySelectorAll('.lumina-dict-popup-audio');
+        const audioBtns = container.querySelectorAll('.nexus-dict-popup-audio');
         
         let _audioCtx = null;
         const getAudioCtx = () => {
@@ -557,55 +557,55 @@ export const LuminaDictionaryPopup = {
     buildEntryHTML(entry, word) {
         let senseMeaningIndex = 1;
         return `
-            <div class="lumina-dict-popup-meta">
-                <div class="lumina-dict-header-row">
-                    <span class="lumina-dict-popup-title">${entry.word || word}</span>
-                    ${entry.pos ? `<span class="lumina-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ''}
+            <div class="nexus-dict-popup-meta">
+                <div class="nexus-dict-header-row">
+                    <span class="nexus-dict-popup-title">${entry.word || word}</span>
+                    ${entry.pos ? `<span class="nexus-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ''}
                 </div>
-                <div class="lumina-dict-popup-prons">
+                <div class="nexus-dict-popup-prons">
                     ${(entry.uk?.ipa || entry.uk?.audio) ? `
-                        <div class="lumina-dict-pron-group uk">
-                            <span class="lumina-dict-lang">UK</span>
-                            <button class="lumina-dict-popup-audio"
+                        <div class="nexus-dict-pron-group uk">
+                            <span class="nexus-dict-lang">UK</span>
+                            <button class="nexus-dict-popup-audio"
                                 data-text="${entry.word || word}" data-lang="en-GB"
                                 ${entry.uk?.audio ? `data-url="${entry.uk.audio}"` : ''}>
                                 ${this.getSpeakerSVG()}
                             </button>
-                            ${entry.uk?.ipa ? `<span class="lumina-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, '')}/</span>` : ''}
+                            ${entry.uk?.ipa ? `<span class="nexus-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, '')}/</span>` : ''}
                         </div>
                     ` : ''}
                     ${(entry.us?.ipa || entry.us?.audio) ? `
-                        <div class="lumina-dict-pron-group us">
-                            <span class="lumina-dict-lang">US</span>
-                            <button class="lumina-dict-popup-audio"
+                        <div class="nexus-dict-pron-group us">
+                            <span class="nexus-dict-lang">US</span>
+                            <button class="nexus-dict-popup-audio"
                                 data-text="${entry.word || word}" data-lang="en-US"
                                 ${entry.us?.audio ? `data-url="${entry.us.audio}"` : ''}>
                                 ${this.getSpeakerSVG()}
                             </button>
-                            ${entry.us?.ipa ? `<span class="lumina-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, '')}/</span>` : ''}
+                            ${entry.us?.ipa ? `<span class="nexus-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, '')}/</span>` : ''}
                         </div>
                     ` : ''}
                 </div>
             </div>
-            <div class="lumina-dict-popup-senses">
+            <div class="nexus-dict-popup-senses">
                 ${(entry.senses || []).map(sense => {
                     return `
-                        <div class="lumina-dict-popup-sense">
-                            ${sense.indicator ? `<div class="lumina-dict-sense-indicator">${sense.indicator}</div>` : ''}
+                        <div class="nexus-dict-popup-sense">
+                            ${sense.indicator ? `<div class="nexus-dict-sense-indicator">${sense.indicator}</div>` : ''}
                             ${(sense.definitions || []).map(def => {
                                 const html = `
-                                    <div class="lumina-dict-popup-meaning">
-                                        <div class="lumina-dict-meaning-header">
-                                            ${sense.definitions.length > 1 ? `<span class="lumina-dict-meaning-number">${senseMeaningIndex}.</span>` : ''}
-                                            <span class="lumina-dict-meaning-text">${def.meaning}</span>
+                                    <div class="nexus-dict-popup-meaning">
+                                        <div class="nexus-dict-meaning-header">
+                                            ${sense.definitions.length > 1 ? `<span class="nexus-dict-meaning-number">${senseMeaningIndex}.</span>` : ''}
+                                            <span class="nexus-dict-meaning-text">${def.meaning}</span>
                                         </div>
                                         ${def.examples && def.examples.length > 0 ? `
-                                            <div class="lumina-dict-popup-examples">
+                                            <div class="nexus-dict-popup-examples">
                                                 ${def.examples.map(ex => {
                                                     const escaped = (entry.word || word || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                                                     const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, 'gi');
                                                     const highlighted = ex.replace(regex, '<strong>$1</strong>');
-                                                    return `<div class="lumina-dict-popup-example">${highlighted}</div>`;
+                                                    return `<div class="nexus-dict-popup-example">${highlighted}</div>`;
                                                 }).join('')}
                                             </div>
                                         ` : ''}
@@ -623,8 +623,8 @@ export const LuminaDictionaryPopup = {
 };
 
 if (typeof window !== 'undefined') {
-    window.LuminaDictionaryPopup = LuminaDictionaryPopup;
+    window.NexusDictionaryPopup = NexusDictionaryPopup;
 }
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaDictionaryPopup = LuminaDictionaryPopup;
+    globalThis.NexusDictionaryPopup = NexusDictionaryPopup;
 }

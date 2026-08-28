@@ -1,4 +1,4 @@
-export const LUMINA_DEFAULTS = {
+export const NEXUS_DEFAULTS = {
     provider: 'groq',
     groqModel: 'llama3-8b-8192',
     geminiModel: 'gemini-2.5-flash-lite',
@@ -10,7 +10,7 @@ export const LUMINA_DEFAULTS = {
     reasoningMode: false
 };
 
-export const LUMINA_PROVIDERS = {
+export const NEXUS_PROVIDERS = {
     groq: {
         link: 'https://console.groq.com/keys',
         modelsUrl: 'https://api.groq.com/openai/v1/models',
@@ -38,9 +38,9 @@ export const LUMINA_PROVIDERS = {
     }
 };
 
-export const LUMINA_DEFAULT_SHORTCUTS = {
-    luminaChat: { key: 'Space', modifiers: ['Alt'] },
-    askLumina: { key: 'L', modifiers: ['Alt'] },
+export const NEXUS_DEFAULT_SHORTCUTS = {
+    nexusChat: { key: 'Space', modifiers: ['Alt'] },
+    askNexus: { key: 'L', modifiers: ['Alt'] },
     audio: { key: 'Shift', modifiers: [] },
     translate: { key: 'T', modifiers: ['Alt'] },
     micToggle: { key: 'M', modifiers: ['Alt'] },
@@ -81,7 +81,7 @@ export const MIME_ALIASES = {
     'application/javascript': 'text/javascript', 'text/x-python-script': 'text/x-python', 'application/x-javascript': 'text/javascript'
 };
 
-export const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'lumina_web_selection_';
+export const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'nexus_web_selection_';
 
 export function isWebPageUrl(url) {
     return typeof url === 'string' && (
@@ -92,9 +92,9 @@ export function isWebPageUrl(url) {
 }
 
 if (typeof globalThis !== 'undefined') {
-    globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
-    globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
-    globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
+    globalThis.NEXUS_DEFAULTS = NEXUS_DEFAULTS;
+    globalThis.NEXUS_PROVIDERS = NEXUS_PROVIDERS;
+    globalThis.NEXUS_DEFAULT_SHORTCUTS = NEXUS_DEFAULT_SHORTCUTS;
     globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
     globalThis.MIME_ALIASES = MIME_ALIASES;
     globalThis.WEB_SOURCE_SELECTION_STORAGE_PREFIX = WEB_SOURCE_SELECTION_STORAGE_PREFIX;

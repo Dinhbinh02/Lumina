@@ -29,7 +29,7 @@ export class GeminiLiveClient {
 
     async connect() {
         if (!this.apiKey) {
-            this.onError('API Key is missing. Please set your Gemini API Key in Lumina Settings.');
+            this.onError('API Key is missing. Please set your Gemini API Key in Nexus Settings.');
             return false;
         }
 
@@ -325,7 +325,7 @@ export class GeminiLiveClient {
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#4285f4';
                 ctx.font = 'bold 24px sans-serif';
-                ctx.fillText('Lumina Live Vision', 30, 60);
+                ctx.fillText('Nexus Live Vision', 30, 60);
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                 const base64Jpg = dataUrl.split(',')[1];

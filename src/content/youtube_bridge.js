@@ -10,24 +10,24 @@ export class YouTubeButtonManager {
         this.setupGlobalListener();
     }
     injectStyles() {
-        if (document.getElementById('lumina-yt-styles')) return;
+        if (document.getElementById('nexus-yt-styles')) return;
         const style = document.createElement('style');
-        style.id = 'lumina-yt-styles';
+        style.id = 'nexus-yt-styles';
         style.textContent = `
             button[aria-label="Ask"] .ytSpecButtonShapeNextIcon,
             button[title="Ask"] .ytSpecButtonShapeNextIcon,
-            #lumina-yt-ask-btn .ytSpecButtonShapeNextIcon {
+            #nexus-yt-ask-btn .ytSpecButtonShapeNextIcon {
                 display: none !important;
             }
             button[aria-label="Download"] .ytSpecButtonShapeNextIcon,
             button[title="Download"] .ytSpecButtonShapeNextIcon,
-            #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextIcon {
+            #nexus-yt-copy-transcript-btn .ytSpecButtonShapeNextIcon {
                 display: none !important;
             }
             
             button[aria-label="Ask"] .ytSpecButtonShapeNextButtonTextContent,
             button[title="Ask"] .ytSpecButtonShapeNextButtonTextContent,
-            #lumina-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent {
+            #nexus-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent {
                 font-size: 0 !important;
                 display: inline-flex !important;
                 align-items: center !important;
@@ -36,8 +36,8 @@ export class YouTubeButtonManager {
             }
             button[aria-label="Ask"] .ytSpecButtonShapeNextButtonTextContent::before,
             button[title="Ask"] .ytSpecButtonShapeNextButtonTextContent::before,
-            #lumina-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent::before {
-                content: "Ask Lumina" !important;
+            #nexus-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent::before {
+                content: "Ask Nexus" !important;
                 font-size: 14px !important;
                 display: inline-block !important;
                 vertical-align: middle !important;
@@ -45,7 +45,7 @@ export class YouTubeButtonManager {
 
             button[aria-label="Download"] .ytSpecButtonShapeNextButtonTextContent,
             button[title="Download"] .ytSpecButtonShapeNextButtonTextContent,
-            #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent {
+            #nexus-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent {
                 font-size: 0 !important;
                 display: inline-flex !important;
                 align-items: center !important;
@@ -54,23 +54,23 @@ export class YouTubeButtonManager {
             }
             button[aria-label="Download"] .ytSpecButtonShapeNextButtonTextContent::before,
             button[title="Download"] .ytSpecButtonShapeNextButtonTextContent::before,
-            #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Copy Transcript" !important;
                 font-size: 14px !important;
                 display: inline-block !important;
                 vertical-align: middle !important;
             }
 
-            #lumina-yt-copy-transcript-btn.is-fetching .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-fetching .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Fetching..." !important;
             }
-            #lumina-yt-copy-transcript-btn.is-copied .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-copied .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Copied!" !important;
             }
-            #lumina-yt-copy-transcript-btn.is-error .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-error .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Error!" !important;
             }
-            #lumina-yt-copy-transcript-btn.is-not-found .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-not-found .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "No Transcript!" !important;
             }
         `;
@@ -80,7 +80,7 @@ export class YouTubeButtonManager {
         window.addEventListener('click', async (e) => {
             if (!window.location.hostname.includes('youtube.com')) return;
             
-            const askBtn = e.target.closest('button[aria-label="Ask"], button[title="Ask"], #lumina-yt-ask-btn');
+            const askBtn = e.target.closest('button[aria-label="Ask"], button[title="Ask"], #nexus-yt-ask-btn');
             if (askBtn) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -89,7 +89,7 @@ export class YouTubeButtonManager {
                 return;
             }
 
-            const copyBtn = e.target.closest('button[aria-label="Download"], button[title="Download"], #lumina-yt-copy-transcript-btn');
+            const copyBtn = e.target.closest('button[aria-label="Download"], button[title="Download"], #nexus-yt-copy-transcript-btn');
             if (copyBtn) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -121,19 +121,19 @@ export class YouTubeButtonManager {
     }
     injectButton() {
         const nativeBtn = document.querySelector('button[aria-label="Ask"], button[title="Ask"]');
-        if (nativeBtn && nativeBtn.id !== 'lumina-yt-ask-btn') {
-            nativeBtn.id = 'lumina-yt-ask-btn';
+        if (nativeBtn && nativeBtn.id !== 'nexus-yt-ask-btn') {
+            nativeBtn.id = 'nexus-yt-ask-btn';
             this.button = nativeBtn;
         }
 
         const downloadBtn = document.querySelector('button[aria-label="Download"], button[title="Download"]');
-        if (downloadBtn && downloadBtn.id !== 'lumina-yt-copy-transcript-btn') {
-            downloadBtn.id = 'lumina-yt-copy-transcript-btn';
+        if (downloadBtn && downloadBtn.id !== 'nexus-yt-copy-transcript-btn') {
+            downloadBtn.id = 'nexus-yt-copy-transcript-btn';
             this.copyButton = downloadBtn;
         }
     }
     async handleCopyTranscript() {
-        const btn = document.getElementById('lumina-yt-copy-transcript-btn');
+        const btn = document.getElementById('nexus-yt-copy-transcript-btn');
         if (!btn) return;
 
         btn.classList.remove('is-copied', 'is-error', 'is-not-found');
@@ -149,13 +149,13 @@ export class YouTubeButtonManager {
                 btn.classList.add('is-not-found');
             }
         } catch (err) {
-            console.error('[Lumina YT] Failed to copy transcript:', err);
+            console.error('[Nexus YT] Failed to copy transcript:', err);
             btn.classList.remove('is-fetching');
             btn.classList.add('is-error');
         }
 
         setTimeout(() => {
-            const currentBtn = document.getElementById('lumina-yt-copy-transcript-btn');
+            const currentBtn = document.getElementById('nexus-yt-copy-transcript-btn');
             if (currentBtn) {
                 currentBtn.classList.remove('is-fetching', 'is-copied', 'is-error', 'is-not-found');
             }
@@ -175,7 +175,7 @@ export class YouTubeButtonManager {
                 youtubeTrigger: triggerInfo
             });
         } catch (err) {
-            console.error('[Lumina] Failed to open side panel:', err);
+            console.error('[Nexus] Failed to open side panel:', err);
         }
     }
     removeButton() {

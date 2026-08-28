@@ -1,17 +1,17 @@
 import { WEB_SOURCE_SELECTION_STORAGE_PREFIX, isWebPageUrl } from '../../../shared/constants.js';
-import { LuminaToken } from '../../../core/ai/token_utils.js';
+import { NexusToken } from '../../../core/ai/token_utils.js';
 import { ChatHistoryManager } from '../../../db/chat_history.js';
 
 export const webSourceSelectionsByPageTabId = {};
 export const currentBrowserTabTokens = new Map();
 
-export function getWebSelectionScopeKey(luminaTabId, currentBrowserTab) {
-    if (luminaTabId == null || !currentBrowserTab) return null;
-    return `${String(luminaTabId)}_${String(currentBrowserTab.tabId)}`;
+export function getWebSelectionScopeKey(nexusTabId, currentBrowserTab) {
+    if (nexusTabId == null || !currentBrowserTab) return null;
+    return `${String(nexusTabId)}_${String(currentBrowserTab.tabId)}`;
 }
 
 export function getWebSelectionStorageKey(key) {
-    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX || 'lumina_web_selection_'}${String(key)}`;
+    return `${WEB_SOURCE_SELECTION_STORAGE_PREFIX || 'nexus_web_selection_'}${String(key)}`;
 }
 
 export function readWebSelectionFromStorage(scopeKey) {
@@ -53,15 +53,15 @@ export function deleteWebSelectionFromStorage(scopeKey) {
     localStorage.removeItem(key);
 }
 
-export function getWebSelectionForScope(luminaTabId, currentBrowserTab) {
-    const scopeKey = getWebSelectionScopeKey(luminaTabId, currentBrowserTab);
+export function getWebSelectionForScope(nexusTabId, currentBrowserTab) {
+    const scopeKey = getWebSelectionScopeKey(nexusTabId, currentBrowserTab);
     if (!scopeKey) return [];
     webSourceSelectionsByPageTabId[scopeKey] = readWebSelectionFromStorage(scopeKey);
     return webSourceSelectionsByPageTabId[scopeKey] || [];
 }
 
-export function saveWebSelectionForScope(luminaTabId, selection, currentBrowserTab) {
-    const scopeKey = getWebSelectionScopeKey(luminaTabId, currentBrowserTab);
+export function saveWebSelectionForScope(nexusTabId, selection, currentBrowserTab) {
+    const scopeKey = getWebSelectionScopeKey(nexusTabId, currentBrowserTab);
     if (!scopeKey) return;
     const normalizedSelection = (selection || []).filter((source) => source && (!isWebPageUrl || isWebPageUrl(source.url))).map((source) => ({
         tabId: source.tabId,
@@ -72,7 +72,7 @@ export function saveWebSelectionForScope(luminaTabId, selection, currentBrowserT
     webSourceSelectionsByPageTabId[scopeKey] = normalizedSelection;
     writeWebSelectionToStorage(scopeKey, normalizedSelection);
     if (normalizedSelection.length > 0) {
-        refreshWebSourceTokens(luminaTabId, normalizedSelection, currentBrowserTab);
+        refreshWebSourceTokens(nexusTabId, normalizedSelection, currentBrowserTab);
     }
 }
 
@@ -80,7 +80,7 @@ export async function ensureContentScriptsInjected(tabId) {
     try {
         const checkResults = await chrome.scripting.executeScript({
             target: { tabId: tabId },
-            func: () => typeof window.luminaExtractMainContent === 'function'
+            func: () => typeof window.nexusExtractMainContent === 'function'
         }).catch(() => null);
         const isAlreadyInjected = checkResults && checkResults[0] && checkResults[0].result === true;
         if (!isAlreadyInjected) {
@@ -94,7 +94,7 @@ export async function ensureContentScriptsInjected(tabId) {
             }
         }
     } catch (e) {
-        console.warn(`[Lumina] Failed to inject content scripts into tab ${tabId}:`, e);
+        console.warn(`[Nexus] Failed to inject content scripts into tab ${tabId}:`, e);
     }
 }
 
@@ -126,7 +126,7 @@ export async function fetchFreshWebContent(tabId) {
                 }
             }
         } catch (e) {
-            console.error('[Lumina WebSource] Failed to fetch Lumina tab content:', e);
+            console.error('[Nexus WebSource] Failed to fetch Nexus tab content:', e);
         }
         return null;
     }
@@ -135,8 +135,8 @@ export async function fetchFreshWebContent(tabId) {
     try {
         const results = await chrome.scripting.executeScript({
             target: { tabId: parseInt(tabId), allFrames: true },
-            func: () => typeof window.luminaExtractMainContent === 'function'
-                ? window.luminaExtractMainContent(document, true) : null
+            func: () => typeof window.nexusExtractMainContent === 'function'
+                ? window.nexusExtractMainContent(document, true) : null
         });
         if (!results) return null;
         const texts = [];
@@ -167,31 +167,31 @@ export async function fetchFreshWebContent(tabId) {
         }
         return texts.length > 0 ? texts.join('\n\n') : null;
     } catch (e) {
-        console.warn(`[Lumina WebSource] executeScript failed for tab ${tabId}:`, e);
+        console.warn(`[Nexus WebSource] executeScript failed for tab ${tabId}:`, e);
         return null;
     }
 }
 
-export async function refreshWebSourceTokens(luminaTabId, selection, currentBrowserTab) {
+export async function refreshWebSourceTokens(nexusTabId, selection, currentBrowserTab) {
     if (!selection || selection.length === 0) return;
     let updated = false;
     for (const source of selection) {
         try {
             const text = await fetchFreshWebContent(source.tabId);
             if (!text || text.length < 200) continue;
-            const count = (typeof LuminaToken !== 'undefined') ? LuminaToken.count(text) : Math.ceil(text.length / 4);
+            const count = (typeof NexusToken !== 'undefined') ? NexusToken.count(text) : Math.ceil(text.length / 4);
             if (count < 10) continue;
             if (source.tokens !== count) {
                 source.tokens = count;
                 updated = true;
             }
         } catch (e) {
-            console.warn(`[Lumina WebSource] Token refresh failed for tab ${source.tabId}:`, e);
+            console.warn(`[Nexus WebSource] Token refresh failed for tab ${source.tabId}:`, e);
             if (!source.tokens) source.tokens = 0;
         }
     }
-    if (updated && luminaTabId) {
-        const scopeKey = getWebSelectionScopeKey(luminaTabId, currentBrowserTab);
+    if (updated && nexusTabId) {
+        const scopeKey = getWebSelectionScopeKey(nexusTabId, currentBrowserTab);
         if (scopeKey) {
             writeWebSelectionToStorage(scopeKey, selection);
         }

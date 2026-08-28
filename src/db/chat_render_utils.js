@@ -1,7 +1,7 @@
 (function() {
     const globalObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
-    if (!globalObj.LuminaRawTextRegistry) {
-        globalObj.LuminaRawTextRegistry = new WeakMap();
+    if (!globalObj.NexusRawTextRegistry) {
+        globalObj.NexusRawTextRegistry = new WeakMap();
     }
     
     if (typeof Element !== 'undefined' && Element.prototype) {
@@ -11,7 +11,7 @@
 
         Element.prototype.setAttribute = function(name, value) {
             if (name === 'data-raw-text') {
-                globalObj.LuminaRawTextRegistry.set(this, value);
+                globalObj.NexusRawTextRegistry.set(this, value);
                 const truncated = typeof value === 'string' && value.length > 1000 ? value.substring(0, 1000) + '... (truncated in DOM)' : value;
                 return originalSetAttribute.call(this, name, truncated);
             }
@@ -20,8 +20,8 @@
 
         Element.prototype.getAttribute = function(name) {
             if (name === 'data-raw-text') {
-                if (globalObj.LuminaRawTextRegistry.has(this)) {
-                    return globalObj.LuminaRawTextRegistry.get(this);
+                if (globalObj.NexusRawTextRegistry.has(this)) {
+                    return globalObj.NexusRawTextRegistry.get(this);
                 }
             }
             return originalGetAttribute.call(this, name);
@@ -29,7 +29,7 @@
 
         Element.prototype.removeAttribute = function(name) {
             if (name === 'data-raw-text') {
-                globalObj.LuminaRawTextRegistry.delete(this);
+                globalObj.NexusRawTextRegistry.delete(this);
             }
             return originalRemoveAttribute.call(this, name);
         };
@@ -64,8 +64,8 @@ export function createObjectUrlFromDataUrl(dataUrl) {
         const blob = new Blob([new Uint8Array(array)], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const globalObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
-        globalObj.LuminaActiveBlobUrls = globalObj.LuminaActiveBlobUrls || [];
-        globalObj.LuminaActiveBlobUrls.push(url);
+        globalObj.NexusActiveBlobUrls = globalObj.NexusActiveBlobUrls || [];
+        globalObj.NexusActiveBlobUrls.push(url);
         return url;
     } catch (e) {
         console.error('Failed to create object URL from data URL:', e);
@@ -76,12 +76,12 @@ export function createObjectUrlFromDataUrl(dataUrl) {
 export function resolveImagePreviewSrc(item, src) {
     if (!src || typeof src !== 'string') return src;
     if (!src.startsWith('data:image/')) return src;
-    if (item && typeof item === 'object' && item._luminaBlobUrl) {
-        return item._luminaBlobUrl;
+    if (item && typeof item === 'object' && item._nexusBlobUrl) {
+        return item._nexusBlobUrl;
     }
     const blobUrl = createObjectUrlFromDataUrl(src);
     if (blobUrl && item && typeof item === 'object') {
-        item._luminaBlobUrl = blobUrl;
+        item._nexusBlobUrl = blobUrl;
     }
     return blobUrl || src;
 }

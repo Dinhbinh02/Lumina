@@ -1,13 +1,13 @@
 import { ChatHistoryManager } from '../../db/chat_history.js';
 
-export class LuminaSearchModal {
+export class NexusSearchModal {
   static init() {
-    this.overlay = document.getElementById('lumina-search-overlay');
-    this.searchInput = document.getElementById('lumina-search-input');
-    this.resultsList = document.getElementById('lumina-search-results-list');
-    this.closeBtn = document.getElementById('lumina-search-close-btn');
-    this.overlayCloseBtn = document.getElementById('lumina-search-overlay-close-btn');
-    this.newChatBtn = document.getElementById('lumina-search-new-chat');
+    this.overlay = document.getElementById('nexus-search-overlay');
+    this.searchInput = document.getElementById('nexus-search-input');
+    this.resultsList = document.getElementById('nexus-search-results-list');
+    this.closeBtn = document.getElementById('nexus-search-close-btn');
+    this.overlayCloseBtn = document.getElementById('nexus-search-overlay-close-btn');
+    this.newChatBtn = document.getElementById('nexus-search-new-chat');
     if (!this.overlay) return;
     if (this.initialized) return;
     this.overlay.addEventListener('click', (e) => {
@@ -155,7 +155,7 @@ export class LuminaSearchModal {
       });
       allGroups.forEach(groupName => {
         const headerEl = document.createElement('div');
-        headerEl.className = 'lumina-search-group-header';
+        headerEl.className = 'nexus-search-group-header';
         headerEl.textContent = groupName;
         this.resultsList.appendChild(headerEl);
         grouped[groupName].forEach(session => {
@@ -167,19 +167,19 @@ export class LuminaSearchModal {
           const activeSessionId = this.getActiveSessionId();
           const isCurrent = activeSessionId === session.id;
           const timeIndicatorHtml = isCurrent
-            ? `<span class="lumina-search-item-current">current</span>`
-            : `<span class="lumina-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
+            ? `<span class="nexus-search-item-current">current</span>`
+            : `<span class="nexus-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
           const itemEl = document.createElement('div');
-          itemEl.className = 'lumina-search-item';
+          itemEl.className = 'nexus-search-item';
           itemEl.innerHTML = `
-            <div class="lumina-search-item-content">
-              <div class="lumina-search-item-top">
-                <span class="lumina-search-item-title"></span>
+            <div class="nexus-search-item-content">
+              <div class="nexus-search-item-top">
+                <span class="nexus-search-item-title"></span>
                 ${timeIndicatorHtml}
               </div>
             </div>
           `;
-          itemEl.querySelector('.lumina-search-item-title').textContent = displayTitle;
+          itemEl.querySelector('.nexus-search-item-title').textContent = displayTitle;
           itemEl.addEventListener('click', () => this.openSession(session.id));
           this.resultsList.appendChild(itemEl);
         });
@@ -225,28 +225,28 @@ export class LuminaSearchModal {
       }
       const finalResults = results.slice(0, 20);
       if (finalResults.length === 0) {
-        this.resultsList.innerHTML = `<div class="lumina-search-no-results">No chats found</div>`;
+        this.resultsList.innerHTML = `<div class="nexus-search-no-results">No chats found</div>`;
         return;
       }
       finalResults.forEach(item => {
         const activeSessionId = this.getActiveSessionId();
         const isCurrent = activeSessionId === item.sessionId;
         const timeIndicatorHtml = isCurrent
-          ? `<span class="lumina-search-item-current">current</span>`
-          : `<span class="lumina-search-item-date">${this.formatDate(item.timestamp)}</span>`;
+          ? `<span class="nexus-search-item-current">current</span>`
+          : `<span class="nexus-search-item-date">${this.formatDate(item.timestamp)}</span>`;
         const itemEl = document.createElement('div');
-        itemEl.className = 'lumina-search-item';
+        itemEl.className = 'nexus-search-item';
         itemEl.innerHTML = `
-          <div class="lumina-search-item-content">
-            <div class="lumina-search-item-top">
-              <span class="lumina-search-item-title"></span>
+          <div class="nexus-search-item-content">
+            <div class="nexus-search-item-top">
+              <span class="nexus-search-item-title"></span>
               ${timeIndicatorHtml}
             </div>
-            <div class="lumina-search-item-snippet"></div>
+            <div class="nexus-search-item-snippet"></div>
           </div>
         `;
-        itemEl.querySelector('.lumina-search-item-title').textContent = item.title;
-        itemEl.querySelector('.lumina-search-item-snippet').innerHTML = this.getHighlightHtml(item.snippet, query);
+        itemEl.querySelector('.nexus-search-item-title').textContent = item.title;
+        itemEl.querySelector('.nexus-search-item-snippet').innerHTML = this.getHighlightHtml(item.snippet, query);
         itemEl.addEventListener('click', () => this.openSession(item.sessionId, item.messageIndex));
         this.resultsList.appendChild(itemEl);
       });
@@ -271,7 +271,7 @@ export class LuminaSearchModal {
     if (typeof window.loadHistoryIntoNewTab === 'function') {
       window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
     }
-    const sidebar = document.getElementById('lumina-sidebar');
+    const sidebar = document.getElementById('nexus-sidebar');
     const backdrop = document.querySelector('.sidebar-backdrop');
     if (sidebar) sidebar.classList.remove('active');
     if (backdrop) backdrop.classList.remove('active');
@@ -283,9 +283,9 @@ export class LuminaSearchModal {
       const sid = activeSidebarItem.getAttribute('data-session-id');
       if (sid) return sid;
     }
-    if (typeof window.LuminaSelectionScope !== 'undefined') {
-      const tabs = window.LuminaSelectionScope.getTabs();
-      const activeIndex = window.LuminaSelectionScope.getActiveTabIndex();
+    if (typeof window.NexusSelectionScope !== 'undefined') {
+      const tabs = window.NexusSelectionScope.getTabs();
+      const activeIndex = window.NexusSelectionScope.getActiveTabIndex();
       if (tabs && activeIndex >= 0 && tabs[activeIndex]) {
         return tabs[activeIndex].sessionId;
       }
@@ -311,14 +311,14 @@ export class LuminaSearchModal {
 }
 
 if (typeof window !== 'undefined') {
-  window.LuminaSearchModal = LuminaSearchModal;
+  window.NexusSearchModal = NexusSearchModal;
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      if (document.getElementById('lumina-search-overlay')) {
-        LuminaSearchModal.init();
+      if (document.getElementById('nexus-search-overlay')) {
+        NexusSearchModal.init();
       }
     });
-  } else if (document.getElementById('lumina-search-overlay')) {
-    LuminaSearchModal.init();
+  } else if (document.getElementById('nexus-search-overlay')) {
+    NexusSearchModal.init();
   }
 }

@@ -1,7 +1,7 @@
 export class ShadowHostManager {
     constructor() {
-        this.luminaHost = null;
-        this.luminaShadowRoot = null;
+        this.nexusHost = null;
+        this.nexusShadowRoot = null;
         this.dictPlusObserver = null;
         this.cachedTheme = null;
         this.cachedAccent = null;
@@ -9,33 +9,33 @@ export class ShadowHostManager {
     }
 
     init() {
-        if (this.luminaHost || document.getElementById('lumina-host') || document.getElementById('lumina-shadow-host')) {
-            this.luminaHost = document.getElementById('lumina-host') || document.getElementById('lumina-shadow-host');
-            this.luminaShadowRoot = this.luminaHost ? this.luminaHost.shadowRoot : null;
-            return { host: this.luminaHost, shadowRoot: this.luminaShadowRoot };
+        if (this.nexusHost || document.getElementById('nexus-host') || document.getElementById('nexus-shadow-host')) {
+            this.nexusHost = document.getElementById('nexus-host') || document.getElementById('nexus-shadow-host');
+            this.nexusShadowRoot = this.nexusHost ? this.nexusHost.shadowRoot : null;
+            return { host: this.nexusHost, shadowRoot: this.nexusShadowRoot };
         }
-        this.luminaHost = document.createElement('div');
-        this.luminaHost.id = 'lumina-shadow-host';
-        this.luminaHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; overflow: visible;';
+        this.nexusHost = document.createElement('div');
+        this.nexusHost.id = 'nexus-shadow-host';
+        this.nexusHost.style.cssText = 'position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; overflow: visible;';
         
-        this.luminaShadowRoot = this.luminaHost.attachShadow({ mode: 'open' });
-        (document.documentElement || document.body).appendChild(this.luminaHost);
+        this.nexusShadowRoot = this.nexusHost.attachShadow({ mode: 'open' });
+        (document.documentElement || document.body).appendChild(this.nexusHost);
 
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = chrome.runtime.getURL('assets/styles/styles.css');
-        this.luminaShadowRoot.appendChild(link);
+        this.nexusShadowRoot.appendChild(link);
 
         const katexLink = document.createElement('link');
         katexLink.rel = 'stylesheet';
         katexLink.href = chrome.runtime.getURL('lib/vendor/katex/katex.min.css');
-        this.luminaShadowRoot.appendChild(katexLink);
+        this.nexusShadowRoot.appendChild(katexLink);
 
         this.applyAskSelectionStyles();
         this.initThemeObserver();
         this.updateTheme();
 
-        return { host: this.luminaHost, shadowRoot: this.luminaShadowRoot };
+        return { host: this.nexusHost, shadowRoot: this.nexusShadowRoot };
     }
 
     applyAskSelectionStyles() {
@@ -49,10 +49,10 @@ export class ShadowHostManager {
             } else if (items.fontSize) {
                 baseFontSize = items.fontSize;
             }
-            if (this.luminaHost) {
-                this.luminaHost.style.setProperty('font-size', baseFontSize + 'px', 'important');
+            if (this.nexusHost) {
+                this.nexusHost.style.setProperty('font-size', baseFontSize + 'px', 'important');
             }
-            document.documentElement.style.setProperty('--lumina-fontSize', baseFontSize + 'px', 'important');
+            document.documentElement.style.setProperty('--nexus-fontSize', baseFontSize + 'px', 'important');
         });
     }
 
@@ -62,16 +62,16 @@ export class ShadowHostManager {
                 ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
                 : theme;
             const isDark = preferredTheme === 'dark';
-            if (this.luminaHost) {
+            if (this.nexusHost) {
                 if (isDark) {
-                    this.luminaHost.setAttribute('data-theme', 'dark');
+                    this.nexusHost.setAttribute('data-theme', 'dark');
                 } else {
-                    this.luminaHost.removeAttribute('data-theme');
+                    this.nexusHost.removeAttribute('data-theme');
                 }
-                this.luminaHost.setAttribute('data-accent', accent || 'default');
-                this.luminaHost.setAttribute('data-contrast', contrast || 'auto');
+                this.nexusHost.setAttribute('data-accent', accent || 'default');
+                this.nexusHost.setAttribute('data-contrast', contrast || 'auto');
             }
-            const overlays = this.luminaShadowRoot ? this.luminaShadowRoot.querySelectorAll('.lumina-overlay') : [];
+            const overlays = this.nexusShadowRoot ? this.nexusShadowRoot.querySelectorAll('.nexus-overlay') : [];
             overlays.forEach(el => {
                 if (isDark) {
                     el.setAttribute('data-theme', 'dark');
@@ -95,12 +95,12 @@ export class ShadowHostManager {
     }
 
     initThemeObserver() {
-        if (this.dictPlusObserver || !this.luminaShadowRoot) return;
+        if (this.dictPlusObserver || !this.nexusShadowRoot) return;
         let debounceTimer = null;
         this.dictPlusObserver = new MutationObserver((mutations) => {
             const hasTopLevelChange = mutations.some(m =>
                 m.type === 'childList' && m.addedNodes.length &&
-                m.target === this.luminaShadowRoot
+                m.target === this.nexusShadowRoot
             );
             if (!hasTopLevelChange) return;
             if (debounceTimer) return;
@@ -109,6 +109,6 @@ export class ShadowHostManager {
                 this.updateTheme();
             }, 200);
         });
-        this.dictPlusObserver.observe(this.luminaShadowRoot, { childList: true, subtree: true });
+        this.dictPlusObserver.observe(this.nexusShadowRoot, { childList: true, subtree: true });
     }
 }

@@ -41,11 +41,11 @@ export const isExcludedKey = (k) => [
     'settings_last_updated', 'optionsLastSection', 'optionsLastScroll', 'optionsScrollPositions',
     'sidepanel_active_tab_index', 'sidepanel_active_group_index', 'sidepanel_secondary_tab_index',
     'sidepanel_is_split_mode', 'sidepanel_split_ratio',
-    'lumina_active_tab_index', 'lumina_active_group_index', 'lumina_secondary_tab_index',
-    'lumina_is_split_mode', 'lumina_split_ratio',
-    'luminaWindowId', 'pendingMicToggle',
-    'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
+    'nexus_active_tab_index', 'nexus_active_group_index', 'nexus_secondary_tab_index',
+    'nexus_is_split_mode', 'nexus_split_ratio',
+    'nexusWindowId', 'pendingMicToggle',
+    'nexusTemplatesV3', 'nexusBatchHistoryV3', 'lastUsedGenAIModel',
     'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent',
     'attachments'
 ].includes(k) || k.includes('_inst_') || k.startsWith('pending_sidepanel_query_') || k.startsWith('rot_') ||
-    k === 'audio_cache' || k.startsWith('lumina_img_cache_') || k.startsWith('lumina_img_query_') || k.startsWith('spotlight_history_') || k.startsWith('yt_transcript_');
+    k === 'audio_cache' || k.startsWith('nexus_img_cache_') || k.startsWith('nexus_img_query_') || k.startsWith('spotlight_history_') || k.startsWith('yt_transcript_');

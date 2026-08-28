@@ -84,7 +84,7 @@ export function initMarkdownMath() {
                             return token.raw;
                         }
                     }
-                    return `<span class="lumina-math-inline-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</span>`;
+                    return `<span class="nexus-math-inline-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</span>`;
                 }
             },
             {
@@ -109,7 +109,7 @@ export function initMarkdownMath() {
                             return token.raw;
                         }
                     }
-                    return `<div class="lumina-math-block-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</div>`;
+                    return `<div class="nexus-math-block-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</div>`;
                 }
             }
         ]

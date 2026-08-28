@@ -5,7 +5,7 @@ export function renderChartJSWrapper(wrapper) {
         return;
     }
     if (wrapper.getAttribute('data-last-rendered-source') === configAttr) return;
-    const chatAnswer = wrapper.closest('.lumina-chat-answer');
+    const chatAnswer = wrapper.closest('.nexus-chat-answer');
     if (chatAnswer && chatAnswer.classList.contains('streaming')) return;
     const rawConfig = configAttr
         .replace(/&amp;/g, '&')
@@ -64,19 +64,19 @@ export function renderChartJSWrapper(wrapper) {
     });
 }
 
-export function processLuminaChartElements(rootNode) {
+export function processNexusChartElements(rootNode) {
     if (!rootNode) return;
     const wrappers = [];
-    if (rootNode.classList && rootNode.classList.contains('lumina-chartjs-wrapper')) {
+    if (rootNode.classList && rootNode.classList.contains('nexus-chartjs-wrapper')) {
         wrappers.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-        rootNode.querySelectorAll('.lumina-chartjs-wrapper').forEach(w => wrappers.push(w));
+        rootNode.querySelectorAll('.nexus-chartjs-wrapper').forEach(w => wrappers.push(w));
     }
     wrappers.forEach(w => renderChartJSWrapper(w));
 }
 
 if (typeof window !== 'undefined') {
     window._renderChartJSWrapper = renderChartJSWrapper;
-    window.processLuminaChartElements = processLuminaChartElements;
+    window.processNexusChartElements = processNexusChartElements;
 }

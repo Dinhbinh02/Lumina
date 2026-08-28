@@ -4,14 +4,14 @@ export function renderVoiceCardHTML(voice, isSelected = false) {
     const desc = voice.description || '';
     
     return `
-        <div class="lumina-voice-card\${isSelected ? ' selected' : ''}" data-voice-id="\${voice.id}">
-            <div class="lumina-voice-card-header">
-                <span class="lumina-voice-name">\${voice.name}</span>
-                <span class="lumina-voice-badge">\${accent.toUpperCase()}</span>
+        <div class="nexus-voice-card\${isSelected ? ' selected' : ''}" data-voice-id="\${voice.id}">
+            <div class="nexus-voice-card-header">
+                <span class="nexus-voice-name">\${voice.name}</span>
+                <span class="nexus-voice-badge">\${accent.toUpperCase()}</span>
             </div>
-            <div class="lumina-voice-card-body">
-                <span class="lumina-voice-gender">\${gender}</span>
-                \${desc ? \`<p class="lumina-voice-desc">\${desc}</p>\` : ''}
+            <div class="nexus-voice-card-body">
+                <span class="nexus-voice-gender">\${gender}</span>
+                \${desc ? \`<p class="nexus-voice-desc">\${desc}</p>\` : ''}
             </div>
         </div>
     `;

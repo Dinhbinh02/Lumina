@@ -1,5 +1,5 @@
-export const LuminaChatDB = {
-    DB_NAME: 'LuminaChatDB',
+export const NexusChatDB = {
+    DB_NAME: 'NexusChatDB',
     DB_VERSION: 1,
     SESSIONS_STORE: 'sessions',
     MESSAGES_STORE: 'messages',
@@ -179,5 +179,5 @@ export const LuminaChatDB = {
 };
 
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaChatDB = LuminaChatDB;
+    globalThis.NexusChatDB = NexusChatDB;
 }

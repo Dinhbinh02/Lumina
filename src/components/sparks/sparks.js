@@ -1,13 +1,11 @@
 import { DEFAULT_SPARKS } from './default_sparks.js';
-export const SPARKS_KEY = 'lumina_sparks';
+export const SPARKS_KEY = 'nexus_sparks';
 let sidebarSparksExpanded = false;
 export { DEFAULT_SPARKS };
 
 async function sparksLoad() {
-
-
-    const res = await chrome.storage.local.get([SPARKS_KEY]);
-    let sparks = res[SPARKS_KEY];
+    const res = await chrome.storage.local.get([SPARKS_KEY, 'sparks', 'lumina_sparks']);
+    let sparks = res[SPARKS_KEY] || res['sparks'] || res['lumina_sparks'];
     if (!sparks) {
         sparks = {};
         for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
@@ -22,6 +20,8 @@ async function sparksLoad() {
                 updatedAt: Date.now()
             };
         }
+        await sparksSave(sparks);
+    } else if (!res[SPARKS_KEY]) {
         await sparksSave(sparks);
     }
     return sparks;
@@ -53,29 +53,19 @@ function sparksNewId() {
     return 'spark_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
 }
 function sparksOpenPage() {
-    const chatLayout = document.getElementById('chat-layout');
-    const sparksPage = document.getElementById('sparks-page');
-    const topbar = document.getElementById('lumina-topbar');
-    if (chatLayout && sparksPage) {
-        chatLayout.style.display = 'none';
-        if (topbar) topbar.style.display = 'none';
-        sparksPage.style.display = 'flex';
-        sparksRenderList();
-        document.getElementById('sidebar-sparks-btn')?.classList.add('active');
-        document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+    if (typeof window.NexusViewManager !== 'undefined') {
+        window.NexusViewManager.switchView('sparks');
     }
+    sparksRenderList();
+    document.getElementById('sidebar-sparks-btn')?.classList.add('active');
+    document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
 }
 function sparksClosePage() {
-    const chatLayout = document.getElementById('chat-layout');
-    const sparksPage = document.getElementById('sparks-page');
-    const topbar = document.getElementById('lumina-topbar');
-    if (chatLayout && sparksPage) {
-        sparksPage.style.display = 'none';
-        if (topbar) topbar.style.display = 'flex';
-        chatLayout.style.display = 'flex';
-        document.getElementById('sidebar-sparks-btn')?.classList.remove('active');
-        document.getElementById('sparks-editor-overlay')?.remove();
+    if (typeof window.NexusViewManager !== 'undefined') {
+        window.NexusViewManager.switchView('chat');
     }
+    document.getElementById('sidebar-sparks-btn')?.classList.remove('active');
+    document.getElementById('sparks-editor-overlay')?.remove();
 }
 async function sparksRenderList() {
     const body = document.getElementById('sparks-page-body');
@@ -192,11 +182,11 @@ async function sparksOpenEditor(sparkId = null) {
                     <div class="sparks-field">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <label class="sparks-label">Instructions</label>
-                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--lumina-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ''}
+                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--nexus-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ''}
                         </div>
-                        <div class="lumina-input-container sparks-instructions-container">
-                            <div class="lumina-input-bar">
-                                <textarea id="spark-instructions-input" class="lumina-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
+                        <div class="nexus-input-container sparks-instructions-container">
+                            <div class="nexus-input-bar">
+                                <textarea id="spark-instructions-input" class="nexus-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || '')}</textarea>
                             </div>
                         </div>
                     </div>
@@ -229,14 +219,14 @@ async function sparksOpenEditor(sparkId = null) {
                     <div class="sparks-editor-resizer-handle"></div>
                 </div>
                 <div class="sparks-preview-header">
-                    <div class="lumina-model-selector" id="sparks-preview-model-selector">
-                        <button class="lumina-model-btn" id="sparks-preview-model-btn">
-                            <span class="lumina-current-model" id="sparks-preview-model-label">Loading...</span>
+                    <div class="nexus-model-selector" id="sparks-preview-model-selector">
+                        <button class="nexus-model-btn" id="sparks-preview-model-btn">
+                            <span class="nexus-current-model" id="sparks-preview-model-label">Loading...</span>
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M6 9l6 6 6-6"/>
                             </svg>
                         </button>
-                        <div class="lumina-model-dropdown" id="sparks-preview-model-dropdown"></div>
+                        <div class="nexus-model-dropdown" id="sparks-preview-model-dropdown"></div>
                     </div>
                 </div>
                 <div class="sparks-preview-chat" id="sparks-preview-chat">
@@ -244,25 +234,25 @@ async function sparksOpenEditor(sparkId = null) {
                         <div class="spark-welcome">
                             <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
                             <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || 'New Spark')}</h1>
-                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? 'block' : 'none'};">${escapeHtml(spark?.description || '')}</p>
+                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? 'block' : 'none'};">${escapeHtml(spark?.description || '')}</p>
                         </div>
                     </div>
-                    <div class="lumina-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
+                    <div class="nexus-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
                 </div>
-                <div class="lumina-chat-input-wrapper sparks-preview-input-area">
-                    <div class="lumina-input-container">
-                        <div class="lumina-input-bar">
-                            <div class="lumina-left-actions">
-                                 <button class="lumina-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
-                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <div class="nexus-chat-input-wrapper sparks-preview-input-area">
+                    <div class="nexus-input-container">
+                        <div class="nexus-input-bar">
+                            <div class="nexus-left-actions">
+                                 <button class="nexus-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                  </button>
                             </div>
-                            <textarea class="lumina-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
-                            <div class="lumina-trailing-group">
-                                <button class="lumina-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
+                            <textarea class="nexus-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
+                            <div class="nexus-trailing-group">
+                                <button class="nexus-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
                                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                                 </button>
-                                <button class="lumina-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
+                                <button class="nexus-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                                 </button>
                             </div>
@@ -272,7 +262,7 @@ async function sparksOpenEditor(sparkId = null) {
             </div>
         </div>
     `;
-    const mainContent = document.querySelector('.lumina-main-content');
+    const mainContent = document.querySelector('.nexus-main-content');
     if (mainContent) {
         mainContent.appendChild(overlay);
     } else {
@@ -556,9 +546,9 @@ async function sparksOpenEditor(sparkId = null) {
     function appendPreviewMessage(role, text) {
         if (role === 'user') {
             const row = document.createElement('div');
-            row.className = 'lumina-question-row';
+            row.className = 'nexus-question-row';
             const qDiv = document.createElement('div');
-            qDiv.className = 'lumina-chat-question';
+            qDiv.className = 'nexus-chat-question';
             qDiv.textContent = text;
             row.appendChild(qDiv);
             messagesEl.appendChild(row);
@@ -566,7 +556,7 @@ async function sparksOpenEditor(sparkId = null) {
             return qDiv;
         } else {
             const aDiv = document.createElement('div');
-            aDiv.className = 'lumina-chat-answer';
+            aDiv.className = 'nexus-chat-answer';
             aDiv.textContent = text;
             messagesEl.appendChild(aDiv);
             messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -581,7 +571,7 @@ async function sparksOpenEditor(sparkId = null) {
         if (!btn || !dropdown || !label) return;
         const data = await chrome.storage.local.get(['providers', 'advancedParamsByModel', 'lastUsedModel', 'promptSupport']);
         const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
-        const chain = window.LuminaModelHelper ? window.LuminaModelHelper.buildModelChain(data, promptSupport) : [];
+        const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data, promptSupport) : [];
         let currentModel = data.lastUsedModel?.model;
         let currentProviderId = data.lastUsedModel?.providerId;
         if (!currentModel && chain.length > 0) {
@@ -597,15 +587,15 @@ async function sparksOpenEditor(sparkId = null) {
             dropdown.innerHTML = chain.map(item => {
                 const isSelected = sparkSelectedModel && sparkSelectedModel.model === item.model && sparkSelectedModel.providerId === item.providerId;
                 return `
-                    <div class="lumina-model-item ${isSelected ? 'active' : ''}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
-                        <div class="lumina-model-item-info">
-                            <div class="lumina-model-name">${escapeHtml(item.displayName)}</div>
-                            <div class="lumina-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
+                    <div class="nexus-model-item ${isSelected ? 'active' : ''}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
+                        <div class="nexus-model-item-info">
+                            <div class="nexus-model-name">${escapeHtml(item.displayName)}</div>
+                            <div class="nexus-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
                         </div>
                     </div>
                 `;
             }).join('');
-            dropdown.querySelectorAll('.lumina-model-item').forEach(el => {
+            dropdown.querySelectorAll('.nexus-model-item').forEach(el => {
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const m = el.dataset.model;
@@ -620,7 +610,7 @@ async function sparksOpenEditor(sparkId = null) {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isActive = dropdown.classList.contains('active');
-            document.querySelectorAll('.lumina-model-dropdown.active').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.nexus-model-dropdown.active').forEach(d => d.classList.remove('active'));
             if (!isActive) {
                 renderDropdown();
                 dropdown.classList.add('active');
@@ -646,7 +636,7 @@ async function sparksOpenEditor(sparkId = null) {
         previewHistory.push({ role: 'user', text });
         updatePreviewState();
         const aiDiv = appendPreviewMessage('assistant', '');
-        aiDiv.innerHTML = LuminaTemplates.thinkingDots();
+        aiDiv.innerHTML = NexusTemplates.thinkingDots();
         previewStreaming = true;
         previewSend.disabled = true;
         try {
@@ -657,8 +647,8 @@ async function sparksOpenEditor(sparkId = null) {
                 if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
                     model = storageData.lastUsedModel.model;
                     providerId = storageData.lastUsedModel.providerId;
-                } else if (typeof window.getActiveLuminaTab === 'function' && window.getActiveLuminaTab()?.selectedModel) {
-                    const curTab = window.getActiveLuminaTab();
+                } else if (typeof window.getActiveNexusTab === 'function' && window.getActiveNexusTab()?.selectedModel) {
+                    const curTab = window.getActiveNexusTab();
                     model = curTab.selectedModel.model;
                     providerId = curTab.selectedModel.providerId;
                 } else if (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && tabs[activeTabIndex]?.selectedModel) {
@@ -767,7 +757,7 @@ async function sidebarSparksRenderList() {
         item.addEventListener('click', (e) => {
             if (e.target.closest('.sidebar-spark-item__menu-btn')) return;
             openSparkChat(item.dataset.sparkId);
-            const sidebar = document.getElementById('lumina-sidebar');
+            const sidebar = document.getElementById('nexus-sidebar');
             const backdrop = document.querySelector('.sidebar-backdrop');
             if (sidebar) sidebar.classList.remove('active');
             if (backdrop) backdrop.classList.remove('active');
@@ -872,10 +862,16 @@ function showSparkContextMenu(btn, sparkId) {
 async function openSparkChat(sparkId) {
     sparksClosePage();
     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
-    const activeTab = (typeof window.getActiveLuminaTab === 'function')
-        ? window.getActiveLuminaTab()
-        : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : (window.LuminaSelectionScope?.getTabs?.()?.[window.LuminaSelectionScope?.getActiveTabIndex?.()] ?? null));
+    document.querySelectorAll('.sidebar-spark-item').forEach(el => {
+        if (el.dataset.sparkId === sparkId) el.classList.add('active');
+        else el.classList.remove('active');
+    });
+    document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
+    document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+    document.getElementById('sidebar-tts-btn')?.classList.remove('active');
+    const activeTab = (typeof window.getActiveNexusTab === 'function')
+        ? window.getActiveNexusTab()
+        : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : (window.NexusSelectionScope?.getTabs?.()?.[window.NexusSelectionScope?.getActiveTabIndex?.()] ?? null));
     if (activeTab) {
         activeTab.sparkId = sparkId;
         if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
@@ -883,8 +879,8 @@ async function openSparkChat(sparkId) {
         const targetSharedInputUI = (typeof window.getSharedInputUI === 'function')
             ? window.getSharedInputUI()
             : ((typeof sharedInputUI !== 'undefined') ? sharedInputUI : (activeTab?.chatUIInstance?.sharedInputUI || null));
-        const settingsRes = await chrome.storage.local.get(['lumina_spark_last_settings']);
-        const sparkSettings = (settingsRes.lumina_spark_last_settings || {})[sparkId];
+        const settingsRes = await chrome.storage.local.get(['nexus_spark_last_settings']);
+        const sparkSettings = (settingsRes.nexus_spark_last_settings || {})[sparkId];
         if (activeTab.selectedModel) {
             if (targetChatUI) {
                 targetChatUI.activeTabModel = { ...activeTab.selectedModel };
@@ -1005,7 +1001,7 @@ async function renderSparkWelcomeScreen(activeTab) {
         <div class="spark-welcome">
             <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
             <h1 class="spark-welcome__title">${escapeHtml(spark.name)}</h1>
-            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--lumina-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ''}
+            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ''}
             ${recentHTML}
         </div>
     `;
@@ -1185,8 +1181,8 @@ function initSparks() {
         sidebarNewSparkBtn.addEventListener('click', () => sparksOpenEditor(null));
     }
     document.getElementById('sidebar-new-chat-btn')?.addEventListener('click', () => {
-        const activeTab = (typeof window.getActiveLuminaTab === 'function')
-            ? window.getActiveLuminaTab()
+        const activeTab = (typeof window.getActiveNexusTab === 'function')
+            ? window.getActiveNexusTab()
             : ((typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null));
         if (activeTab) {
             activeTab.sparkId = null;
@@ -1197,8 +1193,8 @@ function initSparks() {
         sidebarSparksRenderList();
     });
     document.getElementById('topbar-new-chat-btn')?.addEventListener('click', () => {
-        const activeTab = (typeof window.getActiveLuminaTab === 'function')
-            ? window.getActiveLuminaTab()
+        const activeTab = (typeof window.getActiveNexusTab === 'function')
+            ? window.getActiveNexusTab()
             : ((typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null));
         if (activeTab) {
             activeTab.sparkId = null;

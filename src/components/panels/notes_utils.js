@@ -71,15 +71,7 @@ export function highlightSnippet(snippet, query) {
     const escapedSnippet = escapeHtml(snippet);
     const escapedQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
-    return escapedSnippet.replace(regex, '<mark class="lumina-search-match">$1</mark>');
-}
-
-export function calculateWordCount(text) {
-    if (!text) return { words: 0, chars: 0 };
-    const cleanText = text.trim();
-    const words = cleanText ? cleanText.split(/\s+/).length : 0;
-    const chars = cleanText.length;
-    return { words, chars };
+    return escapedSnippet.replace(regex, '<mark class="nexus-search-match">$1</mark>');
 }
 
 export function filterNotesByCollection(notes, collectionId) {

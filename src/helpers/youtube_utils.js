@@ -42,7 +42,7 @@ export const YoutubeUtils = {
             if (!transcriptData || transcriptData.length === 0) return null;
             return this._normalizeTranscript(transcriptData);
         } catch (e) {
-            console.error('[Lumina] Transcript extraction failed:', e);
+            console.error('[Nexus] Transcript extraction failed:', e);
             return null;
         }
     },

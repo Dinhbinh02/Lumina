@@ -16,10 +16,10 @@
         document.documentElement.classList.add('is-sidepanel');
     }
 
-    if (localStorage.getItem('lumina_sidebar_collapsed') === 'true' && !isSidePanel && window.innerWidth > 768) {
+    if (localStorage.getItem('nexus_sidebar_collapsed') === 'true' && !isSidePanel && window.innerWidth > 768) {
         injectStyle('sidebar-init-style', `
-            .lumina-sidebar { width: 48px !important; transition: none !important; }
-            .lumina-sidebar *, .lumina-sidebar *::before, .lumina-sidebar *::after { transition: none !important; }
+            .nexus-sidebar { width: 48px !important; transition: none !important; }
+            .nexus-sidebar *, .nexus-sidebar *::before, .nexus-sidebar *::after { transition: none !important; }
             .brand-name, .action-text, .nav-text, .sidebar-section-title, .user-name, 
             .sidebar-spark-item__title, .sidebar-spark-item__menu-btn, .recent-chats-list, .sidebar-header-actions {
                 opacity: 0 !important; max-width: 0 !important; max-height: 0 !important; pointer-events: none !important;
@@ -39,7 +39,7 @@
     }
 
     try {
-        const cachedUserRaw = localStorage.getItem('lumina_cached_user');
+        const cachedUserRaw = localStorage.getItem('nexus_cached_user');
         if (cachedUserRaw) {
             const user = JSON.parse(cachedUserRaw);
             if (user && (user.name || user.picture)) {
@@ -67,7 +67,7 @@
 
     if (viewParam === 'notes' || viewParam === 'sparks' || viewParam === 'tts') {
         document.addEventListener('DOMContentLoaded', () => {
-            const mainContent = document.querySelector('.lumina-main-content');
+            const mainContent = document.querySelector('.nexus-main-content');
             if (mainContent) {
                 mainContent.setAttribute('data-active-view', viewParam);
             }
@@ -75,19 +75,19 @@
         if (viewParam === 'notes') {
             document.title = 'Notes';
             injectStyle('view-init-style', `
-                .lumina-page-view { display: none !important; }
+                .nexus-page-view { display: none !important; }
                 #notes-page { display: flex !important; }
             `);
         } else if (viewParam === 'sparks') {
             document.title = 'Sparks';
             injectStyle('view-init-style', `
-                .lumina-page-view { display: none !important; }
+                .nexus-page-view { display: none !important; }
                 #sparks-page { display: flex !important; }
             `);
         } else if (viewParam === 'tts') {
             document.title = 'TTS Studio';
             injectStyle('view-init-style', `
-                .lumina-page-view { display: none !important; }
+                .nexus-page-view { display: none !important; }
                 #tts-page { display: flex !important; }
             `);
         }

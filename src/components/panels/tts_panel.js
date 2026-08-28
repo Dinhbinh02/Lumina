@@ -34,7 +34,7 @@ export class TTSPanel {
     }
     loadLastVoiceSettings() {
         try {
-            const raw = localStorage.getItem('lumina_tts_last_settings');
+            const raw = localStorage.getItem('nexus_tts_last_settings');
             if (raw) {
                 const settings = JSON.parse(raw);
                 if (settings.mode) this.currentMode = settings.mode;
@@ -60,7 +60,7 @@ export class TTSPanel {
                 accent: this.selectedAccent,
                 audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile
             };
-            localStorage.setItem('lumina_tts_last_settings', JSON.stringify(settings));
+            localStorage.setItem('nexus_tts_last_settings', JSON.stringify(settings));
         } catch (_) {}
     }
     async init(recordingId = null) {
@@ -345,8 +345,8 @@ export class TTSPanel {
                     const newTitle = this.heroTitle.value.trim() || 'Untitled Audio';
                     await TTSDB.updateRecordingTitle(this.currentRecordingId, newTitle);
                     await this.loadRecordings();
-                    if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                        LuminaSync.triggerDebouncedSync();
+                    if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                        NexusSync.triggerDebouncedSync();
                     }
                 }
             });
@@ -572,7 +572,7 @@ export class TTSPanel {
         }
         if (voices.length === 0) {
             this.voiceCardsContainer.innerHTML = `
-                <div style="padding: 16px; text-align: center; color: var(--lumina-text-muted, #94a3b8); font-size: 0.8rem;">
+                <div style="padding: 16px; text-align: center; color: var(--nexus-text-muted, #94a3b8); font-size: 0.8rem;">
                     No voices matching the selected filters.
                 </div>
             `;
@@ -732,8 +732,8 @@ export class TTSPanel {
                 const id = btn.dataset.id;
                 await TTSDB.toggleStar(id);
                 await this.loadRecordings();
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
             });
         });
@@ -960,8 +960,8 @@ export class TTSPanel {
         }
         this.showStatus('', false);
         this.renderRecordingsList();
-        if (typeof LuminaViewManager !== 'undefined' && typeof LuminaViewManager.updateUrl === 'function') {
-            LuminaViewManager.updateUrl('tts', { recordingId: rec.id });
+        if (typeof NexusViewManager !== 'undefined' && typeof NexusViewManager.updateUrl === 'function') {
+            NexusViewManager.updateUrl('tts', { recordingId: rec.id });
         }
         if (this.page) {
             this.page.classList.add('show-studio');
@@ -991,8 +991,8 @@ export class TTSPanel {
         this.currentWavBlob = null;
         this.audioElement.pause();
         this.audioElement.src = '';
-        if (typeof LuminaViewManager !== 'undefined' && typeof LuminaViewManager.updateUrl === 'function') {
-            LuminaViewManager.updateUrl('tts', {});
+        if (typeof NexusViewManager !== 'undefined' && typeof NexusViewManager.updateUrl === 'function') {
+            NexusViewManager.updateUrl('tts', {});
         }
         if (this.modeSwitcher) this.modeSwitcher.style.display = 'flex';
         if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = 'block';
@@ -1078,8 +1078,8 @@ export class TTSPanel {
             this.resetStudioForNew();
         }
         await this.loadRecordings();
-        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-            LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+            NexusSync.triggerDebouncedSync();
         }
     }
     setMode(mode) {
@@ -1171,7 +1171,7 @@ export class TTSPanel {
     }
     async getCustomPresets() {
         try {
-            const raw = localStorage.getItem('lumina_tts_custom_presets');
+            const raw = localStorage.getItem('nexus_tts_custom_presets');
             return raw ? JSON.parse(raw) : [];
         } catch (_) {
             return [];
@@ -1179,7 +1179,7 @@ export class TTSPanel {
     }
     async saveCustomPresets(presets) {
         try {
-            localStorage.setItem('lumina_tts_custom_presets', JSON.stringify(presets));
+            localStorage.setItem('nexus_tts_custom_presets', JSON.stringify(presets));
             this.renderCustomPresets();
         } catch (_) {}
     }
@@ -1330,8 +1330,8 @@ export class TTSPanel {
                     durationSeconds: result.durationSeconds,
                     audioBlob: result.blob
                 });
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 // Chạy Groq Whisper alignment ngầm
                 if (typeof GroqAligner !== 'undefined') {

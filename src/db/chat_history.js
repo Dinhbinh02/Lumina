@@ -1,5 +1,5 @@
-import { LuminaChatDB } from './chat_db.js';
-import { LuminaAttachmentDB } from './attachment_db.js';
+import { NexusChatDB } from './chat_db.js';
+import { NexusAttachmentDB } from './attachment_db.js';
 import { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups } from './chat_render_utils.js';
 export { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups };
 
@@ -7,24 +7,24 @@ export { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, rec
 
 
 export const ChatHistoryManager = {
-    STORAGE_KEY: 'lumina_chat_sessions',
+    STORAGE_KEY: 'nexus_chat_sessions',
     LEGACY_KEY: 'chat_history',
-    TEMP_POPUP_KEY: 'lumina_popup_sessions',
+    TEMP_POPUP_KEY: 'nexus_popup_sessions',
     MAX_HISTORIES: 999,
     RETENTION_DAYS: 180,
     currentSessionId: null,
     generateSessionId() {
         return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     },
-    async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null) {
+    async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null, suppressBroadcast = false) {
         if (!historyEl && typeof currentPopup !== 'undefined' && currentPopup) {
-            historyEl = currentPopup.querySelector('.lumina-chat-history');
+            historyEl = currentPopup.querySelector('.nexus-chat-history');
         }
         if (!historyEl) return;
         const now = Date.now();
         if (!force && this._lastSaveTime && (now - this._lastSaveTime < 500)) {
             if (this._saveTimeout) clearTimeout(this._saveTimeout);
-            this._saveTimeout = setTimeout(() => this.saveCurrentChat(historyEl, optionalSessionId, sparkId, force, extraSettings), 500);
+            this._saveTimeout = setTimeout(() => this.saveCurrentChat(historyEl, optionalSessionId, sparkId, force, extraSettings, suppressBroadcast), 500);
             return;
         }
         this._lastSaveTime = now;
@@ -66,9 +66,9 @@ export const ChatHistoryManager = {
                 return msg;
             });
             
-            await LuminaChatDB.putMessages(activeSessionId, optimizedMessages);
+            await NexusChatDB.putMessages(activeSessionId, optimizedMessages);
             
-            const existingSession = await LuminaChatDB.getSession(activeSessionId) || {};
+            const existingSession = await NexusChatDB.getSession(activeSessionId) || {};
             const isRenamed = existingSession.isRenamed || false;
             const autoNamed = existingSession.autoNamed || false;
             const finalTitle = (isRenamed || autoNamed) ? existingSession.title : title;
@@ -120,19 +120,19 @@ export const ChatHistoryManager = {
                 archived: existingSession.archived || false
             };
             
-            await LuminaChatDB.putSession(sessionMeta);
+            await NexusChatDB.putSession(sessionMeta);
 
             if (sparkId) {
                 const finalModel = (extraSettings && extraSettings.selectedModel) || existingSession.selectedModel || null;
                 const finalThinking = (extraSettings && extraSettings.thinkingLevel) || existingSession.thinkingLevel || null;
                 if (finalModel || finalThinking) {
-                    const settingsRes = await chrome.storage.local.get(['lumina_spark_last_settings']);
-                    const sparkSettings = settingsRes.lumina_spark_last_settings || {};
+                    const settingsRes = await chrome.storage.local.get(['nexus_spark_last_settings']);
+                    const sparkSettings = settingsRes.nexus_spark_last_settings || {};
                     sparkSettings[sparkId] = {
                         selectedModel: finalModel,
                         thinkingLevel: finalThinking
                     };
-                    await chrome.storage.local.set({ lumina_spark_last_settings: sparkSettings });
+                    await chrome.storage.local.set({ nexus_spark_last_settings: sparkSettings });
                 }
             }
             
@@ -141,20 +141,22 @@ export const ChatHistoryManager = {
                 window._localSavedSessions[activeSessionId] = Date.now();
             }
             
-            const senderInstanceId = (typeof window !== 'undefined' && window._luminaWindowInstanceId) ? window._luminaWindowInstanceId : null;
-            chrome.runtime.sendMessage({ action: 'lumina_session_updated', sessionId: activeSessionId, source: 'local_save', senderInstanceId }).catch(() => {});
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated', senderInstanceId }).catch(() => {});
+            const senderInstanceId = (typeof window !== 'undefined' && window._nexusWindowInstanceId) ? window._nexusWindowInstanceId : null;
+            if (!suppressBroadcast) {
+                chrome.runtime.sendMessage({ action: 'nexus_session_updated', sessionId: activeSessionId, source: 'local_save', senderInstanceId }).catch(() => {});
+            }
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated', senderInstanceId }).catch(() => {});
         } catch (error) {
             console.error('Failed to save chat history:', error);
         }
     },
     
     createCompletedStepperHTML(query, sourcesCount) {
-        const checkIcon = '<svg class="lumina-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        const checkIcon = '<svg class="nexus-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
         return `
-            <div class="lumina-completed-step">
+            <div class="nexus-completed-step">
                 ${checkIcon}
-                <span class="lumina-step-text">Searched for: <strong>"${query}"</strong> (${sourcesCount} sources)</span>
+                <span class="nexus-step-text">Searched for: <strong>"${query}"</strong> (${sourcesCount} sources)</span>
             </div>
         `;
     },
@@ -162,16 +164,16 @@ export const ChatHistoryManager = {
     extractMessages(historyElement) {
         const messages = [];
         for (const child of historyElement.children) {
-            if (!child.classList.contains('lumina-entry')) continue;
+            if (!child.classList.contains('nexus-entry')) continue;
             const entryType = child.dataset.entryType;
             const fromCache = child.dataset.fromCache === 'true';
             const timestamp = parseInt(child.dataset.timestamp) || Date.now();
-            const questionEl = child.querySelector('.lumina-chat-question');
-            const versionsContainer = child.querySelector('.lumina-answer-versions');
-            const answerEl = child.querySelector('.lumina-chat-answer');
+            const questionEl = child.querySelector('.nexus-chat-question');
+            const versionsContainer = child.querySelector('.nexus-answer-versions');
+            const answerEl = child.querySelector('.nexus-chat-answer');
             if (questionEl) {
-                let serializedImages = Array.isArray(questionEl._luminaImages) ? questionEl._luminaImages :
-                    (Array.isArray(child._luminaImages) ? child._luminaImages : null);
+                let serializedImages = Array.isArray(questionEl._nexusImages) ? questionEl._nexusImages :
+                    (Array.isArray(child._nexusImages) ? child._nexusImages : null);
                 if (!serializedImages && questionEl.dataset.images) {
                     try {
                         const parsedImages = JSON.parse(questionEl.dataset.images);
@@ -195,14 +197,14 @@ export const ChatHistoryManager = {
                 });
             }
             if (versionsContainer) {
-                const versions = Array.from(versionsContainer.querySelectorAll('.lumina-answer-version'));
-                const activeVersion = versionsContainer.querySelector('.lumina-answer-version.active');
+                const versions = Array.from(versionsContainer.querySelectorAll('.nexus-answer-version'));
+                const activeVersion = versionsContainer.querySelector('.nexus-answer-version.active');
                 const activeIndex = activeVersion ? parseInt(activeVersion.dataset.versionIndex) || 0 : 0;
                 const versionContents = versions.map(v => {
-                    const ans = v.querySelector('.lumina-chat-answer');
+                    const ans = v.querySelector('.nexus-chat-answer');
                     return ans ? (ans.getAttribute('data-raw-text') || ans.innerHTML) : '';
                 });
-                const activeAnswerEl = activeVersion ? activeVersion.querySelector('.lumina-chat-answer') : (versions[0] ? versions[0].querySelector('.lumina-chat-answer') : null);
+                const activeAnswerEl = activeVersion ? activeVersion.querySelector('.nexus-chat-answer') : (versions[0] ? versions[0].querySelector('.nexus-chat-answer') : null);
                 const webSearchData = activeAnswerEl?.dataset.webSearch ? JSON.parse(activeAnswerEl.dataset.webSearch) : null;
                 messages.push({
                     type: 'answer',
@@ -225,11 +227,11 @@ export const ChatHistoryManager = {
         return messages;
     },
     generateChatTitle(historyElement) {
-        const allEntries = Array.from(historyElement.querySelectorAll('.lumina-entry'));
+        const allEntries = Array.from(historyElement.querySelectorAll('.nexus-entry'));
         if (allEntries.length === 0) return 'New Chat';
         for (let i = allEntries.length - 1; i >= 0; i--) {
             const entry = allEntries[i];
-            const questionEl = entry.querySelector('.lumina-chat-question');
+            const questionEl = entry.querySelector('.nexus-chat-question');
             if (questionEl) {
                 return questionEl.getAttribute('data-raw-text') || questionEl.textContent.trim();
             }
@@ -238,10 +240,10 @@ export const ChatHistoryManager = {
     },
     async loadChat(sessionId) {
         try {
-            const chatMeta = await LuminaChatDB.getSession(sessionId);
+            const chatMeta = await NexusChatDB.getSession(sessionId);
             if (chatMeta) {
                 this.currentSessionId = sessionId;
-                const messages = await LuminaChatDB.getMessages(sessionId) || [];
+                const messages = await NexusChatDB.getMessages(sessionId) || [];
                 const chatData = {
                     ...chatMeta,
                     messages: messages,
@@ -263,17 +265,17 @@ export const ChatHistoryManager = {
             showChatPopup('');
             overridePopupAnimation(currentPopup);
         }
-        const history = historyContainer || currentPopup.querySelector('.lumina-chat-history');
+        const history = historyContainer || currentPopup.querySelector('.nexus-chat-history');
         if (!history) return;
         
         const globalObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
-        if (globalObj.LuminaActiveBlobUrls && globalObj.LuminaActiveBlobUrls.length > 0) {
-            globalObj.LuminaActiveBlobUrls.forEach(url => {
+        if (globalObj.NexusActiveBlobUrls && globalObj.NexusActiveBlobUrls.length > 0) {
+            globalObj.NexusActiveBlobUrls.forEach(url => {
                 try {
                     URL.revokeObjectURL(url);
                 } catch (e) {}
             });
-            globalObj.LuminaActiveBlobUrls = [];
+            globalObj.NexusActiveBlobUrls = [];
         }
         
         const restoreId = Math.random().toString(36).substr(2, 9);
@@ -285,8 +287,8 @@ export const ChatHistoryManager = {
         let sparksMap = {};
         if (chatData.sparkId) {
             try {
-                const sparksRes = await chrome.storage.local.get(['lumina_sparks']);
-                sparksMap = sparksRes.lumina_sparks || {};
+                const sparksRes = await chrome.storage.local.get(['nexus_sparks']);
+                sparksMap = sparksRes.nexus_sparks || {};
             } catch (e) {
                 console.error('Failed to load sparks in restoreChat', e);
             }
@@ -294,18 +296,18 @@ export const ChatHistoryManager = {
         
         const processPromises = [];
         
-        if (typeof document !== 'undefined' && !document.getElementById('lumina-lazy-load-styles')) {
+        if (typeof document !== 'undefined' && !document.getElementById('nexus-lazy-load-styles')) {
             const style = document.createElement('style');
-            style.id = 'lumina-lazy-load-styles';
+            style.id = 'nexus-lazy-load-styles';
             style.textContent = `
-                .lumina-load-more-history {
+                .nexus-load-more-history {
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     padding: 8px 12px;
                     margin: 8px auto;
                     height: 32px;
-                    color: var(--lumina-sidebar-text-muted);
+                    color: var(--nexus-sidebar-text-muted);
                     font-size: 11px;
                     cursor: pointer;
                     user-select: none;
@@ -334,13 +336,13 @@ export const ChatHistoryManager = {
 
                 if (msg.type === 'question') {
                     const entryDiv = document.createElement('div');
-                    entryDiv.className = 'lumina-entry';
+                    entryDiv.className = 'nexus-entry';
                     entryDiv.dataset.entryId = msg.metadata?.entryId || ('entry-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
                     entryDiv.dataset.entryType = msg.metadata?.entryType || 'qa';
                     if (msg.timestamp) entryDiv.dataset.timestamp = String(msg.timestamp);
 
                     const questionDiv = document.createElement('div');
-                    questionDiv.className = 'lumina-chat-question';
+                    questionDiv.className = 'nexus-chat-question';
                     questionDiv.dataset.messageIndex = msgIdx;
                     questionDiv.dataset.entryType = entryDiv.dataset.entryType;
                     questionDiv.setAttribute('data-raw-text', msg.content);
@@ -355,8 +357,8 @@ export const ChatHistoryManager = {
                         : [];
 
                     if (visibleImages.length > 0) {
-                        questionDiv._luminaImages = visibleImages;
-                        entryDiv._luminaImages = visibleImages;
+                        questionDiv._nexusImages = visibleImages;
+                        entryDiv._nexusImages = visibleImages;
                         questionDiv.dataset.images = JSON.stringify({
                             compact: true,
                             count: visibleImages.length,
@@ -383,11 +385,11 @@ export const ChatHistoryManager = {
                         });
 
                         const filesDiv = document.createElement('div');
-                        filesDiv.className = 'lumina-chat-question-files';
+                        filesDiv.className = 'nexus-chat-question-files';
                         visibleImages.forEach(item => {
                             const isImage = item.isImage || (item.mimeType && item.mimeType.startsWith('image/'));
                             const rawSrc = item.objectUrl || item.dataUrl || item.previewUrl || (item.mimeType && item.data ? `data:${item.mimeType};base64,${item.data}` : '');
-                            const src = isImage ? (rawSrc.startsWith('data:') || rawSrc.startsWith('blob:') ? rawSrc : (typeof LuminaChatUI !== 'undefined' ? LuminaChatUI._resolveImagePreviewSrc(item, rawSrc) : rawSrc)) : rawSrc;
+                            const src = isImage ? (rawSrc.startsWith('data:') || rawSrc.startsWith('blob:') ? rawSrc : (typeof NexusChatUI !== 'undefined' ? NexusChatUI._resolveImagePreviewSrc(item, rawSrc) : rawSrc)) : rawSrc;
                             if (isImage) {
                                 const img = document.createElement('img');
                                 img.src = src;
@@ -395,27 +397,27 @@ export const ChatHistoryManager = {
                                     img.dataset.attachmentId = item.attachmentId;
                                 }
                                 if (item.name) img.alt = item.name;
-                                img.className = 'lumina-clickable-image';
+                                img.className = 'nexus-clickable-image';
                                 img.addEventListener('click', (e) => {
                                     e.stopPropagation();
-                                    if (typeof LuminaChatUI !== 'undefined') {
-                                        LuminaChatUI.showImagePreview(img.src, img.alt);
+                                    if (typeof NexusChatUI !== 'undefined') {
+                                        NexusChatUI.showImagePreview(img.src, img.alt);
                                     }
                                 });
                                 filesDiv.appendChild(img);
                             } else {
                                 const fileName = item.name || 'File';
-                                const displayName = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getDisplayFileName(fileName) : fileName;
-                                const category = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.inferFileCategory(item) : 'other';
-                                const icon = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getFileIconByCategory(category) : '📄';
-                                const typeLabel = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getFileTypeLabel(item) : '';
+                                const displayName = typeof NexusChatUI !== 'undefined' ? NexusChatUI.getDisplayFileName(fileName) : fileName;
+                                const category = typeof NexusChatUI !== 'undefined' ? NexusChatUI.inferFileCategory(item) : 'other';
+                                const icon = typeof NexusChatUI !== 'undefined' ? NexusChatUI.getFileIconByCategory(category) : '📄';
+                                const typeLabel = typeof NexusChatUI !== 'undefined' ? NexusChatUI.getFileTypeLabel(item) : '';
                                 const fileChip = document.createElement('div');
-                                fileChip.className = 'lumina-preview-item is-file lumina-question-file-chip';
+                                fileChip.className = 'nexus-preview-item is-file nexus-question-file-chip';
                                 if (item.attachmentId) {
                                     fileChip.dataset.attachmentId = item.attachmentId;
                                 }
                                 fileChip.title = fileName;
-                                fileChip.innerHTML = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${displayName || fileName}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${typeLabel}</span></div></div>`;
+                                fileChip.innerHTML = `<div class="nexus-file-preview-info"><span class="nexus-file-name">${displayName || fileName}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${typeLabel}</span></div></div>`;
                                 filesDiv.appendChild(fileChip);
                             }
                         });
@@ -423,9 +425,9 @@ export const ChatHistoryManager = {
 
                         visibleImages.forEach(imgItem => {
                             if (imgItem && imgItem.attachmentId) {
-                                LuminaAttachmentDB.get(imgItem.attachmentId).then(async (blob) => {
+                                NexusAttachmentDB.get(imgItem.attachmentId).then(async (blob) => {
                                     if (blob) {
-                                        const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                                        const dataUrl = await NexusAttachmentDB.blobToDataURL(blob);
                                         const imgEl = entryDiv.querySelector(`[data-attachment-id="${imgItem.attachmentId}"]`);
                                         if (imgEl && dataUrl) {
                                             imgEl.src = dataUrl;
@@ -442,18 +444,18 @@ export const ChatHistoryManager = {
                         const contextText = cleanMsgContent.substring(9, closeBracketIdx).trim();
                         const taglessText = cleanMsgContent.substring(closeBracketIdx + 1).trim();
                         const tagContent = contextText ? `"${contextText}"` : "";
-                        questionDiv.innerHTML = `<div class="lumina-question-content">${tagContent} ${taglessText}</div>`;
+                        questionDiv.innerHTML = `<div class="nexus-question-content">${tagContent} ${taglessText}</div>`;
                     } else {
-                        questionDiv.innerHTML = `<div class="lumina-question-content">${cleanMsgContent}</div>`;
+                        questionDiv.innerHTML = `<div class="nexus-question-content">${cleanMsgContent}</div>`;
                     }
 
                     const row = document.createElement('div');
-                    row.className = 'lumina-question-row';
+                    row.className = 'nexus-question-row';
                     row.appendChild(questionDiv);
                     entryDiv.appendChild(row);
 
-                    if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.injectQuestionActions === 'function') {
-                        LuminaChatUI.injectQuestionActions(questionDiv);
+                    if (typeof NexusChatUI !== 'undefined' && typeof NexusChatUI.injectQuestionActions === 'function') {
+                        NexusChatUI.injectQuestionActions(questionDiv);
                     }
 
                     const nextItem = i + 1 < group.length ? group[i + 1] : null;
@@ -473,14 +475,14 @@ export const ChatHistoryManager = {
 
                         if (answerMsg.versions && answerMsg.versions.length > 1) {
                             const versionsContainer = document.createElement('div');
-                            versionsContainer.className = 'lumina-answer-versions';
+                            versionsContainer.className = 'nexus-answer-versions';
                             const activeIndex = answerMsg.versions.length - 1;
                             answerMsg.versions.forEach((versionContent, idx) => {
                                 const versionDiv = document.createElement('div');
-                                versionDiv.className = 'lumina-answer-version' + (idx === activeIndex ? ' active' : '');
+                                versionDiv.className = 'nexus-answer-version' + (idx === activeIndex ? ' active' : '');
                                 versionDiv.dataset.versionIndex = idx.toString();
                                 const answerDiv = document.createElement('div');
-                                answerDiv.className = 'lumina-chat-answer';
+                                answerDiv.className = 'nexus-chat-answer';
                                 answerDiv.setAttribute('data-raw-text', versionContent);
                                 const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
                                 if (displayContent.trim().startsWith('<')) {
@@ -492,7 +494,7 @@ export const ChatHistoryManager = {
                                         const sources = answerMsg.metadata.webSearch.sources;
                                         html = html.replace(/\[(\d+)\]/g, (match, num) => {
                                             const sIdx = parseInt(num) - 1;
-                                            if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                                            if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="nexus-citation">${num}</a>`;
                                             return match;
                                         });
                                     }
@@ -504,21 +506,21 @@ export const ChatHistoryManager = {
                                     link.target = '_blank';
                                     link.rel = 'noopener noreferrer';
                                 });
-                                if (typeof LuminaChatUI !== 'undefined') {
-                                    processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                                if (typeof NexusChatUI !== 'undefined') {
+                                    processPromises.push(NexusChatUI.processContainer(answerDiv));
                                 }
                                 if (chatData.sparkId && sparksMap[chatData.sparkId]) {
                                     const spark = sparksMap[chatData.sparkId];
                                     const headerDiv = document.createElement('div');
-                                    headerDiv.className = 'lumina-spark-message-header';
+                                    headerDiv.className = 'nexus-spark-message-header';
                                     const nameSpan = document.createElement('span');
-                                    nameSpan.className = 'lumina-spark-name';
+                                    nameSpan.className = 'nexus-spark-name';
                                     nameSpan.textContent = spark.name;
                                     const sepSpan = document.createElement('span');
-                                    sepSpan.className = 'lumina-spark-separator';
+                                    sepSpan.className = 'nexus-spark-separator';
                                     sepSpan.textContent = ' • ';
                                     const typeSpan = document.createElement('span');
-                                    typeSpan.className = 'lumina-spark-type';
+                                    typeSpan.className = 'nexus-spark-type';
                                     typeSpan.textContent = 'Custom Spark';
                                     headerDiv.appendChild(nameSpan);
                                     headerDiv.appendChild(sepSpan);
@@ -530,11 +532,11 @@ export const ChatHistoryManager = {
                             });
 
                             const navContainer = document.createElement('div');
-                            navContainer.className = 'lumina-answer-nav';
+                            navContainer.className = 'nexus-answer-nav';
                             navContainer.innerHTML = `
-                                <button class="lumina-answer-nav-btn nav-prev" ${activeIndex === 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-                                <span class="lumina-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                                <button class="lumina-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+                                <button class="nexus-answer-nav-btn nav-prev" ${activeIndex === 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+                                <span class="nexus-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
+                                <button class="nexus-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
                             `;
                             versionsContainer.appendChild(navContainer);
                             if (typeof showAnswerVersion === 'function') {
@@ -544,28 +546,28 @@ export const ChatHistoryManager = {
                             entryDiv.appendChild(versionsContainer);
                         } else {
                             const answerDiv = document.createElement('div');
-                            answerDiv.className = 'lumina-chat-answer';
+                            answerDiv.className = 'nexus-chat-answer';
                             answerDiv.setAttribute('data-raw-text', answerMsg.content);
                             let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                            displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+                            displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
                                 const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                                 const displayType = type.replace('code/', '').toUpperCase();
-                                return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
-      <div class="lumina-canvas-card-left">
-        <div class="lumina-canvas-card-info">
-          <div class="lumina-canvas-card-title">${name}</div>
-          <div class="lumina-canvas-card-meta">${displayType} • ${timeStr}</div>
+                                return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
+      <div class="nexus-canvas-card-left">
+        <div class="nexus-canvas-card-info">
+          <div class="nexus-canvas-card-title">${name}</div>
+          <div class="nexus-canvas-card-meta">${displayType} • ${timeStr}</div>
         </div>
       </div>
     </div>`;
                             });
-                            displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+                            displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
                                 return `*🔄 Canvas Updated: **${name}***`;
                             });
-                            displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+                            displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
                                 return `*💬 Canvas Comment Added: **${name}***`;
                             });
-                            if (displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
+                            if (displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
                                 answerDiv.innerHTML = displayContent;
                             } else if (typeof marked !== 'undefined') {
                                 let content = displayContent;
@@ -577,7 +579,7 @@ export const ChatHistoryManager = {
                                     const sources = answerMsg.metadata.webSearch.sources;
                                     html = html.replace(/\[(\d+)\]/g, (match, num) => {
                                         const sIdx = parseInt(num) - 1;
-                                        if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                                        if (sources[sIdx]) return `<a href="${sources[sIdx].link}" target="_blank" rel="noopener noreferrer" class="nexus-citation">${num}</a>`;
                                         return match;
                                     });
                                 }
@@ -589,21 +591,21 @@ export const ChatHistoryManager = {
                                 link.target = '_blank';
                                 link.rel = 'noopener noreferrer';
                             });
-                            if (typeof LuminaChatUI !== 'undefined') {
-                                processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                            if (typeof NexusChatUI !== 'undefined') {
+                                processPromises.push(NexusChatUI.processContainer(answerDiv));
                             }
                             if (chatData.sparkId && sparksMap[chatData.sparkId]) {
                                 const spark = sparksMap[chatData.sparkId];
                                 const headerDiv = document.createElement('div');
-                                headerDiv.className = 'lumina-spark-message-header';
+                                headerDiv.className = 'nexus-spark-message-header';
                                 const nameSpan = document.createElement('span');
-                                nameSpan.className = 'lumina-spark-name';
+                                nameSpan.className = 'nexus-spark-name';
                                 nameSpan.textContent = spark.name;
                                 const sepSpan = document.createElement('span');
-                                sepSpan.className = 'lumina-spark-separator';
+                                sepSpan.className = 'nexus-spark-separator';
                                 sepSpan.textContent = ' • ';
                                 const typeSpan = document.createElement('span');
-                                typeSpan.className = 'lumina-spark-type';
+                                typeSpan.className = 'nexus-spark-type';
                                 typeSpan.textContent = 'Custom Spark';
                                 headerDiv.appendChild(nameSpan);
                                 headerDiv.appendChild(sepSpan);
@@ -618,7 +620,7 @@ export const ChatHistoryManager = {
                     if (typeof attachQuestionListeners === 'function') attachQuestionListeners(questionDiv.querySelector('[contenteditable]'));
                 } else if (msg.type === 'answer') {
                     const entryDiv = document.createElement('div');
-                    entryDiv.className = 'lumina-entry';
+                    entryDiv.className = 'nexus-entry';
                     entryDiv.dataset.entryId = msg.metadata?.entryId || ('entry-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
                     entryDiv.dataset.entryType = msg.metadata?.entryType || 'qa';
                     if (msg.metadata?.webSearch) {
@@ -628,28 +630,28 @@ export const ChatHistoryManager = {
                         entryDiv.appendChild(stepperContainer.firstChild);
                     }
                     const answerDiv = document.createElement('div');
-                    answerDiv.className = 'lumina-chat-answer';
+                    answerDiv.className = 'nexus-chat-answer';
                     answerDiv.setAttribute('data-raw-text', msg.content);
                     let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                    displayContent = displayContent.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+                    displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
                         const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         const displayType = type.replace('code/', '').toUpperCase();
-                        return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
-      <div class="lumina-canvas-card-left">
-        <div class="lumina-canvas-card-info">
-          <div class="lumina-canvas-card-title">${name}</div>
-          <div class="lumina-canvas-card-meta">${displayType} • ${timeStr}</div>
+                        return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
+      <div class="nexus-canvas-card-left">
+        <div class="nexus-canvas-card-info">
+          <div class="nexus-canvas-card-title">${name}</div>
+          <div class="nexus-canvas-card-meta">${displayType} • ${timeStr}</div>
         </div>
       </div>
     </div>`;
                     });
-                    displayContent = displayContent.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+                    displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
                         return `*🔄 Canvas Updated: **${name}***`;
                     });
-                    displayContent = displayContent.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+                    displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
                         return `*💬 Canvas Comment Added: **${name}***`;
                     });
-                    if (displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="lumina-canvas-card"')) {
+                    if (displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
                         answerDiv.innerHTML = displayContent;
                     } else if (typeof marked !== 'undefined') {
                         let c = displayContent;
@@ -664,21 +666,21 @@ export const ChatHistoryManager = {
                         link.target = '_blank';
                         link.rel = 'noopener noreferrer';
                     });
-                    if (typeof LuminaChatUI !== 'undefined') {
-                        processPromises.push(LuminaChatUI.processContainer(answerDiv));
+                    if (typeof NexusChatUI !== 'undefined') {
+                        processPromises.push(NexusChatUI.processContainer(answerDiv));
                     }
                     if (chatData.sparkId && sparksMap[chatData.sparkId]) {
                         const spark = sparksMap[chatData.sparkId];
                         const headerDiv = document.createElement('div');
-                        headerDiv.className = 'lumina-spark-message-header';
+                        headerDiv.className = 'nexus-spark-message-header';
                         const nameSpan = document.createElement('span');
-                        nameSpan.className = 'lumina-spark-name';
+                        nameSpan.className = 'nexus-spark-name';
                         nameSpan.textContent = spark.name;
                         const sepSpan = document.createElement('span');
-                        sepSpan.className = 'lumina-spark-separator';
+                        sepSpan.className = 'nexus-spark-separator';
                         sepSpan.textContent = ' • ';
                         const typeSpan = document.createElement('span');
-                        typeSpan.className = 'lumina-spark-type';
+                        typeSpan.className = 'nexus-spark-type';
                         typeSpan.textContent = 'Custom Spark';
                         headerDiv.appendChild(nameSpan);
                         headerDiv.appendChild(sepSpan);
@@ -709,9 +711,9 @@ export const ChatHistoryManager = {
             historyContainer.__loadedGroupsCount = initialPageSize;
             
             const loadMoreDiv = document.createElement('div');
-            loadMoreDiv.className = 'lumina-load-more-history';
+            loadMoreDiv.className = 'nexus-load-more-history';
             loadMoreDiv.innerHTML = `
-                <svg class="lumina-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px; animation: spin 0.8s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                <svg class="nexus-load-more-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 14px; height: 14px; animation: spin 0.8s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
             `;
             if (history.__activeRestoreId !== restoreId) return;
             history.appendChild(loadMoreDiv);
@@ -724,11 +726,11 @@ export const ChatHistoryManager = {
             const loadNextChunk = async () => {
                 if (loadMoreDiv.dataset.loading === 'true') return;
                 loadMoreDiv.dataset.loading = 'true';
-                const spinner = loadMoreDiv.querySelector('.lumina-load-more-spinner');
+                const spinner = loadMoreDiv.querySelector('.nexus-load-more-spinner');
                 if (spinner) spinner.style.display = 'block';
                 
                 const loadedCount = historyContainer.__loadedGroupsCount || 10;
-                const allMessages = await LuminaChatDB.getMessages(historyContainer.__remainingSessionId).catch(() => []);
+                const allMessages = await NexusChatDB.getMessages(historyContainer.__remainingSessionId).catch(() => []);
                 const allGroups = reconstructGroups(allMessages);
                 const remaining = allGroups.slice(0, -loadedCount);
                 
@@ -776,9 +778,9 @@ export const ChatHistoryManager = {
             loadMoreDiv.addEventListener('click', loadNextChunk);
         }
 
-        const hasEntries = history.querySelector('.lumina-entry');
-        const regenBtn = document.getElementById('lumina-regenerate-btn') ||
-            document.querySelector('.lumina-regenerate-btn');
+        const hasEntries = history.querySelector('.nexus-entry');
+        const regenBtn = document.getElementById('nexus-regenerate-btn') ||
+            document.querySelector('.nexus-regenerate-btn');
 
         if (processPromises.length > 0) {
             if (historyContainer) {
@@ -791,7 +793,7 @@ export const ChatHistoryManager = {
             regenBtn.style.display = hasEntries ? 'flex' : 'none';
         }
 
-        const wsContainers = history.querySelectorAll('.lumina-websource-container');
+        const wsContainers = history.querySelectorAll('.nexus-websource-container');
         if (wsContainers.length > 0) {
             wsContainers.forEach(container => {
                 const iframe = container.querySelector('iframe');
@@ -846,11 +848,11 @@ export const ChatHistoryManager = {
         }
     },
     async getAllHistories() {
-        return await LuminaChatDB.getAllSessions();
+        return await NexusChatDB.getAllSessions();
     },
     async deleteSessionWithAttachments(sessionId) {
         try {
-            const messages = await LuminaChatDB.getMessages(sessionId);
+            const messages = await NexusChatDB.getMessages(sessionId);
             if (Array.isArray(messages)) {
                 for (const msg of messages) {
                     const files = msg.files || msg.images;
@@ -858,7 +860,7 @@ export const ChatHistoryManager = {
                         for (const file of files) {
                             if (file && file.attachmentId) {
                                 try {
-                                    await LuminaAttachmentDB.delete(file.attachmentId);
+                                    await NexusAttachmentDB.delete(file.attachmentId);
                                 } catch (e) {
                                     console.error('Failed to delete attachment from DB:', file.attachmentId, e);
                                 }
@@ -870,7 +872,7 @@ export const ChatHistoryManager = {
         } catch (e) {
             console.error('Error fetching messages for attachment cleanup:', e);
         }
-        await LuminaChatDB.deleteSession(sessionId);
+        await NexusChatDB.deleteSession(sessionId);
     },
     async deleteChat(sessionId) {
         try {
@@ -883,10 +885,10 @@ export const ChatHistoryManager = {
                     });
                 }
             });
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_deleted', deletedIds: [sessionId] }).catch(() => {});
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
-            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                LuminaSync.triggerDebouncedSync();
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_deleted', deletedIds: [sessionId] }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                NexusSync.triggerDebouncedSync();
             }
             return true;
         } catch (error) {
@@ -896,15 +898,15 @@ export const ChatHistoryManager = {
     },
     async renameChat(sessionId, newTitle) {
         try {
-            const meta = await LuminaChatDB.getSession(sessionId);
+            const meta = await NexusChatDB.getSession(sessionId);
             if (meta) {
                 meta.title = newTitle;
                 meta.isRenamed = true;
                 meta.updatedAt = Date.now();
-                await LuminaChatDB.putSession(meta);
-                chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                await NexusChatDB.putSession(meta);
+                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
                 return true;
             }
@@ -917,11 +919,11 @@ export const ChatHistoryManager = {
     async updateSessionModelAndThinking(sessionId, selectedModel, thinkingLevel) {
         if (!sessionId || sessionId === 'null') return false;
         try {
-            const meta = await LuminaChatDB.getSession(sessionId);
+            const meta = await NexusChatDB.getSession(sessionId);
             if (meta) {
                 if (selectedModel !== undefined) meta.selectedModel = selectedModel;
                 if (thinkingLevel !== undefined) meta.thinkingLevel = thinkingLevel;
-                await LuminaChatDB.putSession(meta);
+                await NexusChatDB.putSession(meta);
                 return true;
             }
             return false;
@@ -932,7 +934,7 @@ export const ChatHistoryManager = {
     },
     async getStorageUsage() {
         try {
-            return await LuminaChatDB.getStorageUsage();
+            return await NexusChatDB.getStorageUsage();
         } catch (error) {
             console.error('Error calculating chat storage:', error);
             return 0;
@@ -940,7 +942,7 @@ export const ChatHistoryManager = {
     },
     async clearAllHistory() {
         try {
-            const sessions = await LuminaChatDB.getAllSessions(true);
+            const sessions = await NexusChatDB.getAllSessions(true);
             for (const sessionId of Object.keys(sessions)) {
                 const session = sessions[sessionId];
                 if (session && session.archived) {
@@ -948,9 +950,9 @@ export const ChatHistoryManager = {
                 }
                 await this.deleteSessionWithAttachments(sessionId);
             }
-            chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
-            if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                LuminaSync.triggerDebouncedSync();
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                NexusSync.triggerDebouncedSync();
             }
             return true;
         } catch (error) {
@@ -972,7 +974,7 @@ export const ChatHistoryManager = {
             const retentionMs = months * 30 * 24 * 60 * 60 * 1000;
             const cutoffTime = Date.now() - retentionMs;
             
-            const sessions = await LuminaChatDB.getAllSessions();
+            const sessions = await NexusChatDB.getAllSessions();
             const deletedSessionIds = [];
             for (const [id, session] of Object.entries(sessions)) {
                 const sessionTime = session.updatedAt || session.createdAt || 0;
@@ -983,23 +985,23 @@ export const ChatHistoryManager = {
             }
             if (deletedSessionIds.length > 0) {
                 chrome.runtime.sendMessage({ action: 'cleanup_opfs_files' });
-                chrome.runtime.sendMessage({ action: 'lumina_sessions_index_updated' }).catch(() => {});
-                if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.triggerDebouncedSync === 'function') {
-                    LuminaSync.triggerDebouncedSync();
+                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                    NexusSync.triggerDebouncedSync();
                 }
             }
         } catch (error) {
-            console.error('[Lumina History] Error cleaning up history by age:', error);
+            console.error('[Nexus History] Error cleaning up history by age:', error);
         }
     },
 
     async getSessionMessages(sessionId) {
-        return await LuminaChatDB.getMessages(sessionId) || [];
+        return await NexusChatDB.getMessages(sessionId) || [];
     },
 
     async saveSessionMessages(sessionId, messages) {
-        const result = await LuminaChatDB.putMessages(sessionId, messages);
-        if (typeof LuminaAttachmentDB !== 'undefined' && LuminaAttachmentDB.getAllMetadata) {
+        const result = await NexusChatDB.putMessages(sessionId, messages);
+        if (typeof NexusAttachmentDB !== 'undefined' && NexusAttachmentDB.getAllMetadata) {
             (async () => {
                 try {
                     const activeIds = new Set();
@@ -1015,12 +1017,12 @@ export const ChatHistoryManager = {
                             }
                         }
                     }
-                    const metadata = await LuminaAttachmentDB.getAllMetadata();
+                    const metadata = await NexusAttachmentDB.getAllMetadata();
                     const sessionPrefix = `${sessionId}_`;
                     for (const item of metadata) {
                         if (item && item.key && item.key.startsWith(sessionPrefix)) {
                             if (!activeIds.has(item.key)) {
-                                await LuminaAttachmentDB.delete(item.key).catch(() => {});
+                                await NexusAttachmentDB.delete(item.key).catch(() => {});
                             }
                         }
                     }
@@ -1033,16 +1035,16 @@ export const ChatHistoryManager = {
     }
 };
 
-export const LuminaChatHistory = ChatHistoryManager;
+export const NexusChatHistory = ChatHistoryManager;
 
 if (typeof window !== 'undefined') {
     if (window.location.protocol === 'chrome-extension:') {
         ChatHistoryManager.cleanupHistoryByAge();
     }
     window.ChatHistoryManager = ChatHistoryManager;
-    window.LuminaChatHistory = LuminaChatHistory;
+    window.NexusChatHistory = NexusChatHistory;
 }
 if (typeof globalThis !== 'undefined') {
     globalThis.ChatHistoryManager = ChatHistoryManager;
-    globalThis.LuminaChatHistory = LuminaChatHistory;
+    globalThis.NexusChatHistory = NexusChatHistory;
 }

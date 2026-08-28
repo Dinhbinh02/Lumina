@@ -1,4 +1,4 @@
-export class LuminaTemplates {
+export class NexusTemplates {
     static escapeHtml(str) {
         if (!str) return '';
         return String(str)
@@ -11,11 +11,11 @@ export class LuminaTemplates {
 
     static modelItem(displayName, model) {
         const name = displayName || model;
-        return `<span class="model-name">${LuminaTemplates.escapeHtml(name)}</span>`;
+        return `<span class="model-name">${NexusTemplates.escapeHtml(name)}</span>`;
     }
 
     static thinkingDots() {
-        const temp = document.getElementById('lumina-thinkingIndicatorTemplate');
+        const temp = document.getElementById('nexus-thinkingIndicatorTemplate');
         if (temp) {
             const clone = temp.content.cloneNode(true);
             const dots = clone.querySelector('.thinking-dots');
@@ -35,16 +35,16 @@ export class LuminaTemplates {
     static sidebarContextMenu(items) {
         return items.map(item => {
             if (item.type === 'header') {
-                return `<div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--lumina-sidebar-text-muted, #757575);padding-bottom:2px;">${LuminaTemplates.escapeHtml(item.label)}</div>`;
+                return `<div class="sidebar-ctx-item sidebar-ctx-header-name" style="pointer-events:none;font-weight:600;font-size:12px;color:var(--nexus-sidebar-text-muted, #757575);padding-bottom:2px;">${NexusTemplates.escapeHtml(item.label)}</div>`;
             }
             if (item.type === 'divider') {
                 return `<div class="sidebar-ctx-divider"></div>`;
             }
             const dangerClass = item.danger ? ' sidebar-ctx-item--danger' : '';
             return `
-                <div class="sidebar-ctx-item${dangerClass}" data-action="${LuminaTemplates.escapeHtml(item.action)}">
+                <div class="sidebar-ctx-item${dangerClass}" data-action="${NexusTemplates.escapeHtml(item.action)}">
                     ${item.icon || ''}
-                    <span>${LuminaTemplates.escapeHtml(item.label)}</span>
+                    <span>${NexusTemplates.escapeHtml(item.label)}</span>
                 </div>
             `;
         }).join('');
@@ -130,7 +130,7 @@ export async function ensureMarkedLoaded() {
 }
 
 if (typeof window !== 'undefined') {
-    window.LuminaTemplates = LuminaTemplates;
+    window.NexusTemplates = NexusTemplates;
     window.ensureKatexLoaded = ensureKatexLoaded;
     window.ensureChartLoaded = ensureChartLoaded;
     window.ensurePdfjsLoaded = ensurePdfjsLoaded;

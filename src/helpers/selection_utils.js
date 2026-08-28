@@ -1,6 +1,6 @@
-import { LuminaAnnotation } from './annotation_utils.js';
+import { NexusAnnotation } from './annotation_utils.js';
 
-export const LuminaSelection = {
+export const NexusSelection = {
     btn: null,
     inputPopup: null,
     inputField: null,
@@ -27,12 +27,12 @@ export const LuminaSelection = {
             chrome.runtime.sendMessage(message, () => {
                 const lastError = chrome.runtime.lastError;
                 if (lastError) {
-                    console.warn('[Lumina] runtime message dropped:', lastError.message);
+                    console.warn('[Nexus] runtime message dropped:', lastError.message);
                 }
             });
             return true;
         } catch (error) {
-            console.warn('[Lumina] runtime context unavailable:', error?.message || error);
+            console.warn('[Nexus] runtime context unavailable:', error?.message || error);
             return false;
         }
     },
@@ -46,7 +46,7 @@ export const LuminaSelection = {
         }
     },
     getHighlightsInSelection(selectedRange) {
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation;
         if (!selectedRange || !annotationEngine) return [];
         const intersectingHighlights = [];
         for (const [id, data] of annotationEngine.highlightsMap.entries()) {
@@ -61,18 +61,18 @@ export const LuminaSelection = {
         let html = '';
         if (this.annotationMode) {
             html += `
-                <div class="lumina-color-swatch lumina-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                <div class="nexus-color-swatch nexus-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
-                <div class="lumina-action-item lumina-action-comment" title="Edit/Add Comment">
+                <div class="nexus-action-item nexus-action-comment" title="Edit/Add Comment">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
             this.ANNOTATION_COLORS.forEach(color => {
                 const isActive = color.toLowerCase() === (this.currentHighlightColor || '').toLowerCase();
                 html += `
-                    <div class="lumina-action-item lumina-action-highlight-btn ${isActive ? 'active' : ''}" data-color="${color}" title="Change Color">
-                        <div class="lumina-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? '2px solid var(--lumina-ui-primary, #6366f1)' : '1px solid rgba(0,0,0,0.15)'};"></div>
+                    <div class="nexus-action-item nexus-action-highlight-btn ${isActive ? 'active' : ''}" data-color="${color}" title="Change Color">
+                        <div class="nexus-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? '2px solid var(--nexus-ui-primary, #6366f1)' : '1px solid rgba(0,0,0,0.15)'};"></div>
                     </div>
                 `;
             });
@@ -80,36 +80,36 @@ export const LuminaSelection = {
             const intersectingIds = this.getHighlightsInSelection(this.range);
             if (intersectingIds.length > 0) {
                 html += `
-                    <div class="lumina-color-swatch lumina-clear-highlight" title="Clear All Highlights in Selection" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                    <div class="nexus-color-swatch nexus-clear-highlight" title="Clear All Highlights in Selection" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </div>
                 `;
             }
             html += `
-                <div class="lumina-action-item lumina-action-dict" title="Dictionary">
+                <div class="nexus-action-item nexus-action-dict" title="Dictionary">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                 </div>
-                <div class="lumina-action-item lumina-action-comment" title="Add Comment">
+                <div class="nexus-action-item nexus-action-comment" title="Add Comment">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block; opacity: 0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
             html += `
-                <div class="lumina-action-item lumina-action-highlight-btn" data-color="${this.currentHighlightColor}" title="Highlight text">
-                    <div class="lumina-action-highlight-color-preview" style="background-color: ${this.currentHighlightColor};"></div>
+                <div class="nexus-action-item nexus-action-highlight-btn" data-color="${this.currentHighlightColor}" title="Highlight text">
+                    <div class="nexus-action-highlight-color-preview" style="background-color: ${this.currentHighlightColor};"></div>
                 </div>
             `;
             const remainingColors = this.ANNOTATION_COLORS.filter(c => c.toLowerCase() !== this.currentHighlightColor.toLowerCase());
             if (this.showExtraColors) {
                 remainingColors.forEach(color => {
                     html += `
-                        <div class="lumina-action-item lumina-action-highlight-btn extra-color" data-color="${color}" title="Highlight text">
-                            <div class="lumina-action-highlight-color-preview" style="background-color: ${color};"></div>
+                        <div class="nexus-action-item nexus-action-highlight-btn extra-color" data-color="${color}" title="Highlight text">
+                            <div class="nexus-action-highlight-color-preview" style="background-color: ${color};"></div>
                         </div>
                     `;
                 });
             } else {
                 html += `
-                    <div class="lumina-action-item lumina-action-expand-colors" title="More colors">
+                    <div class="nexus-action-item nexus-action-expand-colors" title="More colors">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block; opacity: 0.7;"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
                 `;
@@ -131,21 +131,21 @@ export const LuminaSelection = {
         this.onCommentAdded = options.onCommentAdded;
         this.cleanup();
         this.btn = document.createElement('div');
-        this.btn.id = 'lumina-action-bar';
+        this.btn.id = 'nexus-action-bar';
         this.btn.style.cssText = 'pointer-events: auto; display: none; visibility: hidden;';
         this.renderDefaultActionBar();
         this.inputPopup = document.createElement('div');
-        this.inputPopup.id = 'lumina-ask-input-popup';
+        this.inputPopup.id = 'nexus-ask-input-popup';
         this.inputPopup.style.cssText = 'pointer-events: auto; display: none; visibility: hidden;';
         this.inputPopup.innerHTML = `
-            <div class="lumina-ask-input-wrapper">
-                <textarea class="lumina-ask-input-field" placeholder="Add a comment..."></textarea>
+            <div class="nexus-ask-input-wrapper">
+                <textarea class="nexus-ask-input-field" placeholder="Add a comment..."></textarea>
             </div>
         `;
-        this.inputField = this.inputPopup.querySelector('.lumina-ask-input-field');
+        this.inputField = this.inputPopup.querySelector('.nexus-ask-input-field');
 
         this.hoverTooltip = document.createElement('div');
-        this.hoverTooltip.id = 'lumina-comment-hover-tooltip';
+        this.hoverTooltip.id = 'nexus-comment-hover-tooltip';
         this.hoverTooltip.style.cssText = 'pointer-events: auto; display: none; visibility: hidden; position: fixed; z-index: 2147483647;';
         this.shadowRoot.appendChild(this.hoverTooltip);
 
@@ -162,12 +162,12 @@ export const LuminaSelection = {
         this.btn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             markInteracting();
-            const dictBtn = e.target.closest('.lumina-action-dict');
-            const commentBtn = e.target.closest('.lumina-action-comment');
-            const expandBtn = e.target.closest('.lumina-action-expand-colors');
-            const highlightBtn = e.target.closest('.lumina-action-highlight-btn');
-            const clearHighlightBtn = e.target.closest('.lumina-clear-highlight');
-            const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+            const dictBtn = e.target.closest('.nexus-action-dict');
+            const commentBtn = e.target.closest('.nexus-action-comment');
+            const expandBtn = e.target.closest('.nexus-action-expand-colors');
+            const highlightBtn = e.target.closest('.nexus-action-highlight-btn');
+            const clearHighlightBtn = e.target.closest('.nexus-clear-highlight');
+            const annotationEngine = window.NexusAnnotation || NexusAnnotation;
 
             if (expandBtn) {
                 this.showExtraColors = true;
@@ -222,7 +222,7 @@ export const LuminaSelection = {
 
         const handleSaveComment = () => {
             const commentText = this.inputField.value.trim();
-            const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+            const annotationEngine = window.NexusAnnotation || NexusAnnotation;
             if (commentText) {
                 if (this.annotationMode && this.currentAnnotationId) {
                     if (annotationEngine) {
@@ -256,14 +256,14 @@ export const LuminaSelection = {
             if (this.btn && this.btn.style.display === 'flex') return;
 
             const targetEl = document.elementFromPoint(e.clientX, e.clientY);
-            if (targetEl && (targetEl.closest('.lumina-chat-input-container') || targetEl.closest('.topbar') || targetEl.closest('.header') || targetEl.closest('.lumina-header') || targetEl.closest('#lumina-action-bar'))) {
+            if (targetEl && (targetEl.closest('.nexus-chat-input-container') || targetEl.closest('.topbar') || targetEl.closest('.header') || targetEl.closest('.nexus-header') || targetEl.closest('#nexus-action-bar'))) {
                 if (this.hoverTooltip && this.hoverTooltip.style.display === 'block') {
                     this.hideHoverTooltip();
                 }
                 return;
             }
 
-            const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+            const annotationEngine = window.NexusAnnotation || NexusAnnotation;
             const hData = annotationEngine ? annotationEngine.getHighlightAtCoords(e.clientX, e.clientY) : null;
             if (hData && hData.comment) {
                 if (this._hoverHideTimer) {
@@ -312,8 +312,8 @@ export const LuminaSelection = {
         if (!this.hoverTooltip || !hData || !hData.comment) return;
         this.currentHoveredAnnotationId = hData.id;
         this.hoverTooltip.innerHTML = `
-            <div class="lumina-comment-tooltip-card">
-                <span class="lumina-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
+            <div class="nexus-comment-tooltip-card">
+                <span class="nexus-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
             </div>
         `;
 
@@ -330,9 +330,9 @@ export const LuminaSelection = {
         }
 
         if (startRect) {
-            const inputContainer = document.querySelector('.lumina-chat-input-container');
+            const inputContainer = document.querySelector('.nexus-chat-input-container');
             const inputTop = inputContainer ? inputContainer.getBoundingClientRect().top : window.innerHeight - 100;
-            const topBar = document.querySelector('.topbar, .header, .lumina-header');
+            const topBar = document.querySelector('.topbar, .header, .nexus-header');
             const headerBottom = topBar ? topBar.getBoundingClientRect().bottom : 50;
 
             if (startRect.bottom < headerBottom || startRect.top > inputTop) {
@@ -359,7 +359,7 @@ export const LuminaSelection = {
         this.setScrollLock(false);
         this._unbindSelectionScrollTracking();
         if (this.shadowRoot) {
-            this.shadowRoot.querySelectorAll('#lumina-action-bar, #lumina-ask-input-popup, .lumina-overlay-backdrop').forEach(el => el.remove());
+            this.shadowRoot.querySelectorAll('#nexus-action-bar, #nexus-ask-input-popup, .nexus-overlay-backdrop').forEach(el => el.remove());
         }
     },
     updatePosition(element = this.btn) {
@@ -438,7 +438,7 @@ export const LuminaSelection = {
         this.sourceEntry = null;
         if (range && range.startContainer) {
             const node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
-            this.sourceEntry = node ? node.closest('.lumina-entry') : null;
+            this.sourceEntry = node ? node.closest('.nexus-entry') : null;
         }
         this.annotationMode = false;
         this.showExtraColors = false;
@@ -456,7 +456,7 @@ export const LuminaSelection = {
         this.inputPopup.style.visibility = 'visible';
         if (this.inputField) {
             let existingComment = '';
-            const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+            const annotationEngine = window.NexusAnnotation || NexusAnnotation;
             if (this.annotationMode && this.currentAnnotationId && annotationEngine) {
                 const data = annotationEngine.highlightsMap.get(this.currentAnnotationId);
                 if (data) existingComment = data.comment || '';
@@ -521,12 +521,12 @@ export const LuminaSelection = {
         if (this.onHide) this.onHide();
     },
     setScrollLock(lock) {
-        const isSpotlight = document.body.classList.contains('lumina-page') || window.location.pathname.includes('lumina.html');
+        const isSpotlight = document.body.classList.contains('nexus-page') || window.location.pathname.includes('nexus.html');
         if (isSpotlight) return;
         if (lock) {
             if (!this.inputBackdrop) {
                 this.inputBackdrop = document.createElement('div');
-                this.inputBackdrop.className = 'lumina-overlay-backdrop';
+                this.inputBackdrop.className = 'nexus-overlay-backdrop';
                 this.inputBackdrop.style.zIndex = '2147483646';
                 this.inputBackdrop.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
                 this.inputBackdrop.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
@@ -538,11 +538,11 @@ export const LuminaSelection = {
             this.originalOverflowHtml = document.documentElement.style.overflow;
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
-            document.querySelectorAll('.lumina-chat-scroll-content').forEach(el => {
+            document.querySelectorAll('.nexus-chat-scroll-content').forEach(el => {
                 el.style.overflow = 'hidden';
             });
             this._scrollPreventer = (e) => {
-                if (e.target.closest('.lumina-ask-input-field') || e.target.closest('.lumina-tooltip')) {
+                if (e.target.closest('.nexus-ask-input-field') || e.target.closest('.nexus-tooltip')) {
                     return;
                 }
                 e.preventDefault();
@@ -552,7 +552,7 @@ export const LuminaSelection = {
         } else {
             document.body.style.overflow = this.originalOverflowBody || '';
             document.documentElement.style.overflow = this.originalOverflowHtml || '';
-            document.querySelectorAll('.lumina-chat-scroll-content').forEach(el => {
+            document.querySelectorAll('.nexus-chat-scroll-content').forEach(el => {
                 el.style.overflow = 'auto';
             });
             if (this._scrollPreventer) {
@@ -580,8 +580,8 @@ export const LuminaSelection = {
         return range.getBoundingClientRect();
     },
     getDeepActiveElement(root = document) {
-        if (typeof LuminaChatUI !== 'undefined' && typeof LuminaChatUI.getDeepActiveElement === 'function') {
-            return LuminaChatUI.getDeepActiveElement(root);
+        if (typeof NexusChatUI !== 'undefined' && typeof NexusChatUI.getDeepActiveElement === 'function') {
+            return NexusChatUI.getDeepActiveElement(root);
         }
         let active = root.activeElement;
         while (active && active.shadowRoot) {
@@ -735,8 +735,8 @@ export const LuminaSelection = {
 };
 
 if (typeof window !== 'undefined') {
-    window.LuminaSelection = LuminaSelection;
+    window.NexusSelection = NexusSelection;
 }
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaSelection = LuminaSelection;
+    globalThis.NexusSelection = NexusSelection;
 }

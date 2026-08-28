@@ -81,8 +81,8 @@ export class AuthService {
         this.notifyListeners(this.isAuthenticated, this.user);
         if (this.isAuthenticated && typeof window !== 'undefined') {
             setTimeout(() => {
-                if (typeof LuminaSync !== 'undefined') {
-                    LuminaSync.checkAutoSync(true);
+                if (typeof NexusSync !== 'undefined') {
+                    NexusSync.checkAutoSync(true);
                 }
             }, 100);
         }
@@ -183,8 +183,8 @@ export class AuthService {
         try {
             const token = await this.getAuthToken(true);
             await this.fetchUserInfo(token);
-            if (typeof LuminaSync !== 'undefined') {
-                await LuminaSync.pullFromCloud(true).catch(e => console.warn('[Auth] Post-login pull error:', e));
+            if (typeof NexusSync !== 'undefined') {
+                await NexusSync.pullFromCloud(true).catch(e => console.warn('[Auth] Post-login pull error:', e));
             }
             return this.user;
         } catch (error) {
@@ -211,7 +211,7 @@ export class AuthService {
             'google_user_info'
         ]);
         chrome.alarms.clear('tokenRefresh');
-        chrome.alarms.clear('luminaAutoSync');
+        chrome.alarms.clear('nexusAutoSync');
         this.user = null;
         this.isAuthenticated = false;
         this.notifyListeners();
@@ -264,7 +264,7 @@ export class AuthService {
     }
 }
 
-export const LuminaAuth = new AuthService();
+export const NexusAuth = new AuthService();
 if (typeof window !== 'undefined') {
-    window.LuminaAuth = LuminaAuth;
+    window.NexusAuth = NexusAuth;
 }

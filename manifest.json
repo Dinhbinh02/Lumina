@@ -1,10 +1,10 @@
-﻿{
+{
     "manifest_version":  3,
-    "name":  "Lumina",
+    "name":  "Nexus",
     "version":  "1.0",
     "description":  "Fast, private, and flexible AI assistant for your browser.",
     "content_security_policy":  {
-                                    "extension_pages":  "script-src \u0027self\u0027 \u0027wasm-unsafe-eval\u0027; style-src \u0027self\u0027 \u0027unsafe-inline\u0027 https://fonts.googleapis.com; font-src \u0027self\u0027 https://fonts.gstatic.com; object-src \u0027self\u0027"
+                                    "extension_pages":  "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'self'"
                                 },
     "permissions":  [
                         "storage",
@@ -33,7 +33,7 @@
                                                        ]
                                 },
     "host_permissions":  [
-                             "\u003call_urls\u003e",
+                             "<all_urls>",
                              "https://tactiq.io/*"
                          ],
     "icons":  {
@@ -49,7 +49,7 @@
                                         "48":  "assets/icons/icon48.png",
                                         "128":  "assets/icons/icon128.png"
                                     },
-                   "default_title":  "Lumina",
+                   "default_title":  "Nexus",
                    "default_popup":  "pages/popup/popup.html"
                },
     "background":  {
@@ -57,12 +57,12 @@
                        "type":  "module"
                    },
     "commands":  {
-                     "open-lumina-chat":  {
+                     "open-nexus-chat":  {
                                               "suggested_key":  {
                                                                     "default":  "Ctrl+Space",
                                                                     "mac":  "Alt+Space"
                                                                 },
-                                              "description":  "Toggle Lumina Window",
+                                              "description":  "Toggle Nexus Window",
                                               "global":  true
                                           },
                      "new-chat":  {
@@ -78,7 +78,7 @@
                                                                      "default":  "Ctrl+Shift+Y",
                                                                      "mac":  "Command+Shift+Y"
                                                                  },
-                                               "description":  "Toggle Lumina Side Panel",
+                                               "description":  "Toggle Nexus Side Panel",
                                                "global":  true
                                            }
                  },
@@ -95,12 +95,12 @@
                                                            "pages/*"
                                                        ],
                                          "matches":  [
-                                                         "\u003call_urls\u003e"
+                                                         "<all_urls>"
                                                      ]
                                      }
                                  ],
     "options_ui":  {
-                       "page":  "pages/lumina/lumina.html?settings=1",
+                       "page":  "pages/nexus/nexus.html?settings=1",
                        "open_in_tab":  true
                    },
     "content_scripts":  [

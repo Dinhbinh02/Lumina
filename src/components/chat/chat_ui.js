@@ -1,9 +1,9 @@
 import { morphDOM, scheduleMorphDOM } from './dom_morph.js';
 import { streamSafeParse, completeIncompleteMarkdown, initMarkdownMath } from './markdown_math.js';
-import { renderChartJSWrapper, processLuminaChartElements } from './chart_renderer.js';
-import { processLuminaDynamicImageElements, processLuminaDynamicYoutubeElements } from './dynamic_media_processor.js';
+import { renderChartJSWrapper, processNexusChartElements } from './chart_renderer.js';
+import { processNexusDynamicImageElements, processNexusDynamicYoutubeElements } from './dynamic_media_processor.js';
 
-export class LuminaChatUI {
+export class NexusChatUI {
 
     static getDeepActiveElement() {
         let el = document.activeElement;
@@ -14,31 +14,31 @@ export class LuminaChatUI {
     }
     static injectQuestionActions(questionDiv) {
         if (!questionDiv) return;
-        const row = questionDiv.closest('.lumina-question-row');
+        const row = questionDiv.closest('.nexus-question-row');
         if (!row) return;
-        const existing = row.querySelector('.lumina-question-actions-row');
+        const existing = row.querySelector('.nexus-question-actions-row');
         if (existing) existing.remove();
         const actionsRow = document.createElement('div');
-        actionsRow.className = 'lumina-actions lumina-question-actions-row';
+        actionsRow.className = 'nexus-actions nexus-question-actions-row';
         actionsRow.innerHTML = `
-            <button class="lumina-answer-action-btn btn-undo" title="Undo">
+            <button class="nexus-answer-action-btn btn-undo" title="Undo">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
             </button>
-            <button class="lumina-answer-action-btn btn-copy" title="Copy">
+            <button class="nexus-answer-action-btn btn-copy" title="Copy">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-            <button class="lumina-answer-action-btn btn-edit" title="Edit">
+            <button class="nexus-answer-action-btn btn-edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
         `;
         const getChatUI = () => {
-            const histEl = questionDiv.closest('.lumina-chat-history, .lumina-chat-scroll-content');
+            const histEl = questionDiv.closest('.nexus-chat-history, .nexus-chat-scroll-content');
             return histEl?.__uiInstance || window.ui || (window.currentPopup?.__uiInstance);
         };
         actionsRow.querySelector('.btn-undo').onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const entry = questionDiv.closest('.lumina-entry');
+            const entry = questionDiv.closest('.nexus-entry');
             const chatUI = getChatUI();
             if (chatUI) chatUI._undoEditAndTruncate(entry, 'question', questionDiv, null);
         };
@@ -59,29 +59,29 @@ export class LuminaChatUI {
             if (chatUI) chatUI.enterQuestionEditMode(questionDiv);
         };
         row.appendChild(actionsRow);
-        LuminaChatUI.checkQuestionOverflow(questionDiv);
+        NexusChatUI.checkQuestionOverflow(questionDiv);
     }
     static checkQuestionOverflow(questionDiv) {
         if (!questionDiv) return;
-        const contentDiv = questionDiv.querySelector('.lumina-question-content');
+        const contentDiv = questionDiv.querySelector('.nexus-question-content');
         if (!contentDiv) return;
         if (contentDiv.scrollHeight === 0) {
-            requestAnimationFrame(() => LuminaChatUI.checkQuestionOverflow(questionDiv));
+            requestAnimationFrame(() => NexusChatUI.checkQuestionOverflow(questionDiv));
             return;
         }
         const hasOverflow = contentDiv.scrollHeight > contentDiv.clientHeight;
         if (hasOverflow) {
             questionDiv.classList.add('has-overflow');
-            let btn = questionDiv.querySelector('.lumina-question-expand-btn');
+            let btn = questionDiv.querySelector('.nexus-question-expand-btn');
             if (!btn) {
                 btn = document.createElement('div');
-                btn.className = 'lumina-question-expand-btn';
+                btn.className = 'nexus-question-expand-btn';
                 btn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
                 questionDiv.appendChild(btn);
             }
         } else {
             questionDiv.classList.remove('has-overflow');
-            const btn = questionDiv.querySelector('.lumina-question-expand-btn');
+            const btn = questionDiv.querySelector('.nexus-question-expand-btn');
             if (btn) btn.remove();
         }
     }
@@ -94,18 +94,18 @@ export class LuminaChatUI {
             ...options
         };
         this.systemTokens = 150;
-        this.historyEl = container.querySelector('.lumina-chat-history') ||
-            container.querySelector('.lumina-chat-scroll-content');
+        this.historyEl = container.querySelector('.nexus-chat-history') ||
+            container.querySelector('.nexus-chat-scroll-content');
         if (this.historyEl) {
             this.historyEl.__uiInstance = this;
         }
-        this.inputEl = container.querySelector('.lumina-chat-input') ||
-            (this.options.isSpotlight && !this.options.isPrimaryInput ? null : (document.querySelector('.lumina-chat-input') || document.querySelector('#chat-input')));
-        this.filePreviewEl = container.querySelector('.lumina-file-preview-container') ||
-            container.querySelector('.lumina-image-preview-container') ||
+        this.inputEl = container.querySelector('.nexus-chat-input') ||
+            (this.options.isSpotlight && !this.options.isPrimaryInput ? null : (document.querySelector('.nexus-chat-input') || document.querySelector('#chat-input')));
+        this.filePreviewEl = container.querySelector('.nexus-file-preview-container') ||
+            container.querySelector('.nexus-image-preview-container') ||
             container.querySelector('#image-preview') ||
-            document.querySelector('.lumina-file-preview-container') ||
-            document.querySelector('.lumina-image-preview-container');
+            document.querySelector('.nexus-file-preview-container') ||
+            document.querySelector('.nexus-image-preview-container');
         this.fileInputEl = container.querySelector('input[type="file"]') ||
             container.querySelector('#file-input') ||
             document.querySelector('#file-input');
@@ -139,14 +139,14 @@ export class LuminaChatUI {
             this.container.addEventListener('wheel', (e) => {
                 let target = e.target;
                 while (target && target !== this.container) {
-                    if (target.classList.contains('lumina-chat-scroll-content') ||
-                        target.classList.contains('lumina-chat-history')) {
+                    if (target.classList.contains('nexus-chat-scroll-content') ||
+                        target.classList.contains('nexus-chat-history')) {
                         if (scrollingTimeout) clearTimeout(scrollingTimeout);
-                        if (!target.classList.contains('lumina-is-scrolling')) {
-                            target.classList.add('lumina-is-scrolling');
+                        if (!target.classList.contains('nexus-is-scrolling')) {
+                            target.classList.add('nexus-is-scrolling');
                         }
                         scrollingTimeout = setTimeout(() => {
-                            target.classList.remove('lumina-is-scrolling');
+                            target.classList.remove('nexus-is-scrolling');
                             scrollingTimeout = null;
                         }, 200);
                         break;
@@ -169,13 +169,13 @@ export class LuminaChatUI {
     }
     syncStateFromDOM() {
         if (!this.historyEl) return;
-        const entries = this.historyEl.querySelectorAll('.lumina-entry');
+        const entries = this.historyEl.querySelectorAll('.nexus-entry');
         if (entries.length > 0) {
             const lastEntry = entries[entries.length - 1];
             this.currentEntryDiv = lastEntry;
-            this.loadingDiv = lastEntry.querySelector('.lumina-loading-wrapper');
-            this.searchingDiv = lastEntry.querySelector('.lumina-loading-wrapper') || lastEntry.querySelector('.lumina-searching-indicator');
-            const answerDiv = lastEntry.querySelector('.lumina-chat-answer') || lastEntry.querySelector('.lumina-answer-versions');
+            this.loadingDiv = lastEntry.querySelector('.nexus-loading-wrapper');
+            this.searchingDiv = lastEntry.querySelector('.nexus-loading-wrapper') || lastEntry.querySelector('.nexus-searching-indicator');
+            const answerDiv = lastEntry.querySelector('.nexus-chat-answer') || lastEntry.querySelector('.nexus-answer-versions');
             this.currentAnswerDiv = answerDiv;
         } else {
             this.currentEntryDiv = null;
@@ -188,13 +188,13 @@ export class LuminaChatUI {
         if (!container) return;
         this.historyEl = container;
         this._setupHistoryDelegation(container);
-        if (container._luminaListenersAttached) return;
-        container._luminaListenersAttached = true;
+        if (container._nexusListenersAttached) return;
+        container._nexusListenersAttached = true;
         container.addEventListener('keydown', (e) => {
-            const editable = e.target.closest('.lumina-chat-question div[contenteditable="true"]');
+            const editable = e.target.closest('.nexus-chat-question div[contenteditable="true"]');
             if (editable && e.target === editable) {
                 const isSelectAll = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a';
-                const tag = editable.querySelector('.lumina-selected-text-tag');
+                const tag = editable.querySelector('.nexus-selected-text-tag');
                 if (isSelectAll && tag) {
                     e.preventDefault();
                     const selection = window.getSelection();
@@ -222,7 +222,7 @@ export class LuminaChatUI {
                             const preRange = range.cloneRange();
                             preRange.selectNodeContents(editable);
                             preRange.setEnd(range.startContainer, range.startOffset);
-                            if (preRange.toString().trim() === '' && preRange.cloneContents().querySelector('.lumina-selected-text-tag')) {
+                            if (preRange.toString().trim() === '' && preRange.cloneContents().querySelector('.nexus-selected-text-tag')) {
                                 e.preventDefault();
                                 return;
                             }
@@ -242,12 +242,12 @@ export class LuminaChatUI {
             }
         });
         container.addEventListener('mouseover', (e) => {
-            const tag = e.target.closest('.lumina-selected-text-tag');
-            const commentHighlight = e.target.closest('.lumina-comment-highlight');
+            const tag = e.target.closest('.nexus-selected-text-tag');
+            const commentHighlight = e.target.closest('.nexus-comment-highlight');
             if (tag) {
                 tag.removeAttribute('title');
-                const questionDiv = tag.closest('.lumina-chat-question');
-                const isInputField = tag.closest('.lumina-ask-input-field') || tag.closest('.lumina-chat-input');
+                const questionDiv = tag.closest('.nexus-chat-question');
+                const isInputField = tag.closest('.nexus-ask-input-field') || tag.closest('.nexus-chat-input');
                 let context = "";
                 if (questionDiv) {
                     const rawText = questionDiv.getAttribute('data-raw-text') || "";
@@ -262,19 +262,19 @@ export class LuminaChatUI {
             }
         });
         container.addEventListener('mouseout', (e) => {
-            const tagOrComment = e.target.closest('.lumina-selected-text-tag, .lumina-comment-highlight');
+            const tagOrComment = e.target.closest('.nexus-selected-text-tag, .nexus-comment-highlight');
             if (tagOrComment) this._hideTagTooltip();
         });
         container.addEventListener('mousedown', (e) => {
-            const bubble = e.target.closest('.lumina-chat-question, .lumina-chat-answer');
+            const bubble = e.target.closest('.nexus-chat-question, .nexus-chat-answer');
             if (bubble) {
-                if (e.target.closest('.lumina-question-pin-btn')) return;
-                const expandBtn = e.target.closest('.lumina-question-expand-btn');
+                if (e.target.closest('.nexus-question-pin-btn')) return;
+                const expandBtn = e.target.closest('.nexus-question-expand-btn');
                 if (expandBtn) {
                     e.preventDefault();
                     e.stopPropagation();
                     const isExpanded = bubble.classList.toggle('expanded');
-                    const cDiv = bubble.querySelector('.lumina-question-content');
+                    const cDiv = bubble.querySelector('.nexus-question-content');
                     if (cDiv) {
                         cDiv.scrollTop = 0;
                         cDiv.scrollLeft = 0;
@@ -288,7 +288,7 @@ export class LuminaChatUI {
                 }
                 const editable = bubble.querySelector('[contenteditable="true"]');
                 if (editable) {
-                    if (!e.target.closest('.lumina-edit-btn, a, button, [contenteditable="true"]')) {
+                    if (!e.target.closest('.nexus-edit-btn, a, button, [contenteditable="true"]')) {
                         e.preventDefault();
                         this._focusEditableAtEnd(editable);
                     }
@@ -297,7 +297,7 @@ export class LuminaChatUI {
             }
         });
         container.addEventListener('input', (e) => {
-            const editable = e.target.closest('.lumina-chat-question div[contenteditable="true"]');
+            const editable = e.target.closest('.nexus-chat-question div[contenteditable="true"]');
             if (editable) e.stopPropagation();
         });
     }
@@ -305,9 +305,9 @@ export class LuminaChatUI {
         if (!historyEl) return;
         if (!this._historyDelegationClickHandler) {
             this._historyDelegationClickHandler = (e) => {
-                const actionBtn = e.target.closest('.lumina-answer-action-btn');
+                const actionBtn = e.target.closest('.nexus-answer-action-btn');
                 if (actionBtn) {
-                    const answerDiv = actionBtn.closest('.lumina-chat-answer');
+                    const answerDiv = actionBtn.closest('.nexus-chat-answer');
                     if (answerDiv) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -316,29 +316,29 @@ export class LuminaChatUI {
                         return;
                     }
                 }
-                const clickableImg = e.target.closest('.lumina-clickable-image');
+                const clickableImg = e.target.closest('.nexus-clickable-image');
                 if (clickableImg && clickableImg.src) {
                     e.stopPropagation();
                     this.showImagePreview(clickableImg.src, clickableImg.alt || clickableImg.getAttribute('alt'));
                 }
-                const fileChip = e.target.closest('.lumina-question-file-chip');
+                const fileChip = e.target.closest('.nexus-question-file-chip');
                 if (fileChip) {
                     e.stopPropagation();
-                    const entry = fileChip.closest('.lumina-entry');
-                    if (entry && entry._luminaImages) {
+                    const entry = fileChip.closest('.nexus-entry');
+                    if (entry && entry._nexusImages) {
                         const fileName = fileChip.title;
-                        const fileObj = entry._luminaImages.find(f => f.name === fileName);
+                        const fileObj = entry._nexusImages.find(f => f.name === fileName);
                         if (fileObj) {
                             this.showFilePreview(fileObj);
                         }
                     }
                 }
-                const showCodeBtn = e.target.closest('.lumina-show-code-btn');
+                const showCodeBtn = e.target.closest('.nexus-show-code-btn');
                 if (showCodeBtn) {
                     e.stopPropagation();
-                    const wrapper = showCodeBtn.closest('.lumina-python-chart-wrapper');
+                    const wrapper = showCodeBtn.closest('.nexus-python-chart-wrapper');
                     if (wrapper) {
-                        const codeDisplay = wrapper.querySelector('.lumina-python-code-display');
+                        const codeDisplay = wrapper.querySelector('.nexus-python-code-display');
                         if (codeDisplay) {
                             const isHidden = codeDisplay.style.display === 'none' || codeDisplay.style.getPropertyValue('display') === 'none';
                             codeDisplay.style.setProperty('display', isHidden ? 'block' : 'none', isHidden ? '' : 'important');
@@ -346,7 +346,7 @@ export class LuminaChatUI {
                         }
                     }
                 }
-                const d2Wrapper = e.target.closest('.lumina-d2-wrapper.lumina-d2-rendered');
+                const d2Wrapper = e.target.closest('.nexus-d2-wrapper.nexus-d2-rendered');
                 if (d2Wrapper) {
                     e.stopPropagation();
                     const svgEl = d2Wrapper.querySelector('svg');
@@ -365,7 +365,7 @@ export class LuminaChatUI {
                         clonedSvg.removeAttribute('height');
                         const svgStr = new XMLSerializer().serializeToString(clonedSvg);
                         const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-                        const sourceEl = d2Wrapper.querySelector('.lumina-d2-source, script[type="text/d2"]');
+                        const sourceEl = d2Wrapper.querySelector('.nexus-d2-source, script[type="text/d2"]');
                         const rawDef = sourceEl ? sourceEl.textContent : (d2Wrapper.getAttribute('data-d2') || '');
                         let caption = 'Diagram';
                         const lines = rawDef.split('\n');
@@ -574,12 +574,12 @@ export class LuminaChatUI {
     }
     _ensureQuestionRow(questionDiv) {
         if (!questionDiv) return null;
-        const existingRow = questionDiv.closest('.lumina-question-row');
+        const existingRow = questionDiv.closest('.nexus-question-row');
         if (existingRow) return existingRow;
         const parent = questionDiv.parentElement;
         if (!parent) return null;
         const row = document.createElement('div');
-        row.className = 'lumina-question-row';
+        row.className = 'nexus-question-row';
         parent.insertBefore(row, questionDiv);
         row.appendChild(questionDiv);
         return row;
@@ -601,8 +601,8 @@ export class LuminaChatUI {
         }
     }
     appendQuestion(text, images = [], options = {}) {
-        const layout = this.historyEl.closest('.lumina-chat-layout, #chat-layout');
-        const welcome = (layout || this.historyEl.parentNode || this.historyEl).querySelector('.spark-welcome, .lumina-homepage-welcome');
+        const layout = this.historyEl.closest('.nexus-chat-layout, #chat-layout');
+        const welcome = (layout || this.historyEl.parentNode || this.historyEl).querySelector('.spark-welcome, .nexus-homepage-welcome');
         if (welcome) {
             welcome.remove();
         }
@@ -621,10 +621,10 @@ export class LuminaChatUI {
                     const sessionId = this.historyEl?.dataset?.sessionId || (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.currentSessionId) || 'temp_session';
                     const attachmentId = 'img_' + Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 5);
                     const dbKey = `${sessionId}_${attachmentId}_Image.png`;
-                    const blob = LuminaAttachmentDB.dataURLtoBlob(item);
+                    const blob = NexusAttachmentDB.dataURLtoBlob(item);
                     let objectUrl = item;
                     if (blob) {
-                        LuminaAttachmentDB.put(dbKey, blob);
+                        NexusAttachmentDB.put(dbKey, blob);
                         objectUrl = URL.createObjectURL(blob);
                     }
                     const obj = {
@@ -663,25 +663,25 @@ export class LuminaChatUI {
                     item.attachmentId = dbKey;
                 }
                 if (item.dataUrl && item.dataUrl.startsWith('data:')) {
-                    const blob = LuminaAttachmentDB.dataURLtoBlob(item.dataUrl);
+                    const blob = NexusAttachmentDB.dataURLtoBlob(item.dataUrl);
                     if (blob && item.isImage) {
                         item.objectUrl = URL.createObjectURL(blob);
                     }
                     const storeBlob = async () => {
                         let dataUrlToUse = item.dataUrl;
                         if (item.isImage && dataUrlToUse.length > 120 * 1024) {
-                            dataUrlToUse = await LuminaFileProcessor.compressImage(dataUrlToUse, 2048, 2048, 0.9);
-                            const compressedBlob = LuminaAttachmentDB.dataURLtoBlob(dataUrlToUse);
+                            dataUrlToUse = await NexusFileProcessor.compressImage(dataUrlToUse, 2048, 2048, 0.9);
+                            const compressedBlob = NexusAttachmentDB.dataURLtoBlob(dataUrlToUse);
                             if (compressedBlob) {
                                 if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
                                 item.objectUrl = URL.createObjectURL(compressedBlob);
                                 const imgInDom = this.currentEntryDiv?.querySelector(`img[data-attachment-id="${item.attachmentId}"]`);
                                 if (imgInDom) imgInDom.src = item.objectUrl;
                                 item.mimeType = 'image/webp';
-                                await LuminaAttachmentDB.put(item.attachmentId, compressedBlob);
+                                await NexusAttachmentDB.put(item.attachmentId, compressedBlob);
                             }
                         } else if (blob) {
-                            await LuminaAttachmentDB.put(item.attachmentId, blob);
+                            await NexusAttachmentDB.put(item.attachmentId, blob);
                         }
                     };
                     storeBlob();
@@ -691,12 +691,12 @@ export class LuminaChatUI {
             : [];
         this.currentAnswerDiv = null;
         this.currentEntryDiv = document.createElement('div');
-        this.currentEntryDiv.className = 'lumina-entry';
+        this.currentEntryDiv.className = 'nexus-entry';
         this.currentEntryDiv.dataset.entryType = entryType;
         this.currentEntryDiv.dataset.entryId = 'entry-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         if (visibleImages.length > 0) {
             const filesDiv = document.createElement('div');
-            filesDiv.className = 'lumina-chat-question-files';
+            filesDiv.className = 'nexus-chat-question-files';
             visibleImages.forEach(item => {
                 const isImage = item.isImage || (item.mimeType && item.mimeType.startsWith('image/'));
                 const rawSrc = item.objectUrl || item.dataUrl || item.previewUrl || (item.mimeType && item.data ? `data:${item.mimeType};base64,${item.data}` : '');
@@ -708,7 +708,7 @@ export class LuminaChatUI {
                         img.dataset.attachmentId = item.attachmentId;
                     }
                     if (item.name) img.alt = item.name;
-                    img.className = 'lumina-clickable-image';
+                    img.className = 'nexus-clickable-image';
                     img.addEventListener('click', (e) => {
                         e.stopPropagation();
                         this.showImagePreview(img.src, img.alt);
@@ -716,28 +716,28 @@ export class LuminaChatUI {
                     filesDiv.appendChild(img);
                 } else {
                     const fileName = item.name || 'File';
-                    const displayName = LuminaChatUI.getDisplayFileName(fileName);
-                    const category = LuminaChatUI.inferFileCategory(item);
-                    const icon = LuminaChatUI.getFileIconByCategory(category);
-                    const typeLabel = LuminaChatUI.getFileTypeLabel(item);
+                    const displayName = NexusChatUI.getDisplayFileName(fileName);
+                    const category = NexusChatUI.inferFileCategory(item);
+                    const icon = NexusChatUI.getFileIconByCategory(category);
+                    const typeLabel = NexusChatUI.getFileTypeLabel(item);
                     const fileChip = document.createElement('div');
-                    fileChip.className = 'lumina-preview-item is-file lumina-question-file-chip';
+                    fileChip.className = 'nexus-preview-item is-file nexus-question-file-chip';
                     if (item.attachmentId) {
                         fileChip.dataset.attachmentId = item.attachmentId;
                     }
                     fileChip.title = fileName;
-                    fileChip.innerHTML = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
+                    fileChip.innerHTML = `<div class="nexus-file-preview-info"><span class="nexus-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
                     filesDiv.appendChild(fileChip);
                 }
             });
             this.currentEntryDiv.appendChild(filesDiv);
         }
         const questionDiv = document.createElement('div');
-        questionDiv.className = `lumina-chat-question${entryType !== 'qa' ? ` ${entryType}-question` : ''}`;
+        questionDiv.className = `nexus-chat-question${entryType !== 'qa' ? ` ${entryType}-question` : ''}`;
         questionDiv.dataset.entryType = entryType;
         if (visibleImages.length > 0) {
-            questionDiv._luminaImages = visibleImages;
-            this.currentEntryDiv._luminaImages = visibleImages;
+            questionDiv._nexusImages = visibleImages;
+            this.currentEntryDiv._nexusImages = visibleImages;
             questionDiv.dataset.images = JSON.stringify({
                 compact: true,
                 count: visibleImages.length,
@@ -778,7 +778,7 @@ export class LuminaChatUI {
             questionDiv.setAttribute('data-raw-text', text);
             this.currentEntryDiv.dataset.timestamp = String(Date.now());
             const contentDiv = document.createElement('div');
-            contentDiv.className = 'lumina-question-content';
+            contentDiv.className = 'nexus-question-content';
             contentDiv.innerHTML = displayText
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -789,7 +789,7 @@ export class LuminaChatUI {
         const scrollContainer = this.getScrollContainer();
         const preAppendScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         const row = document.createElement('div');
-        row.className = 'lumina-question-row';
+        row.className = 'nexus-question-row';
         row.appendChild(questionDiv);
         this.currentEntryDiv.appendChild(row);
         this.historyEl.appendChild(this.currentEntryDiv);
@@ -804,7 +804,7 @@ export class LuminaChatUI {
                 this.setInitialEntryHeight(this.currentEntryDiv, true, preAppendScroll, false);
             });
         }
-        LuminaChatUI.injectQuestionActions(questionDiv);
+        NexusChatUI.injectQuestionActions(questionDiv);
         return questionDiv;
     }
     createAnswerDiv() {
@@ -813,22 +813,22 @@ export class LuminaChatUI {
         }
         this._clearCommentInteractions();
         const applyProofreadStyles = (div) => {
-            div.classList.add('lumina-can-comment');
+            div.classList.add('nexus-can-comment');
             if (this.currentEntryDiv && this.currentEntryDiv.dataset.entryType === 'proofread') {
                 div.spellcheck = false;
                 div.style.outline = 'none';
                 div.style.borderRadius = '8px';
-                div.style.backgroundColor = 'var(--lumina-bg-secondary)';
-                div.classList.add('lumina-proofread-editable');
+                div.style.backgroundColor = 'var(--nexus-bg-secondary)';
+                div.classList.add('nexus-proofread-editable');
             }
         };
         if (this.currentEntryDiv) {
-            const activeVersion = this.currentEntryDiv.querySelector('.lumina-answer-version.active');
+            const activeVersion = this.currentEntryDiv.querySelector('.nexus-answer-version.active');
             if (activeVersion) {
-                let innerDiv = activeVersion.querySelector('.lumina-chat-answer');
+                let innerDiv = activeVersion.querySelector('.nexus-chat-answer');
                 if (!innerDiv) {
                     innerDiv = document.createElement('div');
-                    innerDiv.className = 'lumina-chat-answer';
+                    innerDiv.className = 'nexus-chat-answer';
                     activeVersion.appendChild(innerDiv);
                 }
                 applyProofreadStyles(innerDiv);
@@ -836,10 +836,10 @@ export class LuminaChatUI {
             }
         }
         const div = document.createElement('div');
-        div.className = 'lumina-chat-answer';
+        div.className = 'nexus-chat-answer';
         applyProofreadStyles(div);
         if (this.currentEntryDiv) {
-            const existingAnswer = this.currentEntryDiv.querySelector('.lumina-chat-answer');
+            const existingAnswer = this.currentEntryDiv.querySelector('.nexus-chat-answer');
             if (existingAnswer) {
                 this.currentEntryDiv.insertBefore(div, existingAnswer.nextSibling);
             } else {
@@ -847,7 +847,7 @@ export class LuminaChatUI {
             }
         } else {
             this.currentEntryDiv = document.createElement('div');
-            this.currentEntryDiv.className = 'lumina-entry';
+            this.currentEntryDiv.className = 'nexus-entry';
             this.currentEntryDiv.appendChild(div);
             this.historyEl.appendChild(this.currentEntryDiv);
         }
@@ -857,21 +857,21 @@ export class LuminaChatUI {
         }
         if (this.sparkId) {
             const sparkId = this.sparkId;
-            chrome.storage.local.get(['lumina_sparks']).then(res => {
-                const sparks = res.lumina_sparks || {};
+            chrome.storage.local.get(['nexus_sparks']).then(res => {
+                const sparks = res.nexus_sparks || {};
                 const spark = sparks[sparkId];
                 if (spark && spark.name) {
-                    if (!div.querySelector('.lumina-spark-message-header')) {
+                    if (!div.querySelector('.nexus-spark-message-header')) {
                         const headerDiv = document.createElement('div');
-                        headerDiv.className = 'lumina-spark-message-header';
+                        headerDiv.className = 'nexus-spark-message-header';
                         const nameSpan = document.createElement('span');
-                        nameSpan.className = 'lumina-spark-name';
+                        nameSpan.className = 'nexus-spark-name';
                         nameSpan.textContent = spark.name;
                         const sepSpan = document.createElement('span');
-                        sepSpan.className = 'lumina-spark-separator';
+                        sepSpan.className = 'nexus-spark-separator';
                         sepSpan.textContent = ' • ';
                         const typeSpan = document.createElement('span');
-                        typeSpan.className = 'lumina-spark-type';
+                        typeSpan.className = 'nexus-spark-type';
                         typeSpan.textContent = 'Custom Spark';
                         headerDiv.appendChild(nameSpan);
                         headerDiv.appendChild(sepSpan);
@@ -890,14 +890,14 @@ export class LuminaChatUI {
         const currentText = this.currentAnswerDiv.getAttribute('data-raw-text') || '';
         const newText = currentText + chunk;
         this.currentAnswerDiv.setAttribute('data-raw-text', newText);
-        if (typeof window !== 'undefined' && window.LuminaCanvas) {
-            window.LuminaCanvas.handleStream(newText);
+        if (typeof window !== 'undefined' && window.NexusCanvas) {
+            window.NexusCanvas.handleStream(newText);
         }
         this._throttledUpdateTokenCount();
-        let answerContentDiv = this.currentAnswerDiv.querySelector('.lumina-answer-content');
+        let answerContentDiv = this.currentAnswerDiv.querySelector('.nexus-answer-content');
         if (!answerContentDiv) {
             answerContentDiv = document.createElement('div');
-            answerContentDiv.className = 'lumina-answer-content';
+            answerContentDiv.className = 'nexus-answer-content';
             this.currentAnswerDiv.appendChild(answerContentDiv);
             answerContentDiv.__isRich = false;
         }
@@ -958,28 +958,28 @@ export class LuminaChatUI {
         if (answerDiv.__lastRenderedText === newText && !isFinished) return;
         answerDiv.__lastRenderedText = newText;
         let displayText = newText;
-        displayText = displayText.replace(/<lumina-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-create>|$)/gi, (match, name, type) => {
+        displayText = displayText.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const displayType = type.replace('code/', '').toUpperCase();
-            return `<div class="lumina-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
-  <div class="lumina-canvas-card-left">
-    <div class="lumina-canvas-card-info">
-      <div class="lumina-canvas-card-title">${name}</div>
-      <div class="lumina-canvas-card-meta">${displayType} • ${timeStr}</div>
+            return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
+  <div class="nexus-canvas-card-left">
+    <div class="nexus-canvas-card-info">
+      <div class="nexus-canvas-card-title">${name}</div>
+      <div class="nexus-canvas-card-meta">${displayType} • ${timeStr}</div>
     </div>
   </div>
 </div>`;
         });
-        displayText = displayText.replace(/<lumina-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-update>|$)/gi, (match, name) => {
+        displayText = displayText.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
             return `*🔄 Canvas Updated: **${name}***`;
         });
-        displayText = displayText.replace(/<lumina-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/lumina-canvas-comment>|$)/gi, (match, name) => {
+        displayText = displayText.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
             return `*💬 Canvas Comment Added: **${name}***`;
         });
-        const isProofreadAnswer = answerDiv.classList.contains('lumina-proofread-editable');
+        const isProofreadAnswer = answerDiv.classList.contains('nexus-proofread-editable');
         if (isProofreadAnswer) {
             displayText = displayText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-            const existing = answerDiv.querySelector('.lumina-thinking-steps');
+            const existing = answerDiv.querySelector('.nexus-thinking-steps');
             if (existing) existing.remove();
         }
         if (this.webSearchSources && this.webSearchSources.length > 0) {
@@ -1010,7 +1010,7 @@ export class LuminaChatUI {
                         this.updateStatusText(statusWrapper, lastHeading);
                     }
                 }
-                const existingSteps = answerDiv.querySelector('.lumina-thinking-steps');
+                const existingSteps = answerDiv.querySelector('.nexus-thinking-steps');
                 if (existingSteps) existingSteps.remove();
                 this.removeLoading();
                 this.removeSearching();
@@ -1036,21 +1036,21 @@ export class LuminaChatUI {
         if (thinkMatch) {
             isThinkingComplete = lastThinkEnd > lastThinkStart;
         }
-        let answerContentDiv = answerDiv.querySelector('.lumina-answer-content');
+        let answerContentDiv = answerDiv.querySelector('.nexus-answer-content');
         if (!answerContentDiv) {
             answerContentDiv = document.createElement('div');
-            answerContentDiv.className = 'lumina-answer-content';
+            answerContentDiv.className = 'nexus-answer-content';
             answerDiv.appendChild(answerContentDiv);
         }
         if (actualAnswer.trim() || isThinkingComplete) {
-            if (actualAnswer.trim().startsWith('<') && !actualAnswer.trim().startsWith('<div class="lumina-canvas-card"')) {
-                const offsets = window.LuminaSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
+            if (actualAnswer.trim().startsWith('<') && !actualAnswer.trim().startsWith('<div class="nexus-canvas-card"')) {
+                const offsets = window.NexusSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
                 if (answerContentDiv.childNodes.length === 0) {
                     answerContentDiv.innerHTML = actualAnswer;
                 } else {
                     morphDOM(answerContentDiv, actualAnswer);
                 }
-                if (offsets) window.LuminaSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
+                if (offsets) window.NexusSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
             } else if (typeof marked !== 'undefined') {
                 let content = actualAnswer;
                 content = content.replace(/!\[([^\]]*)\]\((image-search:\/\/[^)]*)\)/g, (match, alt, url) => {
@@ -1062,18 +1062,18 @@ export class LuminaChatUI {
                         const sourceIndex = parseInt(num) - 1;
                         const source = this.webSearchSources[sourceIndex];
                         if (source) {
-                            return `<a href="${source.link}" target="_blank" rel="noopener noreferrer" class="lumina-citation">${num}</a>`;
+                            return `<a href="${source.link}" target="_blank" rel="noopener noreferrer" class="nexus-citation">${num}</a>`;
                         }
                         return match;
                     });
                 }
-                const offsets = window.LuminaSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
+                const offsets = window.NexusSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
                 if (answerContentDiv.childNodes.length === 0) {
                     answerContentDiv.innerHTML = htmlContent;
                 } else {
                     morphDOM(answerContentDiv, htmlContent);
                 }
-                if (offsets) window.LuminaSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
+                if (offsets) window.NexusSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
                 answerContentDiv.__isRich = true;
             } else {
                 answerContentDiv.textContent = actualAnswer;
@@ -1109,8 +1109,8 @@ export class LuminaChatUI {
 
         const sourcesSnapshot = Array.isArray(this.webSearchSources) ? [...this.webSearchSources] : [];
         const rawText = answerDivSnapshot ? (answerDivSnapshot.getAttribute('data-raw-text') || '') : '';
-        if (typeof window !== 'undefined' && window.LuminaCanvas) {
-            window.LuminaCanvas.handleDone(rawText);
+        if (typeof window !== 'undefined' && window.NexusCanvas) {
+            window.NexusCanvas.handleDone(rawText);
         }
         const isProofreadEntry = this.currentEntryDiv?.dataset?.entryType === 'proofread';
         const shouldStickBottom = !this.disableStreamAutoFollow && !skipScroll && this._isNearBottom();
@@ -1132,18 +1132,18 @@ export class LuminaChatUI {
                         answerDivSnapshot.dataset.webSearch = JSON.stringify({
                             sourcesCount: sourcesSnapshot.length
                         });
-                        if (!answerDivSnapshot.querySelector('.lumina-sources')) {
+                        if (!answerDivSnapshot.querySelector('.nexus-sources')) {
                             const sourcesDiv = document.createElement('div');
-                            sourcesDiv.className = 'lumina-sources';
+                            sourcesDiv.className = 'nexus-sources';
                             sourcesDiv.innerHTML = `
-                                <div class="lumina-sources-title">Sources</div>
-                                <div class="lumina-sources-list">
+                                <div class="nexus-sources-title">Sources</div>
+                                <div class="nexus-sources-list">
                                     ${sourcesSnapshot.map((source, idx) => `
-                                        <a href="${source.link}" target="_blank" rel="noopener noreferrer" class="lumina-source-item">
-                                            <span class="lumina-source-num">${idx + 1}</span>
-                                            <div class="lumina-source-info">
-                                                <div class="lumina-source-name">${source.title || 'Source'}</div>
-                                                <div class="lumina-source-domain">${source.displayLink || new URL(source.link).hostname}</div>
+                                        <a href="${source.link}" target="_blank" rel="noopener noreferrer" class="nexus-source-item">
+                                            <span class="nexus-source-num">${idx + 1}</span>
+                                            <div class="nexus-source-info">
+                                                <div class="nexus-source-name">${source.title || 'Source'}</div>
+                                                <div class="nexus-source-domain">${source.displayLink || new URL(source.link).hostname}</div>
                                             </div>
                                         </a>
                                     `).join('')}
@@ -1152,9 +1152,9 @@ export class LuminaChatUI {
                             answerDivSnapshot.appendChild(sourcesDiv);
                         }
                     }
-                    await LuminaChatUI.processContainer(answerDivSnapshot);
+                    await NexusChatUI.processContainer(answerDivSnapshot);
                 } catch (e) {
-                    console.error('[Lumina] post-answer processing error:', e);
+                    console.error('[Nexus] post-answer processing error:', e);
                 } finally {
                     this.webSearchSources = previousSources;
                     if (scrollContainer && !shouldStickBottom) {
@@ -1183,7 +1183,7 @@ export class LuminaChatUI {
     static getViewportStats(container, inputWrapper) {
         const containerHeight = container.clientHeight || container.offsetHeight;
         const inputHeight = inputWrapper ? (inputWrapper.offsetHeight || 0) : 0;
-        const isSpotlight = document.body.classList.contains('lumina-page');
+        const isSpotlight = document.body.classList.contains('nexus-page');
         return {
             containerHeight,
             inputHeight,
@@ -1211,9 +1211,9 @@ export class LuminaChatUI {
     adjustEntryMargin(entry, behavior = 'none') {
         if (!entry) return;
         const run = () => {
-            const container = this.container.querySelector('.lumina-chat-container') || this.container;
-            const inputWrapper = this.container.querySelector('.lumina-chat-input-wrapper') || document.body.querySelector('.lumina-chat-input-wrapper');
-            LuminaChatUI.applyViewportMinHeight(entry, container, inputWrapper);
+            const container = this.container.querySelector('.nexus-chat-container') || this.container;
+            const inputWrapper = this.container.querySelector('.nexus-chat-input-wrapper') || document.body.querySelector('.nexus-chat-input-wrapper');
+            NexusChatUI.applyViewportMinHeight(entry, container, inputWrapper);
             this._marginTimer = null;
         };
         const isSpotlight = this.options.isSpotlight;
@@ -1228,20 +1228,20 @@ export class LuminaChatUI {
             this._marginTimer = setTimeout(run, 50);
         }
     }
-    clearEntryMargins(excludeEntry = null) {
+    updateEntryMinHeight(excludeEntry = null) {
         if (!this.historyEl) return;
         if (this._lastActiveEntry && this._lastActiveEntry !== excludeEntry) {
             try {
                 this._lastActiveEntry.style.removeProperty('min-height');
             } catch (e) { }
         }
-        const allEntries = this.historyEl.querySelectorAll('.lumina-entry');
+        const allEntries = this.historyEl.querySelectorAll('.nexus-entry');
         allEntries.forEach(e => {
             if (e !== excludeEntry) {
                 e.style.removeProperty('min-height');
             }
         });
-        this._lastActiveEntry = (excludeEntry && excludeEntry.classList.contains('lumina-entry')) ? excludeEntry : null;
+        this._lastActiveEntry = (excludeEntry && excludeEntry.classList.contains('nexus-entry')) ? excludeEntry : null;
     }
     _extractContext(rawText) {
         if (!rawText) return '';
@@ -1251,8 +1251,8 @@ export class LuminaChatUI {
     _showTagTooltip(target, content, isHtml = false) {
         if (!this.sharedTooltip) {
             this.sharedTooltip = document.createElement('div');
-            this.sharedTooltip.id = 'lumina-chat-tag-tooltip';
-            this.sharedTooltip.className = 'lumina-tooltip';
+            this.sharedTooltip.id = 'nexus-chat-tag-tooltip';
+            this.sharedTooltip.className = 'nexus-tooltip';
             this.sharedTooltip.style.position = 'fixed';
             this.sharedTooltip.style.zIndex = '2147483647';
             this.sharedTooltip.style.pointerEvents = 'none';
@@ -1316,16 +1316,16 @@ export class LuminaChatUI {
         if (!entry || !this.container) return;
         const scrollContainer = this.getScrollContainer();
         if (!scrollContainer) return;
-        const container = this.container.querySelector('.lumina-chat-container') || this.container;
+        const container = this.container.querySelector('.nexus-chat-container') || this.container;
         if (container.offsetParent === null && (window.getComputedStyle(container).display === 'none' || !document.body.contains(container))) {
             return;
         }
-        const inputWrapper = this.container.querySelector('.lumina-chat-input-wrapper') || document.body.querySelector('.lumina-chat-input-wrapper');
-        if (LuminaChatUI.applyViewportMinHeight(entry, container, inputWrapper)) {
-            this.clearEntryMargins(entry);
+        const inputWrapper = this.container.querySelector('.nexus-chat-input-wrapper') || document.body.querySelector('.nexus-chat-input-wrapper');
+        if (NexusChatUI.applyViewportMinHeight(entry, container, inputWrapper)) {
+            this.updateEntryMinHeight(entry);
             if (!skipScroll && (!this.disableAutoScroll || forceScroll)) {
-                const targetScrollTop = LuminaChatUI.calculateInitialScrollTarget(entry, scrollContainer, this.historyEl);
-                const { viewportHeight } = LuminaChatUI.getViewportStats(container, inputWrapper);
+                const targetScrollTop = NexusChatUI.calculateInitialScrollTarget(entry, scrollContainer, this.historyEl);
+                const { viewportHeight } = NexusChatUI.getViewportStats(container, inputWrapper);
                 const maxScroll = scrollContainer.scrollHeight - viewportHeight;
                 const finalScrollTop = Math.min(targetScrollTop, maxScroll);
                 scrollContainer.scrollTop = finalScrollTop;
@@ -1343,7 +1343,7 @@ export class LuminaChatUI {
         const isStopped = text && (text.includes('BodyStreamBuffer') || text.includes('aborted'));
         if (isStopped) {
             const entry = this.currentEntryDiv || this.historyEl.lastElementChild;
-            if (entry && entry.querySelector('.lumina-chat-answer.is-stopped')) {
+            if (entry && entry.querySelector('.nexus-chat-answer.is-stopped')) {
                 return;
             }
         }
@@ -1351,26 +1351,26 @@ export class LuminaChatUI {
         let isNewDiv = false;
         if (!targetDiv) {
             targetDiv = document.createElement('div');
-            targetDiv.className = 'lumina-chat-answer';
+            targetDiv.className = 'nexus-chat-answer';
             isNewDiv = true;
         }
-        let answerContentDiv = targetDiv.querySelector('.lumina-answer-content');
+        let answerContentDiv = targetDiv.querySelector('.nexus-answer-content');
         if (!answerContentDiv) {
             answerContentDiv = document.createElement('div');
-            answerContentDiv.className = 'lumina-answer-content';
+            answerContentDiv.className = 'nexus-answer-content';
             targetDiv.appendChild(answerContentDiv);
         }
         const errorDiv = document.createElement('div');
         if (isStopped) {
             targetDiv.classList.add('is-stopped');
-            errorDiv.className = 'lumina-error-message';
+            errorDiv.className = 'nexus-error-message';
             errorDiv.textContent = 'You stopped this response';
             errorDiv.style.opacity = '0.6';
             errorDiv.style.fontSize = '0.9em';
             errorDiv.style.marginTop = '8px';
         } else {
-            errorDiv.className = 'lumina-error-message';
-            errorDiv.style.setProperty('color', 'var(--lumina-error)', 'important');
+            errorDiv.className = 'nexus-error-message';
+            errorDiv.style.setProperty('color', 'var(--nexus-error)', 'important');
             errorDiv.style.marginTop = '8px';
             errorDiv.textContent = text;
         }
@@ -1383,26 +1383,26 @@ export class LuminaChatUI {
                 this.historyEl.appendChild(targetDiv);
             }
         }
-        LuminaChatUI.injectAnswerActions(targetDiv);
+        NexusChatUI.injectAnswerActions(targetDiv);
         this.scrollToBottom();
         this.currentAnswerDiv = null;
     }
     updateStatusText(statusWrapper, text) {
         if (!statusWrapper) return;
-        const textSpan = statusWrapper.querySelector('.lumina-status-text');
+        const textSpan = statusWrapper.querySelector('.nexus-status-text');
         if (!textSpan) return;
         if (textSpan.textContent === text) return;
         textSpan.textContent = text;
     }
     getLoadingHTML() {
-        return `<div class="lumina-thinking"><div class="lumina-dots-loader"><span></span><span></span><span></span></div><span class="lumina-status-text"></span></div>`;
+        return `<div class="nexus-thinking"><div class="nexus-dots-loader"><span></span><span></span><span></span></div><span class="nexus-status-text"></span></div>`;
     }
     getTranslationSkeletonHTML() {
         return `
-            <div class="lumina-translation-skeleton">
-                <div class="lumina-skeleton-line long"></div>
-                <div class="lumina-skeleton-line long"></div>
-                <div class="lumina-skeleton-line medium"></div>
+            <div class="nexus-translation-skeleton">
+                <div class="nexus-skeleton-line long"></div>
+                <div class="nexus-skeleton-line long"></div>
+                <div class="nexus-skeleton-line medium"></div>
             </div>
         `;
     }
@@ -1414,14 +1414,14 @@ export class LuminaChatUI {
         if (!this.currentAnswerDiv) {
             this.currentAnswerDiv = this.createAnswerDiv();
         }
-        let answerContentDiv = this.currentAnswerDiv.querySelector('.lumina-answer-content');
+        let answerContentDiv = this.currentAnswerDiv.querySelector('.nexus-answer-content');
         if (!answerContentDiv) {
             answerContentDiv = document.createElement('div');
-            answerContentDiv.className = 'lumina-answer-content';
+            answerContentDiv.className = 'nexus-answer-content';
             this.currentAnswerDiv.appendChild(answerContentDiv);
         }
         this.loadingDiv = document.createElement('div');
-        this.loadingDiv.className = 'lumina-loading-wrapper';
+        this.loadingDiv.className = 'nexus-loading-wrapper';
         this.loadingDiv.innerHTML = this.getLoadingHTML();
         answerContentDiv.appendChild(this.loadingDiv);
         if (!skipScroll) {
@@ -1434,17 +1434,17 @@ export class LuminaChatUI {
             this.loadingDiv = null;
         }
         if (this.historyEl) {
-            const extraLoading = this.historyEl.querySelectorAll('.lumina-loading-wrapper');
+            const extraLoading = this.historyEl.querySelectorAll('.nexus-loading-wrapper');
             extraLoading.forEach(el => el.remove());
         }
     }
     clearAnswer(entryDiv) {
         if (!entryDiv) return;
-        const answers = entryDiv.querySelectorAll('.lumina-chat-answer, .lumina-answer-versions, .lumina-answer-nav');
+        const answers = entryDiv.querySelectorAll('.nexus-chat-answer, .nexus-answer-versions, .nexus-answer-nav');
         answers.forEach(el => el.remove());
-        const loading = entryDiv.querySelectorAll('.lumina-loading-wrapper');
+        const loading = entryDiv.querySelectorAll('.nexus-loading-wrapper');
         loading.forEach(el => el.remove());
-        const searching = entryDiv.querySelectorAll('.lumina-searching-indicator');
+        const searching = entryDiv.querySelectorAll('.nexus-searching-indicator');
         searching.forEach(el => el.remove());
         this.currentAnswerDiv = null;
     }
@@ -1452,12 +1452,12 @@ export class LuminaChatUI {
         const text = query ? `Searching for ${query}` : 'Searching';
         const statusWrapper = this.loadingDiv || this.searchingDiv;
         if (statusWrapper) {
-            const thinkingEl = statusWrapper.querySelector('.lumina-thinking');
+            const thinkingEl = statusWrapper.querySelector('.nexus-thinking');
             if (thinkingEl) {
-                let textSpan = thinkingEl.querySelector('.lumina-status-text');
+                let textSpan = thinkingEl.querySelector('.nexus-status-text');
                 if (!textSpan) {
                     textSpan = document.createElement('span');
-                    textSpan.className = 'lumina-status-text';
+                    textSpan.className = 'nexus-status-text';
                     thinkingEl.appendChild(textSpan);
                 }
                 this.updateStatusText(statusWrapper, text);
@@ -1470,15 +1470,15 @@ export class LuminaChatUI {
         if (!this.currentAnswerDiv) {
             this.currentAnswerDiv = this.createAnswerDiv();
         }
-        let answerContentDiv = this.currentAnswerDiv.querySelector('.lumina-answer-content');
+        let answerContentDiv = this.currentAnswerDiv.querySelector('.nexus-answer-content');
         if (!answerContentDiv) {
             answerContentDiv = document.createElement('div');
-            answerContentDiv.className = 'lumina-answer-content';
+            answerContentDiv.className = 'nexus-answer-content';
             this.currentAnswerDiv.appendChild(answerContentDiv);
         }
         this.searchingDiv = document.createElement('div');
-        this.searchingDiv.className = 'lumina-loading-wrapper';
-        this.searchingDiv.innerHTML = `<div class="lumina-thinking"><div class="lumina-dots-loader"><span></span><span></span><span></span></div><span class="lumina-status-text">${text}</span></div>`;
+        this.searchingDiv.className = 'nexus-loading-wrapper';
+        this.searchingDiv.innerHTML = `<div class="nexus-thinking"><div class="nexus-dots-loader"><span></span><span></span><span></span></div><span class="nexus-status-text">${text}</span></div>`;
         answerContentDiv.appendChild(this.searchingDiv);
         this.scrollToBottom(true);
     }
@@ -1488,13 +1488,13 @@ export class LuminaChatUI {
             this.searchingDiv = null;
         }
         if (this.historyEl) {
-            const extraSearching = this.historyEl.querySelectorAll('.lumina-loading-wrapper, .lumina-searching-indicator');
+            const extraSearching = this.historyEl.querySelectorAll('.nexus-loading-wrapper, .nexus-searching-indicator');
             extraSearching.forEach(el => el.remove());
         }
     }
     _clearCommentInteractions() {
         if (!this.historyEl) return;
-        const buttons = this.historyEl.querySelectorAll('.lumina-send-comment-btn');
+        const buttons = this.historyEl.querySelectorAll('.nexus-send-comment-btn');
         buttons.forEach(btn => btn.remove());
     }
     handleWebSearchStatus(msg) {
@@ -1517,8 +1517,8 @@ export class LuminaChatUI {
     }
     async addFile(file) {
         if (!file) return false;
-        if (LuminaFileProcessor.isPdfFile(file)) {
-            const sourceAttachmentId = LuminaFileProcessor.createAttachmentId();
+        if (NexusFileProcessor.isPdfFile(file)) {
+            const sourceAttachmentId = NexusFileProcessor.createAttachmentId();
             const placeholder = {
                 attachmentId: sourceAttachmentId,
                 name: file.name,
@@ -1535,7 +1535,7 @@ export class LuminaChatUI {
             this._updateContainerState();
             setTimeout(async () => {
                 try {
-                    const rawPdf = await LuminaFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
+                    const rawPdf = await NexusFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
                     if (rawPdf) {
                         rawPdf.attachmentId = sourceAttachmentId;
                         rawPdf.isPDF = false;
@@ -1544,7 +1544,7 @@ export class LuminaChatUI {
                             this.attachedFiles[idx] = rawPdf;
                         }
                     }
-                    const derivedFiles = await LuminaFileProcessor.extractPdfAsAttachments(file);
+                    const derivedFiles = await NexusFileProcessor.extractPdfAsAttachments(file);
                     derivedFiles.forEach((prepared, idx) => {
                         prepared.attachmentId = `${sourceAttachmentId}:derived:${idx + 1}`;
                         prepared.parentAttachmentId = sourceAttachmentId;
@@ -1556,7 +1556,7 @@ export class LuminaChatUI {
                         delete this.attachedFiles[idx].status;
                     }
                 } catch (error) {
-                    console.warn('[Lumina] PDF extraction failed; keeping raw PDF attach:', error);
+                    console.warn('[Nexus] PDF extraction failed; keeping raw PDF attach:', error);
                     const idx = this.attachedFiles.findIndex(f => f.attachmentId === sourceAttachmentId);
                     if (idx !== -1) {
                         delete this.attachedFiles[idx].status;
@@ -1568,8 +1568,8 @@ export class LuminaChatUI {
             }, 50);
             return true;
         }
-        if (LuminaFileProcessor.isDocxFile(file)) {
-            const sourceAttachmentId = LuminaFileProcessor.createAttachmentId();
+        if (NexusFileProcessor.isDocxFile(file)) {
+            const sourceAttachmentId = NexusFileProcessor.createAttachmentId();
             const placeholder = {
                 attachmentId: sourceAttachmentId,
                 name: file.name,
@@ -1586,7 +1586,7 @@ export class LuminaChatUI {
             this._updateContainerState();
             setTimeout(async () => {
                 try {
-                    const rawDocx = await LuminaFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
+                    const rawDocx = await NexusFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
                     if (rawDocx) {
                         rawDocx.attachmentId = sourceAttachmentId;
                         const idx = this.attachedFiles.findIndex(f => f.attachmentId === sourceAttachmentId);
@@ -1594,7 +1594,7 @@ export class LuminaChatUI {
                             this.attachedFiles[idx] = rawDocx;
                         }
                     }
-                    const derivedFiles = await LuminaFileProcessor.extractDocxAsAttachments(file);
+                    const derivedFiles = await NexusFileProcessor.extractDocxAsAttachments(file);
                     derivedFiles.forEach((prepared, idx) => {
                         prepared.attachmentId = `${sourceAttachmentId}:derived:${idx + 1}`;
                         prepared.parentAttachmentId = sourceAttachmentId;
@@ -1602,7 +1602,7 @@ export class LuminaChatUI {
                         this._addPreparedFile(prepared);
                     });
                 } catch (error) {
-                    console.warn('[Lumina] DOCX extraction failed; keeping raw DOCX attach:', error);
+                    console.warn('[Nexus] DOCX extraction failed; keeping raw DOCX attach:', error);
                     const idx = this.attachedFiles.findIndex(f => f.attachmentId === sourceAttachmentId);
                     if (idx !== -1) {
                         delete this.attachedFiles[idx].status;
@@ -1614,8 +1614,8 @@ export class LuminaChatUI {
             }, 50);
             return true;
         }
-        if (LuminaFileProcessor.isXlsxFile(file)) {
-            const sourceAttachmentId = LuminaFileProcessor.createAttachmentId();
+        if (NexusFileProcessor.isXlsxFile(file)) {
+            const sourceAttachmentId = NexusFileProcessor.createAttachmentId();
             const placeholder = {
                 attachmentId: sourceAttachmentId,
                 name: file.name,
@@ -1632,7 +1632,7 @@ export class LuminaChatUI {
             this._updateContainerState();
             setTimeout(async () => {
                 try {
-                    const rawXlsx = await LuminaFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
+                    const rawXlsx = await NexusFileProcessor.prepareRawFileAttachment(file, (f) => this._createObjectUrl(f));
                     if (rawXlsx) {
                         rawXlsx.attachmentId = sourceAttachmentId;
                         const idx = this.attachedFiles.findIndex(f => f.attachmentId === sourceAttachmentId);
@@ -1640,7 +1640,7 @@ export class LuminaChatUI {
                             this.attachedFiles[idx] = rawXlsx;
                         }
                     }
-                    const derivedFiles = await LuminaFileProcessor.extractXlsxAsAttachments(file);
+                    const derivedFiles = await NexusFileProcessor.extractXlsxAsAttachments(file);
                     derivedFiles.forEach((prepared, idx) => {
                         prepared.attachmentId = `${sourceAttachmentId}:derived:${idx + 1}`;
                         prepared.parentAttachmentId = sourceAttachmentId;
@@ -1648,7 +1648,7 @@ export class LuminaChatUI {
                         this._addPreparedFile(prepared);
                     });
                 } catch (error) {
-                    console.warn('[Lumina] XLSX extraction failed; keeping raw XLSX attach:', error);
+                    console.warn('[Nexus] XLSX extraction failed; keeping raw XLSX attach:', error);
                     const idx = this.attachedFiles.findIndex(f => f.attachmentId === sourceAttachmentId);
                     if (idx !== -1) {
                         delete this.attachedFiles[idx].status;
@@ -1669,7 +1669,7 @@ export class LuminaChatUI {
                 return true;
             }
         } catch (error) {
-            console.warn('[Lumina] Office parsing failed, falling back to raw file attach:', error);
+            console.warn('[Nexus] Office parsing failed, falling back to raw file attach:', error);
         }
         return await new Promise((resolve) => {
             const reader = new FileReader();
@@ -1705,14 +1705,14 @@ export class LuminaChatUI {
         if (!fileObj || typeof fileObj !== 'object') return;
         
         if (!fileObj.attachmentId) {
-            fileObj.attachmentId = LuminaFileProcessor.createAttachmentId();
+            fileObj.attachmentId = NexusFileProcessor.createAttachmentId();
         }
         
         const isCompressing = fileObj.isImage && fileObj.dataUrl && fileObj.dataUrl.length > 120 * 1024;
         fileObj.status = isCompressing ? 'compressing' : 'done';
         
         if (fileObj.isImage && !fileObj.previewUrl && fileObj.dataUrl) {
-            fileObj.previewUrl = LuminaFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
+            fileObj.previewUrl = NexusFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
         }
         if (fileObj.isImage && fileObj.dataUrl && !fileObj.previewUrl) {
             fileObj.previewUrl = fileObj.dataUrl;
@@ -1728,14 +1728,14 @@ export class LuminaChatUI {
         if (isCompressing) {
             (async () => {
                 try {
-                    const compressedDataUrl = await LuminaFileProcessor.compressImage(fileObj.dataUrl, 2048, 2048, 0.9);
+                    const compressedDataUrl = await NexusFileProcessor.compressImage(fileObj.dataUrl, 2048, 2048, 0.9);
                     fileObj.dataUrl = compressedDataUrl;
                     fileObj.mimeType = 'image/webp';
                     fileObj.name = (fileObj.name || 'Pasted Image.png').replace(/\.[a-zA-Z0-9]+$/, '') + '.webp';
                     if (fileObj.previewUrl && fileObj.previewUrl.startsWith('blob:')) {
                         this._revokeObjectUrl(fileObj.previewUrl);
                     }
-                    fileObj.previewUrl = LuminaFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
+                    fileObj.previewUrl = NexusFileProcessor.resolveImagePreviewSrc(fileObj, fileObj.dataUrl);
                 } catch (err) {
                     console.error('[Immediate Compress] Failed to compress image:', err);
                 }
@@ -1826,10 +1826,10 @@ export class LuminaChatUI {
             return;
         }
         const listDiv = document.createElement('div');
-        listDiv.className = 'lumina-file-list lumina-image-list';
+        listDiv.className = 'nexus-file-list nexus-image-list';
         visibleEntries.forEach(({ file, index }) => {
             const itemDiv = document.createElement('div');
-            itemDiv.className = `lumina-preview-item ${file.isImage ? 'is-image' : 'is-file'} ${file.status === 'uploading' || file.status === 'compressing' ? 'is-uploading' : ''}`;
+            itemDiv.className = `nexus-preview-item ${file.isImage ? 'is-image' : 'is-file'} ${file.status === 'uploading' || file.status === 'compressing' ? 'is-uploading' : ''}`;
             itemDiv.title = file.name;
             let content = '';
             if (file.isImage) {
@@ -1838,18 +1838,18 @@ export class LuminaChatUI {
                 const fileName = file.name || 'File';
                 const rawExt = fileName.includes('.') ? fileName.split('.').pop() : '';
                 const ext = (rawExt || '').toLowerCase();
-                const category = LuminaChatUI.inferFileCategory(ext, file.mimeType || '');
-                const icon = LuminaChatUI.getFileIconByCategory(category);
-                const displayName = LuminaChatUI.getDisplayFileName(fileName);
-                const typeLabel = LuminaChatUI.getFileTypeLabel(file);
-                content = `<div class="lumina-file-preview-info"><span class="lumina-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="lumina-file-meta-row"><span class="lumina-file-icon-inline file-${category}">${icon}</span><span class="lumina-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
+                const category = NexusChatUI.inferFileCategory(ext, file.mimeType || '');
+                const icon = NexusChatUI.getFileIconByCategory(category);
+                const displayName = NexusChatUI.getDisplayFileName(fileName);
+                const typeLabel = NexusChatUI.getFileTypeLabel(file);
+                content = `<div class="nexus-file-preview-info"><span class="nexus-file-name">${this.escapeHTMLAttr(displayName || fileName)}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${this.escapeHTMLAttr(typeLabel)}</span></div></div>`;
             }
             itemDiv.innerHTML = content;
             itemDiv.onclick = () => {
                 this.showFilePreview(file);
             };
             const removeBtn = document.createElement('div');
-            removeBtn.className = 'lumina-file-remove lumina-image-remove';
+            removeBtn.className = 'nexus-file-remove nexus-image-remove';
             removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
             removeBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -1915,27 +1915,27 @@ export class LuminaChatUI {
     }
     appendPartialTranslation(text) {
         this._clearCommentInteractions();
-        this.clearEntryMargins();
+        this.updateEntryMinHeight();
         const safeText = this.escapeHTMLAttr(text);
         const div = document.createElement('div');
-        div.className = 'lumina-entry';
+        div.className = 'nexus-entry';
         div.dataset.entryType = 'translation';
         div.dataset.partial = 'true';
         div.innerHTML = `
-            <div class="lumina-chat-question translation-question">Translate</div>
-            <div class="lumina-translation-container">
-                <div class="lumina-translation-card">
+            <div class="nexus-chat-question translation-question">Translate</div>
+            <div class="nexus-translation-container">
+                <div class="nexus-translation-card">
                     <!-- Source Block (left) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-source" data-copy-text="${safeText}">
-                            <div class="lumina-translation-text">${text}</div>
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-source" data-copy-text="${safeText}">
+                            <div class="nexus-translation-text">${text}</div>
                         </div>
                     </div>
                     <!-- Vertical Divider -->
-                    <div class="lumina-translation-divider"></div>
+                    <div class="nexus-translation-divider"></div>
                     <!-- Target Block (right) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-target">
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-target">
                             ${this.getTranslationSkeletonHTML()}
                         </div>
                     </div>
@@ -1947,8 +1947,8 @@ export class LuminaChatUI {
         this.historyEl.appendChild(div);
         this.scrollToBottom();
         requestAnimationFrame(() => {
-            const sourceText = div.querySelector('.lumina-translation-text');
-            const targetContainer = div.querySelector('.lumina-translation-target');
+            const sourceText = div.querySelector('.nexus-translation-text');
+            const targetContainer = div.querySelector('.nexus-translation-target');
             if (sourceText && targetContainer) {
                 const styles = window.getComputedStyle(sourceText);
                 const lineHeight = parseFloat(styles.lineHeight) || 20;
@@ -1957,9 +1957,9 @@ export class LuminaChatUI {
                 let linesHTML = '';
                 for (let i = 0; i < exactLines; i++) {
                     const type = (i === exactLines - 1) ? 'medium' : 'long';
-                    linesHTML += `<div class="lumina-skeleton-line ${type}"></div>`;
+                    linesHTML += `<div class="nexus-skeleton-line ${type}"></div>`;
                 }
-                targetContainer.innerHTML = `<div class="lumina-translation-skeleton">${linesHTML}</div>`;
+                targetContainer.innerHTML = `<div class="nexus-translation-skeleton">${linesHTML}</div>`;
             }
             this.setInitialEntryHeight(div, false, preAppendScroll, true);
         });
@@ -1971,7 +1971,7 @@ export class LuminaChatUI {
             data = { translation: data, type: 'sentence' };
         }
         if (!data.original) {
-            const sourceDiv = element.querySelector('.lumina-translation-source');
+            const sourceDiv = element.querySelector('.nexus-translation-source');
             if (sourceDiv) {
                 data.original = sourceDiv.getAttribute('data-copy-text') || sourceDiv.textContent.trim();
             }
@@ -1983,27 +1983,27 @@ export class LuminaChatUI {
         let targetHTML = data.translation || '';
         if (data.sentences && Array.isArray(data.sentences)) {
             element.dataset.isPreSplit = 'true';
-            sourceHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.src || '')}</span>`).join(' ');
-            targetHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.tgt || '')}</span>`).join(' ');
+            sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.src || '')}</span>`).join(' ');
+            targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${this.escapeHTML(s.tgt || '')}</span>`).join(' ');
         } else {
             delete element.dataset.isPreSplit;
         }
         element.innerHTML = `
-            <div class="lumina-chat-question translation-question">Translate</div>
-            <div class="lumina-translation-container">
-                <div class="lumina-translation-card">
+            <div class="nexus-chat-question translation-question">Translate</div>
+            <div class="nexus-translation-container">
+                <div class="nexus-translation-card">
                     <!-- Source Block (left) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-source" data-copy-text="${safeOriginal}">
-                            <div class="lumina-translation-text">${sourceHTML}</div>
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
+                            <div class="nexus-translation-text">${sourceHTML}</div>
                         </div>
                     </div>
                     <!-- Vertical Divider -->
-                    <div class="lumina-translation-divider"></div>
+                    <div class="nexus-translation-divider"></div>
                     <!-- Target Block (right) -->
-                    <div class="lumina-translation-block">
-                        <div class="lumina-translation-target" data-copy-text="${safeTranslation}">
-                            <div class="lumina-translation-text">${targetHTML}</div>
+                    <div class="nexus-translation-block">
+                        <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
+                            <div class="nexus-translation-text">${targetHTML}</div>
                         </div>
                     </div>
                 </div>
@@ -2012,12 +2012,12 @@ export class LuminaChatUI {
         delete element.dataset.partial;
         this.adjustEntryMargin(element);
         this._throttledUpdateTokenCount();
-        requestAnimationFrame(() => LuminaChatUI._setupTranslationHighlight(element));
-        LuminaChatUI.balanceTranslationCard(element);
-        const regenBtn = this.container.querySelector('#lumina-regenerate-btn') ||
-            this.container.querySelector('.lumina-regenerate-btn') ||
-            document.getElementById('lumina-regenerate-btn') ||
-            document.querySelector('.lumina-regenerate-btn');
+        requestAnimationFrame(() => NexusChatUI._setupTranslationHighlight(element));
+        NexusChatUI.balanceTranslationCard(element);
+        const regenBtn = this.container.querySelector('#nexus-regenerate-btn') ||
+            this.container.querySelector('.nexus-regenerate-btn') ||
+            document.getElementById('nexus-regenerate-btn') ||
+            document.querySelector('.nexus-regenerate-btn');
         if (regenBtn) {
             regenBtn.style.display = 'flex';
         }
@@ -2042,7 +2042,7 @@ export class LuminaChatUI {
                 throw new Error(response?.error || 'Failed to fetch dictionary');
             }
         } catch (err) {
-            console.error('[Lumina] Dictionary lookup failed:', err);
+            console.error('[Nexus] Dictionary lookup failed:', err);
             this.updatePartialDictionary(entryDiv, { word: word, error: err.message });
         }
     }
@@ -2066,16 +2066,16 @@ export class LuminaChatUI {
 
     appendPartialDictionary(word) {
         this._clearCommentInteractions();
-        this.clearEntryMargins();
+        this.updateEntryMinHeight();
         const div = document.createElement('div');
-        div.className = 'lumina-entry';
+        div.className = 'nexus-entry';
         div.dataset.entryType = 'lookup';
         div.dataset.partial = 'true';
         div.dataset.word = word;
         div.innerHTML = `
-            <div class="lumina-chat-question lookup-question">Define: ${word}</div>
-            <div class="lumina-chat-answer">
-                <div class="lumina-dict-loading">
+            <div class="nexus-chat-question lookup-question">Define: ${word}</div>
+            <div class="nexus-chat-answer">
+                <div class="nexus-dict-loading">
                     ${this.getLoadingHTML()}
                 </div>
             </div>
@@ -2092,17 +2092,17 @@ export class LuminaChatUI {
 
     updatePartialDictionary(element, data) {
         if (!element) return;
-        const answerEl = element.querySelector('.lumina-chat-answer');
+        const answerEl = element.querySelector('.nexus-chat-answer');
         if (!answerEl) return;
         if (data.error && !data.entries) {
             if (data.error.includes('BodyStreamBuffer') || data.error.includes('aborted')) {
-                answerEl.innerHTML = `<div class="lumina-error-message is-stopped">You stopped this response</div>`;
+                answerEl.innerHTML = `<div class="nexus-error-message is-stopped">You stopped this response</div>`;
             } else {
-                answerEl.innerHTML = `<div class="lumina-error-message" style="color: var(--lumina-error) !important;">${data.error}</div>`;
+                answerEl.innerHTML = `<div class="nexus-error-message" style="color: var(--nexus-error) !important;">${data.error}</div>`;
             }
         } else {
             answerEl.innerHTML = this.renderDictionaryEntry(data);
-            answerEl.querySelectorAll('.lumina-dict-audio-btn').forEach(btn => {
+            answerEl.querySelectorAll('.nexus-dict-audio-btn').forEach(btn => {
                 btn.onclick = () => this.playAudio(btn.dataset.url);
             });
         }
@@ -2115,56 +2115,56 @@ export class LuminaChatUI {
 
     renderDictionaryEntry(data) {
         if (!data || !data.entries || data.entries.length === 0) {
-            return `<div class="lumina-error-message">No entries found for "${data.word}"</div>`;
+            return `<div class="nexus-error-message">No entries found for "${data.word}"</div>`;
         }
         let html = `
-            <div class="lumina-dict-card">
-                <div class="lumina-dict-header">
-                    <span class="lumina-dict-word">${data.word}</span>
+            <div class="nexus-dict-card">
+                <div class="nexus-dict-header">
+                    <span class="nexus-dict-word">${data.word}</span>
                 </div>
         `;
         data.entries.forEach(entry => {
             html += `
-                <div class="lumina-dict-item">
-                    <div class="lumina-dict-meta">
-                        ${entry.pos ? `<span class="lumina-dict-pos">${entry.pos}</span>` : ''}
+                <div class="nexus-dict-item">
+                    <div class="nexus-dict-meta">
+                        ${entry.pos ? `<span class="nexus-dict-pos">${entry.pos}</span>` : ''}
                         ${entry.uk?.ipa ? `
-                            <span class="lumina-dict-ipa-group">
-                                <span class="lumina-dict-region">UK</span>
-                                <span class="lumina-dict-ipa">/${entry.uk.ipa}/</span>
-                                ${entry.uk.audio ? `<button class="lumina-dict-audio-btn" data-url="${entry.uk.audio}" title="Play UK Audio">
+                            <span class="nexus-dict-ipa-group">
+                                <span class="nexus-dict-region">UK</span>
+                                <span class="nexus-dict-ipa">/${entry.uk.ipa}/</span>
+                                ${entry.uk.audio ? `<button class="nexus-dict-audio-btn" data-url="${entry.uk.audio}" title="Play UK Audio">
                                     <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
                                 </button>` : ''}
                             </span>
                         ` : ''}
                         ${entry.us?.ipa ? `
-                            <span class="lumina-dict-ipa-group">
-                                <span class="lumina-dict-region">US</span>
-                                <span class="lumina-dict-ipa">/${entry.us.ipa}/</span>
-                                ${entry.us.audio ? `<button class="lumina-dict-audio-btn" data-url="${entry.us.audio}" title="Play US Audio">
+                            <span class="nexus-dict-ipa-group">
+                                <span class="nexus-dict-region">US</span>
+                                <span class="nexus-dict-ipa">/${entry.us.ipa}/</span>
+                                ${entry.us.audio ? `<button class="nexus-dict-audio-btn" data-url="${entry.us.audio}" title="Play US Audio">
                                     <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
                                 </button>` : ''}
                             </span>
                         ` : ''}
                     </div>
-                    <div class="lumina-dict-senses">
+                    <div class="nexus-dict-senses">
             `;
             entry.senses.forEach(sense => {
-                html += `<div class="lumina-dict-sense">`;
+                html += `<div class="nexus-dict-sense">`;
                 if (sense.indicator) {
-                    html += `<div class="lumina-dict-indicator">${sense.indicator}</div>`;
+                    html += `<div class="nexus-dict-indicator">${sense.indicator}</div>`;
                 }
                 sense.definitions.forEach(def => {
                     html += `
-                        <div class="lumina-dict-def-block">
-                            <div class="lumina-dict-meaning-text">${def.meaning}</div>
-                            ${def.translation ? `<div class="lumina-dict-translation">${def.translation}</div>` : ''}
+                        <div class="nexus-dict-def-block">
+                            <div class="nexus-dict-meaning-text">${def.meaning}</div>
+                            ${def.translation ? `<div class="nexus-dict-translation">${def.translation}</div>` : ''}
                             ${def.examples && def.examples.length > 0 ? (() => {
                             const ex = def.examples[0];
                             const escaped = (entry.word || data.word || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                             const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, 'gi');
                             const highlighted = ex.replace(regex, '<strong>$1</strong>');
-                            return `<div class="lumina-dict-example">"${highlighted}"</div>`;
+                            return `<div class="nexus-dict-example">"${highlighted}"</div>`;
                         })() : ''}
                         </div>
                     `;
@@ -2185,7 +2185,7 @@ export class LuminaChatUI {
             const audio = new Audio(url);
             await audio.play();
         } catch (err) {
-            console.error('[Lumina] Failed to play audio:', err);
+            console.error('[Nexus] Failed to play audio:', err);
         }
     }
     static _setupTranslationHighlight(element) {
@@ -2216,9 +2216,9 @@ export class LuminaChatUI {
     }
     collectComments(entry) {
         if (!entry) return { instructions: '', draft: '' };
-        const answerEl = entry.querySelector('.lumina-chat-answer');
+        const answerEl = entry.querySelector('.nexus-chat-answer');
         if (!answerEl) return { instructions: '', draft: '' };
-        const highlights = answerEl.querySelectorAll('.lumina-comment-highlight');
+        const highlights = answerEl.querySelectorAll('.nexus-comment-highlight');
         if (highlights.length === 0) return { instructions: '', draft: '' };
         let instructions = '';
         highlights.forEach((h, index) => {
@@ -2233,21 +2233,21 @@ export class LuminaChatUI {
     }
     gatherMessages(untilEntryId = null, ignoreLimit = false, targetThinkingLevel = 'none') {
         let messages = [];
-        const entries = this.historyEl.querySelectorAll('.lumina-entry');
+        const entries = this.historyEl.querySelectorAll('.nexus-entry');
         for (const entry of entries) {
             const entryType = entry.dataset.entryType || 'qa';
             const isTargetEntry = untilEntryId && entry.dataset.entryId === untilEntryId;
             if (isTargetEntry) break;
-            const questionEl = entry.querySelector('.lumina-chat-question');
+            const questionEl = entry.querySelector('.nexus-chat-question');
             let answerEl = null;
-            const versionsContainer = entry.querySelector('.lumina-answer-versions');
+            const versionsContainer = entry.querySelector('.nexus-answer-versions');
             if (versionsContainer) {
-                const activeVersion = versionsContainer.querySelector('.lumina-answer-version.active');
+                const activeVersion = versionsContainer.querySelector('.nexus-answer-version.active');
                 if (activeVersion) {
-                    answerEl = activeVersion.querySelector('.lumina-chat-answer');
+                    answerEl = activeVersion.querySelector('.nexus-chat-answer');
                 }
             } else {
-                answerEl = entry.querySelector('.lumina-chat-answer');
+                answerEl = entry.querySelector('.nexus-chat-answer');
             }
             if (questionEl) {
                 let questionText = questionEl.getAttribute('data-raw-text') || questionEl.textContent.trim();
@@ -2269,8 +2269,8 @@ export class LuminaChatUI {
                         questionText = prompt;
                     }
                 }
-                let images = Array.isArray(questionEl._luminaImages) ? questionEl._luminaImages :
-                    (Array.isArray(entry._luminaImages) ? entry._luminaImages : []);
+                let images = Array.isArray(questionEl._nexusImages) ? questionEl._nexusImages :
+                    (Array.isArray(entry._nexusImages) ? entry._nexusImages : []);
                 if (!images.length && questionEl.dataset.images) {
                     try {
                         const parsed = JSON.parse(questionEl.dataset.images);
@@ -2290,8 +2290,8 @@ export class LuminaChatUI {
                 });
             }
             if (answerEl) {
-                let answerText = answerEl.classList.contains('lumina-answer-editing')
-                    ? ((answerEl.querySelector('.lumina-answer-content') || answerEl).innerText || (answerEl.querySelector('.lumina-answer-content') || answerEl).textContent || '').trim()
+                let answerText = answerEl.classList.contains('nexus-answer-editing')
+                    ? ((answerEl.querySelector('.nexus-answer-content') || answerEl).innerText || (answerEl.querySelector('.nexus-answer-content') || answerEl).textContent || '').trim()
                     : (answerEl.getAttribute('data-raw-text') || answerEl.textContent.trim());
                 if (answerText) {
                     const normLevel = (typeof targetThinkingLevel === 'string' ? targetThinkingLevel.trim().toLowerCase() : 'none');
@@ -2307,9 +2307,9 @@ export class LuminaChatUI {
             if (isTargetEntry) break;
         }
         if (!ignoreLimit && this.tokenLimit && this.tokenLimit > 0) {
-            const inputEl = this.container ? this.container.querySelector('.lumina-chat-input') : null;
+            const inputEl = this.container ? this.container.querySelector('.nexus-chat-input') : null;
             const inputText = inputEl ? inputEl.value : '';
-            const inputTokens = (typeof LuminaToken !== 'undefined') ? LuminaToken.count(inputText) : Math.ceil(inputText.length / 2);
+            const inputTokens = (typeof NexusToken !== 'undefined') ? NexusToken.count(inputText) : Math.ceil(inputText.length / 2);
             let attachmentTokens = 0;
             if (this.attachedFiles && this.attachedFiles.length > 0) {
                 this.attachedFiles.forEach(file => {
@@ -2318,7 +2318,7 @@ export class LuminaChatUI {
                         if (matches) {
                             try {
                                 const decoded = this._decodeBase64Utf8(matches[2]);
-                                attachmentTokens += (typeof LuminaToken !== 'undefined') ? LuminaToken.count(decoded) : Math.ceil(decoded.length / 2);
+                                attachmentTokens += (typeof NexusToken !== 'undefined') ? NexusToken.count(decoded) : Math.ceil(decoded.length / 2);
                             } catch (e) { }
                         }
                     } else if (file.isImage || file.mimeType?.startsWith('image/')) {
@@ -2329,7 +2329,7 @@ export class LuminaChatUI {
             let contextTokens = 0;
             const webChipsGroup = this.container ? this.container.querySelector('#web-chips-group') : null;
             if (webChipsGroup) {
-                const activeChips = webChipsGroup.querySelectorAll('.lumina-web-chip.is-active');
+                const activeChips = webChipsGroup.querySelectorAll('.nexus-web-chip.is-active');
                 activeChips.forEach(chip => {
                     const tokens = parseInt(chip.dataset.tokens || '0');
                     if (tokens > 0) contextTokens += tokens;
@@ -2344,7 +2344,7 @@ export class LuminaChatUI {
                 const slicedMessages = [];
                 for (let i = messages.length - 1; i >= 0; i--) {
                     const m = messages[i];
-                    const mTokens = (typeof LuminaToken !== 'undefined') ? LuminaToken.count(m.text || '') : Math.ceil((m.text || '').length / 2);
+                    const mTokens = (typeof NexusToken !== 'undefined') ? NexusToken.count(m.text || '') : Math.ceil((m.text || '').length / 2);
                     if (currentHistoryTokens + mTokens <= budget) {
                         slicedMessages.unshift(m);
                         currentHistoryTokens += mTokens;
@@ -2385,39 +2385,39 @@ export class LuminaChatUI {
     static getChatInputHTML(autofocus = false) {
         const isSidePanel = typeof document !== 'undefined' && (document.body.classList.contains('is-sidepanel') || new URLSearchParams(window.location.search).get('sidepanel') === '1');
         return `
-          <div class="lumina-chat-input-wrapper">
-            <div class="lumina-input-meta-container" id="input-meta-container">
-                ${isSidePanel ? '' : '<div class="lumina-web-chips" id="web-chips-group"></div>'}
-                <div class="lumina-redirect-group" id="redirect-chips-group"></div>
+          <div class="nexus-chat-input-wrapper">
+            <div class="nexus-input-meta-container" id="input-meta-container">
+                ${isSidePanel ? '' : '<div class="nexus-web-chips" id="web-chips-group"></div>'}
+                <div class="nexus-redirect-group" id="redirect-chips-group"></div>
             </div>
-            <div class="lumina-input-container">
-                <div class="lumina-file-preview-container lumina-image-preview-container"></div>
-                <div class="lumina-input-bar" id="input-bar">
-                    <div class="lumina-left-actions">
-                         <button class="lumina-upload-btn" id="upload-btn" title="Upload File">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <div class="nexus-input-container">
+                <div class="nexus-file-preview-container nexus-image-preview-container"></div>
+                <div class="nexus-input-bar" id="input-bar">
+                    <div class="nexus-left-actions">
+                         <button class="nexus-upload-btn" id="upload-btn" title="Upload File">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                          </button>
-                         ${isSidePanel ? '<div class="lumina-web-chips" id="web-chips-group"></div>' : ''}
+                         <div class="nexus-model-selector" id="model-selector">
+                             <button class="nexus-model-btn" id="model-btn">
+                                 <span class="nexus-current-model" id="model-label">Loading...</span>
+                                 <svg class="nexus-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" style="opacity: 0.85;"><path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                             </button>
+                             <div class="nexus-model-dropdown" id="model-dropdown"></div>
+                         </div>
+                         ${isSidePanel ? '<div class="nexus-web-chips" id="web-chips-group"></div>' : ''}
                     </div>
-                    <textarea id="chat-input" class="lumina-chat-input" placeholder="Ask anything..." rows="1"></textarea>
-                    <div class="lumina-trailing-group">
-                        <div class="lumina-model-selector" id="model-selector">
-                            <button class="lumina-model-btn" id="model-btn">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" style="opacity: 0.6;"><path d="M18 9l-6 6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 12 12)"/></svg>
-                                <span class="lumina-current-model" id="model-label">Loading...</span>
-                            </button>
-                            <div class="lumina-model-dropdown" id="model-dropdown"></div>
-                        </div>
-                        <button class="lumina-mic-btn" id="mic-btn" title="Voice Input">
+                    <textarea id="chat-input" class="nexus-chat-input" placeholder="Ask anything..." rows="1"></textarea>
+                    <div class="nexus-trailing-group">
+                        <button class="nexus-mic-btn" id="mic-btn" title="Voice Input">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                         </button>
-                        <button class="lumina-action-btn send" id="action-btn" title="Send" disabled>
+                        <button class="nexus-action-btn send" id="action-btn" title="Send" disabled>
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
                         </button>
                     </div>
                 </div>
             </div>
-            <div class="lumina-hover-trigger"></div>
+            <div class="nexus-hover-trigger"></div>
           </div>`;
     }
     setupInputBar() {
@@ -2432,7 +2432,7 @@ export class LuminaChatUI {
             const isTable = text.includes('\t') && (text.includes('\n') || text.includes('\r'));
             const isLongText = text.length > 10000 || (text.split(/\r?\n/).length > 50 && text.length > 2000);
 
-            if ((isTable || isLongText) && typeof LuminaFileProcessor !== 'undefined') {
+            if ((isTable || isLongText) && typeof NexusFileProcessor !== 'undefined') {
                 e.preventDefault();
                 const filename = isTable ? 'Pasted table.tsv' : 'Pasted text.txt';
                 const mimeType = isTable ? 'text/tab-separated-values' : 'text/plain';
@@ -2441,13 +2441,13 @@ export class LuminaChatUI {
             }
         });
         const queryInPopup = (selector) => popup.querySelector(selector) || document.querySelector(selector);
-        const inputBar = queryInPopup('.lumina-input-bar') || queryInPopup('#input-bar');
+        const inputBar = queryInPopup('.nexus-input-bar') || queryInPopup('#input-bar');
         this.isProofreadMode = this.isProofreadMode || false;
         this.isTranslateMode = this.isTranslateMode || false;
         const getModes = () => ({ pr: this.isProofreadMode, tr: this.isTranslateMode });
         const setProofread = (v) => { this.isProofreadMode = v; };
         const setTranslate = (v) => { this.isTranslateMode = v; };
-        const history = queryInPopup('.lumina-chat-history') || queryInPopup('.lumina-chat-scroll-content');
+        const history = queryInPopup('.nexus-chat-history') || queryInPopup('.nexus-chat-scroll-content');
         this.refreshSystemTokens();
         chrome.storage.onChanged.addListener((changes) => {
             if (changes.reasoningMode || changes.responseLanguage) {
@@ -2463,10 +2463,10 @@ export class LuminaChatUI {
             const chipsObserver = new MutationObserver(() => this._throttledUpdateTokenCount());
             chipsObserver.observe(webChips, { childList: true });
         }
-        const inputWrapper = queryInPopup('.lumina-chat-input-wrapper');
+        const inputWrapper = queryInPopup('.nexus-chat-input-wrapper');
         if (inputWrapper) {
             inputWrapper.addEventListener('mousedown', (e) => {
-                const interactiveSelector = 'button, textarea, input, a, .lumina-model-dropdown, .lumina-tools-dropdown, .lumina-mention-popup';
+                const interactiveSelector = 'button, textarea, input, a, .nexus-model-dropdown, .nexus-tools-dropdown, .nexus-mention-popup';
                 const isInteractive = e.target.closest(interactiveSelector);
                 if (!isInteractive) {
                     e.preventDefault();
@@ -2512,7 +2512,7 @@ export class LuminaChatUI {
                         this.currentPageTitle = tabs[0].title || "Current Page";
                     }
                 });
-            } else if (typeof document !== 'undefined' && document.title && document.title !== 'Lumina') {
+            } else if (typeof document !== 'undefined' && document.title && document.title !== 'Nexus') {
                 this.currentPageTitle = document.title;
             }
         };
@@ -2526,7 +2526,7 @@ export class LuminaChatUI {
         };
         this._checkExpand = checkExpand;
         if (typeof ResizeObserver !== 'undefined') {
-            const resizeTarget = queryInPopup('.lumina-input-container') || inputBar;
+            const resizeTarget = queryInPopup('.nexus-input-container') || inputBar;
             if (resizeTarget) {
                 const ro = new ResizeObserver(() => {
                     requestAnimationFrame(() => debouncedCheckExpand());
@@ -2557,7 +2557,7 @@ export class LuminaChatUI {
                         toolsToggle.classList.add('active');
                         toolsToggle.classList.add('active-translate');
                     }
-                    const toggle = queryInPopup('#translate-toggle') || queryInPopup('.lumina-translate-toggle');
+                    const toggle = queryInPopup('#translate-toggle') || queryInPopup('.nexus-translate-toggle');
                     if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
                     input.placeholder = 'Enter text to translate...';
                     input.value = val.slice(translateKw[0].length);
@@ -2580,7 +2580,7 @@ export class LuminaChatUI {
                         toolsToggle.classList.add('active');
                         toolsToggle.classList.add('active-proofread');
                     }
-                    const toggle = queryInPopup('#proofread-toggle') || queryInPopup('.lumina-proofread-toggle');
+                    const toggle = queryInPopup('#proofread-toggle') || queryInPopup('.nexus-proofread-toggle');
                     if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
                     input.placeholder = 'Enter text to proofread...';
                     input.value = val.slice(proofreadKw[0].length);
@@ -2594,7 +2594,7 @@ export class LuminaChatUI {
                     if (sourceKw) {
                         removeActiveModes();
                         this._pendingWebSource = source;
-                        const websourceToggle = queryInPopup('#websource-toggle') || queryInPopup('.lumina-websource-toggle');
+                        const websourceToggle = queryInPopup('#websource-toggle') || queryInPopup('.nexus-websource-toggle');
                         if (websourceToggle) {
                             const label = websourceToggle.querySelector('.tool-label');
                             if (label) label.textContent = source.name;
@@ -2615,19 +2615,19 @@ export class LuminaChatUI {
             this._throttledUpdateTokenCount();
         });
         input.addEventListener('keydown', async (e) => {
-            const isMentionActive = this.container.querySelector('.lumina-mention-popup.active');
+            const isMentionActive = this.container.querySelector('.nexus-mention-popup.active');
             if (e.key === 'Enter' && !e.shiftKey && !e.defaultPrevented && !isMentionActive) {
                 e.preventDefault();
                 const text = input.value.trim();
                 if (!text && this.selectedImages.length === 0) return;
-                const inputContainer = queryInPopup('.lumina-input-container');
+                const inputContainer = queryInPopup('.nexus-input-container');
                 if (inputContainer) {
-                    inputContainer.classList.remove('lumina-sending');
+                    inputContainer.classList.remove('nexus-sending');
                     void inputContainer.offsetWidth;
-                    inputContainer.classList.add('lumina-sending');
-                    setTimeout(() => inputContainer.classList.remove('lumina-sending'), 900);
+                    inputContainer.classList.add('nexus-sending');
+                    setTimeout(() => inputContainer.classList.remove('nexus-sending'), 900);
                 }
-                if (this.historyEl && !this.historyEl._luminaListenersAttached) {
+                if (this.historyEl && !this.historyEl._nexusListenersAttached) {
                     this.initListeners(this.historyEl);
                 }
                 const { pr, tr } = getModes();
@@ -2663,13 +2663,13 @@ export class LuminaChatUI {
             }
             this._updateContainerState();
         });
-        const toolsWrapper = queryInPopup('#tools-wrapper') || queryInPopup('.lumina-actions-dropdown-wrapper');
-        const toolsToggle = queryInPopup('#tools-toggle') || queryInPopup('.lumina-plus-toggle');
-        const toolsDropdown = queryInPopup('#tools-dropdown') || queryInPopup('.lumina-tools-dropdown');
+        const toolsWrapper = queryInPopup('#tools-wrapper') || queryInPopup('.nexus-actions-dropdown-wrapper');
+        const toolsToggle = queryInPopup('#tools-toggle') || queryInPopup('.nexus-plus-toggle');
+        const toolsDropdown = queryInPopup('#tools-dropdown') || queryInPopup('.nexus-tools-dropdown');
         if (toolsWrapper && toolsToggle && !toolsToggle.dataset.setupDone) {
             toolsToggle.dataset.setupDone = 'true';
             const toggleTools = (show) => {
-                const modelDropdown = queryInPopup('.lumina-model-dropdown');
+                const modelDropdown = queryInPopup('.nexus-model-dropdown');
                 const modelWasActive = modelDropdown && modelDropdown.classList.contains('active');
                 if (modelDropdown) modelDropdown.classList.remove('active');
                 const isActive = toolsWrapper.classList.contains('active') || (toolsDropdown && toolsDropdown.classList.contains('active'));
@@ -2714,10 +2714,10 @@ export class LuminaChatUI {
                 toolsToggle.classList.remove('active-proofread');
                 toolsToggle.classList.remove('active-translate');
             }
-            ['#proofread-toggle', '#translate-toggle', '.lumina-proofread-toggle', '.lumina-translate-toggle'].forEach(sel => {
+            ['#proofread-toggle', '#translate-toggle', '.nexus-proofread-toggle', '.nexus-translate-toggle'].forEach(sel => {
                 const el = queryInPopup(sel); if (el) { el.style.display = 'none'; el.classList.remove('active'); }
             });
-            popup.querySelectorAll('.lumina-tool-item').forEach(el => el.classList.remove('active'));
+            popup.querySelectorAll('.nexus-tool-item').forEach(el => el.classList.remove('active'));
             checkExpand();
         };
         this._removeActiveModes = removeActiveModes;
@@ -2726,7 +2726,7 @@ export class LuminaChatUI {
             if (item) item.addEventListener('click', (e) => {
                 e.stopPropagation(); removeActiveModes(); modeSetter();
                 item.classList.add('active');
-                const activeToolsToggle = queryInPopup('#tools-toggle') || queryInPopup('.lumina-plus-toggle');
+                const activeToolsToggle = queryInPopup('#tools-toggle') || queryInPopup('.nexus-plus-toggle');
                 if (activeToolsToggle) {
                     const label = activeToolsToggle.querySelector('.tool-label');
                     if (label) label.textContent = modename;
@@ -2746,7 +2746,7 @@ export class LuminaChatUI {
         };
         setupTool('[data-action="proofread"]', '#proofread-toggle', 'Proofread', () => { setProofread(true); }, 'Enter text to proofread...');
         setupTool('[data-action="translate"]', '#translate-toggle', 'Translate', () => { setTranslate(true); }, 'Enter text to translate...');
-        ['#proofread-toggle', '#translate-toggle', '.lumina-proofread-toggle', '.lumina-translate-toggle'].forEach(sel => {
+        ['#proofread-toggle', '#translate-toggle', '.nexus-proofread-toggle', '.nexus-translate-toggle'].forEach(sel => {
             const toggle = queryInPopup(sel);
             if (toggle) toggle.addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation(); removeActiveModes();
@@ -2761,8 +2761,8 @@ export class LuminaChatUI {
                 this.fileInputEl.click();
             });
         }
-        if (this.fileInputEl && !this.fileInputEl._luminaSetup) {
-            this.fileInputEl._luminaSetup = true;
+        if (this.fileInputEl && !this.fileInputEl._nexusSetup) {
+            this.fileInputEl._nexusSetup = true;
             this.fileInputEl.addEventListener('change', async (e) => {
                 for (const file of e.target.files) this.addFile(file);
                 this.fileInputEl.value = '';
@@ -2770,23 +2770,23 @@ export class LuminaChatUI {
         }
         const dropTarget = this.options.isSpotlight ? document.body : popup;
         this._setupFileDragDrop(dropTarget, input);
-        const micBtn = queryInPopup('#mic-btn') || queryInPopup('.lumina-mic-btn');
+        const micBtn = queryInPopup('#mic-btn') || queryInPopup('.nexus-mic-btn');
         if (micBtn) this._setupMicButton(micBtn, input);
-        const actionBtn = queryInPopup('#action-btn') || queryInPopup('.lumina-action-btn');
+        const actionBtn = queryInPopup('#action-btn') || queryInPopup('.nexus-action-btn');
         if (actionBtn) this._setupActionButton(actionBtn, input);
         this._updateActionBtnState();
     }
     _setupFileDragDrop(dropZone, input) {
-        if (!dropZone || dropZone.dataset.luminaDropSetup === 'true') return;
-        dropZone.dataset.luminaDropSetup = 'true';
+        if (!dropZone || dropZone.dataset.nexusDropSetup === 'true') return;
+        dropZone.dataset.nexusDropSetup = 'true';
         let dragDepth = 0;
         const hasFiles = (dt) => !!dt && Array.from(dt.types || []).includes('Files');
-        const inputContainer = this.container ? this.container.querySelector('.lumina-input-container') : null;
+        const inputContainer = this.container ? this.container.querySelector('.nexus-input-container') : null;
         const setDragState = (active) => {
-            dropZone.classList.toggle('lumina-drag-over', active);
+            dropZone.classList.toggle('nexus-drag-over', active);
             if (inputContainer) {
-                inputContainer.classList.toggle('lumina-drag-over', active);
-                if (!active) inputContainer.classList.remove('lumina-drag-hover-direct');
+                inputContainer.classList.toggle('nexus-drag-over', active);
+                if (!active) inputContainer.classList.remove('nexus-drag-hover-direct');
             }
         };
         dropZone.addEventListener('dragenter', (e) => {
@@ -2816,7 +2816,7 @@ export class LuminaChatUI {
             e.stopPropagation();
             dragDepth = 0;
             setDragState(false);
-            if (inputContainer) inputContainer.classList.remove('lumina-drag-hover-direct');
+            if (inputContainer) inputContainer.classList.remove('nexus-drag-hover-direct');
             const files = Array.from(e.dataTransfer.files || []);
             if (!files.length) return;
             await this._handleDroppedFiles(files, input);
@@ -2826,28 +2826,28 @@ export class LuminaChatUI {
             inputContainer.addEventListener('dragenter', (e) => {
                 if (!hasFiles(e.dataTransfer)) return;
                 containerDragDepth += 1;
-                inputContainer.classList.add('lumina-drag-hover-direct');
+                inputContainer.classList.add('nexus-drag-hover-direct');
             });
             inputContainer.addEventListener('dragover', (e) => {
                 if (!hasFiles(e.dataTransfer)) return;
-                inputContainer.classList.add('lumina-drag-hover-direct');
+                inputContainer.classList.add('nexus-drag-hover-direct');
             });
             inputContainer.addEventListener('dragleave', (e) => {
                 if (!hasFiles(e.dataTransfer)) return;
                 containerDragDepth = Math.max(0, containerDragDepth - 1);
                 if (containerDragDepth === 0) {
-                    inputContainer.classList.remove('lumina-drag-hover-direct');
+                    inputContainer.classList.remove('nexus-drag-hover-direct');
                 }
             });
         }
-        if (this.options.isSpotlight && !window.__luminaSpotlightDropGuardInstalled) {
+        if (this.options.isSpotlight && !window.__nexusSpotlightDropGuardInstalled) {
             const globalDropGuard = (e) => {
                 if (!hasFiles(e.dataTransfer)) return;
                 e.preventDefault();
             };
             window.addEventListener('dragover', globalDropGuard);
             window.addEventListener('drop', globalDropGuard);
-            window.__luminaSpotlightDropGuardInstalled = true;
+            window.__nexusSpotlightDropGuardInstalled = true;
         }
     }
     async _handleDroppedFiles(files, input) {
@@ -2890,13 +2890,13 @@ export class LuminaChatUI {
         this.inputEl.placeholder = state.placeholder || 'Ask anything...';
         if (state.isProofreadMode) {
             this.isProofreadMode = true;
-            const toggle = queryInPopup('#proofread-toggle') || queryInPopup('.lumina-proofread-toggle');
+            const toggle = queryInPopup('#proofread-toggle') || queryInPopup('.nexus-proofread-toggle');
             if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
             const toolItem = queryInPopup('[data-action="proofread"]');
             if (toolItem) toolItem.classList.add('active');
         } else if (state.isTranslateMode) {
             this.isTranslateMode = true;
-            const toggle = queryInPopup('#translate-toggle') || queryInPopup('.lumina-translate-toggle');
+            const toggle = queryInPopup('#translate-toggle') || queryInPopup('.nexus-translate-toggle');
             if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
             const toolItem = queryInPopup('[data-action="translate"]');
             if (toolItem) toolItem.classList.add('active');
@@ -2908,7 +2908,7 @@ export class LuminaChatUI {
     _setupMentions() { }
     _updateContainerState() {
         const queryInPopup = (selector) => this.container.querySelector(selector) || document.querySelector(selector);
-        const container = queryInPopup('.lumina-input-container');
+        const container = queryInPopup('.nexus-input-container');
         if (container) {
             if (this.inputEl && (this.inputEl.value.trim().length > 0 || this.selectedImages.length > 0)) container.classList.add('has-content');
             else container.classList.remove('has-content');
@@ -2917,9 +2917,9 @@ export class LuminaChatUI {
         }
     }
     _setupModelSelector(popup) {
-        const selector = popup.querySelector('.lumina-model-selector');
+        const selector = popup.querySelector('.nexus-model-selector');
         if (!selector) return;
-        const btn = selector.querySelector('.lumina-model-btn'), label = selector.querySelector('.lumina-current-model'), dropdown = selector.querySelector('.lumina-model-dropdown');
+        const btn = selector.querySelector('.nexus-model-btn'), label = selector.querySelector('.nexus-current-model'), dropdown = selector.querySelector('.nexus-model-dropdown');
         if (!btn || !dropdown) return;
         const self = this;
         if (typeof window.getPromptApiNamespace === 'undefined') {
@@ -2956,7 +2956,7 @@ export class LuminaChatUI {
         }
         const render = (data) => {
             const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
-            const chain = window.LuminaModelHelper.buildModelChain(data, promptSupport);
+            const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
             let currentModel = self.activeTabModel?.model;
             let currentProviderId = self.activeTabModel?.providerId;
             const lastUsed = data.lastUsedModel;
@@ -2970,38 +2970,41 @@ export class LuminaChatUI {
                 currentProviderId = chain[0].providerId;
                 if (!self.activeTabModel) self.activeTabModel = { model: currentModel, providerId: currentProviderId };
             }
-            if (currentModel && label) label.textContent = currentModel;
+            const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
+            const activeDisplayName = activeChainItem?.displayName || activeChainItem?.name || currentModel;
+            if (activeDisplayName && label) label.textContent = activeDisplayName;
             dropdown.innerHTML = '';
-            if (chain.length === 0) { dropdown.innerHTML = '<div style="padding:8px;font-size:11px;">No models</div>'; return; }
+            if (chain.length === 0) { dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--nexus-text-secondary);">No models</div>'; return; }
             chain.forEach((item) => {
                 const el = document.createElement('button');
                 const isActive = item.model === currentModel && item.providerId === currentProviderId;
-                el.className = `lumina-model-item ${isActive ? 'active' : ''}`;
-                el.innerHTML = `<div class="model-info"><span class="model-name">${item.model}</span></div>`;
+                const displayName = item.displayName || item.name || item.model;
+                el.className = `nexus-model-item ${isActive ? 'active' : ''}`;
+                el.innerHTML = `<div class="model-info"><span class="model-name">${displayName}</span></div>`;
                 el.onclick = (e) => {
                     e.stopPropagation();
-                    if (label) label.textContent = item.model;
+                    if (label) label.textContent = displayName;
                     dropdown.classList.remove('active');
-                    dropdown.querySelectorAll('.lumina-model-item').forEach(b => b.classList.remove('active'));
+                    dropdown.querySelectorAll('.nexus-model-item').forEach(b => b.classList.remove('active'));
                     el.classList.add('active');
                     self.activeTabModel = { model: item.model, providerId: item.providerId };
                     chrome.storage.local.set({ lastUsedModel: self.activeTabModel });
                     const sid = self.historyEl?.dataset?.sessionId || null;
                     const sidKey = sid || 'null';
-                    chrome.storage.local.get(['lumina_session_settings', 'advancedParamsByModel'], (res) => {
-                        const settings = res.lumina_session_settings || {};
+                    chrome.storage.local.get(['nexus_session_settings', 'advancedParamsByModel'], (res) => {
+                        const settings = res.nexus_session_settings || {};
                         if (!settings[sidKey]) settings[sidKey] = {};
                         settings[sidKey].selectedModel = self.activeTabModel;
                         const advancedParamsByModel = res.advancedParamsByModel || {};
                         const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
                         const modelParams = (item.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!item.providerId ? (advancedParamsByModel[item.model] || {}) : {});
-                        const defaultThinking = window.LuminaModelHelper.getDefaultThinking(item.model, item.providerId);
+                        const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
                         const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
                         self.thinkingLevel = newThinkingLevel;
                         settings[sidKey].thinkingLevel = newThinkingLevel;
-                        chrome.storage.local.set({ lumina_session_settings: settings }, () => {
-                            if (typeof window.LuminaChatHistory?.updateSessionModelAndThinking === 'function' && sid) {
-                                window.LuminaChatHistory.updateSessionModelAndThinking(sid, self.activeTabModel, newThinkingLevel);
+                        chrome.storage.local.set({ nexus_session_settings: settings }, () => {
+                            if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && sid) {
+                                window.NexusChatHistory.updateSessionModelAndThinking(sid, self.activeTabModel, newThinkingLevel);
                             }
                             if (typeof self.refreshReasoningSelector === 'function') {
                                 self.refreshReasoningSelector();
@@ -3009,7 +3012,7 @@ export class LuminaChatUI {
                         });
                     });
                     self._updateTokenLimitFromModel();
-                    selector.dispatchEvent(new CustomEvent('lumina:model-change', {
+                    selector.dispatchEvent(new CustomEvent('nexus:model-change', {
                         bubbles: true,
                         detail: { model: item.model, providerId: item.providerId }
                     }));
@@ -3017,10 +3020,10 @@ export class LuminaChatUI {
                 dropdown.appendChild(el);
             });
             const divider = document.createElement('div');
-            divider.className = 'lumina-model-divider';
+            divider.className = 'nexus-model-divider';
             dropdown.appendChild(divider);
             const thinkingItem = document.createElement('div');
-            thinkingItem.className = 'lumina-model-item lumina-thinking-parent-item';
+            thinkingItem.className = 'nexus-model-item nexus-thinking-parent-item';
             thinkingItem.style.position = 'relative';
             thinkingItem.style.display = 'flex';
             thinkingItem.style.alignItems = 'center';
@@ -3035,31 +3038,31 @@ export class LuminaChatUI {
                 'none': 'None'
             };
             thinkingItem.innerHTML = `
-                <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
-                    <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
-                    <span style="font-size:11px; color:var(--lumina-text-secondary);">${titleMap[currentLevel] || 'None'}</span>
+                <div class="model-info">
+                    <span class="model-name">Thinking level</span>
+                    <span class="model-desc">${titleMap[currentLevel] || 'None'}</span>
                 </div>
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
             `;
             const submenu = document.createElement('div');
-            submenu.className = 'lumina-thinking-submenu';
-            const options = window.LuminaModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
+            submenu.className = 'nexus-thinking-submenu';
+            const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
             options.forEach((opt) => {
                 const optEl = document.createElement('button');
                 const isActive = currentLevel === opt.value;
-                optEl.className = `lumina-thinking-opt-item ${isActive ? 'active' : ''}`;
+                optEl.className = `nexus-thinking-opt-item ${isActive ? 'active' : ''}`;
                 const checkmarkIcon = isActive ? `
-                    <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--lumina-primary);">
+                    <span class="reasoning-checkmark">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </span>
                 ` : `
-                    <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px;"></span>
+                    <span class="reasoning-checkmark"></span>
                 `;
                 optEl.innerHTML = `
                     ${checkmarkIcon}
-                    <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
-                        <span class="reasoning-title" style="font-size:13px; font-weight:500;">${opt.title}</span>
-                        <span class="reasoning-desc" style="font-size:11px; color:var(--lumina-text-secondary);">${opt.desc}</span>
+                    <div class="reasoning-info">
+                        <span class="reasoning-title">${opt.title}</span>
+                        <span class="reasoning-desc">${opt.desc}</span>
                     </div>
                 `;
                 optEl.onclick = (e) => {
@@ -3067,13 +3070,13 @@ export class LuminaChatUI {
                     self.thinkingLevel = opt.value;
                     const sid = self.historyEl?.dataset?.sessionId || null;
                     const sidKey = sid || 'null';
-                    chrome.storage.local.get(['lumina_session_settings'], (res) => {
-                        const settings = res.lumina_session_settings || {};
+                    chrome.storage.local.get(['nexus_session_settings'], (res) => {
+                        const settings = res.nexus_session_settings || {};
                         if (!settings[sidKey]) settings[sidKey] = {};
                         settings[sidKey].thinkingLevel = opt.value;
-                        chrome.storage.local.set({ lumina_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                            if (typeof window.LuminaChatHistory?.updateSessionModelAndThinking === 'function' && sid) {
-                                window.LuminaChatHistory.updateSessionModelAndThinking(sid, undefined, opt.value);
+                        chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
+                            if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && sid) {
+                                window.NexusChatHistory.updateSessionModelAndThinking(sid, undefined, opt.value);
                             }
                             if (typeof self.refreshSystemTokens === 'function') {
                                 self.refreshSystemTokens();
@@ -3093,10 +3096,10 @@ export class LuminaChatUI {
         const fetchAndRender = () => {
             const sid = self.historyEl?.dataset?.sessionId || null;
             const sidKey = sid || 'null';
-            chrome.storage.local.get(['providers', 'modelChains', 'lastUsedModel', 'lumina_session_settings', 'advancedParamsByModel'], async (data) => {
+            chrome.storage.local.get(['providers', 'models', 'modelChains', 'lastUsedModel', 'nexus_session_settings', 'advancedParamsByModel'], async (data) => {
                 const support = await window.getPromptApiSupport();
                 data.promptSupport = support;
-                const settings = data.lumina_session_settings || {};
+                const settings = data.nexus_session_settings || {};
                 const saved = settings[sidKey] || {};
                 if (!self.activeTabModel && saved.selectedModel) {
                     self.activeTabModel = { ...saved.selectedModel };
@@ -3106,7 +3109,7 @@ export class LuminaChatUI {
                     const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
                     const advancedParamsByModel = data.advancedParamsByModel || {};
                     const modelParams = (modelObj.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!modelObj.providerId ? (advancedParamsByModel[modelObj.model] || {}) : {});
-                    const defaultThinking = window.LuminaModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
+                    const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                     self.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
                 }
                 render(data);
@@ -3122,7 +3125,7 @@ export class LuminaChatUI {
             if (dropdown.classList.contains('active')) {
                 dropdown.classList.remove('active');
             } else {
-                const toolsDropdown = popup.querySelector('.lumina-tools-dropdown');
+                const toolsDropdown = popup.querySelector('.nexus-tools-dropdown');
                 if (toolsDropdown) toolsDropdown.classList.remove('active');
                 if (!dropdown.classList.contains('active')) fetchAndRender();
                 dropdown.classList.add('active');
@@ -3194,7 +3197,7 @@ export class LuminaChatUI {
                 recognition.onerror = (event) => {
                     console.error('Speech recognition error', event.error);
                     if (event.error === 'not-allowed') {
-                        if (confirm('Lumina cần quyền truy cập Microphone để nhận diện giọng nói.\n\nDo hạn chế của trình duyệt, bạn cần cấp quyền này ở tab cài đặt. Mở trang cài đặt ngay?')) {
+                        if (confirm('Nexus cần quyền truy cập Microphone để nhận diện giọng nói.\n\nDo hạn chế của trình duyệt, bạn cần cấp quyền này ở tab cài đặt. Mở trang cài đặt ngay?')) {
                             chrome.runtime.sendMessage({ action: 'open_options', section: 'general', requestMic: true });
                         }
                     }
@@ -3209,7 +3212,7 @@ export class LuminaChatUI {
             } catch (err) {
                 console.error(err);
                 if (err.name === 'NotAllowedError' || err.name === 'PermissionDismissedError') {
-                    if (confirm('Lumina cần quyền truy cập Microphone để nhận diện giọng nói.\n\nDo hạn chế của trình duyệt, bạn cần cấp quyền này ở tab cài đặt. Mở trang cài đặt ngay?')) {
+                    if (confirm('Nexus cần quyền truy cập Microphone để nhận diện giọng nói.\n\nDo hạn chế của trình duyệt, bạn cần cấp quyền này ở tab cài đặt. Mở trang cài đặt ngay?')) {
                         chrome.runtime.sendMessage({ action: 'open_options', section: 'general', requestMic: true });
                     }
                 } else {
@@ -3235,7 +3238,7 @@ export class LuminaChatUI {
     }
     _getMaxTokens() {
         let maxTokens = null;
-        const modelLabel = this.container ? this.container.querySelector('.lumina-current-model') : null;
+        const modelLabel = this.container ? this.container.querySelector('.nexus-current-model') : null;
         const currentModel = modelLabel ? modelLabel.textContent : (this.options.isSpotlight ? 'gpt-4o' : '');
         if (this.advancedParamsByModel && currentModel) {
             for (const key in this.advancedParamsByModel) {
@@ -3254,17 +3257,17 @@ export class LuminaChatUI {
         const text = isRegenerate ? '' : this.inputEl.value.trim();
         if (!text && !isRegenerate) return;
         if (this.attachedFiles.some(f => f.status === 'uploading' || f.status === 'compressing')) {
-            console.warn('[Lumina] Cannot submit: files are still processing');
+            console.warn('[Nexus] Cannot submit: files are still processing');
             return;
         }
         this.isGenerating = true;
         this._updateActionBtnState();
-        const inputContainer = this.container ? this.container.querySelector('.lumina-input-container') : null;
+        const inputContainer = this.container ? this.container.querySelector('.nexus-input-container') : null;
         if (inputContainer) {
-            inputContainer.classList.remove('lumina-sending');
+            inputContainer.classList.remove('nexus-sending');
             void inputContainer.offsetWidth;
-            inputContainer.classList.add('lumina-sending');
-            setTimeout(() => inputContainer.classList.remove('lumina-sending'), 900);
+            inputContainer.classList.add('nexus-sending');
+            setTimeout(() => inputContainer.classList.remove('nexus-sending'), 900);
         }
         const readPage = !!this.readWebpageEnabled;
         const pageTitle = this.currentPageTitle || "Current Page";
@@ -3285,39 +3288,39 @@ export class LuminaChatUI {
         if (!actionBtn) return;
         const val = this.inputEl ? this.inputEl.value.trim() : '';
         if (this.isGenerating) {
-            actionBtn.className = 'lumina-action-btn active pause';
+            actionBtn.className = 'nexus-action-btn active pause';
             actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>`;
             actionBtn.title = "Pause";
             actionBtn.removeAttribute('disabled');
         } else if (val) {
-            actionBtn.className = 'lumina-action-btn active send';
+            actionBtn.className = 'nexus-action-btn active send';
             actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
             actionBtn.title = "Send";
             actionBtn.removeAttribute('disabled');
         } else {
-            actionBtn.className = 'lumina-action-btn send';
+            actionBtn.className = 'nexus-action-btn send';
             actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
             actionBtn.title = "Send";
             actionBtn.setAttribute('disabled', 'true');
         }
     }
     _isDocxFile(file) {
-        return typeof LuminaFileProcessor !== 'undefined' && LuminaFileProcessor.isDocxFile ? LuminaFileProcessor.isDocxFile(file) : (file?.name || '').toLowerCase().endsWith('.docx');
+        return typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isDocxFile ? NexusFileProcessor.isDocxFile(file) : (file?.name || '').toLowerCase().endsWith('.docx');
     }
     _isXlsxFile(file) {
-        return typeof LuminaFileProcessor !== 'undefined' && LuminaFileProcessor.isXlsxFile ? LuminaFileProcessor.isXlsxFile(file) : (file?.name || '').toLowerCase().endsWith('.xlsx');
+        return typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isXlsxFile ? NexusFileProcessor.isXlsxFile(file) : (file?.name || '').toLowerCase().endsWith('.xlsx');
     }
     _fileToDataURL(file) {
-        return LuminaFileProcessor.fileToDataURL(file);
+        return NexusFileProcessor.fileToDataURL(file);
     }
     static _resolveImagePreviewSrc(item, src) {
-        return LuminaFileProcessor.resolveImagePreviewSrc(item, src);
+        return NexusFileProcessor.resolveImagePreviewSrc(item, src);
     }
     static _createObjectUrlFromDataUrl(dataUrl) {
-        return LuminaFileProcessor.createObjectUrlFromDataUrl(dataUrl);
+        return NexusFileProcessor.createObjectUrlFromDataUrl(dataUrl);
     }
     _resolveImagePreviewSrc(item, src) {
-        return LuminaFileProcessor.resolveImagePreviewSrc(item, src);
+        return NexusFileProcessor.resolveImagePreviewSrc(item, src);
     }
     _createObjectUrlFromDataUrl(dataUrl) {
         if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
@@ -3343,8 +3346,8 @@ export class LuminaChatUI {
     _createObjectUrl(blobOrFile) {
         if (!blobOrFile || !URL?.createObjectURL) return null;
         const objectUrl = URL.createObjectURL(blobOrFile);
-        if (!this._luminaPreviewObjectUrls) this._luminaPreviewObjectUrls = new Set();
-        this._luminaPreviewObjectUrls.add(objectUrl);
+        if (!this._nexusPreviewObjectUrls) this._nexusPreviewObjectUrls = new Set();
+        this._nexusPreviewObjectUrls.add(objectUrl);
         return objectUrl;
     }
     _revokeObjectUrl(url) {
@@ -3353,7 +3356,7 @@ export class LuminaChatUI {
             URL.revokeObjectURL(url);
         } catch (_) {
         }
-        if (this._luminaPreviewObjectUrls) this._luminaPreviewObjectUrls.delete(url);
+        if (this._nexusPreviewObjectUrls) this._nexusPreviewObjectUrls.delete(url);
     }
     showStopButton(onStop = null) {
         this.isGenerating = true;
@@ -3361,10 +3364,10 @@ export class LuminaChatUI {
         this._updateActionBtnState();
         let stopBtn = null;
         if (this.container) {
-            stopBtn = this.container.querySelector('#lumina-stop-btn') || this.container.querySelector('.lumina-stop-btn');
+            stopBtn = this.container.querySelector('#nexus-stop-btn') || this.container.querySelector('.nexus-stop-btn');
         }
         if (!stopBtn && typeof document !== 'undefined') {
-            stopBtn = document.getElementById('lumina-stop-btn') || document.querySelector('.lumina-stop-btn');
+            stopBtn = document.getElementById('nexus-stop-btn') || document.querySelector('.nexus-stop-btn');
         }
         if (stopBtn) {
             stopBtn.style.display = 'flex';
@@ -3383,7 +3386,7 @@ export class LuminaChatUI {
         this._updateActionBtnState();
         let stopBtn = null;
         if (this.container) {
-            stopBtn = this.container.querySelector('#lumina-stop-btn') || this.container.querySelector('.lumina-stop-btn');
+            stopBtn = this.container.querySelector('#nexus-stop-btn') || this.container.querySelector('.nexus-stop-btn');
         }
         if (stopBtn) {
             stopBtn.style.display = 'none';
@@ -3391,17 +3394,17 @@ export class LuminaChatUI {
     }
     _initContextMenu() {
         if (!this.container) return;
-        const existing = document.querySelector('.lumina-context-menu');
+        const existing = document.querySelector('.nexus-context-menu');
         if (existing) existing.remove();
         this.contextMenu = document.createElement('div');
-        this.contextMenu.className = 'lumina-context-menu';
+        this.contextMenu.className = 'nexus-context-menu';
         this.contextMenu.innerHTML = `
-            <button class="lumina-context-menu-item" data-action="copy">
-                <span class="lumina-svg-icon lumina-icon-copy" aria-hidden="true"></span>
+            <button class="nexus-context-menu-item" data-action="copy">
+                <span class="nexus-svg-icon nexus-icon-copy" aria-hidden="true"></span>
                 Copy
             </button>
-            <button class="lumina-context-menu-item" data-action="regenerate">
-                <span class="lumina-svg-icon lumina-icon-refresh" aria-hidden="true"></span>
+            <button class="nexus-context-menu-item" data-action="regenerate">
+                <span class="nexus-svg-icon nexus-icon-refresh" aria-hidden="true"></span>
                 Regenerate
             </button>
         `;
@@ -3412,7 +3415,7 @@ export class LuminaChatUI {
             }
         });
         this.contextMenu.addEventListener('click', (e) => {
-            const item = e.target.closest('.lumina-context-menu-item');
+            const item = e.target.closest('.nexus-context-menu-item');
             if (!item) return;
             const action = item.dataset.action;
             const targetAnswer = this.contextMenu.__targetAnswer;
@@ -3426,7 +3429,7 @@ export class LuminaChatUI {
         this.contextMenu.__targetAnswer = targetAnswer;
         if (!this.contextMenuBackdrop) {
             this.contextMenuBackdrop = document.createElement('div');
-            this.contextMenuBackdrop.className = 'lumina-overlay-backdrop';
+            this.contextMenuBackdrop.className = 'nexus-overlay-backdrop';
             this.contextMenuBackdrop.style.zIndex = '99999';
             this.contextMenuBackdrop.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
             this.contextMenuBackdrop.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
@@ -3468,14 +3471,14 @@ export class LuminaChatUI {
         }
     }
     async _handleContextMenuAction(action, answer) {
-        const entry = answer.closest('.lumina-entry');
+        const entry = answer.closest('.nexus-entry');
         if (!entry) return;
         const rawText = answer.getAttribute('data-raw-text') || answer.innerText || "";
         switch (action) {
             case 'copy': {
                 let plain = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
                 const clone = answer.cloneNode(true);
-                clone.querySelectorAll('.lumina-actions, .lumina-answer-versions, .lumina-answer-nav, .lumina-thinking-steps, .lumina-thinking').forEach(el => el.remove());
+                clone.querySelectorAll('.nexus-actions, .nexus-answer-versions, .nexus-answer-nav, .nexus-thinking-steps, .nexus-thinking').forEach(el => el.remove());
                 
                 // Clean up KaTeX math rendering to avoid duplicated math symbols in rich text copy
                 clone.querySelectorAll('.katex').forEach(katexEl => {
@@ -3591,7 +3594,7 @@ export class LuminaChatUI {
         if (!this.contextMenu) return;
         this.contextMenu.__targetAnswer = answerDiv;
         this.contextMenu.innerHTML = `
-            <button class="lumina-context-menu-item" data-action="edit">
+            <button class="nexus-context-menu-item" data-action="edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 Edit
             </button>
@@ -3607,8 +3610,8 @@ export class LuminaChatUI {
         this.contextMenu.classList.add('visible');
     }
     _handleQuestionRecheck(userInput, editable, isRegenerate = false) {
-        const questionDiv = editable.closest('.lumina-chat-question');
-        const entry = editable.closest('.lumina-entry');
+        const questionDiv = editable.closest('.nexus-chat-question');
+        const entry = editable.closest('.nexus-entry');
         if (!entry) return;
         entry.dataset.timestamp = Date.now().toString();
         const userTextOnly = userInput.replace(/^SelectedText\s*/, '').trim();
@@ -3630,7 +3633,7 @@ export class LuminaChatUI {
             if (currentTab) {
                 const otherTabs = window.tabs.filter(t => t !== currentTab && t.sessionId === currentTab.sessionId && t.historyEl);
                 otherTabs.forEach(ot => {
-                    const otherEntry = ot.historyEl.querySelector(`.lumina-entry[data-entry-id="${entryId}"]`);
+                    const otherEntry = ot.historyEl.querySelector(`.nexus-entry[data-entry-id="${entryId}"]`);
                     if (otherEntry && ot.chatUIInstance) {
                         let next = otherEntry.nextElementSibling;
                         while (next) {
@@ -3638,7 +3641,7 @@ export class LuminaChatUI {
                             next = next.nextElementSibling;
                             toRemove.remove();
                         }
-                        otherEntry.querySelectorAll('.lumina-chat-answer, .lumina-web-search').forEach(el => el.remove());
+                        otherEntry.querySelectorAll('.nexus-chat-answer, .nexus-web-search').forEach(el => el.remove());
                         ot.chatUIInstance.currentEntryDiv = otherEntry;
                         ot.chatUIInstance.currentAnswerDiv = null;
                     }
@@ -3651,7 +3654,7 @@ export class LuminaChatUI {
             next = next.nextElementSibling;
             toRemove.remove();
         }
-        entry.querySelectorAll('.lumina-chat-answer, .lumina-web-search').forEach(el => el.remove());
+        entry.querySelectorAll('.nexus-chat-answer, .nexus-web-search').forEach(el => el.remove());
         const scrollContainer = this.getScrollContainer();
         if (isRegenerate) {
             this._regenScrollLocked = true;
@@ -3670,10 +3673,10 @@ export class LuminaChatUI {
             const entryId = entry.dataset.entryId;
             const entryType = entry.dataset.entryType || 'chat';
             let originalImages = [];
-            if (questionDiv && Array.isArray(questionDiv._luminaImages)) {
-                originalImages = questionDiv._luminaImages;
-            } else if (entry && Array.isArray(entry._luminaImages)) {
-                originalImages = entry._luminaImages;
+            if (questionDiv && Array.isArray(questionDiv._nexusImages)) {
+                originalImages = questionDiv._nexusImages;
+            } else if (entry && Array.isArray(entry._nexusImages)) {
+                originalImages = entry._nexusImages;
             } else if (questionDiv && questionDiv.dataset.images) {
                 try {
                     const parsed = JSON.parse(questionDiv.dataset.images);
@@ -3705,7 +3708,7 @@ export class LuminaChatUI {
                 selection.addRange(range);
 
                 el.scrollTop = el.scrollHeight;
-                const parentDiv = el.closest('.lumina-chat-question');
+                const parentDiv = el.closest('.nexus-chat-question');
                 if (parentDiv) {
                     parentDiv.scrollTop = parentDiv.scrollHeight;
                 }
@@ -3718,9 +3721,9 @@ export class LuminaChatUI {
     }
     regenerateEntry(entry) {
         if (!entry) return;
-        const questionDiv = entry.querySelector('.lumina-chat-question');
+        const questionDiv = entry.querySelector('.nexus-chat-question');
         if (!questionDiv) return;
-        const questionContent = questionDiv.querySelector('.lumina-question-content')
+        const questionContent = questionDiv.querySelector('.nexus-question-content')
             || questionDiv.querySelector('div[contenteditable="true"]')
             || questionDiv;
         const rawQuestion = questionDiv.getAttribute('data-raw-text') || questionContent.innerText || questionContent.textContent || '';
@@ -3728,16 +3731,16 @@ export class LuminaChatUI {
         this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true);
     }
     enterQuestionEditMode(questionDiv) {
-        if (!questionDiv || questionDiv.classList.contains('lumina-question-editing')) return;
+        if (!questionDiv || questionDiv.classList.contains('nexus-question-editing')) return;
         this._hideContextMenu();
         this.cancelAllQuestionEdits();
-        const row = questionDiv.closest('.lumina-question-row');
-        let contentDiv = questionDiv.querySelector('.lumina-question-content') || questionDiv.querySelector('div[contenteditable="true"]');
+        const row = questionDiv.closest('.nexus-question-row');
+        let contentDiv = questionDiv.querySelector('.nexus-question-content') || questionDiv.querySelector('div[contenteditable="true"]');
         if (!contentDiv) {
             const originalHTML = questionDiv.innerHTML;
             questionDiv.innerHTML = '';
             contentDiv = document.createElement('div');
-            contentDiv.className = 'lumina-question-content';
+            contentDiv.className = 'nexus-question-content';
             contentDiv.innerHTML = originalHTML;
             questionDiv.appendChild(contentDiv);
         }
@@ -3745,24 +3748,24 @@ export class LuminaChatUI {
         questionDiv.__originalHTML = contentDiv.innerHTML;
         questionDiv.__originalRaw = questionDiv.getAttribute('data-raw-text') || contentDiv.innerText || '';
         questionDiv.__questionEditOriginalClassName = contentDiv.className;
-        questionDiv.classList.add('is-editing', 'lumina-question-editing');
+        questionDiv.classList.add('is-editing', 'nexus-question-editing');
         questionDiv.classList.remove('has-overflow', 'expanded');
-        const expandBtn = questionDiv.querySelector('.lumina-question-expand-btn');
+        const expandBtn = questionDiv.querySelector('.nexus-question-expand-btn');
         if (expandBtn) expandBtn.remove();
-        if (row) row.classList.add('lumina-question-row-editing');
-        contentDiv.className = 'lumina-answer-content';
+        if (row) row.classList.add('nexus-question-row-editing');
+        contentDiv.className = 'nexus-answer-content';
         contentDiv.contentEditable = 'plaintext-only';
         contentDiv.spellcheck = false;
         const toolbar = document.createElement('div');
-        toolbar.className = 'lumina-edit-toolbar lumina-question-edit-toolbar';
+        toolbar.className = 'nexus-edit-toolbar nexus-question-edit-toolbar';
         toolbar.contentEditable = 'false';
         toolbar.innerHTML = `
-            <button class="lumina-edit-btn lumina-edit-cancel" title="Cancel">Cancel</button>
-            <button class="lumina-edit-btn lumina-edit-save" title="Update" disabled>Update</button>
+            <button class="nexus-edit-btn nexus-edit-cancel" title="Cancel">Cancel</button>
+            <button class="nexus-edit-btn nexus-edit-save" title="Update" disabled>Update</button>
         `;
         toolbar.onmousedown = (e) => e.preventDefault();
-        const saveBtn = toolbar.querySelector('.lumina-edit-save');
-        const cancelBtn = toolbar.querySelector('.lumina-edit-cancel');
+        const saveBtn = toolbar.querySelector('.nexus-edit-save');
+        const cancelBtn = toolbar.querySelector('.nexus-edit-cancel');
         cancelBtn.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -3831,7 +3834,7 @@ export class LuminaChatUI {
             if (currentTab) {
                 const otherTabs = window.tabs.filter(t => t !== currentTab && t.sessionId === currentTab.sessionId && t.historyEl);
                 otherTabs.forEach(ot => {
-                    const otherEntry = ot.historyEl.querySelector(`.lumina-entry[data-entry-id="${entryId}"]`);
+                    const otherEntry = ot.historyEl.querySelector(`.nexus-entry[data-entry-id="${entryId}"]`);
                     if (otherEntry && ot.chatUIInstance) {
                         let next = otherEntry.nextElementSibling;
                         while (next) {
@@ -3842,15 +3845,15 @@ export class LuminaChatUI {
                         const otPrevEntry = otherEntry.previousElementSibling;
                         ot.chatUIInstance.currentEntryDiv = otPrevEntry;
                         if (otPrevEntry) {
-                            ot.chatUIInstance.currentAnswerDiv = otPrevEntry.querySelector('.lumina-chat-answer') ||
-                                otPrevEntry.querySelector('.lumina-answer-versions');
+                            ot.chatUIInstance.currentAnswerDiv = otPrevEntry.querySelector('.nexus-chat-answer') ||
+                                otPrevEntry.querySelector('.nexus-answer-versions');
                         } else {
                             ot.chatUIInstance.currentAnswerDiv = null;
                         }
                         otherEntry.remove();
                         ot.chatUIInstance._updateActionBtnState();
                         if (otPrevEntry) {
-                            ot.chatUIInstance.clearEntryMargins(otPrevEntry);
+                            ot.chatUIInstance.updateEntryMinHeight(otPrevEntry);
                             ot.chatUIInstance.adjustEntryMargin(otPrevEntry, 'immediate');
                         }
                     }
@@ -3866,15 +3869,15 @@ export class LuminaChatUI {
         const prevEntry = entry.previousElementSibling;
         this.currentEntryDiv = prevEntry;
         if (prevEntry) {
-            this.currentAnswerDiv = prevEntry.querySelector('.lumina-chat-answer') ||
-                prevEntry.querySelector('.lumina-answer-versions');
+            this.currentAnswerDiv = prevEntry.querySelector('.nexus-chat-answer') ||
+                prevEntry.querySelector('.nexus-answer-versions');
         } else {
             this.currentAnswerDiv = null;
         }
         entry.remove();
         this._updateActionBtnState();
         if (prevEntry) {
-            this.clearEntryMargins(prevEntry);
+            this.updateEntryMinHeight(prevEntry);
             this.adjustEntryMargin(prevEntry, 'immediate');
             const scrollContainer = this.getScrollContainer();
             if (scrollContainer) {
@@ -3891,21 +3894,21 @@ export class LuminaChatUI {
             }
         }
         if (this.historyEl) {
-            this.historyEl.dispatchEvent(new CustomEvent('lumina:history-changed', {
+            this.historyEl.dispatchEvent(new CustomEvent('nexus:history-changed', {
                 bubbles: true,
                 detail: { force: true }
             }));
         }
     }
     exitQuestionEditMode(questionDiv, save = false) {
-        if (!questionDiv || !questionDiv.classList.contains('lumina-question-editing')) return;
+        if (!questionDiv || !questionDiv.classList.contains('nexus-question-editing')) return;
         if (questionDiv.__outsideClickListener) {
             document.removeEventListener('mousedown', questionDiv.__outsideClickListener);
             delete questionDiv.__outsideClickListener;
         }
-        const contentDiv = questionDiv.__questionEditContentDiv || questionDiv.querySelector('.lumina-question-content') || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
-        const toolbar = questionDiv.__questionEditToolbar || questionDiv.querySelector('.lumina-question-edit-toolbar');
-        const row = questionDiv.closest('.lumina-question-row');
+        const contentDiv = questionDiv.__questionEditContentDiv || questionDiv.querySelector('.nexus-question-content') || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
+        const toolbar = questionDiv.__questionEditToolbar || questionDiv.querySelector('.nexus-question-edit-toolbar');
+        const row = questionDiv.closest('.nexus-question-row');
         const originalHTML = questionDiv.__originalHTML;
         const originalRaw = questionDiv.__originalRaw || '';
         if (questionDiv.__questionEditClickListener) {
@@ -3933,14 +3936,14 @@ export class LuminaChatUI {
                 questionDiv.scrollTop = 0;
                 questionDiv.scrollLeft = 0;
             }
-            questionDiv.classList.remove('is-editing', 'lumina-question-editing');
-            if (row) row.classList.remove('lumina-question-row-editing');
+            questionDiv.classList.remove('is-editing', 'nexus-question-editing');
+            if (row) row.classList.remove('nexus-question-row-editing');
             if (toolbar) toolbar.remove();
             if (contentDiv) contentDiv.contentEditable = 'false';
             const isRegenerate = (newText === originalRaw);
             this._handleQuestionRecheck(newText, contentDiv || questionDiv, isRegenerate);
-            LuminaChatUI.injectQuestionActions(questionDiv);
-            LuminaChatUI.checkQuestionOverflow(questionDiv);
+            NexusChatUI.injectQuestionActions(questionDiv);
+            NexusChatUI.checkQuestionOverflow(questionDiv);
         } else {
             if (contentDiv && typeof originalHTML === 'string') {
                 contentDiv.innerHTML = originalHTML;
@@ -3957,12 +3960,12 @@ export class LuminaChatUI {
                 questionDiv.scrollLeft = 0;
             }
             questionDiv.setAttribute('data-raw-text', originalRaw);
-            questionDiv.classList.remove('is-editing', 'lumina-question-editing');
-            if (row) row.classList.remove('lumina-question-row-editing');
+            questionDiv.classList.remove('is-editing', 'nexus-question-editing');
+            if (row) row.classList.remove('nexus-question-row-editing');
             if (contentDiv) contentDiv.contentEditable = 'false';
             if (toolbar) toolbar.remove();
-            LuminaChatUI.injectQuestionActions(questionDiv);
-            LuminaChatUI.checkQuestionOverflow(questionDiv);
+            NexusChatUI.injectQuestionActions(questionDiv);
+            NexusChatUI.checkQuestionOverflow(questionDiv);
         }
         delete questionDiv.__originalHTML;
         delete questionDiv.__originalRaw;
@@ -3975,21 +3978,21 @@ export class LuminaChatUI {
     }
     cancelAllQuestionEdits() {
         if (!this.historyEl) return;
-        const editingQuestions = Array.from(this.historyEl.querySelectorAll('.lumina-chat-question.lumina-question-editing'));
+        const editingQuestions = Array.from(this.historyEl.querySelectorAll('.nexus-chat-question.nexus-question-editing'));
         editingQuestions.forEach((questionDiv) => {
             this.exitQuestionEditMode(questionDiv, false);
         });
     }
     enterAnswerEditMode(answerDiv) {
-        if (!answerDiv || answerDiv.classList.contains('lumina-answer-editing')) return;
+        if (!answerDiv || answerDiv.classList.contains('nexus-answer-editing')) return;
         this._hideContextMenu();
         answerDiv.contentEditable = 'false';
-        let contentDiv = answerDiv.querySelector('.lumina-answer-content');
+        let contentDiv = answerDiv.querySelector('.nexus-answer-content');
         if (!contentDiv) {
             const originalHTML = answerDiv.innerHTML;
             answerDiv.innerHTML = '';
             contentDiv = document.createElement('div');
-            contentDiv.className = 'lumina-answer-content';
+            contentDiv.className = 'nexus-answer-content';
             contentDiv.innerHTML = originalHTML;
             answerDiv.appendChild(contentDiv);
         }
@@ -3997,37 +4000,37 @@ export class LuminaChatUI {
         answerDiv.__originalHTML = contentDiv.innerHTML;
         answerDiv.__originalRaw = originalRaw;
         contentDiv.innerHTML = answerDiv.__originalHTML;
-        answerDiv.classList.add('is-editing', 'lumina-answer-editing');
+        answerDiv.classList.add('is-editing', 'nexus-answer-editing');
         contentDiv.contentEditable = 'plaintext-only';
         this._focusEditableAtEnd(contentDiv);
         const toolbar = document.createElement('div');
-        toolbar.className = 'lumina-edit-toolbar lumina-answer-edit-toolbar';
+        toolbar.className = 'nexus-edit-toolbar nexus-answer-edit-toolbar';
         toolbar.contentEditable = 'false';
         toolbar.innerHTML = `
-            <button class="lumina-edit-btn lumina-edit-undo" title="Undo">Undo</button>
-            <div class="lumina-edit-toolbar-spacer"></div>
-            <button class="lumina-edit-btn lumina-edit-cancel" title="Cancel">Cancel</button>
-            <button class="lumina-edit-btn lumina-edit-save" title="Save">Save</button>
+            <button class="nexus-edit-btn nexus-edit-undo" title="Undo">Undo</button>
+            <div class="nexus-edit-toolbar-spacer"></div>
+            <button class="nexus-edit-btn nexus-edit-cancel" title="Cancel">Cancel</button>
+            <button class="nexus-edit-btn nexus-edit-save" title="Save">Save</button>
         `;
         toolbar.onmousedown = (e) => e.preventDefault();
-        toolbar.querySelector('.lumina-edit-undo').onclick = (e) => {
+        toolbar.querySelector('.nexus-edit-undo').onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const entry = answerDiv.closest('.lumina-entry');
+            const entry = answerDiv.closest('.nexus-entry');
             this._undoEditAndTruncate(entry, 'answer', null, answerDiv);
         };
-        toolbar.querySelector('.lumina-edit-cancel').onclick = (e) => {
+        toolbar.querySelector('.nexus-edit-cancel').onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.exitAnswerEditMode(answerDiv, false);
         };
-        toolbar.querySelector('.lumina-edit-save').onclick = (e) => {
+        toolbar.querySelector('.nexus-edit-save').onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.exitAnswerEditMode(answerDiv, true);
         };
         answerDiv.appendChild(toolbar);
-        const entry = answerDiv.closest('.lumina-entry');
+        const entry = answerDiv.closest('.nexus-entry');
         if (entry) {
             requestAnimationFrame(() => {
                 const scrollContainer = this.getScrollContainer();
@@ -4048,7 +4051,7 @@ export class LuminaChatUI {
         };
         contentDiv.addEventListener('keydown', keyHandler);
         setTimeout(() => {
-            if (!answerDiv.classList.contains('lumina-answer-editing')) return;
+            if (!answerDiv.classList.contains('nexus-answer-editing')) return;
             const outsideClickListener = (e) => {
                 if (!answerDiv.contains(e.target)) {
                     this.exitAnswerEditMode(answerDiv, false);
@@ -4059,25 +4062,25 @@ export class LuminaChatUI {
         }, 10);
     }
     exitAnswerEditMode(answerDiv, save = false) {
-        if (!answerDiv || !answerDiv.classList.contains('lumina-answer-editing')) return;
+        if (!answerDiv || !answerDiv.classList.contains('nexus-answer-editing')) return;
         if (answerDiv.__outsideClickListener) {
             document.removeEventListener('mousedown', answerDiv.__outsideClickListener);
             delete answerDiv.__outsideClickListener;
         }
-        const contentDiv = answerDiv.querySelector('.lumina-answer-content') || answerDiv;
-        const toolbar = answerDiv.querySelector('.lumina-answer-edit-toolbar');
+        const contentDiv = answerDiv.querySelector('.nexus-answer-content') || answerDiv;
+        const toolbar = answerDiv.querySelector('.nexus-answer-edit-toolbar');
         if (save) {
             const newText = contentDiv.innerText.trim();
             answerDiv.setAttribute('data-raw-text', newText);
             answerDiv.__lastRenderedText = '';
             this._doRender(answerDiv, true);
-            console.log('[Lumina] Answer saved:', newText);
-            const entry = answerDiv.closest('.lumina-entry');
+            console.log('[Nexus] Answer saved:', newText);
+            const entry = answerDiv.closest('.nexus-entry');
             if (entry) {
                 entry.dataset.timestamp = Date.now().toString();
             }
             if (this.historyEl) {
-                this.historyEl.dispatchEvent(new CustomEvent('lumina:history-changed', {
+                this.historyEl.dispatchEvent(new CustomEvent('nexus:history-changed', {
                     bubbles: true,
                     detail: { force: true }
                 }));
@@ -4086,7 +4089,7 @@ export class LuminaChatUI {
             contentDiv.innerHTML = answerDiv.__originalHTML;
             answerDiv.setAttribute('data-raw-text', answerDiv.__originalRaw);
         }
-        answerDiv.classList.remove('is-editing', 'lumina-answer-editing');
+        answerDiv.classList.remove('is-editing', 'nexus-answer-editing');
         contentDiv.contentEditable = 'false';
         if (toolbar) toolbar.remove();
         delete answerDiv.__originalHTML;
@@ -4094,7 +4097,7 @@ export class LuminaChatUI {
     }
     cancelAllAnswerEdits() {
         if (!this.historyEl) return;
-        const editingAnswers = Array.from(this.historyEl.querySelectorAll('.lumina-chat-answer.lumina-answer-editing'));
+        const editingAnswers = Array.from(this.historyEl.querySelectorAll('.nexus-chat-answer.nexus-answer-editing'));
         editingAnswers.forEach((answerDiv) => {
             this.exitAnswerEditMode(answerDiv, false);
         });
@@ -4102,32 +4105,32 @@ export class LuminaChatUI {
     serializeHistoryHTML() {
         if (!this.historyEl) return '';
         const clonedHistory = this.historyEl.cloneNode(true);
-        const liveAnswers = Array.from(this.historyEl.querySelectorAll('.lumina-chat-answer'));
-        const clonedAnswers = Array.from(clonedHistory.querySelectorAll('.lumina-chat-answer'));
-        const liveQuestions = Array.from(this.historyEl.querySelectorAll('.lumina-chat-question'));
-        const clonedQuestions = Array.from(clonedHistory.querySelectorAll('.lumina-chat-question'));
-        const editingAnswers = Array.from(this.historyEl.querySelectorAll('.lumina-chat-answer.lumina-answer-editing'));
+        const liveAnswers = Array.from(this.historyEl.querySelectorAll('.nexus-chat-answer'));
+        const clonedAnswers = Array.from(clonedHistory.querySelectorAll('.nexus-chat-answer'));
+        const liveQuestions = Array.from(this.historyEl.querySelectorAll('.nexus-chat-question'));
+        const clonedQuestions = Array.from(clonedHistory.querySelectorAll('.nexus-chat-question'));
+        const editingAnswers = Array.from(this.historyEl.querySelectorAll('.nexus-chat-answer.nexus-answer-editing'));
         editingAnswers.forEach((liveAnswer) => {
             const answerIndex = liveAnswers.indexOf(liveAnswer);
             const clonedAnswer = answerIndex >= 0 ? clonedAnswers[answerIndex] : null;
             if (!clonedAnswer) return;
-            const clonedContent = clonedAnswer.querySelector('.lumina-answer-content') || clonedAnswer;
+            const clonedContent = clonedAnswer.querySelector('.nexus-answer-content') || clonedAnswer;
             if (typeof liveAnswer.__originalHTML === 'string') {
                 clonedContent.innerHTML = liveAnswer.__originalHTML;
             }
-            clonedAnswer.classList.remove('lumina-answer-editing');
+            clonedAnswer.classList.remove('nexus-answer-editing');
             clonedAnswer.contentEditable = 'false';
             clonedContent.contentEditable = 'false';
-            const clonedToolbar = clonedAnswer.querySelector('.lumina-answer-edit-toolbar');
+            const clonedToolbar = clonedAnswer.querySelector('.nexus-answer-edit-toolbar');
             if (clonedToolbar) clonedToolbar.remove();
         });
-        const editingQuestions = Array.from(this.historyEl.querySelectorAll('.lumina-chat-question.lumina-question-editing'));
+        const editingQuestions = Array.from(this.historyEl.querySelectorAll('.nexus-chat-question.nexus-question-editing'));
         editingQuestions.forEach((liveQuestion) => {
             const questionIndex = liveQuestions.indexOf(liveQuestion);
             const clonedQuestion = questionIndex >= 0 ? clonedQuestions[questionIndex] : null;
             if (!clonedQuestion) return;
-            const clonedRow = clonedQuestion.closest('.lumina-question-row');
-            const clonedContent = clonedQuestion.querySelector('.lumina-question-content')
+            const clonedRow = clonedQuestion.closest('.nexus-question-row');
+            const clonedContent = clonedQuestion.querySelector('.nexus-question-content')
                 || clonedQuestion.querySelector('div[contenteditable="true"]')
                 || clonedQuestion;
             if (typeof liveQuestion.__originalHTML === 'string') {
@@ -4135,17 +4138,17 @@ export class LuminaChatUI {
             } else if (typeof liveQuestion.getAttribute('data-raw-text') === 'string') {
                 clonedContent.textContent = liveQuestion.getAttribute('data-raw-text');
             }
-            clonedQuestion.classList.remove('lumina-question-editing', 'lumina-answer-editing');
-            if (clonedRow) clonedRow.classList.remove('lumina-question-row-editing');
+            clonedQuestion.classList.remove('nexus-question-editing', 'nexus-answer-editing');
+            if (clonedRow) clonedRow.classList.remove('nexus-question-row-editing');
             clonedContent.contentEditable = 'false';
-            const clonedToolbar = clonedQuestion.querySelector('.lumina-question-edit-toolbar');
+            const clonedToolbar = clonedQuestion.querySelector('.nexus-question-edit-toolbar');
             if (clonedToolbar) clonedToolbar.remove();
         });
-        clonedHistory.querySelectorAll('.lumina-entry').forEach(entry => {
+        clonedHistory.querySelectorAll('.nexus-entry').forEach(entry => {
             entry.style.removeProperty('min-height');
         });
-        clonedHistory.querySelectorAll('.lumina-actions').forEach(el => el.remove());
-        clonedHistory.querySelectorAll('.lumina-code-copy-btn').forEach(el => el.remove());
+        clonedHistory.querySelectorAll('.nexus-actions').forEach(el => el.remove());
+        clonedHistory.querySelectorAll('.nexus-code-copy-btn').forEach(el => el.remove());
         clonedHistory.querySelectorAll('img').forEach(img => {
             if (img.dataset.attachmentId) {
                 img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -4171,8 +4174,8 @@ export class LuminaChatUI {
         return clonedHistory.innerHTML;
     }
     static async processContainer(container) {
-        if (!container || container.__luminaProcessed) return;
-        container.__luminaProcessed = true;
+        if (!container || container.__nexusProcessed) return;
+        container.__nexusProcessed = true;
         const yieldToMain = () => new Promise(resolve => {
             if (typeof window !== 'undefined' && window.requestIdleCallback) {
                 window.requestIdleCallback(() => resolve(), { timeout: 30 });
@@ -4207,14 +4210,14 @@ export class LuminaChatUI {
                 } catch (e) { }
             }
         }
-        const hasPlaceholders = container.querySelector('.lumina-math-inline-placeholder, .lumina-math-block-placeholder');
+        const hasPlaceholders = container.querySelector('.nexus-math-inline-placeholder, .nexus-math-block-placeholder');
         const htmlContent = container.innerHTML;
         if (hasPlaceholders || htmlContent.includes('\\(') || htmlContent.includes('\\[') || htmlContent.includes('\\begin')) {
             try {
                 await window.ensureKatexLoaded();
                 if (typeof katex !== 'undefined') {
                     await yieldToMain();
-                    container.querySelectorAll('.lumina-math-inline-placeholder').forEach(el => {
+                    container.querySelectorAll('.nexus-math-inline-placeholder').forEach(el => {
                         const math = decodeURIComponent(el.getAttribute('data-math') || '').replace(/\\frac\{/g, '\\dfrac{');
                         try {
                             const html = katex.renderToString(math, { displayMode: false, throwOnError: false, strict: 'ignore' });
@@ -4223,7 +4226,7 @@ export class LuminaChatUI {
                             el.replaceWith(document.createTextNode(el.textContent));
                         }
                     });
-                    container.querySelectorAll('.lumina-math-block-placeholder').forEach(el => {
+                    container.querySelectorAll('.nexus-math-block-placeholder').forEach(el => {
                         const math = decodeURIComponent(el.getAttribute('data-math') || '');
                         try {
                             const html = katex.renderToString(math, { displayMode: true, throwOnError: false, strict: 'ignore' });
@@ -4251,61 +4254,61 @@ export class LuminaChatUI {
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
         });
-        await LuminaChatUI.injectCopyButtons(container);
+        await NexusChatUI.injectCopyButtons(container);
         await yieldToMain();
-        container.querySelectorAll('.lumina-thinking-container').forEach(c => {
-            const header = c.querySelector('.lumina-thinking-header');
+        container.querySelectorAll('.nexus-thinking-container').forEach(c => {
+            const header = c.querySelector('.nexus-thinking-header');
             if (header && !header.__thinkingToggleBound) {
                 header.__thinkingToggleBound = true;
                 header.addEventListener('click', () => c.classList.toggle('collapsed'));
             }
         });
         await yieldToMain();
-        container.querySelectorAll('.lumina-translation-card').forEach(card => {
-            const entry = card.closest('.lumina-entry');
+        container.querySelectorAll('.nexus-translation-card').forEach(card => {
+            const entry = card.closest('.nexus-entry');
             if (entry && !entry.__translationHighlightDone) {
-                LuminaChatUI._setupTranslationHighlight(entry);
-                LuminaChatUI.balanceTranslationCard(entry, false);
+                NexusChatUI._setupTranslationHighlight(entry);
+                NexusChatUI.balanceTranslationCard(entry, false);
                 entry.__translationHighlightDone = true;
             }
         });
         await yieldToMain();
-        let answerEls = Array.from(container.querySelectorAll('.lumina-chat-answer'));
-        if (container.classList.contains('lumina-chat-answer')) {
+        let answerEls = Array.from(container.querySelectorAll('.nexus-chat-answer'));
+        if (container.classList.contains('nexus-chat-answer')) {
             answerEls.push(container);
         }
         for (const ans of answerEls) {
-            LuminaChatUI.injectAnswerActions(ans);
+            NexusChatUI.injectAnswerActions(ans);
         }
         await yieldToMain();
-        processLuminaDynamicImageElements(container);
-        processLuminaDynamicYoutubeElements(container);
-        processLuminaChartElements(container);
+        processNexusDynamicImageElements(container);
+        processNexusDynamicYoutubeElements(container);
+        processNexusChartElements(container);
     }
     static async injectCopyButtons(container) {
         if (!container) return;
-        LuminaChatUI.wrapTables(container);
+        NexusChatUI.wrapTables(container);
         const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 10));
         const COPY_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
         const CHECK_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         const preBlocks = Array.from(container.querySelectorAll('pre'));
         for (const pre of preBlocks) {
-            if (pre.classList.contains('lumina-d2-source') || pre.style.display === 'none') {
+            if (pre.classList.contains('nexus-d2-source') || pre.style.display === 'none') {
                 continue;
             }
             await yieldToMain();
-            let wrapper = pre.parentElement && pre.parentElement.classList.contains('lumina-code-block-wrap')
+            let wrapper = pre.parentElement && pre.parentElement.classList.contains('nexus-code-block-wrap')
                 ? pre.parentElement
                 : null;
             if (!wrapper) {
                 wrapper = document.createElement('div');
-                wrapper.className = 'lumina-code-block-wrap';
+                wrapper.className = 'nexus-code-block-wrap';
                 pre.parentNode.insertBefore(wrapper, pre);
                 wrapper.appendChild(pre);
             }
-            pre.querySelectorAll('.lumina-code-copy-btn').forEach(old => old.remove());
-            wrapper.querySelectorAll('.lumina-code-copy-btn').forEach(old => old.remove());
-            wrapper.querySelectorAll('.lumina-code-header').forEach(old => old.remove());
+            pre.querySelectorAll('.nexus-code-copy-btn').forEach(old => old.remove());
+            wrapper.querySelectorAll('.nexus-code-copy-btn').forEach(old => old.remove());
+            wrapper.querySelectorAll('.nexus-code-header').forEach(old => old.remove());
             let lang = 'Code';
             const codeEl = pre.querySelector('code');
             if (codeEl) {
@@ -4328,14 +4331,14 @@ export class LuminaChatUI {
                 }
             }
             const header = document.createElement('div');
-            header.className = 'lumina-code-header';
+            header.className = 'nexus-code-header';
             const langLabel = document.createElement('span');
-            langLabel.className = 'lumina-code-lang';
+            langLabel.className = 'nexus-code-lang';
             langLabel.textContent = lang;
             const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'lumina-code-actions';
+            actionsDiv.className = 'nexus-code-actions';
             const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'lumina-code-download-btn';
+            downloadBtn.className = 'nexus-code-download-btn';
             downloadBtn.title = 'Download Code';
             downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
             downloadBtn.addEventListener('click', (e) => {
@@ -4365,7 +4368,7 @@ export class LuminaChatUI {
                 URL.revokeObjectURL(url);
             });
             const btn = document.createElement('button');
-            btn.className = 'lumina-code-copy-btn';
+            btn.className = 'nexus-code-copy-btn';
             btn.title = 'Copy Code';
             btn.innerHTML = COPY_SVG;
             const showSuccess = () => {
@@ -4408,8 +4411,8 @@ export class LuminaChatUI {
         }
     }
     static injectAnswerActions(answerDiv) {
-        if (!answerDiv || answerDiv.querySelector('.lumina-actions')) return;
-        const entry = answerDiv.closest('.lumina-entry');
+        if (!answerDiv || answerDiv.querySelector('.nexus-actions')) return;
+        const entry = answerDiv.closest('.nexus-entry');
         if (entry) {
             const type = entry.dataset.entryType;
             if (type && type !== 'qa' && type !== 'chat') {
@@ -4417,15 +4420,15 @@ export class LuminaChatUI {
             }
         }
         const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'lumina-actions';
+        actionsDiv.className = 'nexus-actions';
         actionsDiv.innerHTML = `
-            <button class="lumina-answer-action-btn" data-action="regenerate" title="Regenerate">
+            <button class="nexus-answer-action-btn" data-action="regenerate" title="Regenerate">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
             </button>
-            <button class="lumina-answer-action-btn" data-action="copy" title="Copy">
+            <button class="nexus-answer-action-btn" data-action="copy" title="Copy">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-            <button class="lumina-answer-action-btn" data-action="edit" title="Edit">
+            <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
         `;
@@ -4434,11 +4437,11 @@ export class LuminaChatUI {
     static wrapTables(container) {
         if (!container) return;
         container.querySelectorAll('table').forEach(table => {
-            if (table.parentElement && table.parentElement.classList.contains('lumina-table-wrap')) {
+            if (table.parentElement && table.parentElement.classList.contains('nexus-table-wrap')) {
                 return;
             }
             const wrapper = document.createElement('div');
-            wrapper.className = 'lumina-table-wrap';
+            wrapper.className = 'nexus-table-wrap';
             table.parentNode.insertBefore(wrapper, table);
             wrapper.appendChild(table);
         });
@@ -4491,31 +4494,31 @@ export class LuminaChatUI {
         }
 
 
-        const existing = document.querySelector('.lumina-preview-container.fixed-preview');
+        const existing = document.querySelector('.nexus-preview-container.fixed-preview');
         if (existing) existing.remove();
 
         const overlay = document.createElement('div');
-        overlay.className = 'lumina-preview-container fixed-preview';
+        overlay.className = 'nexus-preview-container fixed-preview';
 
         const controls = document.createElement('div');
-        controls.className = 'lumina-preview-controls-bar';
+        controls.className = 'nexus-preview-controls-bar';
 
         const content = document.createElement('div');
-        content.className = 'lumina-preview-content';
+        content.className = 'nexus-preview-content';
 
         let windowBody = content;
         let header = null;
 
         if (fileObj.isImage) {
             controls.innerHTML = `
-                <button class="lumina-preview-btn zoom-out-btn" title="Zoom Out">
+                <button class="nexus-preview-btn zoom-out-btn" title="Zoom Out">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                 </button>
-                <span class="lumina-preview-scale">100%</span>
-                <button class="lumina-preview-btn zoom-in-btn" title="Zoom In">
+                <span class="nexus-preview-scale">100%</span>
+                <button class="nexus-preview-btn zoom-in-btn" title="Zoom In">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                 </button>
-                <button class="lumina-preview-btn close-btn" title="Close (Esc)">
+                <button class="nexus-preview-btn close-btn" title="Close (Esc)">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             `;
@@ -4532,17 +4535,17 @@ export class LuminaChatUI {
             } else if (fileObj.isAudio) {
                 typeClass = 'is-audio';
             }
-            previewWindow.className = `lumina-preview-window ${typeClass}`;
+            previewWindow.className = `nexus-preview-window ${typeClass}`;
 
             const closeBtn = document.createElement('button');
-            closeBtn.className = 'lumina-preview-window-close';
+            closeBtn.className = 'nexus-preview-window-close';
             closeBtn.title = 'Close (Esc)';
             closeBtn.innerHTML = `
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             `;
 
             windowBody = document.createElement('div');
-            windowBody.className = 'lumina-preview-window-body';
+            windowBody.className = 'nexus-preview-window-body';
 
             previewWindow.appendChild(closeBtn);
             previewWindow.appendChild(windowBody);
@@ -4569,7 +4572,7 @@ export class LuminaChatUI {
         if (fileObj.isImage) {
             const img = document.createElement('img');
             img.alt = fileObj.name || 'Image Preview';
-            img.className = 'lumina-preview-img';
+            img.className = 'nexus-preview-img';
 
             let baseWidth = 0;
             let baseHeight = 0;
@@ -4596,7 +4599,7 @@ export class LuminaChatUI {
             let captionText = fileObj.name;
             if (captionText && captionText !== 'diagram' && captionText !== 'Image Preview') {
                 const caption = document.createElement('div');
-                caption.className = 'lumina-preview-caption';
+                caption.className = 'nexus-preview-caption';
                 caption.addEventListener('click', (e) => e.stopPropagation());
                 let sourceDomain = '';
                 try {
@@ -4619,10 +4622,10 @@ export class LuminaChatUI {
             let startX = 0, startY = 0;
             let translateX = 0, translateY = 0;
             const srcKey = fileObj.previewUrl || fileObj.dataUrl;
-            if (window._luminaPreviewStates && window._luminaPreviewStates[srcKey]) {
-                scale = window._luminaPreviewStates[srcKey].scale || 1;
-                translateX = window._luminaPreviewStates[srcKey].translateX || 0;
-                translateY = window._luminaPreviewStates[srcKey].translateY || 0;
+            if (window._nexusPreviewStates && window._nexusPreviewStates[srcKey]) {
+                scale = window._nexusPreviewStates[srcKey].scale || 1;
+                translateX = window._nexusPreviewStates[srcKey].translateX || 0;
+                translateY = window._nexusPreviewStates[srcKey].translateY || 0;
             }
             const updateTransform = () => {
                 if (baseWidth && baseHeight) {
@@ -4630,11 +4633,11 @@ export class LuminaChatUI {
                     img.style.height = `${baseHeight * scale}px`;
                 }
                 img.style.transform = `translate(${translateX}px, ${translateY}px)`;
-                const scalePct = overlay.querySelector('.lumina-preview-scale');
+                const scalePct = overlay.querySelector('.nexus-preview-scale');
                 if (scalePct) scalePct.textContent = `${Math.round(scale * 100)}%`;
                 img.classList.toggle('zoomed', scale !== 1);
-                if (!window._luminaPreviewStates) window._luminaPreviewStates = {};
-                window._luminaPreviewStates[srcKey] = { scale, translateX, translateY };
+                if (!window._nexusPreviewStates) window._nexusPreviewStates = {};
+                window._nexusPreviewStates[srcKey] = { scale, translateX, translateY };
             };
             updateTransform();
             const zoom = (factor, centerX, centerY) => {
@@ -4698,7 +4701,7 @@ export class LuminaChatUI {
         }
         else if (fileObj.isPDF) {
             const pdfContainer = document.createElement('div');
-            pdfContainer.className = 'lumina-preview-pdf-container';
+            pdfContainer.className = 'nexus-preview-pdf-container';
             windowBody.appendChild(pdfContainer);
 
             const renderPdf = async () => {
@@ -4714,7 +4717,7 @@ export class LuminaChatUI {
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
                     const counter = document.createElement('div');
-                    counter.className = 'lumina-preview-pdf-counter-wrapper';
+                    counter.className = 'nexus-preview-pdf-counter-wrapper';
                     counter.innerHTML = `
                         <span class="pdf-page-indicator">1 / ${pdf.numPages}</span>
                         <span class="pdf-counter-divider">|</span>
@@ -4730,7 +4733,7 @@ export class LuminaChatUI {
                     let zoomPercent = 100;
 
                     const updateZoom = () => {
-                        const pages = pdfContainer.querySelectorAll('.lumina-preview-pdf-page');
+                        const pages = pdfContainer.querySelectorAll('.nexus-preview-pdf-page');
                         pages.forEach(page => {
                             page.style.width = `${zoomPercent}%`;
                             page.style.maxWidth = 'none';
@@ -4755,14 +4758,14 @@ export class LuminaChatUI {
                     });
 
                     pdfContainer.addEventListener('dblclick', (e) => {
-                        if (e.target.classList.contains('lumina-preview-pdf-page')) {
+                        if (e.target.classList.contains('nexus-preview-pdf-page')) {
                             zoomPercent = zoomPercent === 100 ? 150 : 100;
                             updateZoom();
                         }
                     });
 
                     pdfContainer.addEventListener('scroll', () => {
-                        const pages = pdfContainer.querySelectorAll('.lumina-preview-pdf-page');
+                        const pages = pdfContainer.querySelectorAll('.nexus-preview-pdf-page');
                         let currentPage = 1;
                         let minDiff = Infinity;
                         const containerRect = pdfContainer.getBoundingClientRect();
@@ -4784,7 +4787,7 @@ export class LuminaChatUI {
                         const page = await pdf.getPage(pageNum);
                         const viewport = page.getViewport({ scale: 1.5 });
                         const canvas = document.createElement('canvas');
-                        canvas.className = 'lumina-preview-pdf-page';
+                        canvas.className = 'nexus-preview-pdf-page';
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
                         pdfContainer.appendChild(canvas);
@@ -4793,7 +4796,7 @@ export class LuminaChatUI {
                         await page.render({ canvasContext: ctx, viewport }).promise;
                     }
                 } catch (e) {
-                    console.error('[Lumina] PDF Preview render error:', e);
+                    console.error('[Nexus] PDF Preview render error:', e);
                     pdfContainer.innerHTML = `<div style="color:red; padding:20px; text-align:center;">Failed to load PDF preview: ${e.message}</div>`;
                 }
             };
@@ -4801,7 +4804,7 @@ export class LuminaChatUI {
         }
         else if (fileObj.isVideo) {
             const video = document.createElement('video');
-            video.className = 'lumina-preview-video';
+            video.className = 'nexus-preview-video';
             video.src = fileObj.dataUrl;
             video.controls = true;
             video.autoplay = true;
@@ -4809,18 +4812,18 @@ export class LuminaChatUI {
         }
         else if (fileObj.isAudio) {
             const audioWrapper = document.createElement('div');
-            audioWrapper.className = 'lumina-preview-audio-wrapper';
+            audioWrapper.className = 'nexus-preview-audio-wrapper';
             audioWrapper.innerHTML = `
-                <div class="lumina-preview-audio-art">
+                <div class="nexus-preview-audio-art">
                     <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                 </div>
-                <div class="lumina-preview-audio-info">
-                    <div class="lumina-preview-audio-title">${this.escapeHTMLAttr(fileObj.name || 'Audio Track')}</div>
-                    <div class="lumina-preview-audio-artist">Lumina Media Player</div>
+                <div class="nexus-preview-audio-info">
+                    <div class="nexus-preview-audio-title">${this.escapeHTMLAttr(fileObj.name || 'Audio Track')}</div>
+                    <div class="nexus-preview-audio-artist">Nexus Media Player</div>
                 </div>
             `;
             const audio = document.createElement('audio');
-            audio.className = 'lumina-preview-audio';
+            audio.className = 'nexus-preview-audio';
             audio.src = fileObj.dataUrl;
             audio.controls = true;
             audio.autoplay = true;
@@ -4885,10 +4888,10 @@ export class LuminaChatUI {
                 }
 
                 const tableContainer = document.createElement('div');
-                tableContainer.className = 'lumina-preview-sheets-container';
+                tableContainer.className = 'nexus-preview-sheets-container';
 
                 const tableEl = document.createElement('table');
-                tableEl.className = 'lumina-preview-sheets-table';
+                tableEl.className = 'nexus-preview-sheets-table';
 
                 rows.forEach((row, rowIndex) => {
                     const tr = document.createElement('tr');
@@ -4905,7 +4908,7 @@ export class LuminaChatUI {
                 windowBody.classList.add('is-sheets-layout');
             } else {
                 const textContainer = document.createElement('div');
-                textContainer.className = 'lumina-preview-text-container';
+                textContainer.className = 'nexus-preview-text-container';
 
                 const codeEl = document.createElement('code');
                 codeEl.style.cssText = 'white-space:pre-wrap; display:block;';
@@ -4927,7 +4930,7 @@ export class LuminaChatUI {
                         }
                         hljs.highlightElement(codeEl);
                     } catch (e) {
-                        console.warn('[Lumina] Syntax highlighting error:', e);
+                        console.warn('[Nexus] Syntax highlighting error:', e);
                     }
                 }
             }
@@ -4936,7 +4939,7 @@ export class LuminaChatUI {
             const derived = this.attachedFiles ? this.attachedFiles.filter(f => f.parentAttachmentId === fileObj.attachmentId) : [];
 
             const docContainer = document.createElement('div');
-            docContainer.className = 'lumina-preview-docx-xlsx-container';
+            docContainer.className = 'nexus-preview-docx-xlsx-container';
             windowBody.appendChild(docContainer);
 
             windowBody.classList.add('is-text-layout');
@@ -4946,13 +4949,13 @@ export class LuminaChatUI {
             } else {
                 derived.forEach(d => {
                     const sheetTitle = document.createElement('h4');
-                    sheetTitle.className = 'lumina-preview-sheet-title';
+                    sheetTitle.className = 'nexus-preview-sheet-title';
                     sheetTitle.textContent = d.name || '';
                     docContainer.appendChild(sheetTitle);
 
                     const txt = this._decodeDataUrlText(d.dataUrl);
                     const pre = document.createElement('pre');
-                    pre.className = 'lumina-preview-pre';
+                    pre.className = 'nexus-preview-pre';
                     const code = document.createElement('code');
                     code.textContent = txt;
 
@@ -4969,24 +4972,24 @@ export class LuminaChatUI {
             }
         }
         else {
-            windowBody.className = 'lumina-preview-window-body is-fallback-layout';
+            windowBody.className = 'nexus-preview-window-body is-fallback-layout';
 
             const ext = (fileObj.name || '').split('.').pop().toLowerCase();
-            const category = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.inferFileCategory(ext, fileObj.mimeType || '') : 'file';
-            const iconSymbol = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getFileIconByCategory(category) : '📎';
-            const sizeLabel = typeof LuminaChatUI !== 'undefined' ? LuminaChatUI.getFileTypeLabel(fileObj) : (fileObj.mimeType || 'Unknown Type');
+            const category = typeof NexusChatUI !== 'undefined' ? NexusChatUI.inferFileCategory(ext, fileObj.mimeType || '') : 'file';
+            const iconSymbol = typeof NexusChatUI !== 'undefined' ? NexusChatUI.getFileIconByCategory(category) : '📎';
+            const sizeLabel = typeof NexusChatUI !== 'undefined' ? NexusChatUI.getFileTypeLabel(fileObj) : (fileObj.mimeType || 'Unknown Type');
 
             windowBody.innerHTML = `
-                <div class="lumina-preview-fallback-icon file-${category}">
+                <div class="nexus-preview-fallback-icon file-${category}">
                     ${iconSymbol}
                 </div>
-                <div class="lumina-preview-fallback-name">${this.escapeHTMLAttr(fileObj.name || 'Unknown File')}</div>
-                <div class="lumina-preview-fallback-meta">${this.escapeHTMLAttr(sizeLabel)}</div>
-                <div class="lumina-preview-fallback-desc">This file type cannot be previewed visually, but it will be attached and sent to the assistant.</div>
+                <div class="nexus-preview-fallback-name">${this.escapeHTMLAttr(fileObj.name || 'Unknown File')}</div>
+                <div class="nexus-preview-fallback-meta">${this.escapeHTMLAttr(sizeLabel)}</div>
+                <div class="nexus-preview-fallback-desc">This file type cannot be previewed visually, but it will be attached and sent to the assistant.</div>
             `;
         }
 
-        const closeBtn = fileObj.isImage ? overlay.querySelector('.close-btn') : overlay.querySelector('.lumina-preview-window-close');
+        const closeBtn = fileObj.isImage ? overlay.querySelector('.close-btn') : overlay.querySelector('.nexus-preview-window-close');
         if (closeBtn) {
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -5021,7 +5024,7 @@ function extractMainContent(doc = document) {
         'iframe', 'noscript', 'form', 'svg', 'canvas',
         '.ads', '#sidebar', '.sidebar', '.menu', '.navigation',
         '.footer', '.header', '.ad-box', '.social-share', '.comments',
-        '[id^="lumina-"]', '[class^="lumina-"]'
+        '[id^="nexus-"]', '[class^="nexus-"]'
     ];
     selectorsToRemove.forEach(s => {
         docClone.querySelectorAll(s).forEach(el => el.remove());
@@ -5047,14 +5050,14 @@ function extractMainContent(doc = document) {
         content: text
     };
 }
-function luminaEstimateTokens(text) {
+function nexusEstimateTokens(text) {
     if (!text) return 0;
     return Math.ceil(text.length / 3);
 }
-function luminaTruncateHistoryWindow(messages, maxTokens) {
+function nexusTruncateHistoryWindow(messages, maxTokens) {
     if (maxTokens === null || maxTokens < 0) return [...messages];
-    const estimateFn = typeof window.luminaEstimateTokens === 'function'
-        ? window.luminaEstimateTokens
+    const estimateFn = typeof window.nexusEstimateTokens === 'function'
+        ? window.nexusEstimateTokens
         : (t => Math.ceil((t || '').length / 3));
     const result = [];
     let currentTokens = 0;
@@ -5078,5 +5081,5 @@ function luminaTruncateHistoryWindow(messages, maxTokens) {
 }
 
 if (typeof window !== "undefined") {
-    window.LuminaChatUI = LuminaChatUI;
+    window.NexusChatUI = NexusChatUI;
 }

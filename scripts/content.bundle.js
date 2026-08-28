@@ -1,6 +1,6 @@
 (() => {
   // src/shared/constants.js
-  var LUMINA_DEFAULTS = {
+  var NEXUS_DEFAULTS = {
     provider: "groq",
     groqModel: "llama3-8b-8192",
     geminiModel: "gemini-2.5-flash-lite",
@@ -11,7 +11,7 @@
     readWebpage: true,
     reasoningMode: false
   };
-  var LUMINA_PROVIDERS = {
+  var NEXUS_PROVIDERS = {
     groq: {
       link: "https://console.groq.com/keys",
       modelsUrl: "https://api.groq.com/openai/v1/models",
@@ -38,9 +38,9 @@
       defaultModel: "mistral-small-latest"
     }
   };
-  var LUMINA_DEFAULT_SHORTCUTS = {
-    luminaChat: { key: "Space", modifiers: ["Alt"] },
-    askLumina: { key: "L", modifiers: ["Alt"] },
+  var NEXUS_DEFAULT_SHORTCUTS = {
+    nexusChat: { key: "Space", modifiers: ["Alt"] },
+    askNexus: { key: "L", modifiers: ["Alt"] },
     audio: { key: "Shift", modifiers: [] },
     translate: { key: "T", modifiers: ["Alt"] },
     micToggle: { key: "M", modifiers: ["Alt"] },
@@ -116,14 +116,14 @@
     "text/x-python-script": "text/x-python",
     "application/x-javascript": "text/javascript"
   };
-  var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "lumina_web_selection_";
+  var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "nexus_web_selection_";
   function isWebPageUrl(url) {
     return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") && url.includes("?sid="));
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
-    globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
-    globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
+    globalThis.NEXUS_DEFAULTS = NEXUS_DEFAULTS;
+    globalThis.NEXUS_PROVIDERS = NEXUS_PROVIDERS;
+    globalThis.NEXUS_DEFAULT_SHORTCUTS = NEXUS_DEFAULT_SHORTCUTS;
     globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
     globalThis.MIME_ALIASES = MIME_ALIASES;
     globalThis.WEB_SOURCE_SELECTION_STORAGE_PREFIX = WEB_SOURCE_SELECTION_STORAGE_PREFIX;
@@ -186,36 +186,36 @@
   // src/content/shadow_host.js
   var ShadowHostManager = class {
     constructor() {
-      this.luminaHost = null;
-      this.luminaShadowRoot = null;
+      this.nexusHost = null;
+      this.nexusShadowRoot = null;
       this.dictPlusObserver = null;
       this.cachedTheme = null;
       this.cachedAccent = null;
       this.cachedContrast = null;
     }
     init() {
-      if (this.luminaHost || document.getElementById("lumina-host") || document.getElementById("lumina-shadow-host")) {
-        this.luminaHost = document.getElementById("lumina-host") || document.getElementById("lumina-shadow-host");
-        this.luminaShadowRoot = this.luminaHost ? this.luminaHost.shadowRoot : null;
-        return { host: this.luminaHost, shadowRoot: this.luminaShadowRoot };
+      if (this.nexusHost || document.getElementById("nexus-host") || document.getElementById("nexus-shadow-host")) {
+        this.nexusHost = document.getElementById("nexus-host") || document.getElementById("nexus-shadow-host");
+        this.nexusShadowRoot = this.nexusHost ? this.nexusHost.shadowRoot : null;
+        return { host: this.nexusHost, shadowRoot: this.nexusShadowRoot };
       }
-      this.luminaHost = document.createElement("div");
-      this.luminaHost.id = "lumina-shadow-host";
-      this.luminaHost.style.cssText = "position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; overflow: visible;";
-      this.luminaShadowRoot = this.luminaHost.attachShadow({ mode: "open" });
-      (document.documentElement || document.body).appendChild(this.luminaHost);
+      this.nexusHost = document.createElement("div");
+      this.nexusHost.id = "nexus-shadow-host";
+      this.nexusHost.style.cssText = "position: fixed; top: 0; left: 0; width: 0; height: 30px; z-index: 2147483647; pointer-events: none; border: none; padding: 0; margin: 0; overflow: visible;";
+      this.nexusShadowRoot = this.nexusHost.attachShadow({ mode: "open" });
+      (document.documentElement || document.body).appendChild(this.nexusHost);
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = chrome.runtime.getURL("assets/styles/styles.css");
-      this.luminaShadowRoot.appendChild(link);
+      this.nexusShadowRoot.appendChild(link);
       const katexLink = document.createElement("link");
       katexLink.rel = "stylesheet";
       katexLink.href = chrome.runtime.getURL("lib/vendor/katex/katex.min.css");
-      this.luminaShadowRoot.appendChild(katexLink);
+      this.nexusShadowRoot.appendChild(katexLink);
       this.applyAskSelectionStyles();
       this.initThemeObserver();
       this.updateTheme();
-      return { host: this.luminaHost, shadowRoot: this.luminaShadowRoot };
+      return { host: this.nexusHost, shadowRoot: this.nexusShadowRoot };
     }
     applyAskSelectionStyles() {
       chrome.storage.local.get(["fontSize", "fontSizeByDomain", "globalDefaults"], (items) => {
@@ -228,26 +228,26 @@
         } else if (items.fontSize) {
           baseFontSize = items.fontSize;
         }
-        if (this.luminaHost) {
-          this.luminaHost.style.setProperty("font-size", baseFontSize + "px", "important");
+        if (this.nexusHost) {
+          this.nexusHost.style.setProperty("font-size", baseFontSize + "px", "important");
         }
-        document.documentElement.style.setProperty("--lumina-fontSize", baseFontSize + "px", "important");
+        document.documentElement.style.setProperty("--nexus-fontSize", baseFontSize + "px", "important");
       });
     }
     updateTheme() {
       const applyThemeSettings = (theme, accent, contrast) => {
         const preferredTheme = theme === "auto" ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" : theme;
         const isDark = preferredTheme === "dark";
-        if (this.luminaHost) {
+        if (this.nexusHost) {
           if (isDark) {
-            this.luminaHost.setAttribute("data-theme", "dark");
+            this.nexusHost.setAttribute("data-theme", "dark");
           } else {
-            this.luminaHost.removeAttribute("data-theme");
+            this.nexusHost.removeAttribute("data-theme");
           }
-          this.luminaHost.setAttribute("data-accent", accent || "default");
-          this.luminaHost.setAttribute("data-contrast", contrast || "auto");
+          this.nexusHost.setAttribute("data-accent", accent || "default");
+          this.nexusHost.setAttribute("data-contrast", contrast || "auto");
         }
-        const overlays = this.luminaShadowRoot ? this.luminaShadowRoot.querySelectorAll(".lumina-overlay") : [];
+        const overlays = this.nexusShadowRoot ? this.nexusShadowRoot.querySelectorAll(".nexus-overlay") : [];
         overlays.forEach((el) => {
           if (isDark) {
             el.setAttribute("data-theme", "dark");
@@ -270,11 +270,11 @@
       });
     }
     initThemeObserver() {
-      if (this.dictPlusObserver || !this.luminaShadowRoot) return;
+      if (this.dictPlusObserver || !this.nexusShadowRoot) return;
       let debounceTimer = null;
       this.dictPlusObserver = new MutationObserver((mutations) => {
         const hasTopLevelChange = mutations.some(
-          (m) => m.type === "childList" && m.addedNodes.length && m.target === this.luminaShadowRoot
+          (m) => m.type === "childList" && m.addedNodes.length && m.target === this.nexusShadowRoot
         );
         if (!hasTopLevelChange) return;
         if (debounceTimer) return;
@@ -283,7 +283,7 @@
           this.updateTheme();
         }, 200);
       });
-      this.dictPlusObserver.observe(this.luminaShadowRoot, { childList: true, subtree: true });
+      this.dictPlusObserver.observe(this.nexusShadowRoot, { childList: true, subtree: true });
     }
   };
 
@@ -333,7 +333,7 @@
         if (!transcriptData || transcriptData.length === 0) return null;
         return this._normalizeTranscript(transcriptData);
       } catch (e) {
-        console.error("[Lumina] Transcript extraction failed:", e);
+        console.error("[Nexus] Transcript extraction failed:", e);
         return null;
       }
     },
@@ -496,24 +496,24 @@
       this.setupGlobalListener();
     }
     injectStyles() {
-      if (document.getElementById("lumina-yt-styles")) return;
+      if (document.getElementById("nexus-yt-styles")) return;
       const style = document.createElement("style");
-      style.id = "lumina-yt-styles";
+      style.id = "nexus-yt-styles";
       style.textContent = `
             button[aria-label="Ask"] .ytSpecButtonShapeNextIcon,
             button[title="Ask"] .ytSpecButtonShapeNextIcon,
-            #lumina-yt-ask-btn .ytSpecButtonShapeNextIcon {
+            #nexus-yt-ask-btn .ytSpecButtonShapeNextIcon {
                 display: none !important;
             }
             button[aria-label="Download"] .ytSpecButtonShapeNextIcon,
             button[title="Download"] .ytSpecButtonShapeNextIcon,
-            #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextIcon {
+            #nexus-yt-copy-transcript-btn .ytSpecButtonShapeNextIcon {
                 display: none !important;
             }
             
             button[aria-label="Ask"] .ytSpecButtonShapeNextButtonTextContent,
             button[title="Ask"] .ytSpecButtonShapeNextButtonTextContent,
-            #lumina-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent {
+            #nexus-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent {
                 font-size: 0 !important;
                 display: inline-flex !important;
                 align-items: center !important;
@@ -522,8 +522,8 @@
             }
             button[aria-label="Ask"] .ytSpecButtonShapeNextButtonTextContent::before,
             button[title="Ask"] .ytSpecButtonShapeNextButtonTextContent::before,
-            #lumina-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent::before {
-                content: "Ask Lumina" !important;
+            #nexus-yt-ask-btn .ytSpecButtonShapeNextButtonTextContent::before {
+                content: "Ask Nexus" !important;
                 font-size: 14px !important;
                 display: inline-block !important;
                 vertical-align: middle !important;
@@ -531,7 +531,7 @@
 
             button[aria-label="Download"] .ytSpecButtonShapeNextButtonTextContent,
             button[title="Download"] .ytSpecButtonShapeNextButtonTextContent,
-            #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent {
+            #nexus-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent {
                 font-size: 0 !important;
                 display: inline-flex !important;
                 align-items: center !important;
@@ -540,23 +540,23 @@
             }
             button[aria-label="Download"] .ytSpecButtonShapeNextButtonTextContent::before,
             button[title="Download"] .ytSpecButtonShapeNextButtonTextContent::before,
-            #lumina-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Copy Transcript" !important;
                 font-size: 14px !important;
                 display: inline-block !important;
                 vertical-align: middle !important;
             }
 
-            #lumina-yt-copy-transcript-btn.is-fetching .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-fetching .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Fetching..." !important;
             }
-            #lumina-yt-copy-transcript-btn.is-copied .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-copied .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Copied!" !important;
             }
-            #lumina-yt-copy-transcript-btn.is-error .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-error .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "Error!" !important;
             }
-            #lumina-yt-copy-transcript-btn.is-not-found .ytSpecButtonShapeNextButtonTextContent::before {
+            #nexus-yt-copy-transcript-btn.is-not-found .ytSpecButtonShapeNextButtonTextContent::before {
                 content: "No Transcript!" !important;
             }
         `;
@@ -565,7 +565,7 @@
     setupGlobalListener() {
       window.addEventListener("click", async (e) => {
         if (!window.location.hostname.includes("youtube.com")) return;
-        const askBtn = e.target.closest('button[aria-label="Ask"], button[title="Ask"], #lumina-yt-ask-btn');
+        const askBtn = e.target.closest('button[aria-label="Ask"], button[title="Ask"], #nexus-yt-ask-btn');
         if (askBtn) {
           e.preventDefault();
           e.stopPropagation();
@@ -573,7 +573,7 @@
           this.handleAction();
           return;
         }
-        const copyBtn = e.target.closest('button[aria-label="Download"], button[title="Download"], #lumina-yt-copy-transcript-btn');
+        const copyBtn = e.target.closest('button[aria-label="Download"], button[title="Download"], #nexus-yt-copy-transcript-btn');
         if (copyBtn) {
           e.preventDefault();
           e.stopPropagation();
@@ -603,18 +603,18 @@
     }
     injectButton() {
       const nativeBtn = document.querySelector('button[aria-label="Ask"], button[title="Ask"]');
-      if (nativeBtn && nativeBtn.id !== "lumina-yt-ask-btn") {
-        nativeBtn.id = "lumina-yt-ask-btn";
+      if (nativeBtn && nativeBtn.id !== "nexus-yt-ask-btn") {
+        nativeBtn.id = "nexus-yt-ask-btn";
         this.button = nativeBtn;
       }
       const downloadBtn = document.querySelector('button[aria-label="Download"], button[title="Download"]');
-      if (downloadBtn && downloadBtn.id !== "lumina-yt-copy-transcript-btn") {
-        downloadBtn.id = "lumina-yt-copy-transcript-btn";
+      if (downloadBtn && downloadBtn.id !== "nexus-yt-copy-transcript-btn") {
+        downloadBtn.id = "nexus-yt-copy-transcript-btn";
         this.copyButton = downloadBtn;
       }
     }
     async handleCopyTranscript() {
-      const btn = document.getElementById("lumina-yt-copy-transcript-btn");
+      const btn = document.getElementById("nexus-yt-copy-transcript-btn");
       if (!btn) return;
       btn.classList.remove("is-copied", "is-error", "is-not-found");
       btn.classList.add("is-fetching");
@@ -628,12 +628,12 @@
           btn.classList.add("is-not-found");
         }
       } catch (err) {
-        console.error("[Lumina YT] Failed to copy transcript:", err);
+        console.error("[Nexus YT] Failed to copy transcript:", err);
         btn.classList.remove("is-fetching");
         btn.classList.add("is-error");
       }
       setTimeout(() => {
-        const currentBtn = document.getElementById("lumina-yt-copy-transcript-btn");
+        const currentBtn = document.getElementById("nexus-yt-copy-transcript-btn");
         if (currentBtn) {
           currentBtn.classList.remove("is-fetching", "is-copied", "is-error", "is-not-found");
         }
@@ -653,7 +653,7 @@
           youtubeTrigger: triggerInfo
         });
       } catch (err) {
-        console.error("[Lumina] Failed to open side panel:", err);
+        console.error("[Nexus] Failed to open side panel:", err);
       }
     }
     removeButton() {
@@ -667,7 +667,7 @@
   };
 
   // src/core/ai/token_utils.js
-  var LuminaToken = {
+  var NexusToken = {
     count: function(text) {
       if (!text) return 0;
       return Math.ceil(text.length / 2.5);
@@ -678,7 +678,7 @@
     }
   };
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaToken = LuminaToken;
+    globalThis.NexusToken = NexusToken;
   }
 
   // src/content/page_reader.js
@@ -713,7 +713,7 @@
       return "";
     }
     const classStr = typeof el.className === "string" ? el.className.toLowerCase() : "";
-    if (el.getAttribute("role") === "button" || classStr.includes("btn") || classStr.includes("button") || el.classList.contains("lumina-dict-play-btn")) {
+    if (el.getAttribute("role") === "button" || classStr.includes("btn") || classStr.includes("button") || el.classList.contains("nexus-dict-play-btn")) {
       return "";
     }
     if (tag === "a" && (el.classList.contains("btn") || el.classList.contains("button") || el.className.includes("btn "))) {
@@ -723,7 +723,7 @@
       return "";
     }
     const classNameStr = typeof el.className === "string" ? el.className : el.className?.baseVal || "";
-    if (/\b(icon|material-icons|google-symbols|fa-|glyphicon|lumina-translation-divider|lumina-trans-actions)\b/i.test(classNameStr)) {
+    if (/\b(icon|material-icons|google-symbols|fa-|glyphicon|nexus-translation-divider|nexus-trans-actions)\b/i.test(classNameStr)) {
       return "";
     }
     let text = "";
@@ -735,10 +735,10 @@
     }
     return text;
   }
-  function getActiveSelection(preferShadow = false, luminaShadowRoot = null) {
-    if (preferShadow && luminaShadowRoot) {
+  function getActiveSelection(preferShadow = false, nexusShadowRoot = null) {
+    if (preferShadow && nexusShadowRoot) {
       try {
-        const shadowSel = luminaShadowRoot.getSelection ? luminaShadowRoot.getSelection() : null;
+        const shadowSel = nexusShadowRoot.getSelection ? nexusShadowRoot.getSelection() : null;
         if (shadowSel && shadowSel.rangeCount > 0 && shadowSel.toString().trim() !== "") {
           return shadowSel;
         }
@@ -760,9 +760,9 @@
       }
     } catch (e) {
     }
-    if (!preferShadow && luminaShadowRoot) {
+    if (!preferShadow && nexusShadowRoot) {
       try {
-        const shadowSel = luminaShadowRoot.getSelection ? luminaShadowRoot.getSelection() : null;
+        const shadowSel = nexusShadowRoot.getSelection ? nexusShadowRoot.getSelection() : null;
         if (shadowSel && shadowSel.rangeCount > 0 && shadowSel.toString().trim() !== "") {
           return shadowSel;
         }
@@ -771,8 +771,8 @@
     }
     return sel;
   }
-  function getSmartSelectionText(luminaShadowRoot = null) {
-    const sel = getActiveSelection(false, luminaShadowRoot);
+  function getSmartSelectionText(nexusShadowRoot = null) {
+    const sel = getActiveSelection(false, nexusShadowRoot);
     if (!sel || sel.rangeCount === 0) return "";
     const range = sel.getRangeAt(0);
     const fragment = range.cloneContents();
@@ -783,8 +783,8 @@
     }
     return extracted;
   }
-  function getSentenceContext(luminaShadowRoot = null) {
-    const sel = getActiveSelection(false, luminaShadowRoot);
+  function getSentenceContext(nexusShadowRoot = null) {
+    const sel = getActiveSelection(false, nexusShadowRoot);
     if (!sel || sel.rangeCount === 0) return "";
     const range = sel.getRangeAt(0);
     let node = range.startContainer;
@@ -797,7 +797,7 @@
         continue;
       }
       if (parent.tagName && blockTags.includes(parent.tagName)) {
-        if (parent.id === "lumina-host" || parent.id === "lumina-shadow-host") {
+        if (parent.id === "nexus-host" || parent.id === "nexus-shadow-host") {
           parent = parent.parentNode || parent.host;
           continue;
         }
@@ -821,8 +821,8 @@
     const end = nextMarkers ? index + selectionText.length + nextMarkers[0].length : text.length;
     return text.substring(start, end).trim();
   }
-  function getParagraphContext(luminaShadowRoot = null) {
-    const sel = getActiveSelection(false, luminaShadowRoot);
+  function getParagraphContext(nexusShadowRoot = null) {
+    const sel = getActiveSelection(false, nexusShadowRoot);
     if (!sel || sel.rangeCount === 0) return "";
     const range = sel.getRangeAt(0);
     let node = range.startContainer;
@@ -835,7 +835,7 @@
         continue;
       }
       if (parent.tagName && blockTags.includes(parent.tagName)) {
-        if (parent.id === "lumina-host" || parent.id === "lumina-shadow-host") {
+        if (parent.id === "nexus-host" || parent.id === "nexus-shadow-host") {
           parent = parent.parentNode || parent.host;
           continue;
         }
@@ -968,7 +968,7 @@ URL: ${url}
         '[class*="fixed" i]',
         '[class*="section-header" i]',
         "#feedback-modal",
-        ".lumina-ignore",
+        ".nexus-ignore",
         '[role="navigation"]',
         '[role="contentinfo"]',
         ".dol-breadcrumb",
@@ -1047,23 +1047,23 @@ URL: ${url}
 ${doc.body ? doc.body.innerText : ""}`;
       return result;
     } catch (error) {
-      console.error("[Lumina] Content extraction failed:", error);
+      console.error("[Nexus] Content extraction failed:", error);
       result.content = `[Extraction Error]: ${error.message}`;
     }
     lastExtractedContent = result;
     lastExtractedUrl = url;
     return result;
   }
-  function luminaEstimateTokens(text) {
+  function nexusEstimateTokens(text) {
     if (!text) return 0;
-    if (typeof LuminaToken !== "undefined") {
-      return LuminaToken.count(text);
+    if (typeof NexusToken !== "undefined") {
+      return NexusToken.count(text);
     }
     return Math.ceil(text.length / 4);
   }
   if (typeof window !== "undefined") {
-    window.luminaExtractMainContent = extractMainContent;
-    window.luminaEstimateTokens = luminaEstimateTokens;
+    window.nexusExtractMainContent = extractMainContent;
+    window.nexusEstimateTokens = nexusEstimateTokens;
   }
 
   // src/content/audio_player.js
@@ -1224,12 +1224,12 @@ ${doc.body ? doc.body.innerText : ""}`;
     }
   }
   if (typeof window !== "undefined") {
-    window.LuminaPlayAudio = playCombinedAudio;
-    window.LuminaStopAudio = stopAudio;
+    window.NexusPlayAudio = playCombinedAudio;
+    window.NexusStopAudio = stopAudio;
   }
 
   // src/helpers/annotation_utils.js
-  var LuminaAnnotation = {
+  var NexusAnnotation = {
     highlightsMap: /* @__PURE__ */ new Map(),
     highlightObjects: /* @__PURE__ */ new Map(),
     styleElement: null,
@@ -1287,7 +1287,7 @@ ${doc.body ? doc.body.innerText : ""}`;
         range.setEnd(endNode, data.endOffset);
         return range;
       } catch (e) {
-        console.warn("[Lumina] Range recovery failed:", e);
+        console.warn("[Nexus] Range recovery failed:", e);
         return null;
       }
     },
@@ -1321,14 +1321,14 @@ ${doc.body ? doc.body.innerText : ""}`;
         comment: arr[8] || ""
       };
     },
-    isLuminaAndNotAnswer(range) {
-      if (typeof window !== "undefined" && window.location.href.includes("lumina.html")) {
+    isNexusAndNotAnswer(range) {
+      if (typeof window !== "undefined" && window.location.href.includes("nexus.html")) {
         if (!range) return true;
         let container = range.commonAncestorContainer;
         if (container.nodeType !== Node.ELEMENT_NODE) {
           container = container.parentNode;
         }
-        if (!container || !container.closest(".lumina-chat-answer")) {
+        if (!container || !container.closest(".nexus-chat-answer")) {
           return true;
         }
       }
@@ -1336,7 +1336,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     highlight(range, color = "#FFFB78", id = null, comment = "") {
       if (!range || range.collapsed) return null;
-      if (this.isLuminaAndNotAnswer(range)) return null;
+      if (this.isNexusAndNotAnswer(range)) return null;
       const highlightId = id || Date.now().toString();
       const rangeToHighlight = range.cloneRange();
       this.saveHighlight(rangeToHighlight, color, highlightId, comment);
@@ -1346,26 +1346,26 @@ ${doc.body ? doc.body.innerText : ""}`;
     injectHighlightCSS(color) {
       if (!this.styleElement) {
         this.styleElement = document.createElement("style");
-        this.styleElement.id = "lumina-highlight-styles";
+        this.styleElement.id = "nexus-highlight-styles";
         (document.head || document.documentElement).appendChild(this.styleElement);
       }
       if (color) {
         const cleanColor = color.toLowerCase().replace("#", "");
-        const styleRule = `::highlight(lumina-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }
+        const styleRule = `::highlight(nexus-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }
 `;
-        if (!this.styleElement.textContent.includes(`lumina-hl-${cleanColor}`)) {
+        if (!this.styleElement.textContent.includes(`nexus-hl-${cleanColor}`)) {
           this.styleElement.textContent += styleRule;
         }
       }
-      const commentRule = `::highlight(lumina-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }
+      const commentRule = `::highlight(nexus-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }
 `;
-      if (!this.styleElement.textContent.includes("lumina-comment-underline")) {
+      if (!this.styleElement.textContent.includes("nexus-comment-underline")) {
         this.styleElement.textContent += commentRule;
       }
     },
     applyHighlight(range, color, highlightId = null, comment = "") {
       if (!range || range.collapsed || !window.Highlight || !CSS.highlights) return;
-      if (this.isLuminaAndNotAnswer(range)) return;
+      if (this.isNexusAndNotAnswer(range)) return;
       this.injectHighlightCSS(color);
       if (color) {
         const normalizedColor = color.toLowerCase();
@@ -1374,7 +1374,7 @@ ${doc.body ? doc.body.innerText : ""}`;
           highlightObj = new Highlight();
           this.highlightObjects.set(normalizedColor, highlightObj);
           const cleanColor = normalizedColor.replace("#", "");
-          CSS.highlights.set(`lumina-hl-${cleanColor}`, highlightObj);
+          CSS.highlights.set(`nexus-hl-${cleanColor}`, highlightObj);
         }
         highlightObj.add(range);
       }
@@ -1383,7 +1383,7 @@ ${doc.body ? doc.body.innerText : ""}`;
         if (!commentObj) {
           commentObj = new Highlight();
           this.highlightObjects.set("comment-underline", commentObj);
-          CSS.highlights.set("lumina-comment-underline", commentObj);
+          CSS.highlights.set("nexus-comment-underline", commentObj);
         }
         commentObj.add(range);
       }
@@ -1412,7 +1412,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       const url = window.location.href.split("#")[0].split("?")[0];
       if (url.startsWith("chrome-extension://")) {
         let tabId = null;
-        const scope = window.LuminaSelectionScope;
+        const scope = window.NexusSelectionScope;
         if (rangeOrNode && scope) {
           const node = rangeOrNode instanceof Range ? rangeOrNode.startContainer : rangeOrNode;
           let curr = node;
@@ -1422,7 +1422,7 @@ ${doc.body ? doc.body.innerText : ""}`;
               const tab = tabsList.find((t) => t.historyEl === curr);
               if (tab) {
                 if (tab.sessionId) {
-                  return `highlights_lumina_session_${tab.sessionId}`;
+                  return `highlights_nexus_session_${tab.sessionId}`;
                 }
                 tabId = tab.id;
                 break;
@@ -1437,12 +1437,12 @@ ${doc.body ? doc.body.innerText : ""}`;
           if (tabsList && typeof activeIdx !== "undefined" && tabsList[activeIdx]) {
             const tab = tabsList[activeIdx];
             if (tab.sessionId) {
-              return `highlights_lumina_session_${tab.sessionId}`;
+              return `highlights_nexus_session_${tab.sessionId}`;
             }
             tabId = tab.id;
           }
         }
-        return tabId ? `highlights_lumina_tab_${tabId}` : `highlights_lumina`;
+        return tabId ? `highlights_nexus_tab_${tabId}` : `highlights_nexus`;
       }
       return `highlights_${url}`;
     },
@@ -1460,7 +1460,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       }
     },
     saveHighlight(range, color, id, comment = "") {
-      if (this.isLuminaAndNotAnswer(range)) return;
+      if (this.isNexusAndNotAnswer(range)) return;
       const storageKey = this.getStorageKey(range);
       const hData = {
         id,
@@ -1478,7 +1478,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     addComment(range, commentText, color = null, id = null) {
       if (!range || range.collapsed) return null;
-      if (this.isLuminaAndNotAnswer(range)) return null;
+      if (this.isNexusAndNotAnswer(range)) return null;
       const highlightId = id || Date.now().toString();
       const rangeToHighlight = range.cloneRange();
       this.saveHighlight(rangeToHighlight, color, highlightId, commentText);
@@ -1517,15 +1517,15 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     loadHighlights(tabId = null) {
       let storageKey = null;
-      if (tabId && window.LuminaSelectionScope) {
-        const tabsList = window.LuminaSelectionScope.getTabs();
+      if (tabId && window.NexusSelectionScope) {
+        const tabsList = window.NexusSelectionScope.getTabs();
         const tab = tabsList && tabsList.find((t) => t.id === tabId);
         if (tab && tab.sessionId) {
-          storageKey = `highlights_lumina_session_${tab.sessionId}`;
+          storageKey = `highlights_nexus_session_${tab.sessionId}`;
         }
       }
       if (!storageKey) {
-        storageKey = tabId ? `highlights_lumina_tab_${tabId}` : this.getStorageKey();
+        storageKey = tabId ? `highlights_nexus_tab_${tabId}` : this.getStorageKey();
       }
       chrome.runtime.sendMessage({
         action: "load_highlights",
@@ -1654,7 +1654,7 @@ ${doc.body ? doc.body.innerText : ""}`;
           newHighlightObj = new Highlight();
           this.highlightObjects.set(newColorNormalized, newHighlightObj);
           const cleanColor = newColorNormalized.replace("#", "");
-          CSS.highlights.set(`lumina-hl-${cleanColor}`, newHighlightObj);
+          CSS.highlights.set(`nexus-hl-${cleanColor}`, newHighlightObj);
           this.injectHighlightCSS(newColorNormalized);
         }
         newHighlightObj.add(data.range);
@@ -1678,7 +1678,7 @@ ${doc.body ? doc.body.innerText : ""}`;
           else {
             const newCommentObj = new Highlight();
             this.highlightObjects.set("comment-underline", newCommentObj);
-            CSS.highlights.set("lumina-comment-underline", newCommentObj);
+            CSS.highlights.set("nexus-comment-underline", newCommentObj);
             newCommentObj.add(data.range);
             this.injectHighlightCSS();
           }
@@ -1690,14 +1690,14 @@ ${doc.body ? doc.body.innerText : ""}`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaAnnotation = LuminaAnnotation;
+    window.NexusAnnotation = NexusAnnotation;
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaAnnotation = LuminaAnnotation;
+    globalThis.NexusAnnotation = NexusAnnotation;
   }
 
   // src/helpers/selection_utils.js
-  var LuminaSelection = {
+  var NexusSelection = {
     btn: null,
     inputPopup: null,
     inputField: null,
@@ -1724,12 +1724,12 @@ ${doc.body ? doc.body.innerText : ""}`;
         chrome.runtime.sendMessage(message, () => {
           const lastError = chrome.runtime.lastError;
           if (lastError) {
-            console.warn("[Lumina] runtime message dropped:", lastError.message);
+            console.warn("[Nexus] runtime message dropped:", lastError.message);
           }
         });
         return true;
       } catch (error) {
-        console.warn("[Lumina] runtime context unavailable:", error?.message || error);
+        console.warn("[Nexus] runtime context unavailable:", error?.message || error);
         return false;
       }
     },
@@ -1743,7 +1743,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       }
     },
     getHighlightsInSelection(selectedRange) {
-      const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+      const annotationEngine = window.NexusAnnotation || NexusAnnotation;
       if (!selectedRange || !annotationEngine) return [];
       const intersectingHighlights = [];
       for (const [id, data] of annotationEngine.highlightsMap.entries()) {
@@ -1758,18 +1758,18 @@ ${doc.body ? doc.body.innerText : ""}`;
       let html = "";
       if (this.annotationMode) {
         html += `
-                <div class="lumina-color-swatch lumina-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                <div class="nexus-color-swatch nexus-clear-highlight" title="Clear Annotation" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
-                <div class="lumina-action-item lumina-action-comment" title="Edit/Add Comment">
+                <div class="nexus-action-item nexus-action-comment" title="Edit/Add Comment">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
         this.ANNOTATION_COLORS.forEach((color) => {
           const isActive = color.toLowerCase() === (this.currentHighlightColor || "").toLowerCase();
           html += `
-                    <div class="lumina-action-item lumina-action-highlight-btn ${isActive ? "active" : ""}" data-color="${color}" title="Change Color">
-                        <div class="lumina-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? "2px solid var(--lumina-ui-primary, #6366f1)" : "1px solid rgba(0,0,0,0.15)"};"></div>
+                    <div class="nexus-action-item nexus-action-highlight-btn ${isActive ? "active" : ""}" data-color="${color}" title="Change Color">
+                        <div class="nexus-action-highlight-color-preview" style="background-color: ${color}; border: ${isActive ? "2px solid var(--nexus-ui-primary, #6366f1)" : "1px solid rgba(0,0,0,0.15)"};"></div>
                     </div>
                 `;
         });
@@ -1777,36 +1777,36 @@ ${doc.body ? doc.body.innerText : ""}`;
         const intersectingIds = this.getHighlightsInSelection(this.range);
         if (intersectingIds.length > 0) {
           html += `
-                    <div class="lumina-color-swatch lumina-clear-highlight" title="Clear All Highlights in Selection" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
+                    <div class="nexus-color-swatch nexus-clear-highlight" title="Clear All Highlights in Selection" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </div>
                 `;
         }
         html += `
-                <div class="lumina-action-item lumina-action-dict" title="Dictionary">
+                <div class="nexus-action-item nexus-action-dict" title="Dictionary">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                 </div>
-                <div class="lumina-action-item lumina-action-comment" title="Add Comment">
+                <div class="nexus-action-item nexus-action-comment" title="Add Comment">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; display: block; opacity: 0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
             `;
         html += `
-                <div class="lumina-action-item lumina-action-highlight-btn" data-color="${this.currentHighlightColor}" title="Highlight text">
-                    <div class="lumina-action-highlight-color-preview" style="background-color: ${this.currentHighlightColor};"></div>
+                <div class="nexus-action-item nexus-action-highlight-btn" data-color="${this.currentHighlightColor}" title="Highlight text">
+                    <div class="nexus-action-highlight-color-preview" style="background-color: ${this.currentHighlightColor};"></div>
                 </div>
             `;
         const remainingColors = this.ANNOTATION_COLORS.filter((c) => c.toLowerCase() !== this.currentHighlightColor.toLowerCase());
         if (this.showExtraColors) {
           remainingColors.forEach((color) => {
             html += `
-                        <div class="lumina-action-item lumina-action-highlight-btn extra-color" data-color="${color}" title="Highlight text">
-                            <div class="lumina-action-highlight-color-preview" style="background-color: ${color};"></div>
+                        <div class="nexus-action-item nexus-action-highlight-btn extra-color" data-color="${color}" title="Highlight text">
+                            <div class="nexus-action-highlight-color-preview" style="background-color: ${color};"></div>
                         </div>
                     `;
           });
         } else {
           html += `
-                    <div class="lumina-action-item lumina-action-expand-colors" title="More colors">
+                    <div class="nexus-action-item nexus-action-expand-colors" title="More colors">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block; opacity: 0.7;"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
                 `;
@@ -1828,20 +1828,20 @@ ${doc.body ? doc.body.innerText : ""}`;
       this.onCommentAdded = options.onCommentAdded;
       this.cleanup();
       this.btn = document.createElement("div");
-      this.btn.id = "lumina-action-bar";
+      this.btn.id = "nexus-action-bar";
       this.btn.style.cssText = "pointer-events: auto; display: none; visibility: hidden;";
       this.renderDefaultActionBar();
       this.inputPopup = document.createElement("div");
-      this.inputPopup.id = "lumina-ask-input-popup";
+      this.inputPopup.id = "nexus-ask-input-popup";
       this.inputPopup.style.cssText = "pointer-events: auto; display: none; visibility: hidden;";
       this.inputPopup.innerHTML = `
-            <div class="lumina-ask-input-wrapper">
-                <textarea class="lumina-ask-input-field" placeholder="Add a comment..."></textarea>
+            <div class="nexus-ask-input-wrapper">
+                <textarea class="nexus-ask-input-field" placeholder="Add a comment..."></textarea>
             </div>
         `;
-      this.inputField = this.inputPopup.querySelector(".lumina-ask-input-field");
+      this.inputField = this.inputPopup.querySelector(".nexus-ask-input-field");
       this.hoverTooltip = document.createElement("div");
-      this.hoverTooltip.id = "lumina-comment-hover-tooltip";
+      this.hoverTooltip.id = "nexus-comment-hover-tooltip";
       this.hoverTooltip.style.cssText = "pointer-events: auto; display: none; visibility: hidden; position: fixed; z-index: 2147483647;";
       this.shadowRoot.appendChild(this.hoverTooltip);
       const markInteracting = () => {
@@ -1865,12 +1865,12 @@ ${doc.body ? doc.body.innerText : ""}`;
         e.preventDefault();
         e.stopPropagation();
         markInteracting();
-        const dictBtn = e.target.closest(".lumina-action-dict");
-        const commentBtn = e.target.closest(".lumina-action-comment");
-        const expandBtn = e.target.closest(".lumina-action-expand-colors");
-        const highlightBtn = e.target.closest(".lumina-action-highlight-btn");
-        const clearHighlightBtn = e.target.closest(".lumina-clear-highlight");
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+        const dictBtn = e.target.closest(".nexus-action-dict");
+        const commentBtn = e.target.closest(".nexus-action-comment");
+        const expandBtn = e.target.closest(".nexus-action-expand-colors");
+        const highlightBtn = e.target.closest(".nexus-action-highlight-btn");
+        const clearHighlightBtn = e.target.closest(".nexus-clear-highlight");
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation;
         if (expandBtn) {
           this.showExtraColors = true;
           this.renderDefaultActionBar();
@@ -1923,7 +1923,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       });
       const handleSaveComment = () => {
         const commentText = this.inputField.value.trim();
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation;
         if (commentText) {
           if (this.annotationMode && this.currentAnnotationId) {
             if (annotationEngine) {
@@ -1954,13 +1954,13 @@ ${doc.body ? doc.body.innerText : ""}`;
         if (this.inputPopup && this.inputPopup.style.display === "flex") return;
         if (this.btn && this.btn.style.display === "flex") return;
         const targetEl = document.elementFromPoint(e.clientX, e.clientY);
-        if (targetEl && (targetEl.closest(".lumina-chat-input-container") || targetEl.closest(".topbar") || targetEl.closest(".header") || targetEl.closest(".lumina-header") || targetEl.closest("#lumina-action-bar"))) {
+        if (targetEl && (targetEl.closest(".nexus-chat-input-container") || targetEl.closest(".topbar") || targetEl.closest(".header") || targetEl.closest(".nexus-header") || targetEl.closest("#nexus-action-bar"))) {
           if (this.hoverTooltip && this.hoverTooltip.style.display === "block") {
             this.hideHoverTooltip();
           }
           return;
         }
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation;
         const hData = annotationEngine ? annotationEngine.getHighlightAtCoords(e.clientX, e.clientY) : null;
         if (hData && hData.comment) {
           if (this._hoverHideTimer) {
@@ -2008,8 +2008,8 @@ ${doc.body ? doc.body.innerText : ""}`;
       if (!this.hoverTooltip || !hData || !hData.comment) return;
       this.currentHoveredAnnotationId = hData.id;
       this.hoverTooltip.innerHTML = `
-            <div class="lumina-comment-tooltip-card">
-                <span class="lumina-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
+            <div class="nexus-comment-tooltip-card">
+                <span class="nexus-comment-tooltip-text">${this.escapeHtml(hData.comment)}</span>
             </div>
         `;
       this.hoverTooltip.style.display = "block";
@@ -2022,9 +2022,9 @@ ${doc.body ? doc.body.innerText : ""}`;
         startRect = rects.length > 0 ? rects[0] : hData.range.getBoundingClientRect();
       }
       if (startRect) {
-        const inputContainer = document.querySelector(".lumina-chat-input-container");
+        const inputContainer = document.querySelector(".nexus-chat-input-container");
         const inputTop = inputContainer ? inputContainer.getBoundingClientRect().top : window.innerHeight - 100;
-        const topBar = document.querySelector(".topbar, .header, .lumina-header");
+        const topBar = document.querySelector(".topbar, .header, .nexus-header");
         const headerBottom = topBar ? topBar.getBoundingClientRect().bottom : 50;
         if (startRect.bottom < headerBottom || startRect.top > inputTop) {
           this.hideHoverTooltip();
@@ -2046,7 +2046,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       this.setScrollLock(false);
       this._unbindSelectionScrollTracking();
       if (this.shadowRoot) {
-        this.shadowRoot.querySelectorAll("#lumina-action-bar, #lumina-ask-input-popup, .lumina-overlay-backdrop").forEach((el) => el.remove());
+        this.shadowRoot.querySelectorAll("#nexus-action-bar, #nexus-ask-input-popup, .nexus-overlay-backdrop").forEach((el) => el.remove());
       }
     },
     updatePosition(element = this.btn) {
@@ -2125,7 +2125,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       this.sourceEntry = null;
       if (range && range.startContainer) {
         const node = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
-        this.sourceEntry = node ? node.closest(".lumina-entry") : null;
+        this.sourceEntry = node ? node.closest(".nexus-entry") : null;
       }
       this.annotationMode = false;
       this.showExtraColors = false;
@@ -2143,7 +2143,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       this.inputPopup.style.visibility = "visible";
       if (this.inputField) {
         let existingComment = "";
-        const annotationEngine = window.LuminaAnnotation || LuminaAnnotation;
+        const annotationEngine = window.NexusAnnotation || NexusAnnotation;
         if (this.annotationMode && this.currentAnnotationId && annotationEngine) {
           const data = annotationEngine.highlightsMap.get(this.currentAnnotationId);
           if (data) existingComment = data.comment || "";
@@ -2208,12 +2208,12 @@ ${doc.body ? doc.body.innerText : ""}`;
       if (this.onHide) this.onHide();
     },
     setScrollLock(lock) {
-      const isSpotlight = document.body.classList.contains("lumina-page") || window.location.pathname.includes("lumina.html");
+      const isSpotlight = document.body.classList.contains("nexus-page") || window.location.pathname.includes("nexus.html");
       if (isSpotlight) return;
       if (lock) {
         if (!this.inputBackdrop) {
           this.inputBackdrop = document.createElement("div");
-          this.inputBackdrop.className = "lumina-overlay-backdrop";
+          this.inputBackdrop.className = "nexus-overlay-backdrop";
           this.inputBackdrop.style.zIndex = "2147483646";
           this.inputBackdrop.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
           this.inputBackdrop.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
@@ -2225,11 +2225,11 @@ ${doc.body ? doc.body.innerText : ""}`;
         this.originalOverflowHtml = document.documentElement.style.overflow;
         document.body.style.overflow = "hidden";
         document.documentElement.style.overflow = "hidden";
-        document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+        document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
           el.style.overflow = "hidden";
         });
         this._scrollPreventer = (e) => {
-          if (e.target.closest(".lumina-ask-input-field") || e.target.closest(".lumina-tooltip")) {
+          if (e.target.closest(".nexus-ask-input-field") || e.target.closest(".nexus-tooltip")) {
             return;
           }
           e.preventDefault();
@@ -2239,7 +2239,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       } else {
         document.body.style.overflow = this.originalOverflowBody || "";
         document.documentElement.style.overflow = this.originalOverflowHtml || "";
-        document.querySelectorAll(".lumina-chat-scroll-content").forEach((el) => {
+        document.querySelectorAll(".nexus-chat-scroll-content").forEach((el) => {
           el.style.overflow = "auto";
         });
         if (this._scrollPreventer) {
@@ -2267,8 +2267,8 @@ ${doc.body ? doc.body.innerText : ""}`;
       return range.getBoundingClientRect();
     },
     getDeepActiveElement(root = document) {
-      if (typeof LuminaChatUI !== "undefined" && typeof LuminaChatUI.getDeepActiveElement === "function") {
-        return LuminaChatUI.getDeepActiveElement(root);
+      if (typeof NexusChatUI !== "undefined" && typeof NexusChatUI.getDeepActiveElement === "function") {
+        return NexusChatUI.getDeepActiveElement(root);
       }
       let active = root.activeElement;
       while (active && active.shadowRoot) {
@@ -2414,10 +2414,10 @@ ${doc.body ? doc.body.innerText : ""}`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaSelection = LuminaSelection;
+    window.NexusSelection = NexusSelection;
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaSelection = LuminaSelection;
+    globalThis.NexusSelection = NexusSelection;
   }
 
   // src/helpers/freedict_parser.js
@@ -2535,7 +2535,7 @@ ${doc.body ? doc.body.innerText : ""}`;
   }
 
   // src/components/dictionary/dictionary_popup.js
-  var LuminaDictionaryPopup = {
+  var NexusDictionaryPopup = {
     instance: null,
     currentWord: "",
     currentSource: "dictionary",
@@ -2577,8 +2577,8 @@ ${doc.body ? doc.body.innerText : ""}`;
       const width = dimensions.dictPopupWidth || 420;
       const height = dimensions.dictPopupHeight || 460;
       const popup = document.createElement("div");
-      popup.id = "lumina-dictionary-popup";
-      popup.className = "lumina-dictionary-popup";
+      popup.id = "nexus-dictionary-popup";
+      popup.className = "nexus-dictionary-popup";
       let x = options.x || window.innerWidth / 2 - width / 2;
       let y = options.y || window.innerHeight / 2 - height / 2;
       const viewportWidth = window.innerWidth;
@@ -2592,24 +2592,24 @@ ${doc.body ? doc.body.innerText : ""}`;
       popup.style.width = `${width}px`;
       popup.style.height = `${height}px`;
       popup.innerHTML = `
-            <div class="lumina-dict-body">
-                <div class="lumina-dict-scroll-area">
-                    <div class="lumina-dict-loading-state">
-                        <div class="lumina-loading-spinner"></div>
+            <div class="nexus-dict-body">
+                <div class="nexus-dict-scroll-area">
+                    <div class="nexus-dict-loading-state">
+                        <div class="nexus-loading-spinner"></div>
                     </div>
                 </div>
             </div>
-            <div class="lumina-dict-footer" style="${this.currentSource === "translate" ? "display: none !important;" : ""}">
-                <div class="lumina-dict-tabs">
-                    <button class="lumina-dict-tab-btn ${this.currentSource === "dictionary" ? "active" : ""}" data-source="dictionary">Dictionary</button>
-                    <button class="lumina-dict-tab-btn ${this.currentSource === "images" ? "active" : ""}" data-source="images">Images</button>
+            <div class="nexus-dict-footer" style="${this.currentSource === "translate" ? "display: none !important;" : ""}">
+                <div class="nexus-dict-tabs">
+                    <button class="nexus-dict-tab-btn ${this.currentSource === "dictionary" ? "active" : ""}" data-source="dictionary">Dictionary</button>
+                    <button class="nexus-dict-tab-btn ${this.currentSource === "images" ? "active" : ""}" data-source="images">Images</button>
                 </div>
             </div>
-            <div class="lumina-dict-resizer-right"></div>
-            <div class="lumina-dict-resizer-bottom"></div>
-            <div class="lumina-dict-resizer-corner"></div>
+            <div class="nexus-dict-resizer-right"></div>
+            <div class="nexus-dict-resizer-bottom"></div>
+            <div class="nexus-dict-resizer-corner"></div>
         `;
-      const shadowHost = document.getElementById("lumina-shadow-host");
+      const shadowHost = document.getElementById("nexus-shadow-host");
       if (shadowHost && shadowHost.shadowRoot) {
         shadowHost.shadowRoot.appendChild(popup);
       } else {
@@ -2621,7 +2621,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     switchSource(source) {
       if (!this.instance || source === this.currentSource) return;
-      const tabs = this.instance.querySelectorAll(".lumina-dict-tab-btn");
+      const tabs = this.instance.querySelectorAll(".nexus-dict-tab-btn");
       const targetTab = Array.from(tabs).find((t) => t.dataset.source === source);
       if (!targetTab) return;
       tabs.forEach((t) => t.classList.remove("active"));
@@ -2634,16 +2634,16 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     setupEvents() {
       if (!this.instance) return;
-      const tabs = this.instance.querySelectorAll(".lumina-dict-tab-btn");
+      const tabs = this.instance.querySelectorAll(".nexus-dict-tab-btn");
       tabs.forEach((tab) => {
         tab.onclick = () => {
           this.isManualSelection = true;
           this.switchSource(tab.dataset.source);
         };
       });
-      const cornerResizer = this.instance.querySelector(".lumina-dict-resizer-corner");
-      const rightResizer = this.instance.querySelector(".lumina-dict-resizer-right");
-      const bottomResizer = this.instance.querySelector(".lumina-dict-resizer-bottom");
+      const cornerResizer = this.instance.querySelector(".nexus-dict-resizer-corner");
+      const rightResizer = this.instance.querySelector(".nexus-dict-resizer-right");
+      const bottomResizer = this.instance.querySelector(".nexus-dict-resizer-bottom");
       let isResizing = false;
       let resizingMode = null;
       let startX, startY, startW, startH;
@@ -2690,7 +2690,7 @@ ${doc.body ? doc.body.innerText : ""}`;
         if (!this.instance) return;
         const path = e.composedPath();
         const isInside = path.some(
-          (el) => el === this.instance || el.id === "lumina-dictionary-popup" || el.id === "lumina-shadow-host" || el.classList && el.classList.contains && el.classList.contains("lumina-dictionary-popup")
+          (el) => el === this.instance || el.id === "nexus-dictionary-popup" || el.id === "nexus-shadow-host" || el.classList && el.classList.contains && el.classList.contains("nexus-dictionary-popup")
         );
         if (!isInside) {
           this.hide();
@@ -2714,11 +2714,11 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     showLoading(source) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!scrollArea) return;
       scrollArea.innerHTML = `
-            <div class="lumina-dict-loading-state">
-                <div class="lumina-loading-spinner"></div>
+            <div class="nexus-dict-loading-state">
+                <div class="nexus-loading-spinner"></div>
             </div>
         `;
     },
@@ -2789,7 +2789,7 @@ ${doc.body ? doc.body.innerText : ""}`;
           throw new Error(response?.error || "Failed to fetch");
         }
       } catch (err) {
-        console.error(`[Lumina Dict] Error in fetchData(${source}):`, err);
+        console.error(`[Nexus Dict] Error in fetchData(${source}):`, err);
         const errMessage = String(err?.message || err || "");
         const isForbidden = /\b403\b|HTTP Status 403|Forbidden/i.test(errMessage);
         const fallbackSource = isForbidden ? this.getFallbackSource(source) : null;
@@ -2798,7 +2798,7 @@ ${doc.body ? doc.body.innerText : ""}`;
           return;
         }
         if (source === this.currentSource) {
-          const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+          const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
           if (scrollArea) {
             let title = "Fetch Failed";
             let desc = err.message;
@@ -2809,11 +2809,11 @@ ${doc.body ? doc.body.innerText : ""}`;
               icon = "\u{1F6AB}";
             }
             scrollArea.innerHTML = `
-                        <div class="lumina-dict-status-container status-error">
-                            <div class="lumina-dict-status-card">
-                                <div class="lumina-dict-status-icon">${icon}</div>
-                                <div class="lumina-dict-status-title">${title}</div>
-                                <div class="lumina-dict-status-desc">${desc}</div>
+                        <div class="nexus-dict-status-container status-error">
+                            <div class="nexus-dict-status-card">
+                                <div class="nexus-dict-status-icon">${icon}</div>
+                                <div class="nexus-dict-status-title">${title}</div>
+                                <div class="nexus-dict-status-desc">${desc}</div>
                             </div>
                         </div>
                     `;
@@ -2825,13 +2825,13 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     renderImages(images) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!images || images.length === 0) {
         scrollArea.innerHTML = `
-                <div class="lumina-dict-status-container status-empty">
-                    <div class="lumina-dict-status-card">
-                        <div class="lumina-dict-status-icon">\u{1F4F8}</div>
-                        <div class="lumina-dict-status-title">No Results Found</div>
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">\u{1F4F8}</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
                     </div>
                 </div>
             `;
@@ -2839,19 +2839,19 @@ ${doc.body ? doc.body.innerText : ""}`;
       }
       const displayImages = images.slice(0, 4);
       scrollArea.innerHTML = `
-            <div class="lumina-dict-images-grid">
+            <div class="nexus-dict-images-grid">
                 ${displayImages.map((img) => `
-                    <div class="lumina-dict-image-card">
-                        <div class="lumina-loading-spinner"></div>
+                    <div class="nexus-dict-image-card">
+                        <div class="nexus-loading-spinner"></div>
                         <img src="${img}" loading="lazy">
                     </div>
                 `).join("")}
             </div>
         `;
-      const cards = scrollArea.querySelectorAll(".lumina-dict-image-card");
+      const cards = scrollArea.querySelectorAll(".nexus-dict-image-card");
       cards.forEach((card) => {
         const img = card.querySelector("img");
-        const spinner = card.querySelector(".lumina-loading-spinner");
+        const spinner = card.querySelector(".nexus-loading-spinner");
         if (img) {
           img.onload = () => {
             if (spinner) spinner.style.setProperty("display", "none", "important");
@@ -2867,7 +2867,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     },
     renderTranslation(data) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!scrollArea) return;
       const escapeHTML = (str) => {
         if (!str) return "";
@@ -2879,54 +2879,54 @@ ${doc.body ? doc.body.innerText : ""}`;
       let targetHTML = escapeHTML(data.translation || "");
       const isPreSplit = data.sentences && Array.isArray(data.sentences);
       if (isPreSplit) {
-        sourceHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || "")}</span>`).join(" ");
-        targetHTML = data.sentences.map((s, idx) => `<span class="lumina-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || "")}</span>`).join(" ");
+        sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || "")}</span>`).join(" ");
+        targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || "")}</span>`).join(" ");
       }
       scrollArea.innerHTML = `
-            <div class="lumina-dict-content-wrapper lumina-dict-translation-wrapper" style="padding: 12px;">
-                <div class="lumina-translation-container" style="margin: 0; width: 100%;">
-                    <div class="lumina-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ""}>
-                        <div class="lumina-translation-block" style="padding: 0 8px 0 0;">
-                            <div class="lumina-translation-source" data-copy-text="${safeOriginal}">
-                                <div class="lumina-translation-text">${sourceHTML}</div>
+            <div class="nexus-dict-content-wrapper nexus-dict-translation-wrapper" style="padding: 12px;">
+                <div class="nexus-translation-container" style="margin: 0; width: 100%;">
+                    <div class="nexus-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ""}>
+                        <div class="nexus-translation-block" style="padding: 0 8px 0 0;">
+                            <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
+                                <div class="nexus-translation-text">${sourceHTML}</div>
                             </div>
                         </div>
-                        <div class="lumina-translation-divider"></div>
-                        <div class="lumina-translation-block" style="padding: 0 0 0 8px;">
-                            <div class="lumina-translation-target" data-copy-text="${safeTranslation}">
-                                <div class="lumina-translation-text">${targetHTML}</div>
+                        <div class="nexus-translation-divider"></div>
+                        <div class="nexus-translation-block" style="padding: 0 0 0 8px;">
+                            <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
+                                <div class="nexus-translation-text">${targetHTML}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-      const cardContainer = scrollArea.querySelector(".lumina-translation-card");
-      if (cardContainer && typeof LuminaChatUI !== "undefined") {
-        LuminaChatUI._setupTranslationHighlight(cardContainer);
-        LuminaChatUI.balanceTranslationCard(cardContainer);
+      const cardContainer = scrollArea.querySelector(".nexus-translation-card");
+      if (cardContainer && typeof NexusChatUI !== "undefined") {
+        NexusChatUI._setupTranslationHighlight(cardContainer);
+        NexusChatUI.balanceTranslationCard(cardContainer);
       }
     },
     renderData(data) {
       if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".lumina-dict-scroll-area");
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
       if (!data || !data.entries || data.entries.length === 0) {
         scrollArea.innerHTML = `
-                <div class="lumina-dict-status-container status-empty">
-                    <div class="lumina-dict-status-card">
-                        <div class="lumina-dict-status-icon">\u{1F50D}</div>
-                        <div class="lumina-dict-status-title">No Results Found</div>
-                        <div class="lumina-dict-status-desc">Try checking spelling or choose another source.</div>
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">\u{1F50D}</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
+                        <div class="nexus-dict-status-desc">Try checking spelling or choose another source.</div>
                     </div>
                 </div>
             `;
         return;
       }
-      scrollArea.innerHTML = `<div class="lumina-dict-content-wrapper"></div>`;
-      const wrapper = scrollArea.querySelector(".lumina-dict-content-wrapper");
+      scrollArea.innerHTML = `<div class="nexus-dict-content-wrapper"></div>`;
+      const wrapper = scrollArea.querySelector(".nexus-dict-content-wrapper");
       data.entries.forEach((entry) => {
         const entryEl = document.createElement("div");
-        entryEl.className = "lumina-dict-popup-item";
+        entryEl.className = "nexus-dict-popup-item";
         entryEl.innerHTML = this.buildEntryHTML(entry, data.word);
         wrapper.appendChild(entryEl);
       });
@@ -2961,7 +2961,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
     },
     setupAudioListeners(container) {
-      const audioBtns = container.querySelectorAll(".lumina-dict-popup-audio");
+      const audioBtns = container.querySelectorAll(".nexus-dict-popup-audio");
       let _audioCtx = null;
       const getAudioCtx = () => {
         if (!_audioCtx || _audioCtx.state === "closed") {
@@ -3097,55 +3097,55 @@ ${doc.body ? doc.body.innerText : ""}`;
     buildEntryHTML(entry, word) {
       let senseMeaningIndex = 1;
       return `
-            <div class="lumina-dict-popup-meta">
-                <div class="lumina-dict-header-row">
-                    <span class="lumina-dict-popup-title">${entry.word || word}</span>
-                    ${entry.pos ? `<span class="lumina-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ""}
+            <div class="nexus-dict-popup-meta">
+                <div class="nexus-dict-header-row">
+                    <span class="nexus-dict-popup-title">${entry.word || word}</span>
+                    ${entry.pos ? `<span class="nexus-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ""}
                 </div>
-                <div class="lumina-dict-popup-prons">
+                <div class="nexus-dict-popup-prons">
                     ${entry.uk?.ipa || entry.uk?.audio ? `
-                        <div class="lumina-dict-pron-group uk">
-                            <span class="lumina-dict-lang">UK</span>
-                            <button class="lumina-dict-popup-audio"
+                        <div class="nexus-dict-pron-group uk">
+                            <span class="nexus-dict-lang">UK</span>
+                            <button class="nexus-dict-popup-audio"
                                 data-text="${entry.word || word}" data-lang="en-GB"
                                 ${entry.uk?.audio ? `data-url="${entry.uk.audio}"` : ""}>
                                 ${this.getSpeakerSVG()}
                             </button>
-                            ${entry.uk?.ipa ? `<span class="lumina-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
+                            ${entry.uk?.ipa ? `<span class="nexus-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
                         </div>
                     ` : ""}
                     ${entry.us?.ipa || entry.us?.audio ? `
-                        <div class="lumina-dict-pron-group us">
-                            <span class="lumina-dict-lang">US</span>
-                            <button class="lumina-dict-popup-audio"
+                        <div class="nexus-dict-pron-group us">
+                            <span class="nexus-dict-lang">US</span>
+                            <button class="nexus-dict-popup-audio"
                                 data-text="${entry.word || word}" data-lang="en-US"
                                 ${entry.us?.audio ? `data-url="${entry.us.audio}"` : ""}>
                                 ${this.getSpeakerSVG()}
                             </button>
-                            ${entry.us?.ipa ? `<span class="lumina-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
+                            ${entry.us?.ipa ? `<span class="nexus-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
                         </div>
                     ` : ""}
                 </div>
             </div>
-            <div class="lumina-dict-popup-senses">
+            <div class="nexus-dict-popup-senses">
                 ${(entry.senses || []).map((sense) => {
         return `
-                        <div class="lumina-dict-popup-sense">
-                            ${sense.indicator ? `<div class="lumina-dict-sense-indicator">${sense.indicator}</div>` : ""}
+                        <div class="nexus-dict-popup-sense">
+                            ${sense.indicator ? `<div class="nexus-dict-sense-indicator">${sense.indicator}</div>` : ""}
                             ${(sense.definitions || []).map((def) => {
           const html = `
-                                    <div class="lumina-dict-popup-meaning">
-                                        <div class="lumina-dict-meaning-header">
-                                            ${sense.definitions.length > 1 ? `<span class="lumina-dict-meaning-number">${senseMeaningIndex}.</span>` : ""}
-                                            <span class="lumina-dict-meaning-text">${def.meaning}</span>
+                                    <div class="nexus-dict-popup-meaning">
+                                        <div class="nexus-dict-meaning-header">
+                                            ${sense.definitions.length > 1 ? `<span class="nexus-dict-meaning-number">${senseMeaningIndex}.</span>` : ""}
+                                            <span class="nexus-dict-meaning-text">${def.meaning}</span>
                                         </div>
                                         ${def.examples && def.examples.length > 0 ? `
-                                            <div class="lumina-dict-popup-examples">
+                                            <div class="nexus-dict-popup-examples">
                                                 ${def.examples.map((ex) => {
             const escaped = (entry.word || word || "").replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
             const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, "gi");
             const highlighted = ex.replace(regex, "<strong>$1</strong>");
-            return `<div class="lumina-dict-popup-example">${highlighted}</div>`;
+            return `<div class="nexus-dict-popup-example">${highlighted}</div>`;
           }).join("")}
                                             </div>
                                         ` : ""}
@@ -3162,10 +3162,10 @@ ${doc.body ? doc.body.innerText : ""}`;
     }
   };
   if (typeof window !== "undefined") {
-    window.LuminaDictionaryPopup = LuminaDictionaryPopup;
+    window.NexusDictionaryPopup = NexusDictionaryPopup;
   }
   if (typeof globalThis !== "undefined") {
-    globalThis.LuminaDictionaryPopup = LuminaDictionaryPopup;
+    globalThis.NexusDictionaryPopup = NexusDictionaryPopup;
   }
 
   // src/content/index.js
@@ -3173,7 +3173,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     window.katexLoaded = true;
     const eventCleanup = new EventCleanupManager();
     const shadowManager = new ShadowHostManager();
-    const { host: luminaHost, shadowRoot: luminaShadowRoot } = shadowManager.init();
+    const { host: nexusHost, shadowRoot: nexusShadowRoot } = shadowManager.init();
     let currentCachedZoom = 1;
     function updateCachedZoom(callback) {
       if (!chrome.runtime || !chrome.runtime.id) {
@@ -3198,8 +3198,8 @@ ${doc.body ? doc.body.innerText : ""}`;
     updateCachedZoom();
     window.addEventListener("resize", () => {
       updateCachedZoom(() => {
-        if (window.LuminaSelection) {
-          LuminaSelection.hide();
+        if (window.NexusSelection) {
+          NexusSelection.hide();
         }
       });
     });
@@ -3231,11 +3231,11 @@ ${doc.body ? doc.body.innerText : ""}`;
       }
     }
     function triggerSidePanelQuery(query, displayQuery = null, mode = "qa", range = null, shouldHighlight = true) {
-      if (shouldHighlight && window.LuminaAnnotation) {
+      if (shouldHighlight && window.NexusAnnotation) {
         const finalRange = range || (window.getSelection().rangeCount > 0 ? window.getSelection().getRangeAt(0) : null);
         if (finalRange && !finalRange.collapsed) {
           const color = "#FFFB78";
-          window.LuminaAnnotation.highlight(finalRange, color);
+          window.NexusAnnotation.highlight(finalRange, color);
           const selection = window.getSelection();
           if (selection) selection.removeAllRanges();
         }
@@ -3247,9 +3247,9 @@ ${doc.body ? doc.body.innerText : ""}`;
         mode
       });
     }
-    if (window.LuminaSelection) {
-      LuminaSelection.init({
-        shadowRoot: luminaShadowRoot,
+    if (window.NexusSelection) {
+      NexusSelection.init({
+        shadowRoot: nexusShadowRoot,
         onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
           if (isAudio) {
             playCombinedAudio(displayQuery);
@@ -3265,7 +3265,7 @@ ${doc.body ? doc.body.innerText : ""}`;
             if (text) {
               const rangeToUse = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
               const rect = rangeToUse ? rangeToUse.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
-              LuminaDictionaryPopup.show(text, {
+              NexusDictionaryPopup.show(text, {
                 x: rect.left,
                 y: rect.bottom + 5,
                 source: "dictionary"
@@ -3282,15 +3282,15 @@ ${doc.body ? doc.body.innerText : ""}`;
     window.addEventListener("mousemove", (e) => {
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
-      if (window.LuminaSelection) {
-        LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+      if (window.NexusSelection) {
+        NexusSelection.mouseCoords = { x: e.clientX, y: e.clientY };
       }
     }, { passive: true });
     window.addEventListener("mouseup", (e) => {
       if (isExtensionDisabled) return;
-      if (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
+      if (window.NexusSelection && NexusSelection.isInteractingWithActionBar) return;
       const path = e.composedPath();
-      const isInsideShadow = path.some((el) => el.id === "lumina-shadow-host" || el.tagName && el.tagName.toLowerCase() === "lumina-shadow-host");
+      const isInsideShadow = path.some((el) => el.id === "nexus-shadow-host" || el.tagName && el.tagName.toLowerCase() === "nexus-shadow-host");
       if (isInsideShadow) return;
       if (askSelectionPopupEnabled) {
         const sel = window.getSelection();
@@ -3299,7 +3299,7 @@ ${doc.body ? doc.body.innerText : ""}`;
           e.stopPropagation();
         }
       }
-      const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
+      const activeElement = window.NexusSelection ? NexusSelection.getDeepActiveElement() : document.activeElement;
       const isInput = activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA");
       setTimeout(() => {
         let text = "";
@@ -3317,47 +3317,47 @@ ${doc.body ? doc.body.innerText : ""}`;
           range = finalSelection.rangeCount > 0 ? finalSelection.getRangeAt(0) : null;
         }
         if (!askSelectionPopupEnabled || text.length === 0) {
-          const isHighlight = e.target.closest(".lumina-highlight") || window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
-          if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+          const isHighlight = e.target.closest(".nexus-highlight") || window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+          if (window.NexusSelection && !isHighlight) NexusSelection.hide();
           return;
         }
-        if (text.length > 0 && (range || isInput) && window.LuminaSelection) {
+        if (text.length > 0 && (range || isInput) && window.NexusSelection) {
           if (e.clientX && e.clientY) {
-            LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+            NexusSelection.mouseCoords = { x: e.clientX, y: e.clientY };
           }
-          LuminaSelection.show(e.clientX, e.clientY, text, range);
+          NexusSelection.show(e.clientX, e.clientY, text, range);
         } else if (!isInsideShadow) {
-          const isHighlight = e.target.closest(".lumina-highlight");
-          if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+          const isHighlight = e.target.closest(".nexus-highlight");
+          if (window.NexusSelection && !isHighlight) NexusSelection.hide();
         }
       }, 50);
     }, true);
     window.addEventListener("mousedown", (e) => {
       const path = e.composedPath();
-      const isInsideAskBtn = path.some((el) => el.id === "lumina-action-bar" || el.id === "lumina-ask-input-popup" || window.LuminaSelection && el === LuminaSelection.btn);
-      const isHighlight = window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+      const isInsideAskBtn = path.some((el) => el.id === "nexus-action-bar" || el.id === "nexus-ask-input-popup" || window.NexusSelection && el === NexusSelection.btn);
+      const isHighlight = window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
       if (!isInsideAskBtn && !isHighlight) {
-        if (window.LuminaSelection) LuminaSelection.hide();
+        if (window.NexusSelection) NexusSelection.hide();
       }
     }, true);
     chrome.storage.local.get(["readWebpage", "askSelectionPopupEnabled"], (result) => {
       readWebpageEnabled = result.readWebpage ?? false;
       askSelectionPopupEnabled = result.askSelectionPopupEnabled ?? false;
-      if (window.LuminaAnnotation) {
-        LuminaAnnotation.loadHighlights();
+      if (window.NexusAnnotation) {
+        NexusAnnotation.loadHighlights();
       }
     });
     let lastUrl = window.location.href;
     setInterval(() => {
       if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
-        if (window.LuminaAnnotation) {
-          LuminaAnnotation.clearAllHighlights();
-          LuminaAnnotation.loadHighlights();
+        if (window.NexusAnnotation) {
+          NexusAnnotation.clearAllHighlights();
+          NexusAnnotation.loadHighlights();
         }
       }
     }, 500);
-    const DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS || {};
+    const DEFAULT_SHORTCUTS = NEXUS_DEFAULT_SHORTCUTS || {};
     let shortcuts = { ...DEFAULT_SHORTCUTS };
     let questionMappings = [];
     chrome.storage.local.get(["shortcuts", "annotationShortcuts", "questionMappings", "disabledDomains"], (items) => {
@@ -3375,7 +3375,7 @@ ${doc.body ? doc.body.innerText : ""}`;
         if (changes.readWebpage) readWebpageEnabled = changes.readWebpage.newValue ?? false;
         if (changes.askSelectionPopupEnabled) {
           askSelectionPopupEnabled = changes.askSelectionPopupEnabled.newValue ?? false;
-          if (!askSelectionPopupEnabled && window.LuminaSelection) LuminaSelection.hide();
+          if (!askSelectionPopupEnabled && window.NexusSelection) NexusSelection.hide();
         }
         if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
         if (changes.shortcuts) Object.assign(shortcuts, changes.shortcuts.newValue || DEFAULT_SHORTCUTS);
@@ -3392,8 +3392,8 @@ ${doc.body ? doc.body.innerText : ""}`;
       if (!chrome.runtime || !chrome.runtime.id) return;
       if (request.action === "toggle_extension_state") {
         isExtensionDisabled = !request.isEnabled;
-        if (isExtensionDisabled && window.LuminaSelection) {
-          LuminaSelection.hide();
+        if (isExtensionDisabled && window.NexusSelection) {
+          NexusSelection.hide();
         }
       } else if (request.action === "get_page_content") {
         extractMainContent().then((result) => {
@@ -3416,15 +3416,15 @@ ${doc.body ? doc.body.innerText : ""}`;
     document.addEventListener("click", (e) => {
       if (isExtensionDisabled) return;
       const path = e.composedPath();
-      const isInsideLumina = path.some((el) => el.id === "lumina-action-bar" || el.id === "lumina-ask-input-popup" || el.id === "lumina-shadow-host" || el.id === "lumina-comment-hover-tooltip" || el.tagName && el.tagName.toLowerCase() === "lumina-shadow-host");
-      if (isInsideLumina || window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
-      if (window.LuminaAnnotation) {
-        const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+      const isInsideNexus = path.some((el) => el.id === "nexus-action-bar" || el.id === "nexus-ask-input-popup" || el.id === "nexus-shadow-host" || el.id === "nexus-comment-hover-tooltip" || el.tagName && el.tagName.toLowerCase() === "nexus-shadow-host");
+      if (isInsideNexus || window.NexusSelection && NexusSelection.isInteractingWithActionBar) return;
+      if (window.NexusAnnotation) {
+        const hData = NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
         if (hData) {
           e.preventDefault();
           e.stopPropagation();
-          if (window.LuminaSelection) {
-            LuminaSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
+          if (window.NexusSelection) {
+            NexusSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
           }
         }
       }
@@ -3432,7 +3432,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     let modifierKeyPressedAlone = true;
     function getSelectedTextForAudio() {
       let text = "";
-      const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
+      const activeElement = window.NexusSelection ? NexusSelection.getDeepActiveElement() : document.activeElement;
       const isInput = activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA");
       if (isInput) {
         const start = activeElement.selectionStart;
@@ -3503,7 +3503,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       const audioShortcut = shortcuts["audio"];
       const isModifierOnlyAudio = audioShortcut && ["Shift", "Control", "Alt", "Meta"].includes(audioShortcut.key) && (!audioShortcut.modifiers || audioShortcut.modifiers.length === 0);
       if (!isModifierOnlyAudio && matchesShortcut(event, "audio")) {
-        if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+        if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
         const text = getSelectedTextForAudio();
         event.preventDefault();
         event.stopPropagation();
@@ -3514,27 +3514,27 @@ ${doc.body ? doc.body.innerText : ""}`;
         }
         return;
       }
-      if (matchesShortcut(event, "askLumina")) {
+      if (matchesShortcut(event, "askNexus")) {
         const selection = window.getSelection();
         const text = selection ? selection.toString().trim() : "";
         const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-        if (text.length > 0 && range && window.LuminaSelection) {
+        if (text.length > 0 && range && window.NexusSelection) {
           event.preventDefault();
           event.stopPropagation();
-          LuminaSelection.show(0, 0, text, range);
-          LuminaSelection.showInput();
+          NexusSelection.show(0, 0, text, range);
+          NexusSelection.showInput();
           return;
         }
       }
       if (matchesShortcut(event, "translate")) {
-        if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+        if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
         const selection = window.getSelection();
         const text = selection ? selection.toString().trim() : "";
         if (text.length > 0) {
           event.preventDefault();
           event.stopPropagation();
           const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-          if (window.LuminaSelection) LuminaSelection.hide();
+          if (window.NexusSelection) NexusSelection.hide();
           triggerSidePanelQuery(text, text, "translate", range);
           return;
         }
@@ -3546,7 +3546,7 @@ ${doc.body ? doc.body.innerText : ""}`;
         safeRuntimeSendMessage({ action: "open_sidepanel" });
         return;
       }
-      if (matchesShortcut(event, "luminaChat")) {
+      if (matchesShortcut(event, "nexusChat")) {
         event.preventDefault();
         event.stopPropagation();
         safeRuntimeSendMessage({ action: "open_sidepanel" });
@@ -3556,7 +3556,7 @@ ${doc.body ? doc.body.innerText : ""}`;
       for (const shortcut of annotationShortcutsList) {
         if (shortcut.enabled === false) continue;
         if (matchesAnnotationShortcut(event, shortcut)) {
-          if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+          if (window.NexusSelection && NexusSelection.isInsideEditable()) continue;
           const selection = window.getSelection();
           const text = selection ? selection.toString().trim() : "";
           if (text.length > 0 && selection.rangeCount > 0) {
@@ -3564,17 +3564,17 @@ ${doc.body ? doc.body.innerText : ""}`;
             event.stopPropagation();
             const range = selection.getRangeAt(0);
             const color = shortcut.color || "#FFFB78";
-            if (window.LuminaAnnotation) {
-              window.LuminaAnnotation.highlight(range, color);
+            if (window.NexusAnnotation) {
+              window.NexusAnnotation.highlight(range, color);
             }
             if (selection) selection.removeAllRanges();
-            if (window.LuminaSelection) LuminaSelection.hide();
+            if (window.NexusSelection) NexusSelection.hide();
             return;
           }
         }
       }
       if (questionMappings && questionMappings.length > 0) {
-        if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+        if (window.NexusSelection && !NexusSelection.isInsideEditable()) {
           const selection = window.getSelection();
           const text = selection ? selection.toString().trim() : "";
           if (text) {
@@ -3602,7 +3602,7 @@ ${doc.body ? doc.body.innerText : ""}`;
               const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
               const shouldHighlight = mapping.highlight !== false && mapping.enableHighlight !== false;
               triggerSidePanelQuery(fullQuestion, displayQuestion, "qa", range, shouldHighlight);
-              if (window.LuminaSelection) LuminaSelection.hide();
+              if (window.NexusSelection) NexusSelection.hide();
               return;
             }
           }
@@ -3612,7 +3612,7 @@ ${doc.body ? doc.body.innerText : ""}`;
     document.addEventListener("keyup", (event) => {
       if (isExtensionDisabled) return;
       if (matchesShortcut(event, "audio")) {
-        if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+        if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
         const text = getSelectedTextForAudio();
         event.preventDefault();
         event.stopPropagation();

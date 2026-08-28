@@ -172,25 +172,25 @@ Chart.js Chart Rule:
 
 [YouTube]
 \`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.
-[Lumina Canvas (Document Workspace)]
-The Lumina Canvas is a side-by-side workspace next to the conversation. Use it ONLY for long documents or full code files (HTML, JS, React, etc.) that the user wants to write, iterate on, or preview.
+[Nexus Canvas (Document Workspace)]
+The Nexus Canvas is a side-by-side workspace next to the conversation. Use it ONLY for long documents or full code files (HTML, JS, React, etc.) that the user wants to write, iterate on, or preview.
 To interact with the Canvas, you MUST wrap your commands in the following XML tags:
 1. Create Canvas Document:
-<lumina-canvas-create name="Document Name" type="code/html">
+<nexus-canvas-create name="Document Name" type="code/html">
 ...content here...
-</lumina-canvas-create>
+</nexus-canvas-create>
 (Use type: "document" for text, or "code/javascript", "code/html", "code/react", "code/css", etc. for code files. React and HTML types can be previewed live).
 2. Update Canvas Document:
-<lumina-canvas-update name="Document Name">
+<nexus-canvas-update name="Document Name">
 <pattern>regex_pattern</pattern>
 <replacement>replacement_text</replacement>
-</lumina-canvas-update>
+</nexus-canvas-update>
 (Always write code updates using a single update with ".*" for the pattern to replace the entire content).
 3. Comment Canvas Document:
-<lumina-canvas-comment name="Document Name">
+<nexus-canvas-comment name="Document Name">
 <pattern>regex_pattern</pattern>
 <comment>suggestion</comment>
-</lumina-canvas-comment>
+</nexus-canvas-comment>
 [Context & Personalization Privacy]
 - When using user context or preferences, blend them in seamlessly. NEVER preface responses with artificial meta-phrases like "Based on your info," "Given your profile," or "Since you mentioned."
 - Treat user data as factual and invisible. Do not reference system tags/sources. Never infer or include sensitive personal details (health conditions, origin, religion, financial status, etc.) unless explicitly requested.`;
@@ -336,17 +336,17 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
         return { url, body: geminiBody };
     }
     const openaiMessages = [{ role: 'system', content: sysPrompt }];
-    if (typeof LuminaToken !== 'undefined') {
-        const sysTokens = LuminaToken.count(sysPrompt || '');
-        const historyTokens = msgs.reduce((acc, m) => acc + LuminaToken.count(m.text || ''), 0);
-        const inputTokens = LuminaToken.count(currentQ || '');
+    if (typeof NexusToken !== 'undefined') {
+        const sysTokens = NexusToken.count(sysPrompt || '');
+        const historyTokens = msgs.reduce((acc, m) => acc + NexusToken.count(m.text || ''), 0);
+        const inputTokens = NexusToken.count(currentQ || '');
         let attachmentTokens = 0;
         const allAttachments = [...(imageData || [])];
         msgs.forEach(m => { if (m.files || m.images) allAttachments.push(...(m.files || m.images)); });
         allAttachments.forEach(att => {
             const mime = normalizeMimeType(att.mimeType || '');
             if (isTextAttachmentMime(mime)) {
-                attachmentTokens += LuminaToken.count(decodeBase64Utf8(getBase64FromAttachment(att)));
+                attachmentTokens += NexusToken.count(decodeBase64Utf8(getBase64FromAttachment(att)));
             } else {
                 attachmentTokens += 765;
             }
@@ -499,7 +499,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
         try {
             const response = await requestFn(currentKey);
             if (await isRateLimitOrTooLarge(response)) {
-                console.warn(`[Lumina] Key ${currentIndex} hit rate limit or request-too-large. Rotating to next key.`);
+                console.warn(`[Nexus] Key ${currentIndex} hit rate limit or request-too-large. Rotating to next key.`);
             } else {
                 chrome.storage.local.set({
                     [groupKey]: { index: currentIndex, date: today }
@@ -519,7 +519,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
                 netErr.name = 'NetworkError';
                 throw netErr;
             }
-            console.error(`[Lumina] Request failed with key ${currentIndex}:`, err);
+            console.error(`[Nexus] Request failed with key ${currentIndex}:`, err);
         }
     }
     throw new Error("All API keys failed or were rate limited in this cycle.");
@@ -574,7 +574,7 @@ async function setStatus(tabId, text, type = 'loading') {
 
 const CACHE_EXPIRATION_MS = 1 * 24 * 60 * 60 * 1000;
 
-async function getLuminaCache(cacheKey) {
+async function getNexusCache(cacheKey) {
     try {
         const data = await chrome.storage.local.get([cacheKey]);
         const cache = data[cacheKey] || { entries: {} };
@@ -594,12 +594,12 @@ async function getLuminaCache(cacheKey) {
         }
         return cache;
     } catch (e) {
-        console.error(`[Lumina] Error reading cache ${cacheKey}:`, e);
+        console.error(`[Nexus] Error reading cache ${cacheKey}:`, e);
         return { entries: {} };
     }
 }
 
-async function setLuminaCache(cacheKey, entries, maxEntries = 500) {
+async function setNexusCache(cacheKey, entries, maxEntries = 500) {
     try {
         const entryKeys = Object.keys(entries);
         if (entryKeys.length > maxEntries) {
@@ -612,7 +612,7 @@ async function setLuminaCache(cacheKey, entries, maxEntries = 500) {
             [cacheKey]: { entries, lastUpdate: Date.now() }
         });
     } catch (e) {
-        console.error(`[Lumina] Error writing cache ${cacheKey}:`, e);
+        console.error(`[Nexus] Error writing cache ${cacheKey}:`, e);
     }
 }
 
@@ -621,31 +621,31 @@ const AUDIO_CACHE_MAX_ENTRIES = 200;
 
 async function getAudioFromCache(text) {
     try {
-        if (typeof LuminaAudioCacheDB !== 'undefined') {
+        if (typeof NexusAudioCacheDB !== 'undefined') {
             const key = text.trim().toLowerCase();
-            const entry = await LuminaAudioCacheDB.get(key);
+            const entry = await NexusAudioCacheDB.get(key);
             return entry;
         }
         return null;
     } catch (e) {
-        console.error('[Lumina Audio] Cache read error:', e);
+        console.error('[Nexus Audio] Cache read error:', e);
         return null;
     }
 }
 
 async function setAudioCache(text, type, data) {
     try {
-        if (typeof LuminaAudioCacheDB !== 'undefined') {
+        if (typeof NexusAudioCacheDB !== 'undefined') {
             const key = text.trim().toLowerCase();
             const entry = {
                 type,
                 data,
                 timestamp: Date.now()
             };
-            await LuminaAudioCacheDB.put(key, entry);
+            await NexusAudioCacheDB.put(key, entry);
         }
     } catch (e) {
-        console.error('[Lumina Audio] Cache write error:', e);
+        console.error('[Nexus Audio] Cache write error:', e);
     }
 }
 
@@ -669,14 +669,14 @@ async function fetchPageContent(url) {
         }
         return text;
     } catch (error) {
-        console.error(`[Lumina] Error fetching page content: ${error.message}`);
+        console.error(`[Nexus] Error fetching page content: ${error.message}`);
         throw error;
     }
 }
 
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
-    const streamLogPrefix = `[Lumina BG][${action}]`;
+    const streamLogPrefix = `[Nexus BG][${action}]`;
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
     const providerId = config.providerId;
     const compositeKey = providerId ? `${providerId}:${model}` : model;
@@ -719,7 +719,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
             }
         }
     } catch (e) {
-        console.error('[Lumina] Failed to load user memory:', e);
+        console.error('[Nexus] Failed to load user memory:', e);
     }
     let currentMessages = [...messages];
     let augmentedQuestion = question;
@@ -745,7 +745,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
     if (sessionId) {
         if (sessionControllers.has(sessionId)) {
             try {
-                console.log(`[Lumina BG] Aborting session ${sessionId} due to duplicate/re-submission`);
+                console.log(`[Nexus BG] Aborting session ${sessionId} due to duplicate/re-submission`);
                 sessionControllers.get(sessionId).abort();
             } catch (e) { }
         }
@@ -791,7 +791,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
                 } catch (e) {
                     errorData = { raw: errorText };
                 }
-                console.error('[Lumina] API Error:', {
+                console.error('[Nexus] API Error:', {
                     endpoint: requestedUrl,
                     status: response.status,
                     statusText: response.statusText,
@@ -823,7 +823,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
                             newMaxTokens = currentMaxTokens - reduction;
                             diff -= reduction;
                             payloadParams.maxTokens = newMaxTokens;
-                            console.warn(`[Lumina] Dynamic token reduction: Changing max_tokens from ${currentMaxTokens} to ${newMaxTokens}. Remaining diff: ${diff}`);
+                            console.warn(`[Nexus] Dynamic token reduction: Changing max_tokens from ${currentMaxTokens} to ${newMaxTokens}. Remaining diff: ${diff}`);
                         }
                     }
                     if (diff > 0 && currentMessages.length > 2) {
@@ -832,13 +832,13 @@ async function executeChatRequest(config, messages, initialContext, question, po
                         while (diff > tokensRemoved && currentMessages.length > 2) {
                             const msg1 = currentMessages[0];
                             const msg2 = currentMessages[1];
-                            const t1 = msg1 ? LuminaToken.count(JSON.stringify(msg1)) : 0;
-                            const t2 = msg2 ? LuminaToken.count(JSON.stringify(msg2)) : 0;
+                            const t1 = msg1 ? NexusToken.count(JSON.stringify(msg1)) : 0;
+                            const t2 = msg2 ? NexusToken.count(JSON.stringify(msg2)) : 0;
                             tokensRemoved += (t1 + t2);
                             currentMessages.splice(0, 2);
                             pairsRemoved++;
                         }
-                        console.warn(`[Lumina] Prompt too large. Removed ${pairsRemoved} message pair(s) to free up ~${tokensRemoved} tokens. Remaining diff: ${diff - tokensRemoved}`);
+                        console.warn(`[Nexus] Prompt too large. Removed ${pairsRemoved} message pair(s) to free up ~${tokensRemoved} tokens. Remaining diff: ${diff - tokensRemoved}`);
                     }
                     continue;
                 }
@@ -851,7 +851,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         } catch (e) {
             if (retry < 3 && (e.message === 'RATE_LIMIT_EXHAUSTED' || e.message === 'Failed to fetch')) {
                 if (currentMessages.length > 2) {
-                    console.warn(`[Lumina] Request failed. Retrying with cropped history...`);
+                    console.warn(`[Nexus] Request failed. Retrying with cropped history...`);
                     currentMessages.splice(0, 2);
                     continue;
                 }
@@ -983,7 +983,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
         try {
             chrome.runtime.getPlatformInfo(() => { });
         } catch (e) {
-            console.error('[Lumina] Keep-alive error:', e);
+            console.error('[Nexus] Keep-alive error:', e);
         }
     }, 5000);
     try {
@@ -1071,7 +1071,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                 }
             }
         } catch (e) {
-            console.warn("[Lumina] Optional context extraction failed:", e);
+            console.warn("[Nexus] Optional context extraction failed:", e);
         }
         const globalSettings = await chrome.storage.local.get(['responseLanguage', 'advancedParamsByModel']);
         let chain = await getModelChain('text', requestOptions.tabModel);
@@ -1096,11 +1096,11 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                 return;
             } catch (e) {
                 if (e.name === 'AbortError' || e.message?.includes('aborted') || e.message === 'signal is aborted without reason') {
-                    console.log(`[Lumina] Request aborted by user at index ${i} (${config.model})`);
+                    console.log(`[Nexus] Request aborted by user at index ${i} (${config.model})`);
                     return;
                 }
                 if (e.message === 'RATE_LIMIT_EXHAUSTED') {
-                    console.warn(`[Lumina] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
+                    console.warn(`[Nexus] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
                     if (i < chain.length - 1) {
                         try {
                             const statusMsg = {
@@ -1114,7 +1114,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
                         continue;
                     }
                 }
-                console.error(`[Lumina] Chat Chain failed at index ${i} (${config.model}):`, e);
+                console.error(`[Nexus] Chat Chain failed at index ${i} (${config.model}):`, e);
                 const errorMsg = { error: e.message || "AI Request Failed" };
                 if (sessionId) broadcastToSession(sessionId, errorMsg);
                 else port.postMessage(errorMsg);
@@ -1122,7 +1122,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             }
         }
     } catch (err) {
-        console.error('[Lumina] Fatal Chat Error:', err);
+        console.error('[Nexus] Fatal Chat Error:', err);
         const errorMsg = { error: err.message };
         if (sessionId) broadcastToSession(sessionId, errorMsg);
         else port.postMessage(errorMsg);
@@ -1210,7 +1210,7 @@ export function initChatStreamService() {
                     sendResponse({ success: true, title });
                 })
                 .catch(err => {
-                    console.error('[Lumina BG] generate_chat_title error:', err);
+                    console.error('[Nexus BG] generate_chat_title error:', err);
                     sendResponse({ success: false, error: err?.message || String(err) });
                 });
             return true;
@@ -1218,7 +1218,7 @@ export function initChatStreamService() {
     });
 
     chrome.runtime.onConnect.addListener((port) => {
-    if (port.name === 'lumina-chat-stream') {
+    if (port.name === 'nexus-chat-stream') {
         const registeredSessions = new Set();
         port.onDisconnect.addListener(() => {
             for (const sid of registeredSessions) {
@@ -1248,7 +1248,7 @@ export function initChatStreamService() {
             if (msg.action === 'stop_chat' && msg.sessionId) {
                 const controller = sessionControllers.get(msg.sessionId);
                 if (controller) {
-                    console.log(`[Lumina BG] Aborting session ${msg.sessionId} due to stop_chat message`);
+                    console.log(`[Nexus BG] Aborting session ${msg.sessionId} due to stop_chat message`);
                     controller.abort();
                     sessionControllers.delete(msg.sessionId);
                 }
@@ -1293,7 +1293,7 @@ export function initChatStreamService() {
                         msg.sessionId
                     );
                 } catch (e) {
-                    console.error('[Lumina BG][stream] request error', {
+                    console.error('[Nexus BG][stream] request error', {
                         action: msg.action,
                         error: e?.message || String(e)
                     });

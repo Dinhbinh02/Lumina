@@ -1,5 +1,5 @@
 export class TTSDB {
-    static DB_NAME = 'LuminaTTSDB';
+    static DB_NAME = 'NexusTTSDB';
     static DB_VERSION = 1;
     static STORE_RECORDINGS = 'recordings';
     static _db = null;
@@ -287,7 +287,7 @@ export class TTSManager {
             } catch (_) {}
         }
 
-        ['lumina_gemini_api_key', 'gemini_api_key', 'geminiApiKey'].forEach(storageKey => {
+        ['nexus_gemini_api_key', 'gemini_api_key', 'geminiApiKey'].forEach(storageKey => {
             const val = localStorage.getItem(storageKey);
             if (val && typeof val === 'string') {
                 val.split(',').forEach(k => {
@@ -297,8 +297,8 @@ export class TTSManager {
             }
         });
 
-        if (typeof window !== 'undefined' && window.__luminaGeminiApiKey) {
-            window.__luminaGeminiApiKey.split(',').forEach(k => {
+        if (typeof window !== 'undefined' && window.__nexusGeminiApiKey) {
+            window.__nexusGeminiApiKey.split(',').forEach(k => {
                 const trimmed = k.trim();
                 if (trimmed) keysSet.add(trimmed);
             });
@@ -739,7 +739,7 @@ export class GroqAligner {
                 }
             } catch (_) {}
         }
-        ['lumina_groq_api_key', 'groq_api_key', 'groqApiKey'].forEach(storageKey => {
+        ['nexus_groq_api_key', 'groq_api_key', 'groqApiKey'].forEach(storageKey => {
             const val = localStorage.getItem(storageKey);
             if (val && typeof val === 'string') {
                 val.split(',').forEach(k => {

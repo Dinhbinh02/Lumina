@@ -1,4 +1,4 @@
-export const LuminaViewManager = {
+export const NexusViewManager = {
     currentView: 'chat',
 
     views: {
@@ -9,6 +9,10 @@ export const LuminaViewManager = {
             onOpen: () => {
                 document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                 document.getElementById('sidebar-tts-btn')?.classList.remove('active');
+                const topBar = document.getElementById('nexus-topbar');
+                if (topBar) {
+                    topBar.style.removeProperty('display');
+                }
             }
         },
         notes: {
@@ -21,11 +25,11 @@ export const LuminaViewManager = {
                 document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                 document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
 
-                if (!window.luminaNotesPanelInstance && typeof NotesPanel !== 'undefined') {
-                    window.luminaNotesPanelInstance = new NotesPanel();
+                if (!window.nexusNotesPanelInstance && typeof NotesPanel !== 'undefined') {
+                    window.nexusNotesPanelInstance = new NotesPanel();
                 }
-                if (window.luminaNotesPanelInstance) {
-                    window.luminaNotesPanelInstance.init(params?.noteId, params?.colId);
+                if (window.nexusNotesPanelInstance) {
+                    window.nexusNotesPanelInstance.init(params?.noteId, params?.colId);
                 }
             }
         },
@@ -39,11 +43,11 @@ export const LuminaViewManager = {
                 document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                 document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
 
-                if (!window.luminaTTSPanelInstance && typeof TTSPanel !== 'undefined') {
-                    window.luminaTTSPanelInstance = new TTSPanel();
+                if (!window.nexusTTSPanelInstance && typeof TTSPanel !== 'undefined') {
+                    window.nexusTTSPanelInstance = new TTSPanel();
                 }
-                if (window.luminaTTSPanelInstance && typeof window.luminaTTSPanelInstance.init === 'function') {
-                    window.luminaTTSPanelInstance.init(params?.recordingId);
+                if (window.nexusTTSPanelInstance && typeof window.nexusTTSPanelInstance.init === 'function') {
+                    window.nexusTTSPanelInstance.init(params?.recordingId);
                 }
             }
         },
@@ -71,7 +75,7 @@ export const LuminaViewManager = {
         const initStyle = document.getElementById('view-init-style');
         if (initStyle) initStyle.remove();
 
-        const mainContent = document.querySelector('.lumina-main-content');
+        const mainContent = document.querySelector('.nexus-main-content');
         if (mainContent) {
             mainContent.setAttribute('data-active-view', targetView);
         }
@@ -83,7 +87,12 @@ export const LuminaViewManager = {
         } else if (targetView === 'sparks') {
             document.title = 'Sparks';
         } else {
-            document.title = 'Lumina';
+            document.title = 'Nexus';
+        }
+
+        if (targetView !== 'chat') {
+            document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
         }
 
         this.updateUrl(targetView, params);
@@ -136,8 +145,12 @@ export const LuminaViewManager = {
             urlParams.delete('view');
             urlParams.delete('noteId');
             urlParams.delete('colId');
-            urlParams.delete('sparkId');
             urlParams.delete('recordingId');
+            if (params.sparkId) {
+                urlParams.set('sparkId', params.sparkId);
+            } else if (!params.preserveSparkId) {
+                urlParams.delete('sparkId');
+            }
             const primaryTab = (typeof window.tabs !== 'undefined' && typeof window.activeTabIndex !== 'undefined') ? window.tabs[window.activeTabIndex] : null;
             const sidVal = params.sid || (primaryTab && primaryTab.sessionId ? primaryTab.sessionId : '');
             if (sidVal) {
@@ -147,40 +160,44 @@ export const LuminaViewManager = {
             }
         }
         const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-        window.history.pushState({ view: viewName, ...params }, '', newUrl);
+        if (params.replaceState) {
+            window.history.replaceState({ view: viewName, ...params }, '', newUrl);
+        } else {
+            window.history.pushState({ view: viewName, ...params }, '', newUrl);
+        }
     }
 };
 
 export function updateNotesUrl(noteId, colId) {
-    LuminaViewManager.updateUrl('notes', { noteId, colId });
+    NexusViewManager.updateUrl('notes', { noteId, colId });
 }
 
 export function notesOpenPage(noteIdToLoad, colIdToLoad) {
-    LuminaViewManager.switchView('notes', { noteId: noteIdToLoad, colId: colIdToLoad });
+    NexusViewManager.switchView('notes', { noteId: noteIdToLoad, colId: colIdToLoad });
 }
 
 export function notesClosePage() {
-    LuminaViewManager.switchView('chat');
+    NexusViewManager.switchView('chat');
 }
 
 export function sparksOpenPage(sparkId) {
-    LuminaViewManager.switchView('sparks', { sparkId });
+    NexusViewManager.switchView('sparks', { sparkId });
 }
 
 export function sparksClosePage() {
-    LuminaViewManager.switchView('chat');
+    NexusViewManager.switchView('chat');
 }
 
 export function ttsOpenPage() {
-    LuminaViewManager.switchView('tts');
+    NexusViewManager.switchView('tts');
 }
 
 export function ttsClosePage() {
-    LuminaViewManager.switchView('chat');
+    NexusViewManager.switchView('chat');
 }
 
 if (typeof window !== 'undefined') {
-    window.LuminaViewManager = LuminaViewManager;
+    window.NexusViewManager = NexusViewManager;
     window.updateNotesUrl = updateNotesUrl;
     window.notesOpenPage = notesOpenPage;
     window.notesClosePage = notesClosePage;
@@ -193,11 +210,11 @@ if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const view = urlParams.get('view');
         if (view === 'notes') {
-            LuminaViewManager.switchView('notes', { noteId: urlParams.get('noteId'), colId: urlParams.get('colId') });
+            NexusViewManager.switchView('notes', { noteId: urlParams.get('noteId'), colId: urlParams.get('colId') });
         } else if (view === 'sparks') {
-            LuminaViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
+            NexusViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });
         } else if (view === 'tts') {
-            LuminaViewManager.switchView('tts', { recordingId: urlParams.get('recordingId') });
+            NexusViewManager.switchView('tts', { recordingId: urlParams.get('recordingId') });
         }
     });
 }

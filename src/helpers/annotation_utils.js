@@ -1,4 +1,4 @@
-export const LuminaAnnotation = {
+export const NexusAnnotation = {
     highlightsMap: new Map(),
     highlightObjects: new Map(),
     styleElement: null,
@@ -58,7 +58,7 @@ export const LuminaAnnotation = {
             range.setEnd(endNode, data.endOffset);
             return range;
         } catch (e) {
-            console.warn('[Lumina] Range recovery failed:', e);
+            console.warn('[Nexus] Range recovery failed:', e);
             return null;
         }
     },
@@ -92,14 +92,14 @@ export const LuminaAnnotation = {
             comment: arr[8] || ''
         };
     },
-    isLuminaAndNotAnswer(range) {
-        if (typeof window !== 'undefined' && window.location.href.includes('lumina.html')) {
+    isNexusAndNotAnswer(range) {
+        if (typeof window !== 'undefined' && window.location.href.includes('nexus.html')) {
             if (!range) return true;
             let container = range.commonAncestorContainer;
             if (container.nodeType !== Node.ELEMENT_NODE) {
                 container = container.parentNode;
             }
-            if (!container || !container.closest('.lumina-chat-answer')) {
+            if (!container || !container.closest('.nexus-chat-answer')) {
                 return true;
             }
         }
@@ -107,7 +107,7 @@ export const LuminaAnnotation = {
     },
     highlight(range, color = '#FFFB78', id = null, comment = '') {
         if (!range || range.collapsed) return null;
-        if (this.isLuminaAndNotAnswer(range)) return null;
+        if (this.isNexusAndNotAnswer(range)) return null;
         const highlightId = id || Date.now().toString();
         const rangeToHighlight = range.cloneRange();
         this.saveHighlight(rangeToHighlight, color, highlightId, comment);
@@ -117,24 +117,24 @@ export const LuminaAnnotation = {
     injectHighlightCSS(color) {
         if (!this.styleElement) {
             this.styleElement = document.createElement('style');
-            this.styleElement.id = 'lumina-highlight-styles';
+            this.styleElement.id = 'nexus-highlight-styles';
             (document.head || document.documentElement).appendChild(this.styleElement);
         }
         if (color) {
             const cleanColor = color.toLowerCase().replace('#', '');
-            const styleRule = `::highlight(lumina-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }\n`;
-            if (!this.styleElement.textContent.includes(`lumina-hl-${cleanColor}`)) {
+            const styleRule = `::highlight(nexus-hl-${cleanColor}) { background-color: ${color} !important; color: black !important; }\n`;
+            if (!this.styleElement.textContent.includes(`nexus-hl-${cleanColor}`)) {
                 this.styleElement.textContent += styleRule;
             }
         }
-        const commentRule = `::highlight(lumina-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }\n`;
-        if (!this.styleElement.textContent.includes('lumina-comment-underline')) {
+        const commentRule = `::highlight(nexus-comment-underline) { text-decoration-line: underline !important; text-decoration-style: dashed !important; text-decoration-color: #9ca3af !important; text-decoration-thickness: 1.5px !important; }\n`;
+        if (!this.styleElement.textContent.includes('nexus-comment-underline')) {
             this.styleElement.textContent += commentRule;
         }
     },
     applyHighlight(range, color, highlightId = null, comment = '') {
         if (!range || range.collapsed || !window.Highlight || !CSS.highlights) return;
-        if (this.isLuminaAndNotAnswer(range)) return;
+        if (this.isNexusAndNotAnswer(range)) return;
         this.injectHighlightCSS(color);
         if (color) {
             const normalizedColor = color.toLowerCase();
@@ -143,7 +143,7 @@ export const LuminaAnnotation = {
                 highlightObj = new Highlight();
                 this.highlightObjects.set(normalizedColor, highlightObj);
                 const cleanColor = normalizedColor.replace('#', '');
-                CSS.highlights.set(`lumina-hl-${cleanColor}`, highlightObj);
+                CSS.highlights.set(`nexus-hl-${cleanColor}`, highlightObj);
             }
             highlightObj.add(range);
         }
@@ -152,7 +152,7 @@ export const LuminaAnnotation = {
             if (!commentObj) {
                 commentObj = new Highlight();
                 this.highlightObjects.set('comment-underline', commentObj);
-                CSS.highlights.set('lumina-comment-underline', commentObj);
+                CSS.highlights.set('nexus-comment-underline', commentObj);
             }
             commentObj.add(range);
         }
@@ -181,7 +181,7 @@ export const LuminaAnnotation = {
         const url = window.location.href.split('#')[0].split('?')[0];
         if (url.startsWith('chrome-extension://')) {
             let tabId = null;
-            const scope = window.LuminaSelectionScope;
+            const scope = window.NexusSelectionScope;
             if (rangeOrNode && scope) {
                 const node = (rangeOrNode instanceof Range) ? rangeOrNode.startContainer : rangeOrNode;
                 let curr = node;
@@ -191,7 +191,7 @@ export const LuminaAnnotation = {
                         const tab = tabsList.find(t => t.historyEl === curr);
                         if (tab) {
                             if (tab.sessionId) {
-                                return `highlights_lumina_session_${tab.sessionId}`;
+                                return `highlights_nexus_session_${tab.sessionId}`;
                             }
                             tabId = tab.id;
                             break;
@@ -206,12 +206,12 @@ export const LuminaAnnotation = {
                 if (tabsList && typeof activeIdx !== 'undefined' && tabsList[activeIdx]) {
                     const tab = tabsList[activeIdx];
                     if (tab.sessionId) {
-                        return `highlights_lumina_session_${tab.sessionId}`;
+                        return `highlights_nexus_session_${tab.sessionId}`;
                     }
                     tabId = tab.id;
                 }
             }
-            return tabId ? `highlights_lumina_tab_${tabId}` : `highlights_lumina`;
+            return tabId ? `highlights_nexus_tab_${tabId}` : `highlights_nexus`;
         }
         return `highlights_${url}`;
     },
@@ -229,7 +229,7 @@ export const LuminaAnnotation = {
         }
     },
     saveHighlight(range, color, id, comment = '') {
-        if (this.isLuminaAndNotAnswer(range)) return;
+        if (this.isNexusAndNotAnswer(range)) return;
         const storageKey = this.getStorageKey(range);
         const hData = {
             id,
@@ -247,7 +247,7 @@ export const LuminaAnnotation = {
     },
     addComment(range, commentText, color = null, id = null) {
         if (!range || range.collapsed) return null;
-        if (this.isLuminaAndNotAnswer(range)) return null;
+        if (this.isNexusAndNotAnswer(range)) return null;
         const highlightId = id || Date.now().toString();
         const rangeToHighlight = range.cloneRange();
         this.saveHighlight(rangeToHighlight, color, highlightId, commentText);
@@ -286,15 +286,15 @@ export const LuminaAnnotation = {
     },
     loadHighlights(tabId = null) {
         let storageKey = null;
-        if (tabId && window.LuminaSelectionScope) {
-            const tabsList = window.LuminaSelectionScope.getTabs();
+        if (tabId && window.NexusSelectionScope) {
+            const tabsList = window.NexusSelectionScope.getTabs();
             const tab = tabsList && tabsList.find(t => t.id === tabId);
             if (tab && tab.sessionId) {
-                storageKey = `highlights_lumina_session_${tab.sessionId}`;
+                storageKey = `highlights_nexus_session_${tab.sessionId}`;
             }
         }
         if (!storageKey) {
-            storageKey = tabId ? `highlights_lumina_tab_${tabId}` : this.getStorageKey();
+            storageKey = tabId ? `highlights_nexus_tab_${tabId}` : this.getStorageKey();
         }
         chrome.runtime.sendMessage({
             action: 'load_highlights',
@@ -423,7 +423,7 @@ export const LuminaAnnotation = {
                 newHighlightObj = new Highlight();
                 this.highlightObjects.set(newColorNormalized, newHighlightObj);
                 const cleanColor = newColorNormalized.replace('#', '');
-                CSS.highlights.set(`lumina-hl-${cleanColor}`, newHighlightObj);
+                CSS.highlights.set(`nexus-hl-${cleanColor}`, newHighlightObj);
                 this.injectHighlightCSS(newColorNormalized);
             }
             newHighlightObj.add(data.range);
@@ -447,7 +447,7 @@ export const LuminaAnnotation = {
                 else {
                     const newCommentObj = new Highlight();
                     this.highlightObjects.set('comment-underline', newCommentObj);
-                    CSS.highlights.set('lumina-comment-underline', newCommentObj);
+                    CSS.highlights.set('nexus-comment-underline', newCommentObj);
                     newCommentObj.add(data.range);
                     this.injectHighlightCSS();
                 }
@@ -460,8 +460,8 @@ export const LuminaAnnotation = {
 };
 
 if (typeof window !== 'undefined') {
-    window.LuminaAnnotation = LuminaAnnotation;
+    window.NexusAnnotation = NexusAnnotation;
 }
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaAnnotation = LuminaAnnotation;
+    globalThis.NexusAnnotation = NexusAnnotation;
 }

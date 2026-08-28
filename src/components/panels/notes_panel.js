@@ -9,7 +9,7 @@ export class NotesPanel {
         this.autoSaveTimer = null;
         this.isInitialized = false;
         this.sortMode = 'modified';
-        this.viewMode = localStorage.getItem('lumina_notes_view_mode') || 'grid';
+        this.viewMode = localStorage.getItem('nexus_notes_view_mode') || 'grid';
         this.isBatchMode = false;
         this.selectedNoteIds = new Set();
         this._contextMenu = null;
@@ -27,7 +27,7 @@ export class NotesPanel {
 
         const urlParams = new URLSearchParams(window.location.search);
         const colFromUrl = targetColId || urlParams.get('colId');
-        const savedCol = localStorage.getItem('lumina_active_collection_id');
+        const savedCol = localStorage.getItem('nexus_active_collection_id');
         if (colFromUrl) {
             this.activeCollectionId = colFromUrl;
         } else if (savedCol) {
@@ -54,7 +54,7 @@ export class NotesPanel {
             this.showHubView();
         }
 
-        localStorage.setItem('lumina_active_collection_id', this.activeCollectionId);
+        localStorage.setItem('nexus_active_collection_id', this.activeCollectionId);
         await this.renderCollections();
         await this.renderNotesList();
     }
@@ -74,7 +74,7 @@ export class NotesPanel {
             this.detailView.style.display = 'none';
         }
         this.updateUrlParams();
-        document.title = 'Notes - Lumina';
+        document.title = 'Notes - Nexus';
         this.renderCollections();
         this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
     }
@@ -153,7 +153,6 @@ export class NotesPanel {
         this.backBtn = document.getElementById('notes-back-btn');
         this.noteTitleInput = document.getElementById('note-title-input');
         this.editorContainer = document.getElementById('editorjs');
-        this.wordCountEl = document.getElementById('notes-word-count');
         this.colPickerWrapper = document.getElementById('notes-col-picker-wrapper');
         this.colPickerPill = document.getElementById('notes-col-picker-pill');
         this.colPickerLabel = document.getElementById('notes-col-picker-label');
@@ -306,7 +305,7 @@ export class NotesPanel {
 
     setViewMode(mode) {
         this.viewMode = mode;
-        localStorage.setItem('lumina_notes_view_mode', mode);
+        localStorage.setItem('nexus_notes_view_mode', mode);
         if (this.gridBtn) this.gridBtn.classList.toggle('active', mode === 'grid');
         if (this.listBtn) this.listBtn.classList.toggle('active', mode === 'list');
         this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
@@ -362,15 +361,15 @@ export class NotesPanel {
         menu.style.position = 'fixed';
         menu.style.zIndex = '120';
         let itemsHtml = `
-            <div class="notes-ctx-group-label" style="padding: 6px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--lumina-text-tertiary);">Move ${this.selectedNoteIds.size} notes to:</div>
-            <button class="notes-ctx-item notes-batch-target-col" data-col-id="all" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+            <div class="notes-ctx-group-label" style="padding: 6px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--nexus-text-tertiary);">Move ${this.selectedNoteIds.size} notes to:</div>
+            <button class="notes-ctx-item notes-batch-target-col" data-col-id="all" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                 General (Unassigned)
             </button>
         `;
         collections.forEach(col => {
             itemsHtml += `
-                <button class="notes-ctx-item notes-batch-target-col" data-col-id="${col.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+                <button class="notes-ctx-item notes-batch-target-col" data-col-id="${col.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                     ${escapeHtml(col.name)}
                 </button>
@@ -417,29 +416,29 @@ export class NotesPanel {
         }));
 
         let pillsHtml = `
-            <button type="button" class="lumina-hub-pill ${this.activeCollectionId === 'all' ? 'active' : ''}" data-col-id="all" role="tab">
+            <button type="button" class="nexus-hub-pill ${this.activeCollectionId === 'all' ? 'active' : ''}" data-col-id="all" role="tab">
                 <span>All Notes</span>
-                <span class="lumina-pill-count">${allCount}</span>
+                <span class="nexus-pill-count">${allCount}</span>
             </button>
         `;
 
         collections.forEach((col, idx) => {
             const isActive = this.activeCollectionId === col.id ? 'active' : '';
             pillsHtml += `
-                <button type="button" class="lumina-hub-pill ${isActive}" data-col-id="${col.id}" role="tab" title="Right click or hold for options">
+                <button type="button" class="nexus-hub-pill ${isActive}" data-col-id="${col.id}" role="tab" title="Right click or hold for options">
                     <span>${escapeHtml(col.name)}</span>
-                    <span class="lumina-pill-count">${colCounts[idx]}</span>
+                    <span class="nexus-pill-count">${colCounts[idx]}</span>
                 </button>
             `;
         });
 
         this.collectionsPills.innerHTML = pillsHtml;
 
-        this.collectionsPills.querySelectorAll('.lumina-hub-pill').forEach(pill => {
+        this.collectionsPills.querySelectorAll('.nexus-hub-pill').forEach(pill => {
             const colId = pill.getAttribute('data-col-id');
             pill.addEventListener('click', () => {
                 this.activeCollectionId = colId;
-                localStorage.setItem('lumina_active_collection_id', colId);
+                localStorage.setItem('nexus_active_collection_id', colId);
                 this.updateUrlParams();
                 this.renderCollections();
                 this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
@@ -488,15 +487,15 @@ export class NotesPanel {
         menu.style.position = 'fixed';
         menu.style.zIndex = '120';
         menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-col-rename" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+            <button class="notes-ctx-item" id="ctx-col-rename" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
                 </svg>
                 <span>Rename collection</span>
             </button>
-            <div style="height:1px;background:var(--lumina-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-col-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-danger-color);">
+            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
+            <button class="notes-ctx-item notes-ctx-danger" id="ctx-col-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6l-1 14H6L5 6"></path>
@@ -602,7 +601,7 @@ export class NotesPanel {
         if (notes.length === 0) {
             if (this.emptyState) {
                 this.emptyState.style.display = 'flex';
-                const emptyText = this.emptyState.querySelector('.lumina-empty-text');
+                const emptyText = this.emptyState.querySelector('.nexus-empty-text');
                 if (emptyText) {
                     emptyText.textContent = searchTerm ? `No notes matching "${searchTerm}"` : 'No notes yet in this collection';
                 }
@@ -631,25 +630,25 @@ export class NotesPanel {
             const timeStr = timeAgo(note.updatedAt || note.createdAt);
 
             return `
-                <div class="lumina-hub-card ${isSelected ? 'is-selected' : ''}" data-note-id="${note.id}" draggable="true">
-                    <div class="lumina-card-top">
-                        <div class="lumina-card-top-left">
-                            <input type="checkbox" class="lumina-card-checkbox" data-note-id="${note.id}" ${isSelected ? 'checked' : ''} style="${this.isBatchMode ? 'display:block;' : ''}">
-                            <span class="lumina-card-badge" title="Collection: ${escapeHtml(colName)}">
+                <div class="nexus-hub-card ${isSelected ? 'is-selected' : ''}" data-note-id="${note.id}" draggable="true">
+                    <div class="nexus-card-top">
+                        <div class="nexus-card-top-left">
+                            <input type="checkbox" class="nexus-card-checkbox" data-note-id="${note.id}" ${isSelected ? 'checked' : ''} style="${this.isBatchMode ? 'display:block;' : ''}">
+                            <span class="nexus-card-badge" title="Collection: ${escapeHtml(colName)}">
                                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
                                 <span>${escapeHtml(colName)}</span>
                             </span>
                         </div>
-                        <div class="lumina-card-top-right">
-                            <button type="button" class="lumina-card-pin-btn ${isPinned ? 'pinned' : ''}" data-note-id="${note.id}" title="${isPinned ? 'Unpin' : 'Pin'}">
+                        <div class="nexus-card-top-right">
+                            <button type="button" class="nexus-card-pin-btn ${isPinned ? 'pinned' : ''}" data-note-id="${note.id}" title="${isPinned ? 'Unpin' : 'Pin'}">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="17" x2="12" y2="22"></line>
                                     <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
                                 </svg>
                             </button>
-                            <button type="button" class="lumina-card-menu-btn" data-note-id="${note.id}" title="More options">
+                            <button type="button" class="nexus-card-menu-btn" data-note-id="${note.id}" title="More options">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
                                     <circle cx="12" cy="5" r="2"></circle>
                                     <circle cx="12" cy="12" r="2"></circle>
@@ -658,24 +657,24 @@ export class NotesPanel {
                             </button>
                         </div>
                     </div>
-                    <div class="lumina-card-body">
-                        <h3 class="lumina-card-title">${titleHtml}</h3>
-                        <p class="lumina-card-snippet">${snippetHtml}</p>
+                    <div class="nexus-card-body">
+                        <h3 class="nexus-card-title">${titleHtml}</h3>
+                        <p class="nexus-card-snippet">${snippetHtml}</p>
                     </div>
-                    <div class="lumina-card-footer">
+                    <div class="nexus-card-footer">
                         <span>${timeStr}</span>
                     </div>
                 </div>
             `;
         };
 
-        const containerClass = this.viewMode === 'list' ? 'lumina-hub-list' : 'lumina-hub-grid';
+        const containerClass = this.viewMode === 'list' ? 'nexus-hub-list' : 'nexus-hub-grid';
         let html = '';
 
         if (pinned.length > 0) {
             html += `
-                <div class="lumina-section-block">
-                    <div class="lumina-section-header">
+                <div class="nexus-section-block">
+                    <div class="nexus-section-header">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                         <span>Pinned</span>
                     </div>
@@ -689,8 +688,8 @@ export class NotesPanel {
         if (unpinned.length > 0) {
             if (pinned.length > 0) {
                 html += `
-                    <div class="lumina-section-block">
-                        <div class="lumina-section-header">
+                    <div class="nexus-section-block">
+                        <div class="nexus-section-header">
                             <span>Other Notes</span>
                         </div>
                         <div class="${containerClass}">
@@ -712,7 +711,7 @@ export class NotesPanel {
     }
 
     bindCardInteractions(notes) {
-        this.cardsContainer.querySelectorAll('.lumina-hub-card').forEach(card => {
+        this.cardsContainer.querySelectorAll('.nexus-hub-card').forEach(card => {
             const noteId = card.getAttribute('data-note-id');
             const note = notes.find(n => n.id === noteId);
 
@@ -727,11 +726,11 @@ export class NotesPanel {
             });
 
             card.addEventListener('click', (e) => {
-                if (e.target.closest('.lumina-card-top-right') || e.target.closest('.lumina-card-checkbox')) {
+                if (e.target.closest('.nexus-card-top-right') || e.target.closest('.nexus-card-checkbox')) {
                     return;
                 }
                 if (this.isBatchMode) {
-                    const chk = card.querySelector('.lumina-card-checkbox');
+                    const chk = card.querySelector('.nexus-card-checkbox');
                     if (chk) {
                         chk.checked = !chk.checked;
                         this.handleToggleCardSelection(noteId, chk.checked, card);
@@ -741,7 +740,7 @@ export class NotesPanel {
                 this.loadNote(noteId);
             });
 
-            const checkbox = card.querySelector('.lumina-card-checkbox');
+            const checkbox = card.querySelector('.nexus-card-checkbox');
             if (checkbox) {
                 checkbox.addEventListener('change', (e) => {
                     e.stopPropagation();
@@ -749,7 +748,7 @@ export class NotesPanel {
                 });
             }
 
-            const pinBtn = card.querySelector('.lumina-card-pin-btn');
+            const pinBtn = card.querySelector('.nexus-card-pin-btn');
             if (pinBtn) {
                 pinBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -759,7 +758,7 @@ export class NotesPanel {
                 });
             }
 
-            const menuBtn = card.querySelector('.lumina-card-menu-btn');
+            const menuBtn = card.querySelector('.nexus-card-menu-btn');
             if (menuBtn) {
                 menuBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -800,14 +799,14 @@ export class NotesPanel {
         const moveItems = collections
             .filter(c => c.id !== note.collectionId)
             .map(c => `
-                <button class="notes-ctx-item notes-ctx-move-item" data-col-id="${c.id}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+                <button class="notes-ctx-item notes-ctx-move-item" data-col-id="${c.id}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                     <span>${escapeHtml(c.name)}</span>
                 </button>
             `).join('');
 
         menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-pin" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-text-primary);">
+            <button class="notes-ctx-item" id="ctx-pin" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="17" x2="12" y2="22"></line>
                     <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
@@ -815,12 +814,12 @@ export class NotesPanel {
                 <span>${pinLabel}</span>
             </button>
             ${moveItems.length ? `
-                <div style="height:1px;background:var(--lumina-ui-border);margin:4px 0;"></div>
-                <div style="padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--lumina-text-tertiary);">Move to</div>
+                <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
+                <div style="padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--nexus-text-tertiary);">Move to</div>
                 ${moveItems}
             ` : ''}
-            <div style="height:1px;background:var(--lumina-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--lumina-danger-color);">
+            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
+            <button class="notes-ctx-item notes-ctx-danger" id="ctx-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6l-1 14H6L5 6"></path>
@@ -886,7 +885,7 @@ export class NotesPanel {
         if (name && typeof name === 'string' && name.trim()) {
             const newCol = await NotesManager.createCollection(name.trim());
             this.activeCollectionId = newCol.id;
-            localStorage.setItem('lumina_active_collection_id', newCol.id);
+            localStorage.setItem('nexus_active_collection_id', newCol.id);
             this.updateUrlParams();
             await this.renderCollections();
             await this.renderNotesList();
@@ -920,8 +919,6 @@ export class NotesPanel {
         await this.updateCollectionPickerPill(note);
         await this.updatePinDetailBtn(note);
         await this.initEditorInstance(note.content);
-        const blocks = Array.isArray(note.content) ? note.content : [];
-        this.updateWordCount(blocks);
     }
 
     async updatePinDetailBtn(note) {
@@ -942,8 +939,8 @@ export class NotesPanel {
         if (this.editorContainer) {
             this.editorContainer.innerHTML = '';
         }
-        if (!window.LuminaBlockNote) {
-            if (typeof window.luminaLoadScript === 'function') {
+        if (!window.NexusBlockNote) {
+            if (typeof window.nexusLoadScript === 'function') {
                 try {
                     const cssUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
                         ? chrome.runtime.getURL('lib/vendor/blocknote.css')
@@ -952,15 +949,15 @@ export class NotesPanel {
                         ? chrome.runtime.getURL('lib/vendor/blocknote.js')
                         : '../../lib/vendor/blocknote.js';
                     await Promise.all([
-                        window.luminaLoadCSS(cssUrl),
-                        window.luminaLoadScript(jsUrl)
+                        window.nexusLoadCSS(cssUrl),
+                        window.nexusLoadScript(jsUrl)
                     ]);
                 } catch (e) {
                     console.error('Failed to load BlockNote dynamic scripts:', e);
                 }
             }
         }
-        if (!window.LuminaBlockNote) {
+        if (!window.NexusBlockNote) {
             console.error('BlockNote library is not loaded');
             return;
         }
@@ -971,14 +968,13 @@ export class NotesPanel {
             } else if (initialData?.blocks && Array.isArray(initialData.blocks)) {
                 initialBlocks = initialData.blocks;
             }
-            this.blocknoteInstance = window.LuminaBlockNote.mount(
+            this.blocknoteInstance = window.NexusBlockNote.mount(
                 this.editorContainer,
                 initialBlocks,
                 (updatedBlocks) => {
                     this.triggerAutoSave(updatedBlocks);
                 }
             );
-            this._bindSelectionCount();
         } catch (err) {
             console.error('Failed to initialize BlockNote:', err);
         }
@@ -988,7 +984,6 @@ export class NotesPanel {
         if (this.autoSaveTimer) {
             clearTimeout(this.autoSaveTimer);
         }
-        this.updateWordCount(blocksFromEvent || (this.blocknoteInstance ? this.blocknoteInstance.getBlocks() : []));
         this.autoSaveTimer = setTimeout(async () => {
             if (!this.activeNoteId || !this.blocknoteInstance) return;
             try {
@@ -1002,60 +997,6 @@ export class NotesPanel {
                 console.warn('Auto-save error:', e);
             }
         }, 400);
-    }
-
-    updateWordCount(blocks, selectionText) {
-        if (!this.wordCountEl) return;
-        if (selectionText && selectionText.trim()) {
-            const words = selectionText.trim().split(/\s+/).filter(Boolean).length;
-            this.wordCountEl.textContent = `${words} ${words === 1 ? 'word' : 'words'} selected`;
-            const bar = document.getElementById('notes-word-count-bar');
-            if (bar) bar.classList.add('has-selection');
-            return;
-        }
-        const bar = document.getElementById('notes-word-count-bar');
-        if (bar) bar.classList.remove('has-selection');
-        let fullText = '';
-        if (Array.isArray(blocks)) {
-            for (const block of blocks) {
-                if (block.content && Array.isArray(block.content)) {
-                    fullText += block.content.map(i => i.text || '').join(' ') + ' ';
-                }
-                if (block.children && Array.isArray(block.children)) {
-                    for (const child of block.children) {
-                        if (child.content && Array.isArray(child.content)) {
-                            fullText += child.content.map(i => i.text || '').join(' ') + ' ';
-                        }
-                    }
-                }
-            }
-        }
-        fullText = fullText.trim();
-        const words = fullText ? fullText.split(/\s+/).filter(Boolean).length : 0;
-        this.wordCountEl.textContent = `${words.toLocaleString()} ${words === 1 ? 'word' : 'words'}`;
-    }
-
-    _bindSelectionCount() {
-        if (this._selectionHandler) {
-            document.removeEventListener('selectionchange', this._selectionHandler);
-        }
-        this._selectionHandler = () => {
-            const sel = window.getSelection();
-            if (!sel || sel.isCollapsed) {
-                if (this.blocknoteInstance) {
-                    const blocks = this.blocknoteInstance.getBlocks ? this.blocknoteInstance.getBlocks() : [];
-                    this.updateWordCount(blocks);
-                }
-                return;
-            }
-            const editorEl = this.editorContainer;
-            if (!editorEl) return;
-            const anchorNode = sel.anchorNode;
-            if (!editorEl.contains(anchorNode)) return;
-            const selectedText = sel.toString();
-            this.updateWordCount(null, selectedText);
-        };
-        document.addEventListener('selectionchange', this._selectionHandler);
     }
 
     initCollectionPickerPill() {

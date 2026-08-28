@@ -1,6 +1,6 @@
 export function getPaneActiveModel() {
-    const model = sessionStorage.getItem('lumina_active_model');
-    const providerId = sessionStorage.getItem('lumina_active_provider');
+    const model = sessionStorage.getItem('nexus_active_model');
+    const providerId = sessionStorage.getItem('nexus_active_provider');
     if (model) {
         return { model, providerId };
     }
@@ -9,27 +9,27 @@ export function getPaneActiveModel() {
 
 export function setPaneActiveModel(modelObj) {
     if (modelObj && modelObj.model) {
-        sessionStorage.setItem('lumina_active_model', modelObj.model);
+        sessionStorage.setItem('nexus_active_model', modelObj.model);
         if (modelObj.providerId) {
-            sessionStorage.setItem('lumina_active_provider', modelObj.providerId);
+            sessionStorage.setItem('nexus_active_provider', modelObj.providerId);
         } else {
-            sessionStorage.removeItem('lumina_active_provider');
+            sessionStorage.removeItem('nexus_active_provider');
         }
     } else {
-        sessionStorage.removeItem('lumina_active_model');
-        sessionStorage.removeItem('lumina_active_provider');
+        sessionStorage.removeItem('nexus_active_model');
+        sessionStorage.removeItem('nexus_active_provider');
     }
 }
 
 export function getPaneActiveThinking() {
-    return sessionStorage.getItem('lumina_active_thinking') || null;
+    return sessionStorage.getItem('nexus_active_thinking') || null;
 }
 
 export function setPaneActiveThinking(level) {
     if (level) {
-        sessionStorage.setItem('lumina_active_thinking', level);
+        sessionStorage.setItem('nexus_active_thinking', level);
     } else {
-        sessionStorage.removeItem('lumina_active_thinking');
+        sessionStorage.removeItem('nexus_active_thinking');
     }
 }
 

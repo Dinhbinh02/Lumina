@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.setAttribute('data-theme', mode);
         document.body.setAttribute('data-accent', accentVal);
         document.body.setAttribute('data-contrast', contrastVal);
-        document.documentElement.style.setProperty('--lumina-weight-base', fontWeightVal);
+        document.documentElement.style.setProperty('--nexus-weight-base', fontWeightVal);
     });
     const btnOptions = document.getElementById('btn-options');
     const btnTab = document.getElementById('btn-tab');
@@ -19,21 +19,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (chrome.runtime.openOptionsPage) {
                 chrome.runtime.openOptionsPage();
             } else {
-                window.open(chrome.runtime.getURL('pages/lumina/lumina.html?settings=1'));
+                window.open(chrome.runtime.getURL('pages/nexus/nexus.html?settings=1'));
             }
             window.close();
         });
     }
     if (btnTab) {
         btnTab.addEventListener('click', () => {
-            const url = chrome.runtime.getURL('pages/lumina/lumina.html');
+            const url = chrome.runtime.getURL('pages/nexus/nexus.html');
             chrome.tabs.create({ url });
             window.close();
         });
     }
     if (btnWindow) {
         btnWindow.addEventListener('click', () => {
-            const url = chrome.runtime.getURL('pages/lumina/lumina.html');
+            const url = chrome.runtime.getURL('pages/nexus/nexus.html');
             chrome.windows.create({
                 url: url,
                 type: 'popup',

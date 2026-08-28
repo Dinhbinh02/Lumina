@@ -1,4 +1,4 @@
-export const LuminaToken = {
+export const NexusToken = {
     count: function(text) {
         if (!text) return 0;
         return Math.ceil(text.length / 2.5);
@@ -10,5 +10,5 @@ export const LuminaToken = {
 };
 
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaToken = LuminaToken;
+    globalThis.NexusToken = NexusToken;
 }

@@ -1,4 +1,4 @@
-import { LuminaAudioCacheDB } from '../db/attachment_db.js';
+import { NexusAudioCacheDB } from '../db/attachment_db.js';
 
 export function getLemma(w) {
     if (!w) return '';
@@ -158,31 +158,31 @@ export async function fetchAudio(text, speed = 1.0, forcedLang = null) {
 
 export async function getAudioFromCache(text) {
     try {
-        if (typeof LuminaAudioCacheDB !== 'undefined') {
+        if (typeof NexusAudioCacheDB !== 'undefined') {
             const key = text.trim().toLowerCase();
-            const entry = await LuminaAudioCacheDB.get(key);
+            const entry = await NexusAudioCacheDB.get(key);
             return entry;
         }
         return null;
     } catch (e) {
-        console.error('[Lumina Audio] Cache read error:', e);
+        console.error('[Nexus Audio] Cache read error:', e);
         return null;
     }
 }
 
 export async function setAudioCache(text, type, data) {
     try {
-        if (typeof LuminaAudioCacheDB !== 'undefined') {
+        if (typeof NexusAudioCacheDB !== 'undefined') {
             const key = text.trim().toLowerCase();
             const entry = {
                 type,
                 data,
                 timestamp: Date.now()
             };
-            await LuminaAudioCacheDB.put(key, entry);
+            await NexusAudioCacheDB.put(key, entry);
         }
     } catch (e) {
-        console.error('[Lumina Audio] Cache write error:', e);
+        console.error('[Nexus Audio] Cache write error:', e);
     }
 }
 

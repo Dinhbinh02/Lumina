@@ -1,4 +1,4 @@
-import { LuminaSync } from './drive_sync.js';
+import { NexusSync } from './drive_sync.js';
 import { isExcludedKey } from './crypto_utils.js';
 
 async function gatherLocalStats() {
@@ -14,14 +14,14 @@ async function gatherLocalStats() {
     const allLocal = await chrome.storage.local.get(null);
 
     for (const [k, v] of Object.entries(allLocal)) {
-        if (isExcludedKey(k) || k.startsWith('lumina_session_')) continue;
+        if (isExcludedKey(k) || k.startsWith('nexus_session_')) continue;
         const size = JSON.stringify(v).length;
         stats.storage[k] = { size, preview: JSON.stringify(v).slice(0, 80) };
     }
 
-    if (typeof LuminaChatDB !== 'undefined') {
+    if (typeof NexusChatDB !== 'undefined') {
         try {
-            const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+            const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
             const sessionList = Object.values(sessions).filter(s => s && !s.isDeleted);
             stats.chats.sessionCount = sessionList.length;
             stats.chats.sessions = sessionList.map(s => ({
@@ -46,9 +46,9 @@ async function gatherLocalStats() {
         }
     }
 
-    if (typeof LuminaAnnotationDB !== 'undefined') {
+    if (typeof NexusAnnotationDB !== 'undefined') {
         try {
-            const highlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+            const highlights = await NexusAnnotationDB.getAll().catch(() => ({}));
             stats.highlights.urlCount = Object.keys(highlights).filter(k => k.startsWith('highlights_')).length;
         } catch (e) {
             stats.highlights.error = e.message;
@@ -64,9 +64,9 @@ async function gatherLocalStats() {
         }
     }
 
-    if (typeof LuminaAttachmentDB !== 'undefined') {
+    if (typeof NexusAttachmentDB !== 'undefined') {
         try {
-            const meta = await LuminaAttachmentDB.getAllMetadata().catch(() => []);
+            const meta = await NexusAttachmentDB.getAllMetadata().catch(() => []);
             stats.attachments.count = meta.length;
         } catch (e) {
             stats.attachments.error = e.message;
@@ -87,7 +87,7 @@ async function gatherCloudStats(token) {
         driveFiles: []
     };
 
-    const { token: activeToken, remoteFile, fileId, driveFiles } = await LuminaSync.getOrFindBackupFile(token, true);
+    const { token: activeToken, remoteFile, fileId, driveFiles } = await NexusSync.getOrFindBackupFile(token, true);
 
     stats.driveFiles = (driveFiles || []).map(f => ({
         name: f.name,
@@ -108,12 +108,12 @@ async function gatherCloudStats(token) {
         modifiedTime: remoteFile.modifiedTime
     };
 
-    const backup = await LuminaSync.downloadBackup(activeToken, fileId);
+    const backup = await NexusSync.downloadBackup(activeToken, fileId);
     if (!backup || !backup.data) return { stats, activeToken };
 
     const data = backup.data;
 
-    const cloudSessions = data.lumina_chat_sessions || {};
+    const cloudSessions = data.nexus_chat_sessions || {};
     const activeCloudSessions = Object.values(cloudSessions).filter(s => s && !s.isDeleted);
     stats.chats.sessionCount = activeCloudSessions.length;
     stats.chats.sessions = activeCloudSessions.map(s => ({
@@ -123,14 +123,14 @@ async function gatherCloudStats(token) {
         messageCount: s.messageCount || '?'
     }));
 
-    const cloudNotes = data.lumina_notes_items || [];
-    const cloudCols = data.lumina_notes_collections || [];
+    const cloudNotes = data.nexus_notes_items || [];
+    const cloudCols = data.nexus_notes_collections || [];
     stats.notes.notesCount = cloudNotes.filter(n => n && !n.isDeleted).length;
     stats.notes.collectionsCount = cloudCols.length;
 
     stats.highlights.urlCount = Object.keys(data).filter(k => k.startsWith('highlights_')).length;
 
-    const cloudTts = data.lumina_tts_recordings || [];
+    const cloudTts = data.nexus_tts_recordings || [];
     stats.tts.recordingsCount = cloudTts.filter(r => r && !r.isDeleted).length;
 
     const attFiles = (driveFiles || []).filter(f => f.name.startsWith('att_') && f.name.endsWith('.bin'));
@@ -157,7 +157,7 @@ function compareSessionLists(local, cloud) {
 }
 
 export async function debugSync() {
-    console.group('%c🔍 LUMINA SYNC DEBUGGER', 'color: #a78bfa; font-weight: bold; font-size: 15px;');
+    console.group('%c🔍 NEXUS SYNC DEBUGGER', 'color: #a78bfa; font-weight: bold; font-size: 15px;');
     console.log('%cGathering local data...', 'color: #6ee7b7');
 
     let localStats;
@@ -174,14 +174,14 @@ export async function debugSync() {
         'drive_backup_file_id', 'google_user_info'
     ]);
 
-    const isAuthenticated = typeof LuminaAuth !== 'undefined'
-        ? LuminaAuth.isAuthenticated
+    const isAuthenticated = typeof NexusAuth !== 'undefined'
+        ? NexusAuth.isAuthenticated
         : !!syncStorageData.google_user_info;
 
     let token = null;
     if (isAuthenticated) {
         try {
-            token = await LuminaSync.getToken(false);
+            token = await NexusSync.getToken(false);
         } catch (e) {
             console.warn('[SyncDebug] Could not get token:', e.message);
         }
@@ -303,7 +303,7 @@ export async function debugSync() {
     });
 
     if (!isMd5Match) {
-        console.warn('%c👉 MD5 mismatch detected. Run LuminaSync.syncData() or force push/pull to fix.', 'color: #f87171');
+        console.warn('%c👉 MD5 mismatch detected. Run NexusSync.syncData() or force push/pull to fix.', 'color: #f87171');
     } else if (chatDiff.onlyLocal.length === 0 && chatDiff.onlyCloud.length === 0) {
         console.log('%c✅ Everything looks in sync!', 'color: #6ee7b7; font-weight: bold');
     }

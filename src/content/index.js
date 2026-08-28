@@ -1,18 +1,18 @@
-import { LUMINA_DEFAULT_SHORTCUTS } from '../shared/constants.js';
+import { NEXUS_DEFAULT_SHORTCUTS } from '../shared/constants.js';
 import { EventCleanupManager } from './event_cleanup.js';
 import { ShadowHostManager } from './shadow_host.js';
 import { YouTubeButtonManager } from './youtube_bridge.js';
-import { extractMainContent, luminaEstimateTokens, getActiveSelection, getSmartSelectionText, getSentenceContext, getParagraphContext } from './page_reader.js';
+import { extractMainContent, nexusEstimateTokens, getActiveSelection, getSmartSelectionText, getSentenceContext, getParagraphContext } from './page_reader.js';
 import { playCombinedAudio, stopAudio } from './audio_player.js';
-import { LuminaAnnotation } from '../helpers/annotation_utils.js';
-import { LuminaSelection } from '../helpers/selection_utils.js';
-import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup.js';
+import { NexusAnnotation } from '../helpers/annotation_utils.js';
+import { NexusSelection } from '../helpers/selection_utils.js';
+import { NexusDictionaryPopup } from '../components/dictionary/dictionary_popup.js';
 
 (() => {
     window.katexLoaded = true;
     const eventCleanup = new EventCleanupManager();
     const shadowManager = new ShadowHostManager();
-    const { host: luminaHost, shadowRoot: luminaShadowRoot } = shadowManager.init();
+    const { host: nexusHost, shadowRoot: nexusShadowRoot } = shadowManager.init();
 
     let currentCachedZoom = 1;
     function updateCachedZoom(callback) {
@@ -38,8 +38,8 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
     updateCachedZoom();
     window.addEventListener('resize', () => {
         updateCachedZoom(() => {
-            if (window.LuminaSelection) {
-                LuminaSelection.hide();
+            if (window.NexusSelection) {
+                NexusSelection.hide();
             }
         });
     });
@@ -75,11 +75,11 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
     }
 
     function triggerSidePanelQuery(query, displayQuery = null, mode = 'qa', range = null, shouldHighlight = true) {
-        if (shouldHighlight && window.LuminaAnnotation) {
+        if (shouldHighlight && window.NexusAnnotation) {
             const finalRange = range || (window.getSelection().rangeCount > 0 ? window.getSelection().getRangeAt(0) : null);
             if (finalRange && !finalRange.collapsed) {
                 const color = '#FFFB78';
-                window.LuminaAnnotation.highlight(finalRange, color);
+                window.NexusAnnotation.highlight(finalRange, color);
                 const selection = window.getSelection();
                 if (selection) selection.removeAllRanges();
             }
@@ -92,9 +92,9 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
         });
     }
 
-    if (window.LuminaSelection) {
-        LuminaSelection.init({
-            shadowRoot: luminaShadowRoot,
+    if (window.NexusSelection) {
+        NexusSelection.init({
+            shadowRoot: nexusShadowRoot,
             onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
                 if (isAudio) {
                     playCombinedAudio(displayQuery);
@@ -110,7 +110,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
                     if (text) {
                         const rangeToUse = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
                         const rect = rangeToUse ? rangeToUse.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
-                        LuminaDictionaryPopup.show(text, {
+                        NexusDictionaryPopup.show(text, {
                             x: rect.left,
                             y: rect.bottom + 5,
                             source: 'dictionary'
@@ -128,16 +128,16 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
     window.addEventListener('mousemove', (e) => {
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
-        if (window.LuminaSelection) {
-            LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+        if (window.NexusSelection) {
+            NexusSelection.mouseCoords = { x: e.clientX, y: e.clientY };
         }
     }, { passive: true });
 
     window.addEventListener('mouseup', (e) => {
         if (isExtensionDisabled) return;
-        if (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar) return;
+        if (window.NexusSelection && NexusSelection.isInteractingWithActionBar) return;
         const path = e.composedPath();
-        const isInsideShadow = path.some(el => el.id === 'lumina-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'lumina-shadow-host'));
+        const isInsideShadow = path.some(el => el.id === 'nexus-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
         if (isInsideShadow) return;
         if (askSelectionPopupEnabled) {
             const sel = window.getSelection();
@@ -146,7 +146,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
                 e.stopPropagation();
             }
         }
-        const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
+        const activeElement = window.NexusSelection ? NexusSelection.getDeepActiveElement() : document.activeElement;
         const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
         setTimeout(() => {
             let text = '';
@@ -164,36 +164,36 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
                 range = finalSelection.rangeCount > 0 ? finalSelection.getRangeAt(0) : null;
             }
             if (!askSelectionPopupEnabled || text.length === 0) {
-                const isHighlight = e.target.closest('.lumina-highlight') || (window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
-                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+                const isHighlight = e.target.closest('.nexus-highlight') || (window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
+                if (window.NexusSelection && !isHighlight) NexusSelection.hide();
                 return;
             }
-            if (text.length > 0 && (range || isInput) && window.LuminaSelection) {
+            if (text.length > 0 && (range || isInput) && window.NexusSelection) {
                 if (e.clientX && e.clientY) {
-                    LuminaSelection.mouseCoords = { x: e.clientX, y: e.clientY };
+                    NexusSelection.mouseCoords = { x: e.clientX, y: e.clientY };
                 }
-                LuminaSelection.show(e.clientX, e.clientY, text, range);
+                NexusSelection.show(e.clientX, e.clientY, text, range);
             } else if (!isInsideShadow) {
-                const isHighlight = e.target.closest('.lumina-highlight');
-                if (window.LuminaSelection && !isHighlight) LuminaSelection.hide();
+                const isHighlight = e.target.closest('.nexus-highlight');
+                if (window.NexusSelection && !isHighlight) NexusSelection.hide();
             }
         }, 50);
     }, true);
 
     window.addEventListener('mousedown', (e) => {
         const path = e.composedPath();
-        const isInsideAskBtn = path.some(el => (el.id === 'lumina-action-bar') || (el.id === 'lumina-ask-input-popup') || (window.LuminaSelection && el === LuminaSelection.btn));
-        const isHighlight = window.LuminaAnnotation && LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+        const isInsideAskBtn = path.some(el => (el.id === 'nexus-action-bar') || (el.id === 'nexus-ask-input-popup') || (window.NexusSelection && el === NexusSelection.btn));
+        const isHighlight = window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
         if (!isInsideAskBtn && !isHighlight) {
-            if (window.LuminaSelection) LuminaSelection.hide();
+            if (window.NexusSelection) NexusSelection.hide();
         }
     }, true);
 
     chrome.storage.local.get(['readWebpage', 'askSelectionPopupEnabled'], (result) => {
         readWebpageEnabled = result.readWebpage ?? false;
         askSelectionPopupEnabled = result.askSelectionPopupEnabled ?? false;
-        if (window.LuminaAnnotation) {
-            LuminaAnnotation.loadHighlights();
+        if (window.NexusAnnotation) {
+            NexusAnnotation.loadHighlights();
         }
     });
 
@@ -201,14 +201,14 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
     setInterval(() => {
         if (window.location.href !== lastUrl) {
             lastUrl = window.location.href;
-            if (window.LuminaAnnotation) {
-                LuminaAnnotation.clearAllHighlights();
-                LuminaAnnotation.loadHighlights();
+            if (window.NexusAnnotation) {
+                NexusAnnotation.clearAllHighlights();
+                NexusAnnotation.loadHighlights();
             }
         }
     }, 500);
 
-    const DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS || {};
+    const DEFAULT_SHORTCUTS = NEXUS_DEFAULT_SHORTCUTS || {};
     let shortcuts = { ...DEFAULT_SHORTCUTS };
     let questionMappings = [];
 
@@ -228,7 +228,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
             if (changes.readWebpage) readWebpageEnabled = changes.readWebpage.newValue ?? false;
             if (changes.askSelectionPopupEnabled) {
                 askSelectionPopupEnabled = changes.askSelectionPopupEnabled.newValue ?? false;
-                if (!askSelectionPopupEnabled && window.LuminaSelection) LuminaSelection.hide();
+                if (!askSelectionPopupEnabled && window.NexusSelection) NexusSelection.hide();
             }
             if (changes.questionMappings) questionMappings = changes.questionMappings.newValue || [];
             if (changes.shortcuts) Object.assign(shortcuts, changes.shortcuts.newValue || DEFAULT_SHORTCUTS);
@@ -246,8 +246,8 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
         if (!chrome.runtime || !chrome.runtime.id) return;
         if (request.action === 'toggle_extension_state') {
             isExtensionDisabled = !request.isEnabled;
-            if (isExtensionDisabled && window.LuminaSelection) {
-                LuminaSelection.hide();
+            if (isExtensionDisabled && window.NexusSelection) {
+                NexusSelection.hide();
             }
         } else if (request.action === 'get_page_content') {
             extractMainContent().then(result => {
@@ -272,16 +272,16 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
     document.addEventListener('click', (e) => {
         if (isExtensionDisabled) return;
         const path = e.composedPath();
-        const isInsideLumina = path.some(el => el.id === 'lumina-action-bar' || el.id === 'lumina-ask-input-popup' || el.id === 'lumina-shadow-host' || el.id === 'lumina-comment-hover-tooltip' || (el.tagName && el.tagName.toLowerCase() === 'lumina-shadow-host'));
-        if (isInsideLumina || (window.LuminaSelection && LuminaSelection.isInteractingWithActionBar)) return;
+        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-ask-input-popup' || el.id === 'nexus-shadow-host' || el.id === 'nexus-comment-hover-tooltip' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
+        if (isInsideNexus || (window.NexusSelection && NexusSelection.isInteractingWithActionBar)) return;
 
-        if (window.LuminaAnnotation) {
-            const hData = LuminaAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
+        if (window.NexusAnnotation) {
+            const hData = NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY);
             if (hData) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (window.LuminaSelection) {
-                    LuminaSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
+                if (window.NexusSelection) {
+                    NexusSelection.showAnnotationMenu(hData.range, hData.id, hData.color);
                 }
             }
         }
@@ -291,7 +291,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
 
     function getSelectedTextForAudio() {
         let text = '';
-        const activeElement = window.LuminaSelection ? LuminaSelection.getDeepActiveElement() : document.activeElement;
+        const activeElement = window.NexusSelection ? NexusSelection.getDeepActiveElement() : document.activeElement;
         const isInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
         if (isInput) {
             const start = activeElement.selectionStart;
@@ -373,7 +373,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
         const isModifierOnlyAudio = audioShortcut && ['Shift', 'Control', 'Alt', 'Meta'].includes(audioShortcut.key) && (!audioShortcut.modifiers || audioShortcut.modifiers.length === 0);
 
         if (!isModifierOnlyAudio && matchesShortcut(event, 'audio')) {
-            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
             const text = getSelectedTextForAudio();
             event.preventDefault();
             event.stopPropagation();
@@ -385,28 +385,28 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
             return;
         }
 
-        if (matchesShortcut(event, 'askLumina')) {
+        if (matchesShortcut(event, 'askNexus')) {
             const selection = window.getSelection();
             const text = selection ? selection.toString().trim() : '';
             const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            if (text.length > 0 && range && window.LuminaSelection) {
+            if (text.length > 0 && range && window.NexusSelection) {
                 event.preventDefault();
                 event.stopPropagation();
-                LuminaSelection.show(0, 0, text, range);
-                LuminaSelection.showInput();
+                NexusSelection.show(0, 0, text, range);
+                NexusSelection.showInput();
                 return;
             }
         }
 
         if (matchesShortcut(event, 'translate')) {
-            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
             const selection = window.getSelection();
             const text = selection ? selection.toString().trim() : '';
             if (text.length > 0) {
                 event.preventDefault();
                 event.stopPropagation();
                 const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-                if (window.LuminaSelection) LuminaSelection.hide();
+                if (window.NexusSelection) NexusSelection.hide();
                 triggerSidePanelQuery(text, text, 'translate', range);
                 return;
             }
@@ -420,7 +420,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
             return;
         }
 
-        if (matchesShortcut(event, 'luminaChat')) {
+        if (matchesShortcut(event, 'nexusChat')) {
             event.preventDefault();
             event.stopPropagation();
             safeRuntimeSendMessage({ action: 'open_sidepanel' });
@@ -431,7 +431,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
         for (const shortcut of annotationShortcutsList) {
             if (shortcut.enabled === false) continue;
             if (matchesAnnotationShortcut(event, shortcut)) {
-                if (window.LuminaSelection && LuminaSelection.isInsideEditable()) continue;
+                if (window.NexusSelection && NexusSelection.isInsideEditable()) continue;
                 const selection = window.getSelection();
                 const text = selection ? selection.toString().trim() : '';
                 if (text.length > 0 && selection.rangeCount > 0) {
@@ -439,18 +439,18 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
                     event.stopPropagation();
                     const range = selection.getRangeAt(0);
                     const color = shortcut.color || '#FFFB78';
-                    if (window.LuminaAnnotation) {
-                        window.LuminaAnnotation.highlight(range, color);
+                    if (window.NexusAnnotation) {
+                        window.NexusAnnotation.highlight(range, color);
                     }
                     if (selection) selection.removeAllRanges();
-                    if (window.LuminaSelection) LuminaSelection.hide();
+                    if (window.NexusSelection) NexusSelection.hide();
                     return;
                 }
             }
         }
 
         if (questionMappings && questionMappings.length > 0) {
-            if (window.LuminaSelection && !LuminaSelection.isInsideEditable()) {
+            if (window.NexusSelection && !NexusSelection.isInsideEditable()) {
                 const selection = window.getSelection();
                 const text = selection ? selection.toString().trim() : '';
                 if (text) {
@@ -482,7 +482,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
                         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
                         const shouldHighlight = (mapping.highlight !== false) && (mapping.enableHighlight !== false);
                         triggerSidePanelQuery(fullQuestion, displayQuestion, 'qa', range, shouldHighlight);
-                        if (window.LuminaSelection) LuminaSelection.hide();
+                        if (window.NexusSelection) NexusSelection.hide();
                         return;
                     }
                 }
@@ -493,7 +493,7 @@ import { LuminaDictionaryPopup } from '../components/dictionary/dictionary_popup
     document.addEventListener('keyup', (event) => {
         if (isExtensionDisabled) return;
         if (matchesShortcut(event, 'audio')) {
-            if (window.LuminaSelection && LuminaSelection.isInsideEditable()) return;
+            if (window.NexusSelection && NexusSelection.isInsideEditable()) return;
             const text = getSelectedTextForAudio();
             event.preventDefault();
             event.stopPropagation();

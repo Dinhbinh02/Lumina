@@ -1,4 +1,4 @@
-export const LuminaModelHelper = {
+export const NexusModelHelper = {
     async getPromptSupport() {
         if (typeof window.getPromptApiSupport === 'function') {
             return await window.getPromptApiSupport();
@@ -57,5 +57,5 @@ export const LuminaModelHelper = {
 };
 
 if (typeof window !== 'undefined') {
-    window.LuminaModelHelper = LuminaModelHelper;
+    window.NexusModelHelper = NexusModelHelper;
 }

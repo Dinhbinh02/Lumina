@@ -1,4 +1,4 @@
-export const LuminaFileProcessor = {
+export const NexusFileProcessor = {
     createAttachmentId() {
         return `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     },
@@ -125,18 +125,18 @@ export const LuminaFileProcessor = {
     resolveImagePreviewSrc(item, src) {
         if (!src || typeof src !== 'string') return src;
         if (!src.startsWith('data:image/')) return src;
-        if (item && typeof item === 'object' && item._luminaBlobUrl) {
-            return item._luminaBlobUrl;
+        if (item && typeof item === 'object' && item._nexusBlobUrl) {
+            return item._nexusBlobUrl;
         }
-        const blobUrl = LuminaFileProcessor.createObjectUrlFromDataUrl(src);
+        const blobUrl = NexusFileProcessor.createObjectUrlFromDataUrl(src);
         if (blobUrl && item && typeof item === 'object') {
-            item._luminaBlobUrl = blobUrl;
+            item._nexusBlobUrl = blobUrl;
         }
         return blobUrl || src;
     },
 
     async prepareRawFileAttachment(file, createObjectUrlCallback) {
-        const dataUrl = await LuminaFileProcessor.readFileAsDataUrl(file);
+        const dataUrl = await NexusFileProcessor.readFileAsDataUrl(file);
         if (!dataUrl) return null;
         const mimeType = file.type;
         const isImage = mimeType.startsWith('image/');
@@ -159,11 +159,11 @@ export const LuminaFileProcessor = {
     },
 
     async extractPdfAsAttachments(file) {
-        if (typeof pdfjsLib === 'undefined' && typeof window.luminaLoadScript === 'function') {
+        if (typeof pdfjsLib === 'undefined' && typeof window.nexusLoadScript === 'function') {
             try {
-                await window.luminaLoadScript('../../lib/vendor/pdf.min.js');
+                await window.nexusLoadScript('../../lib/vendor/pdf.min.js');
             } catch (e) {
-                console.error('[Lumina] Failed to load pdf.min.js dynamically:', e);
+                console.error('[Nexus] Failed to load pdf.min.js dynamically:', e);
             }
         }
         if (typeof pdfjsLib === 'undefined') {
@@ -194,7 +194,7 @@ export const LuminaFileProcessor = {
         const baseName = (file.name || 'document').replace(/\.[^.]+$/, '');
         const attachments = [];
         if (text.trim()) {
-            const dataUrl = LuminaFileProcessor.textToDataUrl(text, 'text/plain');
+            const dataUrl = NexusFileProcessor.textToDataUrl(text, 'text/plain');
             attachments.push({
                 mimeType: 'text/plain',
                 name: `${baseName}.txt`,
@@ -207,13 +207,13 @@ export const LuminaFileProcessor = {
     },
 
     async extractXlsxAsAttachments(file) {
-        const entries = await LuminaFileProcessor.readZipEntries(await file.arrayBuffer());
-        const workbookXml = LuminaFileProcessor.decodeUtf8(entries['xl/workbook.xml']);
+        const entries = await NexusFileProcessor.readZipEntries(await file.arrayBuffer());
+        const workbookXml = NexusFileProcessor.decodeUtf8(entries['xl/workbook.xml']);
         if (!workbookXml) return [];
-        const workbookRelsXml = LuminaFileProcessor.decodeUtf8(entries['xl/_rels/workbook.xml.rels']);
-        const sharedStringsXml = LuminaFileProcessor.decodeUtf8(entries['xl/sharedStrings.xml']);
-        const sharedStrings = LuminaFileProcessor.parseSharedStrings(sharedStringsXml);
-        const sheetPathByRelId = LuminaFileProcessor.parseWorkbookRelationships(workbookRelsXml);
+        const workbookRelsXml = NexusFileProcessor.decodeUtf8(entries['xl/_rels/workbook.xml.rels']);
+        const sharedStringsXml = NexusFileProcessor.decodeUtf8(entries['xl/sharedStrings.xml']);
+        const sharedStrings = NexusFileProcessor.parseSharedStrings(sharedStringsXml);
+        const sheetPathByRelId = NexusFileProcessor.parseWorkbookRelationships(workbookRelsXml);
         const parser = new DOMParser();
         const workbookDoc = parser.parseFromString(workbookXml, 'application/xml');
         const sheetNodes = Array.from(workbookDoc.getElementsByTagName('sheet'));
@@ -224,13 +224,13 @@ export const LuminaFileProcessor = {
             const targetPath = relId ? sheetPathByRelId[relId] : '';
             const fallbackPath = `xl/worksheets/sheet${idx + 1}.xml`;
             const sheetPath = targetPath && entries[targetPath] ? targetPath : fallbackPath;
-            const sheetXml = LuminaFileProcessor.decodeUtf8(entries[sheetPath]);
+            const sheetXml = NexusFileProcessor.decodeUtf8(entries[sheetPath]);
             if (!sheetXml) return;
             const sheetName = sheetNode.getAttribute('name') || `Sheet${idx + 1}`;
-            const csv = LuminaFileProcessor.sheetXmlToCsv(sheetXml, sharedStrings);
+            const csv = NexusFileProcessor.sheetXmlToCsv(sheetXml, sharedStrings);
             if (!csv) return;
             const csvName = `${baseName} - ${sheetName}.csv`.replace(/[\\/:*?"<>|]/g, '_');
-            const dataUrl = LuminaFileProcessor.textToDataUrl(csv, 'text/csv');
+            const dataUrl = NexusFileProcessor.textToDataUrl(csv, 'text/csv');
             const base64Data = dataUrl.split(',')[1] || '';
             attachments.push({
                 mimeType: 'text/csv',
@@ -244,14 +244,14 @@ export const LuminaFileProcessor = {
     },
 
     async extractDocxAsAttachments(file) {
-        const entries = await LuminaFileProcessor.readZipEntries(await file.arrayBuffer());
-        const docXml = LuminaFileProcessor.decodeUtf8(entries['word/document.xml']);
+        const entries = await NexusFileProcessor.readZipEntries(await file.arrayBuffer());
+        const docXml = NexusFileProcessor.decodeUtf8(entries['word/document.xml']);
         const baseName = (file.name || 'document').replace(/\.[^.]+$/, '');
         const attachments = [];
         if (docXml) {
-            const text = LuminaFileProcessor.docxXmlToText(docXml);
+            const text = NexusFileProcessor.docxXmlToText(docXml);
             if (text.trim()) {
-                const dataUrl = LuminaFileProcessor.textToDataUrl(text, 'text/plain');
+                const dataUrl = NexusFileProcessor.textToDataUrl(text, 'text/plain');
                 attachments.push({
                     mimeType: 'text/plain',
                     name: `${baseName}.txt`,
@@ -263,10 +263,10 @@ export const LuminaFileProcessor = {
         }
         Object.keys(entries).forEach((path) => {
             if (!path.startsWith('word/media/')) return;
-            const mimeType = LuminaFileProcessor.mimeFromExtension(path);
+            const mimeType = NexusFileProcessor.mimeFromExtension(path);
             if (!mimeType || !mimeType.startsWith('image/')) return;
             const bytes = entries[path];
-            const dataUrl = LuminaFileProcessor.bytesToDataUrl(bytes, mimeType);
+            const dataUrl = NexusFileProcessor.bytesToDataUrl(bytes, mimeType);
             const fileName = path.split('/').pop() || 'image';
             attachments.push({
                 mimeType,
@@ -274,7 +274,7 @@ export const LuminaFileProcessor = {
                 isImage: true,
                 dataUrl,
                 data: dataUrl.split(',')[1] || '',
-                previewUrl: LuminaFileProcessor.resolveImagePreviewSrc(null, dataUrl)
+                previewUrl: NexusFileProcessor.resolveImagePreviewSrc(null, dataUrl)
             });
         });
         return attachments;
@@ -330,8 +330,8 @@ export const LuminaFileProcessor = {
                 } else if (vNode) {
                     value = vNode.textContent || '';
                 }
-                const colIdx = LuminaFileProcessor.columnRefToIndex(ref);
-                rowValues[colIdx] = LuminaFileProcessor.escapeCsv(value);
+                const colIdx = NexusFileProcessor.columnRefToIndex(ref);
+                rowValues[colIdx] = NexusFileProcessor.escapeCsv(value);
             });
             let last = rowValues.length - 1;
             while (last >= 0 && (rowValues[last] === undefined || rowValues[last] === '')) last -= 1;
@@ -379,7 +379,7 @@ export const LuminaFileProcessor = {
     async readZipEntries(arrayBuffer) {
         const bytes = new Uint8Array(arrayBuffer);
         const view = new DataView(arrayBuffer);
-        const eocdOffset = LuminaFileProcessor.findEocdOffset(view);
+        const eocdOffset = NexusFileProcessor.findEocdOffset(view);
         if (eocdOffset < 0) throw new Error('Invalid ZIP: EOCD not found');
         const centralDirSize = view.getUint32(eocdOffset + 12, true);
         const centralDirOffset = view.getUint32(eocdOffset + 16, true);
@@ -406,7 +406,7 @@ export const LuminaFileProcessor = {
             if (compression === 0) {
                 entries[fileName] = new Uint8Array(compressedBytes);
             } else if (compression === 8) {
-                entries[fileName] = await LuminaFileProcessor.inflateRaw(compressedBytes);
+                entries[fileName] = await NexusFileProcessor.inflateRaw(compressedBytes);
             }
             ptr += 46 + nameLen + extraLen + commentLen;
         }
@@ -450,12 +450,12 @@ export const LuminaFileProcessor = {
     },
 
     bytesToDataUrl(bytes, mimeType) {
-        return `data:${mimeType};base64,${LuminaFileProcessor.bytesToBase64(bytes)}`;
+        return `data:${mimeType};base64,${NexusFileProcessor.bytesToBase64(bytes)}`;
     },
 
     textToDataUrl(text, mimeType) {
         const bytes = new TextEncoder().encode(text || '');
-        return LuminaFileProcessor.bytesToDataUrl(bytes, mimeType || 'text/plain');
+        return NexusFileProcessor.bytesToDataUrl(bytes, mimeType || 'text/plain');
     },
 
     mimeFromExtension(path) {
@@ -477,8 +477,8 @@ export const LuminaFileProcessor = {
 };
 
 if (typeof self !== 'undefined') {
-    self.LuminaFileProcessor = LuminaFileProcessor;
+    self.NexusFileProcessor = NexusFileProcessor;
 }
 if (typeof window !== 'undefined') {
-    window.LuminaFileProcessor = LuminaFileProcessor;
+    window.NexusFileProcessor = NexusFileProcessor;
 }

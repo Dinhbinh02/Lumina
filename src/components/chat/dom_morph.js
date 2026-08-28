@@ -35,7 +35,7 @@ export function morphDOM(container, newHTML) {
             return;
         }
         if (oldChild.nodeType === Node.ELEMENT_NODE) {
-            if (oldChild.tagName === 'CANVAS' || oldChild.classList?.contains('lumina-interactive-frozen')) {
+            if (oldChild.tagName === 'CANVAS' || oldChild.classList?.contains('nexus-interactive-frozen')) {
                 return;
             }
 

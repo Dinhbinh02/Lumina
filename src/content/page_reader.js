@@ -1,5 +1,5 @@
 import { YoutubeUtils } from '../helpers/youtube_utils.js';
-import { LuminaToken } from '../core/ai/token_utils.js';
+import { NexusToken } from '../core/ai/token_utils.js';
 
 let lastExtractedContent = null;
 let lastExtractedUrl = "";
@@ -36,7 +36,7 @@ export function getVisibleText(node) {
     if (el.getAttribute('role') === 'button' ||
         classStr.includes('btn') ||
         classStr.includes('button') ||
-        el.classList.contains('lumina-dict-play-btn')) {
+        el.classList.contains('nexus-dict-play-btn')) {
         return '';
     }
     if (tag === 'a' && (
@@ -50,7 +50,7 @@ export function getVisibleText(node) {
         return '';
     }
     const classNameStr = typeof el.className === 'string' ? el.className : (el.className?.baseVal || '');
-    if (/\b(icon|material-icons|google-symbols|fa-|glyphicon|lumina-translation-divider|lumina-trans-actions)\b/i.test(classNameStr)) {
+    if (/\b(icon|material-icons|google-symbols|fa-|glyphicon|nexus-translation-divider|nexus-trans-actions)\b/i.test(classNameStr)) {
         return '';
     }
     let text = '';
@@ -63,10 +63,10 @@ export function getVisibleText(node) {
     return text;
 }
 
-export function getActiveSelection(preferShadow = false, luminaShadowRoot = null) {
-    if (preferShadow && luminaShadowRoot) {
+export function getActiveSelection(preferShadow = false, nexusShadowRoot = null) {
+    if (preferShadow && nexusShadowRoot) {
         try {
-            const shadowSel = (luminaShadowRoot.getSelection) ? luminaShadowRoot.getSelection() : null;
+            const shadowSel = (nexusShadowRoot.getSelection) ? nexusShadowRoot.getSelection() : null;
             if (shadowSel && shadowSel.rangeCount > 0 && shadowSel.toString().trim() !== '') {
                 return shadowSel;
             }
@@ -86,9 +86,9 @@ export function getActiveSelection(preferShadow = false, luminaShadowRoot = null
             active = active.shadowRoot.activeElement;
         }
     } catch (e) { }
-    if (!preferShadow && luminaShadowRoot) {
+    if (!preferShadow && nexusShadowRoot) {
         try {
-            const shadowSel = luminaShadowRoot.getSelection ? luminaShadowRoot.getSelection() : null;
+            const shadowSel = nexusShadowRoot.getSelection ? nexusShadowRoot.getSelection() : null;
             if (shadowSel && shadowSel.rangeCount > 0 && shadowSel.toString().trim() !== '') {
                 return shadowSel;
             }
@@ -97,8 +97,8 @@ export function getActiveSelection(preferShadow = false, luminaShadowRoot = null
     return sel;
 }
 
-export function getSmartSelectionText(luminaShadowRoot = null) {
-    const sel = getActiveSelection(false, luminaShadowRoot);
+export function getSmartSelectionText(nexusShadowRoot = null) {
+    const sel = getActiveSelection(false, nexusShadowRoot);
     if (!sel || sel.rangeCount === 0) return '';
     const range = sel.getRangeAt(0);
     const fragment = range.cloneContents();
@@ -114,8 +114,8 @@ export function getSmartSelectionText(luminaShadowRoot = null) {
     return extracted;
 }
 
-export function getSentenceContext(luminaShadowRoot = null) {
-    const sel = getActiveSelection(false, luminaShadowRoot);
+export function getSentenceContext(nexusShadowRoot = null) {
+    const sel = getActiveSelection(false, nexusShadowRoot);
     if (!sel || sel.rangeCount === 0) return '';
     const range = sel.getRangeAt(0);
     let node = range.startContainer;
@@ -128,7 +128,7 @@ export function getSentenceContext(luminaShadowRoot = null) {
             continue;
         }
         if (parent.tagName && blockTags.includes(parent.tagName)) {
-            if (parent.id === 'lumina-host' || parent.id === 'lumina-shadow-host') {
+            if (parent.id === 'nexus-host' || parent.id === 'nexus-shadow-host') {
                 parent = parent.parentNode || parent.host;
                 continue;
             }
@@ -153,8 +153,8 @@ export function getSentenceContext(luminaShadowRoot = null) {
     return text.substring(start, end).trim();
 }
 
-export function getParagraphContext(luminaShadowRoot = null) {
-    const sel = getActiveSelection(false, luminaShadowRoot);
+export function getParagraphContext(nexusShadowRoot = null) {
+    const sel = getActiveSelection(false, nexusShadowRoot);
     if (!sel || sel.rangeCount === 0) return '';
     const range = sel.getRangeAt(0);
     let node = range.startContainer;
@@ -167,7 +167,7 @@ export function getParagraphContext(luminaShadowRoot = null) {
             continue;
         }
         if (parent.tagName && blockTags.includes(parent.tagName)) {
-            if (parent.id === 'lumina-host' || parent.id === 'lumina-shadow-host') {
+            if (parent.id === 'nexus-host' || parent.id === 'nexus-shadow-host') {
                 parent = parent.parentNode || parent.host;
                 continue;
             }
@@ -255,7 +255,7 @@ export async function performExtraction(doc, url) {
             '[class*="overlay" i]', '[class*="tooltip" i]', '[class*="download" i]', '[class*="comment" i]',
             '[class*="review" i]', '[class*="share" i]', '[class*="cookie" i]', '[class*="gdpr" i]',
             '[class*="logo" i]', '[class*="topbar" i]', '[class*="fixed" i]', '[class*="section-header" i]',
-            '#feedback-modal', '.lumina-ignore', '[role="navigation"]', '[role="contentinfo"]',
+            '#feedback-modal', '.nexus-ignore', '[role="navigation"]', '[role="contentinfo"]',
             '.dol-breadcrumb', '.breadcrumb-container', '.landing-header', '.footer-nested-links',
             '.socialButtonGroup', '.referral-share-banner', '#__NEXT_DATA__', '.rowLink', '.nav-item',
             '.LandingHeader__Main-sc-vzeq2b-0', '.LandingLayout__Main-sc-1plzfds-0', '.TopbarNavList__Main-sc-tbxqf6-1'
@@ -318,7 +318,7 @@ export async function performExtraction(doc, url) {
         result.content = segmentsCount > 0 ? finalMarkdown : `[Fallback Page Text]:\n${doc.body ? doc.body.innerText : ''}`;
         return result;
     } catch (error) {
-        console.error('[Lumina] Content extraction failed:', error);
+        console.error('[Nexus] Content extraction failed:', error);
         result.content = `[Extraction Error]: ${error.message}`;
     }
     lastExtractedContent = result;
@@ -326,15 +326,15 @@ export async function performExtraction(doc, url) {
     return result;
 }
 
-export function luminaEstimateTokens(text) {
+export function nexusEstimateTokens(text) {
     if (!text) return 0;
-    if (typeof LuminaToken !== 'undefined') {
-        return LuminaToken.count(text);
+    if (typeof NexusToken !== 'undefined') {
+        return NexusToken.count(text);
     }
     return Math.ceil(text.length / 4);
 }
 
 if (typeof window !== 'undefined') {
-    window.luminaExtractMainContent = extractMainContent;
-    window.luminaEstimateTokens = luminaEstimateTokens;
+    window.nexusExtractMainContent = extractMainContent;
+    window.nexusEstimateTokens = nexusEstimateTokens;
 }

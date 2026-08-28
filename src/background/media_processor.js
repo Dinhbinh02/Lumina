@@ -1,5 +1,5 @@
 import { MIME_ALIASES, SUPPORTED_MIME_TYPES } from '../shared/constants.js';
-import { LuminaAttachmentDB } from '../db/attachment_db.js';
+import { NexusAttachmentDB } from '../db/attachment_db.js';
 
 export function detectMediaType(item) {
     if (!item) return null;
@@ -45,16 +45,16 @@ export async function readOpfsFileAsBase64(fileUri, fileName) {
             const attachmentId = urlParts[1];
             const name = urlParts.slice(2).join('/');
             const key = `${sessionId}_${attachmentId}_${name}`;
-            const blob = await LuminaAttachmentDB.get(key);
+            const blob = await NexusAttachmentDB.get(key);
             if (blob) {
-                const dataUrl = await LuminaAttachmentDB.blobToDataURL(blob);
+                const dataUrl = await NexusAttachmentDB.blobToDataURL(blob);
                 if (dataUrl) {
                     return dataUrl.split(',')[1];
                 }
             }
         }
     } catch (e) {
-        console.error(`[Lumina DB Read] Failed to read ${fileName}:`, e);
+        console.error(`[Nexus DB Read] Failed to read ${fileName}:`, e);
     }
     return null;
 }

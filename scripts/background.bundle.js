@@ -5,8 +5,8 @@ function initStorageCleanup() {
   chrome.storage.local.get(null, (allData) => {
     if (chrome.runtime.lastError) return;
     const ankiLegacyKeys = /* @__PURE__ */ new Set([
-      "luminaTemplatesV3",
-      "luminaBatchHistoryV3",
+      "nexusTemplatesV3",
+      "nexusBatchHistoryV3",
       "lastUsedGenAIModel",
       "lastUsedBatchSize",
       "lastUsedDeck",
@@ -22,11 +22,11 @@ function initStorageCleanup() {
       });
     }
   });
-  if (typeof LuminaImageCacheDB !== "undefined" && LuminaImageCacheDB.cleanupExpired) {
-    LuminaImageCacheDB.cleanupExpired().catch((err) => console.error("[Lumina BG] Failed to clean up IndexedDB image cache:", err));
+  if (typeof NexusImageCacheDB !== "undefined" && NexusImageCacheDB.cleanupExpired) {
+    NexusImageCacheDB.cleanupExpired().catch((err) => console.error("[Nexus BG] Failed to clean up IndexedDB image cache:", err));
   }
-  if (typeof LuminaAudioCacheDB !== "undefined" && LuminaAudioCacheDB.cleanupExpired) {
-    LuminaAudioCacheDB.cleanupExpired().catch((err) => console.error("[Lumina BG] Failed to clean up IndexedDB audio cache:", err));
+  if (typeof NexusAudioCacheDB !== "undefined" && NexusAudioCacheDB.cleanupExpired) {
+    NexusAudioCacheDB.cleanupExpired().catch((err) => console.error("[Nexus BG] Failed to clean up IndexedDB audio cache:", err));
   }
 }
 
@@ -52,7 +52,7 @@ function toggleSidePanel(windowId) {
         chrome.sidePanel.setOptions({
           windowId,
           enabled: true,
-          path: "pages/lumina/lumina.html?sidepanel=1"
+          path: "pages/nexus/nexus.html?sidepanel=1"
         });
       });
     }
@@ -84,7 +84,7 @@ async function ensureSidePanelOpen(windowId) {
 function updateDisplayMode(mode) {
   if (!chrome.sidePanel) return;
   chrome.sidePanel.setOptions({
-    path: "pages/lumina/lumina.html?sidepanel=1",
+    path: "pages/nexus/nexus.html?sidepanel=1",
     enabled: true
   });
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
@@ -100,7 +100,7 @@ function initSidePanelManager() {
     }
   });
   chrome.runtime.onConnect.addListener((port) => {
-    if (port.name === "lumina-sidepanel") {
+    if (port.name === "nexus-sidepanel") {
       let connectedWindowId = null;
       port.onMessage.addListener((msg) => {
         if (msg.action === "closing" && msg.windowId) {
@@ -138,11 +138,11 @@ function initSidePanelManager() {
     });
   }
   chrome.tabs.onRemoved.addListener((tabId) => {
-    chrome.storage.local.get(["lumina_tab_sessions"], (result) => {
-      const tabSessions = result.lumina_tab_sessions || {};
+    chrome.storage.local.get(["nexus_tab_sessions"], (result) => {
+      const tabSessions = result.nexus_tab_sessions || {};
       if (tabSessions[tabId]) {
         delete tabSessions[tabId];
-        chrome.storage.local.set({ lumina_tab_sessions: tabSessions });
+        chrome.storage.local.set({ nexus_tab_sessions: tabSessions });
       }
     });
   });
@@ -156,7 +156,7 @@ function initSidePanelManager() {
   });
   if (chrome.commands && chrome.commands.onCommand) {
     chrome.commands.onCommand.addListener((command, tab) => {
-      if (command === "toggle-side-panel" || command === "open-lumina-chat") {
+      if (command === "toggle-side-panel" || command === "open-nexus-chat") {
         if (tab && tab.windowId) {
           toggleSidePanel(tab.windowId);
         } else {
@@ -210,7 +210,7 @@ function initSidePanelManager() {
       const windowIdQuery = sender.tab ? sender.tab.windowId : request.windowId || null;
       if (windowIdQuery) {
         const queryId = Date.now() + "-" + Math.random().toString(36).substring(2, 9);
-        const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes("/pages/lumina/lumina.html");
+        const isInternal = sender.tab && sender.tab.url && sender.tab.url.includes("/pages/nexus/nexus.html");
         const sourceTab = sender.tab && !isInternal ? {
           tabId: sender.tab.id,
           title: sender.tab.title,
@@ -242,7 +242,7 @@ function initSidePanelManager() {
 }
 
 // src/shared/constants.js
-var LUMINA_DEFAULTS = {
+var NEXUS_DEFAULTS = {
   provider: "groq",
   groqModel: "llama3-8b-8192",
   geminiModel: "gemini-2.5-flash-lite",
@@ -253,7 +253,7 @@ var LUMINA_DEFAULTS = {
   readWebpage: true,
   reasoningMode: false
 };
-var LUMINA_PROVIDERS = {
+var NEXUS_PROVIDERS = {
   groq: {
     link: "https://console.groq.com/keys",
     modelsUrl: "https://api.groq.com/openai/v1/models",
@@ -280,9 +280,9 @@ var LUMINA_PROVIDERS = {
     defaultModel: "mistral-small-latest"
   }
 };
-var LUMINA_DEFAULT_SHORTCUTS = {
-  luminaChat: { key: "Space", modifiers: ["Alt"] },
-  askLumina: { key: "L", modifiers: ["Alt"] },
+var NEXUS_DEFAULT_SHORTCUTS = {
+  nexusChat: { key: "Space", modifiers: ["Alt"] },
+  askNexus: { key: "L", modifiers: ["Alt"] },
   audio: { key: "Shift", modifiers: [] },
   translate: { key: "T", modifiers: ["Alt"] },
   micToggle: { key: "M", modifiers: ["Alt"] },
@@ -358,14 +358,14 @@ var MIME_ALIASES = {
   "text/x-python-script": "text/x-python",
   "application/x-javascript": "text/javascript"
 };
-var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "lumina_web_selection_";
+var WEB_SOURCE_SELECTION_STORAGE_PREFIX = "nexus_web_selection_";
 function isWebPageUrl(url) {
   return typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") && url.includes("?sid="));
 }
 if (typeof globalThis !== "undefined") {
-  globalThis.LUMINA_DEFAULTS = LUMINA_DEFAULTS;
-  globalThis.LUMINA_PROVIDERS = LUMINA_PROVIDERS;
-  globalThis.LUMINA_DEFAULT_SHORTCUTS = LUMINA_DEFAULT_SHORTCUTS;
+  globalThis.NEXUS_DEFAULTS = NEXUS_DEFAULTS;
+  globalThis.NEXUS_PROVIDERS = NEXUS_PROVIDERS;
+  globalThis.NEXUS_DEFAULT_SHORTCUTS = NEXUS_DEFAULT_SHORTCUTS;
   globalThis.SUPPORTED_MIME_TYPES = SUPPORTED_MIME_TYPES;
   globalThis.MIME_ALIASES = MIME_ALIASES;
   globalThis.WEB_SOURCE_SELECTION_STORAGE_PREFIX = WEB_SOURCE_SELECTION_STORAGE_PREFIX;
@@ -376,8 +376,8 @@ if (typeof globalThis !== "undefined") {
 }
 
 // src/db/attachment_db.js
-var LuminaAttachmentDB2 = {
-  DB_NAME: "LuminaAttachmentDB",
+var NexusAttachmentDB2 = {
+  DB_NAME: "NexusAttachmentDB",
   DB_VERSION: 1,
   STORE_NAME: "attachments",
   _db: null,
@@ -558,8 +558,8 @@ var LuminaAttachmentDB2 = {
     return { freed: freedBytes, remaining: totalBytes };
   }
 };
-var LuminaImageCacheDB2 = {
-  DB_NAME: "LuminaImageCacheDB",
+var NexusImageCacheDB2 = {
+  DB_NAME: "NexusImageCacheDB",
   DB_VERSION: 1,
   STORE_NAME: "image_queries",
   _db: null,
@@ -685,8 +685,8 @@ var LuminaImageCacheDB2 = {
     });
   }
 };
-var LuminaAudioCacheDB2 = {
-  DB_NAME: "LuminaAudioCacheDB",
+var NexusAudioCacheDB2 = {
+  DB_NAME: "NexusAudioCacheDB",
   DB_VERSION: 1,
   STORE_NAME: "audio_entries",
   _db: null,
@@ -722,7 +722,7 @@ var LuminaAudioCacheDB2 = {
     if (entry && entry.data && Array.isArray(entry.data)) {
       dbValue.data = await Promise.all(entry.data.map(async (base64) => {
         if (typeof base64 !== "string" || !base64.startsWith("data:")) return base64;
-        return await LuminaAttachmentDB2.dataURLtoBlobAsync(base64) || base64;
+        return await NexusAttachmentDB2.dataURLtoBlobAsync(base64) || base64;
       }));
     }
     return new Promise((resolve, reject) => {
@@ -752,7 +752,7 @@ var LuminaAudioCacheDB2 = {
               try {
                 const base64Promises = entry.data.map(async (item) => {
                   if (item instanceof Blob) {
-                    return await LuminaAttachmentDB2.blobToDataURL(item);
+                    return await NexusAttachmentDB2.blobToDataURL(item);
                   }
                   return item;
                 });
@@ -850,9 +850,9 @@ var LuminaAudioCacheDB2 = {
   }
 };
 if (typeof globalThis !== "undefined") {
-  globalThis.LuminaAttachmentDB = LuminaAttachmentDB2;
-  globalThis.LuminaImageCacheDB = LuminaImageCacheDB2;
-  globalThis.LuminaAudioCacheDB = LuminaAudioCacheDB2;
+  globalThis.NexusAttachmentDB = NexusAttachmentDB2;
+  globalThis.NexusImageCacheDB = NexusImageCacheDB2;
+  globalThis.NexusAudioCacheDB = NexusAudioCacheDB2;
 }
 
 // src/background/media_processor.js
@@ -888,16 +888,16 @@ async function readOpfsFileAsBase64(fileUri, fileName) {
       const attachmentId = urlParts[1];
       const name = urlParts.slice(2).join("/");
       const key = `${sessionId}_${attachmentId}_${name}`;
-      const blob = await LuminaAttachmentDB2.get(key);
+      const blob = await NexusAttachmentDB2.get(key);
       if (blob) {
-        const dataUrl = await LuminaAttachmentDB2.blobToDataURL(blob);
+        const dataUrl = await NexusAttachmentDB2.blobToDataURL(blob);
         if (dataUrl) {
           return dataUrl.split(",")[1];
         }
       }
     }
   } catch (e) {
-    console.error(`[Lumina DB Read] Failed to read ${fileName}:`, e);
+    console.error(`[Nexus DB Read] Failed to read ${fileName}:`, e);
   }
   return null;
 }
@@ -1258,30 +1258,30 @@ async function fetchAudio(text, speed = 1, forcedLang = null) {
 }
 async function getAudioFromCache(text) {
   try {
-    if (typeof LuminaAudioCacheDB2 !== "undefined") {
+    if (typeof NexusAudioCacheDB2 !== "undefined") {
       const key = text.trim().toLowerCase();
-      const entry = await LuminaAudioCacheDB2.get(key);
+      const entry = await NexusAudioCacheDB2.get(key);
       return entry;
     }
     return null;
   } catch (e) {
-    console.error("[Lumina Audio] Cache read error:", e);
+    console.error("[Nexus Audio] Cache read error:", e);
     return null;
   }
 }
 async function setAudioCache(text, type, data) {
   try {
-    if (typeof LuminaAudioCacheDB2 !== "undefined") {
+    if (typeof NexusAudioCacheDB2 !== "undefined") {
       const key = text.trim().toLowerCase();
       const entry = {
         type,
         data,
         timestamp: Date.now()
       };
-      await LuminaAudioCacheDB2.put(key, entry);
+      await NexusAudioCacheDB2.put(key, entry);
     }
   } catch (e) {
-    console.error("[Lumina Audio] Cache write error:", e);
+    console.error("[Nexus Audio] Cache write error:", e);
   }
 }
 function initAudioHandlers() {
@@ -1333,8 +1333,8 @@ function initAudioHandlers() {
 }
 
 // src/db/highlight_db.js
-var LuminaAnnotationDB2 = {
-  DB_NAME: "LuminaHighlightDB",
+var NexusAnnotationDB2 = {
+  DB_NAME: "NexusHighlightDB",
   DB_VERSION: 1,
   STORE_NAME: "highlights",
   _db: null,
@@ -1424,96 +1424,96 @@ var LuminaAnnotationDB2 = {
     });
   }
 };
-var LuminaHighlightDB = LuminaAnnotationDB2;
+var NexusHighlightDB = NexusAnnotationDB2;
 if (typeof globalThis !== "undefined") {
-  globalThis.LuminaAnnotationDB = LuminaAnnotationDB2;
-  globalThis.LuminaHighlightDB = LuminaHighlightDB;
+  globalThis.NexusAnnotationDB = NexusAnnotationDB2;
+  globalThis.NexusHighlightDB = NexusHighlightDB;
 }
 
 // src/background/highlight_handlers.js
 function initHighlightHandlers() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "load_highlights") {
-      LuminaAnnotationDB2.get(request.url).then((highlights) => {
+      NexusAnnotationDB2.get(request.url).then((highlights) => {
         sendResponse({ success: true, highlights: highlights || [] });
       }).catch((err) => {
-        console.error("[Lumina BG] load_highlights error:", err);
+        console.error("[Nexus BG] load_highlights error:", err);
         sendResponse({ success: false, error: err.message });
       });
       return true;
     }
     if (request.action === "save_highlight") {
-      LuminaAnnotationDB2.get(request.url).then(async (highlights) => {
+      NexusAnnotationDB2.get(request.url).then(async (highlights) => {
         const list = highlights || [];
         list.push(request.highlight);
-        await LuminaAnnotationDB2.put(request.url, list);
+        await NexusAnnotationDB2.put(request.url, list);
         sendResponse({ success: true });
       }).catch((err) => {
-        console.error("[Lumina BG] save_highlight error:", err);
+        console.error("[Nexus BG] save_highlight error:", err);
         sendResponse({ success: false, error: err.message });
       });
       return true;
     }
     if (request.action === "undo_last_highlight") {
-      LuminaAnnotationDB2.get(request.url).then(async (highlights) => {
+      NexusAnnotationDB2.get(request.url).then(async (highlights) => {
         const list = highlights || [];
         if (list.length === 0) {
           sendResponse({ success: true, lastHighlight: null });
           return;
         }
         const lastHighlight = list.pop();
-        await LuminaAnnotationDB2.put(request.url, list);
+        await NexusAnnotationDB2.put(request.url, list);
         sendResponse({ success: true, lastHighlight });
       }).catch((err) => {
-        console.error("[Lumina BG] undo_last_highlight error:", err);
+        console.error("[Nexus BG] undo_last_highlight error:", err);
         sendResponse({ success: false, error: err.message });
       });
       return true;
     }
     if (request.action === "remove_highlights") {
-      LuminaAnnotationDB2.get(request.url).then(async (highlights) => {
+      NexusAnnotationDB2.get(request.url).then(async (highlights) => {
         const list = highlights || [];
         const idsStr = request.ids.map((id) => id.toString());
         const filtered = list.filter((h) => !idsStr.includes(h[0].toString()));
-        await LuminaAnnotationDB2.put(request.url, filtered);
+        await NexusAnnotationDB2.put(request.url, filtered);
         sendResponse({ success: true });
       }).catch((err) => {
-        console.error("[Lumina BG] remove_highlights error:", err);
+        console.error("[Nexus BG] remove_highlights error:", err);
         sendResponse({ success: false, error: err.message });
       });
       return true;
     }
     if (request.action === "update_highlight_color") {
-      LuminaAnnotationDB2.get(request.url).then(async (highlights) => {
+      NexusAnnotationDB2.get(request.url).then(async (highlights) => {
         const list = highlights || [];
         const highlight = list.find((h) => h[0].toString() === request.id.toString());
         if (highlight) {
           highlight[1] = request.color;
-          await LuminaAnnotationDB2.put(request.url, list);
+          await NexusAnnotationDB2.put(request.url, list);
         }
         sendResponse({ success: true });
       }).catch((err) => {
-        console.error("[Lumina BG] update_highlight_color error:", err);
+        console.error("[Nexus BG] update_highlight_color error:", err);
         sendResponse({ success: false, error: err.message });
       });
       return true;
     }
     if (request.action === "update_highlight_comment") {
-      LuminaAnnotationDB2.get(request.url).then(async (highlights) => {
+      NexusAnnotationDB2.get(request.url).then(async (highlights) => {
         const list = highlights || [];
         const highlight = list.find((h) => h[0].toString() === request.id.toString());
         if (highlight) {
           highlight[8] = request.comment;
-          await LuminaAnnotationDB2.put(request.url, list);
+          await NexusAnnotationDB2.put(request.url, list);
         }
         sendResponse({ success: true });
       }).catch((err) => {
-        console.error("[Lumina BG] update_highlight_comment error:", err);
+        console.error("[Nexus BG] update_highlight_comment error:", err);
         sendResponse({ success: false, error: err.message });
       });
       return true;
     }
-    if ((request.action === "lumina_session_updated" || request.action === "lumina_sessions_index_updated" || request.action === "lumina_sessions_deleted") && !request.isBroadcast) {
+    if ((request.action === "nexus_session_updated" || request.action === "nexus_sessions_index_updated" || request.action === "nexus_sessions_deleted") && !request.isBroadcast) {
       request.isBroadcast = true;
       chrome.runtime.sendMessage(request).catch(() => {
       });
@@ -1560,22 +1560,22 @@ var isExcludedKey = (k) => [
   "sidepanel_secondary_tab_index",
   "sidepanel_is_split_mode",
   "sidepanel_split_ratio",
-  "lumina_active_tab_index",
-  "lumina_active_group_index",
-  "lumina_secondary_tab_index",
-  "lumina_is_split_mode",
-  "lumina_split_ratio",
-  "luminaWindowId",
+  "nexus_active_tab_index",
+  "nexus_active_group_index",
+  "nexus_secondary_tab_index",
+  "nexus_is_split_mode",
+  "nexus_split_ratio",
+  "nexusWindowId",
   "pendingMicToggle",
-  "luminaTemplatesV3",
-  "luminaBatchHistoryV3",
+  "nexusTemplatesV3",
+  "nexusBatchHistoryV3",
   "lastUsedGenAIModel",
   "lastUsedBatchSize",
   "lastUsedDeck",
   "lastUsedTemplateId",
   "ankiQuickNoteContent",
   "attachments"
-].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("lumina_img_cache_") || k.startsWith("lumina_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
+].includes(k) || k.includes("_inst_") || k.startsWith("pending_sidepanel_query_") || k.startsWith("rot_") || k === "audio_cache" || k.startsWith("nexus_img_cache_") || k.startsWith("nexus_img_query_") || k.startsWith("spotlight_history_") || k.startsWith("yt_transcript_");
 
 // src/core/auth/google_auth.js
 var WEB_OAUTH_CONFIG = {
@@ -1654,8 +1654,8 @@ var AuthService = class {
     this.notifyListeners(this.isAuthenticated, this.user);
     if (this.isAuthenticated && typeof window !== "undefined") {
       setTimeout(() => {
-        if (typeof LuminaSync !== "undefined") {
-          LuminaSync.checkAutoSync(true);
+        if (typeof NexusSync !== "undefined") {
+          NexusSync.checkAutoSync(true);
         }
       }, 100);
     }
@@ -1749,8 +1749,8 @@ var AuthService = class {
     try {
       const token = await this.getAuthToken(true);
       await this.fetchUserInfo(token);
-      if (typeof LuminaSync !== "undefined") {
-        await LuminaSync.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
+      if (typeof NexusSync !== "undefined") {
+        await NexusSync.pullFromCloud(true).catch((e) => console.warn("[Auth] Post-login pull error:", e));
       }
       return this.user;
     } catch (error) {
@@ -1779,7 +1779,7 @@ var AuthService = class {
       "google_user_info"
     ]);
     chrome.alarms.clear("tokenRefresh");
-    chrome.alarms.clear("luminaAutoSync");
+    chrome.alarms.clear("nexusAutoSync");
     this.user = null;
     this.isAuthenticated = false;
     this.notifyListeners();
@@ -1831,9 +1831,9 @@ var AuthService = class {
     this.listeners.forEach((cb) => cb(this.isAuthenticated, this.user));
   }
 };
-var LuminaAuth = new AuthService();
+var NexusAuth = new AuthService();
 if (typeof window !== "undefined") {
-  window.LuminaAuth = LuminaAuth;
+  window.NexusAuth = NexusAuth;
 }
 
 // src/core/auth/drive_sync.js
@@ -1841,7 +1841,7 @@ var SyncManager = class {
   _isPageContext() {
     return typeof window !== "undefined";
   }
-  _delegateSyncToBackground(action = "lumina_drive_sync", params = {}) {
+  _delegateSyncToBackground(action = "nexus_drive_sync", params = {}) {
     this.notifyListeners("Syncing...", null);
     const wrapper = typeof document !== "undefined" ? document.getElementById("user-avatar-wrapper") : null;
     if (wrapper) wrapper.classList.add("is-syncing");
@@ -1870,7 +1870,7 @@ var SyncManager = class {
   }
   constructor(authService) {
     this.authService = authService || new AuthService();
-    this.FILENAME = "lumina_backup.json";
+    this.FILENAME = "nexus_backup.json";
     this.listeners = [];
     this.isSyncing = false;
     const isBackground = typeof window === "undefined";
@@ -1894,7 +1894,7 @@ var SyncManager = class {
           "google_oauth_token",
           "google_oauth_token_time",
           "google_user_info",
-          "lumina_cached_user",
+          "nexus_cached_user",
           "last_sync_time",
           "last_sync_hash",
           "last_sync_md5",
@@ -1908,11 +1908,11 @@ var SyncManager = class {
           "optionsScrollPositions",
           "sidepanel_active_tab_index",
           "sidepanel_active_group_index",
-          "lumina_active_tab_index",
-          "lumina_active_group_index"
+          "nexus_active_tab_index",
+          "nexus_active_group_index"
         ];
         const hasSettingsKeys = keys.some(
-          (k) => !k.startsWith("lumina_session_") && !k.startsWith("google_") && !excludedKeys.includes(k)
+          (k) => !k.startsWith("nexus_session_") && !k.startsWith("google_") && !excludedKeys.includes(k)
         );
         if (hasSettingsKeys) {
           chrome.storage.local.set({ settings_last_updated: Date.now() });
@@ -1924,7 +1924,7 @@ var SyncManager = class {
     if (!this.authService.isAuthenticated) return;
     if (this._isPageContext()) {
       try {
-        chrome.runtime.sendMessage({ action: "lumina_drive_sync_debounced", delayMs }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_drive_sync_debounced", delayMs }).catch(() => {
         });
       } catch (e) {
       }
@@ -1945,7 +1945,7 @@ var SyncManager = class {
   async checkAutoSync(forceCheck = false) {
     if (!this.authService.isAuthenticated) return;
     if (this._isPageContext()) {
-      await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true });
+      await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: true });
       return;
     }
     try {
@@ -1962,11 +1962,11 @@ var SyncManager = class {
     return await this.authService.getAuthToken(interactive);
   }
   async syncUp(isAuto = false) {
-    if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
+    if (this._isPageContext()) return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: false, forcePush: true });
     return await this.pushToCloud();
   }
   async syncDown() {
-    if (this._isPageContext()) return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: true });
+    if (this._isPageContext()) return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: true, forcePull: true });
     return await this.pullFromCloud(true);
   }
   async downloadBackup(token, fileId) {
@@ -2090,7 +2090,7 @@ var SyncManager = class {
         throw err;
       }
     }
-    const backupFiles = (driveFiles || []).filter((f) => f.name === this.FILENAME);
+    const backupFiles = (driveFiles || []).filter((f) => f.name === this.FILENAME || f.name === "lumina_backup.json");
     if (backupFiles.length === 0) {
       this.cachedBackupFileId = null;
       await chrome.storage.local.remove(["drive_backup_file_id"]).catch(() => {
@@ -2115,8 +2115,8 @@ var SyncManager = class {
     const localData = await chrome.storage.local.get(null);
     if (typeof NotesManager !== "undefined") {
       try {
-        localData.lumina_notes_collections = typeof NotesManager.getAllCollectionsRaw === "function" ? await NotesManager.getAllCollectionsRaw() : await NotesManager.getCollections(true);
-        localData.lumina_notes_items = typeof NotesManager.getAllNotesRaw === "function" ? await NotesManager.getAllNotesRaw() : await NotesManager.getNotes(null, true);
+        localData.nexus_notes_collections = typeof NotesManager.getAllCollectionsRaw === "function" ? await NotesManager.getAllCollectionsRaw() : await NotesManager.getCollections(true);
+        localData.nexus_notes_items = typeof NotesManager.getAllNotesRaw === "function" ? await NotesManager.getAllNotesRaw() : await NotesManager.getNotes(null, true);
       } catch (err) {
         console.error("[Sync] Failed to gather notes for sync:", err);
       }
@@ -2124,7 +2124,7 @@ var SyncManager = class {
     if (typeof TTSDB !== "undefined") {
       try {
         const recordings = typeof TTSDB.getAllRecordingsRaw === "function" ? await TTSDB.getAllRecordingsRaw() : await TTSDB.getAllRecordings(true);
-        localData.lumina_tts_recordings = recordings.map((rec) => {
+        localData.nexus_tts_recordings = recordings.map((rec) => {
           const { audioBlob, ...meta } = rec;
           return meta;
         });
@@ -2132,27 +2132,27 @@ var SyncManager = class {
         console.error("[Sync] Failed to gather TTS recordings for sync:", err);
       }
     }
-    if (typeof LuminaAnnotationDB !== "undefined") {
+    if (typeof NexusAnnotationDB !== "undefined") {
       try {
-        const highlights = await LuminaAnnotationDB.getAll();
+        const highlights = await NexusAnnotationDB.getAll();
         Object.assign(localData, highlights);
       } catch (err) {
         console.error("[Sync] Failed to load highlights from IndexedDB:", err);
       }
     }
-    if (typeof LuminaChatDB !== "undefined") {
+    if (typeof NexusChatDB !== "undefined") {
       try {
-        const sessions = typeof LuminaChatDB.getAllSessionsRaw === "function" ? await LuminaChatDB.getAllSessionsRaw() : await LuminaChatDB.getAllSessions(true);
+        const sessions = typeof NexusChatDB.getAllSessionsRaw === "function" ? await NexusChatDB.getAllSessionsRaw() : await NexusChatDB.getAllSessions(true);
         const sessionsObj = {};
         for (const s of Object.values(sessions)) {
           if (s && s.id) {
             sessionsObj[s.id] = s;
             if (!s.isDeleted) {
-              localData[`lumina_session_${s.id}`] = await LuminaChatDB.getMessages(s.id).catch(() => []);
+              localData[`nexus_session_${s.id}`] = await NexusChatDB.getMessages(s.id).catch(() => []);
             }
           }
         }
-        localData.lumina_chat_sessions = sessionsObj;
+        localData.nexus_chat_sessions = sessionsObj;
       } catch (err) {
         console.error("[Sync] Failed to load chats from IndexedDB:", err);
       }
@@ -2161,14 +2161,14 @@ var SyncManager = class {
   }
   async pullFromCloud(force = false) {
     if (this._isPageContext()) {
-      return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: true, forcePull: force });
+      return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: true, forcePull: force });
     }
     if (this.isSyncing) return;
     this.isSyncing = true;
     this.notifyListeners("Syncing...", null);
     try {
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "syncing" }).catch(() => {
         });
       } catch (e) {
       }
@@ -2179,14 +2179,14 @@ var SyncManager = class {
       if (!remoteFile || !fileId) {
         this.notifyListeners("No cloud data", null);
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
           });
         } catch (e) {
         }
         return null;
       }
       if (!force && remoteFile.md5Checksum && localSync.last_sync_md5 && remoteFile.md5Checksum === localSync.last_sync_md5) {
-        const localSessionData = typeof LuminaChatDB !== "undefined" ? await LuminaChatDB.getAllSessions().catch(() => ({})) : {};
+        const localSessionData = typeof NexusChatDB !== "undefined" ? await NexusChatDB.getAllSessions().catch(() => ({})) : {};
         const localSessionCount = Object.values(localSessionData).filter((s) => s && !s.isDeleted).length;
         const lastCloudStats = (await chrome.storage.local.get(["last_cloud_stats"])).last_cloud_stats;
         const cloudSessionCount = lastCloudStats ? lastCloudStats.chatsCount : -1;
@@ -2194,7 +2194,7 @@ var SyncManager = class {
           const now2 = Date.now();
           this.notifyListeners("Synced just now", now2);
           try {
-            chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now2 }).catch(() => {
+            chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: now2 }).catch(() => {
             });
           } catch (e) {
           }
@@ -2205,7 +2205,7 @@ var SyncManager = class {
       if (!remoteBackup || !remoteBackup.data) {
         this.notifyListeners("No cloud data", null);
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
           });
         } catch (e) {
         }
@@ -2217,7 +2217,7 @@ var SyncManager = class {
       const keysToRemove = [];
       for (const key of Object.keys(currentLocal)) {
         if (isExcludedKey(key)) continue;
-        if (key.startsWith("lumina_session_") || key === "lumina_chat_sessions") continue;
+        if (key.startsWith("nexus_session_") || key === "nexus_chat_sessions") continue;
         if (key.startsWith("highlights_")) continue;
         if (!(key in remoteData)) {
           keysToRemove.push(key);
@@ -2229,51 +2229,59 @@ var SyncManager = class {
       const storageToSet = {};
       for (const [k, v] of Object.entries(remoteData)) {
         if (isExcludedKey(k)) continue;
-        if (k.startsWith("lumina_session_") || k === "lumina_chat_sessions") continue;
+        if (k.startsWith("nexus_session_") || k.startsWith("lumina_session_") || k === "nexus_chat_sessions" || k === "lumina_chat_sessions") continue;
         if (k.startsWith("highlights_")) continue;
         storageToSet[k] = v;
+        if (k === "sparks" || k === "lumina_sparks") {
+          storageToSet.nexus_sparks = v;
+        }
+      }
+      if (remoteData.sparks || remoteData.lumina_sparks) {
+        storageToSet.nexus_sparks = remoteData.nexus_sparks || remoteData.lumina_sparks || remoteData.sparks;
       }
       if (Object.keys(storageToSet).length > 0) {
         await chrome.storage.local.set(storageToSet);
       }
-      if (typeof LuminaAnnotationDB !== "undefined") {
-        const currentHighlights = await LuminaAnnotationDB.getAll().catch(() => ({}));
+      if (typeof NexusAnnotationDB !== "undefined") {
+        const currentHighlights = await NexusAnnotationDB.getAll().catch(() => ({}));
         for (const key of Object.keys(currentHighlights)) {
           if (!(key in remoteData)) {
-            await LuminaAnnotationDB.delete(key).catch(() => {
+            await NexusAnnotationDB.delete(key).catch(() => {
             });
           }
         }
         for (const [k, v] of Object.entries(remoteData)) {
           if (k.startsWith("highlights_")) {
-            await LuminaAnnotationDB.put(k, v).catch(() => {
+            await NexusAnnotationDB.put(k, v).catch(() => {
             });
           }
         }
       }
-      const remoteSessions = remoteData.lumina_chat_sessions || {};
+      const remoteSessions = remoteData.nexus_chat_sessions || remoteData.lumina_chat_sessions || {};
       const activeAttachmentIds = /* @__PURE__ */ new Set();
-      if (typeof LuminaChatDB !== "undefined") {
+      const cloudUpdatedSessionIds = [];
+      if (typeof NexusChatDB !== "undefined") {
         try {
-          const currentSessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+          const currentSessions = await NexusChatDB.getAllSessions().catch(() => ({}));
           for (const s of Object.values(currentSessions)) {
             if (s && s.id && !remoteSessions[s.id]) {
-              await LuminaChatDB.deleteSession(s.id).catch(() => {
+              await NexusChatDB.deleteSession(s.id).catch(() => {
               });
             }
           }
           for (const [sid, sessionMeta] of Object.entries(remoteSessions)) {
-            await LuminaChatDB.putSession(sessionMeta).catch(() => {
+            await NexusChatDB.putSession(sessionMeta).catch(() => {
             });
             if (sessionMeta && sessionMeta.isDeleted) {
-              await LuminaChatDB.deleteSession(sid).catch(() => {
+              await NexusChatDB.deleteSession(sid).catch(() => {
               });
             } else {
-              const sessionKey = `lumina_session_${sid}`;
-              const messages = remoteData[sessionKey];
+              const sessionKey = `nexus_session_${sid}`;
+              const messages = remoteData[sessionKey] || remoteData[`lumina_session_${sid}`];
               if (Array.isArray(messages)) {
-                await LuminaChatDB.putMessages(sid, messages).catch(() => {
+                await NexusChatDB.putMessages(sid, messages).catch(() => {
                 });
+                cloudUpdatedSessionIds.push(sid);
                 for (const msg of messages) {
                   if (msg && Array.isArray(msg.images)) {
                     for (const img of msg.images) {
@@ -2292,8 +2300,8 @@ var SyncManager = class {
       }
       if (typeof NotesManager !== "undefined") {
         try {
-          const remoteCollections = remoteData.lumina_notes_collections;
-          const remoteNotes = remoteData.lumina_notes_items;
+          const remoteCollections = remoteData.nexus_notes_collections || remoteData.lumina_notes_collections;
+          const remoteNotes = remoteData.nexus_notes_items || remoteData.lumina_notes_items;
           const db = await NotesManager.getDB();
           if (Array.isArray(remoteCollections)) {
             const remoteColIds = new Set(remoteCollections.map((c) => c && c.id).filter(Boolean));
@@ -2329,9 +2337,10 @@ var SyncManager = class {
       }
       const activeTtsRecMap = /* @__PURE__ */ new Map();
       let ttsUpdated = false;
-      if (typeof TTSDB !== "undefined" && Array.isArray(remoteData.lumina_tts_recordings)) {
+      const remoteTtsList = remoteData.nexus_tts_recordings || remoteData.lumina_tts_recordings;
+      if (typeof TTSDB !== "undefined" && Array.isArray(remoteTtsList)) {
         try {
-          const remoteRecs = remoteData.lumina_tts_recordings;
+          const remoteRecs = remoteTtsList;
           const remoteRecIds = new Set(remoteRecs.map((r) => r && r.id).filter(Boolean));
           const currentRecs = await TTSDB.getAllRecordings().catch(() => []);
           const currentMap = new Map(currentRecs.map((r) => [r.id, r]));
@@ -2363,18 +2372,18 @@ var SyncManager = class {
         actualDriveFiles = await this.listAppDataFiles(token).catch(() => []);
       }
       const driveFileMap = new Map((actualDriveFiles || []).map((f) => [f.name, f]));
-      if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
-        const db = await LuminaAttachmentDB.init();
+      if (typeof NexusAttachmentDB !== "undefined" && NexusAttachmentDB.init) {
+        const db = await NexusAttachmentDB.init();
         for (const [filename, fileObj] of driveFileMap.entries()) {
           if (filename.startsWith("att_") && filename.endsWith(".bin")) {
             const key = filename.slice(4, -4);
             if (activeAttachmentIds.has(key)) {
-              const exists = await LuminaAttachmentDB.get(key).catch(() => null);
+              const exists = await NexusAttachmentDB.get(key).catch(() => null);
               if (!exists) {
                 try {
                   const downloadedBlob = await this.downloadBlobFile(token, fileObj.id);
                   if (downloadedBlob) {
-                    await LuminaAttachmentDB.put(key, downloadedBlob);
+                    await NexusAttachmentDB.put(key, downloadedBlob);
                   }
                 } catch (err) {
                   console.warn(`[Sync] Failed to download attachment ${key}:`, err);
@@ -2384,10 +2393,10 @@ var SyncManager = class {
           }
         }
         try {
-          const metadata = await LuminaAttachmentDB.getAllMetadata();
+          const metadata = await NexusAttachmentDB.getAllMetadata();
           for (const item of metadata) {
             if (!activeAttachmentIds.has(item.key)) {
-              await LuminaAttachmentDB.delete(item.key);
+              await NexusAttachmentDB.delete(item.key);
             }
           }
         } catch (cleanupErr) {
@@ -2420,10 +2429,10 @@ var SyncManager = class {
       const now = Date.now();
       const cloudStats = {
         chatsCount: Object.values(remoteSessions).filter((s) => s && !s.isDeleted).length,
-        notesCount: Array.isArray(remoteData.lumina_notes_items) ? remoteData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
-        collectionsCount: Array.isArray(remoteData.lumina_notes_collections) ? remoteData.lumina_notes_collections.length : 0,
+        notesCount: Array.isArray(remoteData.nexus_notes_items) ? remoteData.nexus_notes_items.filter((n) => n && !n.isDeleted).length : 0,
+        collectionsCount: Array.isArray(remoteData.nexus_notes_collections) ? remoteData.nexus_notes_collections.length : 0,
         highlightsCount: Object.keys(remoteData).filter((k) => k.startsWith("highlights_")).length,
-        ttsCount: Array.isArray(remoteData.lumina_tts_recordings) ? remoteData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+        ttsCount: Array.isArray(remoteData.nexus_tts_recordings) ? remoteData.nexus_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
         attachmentsCount: activeAttachmentIds.size
       };
       await chrome.storage.local.set({
@@ -2434,17 +2443,23 @@ var SyncManager = class {
       });
       if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sessions_index_updated" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
         });
-        chrome.runtime.sendMessage({ action: "lumina_notes_updated" }).catch(() => {
+        if (cloudUpdatedSessionIds && cloudUpdatedSessionIds.length > 0) {
+          for (const sid of cloudUpdatedSessionIds) {
+            chrome.runtime.sendMessage({ action: "nexus_session_updated", sessionId: sid, source: "cloud_sync" }).catch(() => {
+            });
+          }
+        }
+        chrome.runtime.sendMessage({ action: "nexus_notes_updated" }).catch(() => {
         });
-        chrome.runtime.sendMessage({ action: "lumina_highlights_updated" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_highlights_updated" }).catch(() => {
         });
         if (ttsUpdated) {
-          chrome.runtime.sendMessage({ action: "lumina_tts_updated" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_tts_updated" }).catch(() => {
           });
         }
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: now }).catch(() => {
         });
       } catch (e) {
       }
@@ -2454,7 +2469,7 @@ var SyncManager = class {
       console.error("[Sync] pullFromCloud error:", error);
       this.notifyListeners("Sync failure", null);
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "failure" }).catch(() => {
         });
       } catch (e) {
       }
@@ -2465,7 +2480,7 @@ var SyncManager = class {
   }
   async pushToCloud() {
     if (this._isPageContext()) {
-      return await this._delegateSyncToBackground("lumina_drive_sync", { isAuto: false, forcePush: true });
+      return await this._delegateSyncToBackground("nexus_drive_sync", { isAuto: false, forcePush: true });
     }
     if (this.isSyncing) return;
     this.isSyncing = true;
@@ -2476,7 +2491,7 @@ var SyncManager = class {
       const localData = await this.gatherLocalData();
       this.notifyListeners("Syncing...", null);
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "syncing" }).catch(() => {
         });
       } catch (e) {
       }
@@ -2509,11 +2524,11 @@ var SyncManager = class {
       const storedBlobs = await chrome.storage.local.get(["drive_uploaded_blobs"]);
       const uploadedBlobSet = new Set(storedBlobs.drive_uploaded_blobs || []);
       let hasNewBlobs = false;
-      if (typeof LuminaAttachmentDB !== "undefined" && LuminaAttachmentDB.init) {
-        const db = await LuminaAttachmentDB.init();
+      if (typeof NexusAttachmentDB !== "undefined" && NexusAttachmentDB.init) {
+        const db = await NexusAttachmentDB.init();
         const localAttachments = await new Promise((resolve) => {
-          const tx = db.transaction(LuminaAttachmentDB.STORE_NAME, "readonly");
-          const store = tx.objectStore(LuminaAttachmentDB.STORE_NAME);
+          const tx = db.transaction(NexusAttachmentDB.STORE_NAME, "readonly");
+          const store = tx.objectStore(NexusAttachmentDB.STORE_NAME);
           const req = store.openCursor();
           const map = /* @__PURE__ */ new Map();
           req.onsuccess = (e) => {
@@ -2560,11 +2575,11 @@ var SyncManager = class {
       }
       const now = Date.now();
       const cloudStats = {
-        chatsCount: Object.values(localData.lumina_chat_sessions || {}).filter((s) => s && !s.isDeleted).length,
-        notesCount: Array.isArray(localData.lumina_notes_items) ? localData.lumina_notes_items.filter((n) => n && !n.isDeleted).length : 0,
-        collectionsCount: Array.isArray(localData.lumina_notes_collections) ? localData.lumina_notes_collections.length : 0,
+        chatsCount: Object.values(localData.nexus_chat_sessions || {}).filter((s) => s && !s.isDeleted).length,
+        notesCount: Array.isArray(localData.nexus_notes_items) ? localData.nexus_notes_items.filter((n) => n && !n.isDeleted).length : 0,
+        collectionsCount: Array.isArray(localData.nexus_notes_collections) ? localData.nexus_notes_collections.length : 0,
         highlightsCount: Object.keys(localData).filter((k) => k.startsWith("highlights_")).length,
-        ttsCount: Array.isArray(localData.lumina_tts_recordings) ? localData.lumina_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+        ttsCount: Array.isArray(localData.nexus_tts_recordings) ? localData.nexus_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
         attachmentsCount: Array.from(uploadedBlobSet).filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length
       };
       await chrome.storage.local.set({
@@ -2576,7 +2591,7 @@ var SyncManager = class {
       if (typeof globalThis !== "undefined") globalThis._lastDriveSyncAt = now;
       this.notifyListeners("Synced just now", now);
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: now }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: now }).catch(() => {
         });
       } catch (e) {
       }
@@ -2585,7 +2600,7 @@ var SyncManager = class {
       console.error("[Sync] pushToCloud error:", error);
       this.notifyListeners("Sync failure", null);
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "failure" }).catch(() => {
         });
       } catch (e) {
       }
@@ -2596,7 +2611,7 @@ var SyncManager = class {
   }
   async cleanDriveDuplicates() {
     if (this._isPageContext()) {
-      return await this._delegateSyncToBackground("lumina_clean_drive_duplicates");
+      return await this._delegateSyncToBackground("nexus_clean_drive_duplicates");
     }
     const token = await this.getToken(true);
     if (!token) return { success: false, error: "Not authenticated" };
@@ -2636,11 +2651,11 @@ var SyncManager = class {
     const allFiles = await this.listAppDataFiles(token);
     if (!Array.isArray(allFiles) || allFiles.length === 0) return { success: true, deletedCount: 0 };
     const activeAttachmentKeys = /* @__PURE__ */ new Set();
-    if (typeof LuminaChatDB !== "undefined") {
+    if (typeof NexusChatDB !== "undefined") {
       try {
-        const sessions = await LuminaChatDB.getAllSessions(true).catch(() => ({}));
+        const sessions = await NexusChatDB.getAllSessions(true).catch(() => ({}));
         for (const sid of Object.keys(sessions)) {
-          const msgs = await LuminaChatDB.getMessages(sid).catch(() => []);
+          const msgs = await NexusChatDB.getMessages(sid).catch(() => []);
           for (const m of msgs) {
             if (Array.isArray(m.files)) {
               for (const f of m.files) {
@@ -2704,19 +2719,50 @@ var SyncManager = class {
     if (!token) throw new Error("Not authenticated");
     const files = await this.listAppDataFiles(token);
     const remoteFile = files.find((f) => f.name === this.FILENAME);
-    if (!remoteFile) throw new Error("lumina_backup.json not found on Google Drive");
+    if (!remoteFile) throw new Error("nexus_backup.json not found on Google Drive");
     const data = await this.downloadBackup(token, remoteFile.id);
     const jsonStr = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `lumina_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+    a.download = `nexus_backup_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return data;
+  }
+  async purgeLegacyLuminaCloudData() {
+    if (this._isPageContext()) {
+      return await this._delegateSyncToBackground("nexus_purge_legacy_cloud");
+    }
+    const token = await this.getToken(true);
+    if (!token) throw new Error("Not authenticated");
+    const driveFiles = await this.listAppDataFiles(token).catch(() => []);
+    let deletedLegacyFiles = 0;
+    for (const file of driveFiles) {
+      if (file.name === "lumina_backup.json" || file.name.startsWith("lumina_")) {
+        await this.deleteDriveFile(token, file.id).catch(() => {
+        });
+        deletedLegacyFiles++;
+      }
+    }
+    const localAll = await chrome.storage.local.get(null);
+    const legacyKeys = Object.keys(localAll).filter((k) => k.startsWith("lumina_") || k === "sparks");
+    if (legacyKeys.length > 0) {
+      await chrome.storage.local.remove(legacyKeys);
+    }
+    this.cachedBackupFileId = null;
+    await chrome.storage.local.remove(["drive_backup_file_id"]).catch(() => {
+    });
+    const pushResult = await this.pushToCloud();
+    return {
+      success: true,
+      deletedLegacyFiles,
+      removedLegacyLocalKeys: legacyKeys.length,
+      pushResult
+    };
   }
   async syncData(isAuto = false) {
     if (isAuto) {
@@ -2726,14 +2772,14 @@ var SyncManager = class {
     }
   }
 };
-var LuminaSync2 = new SyncManager(LuminaAuth);
+var NexusSync2 = new SyncManager(NexusAuth);
 if (typeof window !== "undefined") {
-  window.LuminaSync = LuminaSync2;
+  window.NexusSync = NexusSync2;
 }
 
 // src/db/chat_db.js
-var LuminaChatDB2 = {
-  DB_NAME: "LuminaChatDB",
+var NexusChatDB2 = {
+  DB_NAME: "NexusChatDB",
   DB_VERSION: 1,
   SESSIONS_STORE: "sessions",
   MESSAGES_STORE: "messages",
@@ -2903,12 +2949,12 @@ var LuminaChatDB2 = {
   }
 };
 if (typeof globalThis !== "undefined") {
-  globalThis.LuminaChatDB = LuminaChatDB2;
+  globalThis.NexusChatDB = NexusChatDB2;
 }
 
 // src/db/notes_manager.js
 var NotesManager2 = class _NotesManager {
-  static DB_NAME = "LuminaNotesDB";
+  static DB_NAME = "NexusNotesDB";
   static DB_VERSION = 1;
   static STORE_COLLECTIONS = "collections";
   static STORE_NOTES = "notes";
@@ -2977,8 +3023,8 @@ var NotesManager2 = class _NotesManager {
       const store = tx.objectStore(_NotesManager.STORE_COLLECTIONS);
       const request = store.put(newCol);
       request.onsuccess = () => {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         resolve(newCol);
       };
@@ -2999,8 +3045,8 @@ var NotesManager2 = class _NotesManager {
         col.updatedAt = Date.now();
         const putReq = store.put(col);
         putReq.onsuccess = () => {
-          if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-            LuminaSync.triggerDebouncedSync();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
           }
           resolve(col);
         };
@@ -3029,8 +3075,8 @@ var NotesManager2 = class _NotesManager {
         }
       };
       tx.oncomplete = () => {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         resolve(true);
       };
@@ -3100,8 +3146,8 @@ var NotesManager2 = class _NotesManager {
       const store = tx.objectStore(_NotesManager.STORE_NOTES);
       const request = store.put(newNote);
       request.onsuccess = () => {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         resolve(newNote);
       };
@@ -3122,8 +3168,8 @@ var NotesManager2 = class _NotesManager {
       const store = tx.objectStore(_NotesManager.STORE_NOTES);
       const request = store.put(updatedNote);
       request.onsuccess = () => {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         resolve(updatedNote);
       };
@@ -3144,8 +3190,8 @@ var NotesManager2 = class _NotesManager {
       const store = tx.objectStore(_NotesManager.STORE_NOTES);
       const request = store.put(note);
       request.onsuccess = () => {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         resolve(note);
       };
@@ -3163,8 +3209,8 @@ var NotesManager2 = class _NotesManager {
       const store = tx.objectStore(_NotesManager.STORE_NOTES);
       const req = store.delete(noteId);
       req.onsuccess = () => {
-        if (typeof LuminaSync !== "undefined" && typeof LuminaSync.triggerDebouncedSync === "function") {
-          LuminaSync.triggerDebouncedSync();
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
         }
         resolve(true);
       };
@@ -3178,7 +3224,7 @@ if (typeof globalThis !== "undefined") {
 
 // src/core/audio/tts_manager.js
 var TTSDB2 = class _TTSDB {
-  static DB_NAME = "LuminaTTSDB";
+  static DB_NAME = "NexusTTSDB";
   static DB_VERSION = 1;
   static STORE_RECORDINGS = "recordings";
   static _db = null;
@@ -3464,7 +3510,7 @@ var TTSManager = class {
       } catch (_) {
       }
     }
-    ["lumina_gemini_api_key", "gemini_api_key", "geminiApiKey"].forEach((storageKey) => {
+    ["nexus_gemini_api_key", "gemini_api_key", "geminiApiKey"].forEach((storageKey) => {
       const val = localStorage.getItem(storageKey);
       if (val && typeof val === "string") {
         val.split(",").forEach((k) => {
@@ -3473,8 +3519,8 @@ var TTSManager = class {
         });
       }
     });
-    if (typeof window !== "undefined" && window.__luminaGeminiApiKey) {
-      window.__luminaGeminiApiKey.split(",").forEach((k) => {
+    if (typeof window !== "undefined" && window.__nexusGeminiApiKey) {
+      window.__nexusGeminiApiKey.split(",").forEach((k) => {
         const trimmed = k.trim();
         if (trimmed) keysSet.add(trimmed);
       });
@@ -3868,7 +3914,7 @@ var GroqAligner = class {
       } catch (_) {
       }
     }
-    ["lumina_groq_api_key", "groq_api_key", "groqApiKey"].forEach((storageKey) => {
+    ["nexus_groq_api_key", "groq_api_key", "groqApiKey"].forEach((storageKey) => {
       const val = localStorage.getItem(storageKey);
       if (val && typeof val === "string") {
         val.split(",").forEach((k) => {
@@ -3952,27 +3998,27 @@ if (typeof globalThis !== "undefined") {
 // src/background/sync_handlers.js
 function initSyncHandlers() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "lumina_drive_sync") {
+    if (request.action === "nexus_drive_sync") {
       const isAuto = !!request.isAuto;
       const forcePush = !!request.forcePush;
       const forcePull = !!request.forcePull;
       try {
-        chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "syncing" }).catch(() => {
+        chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "syncing" }).catch(() => {
         });
       } catch (e) {
       }
-      const syncPromise = forcePush ? LuminaSync2.pushToCloud() : forcePull || isAuto ? LuminaSync2.pullFromCloud(forcePull) : LuminaSync2.syncData(isAuto);
+      const syncPromise = forcePush ? NexusSync2.pushToCloud() : forcePull || isAuto ? NexusSync2.pullFromCloud(forcePull) : NexusSync2.syncData(isAuto);
       syncPromise.then((result) => {
         globalThis._lastDriveSyncAt = Date.now();
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "done", timestamp: Date.now() }).catch(() => {
           });
         } catch (e) {
         }
         sendResponse({ success: true, result });
       }).catch((err) => {
         try {
-          chrome.runtime.sendMessage({ action: "lumina_sync_status", status: "failure" }).catch(() => {
+          chrome.runtime.sendMessage({ action: "nexus_sync_status", status: "failure" }).catch(() => {
           });
         } catch (e) {
         }
@@ -3980,13 +4026,17 @@ function initSyncHandlers() {
       });
       return true;
     }
-    if (request.action === "lumina_drive_sync_debounced") {
-      LuminaSync2.triggerDebouncedSync(request.delayMs || 1e3);
+    if (request.action === "nexus_drive_sync_debounced") {
+      NexusSync2.triggerDebouncedSync(request.delayMs || 1e3);
       sendResponse({ success: true });
       return true;
     }
-    if (request.action === "lumina_clean_drive_duplicates") {
-      LuminaSync2.cleanDriveDuplicates().then((res) => sendResponse(res)).catch((err) => sendResponse({ success: false, error: err.message }));
+    if (request.action === "nexus_clean_drive_duplicates") {
+      NexusSync2.cleanDriveDuplicates().then((res) => sendResponse(res)).catch((err) => sendResponse({ success: false, error: err.message }));
+      return true;
+    }
+    if (request.action === "nexus_purge_legacy_cloud") {
+      NexusSync2.purgeLegacyLuminaCloudData().then((res) => sendResponse(res)).catch((err) => sendResponse({ success: false, error: err.message }));
       return true;
     }
   });
@@ -4149,25 +4199,25 @@ Chart.js Chart Rule:
 
 [YouTube]
 \`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.
-[Lumina Canvas (Document Workspace)]
-The Lumina Canvas is a side-by-side workspace next to the conversation. Use it ONLY for long documents or full code files (HTML, JS, React, etc.) that the user wants to write, iterate on, or preview.
+[Nexus Canvas (Document Workspace)]
+The Nexus Canvas is a side-by-side workspace next to the conversation. Use it ONLY for long documents or full code files (HTML, JS, React, etc.) that the user wants to write, iterate on, or preview.
 To interact with the Canvas, you MUST wrap your commands in the following XML tags:
 1. Create Canvas Document:
-<lumina-canvas-create name="Document Name" type="code/html">
+<nexus-canvas-create name="Document Name" type="code/html">
 ...content here...
-</lumina-canvas-create>
+</nexus-canvas-create>
 (Use type: "document" for text, or "code/javascript", "code/html", "code/react", "code/css", etc. for code files. React and HTML types can be previewed live).
 2. Update Canvas Document:
-<lumina-canvas-update name="Document Name">
+<nexus-canvas-update name="Document Name">
 <pattern>regex_pattern</pattern>
 <replacement>replacement_text</replacement>
-</lumina-canvas-update>
+</nexus-canvas-update>
 (Always write code updates using a single update with ".*" for the pattern to replace the entire content).
 3. Comment Canvas Document:
-<lumina-canvas-comment name="Document Name">
+<nexus-canvas-comment name="Document Name">
 <pattern>regex_pattern</pattern>
 <comment>suggestion</comment>
-</lumina-canvas-comment>
+</nexus-canvas-comment>
 [Context & Personalization Privacy]
 - When using user context or preferences, blend them in seamlessly. NEVER preface responses with artificial meta-phrases like "Based on your info," "Given your profile," or "Since you mentioned."
 - Treat user data as factual and invisible. Do not reference system tags/sources. Never infer or include sensitive personal details (health conditions, origin, religion, financial status, etc.) unless explicitly requested.`;
@@ -4295,10 +4345,10 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     return { url, body: geminiBody };
   }
   const openaiMessages = [{ role: "system", content: sysPrompt }];
-  if (typeof LuminaToken !== "undefined") {
-    const sysTokens = LuminaToken.count(sysPrompt || "");
-    const historyTokens = msgs.reduce((acc, m) => acc + LuminaToken.count(m.text || ""), 0);
-    const inputTokens = LuminaToken.count(currentQ || "");
+  if (typeof NexusToken !== "undefined") {
+    const sysTokens = NexusToken.count(sysPrompt || "");
+    const historyTokens = msgs.reduce((acc, m) => acc + NexusToken.count(m.text || ""), 0);
+    const inputTokens = NexusToken.count(currentQ || "");
     let attachmentTokens = 0;
     const allAttachments = [...imageData || []];
     msgs.forEach((m) => {
@@ -4307,7 +4357,7 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
     allAttachments.forEach((att) => {
       const mime = normalizeMimeType(att.mimeType || "");
       if (isTextAttachmentMime(mime)) {
-        attachmentTokens += LuminaToken.count(decodeBase64Utf8(getBase64FromAttachment(att)));
+        attachmentTokens += NexusToken.count(decodeBase64Utf8(getBase64FromAttachment(att)));
       } else {
         attachmentTokens += 765;
       }
@@ -4459,7 +4509,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
     try {
       const response = await requestFn(currentKey);
       if (await isRateLimitOrTooLarge(response)) {
-        console.warn(`[Lumina] Key ${currentIndex} hit rate limit or request-too-large. Rotating to next key.`);
+        console.warn(`[Nexus] Key ${currentIndex} hit rate limit or request-too-large. Rotating to next key.`);
       } else {
         chrome.storage.local.set({
           [groupKey]: { index: currentIndex, date: today }
@@ -4479,7 +4529,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
         netErr.name = "NetworkError";
         throw netErr;
       }
-      console.error(`[Lumina] Request failed with key ${currentIndex}:`, err);
+      console.error(`[Nexus] Request failed with key ${currentIndex}:`, err);
     }
   }
   throw new Error("All API keys failed or were rate limited in this cycle.");
@@ -4487,7 +4537,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
 var CACHE_EXPIRATION_MS = 1 * 24 * 60 * 60 * 1e3;
 async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = "chat_stream", systemOverride = null, sessionId = null) {
   const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
-  const streamLogPrefix = `[Lumina BG][${action}]`;
+  const streamLogPrefix = `[Nexus BG][${action}]`;
   const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
   const providerId = config.providerId;
   const compositeKey = providerId ? `${providerId}:${model}` : model;
@@ -4533,7 +4583,7 @@ async function executeChatRequest(config, messages, initialContext, question, po
       }
     }
   } catch (e) {
-    console.error("[Lumina] Failed to load user memory:", e);
+    console.error("[Nexus] Failed to load user memory:", e);
   }
   let currentMessages = [...messages];
   let augmentedQuestion = question;
@@ -4576,7 +4626,7 @@ ${processedContext}`;
   if (sessionId) {
     if (sessionControllers.has(sessionId)) {
       try {
-        console.log(`[Lumina BG] Aborting session ${sessionId} due to duplicate/re-submission`);
+        console.log(`[Nexus BG] Aborting session ${sessionId} due to duplicate/re-submission`);
         sessionControllers.get(sessionId).abort();
       } catch (e) {
       }
@@ -4623,7 +4673,7 @@ ${processedContext}`;
         } catch (e) {
           errorData = { raw: errorText };
         }
-        console.error("[Lumina] API Error:", {
+        console.error("[Nexus] API Error:", {
           endpoint: requestedUrl,
           status: response.status,
           statusText: response.statusText,
@@ -4652,7 +4702,7 @@ ${processedContext}`;
               newMaxTokens = currentMaxTokens - reduction;
               diff -= reduction;
               payloadParams.maxTokens = newMaxTokens;
-              console.warn(`[Lumina] Dynamic token reduction: Changing max_tokens from ${currentMaxTokens} to ${newMaxTokens}. Remaining diff: ${diff}`);
+              console.warn(`[Nexus] Dynamic token reduction: Changing max_tokens from ${currentMaxTokens} to ${newMaxTokens}. Remaining diff: ${diff}`);
             }
           }
           if (diff > 0 && currentMessages.length > 2) {
@@ -4661,13 +4711,13 @@ ${processedContext}`;
             while (diff > tokensRemoved && currentMessages.length > 2) {
               const msg1 = currentMessages[0];
               const msg2 = currentMessages[1];
-              const t1 = msg1 ? LuminaToken.count(JSON.stringify(msg1)) : 0;
-              const t2 = msg2 ? LuminaToken.count(JSON.stringify(msg2)) : 0;
+              const t1 = msg1 ? NexusToken.count(JSON.stringify(msg1)) : 0;
+              const t2 = msg2 ? NexusToken.count(JSON.stringify(msg2)) : 0;
               tokensRemoved += t1 + t2;
               currentMessages.splice(0, 2);
               pairsRemoved++;
             }
-            console.warn(`[Lumina] Prompt too large. Removed ${pairsRemoved} message pair(s) to free up ~${tokensRemoved} tokens. Remaining diff: ${diff - tokensRemoved}`);
+            console.warn(`[Nexus] Prompt too large. Removed ${pairsRemoved} message pair(s) to free up ~${tokensRemoved} tokens. Remaining diff: ${diff - tokensRemoved}`);
           }
           continue;
         }
@@ -4680,7 +4730,7 @@ ${processedContext}`;
     } catch (e) {
       if (retry < 3 && (e.message === "RATE_LIMIT_EXHAUSTED" || e.message === "Failed to fetch")) {
         if (currentMessages.length > 2) {
-          console.warn(`[Lumina] Request failed. Retrying with cropped history...`);
+          console.warn(`[Nexus] Request failed. Retrying with cropped history...`);
           currentMessages.splice(0, 2);
           continue;
         }
@@ -4813,7 +4863,7 @@ ${processedContext}`;
       chrome.runtime.getPlatformInfo(() => {
       });
     } catch (e) {
-      console.error("[Lumina] Keep-alive error:", e);
+      console.error("[Nexus] Keep-alive error:", e);
     }
   }, 5e3);
   try {
@@ -4900,7 +4950,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
         }
       }
     } catch (e) {
-      console.warn("[Lumina] Optional context extraction failed:", e);
+      console.warn("[Nexus] Optional context extraction failed:", e);
     }
     const globalSettings = await chrome.storage.local.get(["responseLanguage", "advancedParamsByModel"]);
     let chain = await getModelChain("text", requestOptions.tabModel);
@@ -4925,11 +4975,11 @@ async function handleChatStream(messages, initialContext, question, port, imageD
         return;
       } catch (e) {
         if (e.name === "AbortError" || e.message?.includes("aborted") || e.message === "signal is aborted without reason") {
-          console.log(`[Lumina] Request aborted by user at index ${i} (${config.model})`);
+          console.log(`[Nexus] Request aborted by user at index ${i} (${config.model})`);
           return;
         }
         if (e.message === "RATE_LIMIT_EXHAUSTED") {
-          console.warn(`[Lumina] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
+          console.warn(`[Nexus] Model ${config.model} hit RATE LIMIT. Falling back to next...`);
           if (i < chain.length - 1) {
             try {
               const statusMsg = {
@@ -4944,7 +4994,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             continue;
           }
         }
-        console.error(`[Lumina] Chat Chain failed at index ${i} (${config.model}):`, e);
+        console.error(`[Nexus] Chat Chain failed at index ${i} (${config.model}):`, e);
         const errorMsg = { error: e.message || "AI Request Failed" };
         if (sessionId) broadcastToSession(sessionId, errorMsg);
         else port.postMessage(errorMsg);
@@ -4952,7 +5002,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
       }
     }
   } catch (err) {
-    console.error("[Lumina] Fatal Chat Error:", err);
+    console.error("[Nexus] Fatal Chat Error:", err);
     const errorMsg = { error: err.message };
     if (sessionId) broadcastToSession(sessionId, errorMsg);
     else port.postMessage(errorMsg);
@@ -5044,14 +5094,14 @@ function initChatStreamService() {
       generateChatTitleFromModel(request.modelObj, request.question, request.images, request.files, request.history).then((title) => {
         sendResponse({ success: true, title });
       }).catch((err) => {
-        console.error("[Lumina BG] generate_chat_title error:", err);
+        console.error("[Nexus BG] generate_chat_title error:", err);
         sendResponse({ success: false, error: err?.message || String(err) });
       });
       return true;
     }
   });
   chrome.runtime.onConnect.addListener((port) => {
-    if (port.name === "lumina-chat-stream") {
+    if (port.name === "nexus-chat-stream") {
       const registeredSessions = /* @__PURE__ */ new Set();
       port.onDisconnect.addListener(() => {
         for (const sid of registeredSessions) {
@@ -5083,7 +5133,7 @@ function initChatStreamService() {
         if (msg.action === "stop_chat" && msg.sessionId) {
           const controller = sessionControllers.get(msg.sessionId);
           if (controller) {
-            console.log(`[Lumina BG] Aborting session ${msg.sessionId} due to stop_chat message`);
+            console.log(`[Nexus BG] Aborting session ${msg.sessionId} due to stop_chat message`);
             controller.abort();
             sessionControllers.delete(msg.sessionId);
           }
@@ -5128,7 +5178,7 @@ function initChatStreamService() {
               msg.sessionId
             );
           } catch (e) {
-            console.error("[Lumina BG][stream] request error", {
+            console.error("[Nexus BG][stream] request error", {
               action: msg.action,
               error: e?.message || String(e)
             });

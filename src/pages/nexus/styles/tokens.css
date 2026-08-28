@@ -1,0 +1,136 @@
+:root,
+:host {
+  --nexus-ui-opacity: 1.0;
+  --nexus-ui-base-rgb: 255, 255, 255;
+  --nexus-icon-stroke-weight: 1.8;
+  --nexus-ui-bg: #FFFFFF;
+  --nexus-ui-bg-light: #F5F5F7;
+  --nexus-ui-border: rgba(0, 0, 0, 0.1);
+  --nexus-blur-primary: none;
+  --nexus-blur-secondary: none;
+  --nexus-blur-tertiary: none;
+  --nexus-shadow-primary: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  --nexus-shadow-secondary: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --nexus-shadow-tertiary: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --nexus-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --nexus-shadow-focus: 0 0 0 3px rgba(var(--nexus-primary-rgb), 0.4);
+  --nexus-primary-color: #000000;
+  --nexus-primary-rgb: 0, 0, 0;
+  --nexus-text-primary: #202124;
+  --nexus-text-secondary: #5f6368;
+  --nexus-text-tertiary: #9aa0a6;
+  --nexus-radius-lg: 24px;
+  --nexus-radius-md: 16px;
+  --nexus-radius-sm: 12px;
+  --nexus-input-bg: #FFFFFF;
+  --nexus-border-color: rgba(0, 0, 0, 0.12);
+  --nexus-font-sans: 'Inter', sans-serif;
+  --nexus-font-serif: 'Noto Serif', serif;
+  --nexus-font-mono: 'Google Sans Code', monospace;
+  --nexus-font-family: var(--nexus-font-sans);
+  --nexus-font-family-monospace: var(--nexus-font-mono);
+  --nexus-weight-base: 400;
+  --nexus-weight-regular: var(--nexus-weight-base);
+  --nexus-weight-medium: calc(var(--nexus-weight-base) + 100);
+  --nexus-weight-semibold: calc(var(--nexus-weight-base) + 200);
+  --nexus-weight-bold: calc(var(--nexus-weight-base) + 300);
+  --nexus-chat-bg: #FFFFFF;
+  --nexus-bg-primary: #ffffff;
+  --nexus-sidebar-bg: #fcfcfc;
+  --nexus-sidebar-hover: #ebebeb;
+  --nexus-sidebar-active-bg: #f4f4f4;
+  --nexus-sidebar-text: #202124;
+  --nexus-sidebar-text-muted: #5f6368;
+  --nexus-question-bg: #f4f4f4;
+  --nexus-badge-bg: rgba(0, 0, 0, 0.05);
+  --nexus-badge-border: rgba(0, 0, 0, 0.08);
+  --nexus-danger-color: #d93025;
+  --nexus-scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --nexus-scrollbar-thumb-hover: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"],
+:host([data-theme="dark"]) {
+  --nexus-ui-base-rgb: 60, 60, 60;
+  --nexus-text-primary: #ffffff;
+  --nexus-text-secondary: #e0e0e0;
+  --nexus-text-tertiary: #80848c;
+  --nexus-primary-color: #ffffff;
+  --nexus-primary-rgb: 255, 255, 255;
+  --nexus-ui-border: rgba(255, 255, 255, 0.15);
+  --nexus-ui-bg: #3c3c3c;
+  --nexus-ui-bg-light: #2c2c2c;
+  --nexus-input-bg: #2c2c2c;
+  --nexus-card-bg: #2c2c2c;
+  --nexus-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --nexus-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --nexus-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --nexus-border-color: rgba(255, 255, 255, 0.15);
+  --nexus-chat-bg: #3c3c3c;
+  --nexus-bg-primary: #3c3c3c;
+  --nexus-sidebar-bg: #2c2c2c;
+  --nexus-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --nexus-sidebar-active-bg: rgba(255, 255, 255, 0.10);
+  --nexus-sidebar-text: #e8eaed;
+  --nexus-sidebar-text-muted: #b0b3b8;
+  --nexus-question-bg: rgba(255, 255, 255, 0.08);
+  --nexus-badge-bg: rgba(255, 255, 255, 0.08);
+  --nexus-badge-border: rgba(255, 255, 255, 0.12);
+  --nexus-danger-color: #f28b82;
+  --nexus-scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --nexus-scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+}
+
+[data-accent="amber"],
+:host([data-accent="amber"]) {
+  --nexus-primary-color: #d97706;
+  --nexus-primary-rgb: 217, 119, 6;
+}
+
+[data-accent="emerald"],
+:host([data-accent="emerald"]) {
+  --nexus-primary-color: #059669;
+  --nexus-primary-rgb: 5, 150, 105;
+}
+
+[data-accent="sky"],
+:host([data-accent="sky"]) {
+  --nexus-primary-color: #0284c7;
+  --nexus-primary-rgb: 2, 132, 199;
+}
+
+[data-accent="indigo"],
+:host([data-accent="indigo"]) {
+  --nexus-primary-color: #4f46e5;
+  --nexus-primary-rgb: 79, 70, 229;
+}
+
+[data-accent="rose"],
+:host([data-accent="rose"]) {
+  --nexus-primary-color: #e11d48;
+  --nexus-primary-rgb: 225, 29, 72;
+}
+
+[data-contrast="high"] {
+  --nexus-ui-border: rgba(0, 0, 0, 0.4) !important;
+  --nexus-border-color: rgba(0, 0, 0, 0.4) !important;
+  --nexus-text-primary: #000000 !important;
+  --nexus-text-secondary: #202020 !important;
+  --nexus-text-tertiary: #404040 !important;
+  --nexus-shadow-focus: 0 0 0 3px #000000 !important;
+}
+
+[data-theme="dark"][data-contrast="high"],
+:host([data-theme="dark"][data-contrast="high"]) {
+  --nexus-ui-bg: #1a1a1a !important;
+  --nexus-ui-bg-light: #000000 !important;
+  --nexus-input-bg: #000000 !important;
+  --nexus-card-bg: #000000 !important;
+  --nexus-sidebar-bg: #000000 !important;
+  --nexus-ui-border: rgba(255, 255, 255, 0.5) !important;
+  --nexus-border-color: rgba(255, 255, 255, 0.5) !important;
+  --nexus-text-primary: #ffffff !important;
+  --nexus-text-secondary: #f0f0f0 !important;
+  --nexus-text-tertiary: #d0d0d0 !important;
+  --nexus-shadow-focus: 0 0 0 3px #ffffff !important;
+}

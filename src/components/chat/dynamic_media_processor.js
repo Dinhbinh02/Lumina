@@ -1,16 +1,16 @@
 import { searchGoogleImages, searchYoutubeVideo } from './async_media_search.js';
 
-const luminaResolvedYoutubeCache = new Map();
-const luminaResolvedImagesCache = new Map();
+const nexusResolvedYoutubeCache = new Map();
+const nexusResolvedImagesCache = new Map();
 
-export function processLuminaDynamicYoutubeElements(rootNode) {
+export function processNexusDynamicYoutubeElements(rootNode) {
     if (!rootNode) return;
     const yts = [];
-    if (rootNode.classList && rootNode.classList.contains('lumina-youtube-dynamic') && !rootNode.classList.contains('is-loading-started')) {
+    if (rootNode.classList && rootNode.classList.contains('nexus-youtube-dynamic') && !rootNode.classList.contains('is-loading-started')) {
         yts.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-        const found = rootNode.querySelectorAll('.lumina-youtube-dynamic:not(.is-loading-started)');
+        const found = rootNode.querySelectorAll('.nexus-youtube-dynamic:not(.is-loading-started)');
         found.forEach(y => yts.push(y));
     }
     yts.forEach(async (yt) => {
@@ -19,11 +19,11 @@ export function processLuminaDynamicYoutubeElements(rootNode) {
         const cleanQuery = decodeURIComponent(rawQuery).replace(/\+/g, ' ');
         if (!cleanQuery) return;
         let resolvePromise;
-        if (luminaResolvedYoutubeCache.has(cleanQuery)) {
-            resolvePromise = luminaResolvedYoutubeCache.get(cleanQuery);
+        if (nexusResolvedYoutubeCache.has(cleanQuery)) {
+            resolvePromise = nexusResolvedYoutubeCache.get(cleanQuery);
         } else {
             resolvePromise = searchYoutubeVideo(cleanQuery);
-            luminaResolvedYoutubeCache.set(cleanQuery, resolvePromise);
+            nexusResolvedYoutubeCache.set(cleanQuery, resolvePromise);
         }
         try {
             const videoData = await resolvePromise;
@@ -31,9 +31,9 @@ export function processLuminaDynamicYoutubeElements(rootNode) {
             if (videoId) {
                 const embedUrl = `https://www.youtube.com/embed/${videoId}?origin=https://www.youtube.com`;
                 const text = yt.getAttribute('data-text') || 'YouTube video player';
-                yt.innerHTML = `<iframe width="100%" height="315" src="${embedUrl}" title="${text}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="lumina-youtube-iframe"></iframe>`;
+                yt.innerHTML = `<iframe width="100%" height="315" src="${embedUrl}" title="${text}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="nexus-youtube-iframe"></iframe>`;
                 yt.classList.remove('is-loading');
-                const answerDiv = yt.closest('.lumina-chat-answer');
+                const answerDiv = yt.closest('.nexus-chat-answer');
                 if (answerDiv) {
                     const originalHref = yt.getAttribute('data-original-href');
                     const rawText = answerDiv.getAttribute('data-raw-text') || '';
@@ -45,24 +45,24 @@ export function processLuminaDynamicYoutubeElements(rootNode) {
                     }
                 }
             } else {
-                yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">Không tìm thấy video phù hợp trên YouTube cho từ khóa "${cleanQuery}"</div>`;
+                yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--nexus-text-secondary); background: var(--nexus-ui-bg-light); border-radius: 12px; font-family: var(--nexus-font-family); font-size: 13px;">Không tìm thấy video phù hợp trên YouTube cho từ khóa "${cleanQuery}"</div>`;
                 yt.classList.remove('is-loading');
             }
         } catch (e) {
-            yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--lumina-text-secondary); background: var(--lumina-ui-bg-light); border-radius: 12px; font-family: var(--lumina-font-family); font-size: 13px;">Lỗi tải video YouTube</div>`;
+            yt.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--nexus-text-secondary); background: var(--nexus-ui-bg-light); border-radius: 12px; font-family: var(--nexus-font-family); font-size: 13px;">Lỗi tải video YouTube</div>`;
             yt.classList.remove('is-loading');
         }
     });
 }
 
-export function processLuminaDynamicImageElements(rootNode) {
+export function processNexusDynamicImageElements(rootNode) {
     if (!rootNode) return;
     const found = [];
-    if (rootNode.classList && rootNode.classList.contains('lumina-async-image')) {
+    if (rootNode.classList && rootNode.classList.contains('nexus-async-image')) {
         found.push(rootNode);
     }
     if (rootNode.querySelectorAll) {
-        rootNode.querySelectorAll('.lumina-async-image').forEach(i => found.push(i));
+        rootNode.querySelectorAll('.nexus-async-image').forEach(i => found.push(i));
     }
     const imgs = found.filter(img => {
         if (img.classList.contains('is-loading-started')) return false;
@@ -82,9 +82,9 @@ export function processLuminaDynamicImageElements(rootNode) {
             }
         }
         if (!cleanQuery) return;
-        if (luminaResolvedImagesCache.has(cleanQuery)) {
+        if (nexusResolvedImagesCache.has(cleanQuery)) {
             try {
-                const cachedResult = await luminaResolvedImagesCache.get(cleanQuery);
+                const cachedResult = await nexusResolvedImagesCache.get(cleanQuery);
                 if (cachedResult && cachedResult.fallbackUrls) {
                     img.dataset.fallbackUrls = JSON.stringify(cachedResult.fallbackUrls);
                 }
@@ -104,7 +104,7 @@ export function processLuminaDynamicImageElements(rootNode) {
             } catch (err) { }
             throw new Error('Google Image search failed');
         })();
-        luminaResolvedImagesCache.set(cleanQuery, loadPromise);
+        nexusResolvedImagesCache.set(cleanQuery, loadPromise);
         try {
             const result = await loadPromise;
             if (result && result.fallbackUrls) {
@@ -119,6 +119,6 @@ export function processLuminaDynamicImageElements(rootNode) {
 }
 
 if (typeof window !== 'undefined') {
-    window.processLuminaDynamicYoutubeElements = processLuminaDynamicYoutubeElements;
-    window.processLuminaDynamicImageElements = processLuminaDynamicImageElements;
+    window.processNexusDynamicYoutubeElements = processNexusDynamicYoutubeElements;
+    window.processNexusDynamicImageElements = processNexusDynamicImageElements;
 }

@@ -1,5 +1,5 @@
-export const LuminaAnnotationDB = {
-    DB_NAME: 'LuminaHighlightDB',
+export const NexusAnnotationDB = {
+    DB_NAME: 'NexusHighlightDB',
     DB_VERSION: 1,
     STORE_NAME: 'highlights',
     _db: null,
@@ -83,9 +83,9 @@ export const LuminaAnnotationDB = {
     }
 };
 
-export const LuminaHighlightDB = LuminaAnnotationDB;
+export const NexusHighlightDB = NexusAnnotationDB;
 
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaAnnotationDB = LuminaAnnotationDB;
-    globalThis.LuminaHighlightDB = LuminaHighlightDB;
+    globalThis.NexusAnnotationDB = NexusAnnotationDB;
+    globalThis.NexusHighlightDB = NexusHighlightDB;
 }

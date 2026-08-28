@@ -26,7 +26,7 @@ const MARQUEE_STYLES = `
   position: relative !important;
 }
 
-.bn-block-outer.lumina-marquee-selected::after {
+.bn-block-outer.nexus-marquee-selected::after {
   content: "" !important;
   position: absolute !important;
   inset: 1px 0px !important;
@@ -41,7 +41,7 @@ const MARQUEE_STYLES = `
   border-color: rgba(45, 170, 219, 0.6) !important;
 }
 
-[data-theme="dark"] .bn-block-outer.lumina-marquee-selected::after {
+[data-theme="dark"] .bn-block-outer.nexus-marquee-selected::after {
   background: rgba(45, 170, 219, 0.25) !important;
 }
 `;
@@ -57,10 +57,10 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
     });
 
     useEffect(() => {
-        let styleEl = document.getElementById('lumina-marquee-injected-styles');
+        let styleEl = document.getElementById('nexus-marquee-injected-styles');
         if (!styleEl) {
             styleEl = document.createElement('style');
-            styleEl.id = 'lumina-marquee-injected-styles';
+            styleEl.id = 'nexus-marquee-injected-styles';
             styleEl.textContent = MARQUEE_STYLES;
             document.head.appendChild(styleEl);
         } else {
@@ -173,8 +173,8 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
 
         const clearSelection = () => {
             selectedBlockIds.clear();
-            wrapper.querySelectorAll('.lumina-marquee-selected').forEach(el => {
-                el.classList.remove('lumina-marquee-selected');
+            wrapper.querySelectorAll('.nexus-marquee-selected').forEach(el => {
+                el.classList.remove('nexus-marquee-selected');
             });
         };
 
@@ -270,10 +270,10 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
                 const isSelected = selectedBlockIds.has(id);
                 if (intersects && !isSelected) {
                     selectedBlockIds.add(id);
-                    blockEl.classList.add('lumina-marquee-selected');
+                    blockEl.classList.add('nexus-marquee-selected');
                 } else if (!intersects && isSelected) {
                     selectedBlockIds.delete(id);
-                    blockEl.classList.remove('lumina-marquee-selected');
+                    blockEl.classList.remove('nexus-marquee-selected');
                 }
             });
         };
@@ -286,7 +286,7 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
             if (isInteractive) return;
 
             // Clear previous selection if clicking outside of current selection
-            if (selectedBlockIds.size > 0 && !e.target.closest('.lumina-marquee-selected')) {
+            if (selectedBlockIds.size > 0 && !e.target.closest('.nexus-marquee-selected')) {
                 clearSelection();
             }
 
@@ -403,7 +403,7 @@ function BlockNoteApp({ initialBlocks, onChange, onEditorReady }) {
     );
 }
 
-window.LuminaBlockNote = {
+window.NexusBlockNote = {
     mount(container, initialBlocks, onChange) {
         if (!container) return null;
         container.innerHTML = '';

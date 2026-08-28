@@ -1,68 +1,68 @@
-.lumina-search-dialog {
+.nexus-search-dialog {
   width: 700px;
   max-width: 95vw;
   height: 600px;
   max-height: 85vh;
-  background: var(--lumina-ui-bg);
+  background: var(--nexus-ui-bg);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   padding: 0;
-  border: 1px solid var(--lumina-ui-border);
+  border: 1px solid var(--nexus-ui-border);
 }
 
-.lumina-search-container {
+.nexus-search-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
 }
 
-.lumina-search-header {
+.nexus-search-header {
   display: flex;
   align-items: center;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--lumina-ui-border);
+  border-bottom: 1px solid var(--nexus-ui-border);
   gap: 12px;
 }
 
-.lumina-search-input-wrapper {
+.nexus-search-input-wrapper {
   display: flex;
   align-items: center;
   flex: 1;
   gap: 12px;
 }
 
-.lumina-search-bar-icon {
+.nexus-search-bar-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   flex-shrink: 0;
   padding: 6px;
 }
 
-.lumina-search-input {
+.nexus-search-input {
   border: none;
   background: transparent;
   outline: none;
-  font-family: var(--lumina-font-family);
+  font-family: var(--nexus-font-family);
   font-size: 1em;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   width: 100%;
   padding: 0;
 }
 
-.lumina-search-input::placeholder {
-  color: var(--lumina-text-tertiary);
+.nexus-search-input::placeholder {
+  color: var(--nexus-text-tertiary);
 }
 
-.lumina-search-close-btn {
+.nexus-search-close-btn {
   background: transparent;
   border: none;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -72,12 +72,12 @@
   transition: background-color 0.2s, color 0.2s;
 }
 
-.lumina-search-close-btn:hover {
-  background-color: var(--lumina-ui-bg-light);
-  color: var(--lumina-text-primary);
+.nexus-search-close-btn:hover {
+  background-color: var(--nexus-ui-bg-light);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-search-results-section {
+.nexus-search-results-section {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -87,24 +87,24 @@
   overflow-y: auto;
 }
 
-.lumina-search-results-list {
+.nexus-search-results-list {
   flex: 1;
 }
 
-.lumina-search-results-section::-webkit-scrollbar {
+.nexus-search-results-section::-webkit-scrollbar {
   width: 6px;
 }
 
-.lumina-search-results-section::-webkit-scrollbar-track {
+.nexus-search-results-section::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.lumina-search-results-section::-webkit-scrollbar-thumb {
-  background: var(--lumina-ui-border);
+.nexus-search-results-section::-webkit-scrollbar-thumb {
+  background: var(--nexus-ui-border);
   border-radius: 10px;
 }
 
-.lumina-search-new-chat {
+.nexus-search-new-chat {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -113,33 +113,33 @@
   padding: 10px;
   cursor: pointer;
   user-select: none;
-  font-family: var(--lumina-font-family);
+  font-family: var(--nexus-font-family);
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular);
+  font-weight: var(--nexus-weight-regular);
 }
 
-.lumina-search-new-chat:hover {
-  background-color: var(--lumina-ui-bg-light);
+.nexus-search-new-chat:hover {
+  background-color: var(--nexus-ui-bg-light);
 }
 
-.lumina-search-icon-wrapper {
+.nexus-search-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   flex-shrink: 0;
 }
 
-.lumina-search-group-header {
+.nexus-search-group-header {
   font-size: 13px;
-  font-weight: var(--lumina-weight-medium);
-  color: var(--lumina-text-tertiary);
+  font-weight: var(--nexus-weight-medium);
+  color: var(--nexus-text-tertiary);
   margin: 8px 10px 4px 10px;
   text-transform: capitalize;
   letter-spacing: 0.3px;
 }
 
-.lumina-search-item {
+.nexus-search-item {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -150,18 +150,18 @@
   user-select: none;
 }
 
-.lumina-search-item:hover {
-  background-color: var(--lumina-ui-bg-light);
+.nexus-search-item:hover {
+  background-color: var(--nexus-ui-bg-light);
 }
 
-.lumina-search-item-content {
+.nexus-search-item-content {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
 }
 
-.lumina-search-item-top {
+.nexus-search-item-top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -169,26 +169,26 @@
   width: 100%;
 }
 
-.lumina-search-item-title {
+.nexus-search-item-title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-regular);
+  color: var(--nexus-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
 }
 
-.lumina-search-item-date {
+.nexus-search-item-date {
   font-size: 12px;
-  color: var(--lumina-text-tertiary);
+  color: var(--nexus-text-tertiary);
   flex-shrink: 0;
 }
 
-.lumina-search-item-current {
+.nexus-search-item-current {
   font-size: 11px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-primary-color);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-primary-color);
   background-color: rgba(10, 132, 255, 0.15);
   padding: 2px 6px;
   border-radius: 4px;
@@ -197,9 +197,9 @@
   flex-shrink: 0;
 }
 
-.lumina-search-item-snippet {
+.nexus-search-item-snippet {
   font-size: 12.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   margin-top: 4px;
   line-height: 1.4;
   word-break: break-all;
@@ -208,25 +208,25 @@
   text-overflow: ellipsis;
 }
 
-.lumina-search-item-snippet b {
-  font-weight: var(--lumina-weight-bold);
-  color: var(--lumina-text-primary);
+.nexus-search-item-snippet b {
+  font-weight: var(--nexus-weight-bold);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-search-no-results {
+.nexus-search-no-results {
   padding: 40px 24px;
   text-align: center;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   font-size: 14px;
 }
 
-.lumina-search-overlay-close-btn {
+.nexus-search-overlay-close-btn {
   position: absolute;
   top: 16px;
   right: 16px;
   background: transparent;
   border: none;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   cursor: pointer;
   display: none;
   align-items: center;
@@ -237,27 +237,27 @@
   z-index: 10001;
 }
 
-.lumina-search-overlay-close-btn:hover {
+.nexus-search-overlay-close-btn:hover {
   background-color: rgba(0, 0, 0, 0.08);
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
 }
 
-[data-theme="dark"] .lumina-search-overlay-close-btn:hover {
+[data-theme="dark"] .nexus-search-overlay-close-btn:hover {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-.lumina-settings-overlay.in-pane {
+.nexus-settings-overlay.in-pane {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
   z-index: 1000 !important;
-  background: var(--lumina-sidebar-bg) !important;
+  background: var(--nexus-sidebar-bg) !important;
   border-radius: 12px;
 }
 
-.lumina-settings-overlay.in-pane .lumina-search-dialog {
+.nexus-settings-overlay.in-pane .nexus-search-dialog {
   width: 700px;
   height: 600px;
   max-width: 96%;
@@ -265,11 +265,11 @@
   border-radius: 20px;
 }
 
-.lumina-settings-overlay.in-pane .lumina-search-dialog .lumina-search-close-btn {
+.nexus-settings-overlay.in-pane .nexus-search-dialog .nexus-search-close-btn {
   display: none;
 }
 
-.lumina-settings-overlay.in-pane .lumina-search-overlay-close-btn {
+.nexus-settings-overlay.in-pane .nexus-search-overlay-close-btn {
   display: flex;
   top: 12px;
   right: 12px;

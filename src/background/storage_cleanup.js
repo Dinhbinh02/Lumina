@@ -4,7 +4,7 @@ export function initStorageCleanup() {
     chrome.storage.local.get(null, (allData) => {
         if (chrome.runtime.lastError) return;
         const ankiLegacyKeys = new Set([
-            'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
+            'nexusTemplatesV3', 'nexusBatchHistoryV3', 'lastUsedGenAIModel',
             'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent', 'attachments'
         ]);
         const keysToRemove = Object.keys(allData).filter(key => 
@@ -18,10 +18,10 @@ export function initStorageCleanup() {
         }
     });
 
-    if (typeof LuminaImageCacheDB !== 'undefined' && LuminaImageCacheDB.cleanupExpired) {
-        LuminaImageCacheDB.cleanupExpired().catch(err => console.error('[Lumina BG] Failed to clean up IndexedDB image cache:', err));
+    if (typeof NexusImageCacheDB !== 'undefined' && NexusImageCacheDB.cleanupExpired) {
+        NexusImageCacheDB.cleanupExpired().catch(err => console.error('[Nexus BG] Failed to clean up IndexedDB image cache:', err));
     }
-    if (typeof LuminaAudioCacheDB !== 'undefined' && LuminaAudioCacheDB.cleanupExpired) {
-        LuminaAudioCacheDB.cleanupExpired().catch(err => console.error('[Lumina BG] Failed to clean up IndexedDB audio cache:', err));
+    if (typeof NexusAudioCacheDB !== 'undefined' && NexusAudioCacheDB.cleanupExpired) {
+        NexusAudioCacheDB.cleanupExpired().catch(err => console.error('[Nexus BG] Failed to clean up IndexedDB audio cache:', err));
     }
 }

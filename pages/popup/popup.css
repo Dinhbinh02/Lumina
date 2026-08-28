@@ -6,11 +6,11 @@
     --accent-color: #0056D2;
     --btn-hover-bg: #f5f5f7;
     --shadow-color: rgba(0, 0, 0, 0.08);
-    --lumina-weight-base: 400;
-    --lumina-weight-regular: var(--lumina-weight-base);
-    --lumina-weight-medium: calc(var(--lumina-weight-base) + 100);
-    --lumina-weight-semibold: calc(var(--lumina-weight-base) + 200);
-    --lumina-weight-bold: calc(var(--lumina-weight-base) + 300);
+    --nexus-weight-base: 400;
+    --nexus-weight-regular: var(--nexus-weight-base);
+    --nexus-weight-medium: calc(var(--nexus-weight-base) + 100);
+    --nexus-weight-semibold: calc(var(--nexus-weight-base) + 200);
+    --nexus-weight-bold: calc(var(--nexus-weight-base) + 300);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -119,7 +119,7 @@ body {
 
 .logo-name {
     font-size: 17px;
-    font-weight: var(--lumina-weight-bold) ;
+    font-weight: var(--nexus-weight-bold) ;
     letter-spacing: -0.3px;
     color: var(--text-primary);
     background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-color) 100%);
@@ -206,7 +206,7 @@ body {
 
 .btn-label {
     font-size: 11px;
-    font-weight: var(--lumina-weight-semibold) ;
+    font-weight: var(--nexus-weight-semibold) ;
     text-align: center;
     letter-spacing: 0.1px;
     color: var(--text-primary);
@@ -221,7 +221,7 @@ body {
 
 .toggle-label {
     font-size: 13px;
-    font-weight: var(--lumina-weight-medium) ;
+    font-weight: var(--nexus-weight-medium) ;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;

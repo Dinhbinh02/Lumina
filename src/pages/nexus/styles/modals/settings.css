@@ -1,4 +1,4 @@
-@keyframes lumina-settings-fade-in {
+@keyframes nexus-settings-fade-in {
   from {
     opacity: 0;
     transform: scale(0.98) translateY(8px);
@@ -10,7 +10,7 @@
   }
 }
 
-@keyframes lumina-settings-bg-fade {
+@keyframes nexus-settings-bg-fade {
   from {
     opacity: 0;
   }
@@ -20,7 +20,7 @@
   }
 }
 
-.lumina-settings-overlay {
+.nexus-settings-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -35,28 +35,28 @@
   z-index: 20000;
 }
 
-#lumina-provider-popup-overlay,
-#lumina-model-popup-overlay {
+#nexus-provider-popup-overlay,
+#nexus-model-popup-overlay {
   z-index: 21000;
 }
 
-.lumina-settings-dialog {
+.nexus-settings-dialog {
   width: 700px;
   max-width: 90vw;
   height: 600px;
   max-height: 85vh;
-  background: var(--lumina-ui-bg) !important;
+  background: var(--nexus-ui-bg) !important;
   border-radius: 12px;
-  box-shadow: var(--lumina-shadow-primary, none) !important;
+  box-shadow: var(--nexus-shadow-primary, none) !important;
   display: flex;
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--lumina-ui-border);
+  border: 1px solid var(--nexus-ui-border);
   animation: none !important;
   transition: none !important;
 }
 
-.lumina-settings-close-btn {
+.nexus-settings-close-btn {
   position: absolute;
   top: 9px;
   right: 24px;
@@ -65,7 +65,7 @@
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,28 +74,28 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.lumina-settings-close-btn:hover {
-  background: var(--lumina-ui-bg-light, rgba(0, 0, 0, 0.05));
-  color: var(--lumina-text-primary);
+.nexus-settings-close-btn:hover {
+  background: var(--nexus-ui-bg-light, rgba(0, 0, 0, 0.05));
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-body {
+.nexus-settings-body {
   display: flex;
   width: 100%;
   height: 100%;
 }
 
-.lumina-settings-sidebar {
+.nexus-settings-sidebar {
   width: 180px;
-  background: var(--lumina-ui-bg) !important;
-  border-right: 1px solid var(--lumina-ui-border) !important;
+  background: var(--nexus-ui-bg) !important;
+  border-right: 1px solid var(--nexus-ui-border) !important;
   display: flex;
   flex-direction: column;
   padding: 0 8px;
   flex-shrink: 0;
 }
 
-.lumina-settings-sidebar-header {
+.nexus-settings-sidebar-header {
   padding: 16px 12px 12px 12px;
   display: flex;
   align-items: center;
@@ -103,19 +103,19 @@
   margin-bottom: 12px;
 }
 
-.lumina-settings-title {
+.nexus-settings-title {
   font-size: 18px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-nav {
+.nexus-settings-nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.lumina-settings-nav-item {
+.nexus-settings-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -123,103 +123,103 @@
   border-radius: 8px;
   background: transparent !important;
   border: none;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   font-size: 13.5px;
-  font-weight: var(--lumina-weight-regular);
+  font-weight: var(--nexus-weight-regular);
   text-align: left;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
-.lumina-settings-nav-item svg {
+.nexus-settings-nav-item svg {
   opacity: 0.6;
   stroke-width: 1.8;
   width: 16px;
   height: 16px;
 }
 
-.lumina-settings-nav-item:hover {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.04)) !important;
+.nexus-settings-nav-item:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.04)) !important;
 }
 
-.lumina-settings-nav-item.active {
-  background: var(--lumina-sidebar-active-bg, rgba(0, 0, 0, 0.06)) !important;
-  font-weight: var(--lumina-weight-medium);
+.nexus-settings-nav-item.active {
+  background: var(--nexus-sidebar-active-bg, rgba(0, 0, 0, 0.06)) !important;
+  font-weight: var(--nexus-weight-medium);
 }
 
-.lumina-settings-main {
+.nexus-settings-main {
   flex: 1;
   padding: 0 24px 24px 24px;
   overflow-y: auto;
-  background: var(--lumina-ui-bg) !important;
+  background: var(--nexus-ui-bg) !important;
 }
 
-.lumina-settings-section {
+.nexus-settings-section {
   display: none;
 }
 
-.lumina-settings-section.active {
+.nexus-settings-section.active {
   display: block;
 }
 
-.lumina-settings-section-title {
+.nexus-settings-section-title {
   font-size: 18px;
-  font-weight: var(--lumina-weight-semibold);
+  font-weight: var(--nexus-weight-semibold);
   margin-top: 0;
   margin-bottom: 18px;
-  color: var(--lumina-text-primary);
-  border-bottom: 1px solid var(--lumina-ui-border);
+  color: var(--nexus-text-primary);
+  border-bottom: 1px solid var(--nexus-ui-border);
   padding: 16px 0;
   position: sticky;
   top: 0;
-  background: var(--lumina-ui-bg);
+  background: var(--nexus-ui-bg);
   z-index: 9;
 }
 
-.lumina-settings-card {
+.nexus-settings-card {
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
   margin-bottom: 14px;
 }
 
-.lumina-settings-card-body {
+.nexus-settings-card-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.lumina-settings-card-header {
+.nexus-settings-card-header {
   margin-bottom: 8px;
 }
 
-.lumina-settings-card-header h3 {
+.nexus-settings-card-header h3 {
   font-size: 15px;
-  font-weight: var(--lumina-weight-semibold);
+  font-weight: var(--nexus-weight-semibold);
   margin: 0 0 4px 0;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-card-header p {
+.nexus-settings-card-header p {
   font-size: 12.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   margin: 0;
 }
 
-.lumina-settings-group-title {
+.nexus-settings-group-title {
   font-size: 13.5px;
-  font-weight: var(--lumina-weight-medium);
+  font-weight: var(--nexus-weight-medium);
   margin: 18px 0 8px 0;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-card-body p.desc-small {
+.nexus-settings-card-body p.desc-small {
   font-size: 12.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   margin: 0 0 8px 0;
 }
 
-.lumina-settings-group {
+.nexus-settings-group {
   display: flex;
   flex-direction: column;
   background: transparent !important;
@@ -227,7 +227,7 @@
   margin-bottom: 24px;
 }
 
-.lumina-settings-row {
+.nexus-settings-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -235,47 +235,47 @@
   padding: 4px 0;
 }
 
-.lumina-settings-row-info {
+.nexus-settings-row-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
   flex: 1;
 }
 
-.lumina-settings-row-info .title {
+.nexus-settings-row-info .title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-regular);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-row-info .desc {
+.nexus-settings-row-info .desc {
   font-size: 12.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   line-height: 1.4;
 }
 
-.lumina-settings-control {
+.nexus-settings-control {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   align-self: center;
 }
 
-.lumina-settings-select,
-.lumina-settings-field input,
-.lumina-settings-field textarea,
-.lumina-settings-form input {
+.nexus-settings-select,
+.nexus-settings-field input,
+.nexus-settings-field textarea,
+.nexus-settings-form input {
   font-size: 13px;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid var(--lumina-ui-border);
-  background: var(--lumina-input-bg);
-  color: var(--lumina-text-primary);
+  border: 1px solid var(--nexus-ui-border);
+  background: var(--nexus-input-bg);
+  color: var(--nexus-text-primary);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.lumina-settings-field textarea {
+.nexus-settings-field textarea {
   resize: none;
   min-height: 60px;
   max-height: 250px;
@@ -284,14 +284,14 @@
   width: 100%;
 }
 
-.lumina-settings-select:focus,
-.lumina-settings-field input:focus,
-.lumina-settings-field textarea:focus,
-.lumina-settings-form input:focus {
-  border-color: var(--lumina-primary-color);
+.nexus-settings-select:focus,
+.nexus-settings-field input:focus,
+.nexus-settings-field textarea:focus,
+.nexus-settings-form input:focus {
+  border-color: var(--nexus-primary-color);
 }
 
-.lumina-settings-select {
+.nexus-settings-select {
   cursor: pointer;
   min-width: 120px;
   appearance: none;
@@ -301,68 +301,68 @@
   padding-right: 24px;
 }
 
-.lumina-settings-switch {
+.nexus-settings-switch {
   position: relative;
   display: inline-block;
   width: 38px;
   height: 20px;
 }
 
-.lumina-settings-switch input {
+.nexus-settings-switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.lumina-settings-switch .slider {
+.nexus-settings-switch .slider {
   position: absolute;
   cursor: pointer;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--lumina-sidebar-hover, #e5e7eb);
+  background-color: var(--nexus-sidebar-hover, #e5e7eb);
   transition: .2s ease-in-out;
   border-radius: 20px;
 }
 
-.lumina-settings-switch .slider:before {
+.nexus-settings-switch .slider:before {
   position: absolute;
   content: "";
   height: 14px;
   width: 14px;
   left: 3px;
   bottom: 3px;
-  background-color: var(--lumina-ui-bg, white);
+  background-color: var(--nexus-ui-bg, white);
   transition: .2s ease-in-out;
   border-radius: 50%;
 }
 
-.lumina-settings-switch input:checked+.slider {
-  background-color: var(--lumina-primary-color, #000000);
+.nexus-settings-switch input:checked+.slider {
+  background-color: var(--nexus-primary-color, #000000);
 }
 
-.lumina-settings-switch input:checked+.slider:before {
+.nexus-settings-switch input:checked+.slider:before {
   transform: translateX(18px);
 }
 
-.lumina-settings-btn-play {
+.nexus-settings-btn-play {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: var(--lumina-input-bg);
-  border: 1px solid var(--lumina-ui-border);
+  background: var(--nexus-input-bg);
+  border: 1px solid var(--nexus-ui-border);
   padding: 6px 12px;
   border-radius: 8px;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.15s;
   margin-right: 8px;
 }
 
-.lumina-settings-btn-play:hover {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.04));
+.nexus-settings-btn-play:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.04));
 }
 
 .voice-control-row {
@@ -370,31 +370,31 @@
   align-items: center;
 }
 
-.lumina-settings-row-split {
+.nexus-settings-row-split {
   display: flex;
   gap: 12px;
 }
 
-.lumina-settings-field {
+.nexus-settings-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex: 1;
 }
 
-.lumina-settings-field label {
+.nexus-settings-field label {
   font-size: 13px;
-  font-weight: var(--lumina-weight-medium);
-  color: var(--lumina-text-secondary);
+  font-weight: var(--nexus-weight-medium);
+  color: var(--nexus-text-secondary);
 }
 
-.lumina-settings-divider {
+.nexus-settings-divider {
   border: none;
-  border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.06));
+  border-top: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.06));
   margin: 16px 0;
 }
 
-.lumina-settings-slider-row {
+.nexus-settings-slider-row {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -403,116 +403,116 @@
   margin-bottom: 10px;
 }
 
-.lumina-settings-slider-row .label {
+.nexus-settings-slider-row .label {
   font-size: 13px;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   flex: 1;
 }
 
-.lumina-settings-slider-row .slider-container {
+.nexus-settings-slider-row .slider-container {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.lumina-settings-slider-row .slider-side-label {
+.nexus-settings-slider-row .slider-side-label {
   font-size: 12px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   width: 32px;
 }
 
-.lumina-settings-slider-row .slider-side-label:last-child {
+.nexus-settings-slider-row .slider-side-label:last-child {
   text-align: right;
 }
 
-.lumina-settings-slider-row input[type="range"] {
+.nexus-settings-slider-row input[type="range"] {
   width: 120px;
   height: 4px;
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.06));
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.06));
   outline: none;
   appearance: none;
   cursor: pointer;
 }
 
-.lumina-settings-slider-row input[type="range"]::-webkit-slider-thumb {
+.nexus-settings-slider-row input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--lumina-primary-color, #000000);
+  background: var(--nexus-primary-color, #000000);
 }
 
-.lumina-settings-control input[type="range"] {
+.nexus-settings-control input[type="range"] {
   height: 4px;
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.06));
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.06));
   outline: none;
   appearance: none;
   cursor: pointer;
   border-radius: 2px;
 }
 
-.lumina-settings-control input[type="range"]::-webkit-slider-thumb {
+.nexus-settings-control input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--lumina-primary-color);
+  background: var(--nexus-primary-color);
 }
 
-.lumina-provider-model-combined-body {
+.nexus-provider-model-combined-body {
   display: flex;
   flex-direction: column;
   gap: 12px !important;
   padding: 4px 0 !important;
 }
 
-.lumina-provider-setup-container,
-.lumina-model-setup-container {
+.nexus-provider-setup-container,
+.nexus-model-setup-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.lumina-provider-setup-header,
-.lumina-model-setup-header {
+.nexus-provider-setup-header,
+.nexus-model-setup-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.lumina-provider-section-title {
+.nexus-provider-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-provider-setup-row {
+.nexus-provider-setup-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.lumina-provider-dropdown-wrap {
+.nexus-provider-dropdown-wrap {
   width: 140px;
   flex-shrink: 0;
 }
 
-.lumina-provider-key-wrap {
+.nexus-provider-key-wrap {
   position: relative;
   flex: 1;
   display: flex;
   align-items: center;
 }
 
-.lumina-provider-key-wrap input,
-.lumina-provider-endpoint-row input {
+.nexus-provider-key-wrap input,
+.nexus-provider-endpoint-row input {
   width: 100%;
   height: 28px;
   padding: 4px 30px 4px 10px;
   border-radius: 6px;
-  border: 1px solid var(--lumina-ui-border);
-  background: var(--lumina-input-bg);
-  color: var(--lumina-text-primary);
+  border: 1px solid var(--nexus-ui-border);
+  background: var(--nexus-input-bg);
+  color: var(--nexus-text-primary);
   font-size: 12.5px;
   font-family: inherit;
   outline: none;
@@ -520,18 +520,18 @@
   box-sizing: border-box;
 }
 
-.lumina-provider-key-wrap input:focus,
-.lumina-provider-endpoint-row input:focus {
-  border-color: var(--lumina-primary-color);
+.nexus-provider-key-wrap input:focus,
+.nexus-provider-endpoint-row input:focus {
+  border-color: var(--nexus-primary-color);
 }
 
-.lumina-key-toggle-btn {
+.nexus-key-toggle-btn {
   position: absolute;
   right: 6px;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -539,54 +539,54 @@
   border-radius: 4px;
 }
 
-.lumina-key-toggle-btn:hover {
-  color: var(--lumina-text-primary);
+.nexus-key-toggle-btn:hover {
+  color: var(--nexus-text-primary);
 }
 
-.lumina-provider-endpoint-row {
+.nexus-provider-endpoint-row {
   margin-top: 4px;
 }
 
-.lumina-provider-model-divider {
+.nexus-provider-model-divider {
   height: 1px;
-  background: var(--lumina-ui-border);
+  background: var(--nexus-ui-border);
   margin: 4px 0;
 }
 
-.lumina-settings-segmented {
+.nexus-settings-segmented {
   display: flex;
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.03));
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.03));
   border-radius: 8px;
   padding: 2px;
   overflow: hidden;
 }
 
-.lumina-settings-segmented label {
+.nexus-settings-segmented label {
   cursor: pointer;
 }
 
-.lumina-settings-segmented input {
+.nexus-settings-segmented input {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.lumina-settings-segmented span {
+.nexus-settings-segmented span {
   display: inline-block;
   padding: 5px 12px;
   border-radius: 6px;
   font-size: 13px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
 }
 
-.lumina-settings-segmented input:checked+span {
-  background: var(--lumina-input-bg);
-  color: var(--lumina-text-primary);
+.nexus-settings-segmented input:checked+span {
+  background: var(--nexus-input-bg);
+  color: var(--nexus-text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.lumina-settings-btn {
+.nexus-settings-btn {
   font-size: 13px;
   padding: 6px 12px;
   border-radius: 8px;
@@ -595,66 +595,66 @@
   transition: background 0.15s;
 }
 
-.lumina-settings-btn.primary {
-  background: var(--lumina-primary-color);
+.nexus-settings-btn.primary {
+  background: var(--nexus-primary-color);
   color: #ffffff;
 }
 
-.lumina-settings-btn.primary:hover {
+.nexus-settings-btn.primary:hover {
   filter: brightness(0.9);
 }
 
-.lumina-settings-btn.secondary {
-  background: var(--lumina-input-bg);
-  border-color: var(--lumina-ui-border);
-  color: var(--lumina-text-primary);
+.nexus-settings-btn.secondary {
+  background: var(--nexus-input-bg);
+  border-color: var(--nexus-ui-border);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-btn.secondary:hover {
-  background: rgba(var(--lumina-primary-rgb), 0.05);
+.nexus-settings-btn.secondary:hover {
+  background: rgba(var(--nexus-primary-rgb), 0.05);
 }
 
-.lumina-settings-btn.danger {
+.nexus-settings-btn.danger {
   background: #ef4444;
   color: #ffffff;
 }
 
-.lumina-settings-btn.danger:hover {
+.nexus-settings-btn.danger:hover {
   background: #dc2626;
 }
 
-.lumina-settings-btn.sm {
+.nexus-settings-btn.sm {
   padding: 4px 10px;
   font-size: 12px;
   border-radius: 6px;
 }
 
-.lumina-settings-btn.xs {
+.nexus-settings-btn.xs {
   padding: 2px 8px;
   font-size: 11.5px;
   border-radius: 6px;
 }
 
-.lumina-get-key-link {
+.nexus-get-key-link {
   font-size: 11.5px;
-  color: var(--lumina-primary-color);
+  color: var(--nexus-primary-color);
   text-decoration: none;
   font-weight: 500;
   transition: opacity 0.15s;
 }
 
-.lumina-get-key-link:hover {
+.nexus-get-key-link:hover {
   text-decoration: underline;
   opacity: 0.85;
 }
 
-.lumina-storage-actions-group {
+.nexus-storage-actions-group {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.lumina-settings-actions-row {
+.nexus-settings-actions-row {
   display: flex;
   gap: 10px;
 }
@@ -672,16 +672,16 @@
 }
 
 .font-semibold {
-  font-weight: var(--lumina-weight-medium);
+  font-weight: var(--nexus-weight-medium);
 }
 
 .text-error {
   color: #ef4444 !important;
 }
 
-.lumina-settings-form {
-  background: var(--lumina-input-bg);
-  border: 1px solid var(--lumina-ui-border);
+.nexus-settings-form {
+  background: var(--nexus-input-bg);
+  border: 1px solid var(--nexus-ui-border);
   border-radius: 8px;
   padding: 16px;
   margin: 12px 0;
@@ -690,62 +690,62 @@
   gap: 10px;
 }
 
-.lumina-settings-field-header {
+.nexus-settings-field-header {
   display: flex;
   justify-content: space-between;
 }
 
-.lumina-settings-field-header a {
+.nexus-settings-field-header a {
   font-size: 11.5px;
-  color: var(--lumina-primary-color);
+  color: var(--nexus-primary-color);
   text-decoration: none;
 }
 
-.lumina-settings-helper {
+.nexus-settings-helper {
   font-size: 10.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   margin: 0;
 }
 
-.lumina-settings-form-actions {
+.nexus-settings-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
-.lumina-settings-dropdown-wrapper {
+.nexus-settings-dropdown-wrapper {
   position: relative;
   width: 140px;
 }
 
-.lumina-settings-dropdown-wrapper.auto-width {
+.nexus-settings-dropdown-wrapper.auto-width {
   width: max-content;
   align-self: flex-start;
 }
 
-.lumina-settings-dropdown-wrapper.auto-width input {
+.nexus-settings-dropdown-wrapper.auto-width input {
   width: 100%;
 }
 
-.lumina-settings-dropdown-wrapper::after {
+.nexus-settings-dropdown-wrapper::after {
   content: "";
   position: absolute;
   right: 10px;
   top: 50%;
   transform: translateY(-25%);
   border: 4px solid transparent;
-  border-top-color: var(--lumina-text-secondary, #9aa0a6);
+  border-top-color: var(--nexus-text-secondary, #9aa0a6);
   pointer-events: none;
 }
 
-.lumina-settings-dropdown-wrapper input {
+.nexus-settings-dropdown-wrapper input {
   width: 100%;
   height: 28px;
   padding: 4px 28px 4px 10px;
   border-radius: 6px;
-  border: 1px solid var(--lumina-ui-border);
-  background: var(--lumina-input-bg);
-  color: var(--lumina-text-primary);
+  border: 1px solid var(--nexus-ui-border);
+  background: var(--nexus-input-bg);
+  color: var(--nexus-text-primary);
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
@@ -758,35 +758,35 @@
   box-sizing: border-box;
 }
 
-#lumina-model-form-model {
+#nexus-model-form-model {
   cursor: text !important;
 }
 
-.lumina-settings-dropdown-wrapper input:hover {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.04));
+.nexus-settings-dropdown-wrapper input:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.04));
 }
 
-#lumina-settings-fontsize {
+#nexus-settings-fontsize {
   cursor: pointer;
   padding-right: 20px;
 }
 
-#lumina-settings-fontsize-menu {
+#nexus-settings-fontsize-menu {
   min-width: unset;
   width: 100%;
 }
 
-.lumina-settings-dropdown-menu {
+.nexus-settings-dropdown-menu {
   position: absolute;
   top: 100%;
   left: 0;
   min-width: 100%;
   width: max-content;
   max-width: 320px;
-  background: var(--lumina-input-bg);
-  border: 1px solid var(--lumina-ui-border);
+  background: var(--nexus-input-bg);
+  border: 1px solid var(--nexus-ui-border);
   border-radius: 8px;
-  box-shadow: var(--lumina-shadow-secondary);
+  box-shadow: var(--nexus-shadow-secondary);
   z-index: 100;
   max-height: 140px;
   overflow-y: auto;
@@ -795,33 +795,33 @@
 }
 
 
-.lumina-settings-dropdown-menu div {
+.nexus-settings-dropdown-menu div {
   padding: 6px 12px;
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-dropdown-menu div:hover {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.04));
+.nexus-settings-dropdown-menu div:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.04));
 }
 
-.lumina-settings-dropdown-menu div.active {
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.06));
-  font-weight: var(--lumina-weight-medium, 600);
-  color: var(--lumina-text-primary);
+.nexus-settings-dropdown-menu div.active {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.06));
+  font-weight: var(--nexus-weight-medium, 600);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-settings-chain-list {
+.nexus-settings-chain-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.lumina-settings-chain-card {
-  background: var(--lumina-input-bg);
-  border: 1px solid var(--lumina-ui-border);
+.nexus-settings-chain-card {
+  background: var(--nexus-input-bg);
+  border: 1px solid var(--nexus-ui-border);
   border-radius: 8px;
   padding: 6px 12px;
   display: flex;
@@ -832,20 +832,20 @@
   user-select: none;
 }
 
-.lumina-settings-chain-card:active {
+.nexus-settings-chain-card:active {
   cursor: grabbing;
 }
 
-.lumina-settings-chain-card.dragging {
+.nexus-settings-chain-card.dragging {
   opacity: 0.4;
-  background: var(--lumina-sidebar-hover, rgba(0, 0, 0, 0.05));
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.05));
 }
 
 .chain-number {
   font-size: 10.5px;
-  font-weight: var(--lumina-weight-bold);
-  color: var(--lumina-text-secondary);
-  background: var(--lumina-badge-bg);
+  font-weight: var(--nexus-weight-bold);
+  color: var(--nexus-text-secondary);
+  background: var(--nexus-badge-bg);
   min-width: 18px;
   width: auto;
   height: 18px;
@@ -867,8 +867,8 @@
 
 .chain-title {
   font-size: 12.5px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary);
   line-height: 1.2;
 }
 
@@ -876,13 +876,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: var(--lumina-weight-regular) !important;
+  font-weight: var(--nexus-weight-regular) !important;
   flex: 1;
 }
 
 .chain-subtitle {
   font-size: 10.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   text-transform: capitalize;
   line-height: 1.2;
 }
@@ -892,10 +892,10 @@
   align-items: center;
 }
 
-.lumina-settings-icon-btn {
+.nexus-settings-icon-btn {
   background: transparent;
   border: none;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -906,18 +906,18 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.lumina-settings-icon-btn.edit {
+.nexus-settings-icon-btn.edit {
   margin-right: 6px;
 }
 
-.lumina-settings-icon-btn:hover {
-  background: var(--lumina-sidebar-hover);
+.nexus-settings-icon-btn:hover {
+  background: var(--nexus-sidebar-hover);
 }
 
-.lumina-settings-empty-state {
+.nexus-settings-empty-state {
   font-size: 13px;
   text-align: center;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   padding: 4px 8px;
   width: 100%;
 }
@@ -926,21 +926,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--lumina-badge-bg, rgba(0, 0, 0, 0.05));
-  border: 1px solid var(--lumina-badge-border, rgba(0, 0, 0, 0.08));
+  background: var(--nexus-badge-bg, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--nexus-badge-border, rgba(0, 0, 0, 0.08));
   padding: 2px 6px;
   border-radius: 5px;
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-regular);
+  color: var(--nexus-text-primary);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
   margin: 0 2px;
   min-width: 20px;
 }
 
-.lumina-settings-shortcut-box {
-  background: var(--lumina-input-bg, #ffffff);
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.12));
+.nexus-settings-shortcut-box {
+  background: var(--nexus-input-bg, #ffffff);
+  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.12));
   border-radius: 8px;
   padding: 6px 12px;
   width: 130px;
@@ -949,53 +949,53 @@
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   cursor: pointer;
   outline: none;
 }
 
-.lumina-settings-shortcut-box .placeholder {
-  color: var(--lumina-text-tertiary);
+.nexus-settings-shortcut-box .placeholder {
+  color: var(--nexus-text-tertiary);
 }
 
-.lumina-settings-shortcut-box .recording {
+.nexus-settings-shortcut-box .recording {
   color: #ef4444;
 }
 
 .fact-index {
   font-size: 11px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
 }
 
-.lumina-settings-auth-container {
+.nexus-settings-auth-container {
   padding: 4px 0;
   gap: 16px;
 }
 
-.lumina-settings-auth-container p.desc {
+.nexus-settings-auth-container p.desc {
   font-size: 12.5px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   line-height: 1.5;
 }
 
-.lumina-settings-profile-row {
+.nexus-settings-profile-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.lumina-profile-actions {
+.nexus-profile-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.lumina-settings-avatar {
+.nexus-settings-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1.5px solid var(--lumina-ui-border);
+  border: 1.5px solid var(--nexus-ui-border);
 }
 
 .profile-meta {
@@ -1012,18 +1012,18 @@
 
 .profile-name {
   font-size: 14px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary);
 }
 
 .profile-meta p {
   font-size: 12px;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   margin: 0;
 }
 
-.profile-meta #lumina-sync-status {
-  color: var(--lumina-text-tertiary);
+.profile-meta #nexus-sync-status {
+  color: var(--nexus-text-tertiary);
 }
 
 .hidden {
@@ -1031,7 +1031,7 @@
 }
 
 @media (max-width: 768px) {
-  .lumina-settings-dialog {
+  .nexus-settings-dialog {
     width: 95vw;
     max-width: 700px;
     height: 74vh;
@@ -1040,25 +1040,25 @@
     border-radius: 12px;
   }
 
-  .lumina-settings-close-btn {
+  .nexus-settings-close-btn {
     position: static !important;
     margin: 0;
   }
 
-  .lumina-settings-body {
+  .nexus-settings-body {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
   }
 
-  .lumina-settings-sidebar {
+  .nexus-settings-sidebar {
     width: 100%;
     padding: 0;
     border-right: none;
-    background: var(--lumina-ui-bg) !important;
+    background: var(--nexus-ui-bg) !important;
   }
 
-  .lumina-settings-sidebar-header {
+  .nexus-settings-sidebar-header {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
@@ -1066,13 +1066,13 @@
     margin-bottom: 0;
   }
 
-  .lumina-settings-title {
+  .nexus-settings-title {
     font-size: 18px;
-    font-weight: var(--lumina-weight-semibold);
-    color: var(--lumina-text-primary);
+    font-weight: var(--nexus-weight-semibold);
+    color: var(--nexus-text-primary);
   }
 
-  .lumina-settings-nav {
+  .nexus-settings-nav {
     flex-direction: row;
     overflow-x: auto;
     padding: 4px 6px;
@@ -1080,116 +1080,116 @@
     scrollbar-width: none;
   }
 
-  .lumina-settings-nav::-webkit-scrollbar {
+  .nexus-settings-nav::-webkit-scrollbar {
     display: none;
   }
 
-  .lumina-settings-nav-item {
+  .nexus-settings-nav-item {
     padding: 8px;
     white-space: nowrap;
     border-radius: 8px;
     background: transparent !important;
     border: none !important;
-    font-weight: var(--lumina-weight-medium);
-    color: var(--lumina-text-secondary);
+    font-weight: var(--nexus-weight-medium);
+    color: var(--nexus-text-secondary);
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 13px;
   }
 
-  .lumina-settings-nav-item.active {
-    background: var(--lumina-sidebar-active-bg, rgba(0, 0, 0, 0.05)) !important;
-    color: var(--lumina-text-primary) !important;
+  .nexus-settings-nav-item.active {
+    background: var(--nexus-sidebar-active-bg, rgba(0, 0, 0, 0.05)) !important;
+    color: var(--nexus-text-primary) !important;
     border: none !important;
   }
 
-  .lumina-settings-main {
+  .nexus-settings-main {
     padding: 12px;
     flex: 1;
     overflow-y: auto;
   }
 
-  .lumina-settings-section-title {
+  .nexus-settings-section-title {
     position: static;
     padding-top: 0;
     background: transparent;
   }
 
-  .lumina-settings-row-split {
+  .nexus-settings-row-split {
     flex-direction: column;
     gap: 0;
   }
 }
 
 @media (max-width: 480px) {
-  .lumina-settings-row {
+  .nexus-settings-row {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
     padding: 12px 0;
   }
 
-  .lumina-settings-control {
+  .nexus-settings-control {
     justify-content: flex-start;
     width: 100%;
   }
 
-  .lumina-settings-select,
-  .lumina-settings-dropdown-wrapper {
+  .nexus-settings-select,
+  .nexus-settings-dropdown-wrapper {
     width: 100% !important;
   }
 
-  .lumina-settings-main {
+  .nexus-settings-main {
     padding: 8px;
   }
 
-  .lumina-settings-form-actions {
+  .nexus-settings-form-actions {
     flex-direction: column;
     gap: 8px;
     width: 100%;
   }
 
-  .lumina-settings-form-actions .lumina-settings-btn {
+  .nexus-settings-form-actions .nexus-settings-btn {
     width: 100%;
   }
 }
 
-.lumina-dialog {
+.nexus-dialog {
   width: 440px;
   max-width: 96vw;
-  background: var(--lumina-ui-bg, #ffffff) !important;
+  background: var(--nexus-ui-bg, #ffffff) !important;
   border-radius: 12px;
   box-shadow: none !important;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: visible;
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.08));
   animation: none !important;
   transition: none !important;
 }
 
-.lumina-dialog-header {
+.nexus-dialog-header {
   padding: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.lumina-dialog-title {
+.nexus-dialog-title {
   font-size: 16px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-dialog-close-btn {
+.nexus-dialog-close-btn {
   width: 28px;
   height: 28px;
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: var(--lumina-text-secondary, #6b7280);
+  color: var(--nexus-text-secondary, #6b7280);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1197,12 +1197,12 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.lumina-dialog-close-btn:hover {
-  background: var(--lumina-ui-bg-light, rgba(0, 0, 0, 0.05));
-  color: var(--lumina-text-primary);
+.nexus-dialog-close-btn:hover {
+  background: var(--nexus-ui-bg-light, rgba(0, 0, 0, 0.05));
+  color: var(--nexus-text-primary);
 }
 
-.lumina-dialog-body {
+.nexus-dialog-body {
   padding: 0 12px;
   display: flex;
   flex-direction: column;
@@ -1211,37 +1211,37 @@
   overflow-y: visible;
 }
 
-.lumina-dialog-grid-row {
+.nexus-dialog-grid-row {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
 }
 
-.lumina-dialog-grid-row .lumina-settings-field {
+.nexus-dialog-grid-row .nexus-settings-field {
   flex: 1;
   min-width: 0;
 }
 
-.lumina-dialog-grid-row .lumina-settings-field:first-child {
+.nexus-dialog-grid-row .nexus-settings-field:first-child {
   flex: 0 0 140px;
   max-width: 140px;
 }
 
-.lumina-dialog-grid-row .lumina-settings-dropdown-wrapper {
+.nexus-dialog-grid-row .nexus-settings-dropdown-wrapper {
   width: 100%;
 }
 
-.lumina-dialog-footer {
+.nexus-dialog-footer {
   padding: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--lumina-ui-bg, #ffffff);
+  background: var(--nexus-ui-bg, #ffffff);
   border-radius: 0 0 12px 12px;
 }
 
-.lumina-dialog-footer-right {
+.nexus-dialog-footer-right {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1249,7 +1249,7 @@
   justify-content: flex-end;
 }
 
-.lumina-dialog-status {
+.nexus-dialog-status {
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 13px;
@@ -1257,108 +1257,108 @@
   border: 1px solid transparent;
 }
 
-.lumina-dialog-status.hidden {
+.nexus-dialog-status.hidden {
   display: none !important;
 }
 
-.lumina-dialog-status.info {
-  background: var(--lumina-ui-bg-light, rgba(0, 0, 0, 0.03));
-  color: var(--lumina-text-primary);
-  border-color: var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+.nexus-dialog-status.info {
+  background: var(--nexus-ui-bg-light, rgba(0, 0, 0, 0.03));
+  color: var(--nexus-text-primary);
+  border-color: var(--nexus-ui-border, rgba(0, 0, 0, 0.08));
 }
 
-.lumina-dialog-status.success {
+.nexus-dialog-status.success {
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;
   border-color: rgba(16, 185, 129, 0.2);
 }
 
-.lumina-dialog-status.warning {
+.nexus-dialog-status.warning {
   background: rgba(245, 158, 11, 0.1);
   color: #d97706;
   border-color: rgba(245, 158, 11, 0.2);
 }
 
-.lumina-dialog-status.error {
+.nexus-dialog-status.error {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   border-color: rgba(239, 68, 68, 0.2);
 }
 
 .mapping-name {
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   font-size: 13px !important;
-  font-weight: var(--lumina-weight-regular) !important;
+  font-weight: var(--nexus-weight-regular) !important;
 }
 
-#lumina-mapping-popup-overlay .lumina-settings-shortcut-row {
+#nexus-mapping-popup-overlay .nexus-settings-shortcut-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-#lumina-mapping-popup-shortcut {
+#nexus-mapping-popup-shortcut {
   min-width: 80px;
   text-align: center;
   cursor: pointer;
 }
 
-#lumina-mapping-popup-prompt {
+#nexus-mapping-popup-prompt {
   width: 100%;
   min-height: 80px;
   max-height: 200px;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid var(--lumina-ui-border);
+  border: 1px solid var(--nexus-ui-border);
   font-family: inherit;
   font-size: 13px;
-  background: var(--lumina-input-bg);
-  color: var(--lumina-text-primary);
+  background: var(--nexus-input-bg);
+  color: var(--nexus-text-primary);
   overflow-y: auto;
   box-sizing: border-box;
   outline: none;
 }
 
-#lumina-mapping-popup-prompt:focus {
-  border-color: var(--lumina-primary-color);
+#nexus-mapping-popup-prompt:focus {
+  border-color: var(--nexus-primary-color);
 }
 
-#lumina-mapping-popup-prompt:empty:before {
+#nexus-mapping-popup-prompt:empty:before {
   content: attr(data-placeholder);
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   opacity: 0.6;
 }
 
-.lumina-variable-tag {
-  color: var(--lumina-primary-color) !important;
-  font-weight: var(--lumina-weight-medium);
+.nexus-variable-tag {
+  color: var(--nexus-primary-color) !important;
+  font-weight: var(--nexus-weight-medium);
   display: inline-block;
   user-select: none;
 }
 
-.lumina-mapping-reference-chips {
+.nexus-mapping-reference-chips {
   display: flex;
   gap: 8px;
   margin-top: 4px;
 }
 
-.lumina-reference-chip {
-  background: var(--lumina-badge-bg, rgba(0, 0, 0, 0.05));
-  border: 1px solid var(--lumina-badge-border, rgba(0, 0, 0, 0.1));
+.nexus-reference-chip {
+  background: var(--nexus-badge-bg, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--nexus-badge-border, rgba(0, 0, 0, 0.1));
   border-radius: 16px;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   padding: 4px 12px;
   font-size: 12px;
-  font-weight: var(--lumina-weight-regular);
+  font-weight: var(--nexus-weight-regular);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 
-.lumina-reference-chip:hover {
-  background: var(--lumina-sidebar-hover);
+.nexus-reference-chip:hover {
+  background: var(--nexus-sidebar-hover);
 }
 
-.lumina-settings-shortcut-wrapper-row {
+.nexus-settings-shortcut-wrapper-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1366,26 +1366,26 @@
   margin-bottom: 16px;
 }
 
-.lumina-settings-shortcut-wrapper-row .lumina-settings-field {
+.nexus-settings-shortcut-wrapper-row .nexus-settings-field {
   margin-bottom: 0 !important;
 }
 
-.lumina-settings-shortcut-wrapper-row .shortcut-field {
+.nexus-settings-shortcut-wrapper-row .shortcut-field {
   flex: 1;
 }
 
-.lumina-settings-shortcut-wrapper-row .highlight-toggle-row {
+.nexus-settings-shortcut-wrapper-row .highlight-toggle-row {
   display: flex;
   gap: 8px;
 }
 
-.lumina-settings-shortcut-wrapper-row .highlight-toggle-row label:not(.lumina-settings-switch) {
+.nexus-settings-shortcut-wrapper-row .highlight-toggle-row label:not(.nexus-settings-switch) {
   margin-bottom: 0 !important;
   cursor: pointer;
   white-space: nowrap;
 }
 
-#lumina-config-shortcut-btn {
+#nexus-config-shortcut-btn {
   width: 130px;
   box-sizing: border-box;
 }
@@ -1394,7 +1394,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 1px solid var(--lumina-ui-border);
+  border: 1px solid var(--nexus-ui-border);
   box-sizing: border-box;
 }
 
@@ -1405,7 +1405,7 @@
 }
 
 .annotation-shortcut-text {
-  font-weight: var(--lumina-weight-medium);
+  font-weight: var(--nexus-weight-medium);
 }
 
 .swatch {
@@ -1419,72 +1419,72 @@
 }
 
 .swatch.active {
-  border-color: var(--lumina-primary-color) !important;
+  border-color: var(--nexus-primary-color) !important;
 }
 
-.lumina-storage-details {
+.nexus-storage-details {
   margin-top: 12px;
-  background: var(--lumina-bg-secondary, rgba(255, 255, 255, 0.03));
-  border: 1px solid var(--lumina-border, rgba(255, 255, 255, 0.08));
+  background: var(--nexus-bg-secondary, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--nexus-border, rgba(255, 255, 255, 0.08));
   border-radius: 8px;
   padding: 12px;
 }
 
-.lumina-storage-breakdown {
+.nexus-storage-breakdown {
   display: flex;
   gap: 24px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--lumina-border, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--nexus-border, rgba(255, 255, 255, 0.08));
 }
 
-.lumina-storage-breakdown-item {
+.nexus-storage-breakdown-item {
   display: flex;
   gap: 8px;
   font-size: 13px;
 }
 
-.lumina-storage-breakdown-item .label {
-  color: var(--lumina-text-muted, #757575);
+.nexus-storage-breakdown-item .label {
+  color: var(--nexus-text-muted, #757575);
 }
 
-.lumina-storage-breakdown-item span:not(.label) {
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary);
+.nexus-storage-breakdown-item span:not(.label) {
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary);
 }
 
-.lumina-storage-sessions-list-header {
+.nexus-storage-sessions-list-header {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  font-weight: var(--lumina-weight-semibold);
+  font-weight: var(--nexus-weight-semibold);
   text-transform: uppercase;
-  color: var(--lumina-text-muted, #757575);
+  color: var(--nexus-text-muted, #757575);
   margin-bottom: 8px;
   letter-spacing: 0.5px;
 }
 
-.lumina-storage-sessions-list {
+.nexus-storage-sessions-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.lumina-storage-session-item {
+.nexus-storage-session-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background var(--lumina-transition-fast, 0.15s ease);
+  transition: background var(--nexus-transition-fast, 0.15s ease);
 }
 
-.lumina-storage-session-item:hover {
-  background: var(--lumina-bg-hover, rgba(255, 255, 255, 0.06));
+.nexus-storage-session-item:hover {
+  background: var(--nexus-bg-hover, rgba(255, 255, 255, 0.06));
 }
 
-.lumina-storage-session-info {
+.nexus-storage-session-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1493,36 +1493,36 @@
   padding-right: 12px;
 }
 
-.lumina-storage-session-title {
+.nexus-storage-session-title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-regular);
-  color: var(--lumina-text-primary);
+  font-weight: var(--nexus-weight-regular);
+  color: var(--nexus-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.lumina-storage-session-date {
+.nexus-storage-session-date {
   font-size: 11px;
-  color: var(--lumina-text-muted, #757575);
+  color: var(--nexus-text-muted, #757575);
 }
 
-.lumina-storage-session-right {
+.nexus-storage-session-right {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.lumina-storage-session-size {
+.nexus-storage-session-size {
   font-size: 12px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-secondary);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-secondary);
 }
 
-.lumina-storage-session-delete {
+.nexus-storage-session-delete {
   background: none;
   border: none;
-  color: var(--lumina-danger, #ea4335);
+  color: var(--nexus-danger, #ea4335);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -1533,86 +1533,86 @@
   transition: all 0.2s ease;
 }
 
-.lumina-storage-session-delete:hover {
+.nexus-storage-session-delete:hover {
   opacity: 1;
   background: rgba(234, 67, 53, 0.1);
 }
 
-.lumina-storage-session-delete svg {
+.nexus-storage-session-delete svg {
   width: 14px;
   height: 14px;
 }
 
-.lumina-cloud-signin-row {
+.nexus-cloud-signin-row {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 4px 0;
 }
 
-.lumina-cloud-signin-icon {
+.nexus-cloud-signin-icon {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: var(--lumina-sidebar-hover, #e8f0fe);
+  background: var(--nexus-sidebar-hover, #e8f0fe);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.lumina-cloud-signin-icon svg {
+.nexus-cloud-signin-icon svg {
   width: 24px;
   height: 24px;
 }
 
-.lumina-cloud-signin-info {
+.nexus-cloud-signin-info {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.lumina-cloud-signin-info .title {
+.nexus-cloud-signin-info .title {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary, #e8eaed);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary, #e8eaed);
 }
 
-.lumina-cloud-signin-info .desc {
+.nexus-cloud-signin-info .desc {
   font-size: 11px;
-  color: var(--lumina-text-secondary, #9aa0a6);
+  color: var(--nexus-text-secondary, #9aa0a6);
   line-height: 1.4;
 }
 
-.lumina-storage-dashboard {
+.nexus-storage-dashboard {
   padding: 4px 0;
 }
 
-.lumina-storage-dashboard-header {
+.nexus-storage-dashboard-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 8px;
 }
 
-.lumina-storage-dashboard-label {
+.nexus-storage-dashboard-label {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary, #e8eaed);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary, #e8eaed);
 }
 
-.lumina-storage-dashboard-total {
+.nexus-storage-dashboard-total {
   font-size: 12px;
-  color: var(--lumina-text-secondary, #9aa0a6);
+  color: var(--nexus-text-secondary, #9aa0a6);
 }
 
-.lumina-storage-dashboard-total span {
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary, #e8eaed);
+.nexus-storage-dashboard-total span {
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary, #e8eaed);
 }
 
-.lumina-storage-bar-track {
+.nexus-storage-bar-track {
   height: 8px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.06);
@@ -1622,68 +1622,68 @@
   margin-bottom: 10px;
 }
 
-.lumina-storage-bar-segment {
+.nexus-storage-bar-segment {
   height: 100%;
   transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   min-width: 0;
 }
 
-.lumina-storage-bar-segment.seg-db {
+.nexus-storage-bar-segment.seg-db {
   background: linear-gradient(90deg, #ff6b6b, #ff3b30);
   border-radius: 4px 0 0 4px;
 }
 
-.lumina-storage-bar-segment.seg-files {
+.nexus-storage-bar-segment.seg-files {
   background: linear-gradient(90deg, #ffb347, #ff9500);
 }
 
-.lumina-storage-bar-segment.seg-config {
+.nexus-storage-bar-segment.seg-config {
   background: linear-gradient(90deg, #ffd93d, #ffcc00);
 }
 
-.lumina-storage-bar-segment.seg-cache {
+.nexus-storage-bar-segment.seg-cache {
   background: linear-gradient(90deg, #4da3ff, #007aff);
 }
 
-.lumina-storage-compact-grid {
+.nexus-storage-compact-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-top: 10px;
 }
 
-.lumina-storage-compact-item {
+.nexus-storage-compact-item {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: var(--lumina-bg-hover, rgba(0, 0, 0, 0.03));
-  border: 1px solid var(--lumina-border, rgba(0, 0, 0, 0.05));
+  background: var(--nexus-bg-hover, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--nexus-border, rgba(0, 0, 0, 0.05));
   font-size: 11px;
 }
 
-.lumina-storage-compact-item .dot {
+.nexus-storage-compact-item .dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.lumina-storage-compact-item .dot.seg-db {
+.nexus-storage-compact-item .dot.seg-db {
   background: #ff3b30;
 }
 
-.lumina-storage-compact-item .dot.seg-config {
+.nexus-storage-compact-item .dot.seg-config {
   background: #ffcc00;
 }
 
-.lumina-storage-compact-item .dot.seg-cache {
+.nexus-storage-compact-item .dot.seg-cache {
   background: #007aff;
 }
 
-.lumina-storage-compact-item .compact-name {
-  color: var(--lumina-text-secondary, #5f6368);
+.nexus-storage-compact-item .compact-name {
+  color: var(--nexus-text-secondary, #5f6368);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -1691,44 +1691,44 @@
   flex: 1;
 }
 
-.lumina-storage-compact-item .compact-size {
+.nexus-storage-compact-item .compact-size {
   font-weight: 600;
-  color: var(--lumina-text-primary, #202124);
+  color: var(--nexus-text-primary, #202124);
   white-space: nowrap;
 }
 
-.lumina-storage-threads-card {
+.nexus-storage-threads-card {
   padding: 8px 0;
 }
 
-.lumina-storage-sessions-header {
+.nexus-storage-sessions-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.lumina-storage-sessions-header>span {
+.nexus-storage-sessions-header>span {
   font-size: 13px;
-  font-weight: var(--lumina-weight-semibold);
-  color: var(--lumina-text-primary, #e8eaed);
+  font-weight: var(--nexus-weight-semibold);
+  color: var(--nexus-text-primary, #e8eaed);
 }
 
-.lumina-settings-btn.sm {
+.nexus-settings-btn.sm {
   padding: 4px 10px;
   font-size: 13px;
   min-height: unset;
   height: 26px;
 }
 
-#lumina-annotation-popup-color-palette {
+#nexus-annotation-popup-color-palette {
   display: flex;
   gap: 12px;
   padding: 4px 0;
 }
 
-.lumina-account-card {
-  background: var(--lumina-bg-hover, rgba(0, 0, 0, 0.02));
-  border: 1px solid var(--lumina-ui-border);
+.nexus-account-card {
+  background: var(--nexus-bg-hover, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--nexus-ui-border);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 6px;
@@ -1737,19 +1737,19 @@
   gap: 16px;
 }
 
-.lumina-settings-profile-row {
+.nexus-settings-profile-row {
   display: flex;
   align-items: center;
   gap: 12px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--lumina-ui-border);
+  border-bottom: 1px solid var(--nexus-ui-border);
 }
 
-.lumina-settings-avatar {
+.nexus-settings-avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1.5px solid var(--lumina-ui-border);
+  border: 1.5px solid var(--nexus-ui-border);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -1768,7 +1768,7 @@
 }
 
 
-.lumina-profile-actions {
+.nexus-profile-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -1776,7 +1776,7 @@
   flex-shrink: 0;
 }
 
-.lumina-cloud-sync-stats-grid {
+.nexus-cloud-sync-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
@@ -1784,44 +1784,44 @@
   box-sizing: border-box;
 }
 
-.lumina-cloud-stat-card {
+.nexus-cloud-stat-card {
   display: flex;
   flex-direction: column;
   padding: 10px 14px;
-  background: var(--lumina-ui-bg, #ffffff);
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08));
+  background: var(--nexus-ui-bg, #ffffff);
+  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.08));
   border-radius: 10px;
   min-width: 0;
   box-sizing: border-box;
   transition: border-color 0.15s ease;
 }
 
-.lumina-cloud-stat-card:hover {
-  border-color: var(--lumina-primary-color, #007aff);
+.nexus-cloud-stat-card:hover {
+  border-color: var(--nexus-primary-color, #007aff);
 }
 
-.lumina-cloud-stat-card .stat-label {
+.nexus-cloud-stat-card .stat-label {
   font-size: 10.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--lumina-text-tertiary, #9aa0a6);
+  color: var(--nexus-text-tertiary, #9aa0a6);
   margin-bottom: 4px;
 }
 
-.lumina-cloud-stat-card .stat-value {
+.nexus-cloud-stat-card .stat-value {
   font-size: 15px;
   font-weight: 600;
-  color: var(--lumina-text-primary, #202124);
+  color: var(--nexus-text-primary, #202124);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.3;
 }
 
-.lumina-cloud-stat-card .stat-sub {
+.nexus-cloud-stat-card .stat-sub {
   font-size: 11.5px;
-  color: var(--lumina-text-secondary, #5f6368);
+  color: var(--nexus-text-secondary, #5f6368);
   margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;

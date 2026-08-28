@@ -1,143 +1,143 @@
 :host,
 body,
 button {
-  font-family: var(--lumina-font-family);
-  font-size: var(--lumina-fontSize, 13px);
+  font-family: var(--nexus-font-family);
+  font-size: var(--nexus-fontSize, 13px);
   font-weight: 400;
   margin: 0;
 }
 
 html,
 body {
-  background-color: var(--lumina-ui-bg) !important;
-  color: var(--lumina-text-primary);
+  background-color: var(--nexus-ui-bg) !important;
+  color: var(--nexus-text-primary);
   margin: 0;
   padding: 0;
 }
 
 ::selection {
-  background: rgba(var(--lumina-primary-rgb), 0.3) !important;
+  background: rgba(var(--nexus-primary-rgb), 0.3) !important;
   color: inherit !important;
   text-shadow: none !important;
 }
 
 :root,
 :host {
-  --lumina-ui-opacity: 1.0;
-  --lumina-ui-base-rgb: 255, 255, 255;
-  --lumina-icon-stroke-weight: 1.8;
-  --lumina-ui-bg: #FFFFFF;
-  --lumina-ui-bg-light: #F5F5F7;
-  --lumina-ui-border: rgba(0, 0, 0, 0.1);
-  --lumina-blur-primary: none;
-  --lumina-blur-secondary: none;
-  --lumina-blur-tertiary: none;
-  --lumina-shadow-primary: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  --lumina-shadow-secondary: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --lumina-shadow-tertiary: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --lumina-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
-  --lumina-shadow-focus: 0 0 0 3px rgba(var(--lumina-primary-rgb), 0.4);
-  --lumina-primary-color: #0056D2;
-  --lumina-primary-rgb: 0, 86, 210;
-  --lumina-text-primary: #202124;
-  --lumina-text-secondary: #5f6368;
-  --lumina-text-tertiary: #9aa0a6;
-  --lumina-radius-lg: 24px;
-  --lumina-radius-md: 16px;
-  --lumina-radius-sm: 12px;
-  --lumina-input-bg: #FFFFFF;
-  --lumina-border-color: rgba(0, 0, 0, 0.12);
-  --lumina-font-family: 'Inter', system-ui, sans-serif;
-  --lumina-chat-bg: #FFFFFF;
-  --lumina-bg-primary: #ffffff;
-  --lumina-sidebar-bg: #f1f6fe;
-  --lumina-sidebar-hover: rgba(var(--lumina-primary-rgb), 0.06);
-  --lumina-sidebar-active-bg: rgba(var(--lumina-primary-rgb), 0.10);
-  --lumina-sidebar-text: #202124;
-  --lumina-sidebar-text-muted: #5f6368;
+  --nexus-ui-opacity: 1.0;
+  --nexus-ui-base-rgb: 255, 255, 255;
+  --nexus-icon-stroke-weight: 1.8;
+  --nexus-ui-bg: #FFFFFF;
+  --nexus-ui-bg-light: #F5F5F7;
+  --nexus-ui-border: rgba(0, 0, 0, 0.1);
+  --nexus-blur-primary: none;
+  --nexus-blur-secondary: none;
+  --nexus-blur-tertiary: none;
+  --nexus-shadow-primary: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  --nexus-shadow-secondary: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --nexus-shadow-tertiary: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --nexus-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --nexus-shadow-focus: 0 0 0 3px rgba(var(--nexus-primary-rgb), 0.4);
+  --nexus-primary-color: #0056D2;
+  --nexus-primary-rgb: 0, 86, 210;
+  --nexus-text-primary: #202124;
+  --nexus-text-secondary: #5f6368;
+  --nexus-text-tertiary: #9aa0a6;
+  --nexus-radius-lg: 24px;
+  --nexus-radius-md: 16px;
+  --nexus-radius-sm: 12px;
+  --nexus-input-bg: #FFFFFF;
+  --nexus-border-color: rgba(0, 0, 0, 0.12);
+  --nexus-font-family: 'Inter', system-ui, sans-serif;
+  --nexus-chat-bg: #FFFFFF;
+  --nexus-bg-primary: #ffffff;
+  --nexus-sidebar-bg: #f1f6fe;
+  --nexus-sidebar-hover: rgba(var(--nexus-primary-rgb), 0.06);
+  --nexus-sidebar-active-bg: rgba(var(--nexus-primary-rgb), 0.10);
+  --nexus-sidebar-text: #202124;
+  --nexus-sidebar-text-muted: #5f6368;
 }
 
 [data-theme="dark"],
 :host([data-theme="dark"]) {
-  --lumina-ui-base-rgb: 60, 60, 60;
-  --lumina-text-primary: #ffffff;
-  --lumina-text-secondary: #e0e0e0;
-  --lumina-text-tertiary: #80848c;
-  --lumina-primary-color: #0A84FF;
-  --lumina-primary-rgb: 10, 132, 255;
-  --lumina-ui-border: rgba(255, 255, 255, 0.15);
-  --lumina-ui-bg: #3c3c3c;
-  --lumina-ui-bg-light: #2c2c2c;
-  --lumina-input-bg: #2c2c2c;
-  --lumina-card-bg: #2c2c2c;
-  --lumina-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --lumina-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
-  --lumina-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --lumina-border-color: rgba(255, 255, 255, 0.15);
-  --lumina-chat-bg: #3c3c3c;
-  --lumina-bg-primary: #3c3c3c;
-  --lumina-sidebar-bg: #2c2c2c;
-  --lumina-sidebar-hover: rgba(255, 255, 255, 0.06);
-  --lumina-sidebar-active-bg: rgba(255, 255, 255, 0.10);
-  --lumina-sidebar-text: #e8eaed;
-  --lumina-sidebar-text-muted: #b0b3b8;
+  --nexus-ui-base-rgb: 60, 60, 60;
+  --nexus-text-primary: #ffffff;
+  --nexus-text-secondary: #e0e0e0;
+  --nexus-text-tertiary: #80848c;
+  --nexus-primary-color: #0A84FF;
+  --nexus-primary-rgb: 10, 132, 255;
+  --nexus-ui-border: rgba(255, 255, 255, 0.15);
+  --nexus-ui-bg: #3c3c3c;
+  --nexus-ui-bg-light: #2c2c2c;
+  --nexus-input-bg: #2c2c2c;
+  --nexus-card-bg: #2c2c2c;
+  --nexus-shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --nexus-shadow-secondary: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --nexus-shadow-tertiary: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --nexus-border-color: rgba(255, 255, 255, 0.15);
+  --nexus-chat-bg: #3c3c3c;
+  --nexus-bg-primary: #3c3c3c;
+  --nexus-sidebar-bg: #2c2c2c;
+  --nexus-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --nexus-sidebar-active-bg: rgba(255, 255, 255, 0.10);
+  --nexus-sidebar-text: #e8eaed;
+  --nexus-sidebar-text-muted: #b0b3b8;
 }
 
 [data-accent="amber"],
 :host([data-accent="amber"]) {
-  --lumina-primary-color: #d97706;
-  --lumina-primary-rgb: 217, 119, 6;
+  --nexus-primary-color: #d97706;
+  --nexus-primary-rgb: 217, 119, 6;
 }
 
 [data-accent="emerald"],
 :host([data-accent="emerald"]) {
-  --lumina-primary-color: #059669;
-  --lumina-primary-rgb: 5, 150, 105;
+  --nexus-primary-color: #059669;
+  --nexus-primary-rgb: 5, 150, 105;
 }
 
 [data-accent="sky"],
 :host([data-accent="sky"]) {
-  --lumina-primary-color: #0284c7;
-  --lumina-primary-rgb: 2, 132, 199;
+  --nexus-primary-color: #0284c7;
+  --nexus-primary-rgb: 2, 132, 199;
 }
 
 [data-accent="indigo"],
 :host([data-accent="indigo"]) {
-  --lumina-primary-color: #4f46e5;
-  --lumina-primary-rgb: 79, 70, 229;
+  --nexus-primary-color: #4f46e5;
+  --nexus-primary-rgb: 79, 70, 229;
 }
 
 [data-accent="rose"],
 :host([data-accent="rose"]) {
-  --lumina-primary-color: #e11d48;
-  --lumina-primary-rgb: 225, 29, 72;
+  --nexus-primary-color: #e11d48;
+  --nexus-primary-rgb: 225, 29, 72;
 }
 
 [data-theme="dark"][data-contrast="high"],
 :host([data-theme="dark"][data-contrast="high"]) {
-  --lumina-ui-bg: #1a1a1a !important;
-  --lumina-ui-bg-light: #000000 !important;
-  --lumina-input-bg: #000000 !important;
-  --lumina-card-bg: #000000 !important;
-  --lumina-sidebar-bg: #000000 !important;
-  --lumina-ui-border: rgba(255, 255, 255, 0.5) !important;
-  --lumina-border-color: rgba(255, 255, 255, 0.5) !important;
-  --lumina-text-primary: #ffffff !important;
-  --lumina-text-secondary: #f0f0f0 !important;
-  --lumina-text-tertiary: #d0d0d0 !important;
-  --lumina-shadow-focus: 0 0 0 3px #ffffff !important;
+  --nexus-ui-bg: #1a1a1a !important;
+  --nexus-ui-bg-light: #000000 !important;
+  --nexus-input-bg: #000000 !important;
+  --nexus-card-bg: #000000 !important;
+  --nexus-sidebar-bg: #000000 !important;
+  --nexus-ui-border: rgba(255, 255, 255, 0.5) !important;
+  --nexus-border-color: rgba(255, 255, 255, 0.5) !important;
+  --nexus-text-primary: #ffffff !important;
+  --nexus-text-secondary: #f0f0f0 !important;
+  --nexus-text-tertiary: #d0d0d0 !important;
+  --nexus-shadow-focus: 0 0 0 3px #ffffff !important;
 }
 
-.lumina-action-item svg,
-#lumina-action-bar svg,
-.lumina-new-tab-btn svg,
+.nexus-action-item svg,
+#nexus-action-bar svg,
+.nexus-new-tab-btn svg,
 .btn-chain-add svg,
-.lumina-icon svg {
-  stroke-width: var(--lumina-icon-stroke-weight) !important;
+.nexus-icon svg {
+  stroke-width: var(--nexus-icon-stroke-weight) !important;
   shape-rendering: geometricPrecision !important;
 }
 
-#lumina-action-bar {
+#nexus-action-bar {
   all: initial;
   position: absolute !important;
   display: none !important;
@@ -154,20 +154,20 @@ body {
   z-index: 2147483647 !important;
   overflow: hidden !important;
   height: 28px !important;
-  animation: lumina-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  font-family: var(--lumina-font-family) !important;
-  font-size: var(--lumina-fontSize, 13px) !important;
+  animation: nexus-pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family: var(--nexus-font-family) !important;
+  font-size: var(--nexus-fontSize, 13px) !important;
   line-height: normal !important;
   user-select: none !important;
   -webkit-user-select: none !important;
 }
 
-[data-theme="dark"] #lumina-action-bar {
+[data-theme="dark"] #nexus-action-bar {
   background: rgba(28, 28, 30, 0.9) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
 }
 
-.lumina-action-item {
+.nexus-action-item {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -176,17 +176,17 @@ body {
   border-radius: 8px !important;
   cursor: pointer !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  color: var(--lumina-text-secondary) !important;
+  color: var(--nexus-text-secondary) !important;
   white-space: nowrap !important;
   gap: 6px !important;
 }
 
-.lumina-action-item:hover {
+.nexus-action-item:hover {
   background: rgba(0, 0, 0, 0.05) !important;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
 }
 
-.lumina-action-highlight-btn {
+.nexus-action-highlight-btn {
   padding: 0 !important;
   width: 28px !important;
   height: 28px !important;
@@ -196,7 +196,7 @@ body {
   flex-shrink: 0 !important;
 }
 
-.lumina-action-highlight-color-preview {
+.nexus-action-highlight-color-preview {
   width: 14px !important;
   height: 14px !important;
   border-radius: 50% !important;
@@ -205,28 +205,28 @@ body {
   box-sizing: border-box !important;
 }
 
-[data-theme="dark"] .lumina-action-item:hover {
+[data-theme="dark"] .nexus-action-item:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-.lumina-action-item img {
+.nexus-action-item img {
   width: 16px !important;
   height: 16px !important;
   opacity: 0.8 !important;
   transition: opacity 0.2s ease !important;
 }
 
-.lumina-action-item:hover img {
+.nexus-action-item:hover img {
   opacity: 1 !important;
 }
 
-#lumina-action-bar .lumina-action-comment {
+#nexus-action-bar .nexus-action-comment {
   display: flex !important;
 }
 
 
 
-#lumina-comment-hover-tooltip .lumina-comment-tooltip-card {
+#nexus-comment-hover-tooltip .nexus-comment-tooltip-card {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -236,22 +236,22 @@ body {
   border-radius: 10px !important;
   padding: 6px 10px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
-  font-family: var(--lumina-font-family, system-ui, sans-serif) !important;
+  font-family: var(--nexus-font-family, system-ui, sans-serif) !important;
   font-size: 13px !important;
   color: #1c1c1e !important;
   max-width: 280px !important;
   word-break: break-word !important;
-  animation: lumina-pop-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  animation: nexus-pop-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   pointer-events: auto !important;
 }
 
-[data-theme="dark"] #lumina-comment-hover-tooltip .lumina-comment-tooltip-card {
+[data-theme="dark"] #nexus-comment-hover-tooltip .nexus-comment-tooltip-card {
   background: rgba(28, 28, 30, 0.95) !important;
   color: #ffffff !important;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
 }
 
-.lumina-comment-tooltip-text {
+.nexus-comment-tooltip-text {
   flex: 1 !important;
   line-height: 1.35 !important;
   font-weight: 500 !important;
@@ -259,7 +259,7 @@ body {
 
 
 
-.lumina-tooltip {
+.nexus-tooltip {
   position: fixed;
   background: rgba(15, 15, 15, 0.9) !important;
   color: #fff !important;
@@ -283,35 +283,35 @@ body {
   box-sizing: border-box !important;
 }
 
-.lumina-tooltip.active {
+.nexus-tooltip.active {
   display: block;
   opacity: 1;
   transform: translateY(0);
 }
 
-.lumina-dictionary-popup {
+.nexus-dictionary-popup {
   position: fixed !important;
   z-index: 2147483647 !important;
-  background: var(--lumina-bg-primary, #ffffff) !important;
+  background: var(--nexus-bg-primary, #ffffff) !important;
   border-radius: 14px !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.1)) !important;
+  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.1)) !important;
   pointer-events: auto !important;
   transform: translateZ(0) !important;
   will-change: transform, opacity !important;
-  font-family: var(--lumina-font-family) !important;
+  font-family: var(--nexus-font-family) !important;
 }
 
-.lumina-dictionary-popup *:not(.lumina-dict-ipa):not(.lumina-dict-popup-title),
-.lumina-dictionary-popup *:not(.lumina-dict-ipa):not(.lumina-dict-popup-title)::before,
-.lumina-dictionary-popup *:not(.lumina-dict-ipa):not(.lumina-dict-popup-title)::after {
-  font-family: var(--lumina-font-family) !important;
+.nexus-dictionary-popup *:not(.nexus-dict-ipa):not(.nexus-dict-popup-title),
+.nexus-dictionary-popup *:not(.nexus-dict-ipa):not(.nexus-dict-popup-title)::before,
+.nexus-dictionary-popup *:not(.nexus-dict-ipa):not(.nexus-dict-popup-title)::after {
+  font-family: var(--nexus-font-family) !important;
 }
 
-.lumina-dict-body {
+.nexus-dict-body {
   flex: 1 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -322,7 +322,7 @@ body {
   border-top-right-radius: 14px !important;
 }
 
-.lumina-dict-popup-item {
+.nexus-dict-popup-item {
   margin-bottom: 12px !important;
 }
 
@@ -331,12 +331,12 @@ body {
   display: block !important;
 }
 
-.lumina-action-item .lumina-svg-icon {
+.nexus-action-item .nexus-svg-icon {
   width: 17px !important;
   height: 17px !important;
 }
 
-.lumina-dict-resizer-right {
+.nexus-dict-resizer-right {
   position: absolute !important;
   right: -3px !important;
   top: 0 !important;
@@ -346,7 +346,7 @@ body {
   z-index: 2147483647 !important;
 }
 
-.lumina-dict-resizer-bottom {
+.nexus-dict-resizer-bottom {
   position: absolute !important;
   bottom: -3px !important;
   left: 0 !important;
@@ -356,7 +356,7 @@ body {
   z-index: 2147483647 !important;
 }
 
-.lumina-dict-resizer-corner {
+.nexus-dict-resizer-corner {
   position: absolute !important;
   right: 0 !important;
   bottom: 0 !important;
@@ -366,7 +366,7 @@ body {
   z-index: 2147483647 !important;
 }
 
-.lumina-ask-input-wrapper {
+.nexus-ask-input-wrapper {
   position: relative !important;
   flex: 1 !important;
   display: flex !important;
@@ -375,7 +375,7 @@ body {
   width: 100% !important;
 }
 
-.lumina-ask-input-field {
+.nexus-ask-input-field {
   flex: 1 !important;
   background: transparent !important;
   border: none !important;
@@ -383,12 +383,12 @@ body {
   padding: 5px 12px !important;
   font-size: 1em !important;
   font-weight: 400 !important;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   min-height: 23px !important;
   max-height: 180px !important;
   overflow-y: auto !important;
   line-height: 1.5 !important;
-  font-family: var(--lumina-font-family) !important;
+  font-family: var(--nexus-font-family) !important;
   box-sizing: border-box !important;
   cursor: text !important;
   display: block !important;
@@ -404,15 +404,15 @@ body {
   field-sizing: content !important;
 }
 
-.lumina-input-bar .lumina-chat-input::placeholder,
-.lumina-ask-input-field::placeholder {
+.nexus-input-bar .nexus-chat-input::placeholder,
+.nexus-ask-input-field::placeholder {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  color: var(--lumina-text-secondary, #5f6368) !important;
+  color: var(--nexus-text-secondary, #5f6368) !important;
   opacity: 0.65 !important;
   font-weight: 400 !important;
-  font-family: var(--lumina-font-family) !important;
+  font-family: var(--nexus-font-family) !important;
   font-size: 1em !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
@@ -421,15 +421,15 @@ body {
   text-shadow: none !important;
 }
 
-[data-theme="dark"] .lumina-input-bar .lumina-chat-input::placeholder,
-[data-theme="dark"] .lumina-ask-input-field::placeholder {
-  color: var(--lumina-text-secondary, #9aa0a6) !important;
+[data-theme="dark"] .nexus-input-bar .nexus-chat-input::placeholder,
+[data-theme="dark"] .nexus-ask-input-field::placeholder {
+  color: var(--nexus-text-secondary, #9aa0a6) !important;
   opacity: 0.65 !important;
 }
 
-.lumina-actions-menu>button,
-.lumina-actions-menu .lumina-tools-toggle,
-.lumina-actions-menu .lumina-model-btn {
+.nexus-actions-menu>button,
+.nexus-actions-menu .nexus-tools-toggle,
+.nexus-actions-menu .nexus-model-btn {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -437,7 +437,7 @@ body {
   width: 100% !important;
   border: none !important;
   background: transparent !important;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   text-align: left;
@@ -446,16 +446,16 @@ body {
   cursor: pointer;
 }
 
-.lumina-actions-menu>button:hover,
-.lumina-actions-menu .lumina-tools-toggle:hover,
-.lumina-actions-menu .lumina-model-btn:hover {
+.nexus-actions-menu>button:hover,
+.nexus-actions-menu .nexus-tools-toggle:hover,
+.nexus-actions-menu .nexus-model-btn:hover {
   background: rgba(0, 0, 0, 0.12) !important;
 }
 
-.lumina-dict-word {
+.nexus-dict-word {
   font-weight: 700 !important;
   font-size: 1.6em !important;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   letter-spacing: -0.03em;
   text-transform: lowercase !important;
   display: inline-block;
@@ -463,14 +463,14 @@ body {
   margin-top: -6px !important;
 }
 
-.lumina-dict-pos {
+.nexus-dict-pos {
   display: inline-block;
   font-size: 0.85em !important;
   font-weight: 600 !important;
-  color: var(--lumina-primary-color);
+  color: var(--nexus-primary-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: rgba(var(--lumina-primary-rgb), 0.1);
+  background: rgba(var(--nexus-primary-rgb), 0.1);
   padding: 1px 6px;
   border-radius: 4px;
   margin-right: 6px;
@@ -478,40 +478,40 @@ body {
   vertical-align: middle;
 }
 
-.lumina-dict-meaning-text {
+.nexus-dict-meaning-text {
   font-weight: 400 !important;
-  color: var(--lumina-text-primary);
+  color: var(--nexus-text-primary);
   line-height: 1.5;
   display: inline;
 }
 
-.lumina-dict-meaning-text::first-letter {
+.nexus-dict-meaning-text::first-letter {
   text-transform: uppercase !important;
 }
 
-.lumina-dict-example {
+.nexus-dict-example {
   font-style: italic;
-  color: var(--lumina-text-secondary);
+  color: var(--nexus-text-secondary);
   margin-top: 6px;
   padding-left: 12px;
-  border-left: 2px solid rgba(var(--lumina-primary-rgb), 0.4);
+  border-left: 2px solid rgba(var(--nexus-primary-rgb), 0.4);
   font-size: 0.92em !important;
   font-weight: 400 !important;
   line-height: 1.65;
 }
 
-.lumina-dict-translation {
-  color: var(--lumina-text-secondary);
+.nexus-dict-translation {
+  color: var(--nexus-text-secondary);
   font-weight: 400 !important;
 }
 
-[data-theme="dark"] .lumina-dictionary-popup {
-  background: var(--lumina-bg-primary, #1c1c1e) !important;
+[data-theme="dark"] .nexus-dictionary-popup {
+  background: var(--nexus-bg-primary, #1c1c1e) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
-.lumina-dict-scroll-area {
+.nexus-dict-scroll-area {
   flex: 1 !important;
   min-height: 0 !important;
   overflow-y: auto !important;
@@ -522,20 +522,20 @@ body {
   -webkit-overflow-scrolling: touch !important;
 }
 
-.lumina-dict-scroll-area::-webkit-scrollbar {
+.nexus-dict-scroll-area::-webkit-scrollbar {
   width: 6px;
 }
 
-.lumina-dict-scroll-area::-webkit-scrollbar-thumb {
+.nexus-dict-scroll-area::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 3px;
 }
 
-[data-theme="dark"] .lumina-dict-scroll-area::-webkit-scrollbar-thumb {
+[data-theme="dark"] .nexus-dict-scroll-area::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.lumina-dict-footer {
+.nexus-dict-footer {
   position: relative !important;
   height: 32px !important;
   background: #f1f3f4 !important;
@@ -550,7 +550,7 @@ body {
   overflow: hidden !important;
 }
 
-.lumina-dict-tabs {
+.nexus-dict-tabs {
   display: flex !important;
   width: 100% !important;
   height: 100% !important;
@@ -561,16 +561,16 @@ body {
   z-index: 2 !important;
 }
 
-[data-theme="dark"] .lumina-dict-footer {
+[data-theme="dark"] .nexus-dict-footer {
   background: #1e1e1e !important;
   border-top: none !important;
 }
 
-[data-theme="dark"] .lumina-dict-tabs {
+[data-theme="dark"] .nexus-dict-tabs {
   background: transparent !important;
 }
 
-.lumina-dict-tab-btn {
+.nexus-dict-tab-btn {
   flex: 1 !important;
   height: 100% !important;
   border: none !important;
@@ -588,62 +588,62 @@ body {
   justify-content: center !important;
 }
 
-.lumina-dict-tab-btn.active {
-  background: var(--lumina-bg-primary, #ffffff) !important;
-  color: var(--lumina-primary-color, #007aff) !important;
+.nexus-dict-tab-btn.active {
+  background: var(--nexus-bg-primary, #ffffff) !important;
+  color: var(--nexus-primary-color, #007aff) !important;
   z-index: 10 !important;
 }
 
-.lumina-dict-tab-btn.active::before {
+.nexus-dict-tab-btn.active::before {
   content: "" !important;
   position: absolute !important;
   top: 0 !important;
   left: -12px !important;
   width: 12px !important;
   height: 12px !important;
-  background: radial-gradient(circle at bottom left, transparent 12px, var(--lumina-bg-primary, #ffffff) 12.5px) !important;
+  background: radial-gradient(circle at bottom left, transparent 12px, var(--nexus-bg-primary, #ffffff) 12.5px) !important;
   pointer-events: none !important;
 }
 
-.lumina-dict-tab-btn.active::after {
+.nexus-dict-tab-btn.active::after {
   content: "" !important;
   position: absolute !important;
   top: 0 !important;
   right: -12px !important;
   width: 12px !important;
   height: 12px !important;
-  background: radial-gradient(circle at bottom right, transparent 12px, var(--lumina-bg-primary, #ffffff) 12.5px) !important;
+  background: radial-gradient(circle at bottom right, transparent 12px, var(--nexus-bg-primary, #ffffff) 12.5px) !important;
   pointer-events: none !important;
 }
 
-[data-theme="dark"] .lumina-dict-tab-btn {
+[data-theme="dark"] .nexus-dict-tab-btn {
   color: #9aa0a6 !important;
 }
 
-[data-theme="dark"] .lumina-dict-tab-btn.active {
-  background: var(--lumina-input-bg) !important;
+[data-theme="dark"] .nexus-dict-tab-btn.active {
+  background: var(--nexus-input-bg) !important;
   color: #fff !important;
 }
 
-[data-theme="dark"] .lumina-dict-tab-btn.active::before {
-  background: radial-gradient(circle at bottom left, transparent 12px, var(--lumina-input-bg) 12.5px) !important;
+[data-theme="dark"] .nexus-dict-tab-btn.active::before {
+  background: radial-gradient(circle at bottom left, transparent 12px, var(--nexus-input-bg) 12.5px) !important;
 }
 
-[data-theme="dark"] .lumina-dict-tab-btn.active::after {
-  background: radial-gradient(circle at bottom right, transparent 12px, var(--lumina-input-bg) 12.5px) !important;
+[data-theme="dark"] .nexus-dict-tab-btn.active::after {
+  background: radial-gradient(circle at bottom right, transparent 12px, var(--nexus-input-bg) 12.5px) !important;
 }
 
-.lumina-dict-tab-btn:not(.active):hover {
+.nexus-dict-tab-btn:not(.active):hover {
   background: rgba(0, 0, 0, 0.04) !important;
   color: #202124 !important;
 }
 
-[data-theme="dark"] .lumina-dict-tab-btn:not(.active):hover {
+[data-theme="dark"] .nexus-dict-tab-btn:not(.active):hover {
   background: rgba(255, 255, 255, 0.04) !important;
   color: #e8eaed !important;
 }
 
-.lumina-dict-status-container {
+.nexus-dict-status-container {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -655,68 +655,68 @@ body {
   box-sizing: border-box !important;
 }
 
-.lumina-dict-status-card {
+.nexus-dict-status-card {
   max-width: 320px !important;
-  animation: lumina-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: nexus-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.lumina-dict-status-icon {
+.nexus-dict-status-icon {
   font-size: 3em !important;
   margin-bottom: 16px !important;
   line-height: 1 !important;
 }
 
-.lumina-dict-status-title {
+.nexus-dict-status-title {
   font-size: 1.25em !important;
   font-weight: 600 !important;
   margin-bottom: 10px !important;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   letter-spacing: -0.01em !important;
 }
 
-.lumina-dict-status-desc {
+.nexus-dict-status-desc {
   font-size: 0.95em !important;
   line-height: 1.6 !important;
-  color: var(--lumina-text-secondary) !important;
+  color: var(--nexus-text-secondary) !important;
   font-weight: 400 !important;
 }
 
-.status-error .lumina-dict-status-icon {
+.status-error .nexus-dict-status-icon {
   filter: drop-shadow(0 2px 4px rgba(255, 59, 48, 0.2));
 }
 
-.status-empty .lumina-dict-status-icon {
+.status-empty .nexus-dict-status-icon {
   filter: grayscale(1) opacity(0.6);
 }
 
-.lumina-dict-popup-meta {
+.nexus-dict-popup-meta {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important;
   margin-bottom: 8px !important;
 }
 
-.lumina-dict-popup-item+.lumina-dict-popup-item {
+.nexus-dict-popup-item+.nexus-dict-popup-item {
   margin-top: 14px !important;
-  border-top: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
+  border-top: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.08)) !important;
   padding-top: 10px !important;
 }
 
-.lumina-dict-popup-sense {
+.nexus-dict-popup-sense {
   margin-top: 6px !important;
   margin-bottom: 4px !important;
   position: relative !important;
 }
 
-.lumina-dict-popup-meaning {
+.nexus-dict-popup-meaning {
   margin-bottom: 4px !important;
 }
 
-.lumina-dict-popup-meaning:last-child {
+.nexus-dict-popup-meaning:last-child {
   margin-bottom: 0 !important;
 }
 
-.lumina-dict-header-row {
+.nexus-dict-header-row {
   display: flex !important;
   justify-content: flex-start !important;
   align-items: baseline !important;
@@ -724,10 +724,10 @@ body {
   margin-bottom: 4px !important;
 }
 
-.lumina-dict-popup-pos {
+.nexus-dict-popup-pos {
   font-size: 0.85em !important;
   text-transform: lowercase !important;
-  color: var(--lumina-text-secondary) !important;
+  color: var(--nexus-text-secondary) !important;
   font-weight: 500 !important;
   font-style: italic !important;
   text-align: right !important;
@@ -735,40 +735,40 @@ body {
   line-height: 1.2 !important;
 }
 
-.lumina-dict-popup-examples {
+.nexus-dict-popup-examples {
   margin-top: 8px !important;
   padding-left: 12px !important;
   border-left: 2px solid rgba(0, 0, 0, 0.05) !important;
 }
 
-[data-theme="dark"] .lumina-dict-popup-examples {
+[data-theme="dark"] .nexus-dict-popup-examples {
   border-left-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.lumina-dict-popup-example {
+.nexus-dict-popup-example {
   font-size: 0.95em !important;
-  color: var(--lumina-text-secondary) !important;
+  color: var(--nexus-text-secondary) !important;
   font-style: italic !important;
   margin-bottom: 4px !important;
   line-height: 1.4 !important;
 }
 
-.lumina-dict-loading-state {
+.nexus-dict-loading-state {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   height: 100% !important;
   gap: 12px !important;
-  color: var(--lumina-text-secondary) !important;
+  color: var(--nexus-text-secondary) !important;
   font-size: 0.9em !important;
 }
 
-.lumina-dictionary-popup .lumina-dict-popup-title {
-  font-family: var(--lumina-font-family) !important;
+.nexus-dictionary-popup .nexus-dict-popup-title {
+  font-family: var(--nexus-font-family) !important;
   font-size: 1.4em !important;
   font-weight: 800 !important;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
   line-height: 1.1 !important;
@@ -778,30 +778,30 @@ body {
   text-overflow: ellipsis !important;
 }
 
-.lumina-dict-images-grid {
+.nexus-dict-images-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
   gap: 10px !important;
   padding: 0 !important;
 }
 
-.lumina-dict-image-card {
+.nexus-dict-image-card {
   position: relative !important;
   border-radius: 8px !important;
   overflow: hidden !important;
   background: rgba(0, 0, 0, 0.05) !important;
   aspect-ratio: 4/3 !important;
-  border: 1px solid var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
+  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.08)) !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
   cursor: pointer !important;
 }
 
-.lumina-dict-image-card:hover {
+.nexus-dict-image-card:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
-.lumina-dict-image-card .lumina-loading-spinner {
+.nexus-dict-image-card .nexus-loading-spinner {
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
@@ -810,61 +810,61 @@ body {
   z-index: 1 !important;
 }
 
-.lumina-dict-image-card img {
+.nexus-dict-image-card img {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
   display: block !important;
 }
 
-[data-theme="dark"] .lumina-dict-image-card {
+[data-theme="dark"] .nexus-dict-image-card {
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
-.lumina-dict-popup-prons {
+.nexus-dict-popup-prons {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important;
   margin-top: 2px !important;
 }
 
-.lumina-dict-pron-group {
+.nexus-dict-pron-group {
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
   font-weight: 600 !important;
 }
 
-.lumina-dict-pron-group .lumina-dict-ipa {
+.nexus-dict-pron-group .nexus-dict-ipa {
   font-weight: 500 !important;
 }
 
-.lumina-dict-pron-group.uk {
+.nexus-dict-pron-group.uk {
   color: #0076d6 !important;
 }
 
-.lumina-dict-pron-group.us {
+.nexus-dict-pron-group.us {
   color: #d0021b !important;
 }
 
-.lumina-dict-lang {
+.nexus-dict-lang {
   font-size: 0.9em !important;
   font-weight: 800 !important;
   line-height: 1.2 !important;
   text-transform: uppercase !important;
 }
 
-.lumina-dict-ipa {
+.nexus-dict-ipa {
   font-family: "Lucida Sans Unicode", "Arial Unicode MS", "Doulos SIL", "Charis SIL", "Gentium Plus", sans-serif !important;
   font-size: 0.95em !important;
   letter-spacing: 0.03em !important;
   font-weight: 600 !important;
-  color: var(--lumina-text-primary) !important;
+  color: var(--nexus-text-primary) !important;
   line-height: 1.2 !important;
   margin-top: -1px !important;
 }
 
-.lumina-dict-popup-audio {
+.nexus-dict-popup-audio {
   background: transparent !important;
   border: none !important;
   padding: 4px !important;
@@ -877,20 +877,20 @@ body {
   transition: all 0.2s !important;
 }
 
-.lumina-dict-popup-audio:hover {
+.nexus-dict-popup-audio:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   transform: scale(1.1) !important;
 }
 
-[data-theme="dark"] .lumina-dict-popup-audio:hover {
+[data-theme="dark"] .nexus-dict-popup-audio:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-.lumina-dict-sense-indicator {
+.nexus-dict-sense-indicator {
   font-size: 0.76em !important;
   font-weight: 700 !important;
-  color: var(--lumina-primary-color) !important;
-  background: rgba(var(--lumina-primary-rgb, 0, 86, 210), 0.08) !important;
+  color: var(--nexus-primary-color) !important;
+  background: rgba(var(--nexus-primary-rgb, 0, 86, 210), 0.08) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.08em !important;
   padding: 3px 8px !important;
@@ -901,25 +901,25 @@ body {
   line-height: 1.2 !important;
 }
 
-[data-theme="dark"] .lumina-dict-sense-indicator {
-  background: rgba(var(--lumina-primary-rgb, 0, 86, 210), 0.16) !important;
+[data-theme="dark"] .nexus-dict-sense-indicator {
+  background: rgba(var(--nexus-primary-rgb, 0, 86, 210), 0.16) !important;
   color: #58a6ff !important;
 }
 
-.lumina-dict-popup-sense:first-child .lumina-dict-sense-indicator {
+.nexus-dict-popup-sense:first-child .nexus-dict-sense-indicator {
   margin-top: 0 !important;
 }
 
-.lumina-dict-popup-meaning:last-child {
+.nexus-dict-popup-meaning:last-child {
   margin-bottom: 0;
 }
 
-[data-theme="dark"] .lumina-tooltip {
+[data-theme="dark"] .nexus-tooltip {
   background: #f5f5f7 !important;
   color: #1d1d1f !important;
 }
 
-.lumina-highlight {
+.nexus-highlight {
   color: inherit !important;
   cursor: pointer !important;
   border-radius: 0;
@@ -930,7 +930,7 @@ body {
   user-select: text;
 }
 
-.lumina-highlight::before {
+.nexus-highlight::before {
   content: '';
   position: absolute;
   top: 0;
@@ -941,11 +941,11 @@ body {
   z-index: 1;
 }
 
-.lumina-highlight:hover {
+.nexus-highlight:hover {
   opacity: 0.8;
 }
 
-.lumina-color-swatch {
+.nexus-color-swatch {
   width: 18px !important;
   height: 18px !important;
   border-radius: 50% !important;
@@ -956,20 +956,20 @@ body {
   flex-shrink: 0 !important;
 }
 
-.lumina-color-swatch:hover {
+.nexus-color-swatch:hover {
   transform: scale(1.2);
 }
 
-.lumina-color-swatch.active {
+.nexus-color-swatch.active {
   border-color: rgba(0, 0, 0, 0.3) !important;
   transform: scale(1.1);
 }
 
-[data-theme="dark"] .lumina-color-swatch.active {
+[data-theme="dark"] .nexus-color-swatch.active {
   border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
-.lumina-clear-highlight {
+.nexus-clear-highlight {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -977,18 +977,18 @@ body {
   color: #8e8e93 !important;
 }
 
-[data-theme="dark"] .lumina-clear-highlight {
+[data-theme="dark"] .nexus-clear-highlight {
   background: #3a3a3c !important;
   color: #8e8e93 !important;
 }
 
-.lumina-clear-highlight svg {
+.nexus-clear-highlight svg {
   width: 10px !important;
   height: 10px !important;
   stroke: currentColor !important;
 }
 
-.lumina-highlight-icon-circle {
+.nexus-highlight-icon-circle {
   width: 16px !important;
   height: 16px !important;
   border-radius: 50% !important;
@@ -996,66 +996,66 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
-[data-theme="dark"] .lumina-highlight-icon-circle {
+[data-theme="dark"] .nexus-highlight-icon-circle {
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-.lumina-dict-translation-container {
+.nexus-dict-translation-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
-.lumina-dict-translation-header {
+.nexus-dict-translation-header {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   margin-bottom: 8px !important;
 }
 
-.lumina-dict-translation-label {
+.nexus-dict-translation-label {
   font-size: 0.79em !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  color: var(--lumina-text-secondary, rgba(0, 0, 0, 0.5)) !important;
+  color: var(--nexus-text-secondary, rgba(0, 0, 0, 0.5)) !important;
 }
 
-[data-theme="dark"] .lumina-dict-translation-label {
-  color: var(--lumina-text-secondary, rgba(255, 255, 255, 0.5)) !important;
+[data-theme="dark"] .nexus-dict-translation-label {
+  color: var(--nexus-text-secondary, rgba(255, 255, 255, 0.5)) !important;
 }
 
-.lumina-dict-original-text {
+.nexus-dict-original-text {
   font-size: 1em !important;
   line-height: 1.5 !important;
-  color: var(--lumina-text-primary, #000) !important;
+  color: var(--nexus-text-primary, #000) !important;
   margin-bottom: 16px !important;
   white-space: pre-wrap !important;
 }
 
-[data-theme="dark"] .lumina-dict-original-text {
-  color: var(--lumina-text-primary, #fff) !important;
+[data-theme="dark"] .nexus-dict-original-text {
+  color: var(--nexus-text-primary, #fff) !important;
 }
 
-.lumina-dict-translation-divider {
+.nexus-dict-translation-divider {
   height: 1px !important;
-  background: var(--lumina-ui-border, rgba(0, 0, 0, 0.08)) !important;
+  background: var(--nexus-ui-border, rgba(0, 0, 0, 0.08)) !important;
   margin: 16px 0 !important;
 }
 
-[data-theme="dark"] .lumina-dict-translation-divider {
-  background: var(--lumina-ui-border, rgba(255, 255, 255, 0.1)) !important;
+[data-theme="dark"] .nexus-dict-translation-divider {
+  background: var(--nexus-ui-border, rgba(255, 255, 255, 0.1)) !important;
 }
 
-.lumina-dict-translated-text {
+.nexus-dict-translated-text {
   font-size: 1em !important;
   font-weight: 500 !important;
   line-height: 1.5 !important;
   color: #000000 !important;
   white-space: pre-wrap !important;
-  font-family: var(--lumina-font-family) !important;
+  font-family: var(--nexus-font-family) !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
 }
 
-[data-theme="dark"] .lumina-dict-translated-text {
+[data-theme="dark"] .nexus-dict-translated-text {
   color: #ffffff !important;
 }

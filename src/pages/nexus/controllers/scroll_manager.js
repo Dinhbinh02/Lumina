@@ -1,15 +1,15 @@
 export function bindContainerWheelForward(containerEl) {
-    if (!containerEl || containerEl.__luminaWheelBound) return;
-    containerEl.__luminaWheelBound = true;
+    if (!containerEl || containerEl.__nexusWheelBound) return;
+    containerEl.__nexusWheelBound = true;
     let cachedScrollable = null;
     function attachScrollContentBlocker(scrollable) {
-        if (!scrollable || scrollable.__luminaWheelStop) return;
-        scrollable.__luminaWheelStop = true;
+        if (!scrollable || scrollable.__nexusWheelStop) return;
+        scrollable.__nexusWheelStop = true;
         scrollable.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
     }
     containerEl.addEventListener('wheel', (e) => {
         if (!cachedScrollable || cachedScrollable.style.display === 'none') {
-            cachedScrollable = containerEl.querySelector('.lumina-chat-scroll-content:not([style*="display: none"])');
+            cachedScrollable = containerEl.querySelector('.nexus-chat-scroll-content:not([style*="display: none"])');
             if (cachedScrollable) attachScrollContentBlocker(cachedScrollable);
         }
         if (!cachedScrollable) return;
@@ -19,7 +19,7 @@ export function bindContainerWheelForward(containerEl) {
         else if (e.deltaMode === 2) delta *= cachedScrollable.clientHeight;
         cachedScrollable.scrollBy({ top: delta, behavior: 'instant' });
     }, { passive: false });
-    const existing = containerEl.querySelector('.lumina-chat-scroll-content');
+    const existing = containerEl.querySelector('.nexus-chat-scroll-content');
     if (existing) attachScrollContentBlocker(existing);
 }
 
@@ -65,7 +65,7 @@ export function hideTopbarLoading() {
 
 export function restoreScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
-    const entries = tab.historyEl.querySelectorAll('.lumina-entry');
+    const entries = tab.historyEl.querySelectorAll('.nexus-entry');
     if (entries.length === 0) return;
     if (tab.scrollTop != null && tab.scrollTop !== -1) {
         tab.historyEl.scrollTop = tab.scrollTop;
@@ -77,21 +77,21 @@ export function restoreScrollPosition(tab) {
     }
     if (tab.scrollAnchorIndex != null && tab.scrollAnchorIndex < entries.length) {
         const anchor = entries[tab.scrollAnchorIndex];
-        const baseTarget = window.LuminaChatUI ? window.LuminaChatUI.calculateInitialScrollTarget(anchor, tab.historyEl) : 0;
+        const baseTarget = window.NexusChatUI ? window.NexusChatUI.calculateInitialScrollTarget(anchor, tab.historyEl) : 0;
         tab.historyEl.scrollTop = baseTarget + (tab.scrollAnchorOffset || 0);
     }
 }
 
 export function restoreLatestScrollPosition(tab) {
     if (!tab || !tab.historyEl) return;
-    const entries = tab.historyEl.querySelectorAll('.lumina-entry');
+    const entries = tab.historyEl.querySelectorAll('.nexus-entry');
     if (entries.length === 0) return;
     const latestEntry = entries[entries.length - 1];
-    if (tab.chatUIInstance && typeof tab.chatUIInstance.clearEntryMargins === 'function') {
-        tab.chatUIInstance.clearEntryMargins(latestEntry);
+    if (tab.chatUIInstance && typeof tab.chatUIInstance.updateEntryMinHeight === 'function') {
+        tab.chatUIInstance.updateEntryMinHeight(latestEntry);
         tab.chatUIInstance.adjustEntryMargin(latestEntry, 'immediate');
     }
-    const targetScrollTop = window.LuminaChatUI ? window.LuminaChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl) : 0;
+    const targetScrollTop = window.NexusChatUI ? window.NexusChatUI.calculateInitialScrollTarget(latestEntry, tab.historyEl) : 0;
     tab.historyEl.scrollTop = targetScrollTop;
     tab.scrollTop = targetScrollTop;
 }

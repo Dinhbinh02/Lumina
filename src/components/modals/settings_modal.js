@@ -2,15 +2,15 @@ import { UserMemory } from '../../core/ai/memory.js';
 import { injectSettingsTemplates } from './settings/dom_templates.js';
 import { getDefaultProviders } from './settings/providers_data.js';
 
-export class LuminaSettingsModal {
+export class NexusSettingsModal {
   static init() {
     this.injectDOMTemplates();
-    this.overlay = document.getElementById('lumina-settings-overlay');
-    this.closeBtn = document.getElementById('lumina-settings-close-btn');
-    this.navContainer = document.getElementById('lumina-settings-nav');
-    this.mainContainer = document.querySelector('.lumina-settings-main');
-    this.sections = document.querySelectorAll('.lumina-settings-section');
-    this.navItems = document.querySelectorAll('.lumina-settings-nav-item');
+    this.overlay = document.getElementById('nexus-settings-overlay');
+    this.closeBtn = document.getElementById('nexus-settings-close-btn');
+    this.navContainer = document.getElementById('nexus-settings-nav');
+    this.mainContainer = document.querySelector('.nexus-settings-main');
+    this.sections = document.querySelectorAll('.nexus-settings-section');
+    this.navItems = document.querySelectorAll('.nexus-settings-nav-item');
     if (!this.overlay) return;
     this.closeBtn.addEventListener('click', () => this.hide());
     this.overlay.addEventListener('click', (e) => {
@@ -33,20 +33,20 @@ export class LuminaSettingsModal {
     this.bindPersonalizationTab();
     this.bindKeyboardTab();
     this.bindAccountTab();
-    const toggleLuminaKeyBtn = document.getElementById('toggle-lumina-key-visibility');
-    const luminaApiKeyInput = document.getElementById('lumina-provider-form-apikey');
-    const luminaEyeOpen = document.getElementById('lumina-eye-open-icon');
-    const luminaEyeClosed = document.getElementById('lumina-eye-closed-icon');
-    if (toggleLuminaKeyBtn && luminaApiKeyInput) {
-      toggleLuminaKeyBtn.addEventListener('click', () => {
-        if (luminaApiKeyInput.type === 'password') {
-          luminaApiKeyInput.type = 'text';
-          luminaEyeOpen.style.display = 'none';
-          luminaEyeClosed.style.display = 'block';
+    const toggleNexusKeyBtn = document.getElementById('toggle-nexus-key-visibility');
+    const nexusApiKeyInput = document.getElementById('nexus-provider-form-apikey');
+    const nexusEyeOpen = document.getElementById('nexus-eye-open-icon');
+    const nexusEyeClosed = document.getElementById('nexus-eye-closed-icon');
+    if (toggleNexusKeyBtn && nexusApiKeyInput) {
+      toggleNexusKeyBtn.addEventListener('click', () => {
+        if (nexusApiKeyInput.type === 'password') {
+          nexusApiKeyInput.type = 'text';
+          nexusEyeOpen.style.display = 'none';
+          nexusEyeClosed.style.display = 'block';
         } else {
-          luminaApiKeyInput.type = 'password';
-          luminaEyeOpen.style.display = 'block';
-          luminaEyeClosed.style.display = 'none';
+          nexusApiKeyInput.type = 'password';
+          nexusEyeOpen.style.display = 'block';
+          nexusEyeClosed.style.display = 'none';
         }
       });
     }
@@ -84,7 +84,7 @@ export class LuminaSettingsModal {
       item.classList.toggle('active', item.getAttribute('data-section') === sectionId);
     });
     this.sections.forEach(section => {
-      section.classList.toggle('active', section.id === `lumina-settings-sec-${sectionId}`);
+      section.classList.toggle('active', section.id === `nexus-settings-sec-${sectionId}`);
     });
     if (this.mainContainer) this.mainContainer.scrollTop = 0;
   }
@@ -118,15 +118,15 @@ export class LuminaSettingsModal {
       const accentVal = items.accentColor || 'default';
       const fontFamilyVal = items.fontFamily || 'default';
       const fontWeightVal = items.fontWeight || '400';
-      this.setDropdownValue('lumina-settings-theme', 'lumina-settings-theme-menu', themeVal, 'System');
-      this.setDropdownValue('lumina-settings-contrast', 'lumina-settings-contrast-menu', contrastVal, 'System');
-      this.setDropdownValue('lumina-settings-accent', 'lumina-settings-accent-menu', accentVal, 'Default');
-      this.setDropdownValue('lumina-settings-fontfamily', 'lumina-settings-fontfamily-menu', fontFamilyVal, 'Default');
+      this.setDropdownValue('nexus-settings-theme', 'nexus-settings-theme-menu', themeVal, 'System');
+      this.setDropdownValue('nexus-settings-contrast', 'nexus-settings-contrast-menu', contrastVal, 'System');
+      this.setDropdownValue('nexus-settings-accent', 'nexus-settings-accent-menu', accentVal, 'Default');
+      this.setDropdownValue('nexus-settings-fontfamily', 'nexus-settings-fontfamily-menu', fontFamilyVal, 'Default');
       const weightLabels = { '300': 'Thin', '350': 'Book', '400': 'Normal', '450': 'Medium', '500': 'Semi-bold' };
-      this.setDropdownValue('lumina-settings-fontweight', 'lumina-settings-fontweight-menu', fontWeightVal, weightLabels[fontWeightVal] || 'Normal');
-      document.body.className = document.body.className.replace(/\blumina-font-\S+/g, '');
-      document.body.classList.add(`lumina-font-${fontFamilyVal}`);
-      document.documentElement.style.setProperty('--lumina-weight-base', fontWeightVal);
+      this.setDropdownValue('nexus-settings-fontweight', 'nexus-settings-fontweight-menu', fontWeightVal, weightLabels[fontWeightVal] || 'Normal');
+      document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, '');
+      document.body.classList.add(`nexus-font-${fontFamilyVal}`);
+      document.documentElement.style.setProperty('--nexus-weight-base', fontWeightVal);
       let mode = themeVal === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : themeVal;
       if (typeof chrome !== 'undefined' && chrome.extension && chrome.extension.inIncognitoContext) {
         mode = 'dark';
@@ -134,32 +134,32 @@ export class LuminaSettingsModal {
       document.body.setAttribute('data-theme', mode);
       document.body.setAttribute('data-accent', accentVal);
       document.body.setAttribute('data-contrast', contrastVal);
-      this.setDropdownValue('lumina-settings-language', 'lumina-settings-language-menu', items.language || 'auto', 'Auto-detect');
-      document.getElementById('lumina-settings-dictation-toggle').checked = items.dictationEnabled !== false;
-      this.setDropdownValue('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu', items.spokenLanguage || 'auto', 'Auto-detect');
-      this.setDropdownValue('lumina-settings-voice-select', 'lumina-settings-voice-select-menu', items.voice || 'sol', 'Sol');
-      document.getElementById('lumina-settings-separate-voice').checked = items.separateVoiceEnabled === true;
-      this.setDropdownValue('lumina-settings-tts-model', 'lumina-settings-tts-model-menu', items.ttsModel || 'gemini-2.5-flash', 'Gemini 2.5 Flash');
-      this.setDropdownValue('lumina-settings-stt-model', 'lumina-settings-stt-model-menu', items.sttModel || 'whisper-large-v3-turbo', 'Whisper Large V3 Turbo (Fastest)');
+      this.setDropdownValue('nexus-settings-language', 'nexus-settings-language-menu', items.language || 'auto', 'Auto-detect');
+      document.getElementById('nexus-settings-dictation-toggle').checked = items.dictationEnabled !== false;
+      this.setDropdownValue('nexus-settings-spoken-lang', 'nexus-settings-spoken-lang-menu', items.spokenLanguage || 'auto', 'Auto-detect');
+      this.setDropdownValue('nexus-settings-voice-select', 'nexus-settings-voice-select-menu', items.voice || 'sol', 'Sol');
+      document.getElementById('nexus-settings-separate-voice').checked = items.separateVoiceEnabled === true;
+      this.setDropdownValue('nexus-settings-tts-model', 'nexus-settings-tts-model-menu', items.ttsModel || 'gemini-2.5-flash', 'Gemini 2.5 Flash');
+      this.setDropdownValue('nexus-settings-stt-model', 'nexus-settings-stt-model-menu', items.sttModel || 'whisper-large-v3-turbo', 'Whisper Large V3 Turbo (Fastest)');
       const fsVal = items.fontSize || 14;
-      const fsInput = document.getElementById('lumina-settings-fontsize');
+      const fsInput = document.getElementById('nexus-settings-fontsize');
       if (fsInput) fsInput.value = fsVal;
-      const toneInput = document.getElementById('lumina-settings-base-tone-input');
+      const toneInput = document.getElementById('nexus-settings-base-tone-input');
       if (toneInput) {
         const toneVal = items.baseTone || 'default';
         toneInput.dataset.value = toneVal;
-        const toneMenu = document.getElementById('lumina-settings-base-tone-menu');
+        const toneMenu = document.getElementById('nexus-settings-base-tone-menu');
         const matchedDiv = toneMenu?.querySelector(`div[data-val="${toneVal}"]`);
         toneInput.value = matchedDiv ? matchedDiv.textContent : 'Default';
         this.adjustInputWidthToContent(toneInput);
       }
-      document.getElementById('lumina-settings-char-warm').value = items.charWarm || 3;
-      document.getElementById('lumina-settings-char-enthusiastic').value = items.charEnthusiastic || 3;
-      document.getElementById('lumina-settings-char-headers').value = items.charHeaders || 3;
-      document.getElementById('lumina-settings-char-emoji').value = items.charEmoji || 3;
-      document.getElementById('lumina-settings-about-nickname').value = items.aboutNickname || '';
-      document.getElementById('lumina-settings-about-occupation').value = items.aboutOccupation || '';
-      const interestsTextarea = document.getElementById('lumina-settings-about-interests');
+      document.getElementById('nexus-settings-char-warm').value = items.charWarm || 3;
+      document.getElementById('nexus-settings-char-enthusiastic').value = items.charEnthusiastic || 3;
+      document.getElementById('nexus-settings-char-headers').value = items.charHeaders || 3;
+      document.getElementById('nexus-settings-char-emoji').value = items.charEmoji || 3;
+      document.getElementById('nexus-settings-about-nickname').value = items.aboutNickname || '';
+      document.getElementById('nexus-settings-about-occupation').value = items.aboutOccupation || '';
+      const interestsTextarea = document.getElementById('nexus-settings-about-interests');
       if (interestsTextarea) {
         interestsTextarea.value = items.aboutInterests || '';
         interestsTextarea.dispatchEvent(new Event('input'));
@@ -173,7 +173,7 @@ export class LuminaSettingsModal {
       this.annotationShortcuts = items.annotationShortcuts || [];
       this.renderAnnotationShortcuts();
       this.loadShortcutsKeys(items);
-      const retentionInput = document.getElementById('lumina-history-retention-input');
+      const retentionInput = document.getElementById('nexus-history-retention-input');
       const savedRet = items.historyRetentionMonths !== undefined ? items.historyRetentionMonths : 3;
       const matchingOpt = [
         { label: '1 Week', value: '0.25' },
@@ -201,28 +201,28 @@ export class LuminaSettingsModal {
       return el ? parseInt(el.value, 10) : fallback;
     };
     const settings = {
-      theme: getDropdownVal('lumina-settings-theme', 'auto'),
-      contrast: getDropdownVal('lumina-settings-contrast', 'auto'),
-      accentColor: getDropdownVal('lumina-settings-accent', 'default'),
-      fontFamily: getDropdownVal('lumina-settings-fontfamily', 'default'),
-      fontWeight: getDropdownVal('lumina-settings-fontweight', '400'),
-      fontSize: parseFloat(getVal('lumina-settings-fontsize', '14')) || 14,
-      language: getDropdownVal('lumina-settings-language', 'auto'),
-      dictationEnabled: document.getElementById('lumina-settings-dictation-toggle') ? getChecked('lumina-settings-dictation-toggle') : true,
-      spokenLanguage: getDropdownVal('lumina-settings-spoken-lang', 'auto'),
-      voice: getDropdownVal('lumina-settings-voice-select', 'sol'),
-      separateVoiceEnabled: getChecked('lumina-settings-separate-voice'),
-      ttsModel: getDropdownVal('lumina-settings-tts-model', 'gemini-2.5-flash'),
-      sttModel: getDropdownVal('lumina-settings-stt-model', 'whisper-large-v3-turbo'),
-      baseTone: document.getElementById('lumina-settings-base-tone-input')?.dataset.value || 'default',
-      charWarm: getInt('lumina-settings-char-warm', 3),
-      charEnthusiastic: getInt('lumina-settings-char-enthusiastic', 3),
-      charHeaders: getInt('lumina-settings-char-headers', 3),
-      charEmoji: getInt('lumina-settings-char-emoji', 3),
-      aboutNickname: getVal('lumina-settings-about-nickname').trim(),
-      aboutOccupation: getVal('lumina-settings-about-occupation').trim(),
-      aboutInterests: getVal('lumina-settings-about-interests').trim(),
-      historyRetentionMonths: parseFloat(document.getElementById('lumina-history-retention-input')?.dataset.value || '3')
+      theme: getDropdownVal('nexus-settings-theme', 'auto'),
+      contrast: getDropdownVal('nexus-settings-contrast', 'auto'),
+      accentColor: getDropdownVal('nexus-settings-accent', 'default'),
+      fontFamily: getDropdownVal('nexus-settings-fontfamily', 'default'),
+      fontWeight: getDropdownVal('nexus-settings-fontweight', '400'),
+      fontSize: parseFloat(getVal('nexus-settings-fontsize', '14')) || 14,
+      language: getDropdownVal('nexus-settings-language', 'auto'),
+      dictationEnabled: document.getElementById('nexus-settings-dictation-toggle') ? getChecked('nexus-settings-dictation-toggle') : true,
+      spokenLanguage: getDropdownVal('nexus-settings-spoken-lang', 'auto'),
+      voice: getDropdownVal('nexus-settings-voice-select', 'sol'),
+      separateVoiceEnabled: getChecked('nexus-settings-separate-voice'),
+      ttsModel: getDropdownVal('nexus-settings-tts-model', 'gemini-2.5-flash'),
+      sttModel: getDropdownVal('nexus-settings-stt-model', 'whisper-large-v3-turbo'),
+      baseTone: document.getElementById('nexus-settings-base-tone-input')?.dataset.value || 'default',
+      charWarm: getInt('nexus-settings-char-warm', 3),
+      charEnthusiastic: getInt('nexus-settings-char-enthusiastic', 3),
+      charHeaders: getInt('nexus-settings-char-headers', 3),
+      charEmoji: getInt('nexus-settings-char-emoji', 3),
+      aboutNickname: getVal('nexus-settings-about-nickname').trim(),
+      aboutOccupation: getVal('nexus-settings-about-occupation').trim(),
+      aboutInterests: getVal('nexus-settings-about-interests').trim(),
+      historyRetentionMonths: parseFloat(document.getElementById('nexus-history-retention-input')?.dataset.value || '3')
     };
     chrome.storage.local.set(settings, () => {
       if (typeof applyTheme === 'function') {
@@ -236,20 +236,20 @@ export class LuminaSettingsModal {
       }
       document.body.setAttribute('data-accent', settings.accentColor);
       document.body.setAttribute('data-contrast', settings.contrast);
-      document.body.className = document.body.className.replace(/\blumina-font-\S+/g, '');
-      document.body.classList.add(`lumina-font-${settings.fontFamily}`);
-      document.documentElement.style.setProperty('--lumina-weight-base', settings.fontWeight);
+      document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, '');
+      document.body.classList.add(`nexus-font-${settings.fontFamily}`);
+      document.documentElement.style.setProperty('--nexus-weight-base', settings.fontWeight);
       if (typeof applyFontSize === 'function') {
         applyFontSize(settings.fontSize);
       }
     });
   }
   static bindGeneralTab() {
-    const setupKeyInput = document.getElementById('lumina-setup-provider-key');
-    const setupEndpointInput = document.getElementById('lumina-setup-provider-endpoint');
-    const keyToggleBtn = document.getElementById('lumina-setup-key-toggle');
-    const eyeOpen = document.getElementById('lumina-setup-eye-open');
-    const eyeClosed = document.getElementById('lumina-setup-eye-closed');
+    const setupKeyInput = document.getElementById('nexus-setup-provider-key');
+    const setupEndpointInput = document.getElementById('nexus-setup-provider-endpoint');
+    const keyToggleBtn = document.getElementById('nexus-setup-key-toggle');
+    const eyeOpen = document.getElementById('nexus-setup-eye-open');
+    const eyeClosed = document.getElementById('nexus-setup-eye-closed');
     if (keyToggleBtn && setupKeyInput) {
       keyToggleBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -268,10 +268,10 @@ export class LuminaSettingsModal {
     if (setupEndpointInput) {
       setupEndpointInput.addEventListener('input', () => this.saveSelectedProviderKey());
     }
-    const cancelModelBtn = document.getElementById('lumina-cancel-model-btn');
-    const saveModelBtn = document.getElementById('lumina-save-model-btn');
-    const closeModelPopupBtn = document.getElementById('lumina-model-popup-close-btn');
-    const modelPopupOverlay = document.getElementById('lumina-model-popup-overlay');
+    const cancelModelBtn = document.getElementById('nexus-cancel-model-btn');
+    const saveModelBtn = document.getElementById('nexus-save-model-btn');
+    const closeModelPopupBtn = document.getElementById('nexus-model-popup-close-btn');
+    const modelPopupOverlay = document.getElementById('nexus-model-popup-overlay');
     if (cancelModelBtn) cancelModelBtn.addEventListener('click', () => this.hideModelForm());
     if (saveModelBtn) saveModelBtn.addEventListener('click', () => this.addModelToChain());
     if (closeModelPopupBtn) closeModelPopupBtn.addEventListener('click', () => this.hideModelForm());
@@ -280,12 +280,12 @@ export class LuminaSettingsModal {
         if (e.target === modelPopupOverlay) this.hideModelForm();
       });
     }
-    this.setupDropdownInputs('lumina-model-form-provider', 'lumina-model-form-provider-list');
-    this.setupDropdownInputs('lumina-model-form-model', 'lumina-model-form-model-list');
-    this.setupDropdownInputs('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list');
-    this.setupDropdownInputs('lumina-setup-provider-input', 'lumina-setup-provider-menu');
-    this.setupDropdownInputs('lumina-settings-tts-model', 'lumina-settings-tts-model-menu');
-    this.setupDropdownInputs('lumina-settings-stt-model', 'lumina-settings-stt-model-menu');
+    this.setupDropdownInputs('nexus-model-form-provider', 'nexus-model-form-provider-list');
+    this.setupDropdownInputs('nexus-model-form-model', 'nexus-model-form-model-list');
+    this.setupDropdownInputs('nexus-model-form-max-tokens', 'nexus-model-form-max-tokens-list');
+    this.setupDropdownInputs('nexus-setup-provider-input', 'nexus-setup-provider-menu');
+    this.setupDropdownInputs('nexus-settings-tts-model', 'nexus-settings-tts-model-menu');
+    this.setupDropdownInputs('nexus-settings-stt-model', 'nexus-settings-stt-model-menu');
   }
   static getDefaultProviders() {
     return getDefaultProviders();
@@ -331,10 +331,10 @@ export class LuminaSettingsModal {
     return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
   }
   static renderProviders() {
-    const menu = document.getElementById('lumina-setup-provider-menu');
+    const menu = document.getElementById('nexus-setup-provider-menu');
     if (!menu) return;
     menu.innerHTML = this.providers.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
-    const input = document.getElementById('lumina-setup-provider-input');
+    const input = document.getElementById('nexus-setup-provider-input');
     let currentId = input?.dataset.value;
     if (!currentId || !this.providers.some(p => p.id === currentId)) {
       currentId = this.providers[0]?.id || 'openai-default';
@@ -342,11 +342,11 @@ export class LuminaSettingsModal {
     this.selectProviderSetup(currentId);
   }
   static selectProviderSetup(providerId) {
-    const input = document.getElementById('lumina-setup-provider-input');
-    const keyInput = document.getElementById('lumina-setup-provider-key');
-    const badge = document.getElementById('lumina-setup-provider-badge');
-    const endpointRow = document.getElementById('lumina-setup-endpoint-row');
-    const endpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    const input = document.getElementById('nexus-setup-provider-input');
+    const keyInput = document.getElementById('nexus-setup-provider-key');
+    const badge = document.getElementById('nexus-setup-provider-badge');
+    const endpointRow = document.getElementById('nexus-setup-endpoint-row');
+    const endpointInput = document.getElementById('nexus-setup-provider-endpoint');
     if (!input) return;
     const p = this.providers.find(prov => prov.id === providerId) || this.providers[0];
     if (!p) return;
@@ -355,7 +355,7 @@ export class LuminaSettingsModal {
     if (keyInput) {
       keyInput.value = p.apiKey || '';
     }
-    const getKeyLink = document.getElementById('lumina-setup-get-key-link');
+    const getKeyLink = document.getElementById('nexus-setup-get-key-link');
     if (getKeyLink) {
       if (p.apiKeyUrl) {
         getKeyLink.href = p.apiKeyUrl;
@@ -374,9 +374,9 @@ export class LuminaSettingsModal {
     }
   }
   static saveSelectedProviderKey() {
-    const input = document.getElementById('lumina-setup-provider-input');
-    const keyInput = document.getElementById('lumina-setup-provider-key');
-    const endpointInput = document.getElementById('lumina-setup-provider-endpoint');
+    const input = document.getElementById('nexus-setup-provider-input');
+    const keyInput = document.getElementById('nexus-setup-provider-key');
+    const endpointInput = document.getElementById('nexus-setup-provider-endpoint');
     const providerId = input?.dataset.value;
     if (!providerId) return;
     const p = this.providers.find(prov => prov.id === providerId);
@@ -390,7 +390,7 @@ export class LuminaSettingsModal {
     });
   }
   static populateProviderDropdowns() {
-    const chainProvList = document.getElementById('lumina-model-form-provider-list');
+    const chainProvList = document.getElementById('nexus-model-form-provider-list');
     const configuredProviders = this.providers.filter(p => 
       (p.apiKey && p.apiKey.trim().length > 0) ||
       p.id.includes('ollama') ||
@@ -403,10 +403,10 @@ export class LuminaSettingsModal {
       if (configuredProviders.length > 0) {
         chainProvList.innerHTML = configuredProviders.map(p => `<div data-val="${p.id}">${p.name}</div>`).join('');
       } else {
-        chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--lumina-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
+        chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--nexus-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
       }
     }
-    const retentionMenu = document.getElementById('lumina-history-retention-menu');
+    const retentionMenu = document.getElementById('nexus-history-retention-menu');
     if (retentionMenu) {
       const opts = [
         { label: '1 Week', value: '0.25' },
@@ -449,31 +449,31 @@ export class LuminaSettingsModal {
       input.value = targetEl.textContent;
       input.dataset.value = targetEl.dataset.val || targetEl.textContent;
       menu.style.display = 'none';
-      if (inputId === 'lumina-setup-provider-input') {
+      if (inputId === 'nexus-setup-provider-input') {
         this.selectProviderSetup(input.dataset.value);
       }
-      if (inputId === 'lumina-settings-base-tone-input') {
+      if (inputId === 'nexus-settings-base-tone-input') {
         this.adjustInputWidthToContent(input);
       }
       if (
-        inputId === 'lumina-history-retention-input' ||
-        inputId === 'lumina-settings-base-tone-input' ||
-        inputId === 'lumina-settings-fontsize' ||
-        inputId === 'lumina-settings-theme' ||
-        inputId === 'lumina-settings-contrast' ||
-        inputId === 'lumina-settings-accent' ||
-        inputId === 'lumina-settings-fontfamily' ||
-        inputId === 'lumina-settings-fontweight' ||
-        inputId === 'lumina-settings-language' ||
-        inputId === 'lumina-settings-spoken-lang' ||
-        inputId === 'lumina-settings-voice-select' ||
-        inputId === 'lumina-settings-tts-model' ||
-        inputId === 'lumina-settings-stt-model'
+        inputId === 'nexus-history-retention-input' ||
+        inputId === 'nexus-settings-base-tone-input' ||
+        inputId === 'nexus-settings-fontsize' ||
+        inputId === 'nexus-settings-theme' ||
+        inputId === 'nexus-settings-contrast' ||
+        inputId === 'nexus-settings-accent' ||
+        inputId === 'nexus-settings-fontfamily' ||
+        inputId === 'nexus-settings-fontweight' ||
+        inputId === 'nexus-settings-language' ||
+        inputId === 'nexus-settings-spoken-lang' ||
+        inputId === 'nexus-settings-voice-select' ||
+        inputId === 'nexus-settings-tts-model' ||
+        inputId === 'nexus-settings-stt-model'
       ) {
         this.saveOptions();
       }
-      if (inputId === 'lumina-model-form-provider') {
-        const modelInput = document.getElementById('lumina-model-form-model');
+      if (inputId === 'nexus-model-form-provider') {
+        const modelInput = document.getElementById('nexus-model-form-model');
         if (modelInput) {
           modelInput.value = '';
           modelInput.dataset.value = '';
@@ -485,13 +485,13 @@ export class LuminaSettingsModal {
     input.addEventListener('click', (e) => {
       e.stopPropagation();
       const isCurrentlyOpen = menu.style.display === 'block';
-      document.querySelectorAll('.lumina-settings-dropdown-menu').forEach(m => {
+      document.querySelectorAll('.nexus-settings-dropdown-menu').forEach(m => {
         m.style.display = 'none';
       });
       if (!isCurrentlyOpen) {
-        if (inputId === 'lumina-settings-tts-model') {
+        if (inputId === 'nexus-settings-tts-model') {
           this.loadTtsModels().then(() => updateActiveItems(false));
-        } else if (inputId === 'lumina-settings-stt-model') {
+        } else if (inputId === 'nexus-settings-stt-model') {
           this.loadSttModels().then(() => updateActiveItems(false));
         }
         menu.style.display = 'block';
@@ -499,7 +499,7 @@ export class LuminaSettingsModal {
       }
     });
     document.addEventListener('click', (e) => {
-      const wrapper = input.closest('.lumina-settings-dropdown-wrapper');
+      const wrapper = input.closest('.nexus-settings-dropdown-wrapper');
       if (wrapper && !wrapper.contains(e.target)) {
         menu.style.display = 'none';
       }
@@ -541,7 +541,7 @@ export class LuminaSettingsModal {
       }
     };
     input.addEventListener('keydown', handleKeyDown);
-    if (inputId === 'lumina-model-form-model' || inputId === 'lumina-setup-provider-input' || inputId === 'lumina-model-form-provider') {
+    if (inputId === 'nexus-model-form-model' || inputId === 'nexus-setup-provider-input' || inputId === 'nexus-model-form-provider') {
       input.addEventListener('input', () => {
         const query = input.value.toLowerCase().trim();
         const items = menu.querySelectorAll('div');
@@ -573,7 +573,7 @@ export class LuminaSettingsModal {
   }
   static adjustInputWidthToContent(input) {
     if (!input) return;
-    const wrapper = input.closest('.lumina-settings-dropdown-wrapper');
+    const wrapper = input.closest('.nexus-settings-dropdown-wrapper');
     if (!wrapper) return;
     const tempSpan = document.createElement('span');
     tempSpan.style.visibility = 'hidden';
@@ -599,12 +599,12 @@ export class LuminaSettingsModal {
     el.addEventListener('input', adjust);
   }
   static async loadModelsForProvider(providerId) {
-    const menu = document.getElementById('lumina-model-form-model-list');
+    const menu = document.getElementById('nexus-model-form-model-list');
     if (!menu) return;
-    menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">Loading models...</div>';
+    menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">Loading models...</div>';
     const provider = this.providers.find(p => p.id === providerId);
     if (!provider) {
-      menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--lumina-text-secondary);">No provider selected</div>';
+      menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">No provider selected</div>';
       return;
     }
     try {
@@ -684,7 +684,7 @@ export class LuminaSettingsModal {
     }
   }
   static async loadTtsModels() {
-    const menu = document.getElementById('lumina-settings-tts-model-menu');
+    const menu = document.getElementById('nexus-settings-tts-model-menu');
     if (!menu) return;
     const geminiProv = this.providers.find(p => p.id === 'gemini-default' || p.id.includes('gemini'));
     const apiKey = geminiProv?.apiKey?.trim() || '';
@@ -714,7 +714,7 @@ export class LuminaSettingsModal {
     }
   }
   static async loadSttModels() {
-    const menu = document.getElementById('lumina-settings-stt-model-menu');
+    const menu = document.getElementById('nexus-settings-stt-model-menu');
     if (!menu) return;
     const groqProv = this.providers.find(p => p.id === 'groq-default' || p.id.includes('groq'));
     const apiKey = groqProv?.apiKey?.trim() || '';
@@ -748,44 +748,44 @@ export class LuminaSettingsModal {
     }
   }
   static showProviderForm() {
-    const overlay = document.getElementById('lumina-provider-popup-overlay');
+    const overlay = document.getElementById('nexus-provider-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-    document.getElementById('lumina-provider-form-id').value = '';
-    document.getElementById('lumina-provider-form-name').value = '';
-    document.getElementById('lumina-provider-form-endpoint').value = '';
-    document.getElementById('lumina-provider-form-apikey').value = '';
-    const statusEl = document.getElementById('lumina-dialog-status');
+    document.getElementById('nexus-provider-form-id').value = '';
+    document.getElementById('nexus-provider-form-name').value = '';
+    document.getElementById('nexus-provider-form-endpoint').value = '';
+    document.getElementById('nexus-provider-form-apikey').value = '';
+    const statusEl = document.getElementById('nexus-dialog-status');
     if (statusEl) {
       statusEl.innerHTML = '';
-      statusEl.className = 'lumina-dialog-status hidden';
+      statusEl.className = 'nexus-dialog-status hidden';
     }
   }
   static editProvider(id) {
     const p = this.providers.find(p => p.id === id);
     if (!p) return;
-    const overlay = document.getElementById('lumina-provider-popup-overlay');
+    const overlay = document.getElementById('nexus-provider-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-    document.getElementById('lumina-provider-form-id').value = p.id;
-    document.getElementById('lumina-provider-form-name').value = p.name;
-    document.getElementById('lumina-provider-form-endpoint').value = p.endpoint;
-    document.getElementById('lumina-provider-form-apikey').value = p.apiKey || '';
-    const statusEl = document.getElementById('lumina-dialog-status');
+    document.getElementById('nexus-provider-form-id').value = p.id;
+    document.getElementById('nexus-provider-form-name').value = p.name;
+    document.getElementById('nexus-provider-form-endpoint').value = p.endpoint;
+    document.getElementById('nexus-provider-form-apikey').value = p.apiKey || '';
+    const statusEl = document.getElementById('nexus-dialog-status');
     if (statusEl) {
       statusEl.innerHTML = '';
-      statusEl.className = 'lumina-dialog-status hidden';
+      statusEl.className = 'nexus-dialog-status hidden';
     }
   }
   static hideProviderForm() {
-    const overlay = document.getElementById('lumina-provider-popup-overlay');
+    const overlay = document.getElementById('nexus-provider-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
   static showModelForm(index = null) {
-    const overlay = document.getElementById('lumina-model-popup-overlay');
+    const overlay = document.getElementById('nexus-model-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-    const indexInput = document.getElementById('lumina-model-form-index');
-    const providerInput = document.getElementById('lumina-model-form-provider');
-    const modelInput = document.getElementById('lumina-model-form-model');
-    const customNameInput = document.getElementById('lumina-model-form-name-custom');
+    const indexInput = document.getElementById('nexus-model-form-index');
+    const providerInput = document.getElementById('nexus-model-form-provider');
+    const modelInput = document.getElementById('nexus-model-form-model');
+    const customNameInput = document.getElementById('nexus-model-form-name-custom');
     this.populateProviderDropdowns();
     if (index !== null && index >= 0) {
       const item = this.models[index];
@@ -796,7 +796,7 @@ export class LuminaSettingsModal {
       modelInput.value = item.modelName;
       customNameInput.value = item.displayName || '';
       const tokenVal = item.maxTokens || 8192;
-      this.setDropdownValue('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
+      this.setDropdownValue('nexus-model-form-max-tokens', 'nexus-model-form-max-tokens-list', String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
       this.loadModelsForProvider(item.providerId);
     } else {
       indexInput.value = '';
@@ -804,15 +804,15 @@ export class LuminaSettingsModal {
       providerInput.dataset.value = '';
       modelInput.value = '';
       customNameInput.value = '';
-      this.setDropdownValue('lumina-model-form-max-tokens', 'lumina-model-form-max-tokens-list', '8192', '8,192 tokens (Default)');
+      this.setDropdownValue('nexus-model-form-max-tokens', 'nexus-model-form-max-tokens-list', '8192', '8,192 tokens (Default)');
     }
     this.updateModelPopupFieldsState();
   }
   static updateModelPopupFieldsState() {
-    const provider = document.getElementById('lumina-model-form-provider').dataset.value;
-    const modelInput = document.getElementById('lumina-model-form-model');
-    const customNameInput = document.getElementById('lumina-model-form-name-custom');
-    const maxTokensInput = document.getElementById('lumina-model-form-max-tokens');
+    const provider = document.getElementById('nexus-model-form-provider').dataset.value;
+    const modelInput = document.getElementById('nexus-model-form-model');
+    const customNameInput = document.getElementById('nexus-model-form-name-custom');
+    const maxTokensInput = document.getElementById('nexus-model-form-max-tokens');
     const shouldDisable = !provider;
     if (modelInput) {
       modelInput.disabled = shouldDisable;
@@ -846,17 +846,17 @@ export class LuminaSettingsModal {
     }
   }
   static hideModelForm() {
-    const overlay = document.getElementById('lumina-model-popup-overlay');
+    const overlay = document.getElementById('nexus-model-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
   static showMappingForm(index = null) {
-    const overlay = document.getElementById('lumina-mapping-popup-overlay');
+    const overlay = document.getElementById('nexus-mapping-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-    const indexInput = document.getElementById('lumina-mapping-form-index');
-    const nameInput = document.getElementById('lumina-mapping-popup-name');
-    const shortcutBox = document.getElementById('lumina-mapping-popup-shortcut');
-    const promptInput = document.getElementById('lumina-mapping-popup-prompt');
-    const highlightInput = document.getElementById('lumina-mapping-popup-highlight');
+    const indexInput = document.getElementById('nexus-mapping-form-index');
+    const nameInput = document.getElementById('nexus-mapping-popup-name');
+    const shortcutBox = document.getElementById('nexus-mapping-popup-shortcut');
+    const promptInput = document.getElementById('nexus-mapping-popup-prompt');
+    const highlightInput = document.getElementById('nexus-mapping-popup-highlight');
     if (index !== null && index >= 0) {
       const item = this.questionMappings[index];
       indexInput.value = index;
@@ -874,15 +874,15 @@ export class LuminaSettingsModal {
     }
   }
   static hideMappingForm() {
-    const overlay = document.getElementById('lumina-mapping-popup-overlay');
+    const overlay = document.getElementById('nexus-mapping-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
   static saveMapping() {
-    const indexInput = document.getElementById('lumina-mapping-form-index');
-    const nameInput = document.getElementById('lumina-mapping-popup-name');
-    const shortcutBox = document.getElementById('lumina-mapping-popup-shortcut');
-    const promptInput = document.getElementById('lumina-mapping-popup-prompt');
-    const highlightInput = document.getElementById('lumina-mapping-popup-highlight');
+    const indexInput = document.getElementById('nexus-mapping-form-index');
+    const nameInput = document.getElementById('nexus-mapping-popup-name');
+    const shortcutBox = document.getElementById('nexus-mapping-popup-shortcut');
+    const promptInput = document.getElementById('nexus-mapping-popup-prompt');
+    const highlightInput = document.getElementById('nexus-mapping-popup-highlight');
     const name = nameInput.value.trim();
     const prompt = this.serializePrompt(promptInput).trim();
     if (!name || !prompt) {
@@ -929,7 +929,7 @@ export class LuminaSettingsModal {
       if (node.nodeType === Node.TEXT_NODE) {
         result += node.textContent;
       } else if (node.nodeType === Node.ELEMENT_NODE) {
-        if (node.classList.contains('lumina-variable-tag')) {
+        if (node.classList.contains('nexus-variable-tag')) {
           result += node.getAttribute('data-val') || node.textContent;
         } else if (node.tagName === 'BR') {
           result += '\n';
@@ -951,36 +951,36 @@ export class LuminaSettingsModal {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
     const html = escaped.replace(/(\$SelectedText|\$Sentence|\$Paragraph)/g, (match) => {
-      return `<span class="lumina-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
+      return `<span class="nexus-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
     });
     const formattedHtml = html.replace(/\n/g, '<br>');
     el.innerHTML = formattedHtml;
   }
   static resetProvider() {
-    const id = document.getElementById('lumina-provider-form-id').value;
+    const id = document.getElementById('nexus-provider-form-id').value;
     if (!id) {
-      document.getElementById('lumina-provider-form-name').value = '';
-      document.getElementById('lumina-provider-form-endpoint').value = '';
-      document.getElementById('lumina-provider-form-apikey').value = '';
+      document.getElementById('nexus-provider-form-name').value = '';
+      document.getElementById('nexus-provider-form-endpoint').value = '';
+      document.getElementById('nexus-provider-form-apikey').value = '';
       return;
     }
     const defaults = this.getDefaultProviders();
     const defaultProv = defaults.find(d => d.id === id);
     if (defaultProv) {
-      document.getElementById('lumina-provider-form-name').value = defaultProv.name;
-      document.getElementById('lumina-provider-form-endpoint').value = defaultProv.endpoint;
-      document.getElementById('lumina-provider-form-apikey').value = '';
+      document.getElementById('nexus-provider-form-name').value = defaultProv.name;
+      document.getElementById('nexus-provider-form-endpoint').value = defaultProv.endpoint;
+      document.getElementById('nexus-provider-form-apikey').value = '';
     } else {
-      document.getElementById('lumina-provider-form-name').value = '';
-      document.getElementById('lumina-provider-form-endpoint').value = '';
-      document.getElementById('lumina-provider-form-apikey').value = '';
+      document.getElementById('nexus-provider-form-name').value = '';
+      document.getElementById('nexus-provider-form-endpoint').value = '';
+      document.getElementById('nexus-provider-form-apikey').value = '';
     }
   }
   static saveProvider() {
-    const id = document.getElementById('lumina-provider-form-id').value || 'custom-' + Date.now();
-    const name = document.getElementById('lumina-provider-form-name').value.trim();
-    const endpoint = document.getElementById('lumina-provider-form-endpoint').value.trim();
-    const apiKey = document.getElementById('lumina-provider-form-apikey').value.trim();
+    const id = document.getElementById('nexus-provider-form-id').value || 'custom-' + Date.now();
+    const name = document.getElementById('nexus-provider-form-name').value.trim();
+    const endpoint = document.getElementById('nexus-provider-form-endpoint').value.trim();
+    const apiKey = document.getElementById('nexus-provider-form-apikey').value.trim();
     if (!name || !endpoint) {
       alert('Name and Endpoint are required.');
       return;
@@ -999,25 +999,25 @@ export class LuminaSettingsModal {
     });
   }
   static checkApiKeys() {
-    const name = document.getElementById('lumina-provider-form-name').value.trim();
-    const endpoint = document.getElementById('lumina-provider-form-endpoint').value.trim();
-    const apiKey = document.getElementById('lumina-provider-form-apikey').value.trim();
+    const name = document.getElementById('nexus-provider-form-name').value.trim();
+    const endpoint = document.getElementById('nexus-provider-form-endpoint').value.trim();
+    const apiKey = document.getElementById('nexus-provider-form-apikey').value.trim();
     if (!endpoint || !apiKey) {
       alert('Endpoint and API Key are required to check status.');
       return;
     }
-    const statusEl = document.getElementById('lumina-dialog-status');
+    const statusEl = document.getElementById('nexus-dialog-status');
     if (!statusEl) return;
     statusEl.classList.remove('hidden');
-    statusEl.className = 'lumina-dialog-status info';
+    statusEl.className = 'nexus-dialog-status info';
     statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
-    const checkBtn = document.getElementById('lumina-check-apikeys-btn');
+    const checkBtn = document.getElementById('nexus-check-apikeys-btn');
     const originalText = checkBtn.textContent;
     checkBtn.textContent = 'Checking...';
     checkBtn.disabled = true;
     const keysList = apiKey.split(',').map(k => k.trim()).filter(Boolean);
     if (keysList.length === 0) {
-      statusEl.className = 'lumina-dialog-status error';
+      statusEl.className = 'nexus-dialog-status error';
       statusEl.innerHTML = '<strong>Error:</strong> No keys entered.';
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
@@ -1059,7 +1059,7 @@ export class LuminaSettingsModal {
       checkBtn.textContent = originalText;
       checkBtn.disabled = false;
       const allOk = results.every(r => r.ok);
-      statusEl.className = 'lumina-dialog-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
+      statusEl.className = 'nexus-dialog-status ' + (allOk ? 'success' : results.some(r => r.ok) ? 'warning' : 'error');
       if (results.length === 1) {
         const res = results[0];
         if (res.ok) {
@@ -1074,7 +1074,7 @@ export class LuminaSettingsModal {
         results.forEach(res => {
           html += `
             <li class="${res.ok ? 'key-ok' : 'key-fail'}" style="color: ${res.ok ? '#10b981' : '#ef4444'}; font-size: 12px; margin-top: 2px;">
-              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--lumina-text-primary); font-weight: 500;">${res.keyLabel}</span>:
+              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--nexus-text-primary); font-weight: 500;">${res.keyLabel}</span>:
               <strong>${res.ok ? 'VALID' : res.status ? `FAILED (${res.status})` : `FAILED (${res.error})`}</strong>
             </li>
           `;
@@ -1085,11 +1085,11 @@ export class LuminaSettingsModal {
     });
   }
   static addModelToChain() {
-    const indexStr = document.getElementById('lumina-model-form-index').value;
-    const provider = document.getElementById('lumina-model-form-provider').dataset.value;
-    const model = document.getElementById('lumina-model-form-model').value.trim();
-    const customName = document.getElementById('lumina-model-form-name-custom').value.trim();
-    const maxTokensInput = document.getElementById('lumina-model-form-max-tokens');
+    const indexStr = document.getElementById('nexus-model-form-index').value;
+    const provider = document.getElementById('nexus-model-form-provider').dataset.value;
+    const model = document.getElementById('nexus-model-form-model').value.trim();
+    const customName = document.getElementById('nexus-model-form-name-custom').value.trim();
+    const maxTokensInput = document.getElementById('nexus-model-form-max-tokens');
     const maxTokens = parseInt(maxTokensInput?.dataset?.value || '8192', 10);
     if (!provider || !model) {
       alert('Provider and Model are required.');
@@ -1116,24 +1116,24 @@ export class LuminaSettingsModal {
     });
   }
   static renderChainList() {
-    const list = document.getElementById('lumina-model-list');
+    const list = document.getElementById('nexus-model-list');
     if (!list) return;
     list.innerHTML = '';
-    const addModelHeaderBtn = document.getElementById('lumina-open-add-model-btn');
+    const addModelHeaderBtn = document.getElementById('nexus-open-add-model-btn');
     if (addModelHeaderBtn && !addModelHeaderBtn.dataset.bound) {
       addModelHeaderBtn.dataset.bound = 'true';
       addModelHeaderBtn.addEventListener('click', () => this.showModelForm());
     }
     if (this.models.length === 0) {
       const emptyState = document.createElement('div');
-      emptyState.className = 'lumina-settings-empty-state';
+      emptyState.className = 'nexus-settings-empty-state';
       emptyState.textContent = 'No models added yet. Click "Add model" above to start.';
       list.appendChild(emptyState);
     } else {
-      const temp = document.getElementById('lumina-chainItemTemplate');
+      const temp = document.getElementById('nexus-chainItemTemplate');
       this.models.forEach((item, index) => {
         const clone = temp.content.cloneNode(true);
-        const cardEl = clone.querySelector('.lumina-settings-chain-card');
+        const cardEl = clone.querySelector('.nexus-settings-chain-card');
         cardEl.dataset.index = index;
         clone.querySelector('.chain-number').textContent = index + 1;
         clone.querySelector('.chain-title').textContent = item.displayName || item.modelName;
@@ -1177,16 +1177,16 @@ export class LuminaSettingsModal {
     }
   }
   static bindAppearanceTab() {
-    this.setupDropdownInputs('lumina-settings-theme', 'lumina-settings-theme-menu');
-    this.setupDropdownInputs('lumina-settings-contrast', 'lumina-settings-contrast-menu');
-    this.setupDropdownInputs('lumina-settings-accent', 'lumina-settings-accent-menu');
-    this.setupDropdownInputs('lumina-settings-fontfamily', 'lumina-settings-fontfamily-menu');
-    this.setupDropdownInputs('lumina-settings-fontweight', 'lumina-settings-fontweight-menu');
-    this.setupDropdownInputs('lumina-settings-language', 'lumina-settings-language-menu');
-    this.setupDropdownInputs('lumina-settings-spoken-lang', 'lumina-settings-spoken-lang-menu');
-    this.setupDropdownInputs('lumina-settings-voice-select', 'lumina-settings-voice-select-menu');
-    this.setupDropdownInputs('lumina-settings-fontsize', 'lumina-settings-fontsize-menu');
-    const fsInput = document.getElementById('lumina-settings-fontsize');
+    this.setupDropdownInputs('nexus-settings-theme', 'nexus-settings-theme-menu');
+    this.setupDropdownInputs('nexus-settings-contrast', 'nexus-settings-contrast-menu');
+    this.setupDropdownInputs('nexus-settings-accent', 'nexus-settings-accent-menu');
+    this.setupDropdownInputs('nexus-settings-fontfamily', 'nexus-settings-fontfamily-menu');
+    this.setupDropdownInputs('nexus-settings-fontweight', 'nexus-settings-fontweight-menu');
+    this.setupDropdownInputs('nexus-settings-language', 'nexus-settings-language-menu');
+    this.setupDropdownInputs('nexus-settings-spoken-lang', 'nexus-settings-spoken-lang-menu');
+    this.setupDropdownInputs('nexus-settings-voice-select', 'nexus-settings-voice-select-menu');
+    this.setupDropdownInputs('nexus-settings-fontsize', 'nexus-settings-fontsize-menu');
+    const fsInput = document.getElementById('nexus-settings-fontsize');
     if (fsInput) {
       fsInput.addEventListener('change', () => this.saveOptions());
       fsInput.addEventListener('keydown', (e) => {
@@ -1195,10 +1195,10 @@ export class LuminaSettingsModal {
         }
       });
     }
-    document.getElementById('lumina-settings-dictation-toggle').addEventListener('change', () => this.saveOptions());
-    document.getElementById('lumina-settings-separate-voice').addEventListener('change', () => this.saveOptions());
-    document.getElementById('lumina-settings-voice-play-btn').addEventListener('click', () => {
-      const voice = document.getElementById('lumina-settings-voice-select').dataset.value || 'sol';
+    document.getElementById('nexus-settings-dictation-toggle').addEventListener('change', () => this.saveOptions());
+    document.getElementById('nexus-settings-separate-voice').addEventListener('change', () => this.saveOptions());
+    document.getElementById('nexus-settings-voice-play-btn').addEventListener('click', () => {
+      const voice = document.getElementById('nexus-settings-voice-select').dataset.value || 'sol';
       const audio = new Audio();
       audio.src = `../../assets/audio/voice_${voice}.mp3`;
       audio.play().catch(() => {
@@ -1207,29 +1207,29 @@ export class LuminaSettingsModal {
     });
   }
   static bindPersonalizationTab() {
-    this.setupDropdownInputs('lumina-settings-base-tone-input', 'lumina-settings-base-tone-menu');
+    this.setupDropdownInputs('nexus-settings-base-tone-input', 'nexus-settings-base-tone-menu');
     const ranges = [
-      'lumina-settings-char-warm', 'lumina-settings-char-enthusiastic',
-      'lumina-settings-char-headers', 'lumina-settings-char-emoji'
+      'nexus-settings-char-warm', 'nexus-settings-char-enthusiastic',
+      'nexus-settings-char-headers', 'nexus-settings-char-emoji'
     ];
     ranges.forEach(id => {
       document.getElementById(id).addEventListener('change', () => this.saveOptions());
     });
-    const inputs = ['lumina-settings-about-nickname', 'lumina-settings-about-occupation', 'lumina-settings-about-interests'];
+    const inputs = ['nexus-settings-about-nickname', 'nexus-settings-about-occupation', 'nexus-settings-about-interests'];
     inputs.forEach(id => {
       document.getElementById(id).addEventListener('blur', () => this.saveOptions());
     });
-    const addInstructionBtn = document.getElementById('lumina-add-instruction-btn');
+    const addInstructionBtn = document.getElementById('nexus-add-instruction-btn');
     if (addInstructionBtn) {
       addInstructionBtn.addEventListener('click', () => {
         this.showInstructionForm();
       });
     }
-    const cancelInstBtn = document.getElementById('lumina-cancel-instruction-popup-btn');
-    const saveInstBtn = document.getElementById('lumina-save-instruction-popup-btn');
-    const closeInstPopupBtn = document.getElementById('lumina-instruction-popup-close-btn');
-    const instPopupOverlay = document.getElementById('lumina-instruction-popup-overlay');
-    const contentInputEl = document.getElementById('lumina-instruction-popup-content');
+    const cancelInstBtn = document.getElementById('nexus-cancel-instruction-popup-btn');
+    const saveInstBtn = document.getElementById('nexus-save-instruction-popup-btn');
+    const closeInstPopupBtn = document.getElementById('nexus-instruction-popup-close-btn');
+    const instPopupOverlay = document.getElementById('nexus-instruction-popup-overlay');
+    const contentInputEl = document.getElementById('nexus-instruction-popup-content');
     if (contentInputEl) {
       contentInputEl.addEventListener('input', () => {
         contentInputEl.style.height = 'auto';
@@ -1246,10 +1246,10 @@ export class LuminaSettingsModal {
     }
   }
   static showInstructionForm(index = null) {
-    const overlay = document.getElementById('lumina-instruction-popup-overlay');
-    const titleEl = document.getElementById('lumina-instruction-popup-title');
-    const indexInput = document.getElementById('lumina-instruction-popup-index');
-    const contentInput = document.getElementById('lumina-instruction-popup-content');
+    const overlay = document.getElementById('nexus-instruction-popup-overlay');
+    const titleEl = document.getElementById('nexus-instruction-popup-title');
+    const indexInput = document.getElementById('nexus-instruction-popup-index');
+    const contentInput = document.getElementById('nexus-instruction-popup-content');
     if (!overlay || !titleEl || !indexInput || !contentInput) return;
     if (index !== null && index >= 0 && index < this.userFacts.length) {
       titleEl.textContent = 'Edit Custom Instruction';
@@ -1266,12 +1266,12 @@ export class LuminaSettingsModal {
     setTimeout(() => contentInput.focus(), 50);
   }
   static hideInstructionForm() {
-    const overlay = document.getElementById('lumina-instruction-popup-overlay');
+    const overlay = document.getElementById('nexus-instruction-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
   static async saveInstructionPopup() {
-    const indexInput = document.getElementById('lumina-instruction-popup-index');
-    const contentInput = document.getElementById('lumina-instruction-popup-content');
+    const indexInput = document.getElementById('nexus-instruction-popup-index');
+    const contentInput = document.getElementById('nexus-instruction-popup-content');
     if (!indexInput || !contentInput) return;
     const val = contentInput.value.trim();
     if (!val) {
@@ -1291,14 +1291,14 @@ export class LuminaSettingsModal {
     this.hideInstructionForm();
   }
   static renderUserFacts() {
-    const list = document.getElementById('lumina-user-facts-list');
+    const list = document.getElementById('nexus-user-facts-list');
     if (!list) return;
     list.innerHTML = '';
     if (this.userFacts.length === 0) {
-      list.innerHTML = '<div class="lumina-settings-empty-state">No instructions added yet. Add one above.</div>';
+      list.innerHTML = '<div class="nexus-settings-empty-state">No instructions added yet. Add one above.</div>';
       return;
     }
-    const temp = document.getElementById('lumina-userFactItemTemplate');
+    const temp = document.getElementById('nexus-userFactItemTemplate');
     this.userFacts.forEach((fact, idx) => {
       const clone = temp.content.cloneNode(true);
       clone.querySelector('.fact-index').textContent = idx + 1;
@@ -1331,22 +1331,22 @@ export class LuminaSettingsModal {
     });
   }
   static bindKeyboardTab() {
-    const configBtn = document.getElementById('lumina-config-shortcut-btn');
+    const configBtn = document.getElementById('nexus-config-shortcut-btn');
     if (configBtn) {
       configBtn.addEventListener('click', () => {
         chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
       });
     }
-    const addMappingBtn = document.getElementById('lumina-add-mapping-btn');
+    const addMappingBtn = document.getElementById('nexus-add-mapping-btn');
     if (addMappingBtn) {
       addMappingBtn.addEventListener('click', () => {
         this.showMappingForm();
       });
     }
-    const cancelMappingBtn = document.getElementById('lumina-cancel-mapping-btn');
-    const saveMappingBtn = document.getElementById('lumina-save-mapping-btn');
-    const closeMappingPopupBtn = document.getElementById('lumina-mapping-popup-close-btn');
-    const mappingPopupOverlay = document.getElementById('lumina-mapping-popup-overlay');
+    const cancelMappingBtn = document.getElementById('nexus-cancel-mapping-btn');
+    const saveMappingBtn = document.getElementById('nexus-save-mapping-btn');
+    const closeMappingPopupBtn = document.getElementById('nexus-mapping-popup-close-btn');
+    const mappingPopupOverlay = document.getElementById('nexus-mapping-popup-overlay');
     if (cancelMappingBtn) cancelMappingBtn.addEventListener('click', () => this.hideMappingForm());
     if (saveMappingBtn) saveMappingBtn.addEventListener('click', () => this.saveMapping());
     if (closeMappingPopupBtn) closeMappingPopupBtn.addEventListener('click', () => this.hideMappingForm());
@@ -1355,7 +1355,7 @@ export class LuminaSettingsModal {
         if (e.target === mappingPopupOverlay) this.hideMappingForm();
       });
     }
-    const mappingPopupShortcut = document.getElementById('lumina-mapping-popup-shortcut');
+    const mappingPopupShortcut = document.getElementById('nexus-mapping-popup-shortcut');
     if (mappingPopupShortcut) {
       mappingPopupShortcut.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1364,21 +1364,21 @@ export class LuminaSettingsModal {
         this.recordShortcut(mappingPopupShortcut);
       });
     }
-    const referenceChipsContainer = document.getElementById('lumina-mapping-popup-reference-chips');
+    const referenceChipsContainer = document.getElementById('nexus-mapping-popup-reference-chips');
     if (referenceChipsContainer) {
-      referenceChipsContainer.querySelectorAll('.lumina-reference-chip').forEach(chip => {
+      referenceChipsContainer.querySelectorAll('.nexus-reference-chip').forEach(chip => {
         chip.addEventListener('click', (e) => {
           e.preventDefault();
           const val = chip.getAttribute('data-val');
           if (!val) return;
-          const promptInput = document.getElementById('lumina-mapping-popup-prompt');
+          const promptInput = document.getElementById('nexus-mapping-popup-prompt');
           if (promptInput) {
             const selection = window.getSelection();
             if (selection.rangeCount > 0) {
               const range = selection.getRangeAt(0);
               if (promptInput.contains(range.commonAncestorContainer)) {
                 const span = document.createElement('span');
-                span.className = 'lumina-variable-tag';
+                span.className = 'nexus-variable-tag';
                 span.contentEditable = 'false';
                 span.setAttribute('data-val', val);
                 span.textContent = val;
@@ -1392,7 +1392,7 @@ export class LuminaSettingsModal {
               }
             }
             const span = document.createElement('span');
-            span.className = 'lumina-variable-tag';
+            span.className = 'nexus-variable-tag';
             span.contentEditable = 'false';
             span.setAttribute('data-val', val);
             span.textContent = val;
@@ -1408,16 +1408,16 @@ export class LuminaSettingsModal {
         });
       });
     }
-    const addAnnotationBtn = document.getElementById('lumina-add-annotation-shortcut-btn');
+    const addAnnotationBtn = document.getElementById('nexus-add-annotation-shortcut-btn');
     if (addAnnotationBtn) {
       addAnnotationBtn.addEventListener('click', () => {
         this.showAnnotationForm();
       });
     }
-    const cancelAnnotationBtn = document.getElementById('lumina-cancel-annotation-btn');
-    const saveAnnotationBtn = document.getElementById('lumina-save-annotation-btn');
-    const closeAnnotationPopupBtn = document.getElementById('lumina-annotation-popup-close-btn');
-    const annotationPopupOverlay = document.getElementById('lumina-annotation-popup-overlay');
+    const cancelAnnotationBtn = document.getElementById('nexus-cancel-annotation-btn');
+    const saveAnnotationBtn = document.getElementById('nexus-save-annotation-btn');
+    const closeAnnotationPopupBtn = document.getElementById('nexus-annotation-popup-close-btn');
+    const annotationPopupOverlay = document.getElementById('nexus-annotation-popup-overlay');
     if (cancelAnnotationBtn) cancelAnnotationBtn.addEventListener('click', () => this.hideAnnotationForm());
     if (saveAnnotationBtn) saveAnnotationBtn.addEventListener('click', () => this.saveAnnotation());
     if (closeAnnotationPopupBtn) closeAnnotationPopupBtn.addEventListener('click', () => this.hideAnnotationForm());
@@ -1426,7 +1426,7 @@ export class LuminaSettingsModal {
         if (e.target === annotationPopupOverlay) this.hideAnnotationForm();
       });
     }
-    const annotationPopupShortcut = document.getElementById('lumina-annotation-popup-shortcut');
+    const annotationPopupShortcut = document.getElementById('nexus-annotation-popup-shortcut');
     if (annotationPopupShortcut) {
       annotationPopupShortcut.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1438,7 +1438,7 @@ export class LuminaSettingsModal {
     this.bindShortcutRecorders();
   }
   static bindShortcutRecorders() {
-    document.querySelectorAll('.lumina-settings-shortcut-box[data-action]').forEach(box => {
+    document.querySelectorAll('.nexus-settings-shortcut-box[data-action]').forEach(box => {
       box.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1515,7 +1515,7 @@ export class LuminaSettingsModal {
     this.recordingHadInput = false;
     this.recordingPressedCodes = new Set();
     box.classList.add('recording');
-    box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--lumina-text-secondary);">Recording...</span>';
+    box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--nexus-text-secondary);">Recording...</span>';
     const keydownHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -1665,7 +1665,7 @@ export class LuminaSettingsModal {
     const mousedownHandler = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const shortcutTarget = e.target.closest('.lumina-settings-shortcut-box');
+      const shortcutTarget = e.target.closest('.nexus-settings-shortcut-box');
       if (shortcutTarget !== box) {
         box.removeAttribute('data-key');
         delete box.dataset.key;
@@ -1778,7 +1778,7 @@ export class LuminaSettingsModal {
   }
   static loadShortcutsKeys(items) {
     const list = items.shortcuts || {};
-    document.querySelectorAll('.lumina-settings-shortcut-box[data-action]').forEach(box => {
+    document.querySelectorAll('.nexus-settings-shortcut-box[data-action]').forEach(box => {
       const action = box.dataset.action;
       const val = list[action];
       if (val && typeof val === 'object') {
@@ -1791,17 +1791,17 @@ export class LuminaSettingsModal {
     });
   }
   static renderQuestionMappings() {
-    const list = document.getElementById('lumina-question-mappings-list');
+    const list = document.getElementById('nexus-question-mappings-list');
     if (!list) return;
     list.innerHTML = '';
     if (this.questionMappings.length === 0) {
       const emptyState = document.createElement('div');
-      emptyState.className = 'lumina-settings-empty-state';
+      emptyState.className = 'nexus-settings-empty-state';
       emptyState.textContent = 'No custom mappings added yet.';
       list.appendChild(emptyState);
       return;
     }
-    const temp = document.getElementById('lumina-mappingRowTemplate');
+    const temp = document.getElementById('nexus-mappingRowTemplate');
     this.questionMappings.forEach((mapping, idx) => {
       const clone = temp.content.cloneNode(true);
       const displayKey = mapping.keyData ? (mapping.keyData.metaKey ? '⌘' : '') +
@@ -1843,11 +1843,11 @@ export class LuminaSettingsModal {
     document.addEventListener('keydown', keydownHandler, true);
   }
   static showAnnotationForm(index = null) {
-    const overlay = document.getElementById('lumina-annotation-popup-overlay');
+    const overlay = document.getElementById('nexus-annotation-popup-overlay');
     if (overlay) overlay.style.display = 'flex';
-    const indexInput = document.getElementById('lumina-annotation-form-index');
-    const shortcutBox = document.getElementById('lumina-annotation-popup-shortcut');
-    const palette = document.getElementById('lumina-annotation-popup-color-palette');
+    const indexInput = document.getElementById('nexus-annotation-form-index');
+    const shortcutBox = document.getElementById('nexus-annotation-popup-shortcut');
+    const palette = document.getElementById('nexus-annotation-popup-color-palette');
     const colors = [
       '#FFFB78',
       '#ffcc80',
@@ -1893,13 +1893,13 @@ export class LuminaSettingsModal {
     }
   }
   static hideAnnotationForm() {
-    const overlay = document.getElementById('lumina-annotation-popup-overlay');
+    const overlay = document.getElementById('nexus-annotation-popup-overlay');
     if (overlay) overlay.style.display = 'none';
   }
   static saveAnnotation() {
-    const indexInput = document.getElementById('lumina-annotation-form-index');
-    const shortcutBox = document.getElementById('lumina-annotation-popup-shortcut');
-    const palette = document.getElementById('lumina-annotation-popup-color-palette');
+    const indexInput = document.getElementById('nexus-annotation-form-index');
+    const shortcutBox = document.getElementById('nexus-annotation-popup-shortcut');
+    const palette = document.getElementById('nexus-annotation-popup-color-palette');
     let keyData = null;
     if (shortcutBox.dataset.key) {
       try {
@@ -1932,17 +1932,17 @@ export class LuminaSettingsModal {
     });
   }
   static renderAnnotationShortcuts() {
-    const list = document.getElementById('lumina-annotation-shortcuts-list');
+    const list = document.getElementById('nexus-annotation-shortcuts-list');
     if (!list) return;
     list.innerHTML = '';
     if (this.annotationShortcuts.length === 0) {
       const emptyState = document.createElement('div');
-      emptyState.className = 'lumina-settings-empty-state';
+      emptyState.className = 'nexus-settings-empty-state';
       emptyState.textContent = 'No annotation shortcuts added yet.';
       list.appendChild(emptyState);
       return;
     }
-    const temp = document.getElementById('lumina-annotationRowTemplate');
+    const temp = document.getElementById('nexus-annotationRowTemplate');
     this.annotationShortcuts.forEach((shortcut, idx) => {
       const clone = temp.content.cloneNode(true);
       const displayKey = shortcut.keyData ? (shortcut.keyData.metaKey ? '⌘' : '') +
@@ -1966,18 +1966,18 @@ export class LuminaSettingsModal {
     });
   }
   static bindAccountTab() {
-    const googleLoginBtn = document.getElementById('lumina-google-login-btn');
+    const googleLoginBtn = document.getElementById('nexus-google-login-btn');
     if (googleLoginBtn) {
       googleLoginBtn.addEventListener('click', async () => {
         try {
           googleLoginBtn.disabled = true;
           const originalHTML = googleLoginBtn.innerHTML;
           googleLoginBtn.innerHTML = 'Signing In...';
-          if (typeof LuminaAuth !== 'undefined') {
-            await LuminaAuth.login();
-            if (typeof LuminaSync !== 'undefined') {
+          if (typeof NexusAuth !== 'undefined') {
+            await NexusAuth.login();
+            if (typeof NexusSync !== 'undefined') {
               try {
-                await LuminaSync.syncData();
+                await NexusSync.syncData();
               } catch (syncErr) {
                 console.error('Initial sync failed:', syncErr);
               }
@@ -1993,24 +1993,24 @@ export class LuminaSettingsModal {
         }
       });
     }
-    const googleLogoutBtn = document.getElementById('lumina-google-logout-btn');
+    const googleLogoutBtn = document.getElementById('nexus-google-logout-btn');
     if (googleLogoutBtn) {
       googleLogoutBtn.addEventListener('click', async () => {
-        if (typeof LuminaAuth !== 'undefined') {
-          await LuminaAuth.logout();
+        if (typeof NexusAuth !== 'undefined') {
+          await NexusAuth.logout();
         }
       });
     }
-    const syncBtn = document.getElementById('lumina-sync-btn');
+    const syncBtn = document.getElementById('nexus-sync-btn');
     if (syncBtn) {
       syncBtn.addEventListener('click', async () => {
         syncBtn.disabled = true;
         const originalHTML = syncBtn.innerHTML;
         syncBtn.innerHTML = 'Syncing...';
         try {
-          if (typeof LuminaSync !== 'undefined') {
-            await LuminaSync.syncUp();
-            LuminaSettingsModal.updateStorageUsage();
+          if (typeof NexusSync !== 'undefined') {
+            await NexusSync.syncUp();
+            NexusSettingsModal.updateStorageUsage();
           }
         } catch (e) {
           alert('Sync failed: ' + e.message);
@@ -2020,12 +2020,12 @@ export class LuminaSettingsModal {
         }
       });
     }
-    const authLoggedOut = document.getElementById('lumina-auth-logged-out');
-    const authLoggedIn = document.getElementById('lumina-auth-logged-in');
-    const userAvatar = document.getElementById('lumina-user-avatar');
-    const userName = document.getElementById('lumina-user-name');
-    const userEmail = document.getElementById('lumina-user-email');
-    const syncStatus = document.getElementById('lumina-sync-status');
+    const authLoggedOut = document.getElementById('nexus-auth-logged-out');
+    const authLoggedIn = document.getElementById('nexus-auth-logged-in');
+    const userAvatar = document.getElementById('nexus-user-avatar');
+    const userName = document.getElementById('nexus-user-name');
+    const userEmail = document.getElementById('nexus-user-email');
+    const syncStatus = document.getElementById('nexus-sync-status');
     function updateAuthUI(isAuthenticated, user) {
       if (isAuthenticated && user) {
         if (authLoggedOut) authLoggedOut.classList.add('hidden');
@@ -2037,16 +2037,16 @@ export class LuminaSettingsModal {
         if (authLoggedOut) authLoggedOut.classList.remove('hidden');
         if (authLoggedIn) authLoggedIn.classList.add('hidden');
       }
-      LuminaSettingsModal.updateCloudSyncDashboard();
+      NexusSettingsModal.updateCloudSyncDashboard();
     }
-    if (typeof LuminaAuth !== 'undefined') {
-      LuminaAuth.addListener(updateAuthUI);
-      if (LuminaAuth.isAuthenticated) {
-        updateAuthUI(true, LuminaAuth.user);
+    if (typeof NexusAuth !== 'undefined') {
+      NexusAuth.addListener(updateAuthUI);
+      if (NexusAuth.isAuthenticated) {
+        updateAuthUI(true, NexusAuth.user);
       }
     }
-    if (typeof LuminaSync !== 'undefined') {
-      LuminaSync.addListener((status, timestamp) => {
+    if (typeof NexusSync !== 'undefined') {
+      NexusSync.addListener((status, timestamp) => {
         if (syncStatus && status) {
           if (timestamp) {
             const timeStr = new Date(timestamp).toLocaleString();
@@ -2055,21 +2055,21 @@ export class LuminaSettingsModal {
             syncStatus.textContent = status;
           }
         }
-        LuminaSettingsModal.updateCloudSyncDashboard();
+        NexusSettingsModal.updateCloudSyncDashboard();
       });
-      if (typeof LuminaAuth !== 'undefined' && LuminaAuth.isAuthenticated) {
-        LuminaSync.getLastSyncTime().then(time => {
+      if (typeof NexusAuth !== 'undefined' && NexusAuth.isAuthenticated) {
+        NexusSync.getLastSyncTime().then(time => {
           if (syncStatus && time !== 'Never') {
             syncStatus.textContent = `Last synced: ${time}`;
           }
         });
       }
     }
-    document.getElementById('lumina-export-settings-btn').addEventListener('click', async () => {
+    document.getElementById('nexus-export-settings-btn').addEventListener('click', async () => {
       try {
         let exportData;
-        if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.gatherLocalData === 'function') {
-          exportData = await LuminaSync.gatherLocalData();
+        if (typeof NexusSync !== 'undefined' && typeof NexusSync.gatherLocalData === 'function') {
+          exportData = await NexusSync.gatherLocalData();
         } else {
           exportData = await new Promise(resolve => chrome.storage.local.get(null, resolve));
         }
@@ -2077,7 +2077,7 @@ export class LuminaSettingsModal {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `lumina_backup_${Date.now()}.json`;
+        a.download = `nexus_backup_${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
       } catch (err) {
@@ -2085,8 +2085,8 @@ export class LuminaSettingsModal {
         alert('Failed to export data.');
       }
     });
-    const fileInput = document.getElementById('lumina-import-settings-file');
-    document.getElementById('lumina-import-settings-btn').addEventListener('click', () => fileInput.click());
+    const fileInput = document.getElementById('nexus-import-settings-file');
+    document.getElementById('nexus-import-settings-btn').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -2095,9 +2095,9 @@ export class LuminaSettingsModal {
         try {
           const data = JSON.parse(evt.target.result);
           if (!data || typeof data !== 'object') throw new Error('Invalid format');
-          if (typeof LuminaSync !== 'undefined' && typeof LuminaSync.persistMergedData === 'function') {
-            const sessionsObj = data.lumina_chat_sessions || {};
-            await LuminaSync.persistMergedData(data, sessionsObj, []);
+          if (typeof NexusSync !== 'undefined' && typeof NexusSync.persistMergedData === 'function') {
+            const sessionsObj = data.nexus_chat_sessions || {};
+            await NexusSync.persistMergedData(data, sessionsObj, []);
           } else {
             await new Promise(resolve => {
               chrome.storage.local.clear(() => {
@@ -2107,8 +2107,8 @@ export class LuminaSettingsModal {
           }
           alert('Backup data successfully imported!');
           this.loadSettings();
-          LuminaSettingsModal.updateStorageUsage();
-          const scope = window.LuminaSelectionScope;
+          NexusSettingsModal.updateStorageUsage();
+          const scope = window.NexusSelectionScope;
           if (scope) {
             scope.renderRecentChatsSidebar();
           }
@@ -2121,7 +2121,7 @@ export class LuminaSettingsModal {
       };
       reader.readAsText(file);
     });
-    document.getElementById('lumina-delete-all-btn').addEventListener('click', async () => {
+    document.getElementById('nexus-delete-all-btn').addEventListener('click', async () => {
       if (typeof window.showCustomPopup === 'function') {
         const confirmed = await window.showCustomPopup({
           title: 'Delete All History',
@@ -2132,8 +2132,8 @@ export class LuminaSettingsModal {
         if (confirmed) {
           if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.clearAllHistory) {
             await ChatHistoryManager.clearAllHistory();
-            LuminaSettingsModal.updateStorageUsage();
-            const scope = window.LuminaSelectionScope;
+            NexusSettingsModal.updateStorageUsage();
+            const scope = window.NexusSelectionScope;
             if (scope) {
               scope.renderRecentChatsSidebar();
               scope.resetChat(false);
@@ -2145,8 +2145,8 @@ export class LuminaSettingsModal {
         if (confirm('Are you sure you want to delete your entire chat history? This action cannot be reversed.')) {
           if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.clearAllHistory) {
             await ChatHistoryManager.clearAllHistory();
-            LuminaSettingsModal.updateStorageUsage();
-            const scope = window.LuminaSelectionScope;
+            NexusSettingsModal.updateStorageUsage();
+            const scope = window.NexusSelectionScope;
             if (scope) {
               scope.renderRecentChatsSidebar();
               scope.resetChat(false);
@@ -2156,16 +2156,16 @@ export class LuminaSettingsModal {
         }
       }
     });
-    this.setupDropdownInputs('lumina-history-retention-input', 'lumina-history-retention-menu');
+    this.setupDropdownInputs('nexus-history-retention-input', 'nexus-history-retention-menu');
   }
   static updateStorageUsage() {
-    const textEl = document.getElementById('lumina-storage-usage-text');
+    const textEl = document.getElementById('nexus-storage-usage-text');
     if (!textEl) return;
     chrome.storage.local.get(null, async (items) => {
       const now = Date.now();
       const expiredImgKeys = [];
       Object.keys(items).forEach(key => {
-        if (key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_')) {
+        if (key.startsWith('nexus_img_cache_') || key.startsWith('nexus_img_query_')) {
           const item = items[key];
           if (item && item.timestamp && (now - item.timestamp > 1 * 24 * 60 * 60 * 1000)) {
             expiredImgKeys.push(key);
@@ -2192,7 +2192,7 @@ export class LuminaSettingsModal {
       if (expiredImgKeys.length > 0) {
         chrome.storage.local.remove(expiredImgKeys);
       }
-      let dbSize = await LuminaChatDB.getStorageUsage();
+      let dbSize = await NexusChatDB.getStorageUsage();
       let configSize = 0;
       let cacheSize = 0;
       Object.keys(items).forEach(key => {
@@ -2201,15 +2201,15 @@ export class LuminaSettingsModal {
           return;
         }
         const isAnkiKey = key.startsWith('rot_') || [
-          'luminaTemplatesV3', 'luminaBatchHistoryV3', 'lastUsedGenAIModel',
+          'nexusTemplatesV3', 'nexusBatchHistoryV3', 'lastUsedGenAIModel',
           'lastUsedBatchSize', 'lastUsedDeck', 'lastUsedTemplateId', 'ankiQuickNoteContent'
         ].includes(key);
         if (isAnkiKey) return;
         const valueStr = JSON.stringify(items[key]);
         const sizeBytes = valueStr ? valueStr.length : 0;
-        if (key === 'lumina_chat_sessions' || key.startsWith('lumina_session_') || key.startsWith('lumina_history_')) {
+        if (key === 'nexus_chat_sessions' || key.startsWith('nexus_session_') || key.startsWith('nexus_history_')) {
           return;
-        } else if (key.startsWith('spotlight_history_') || key === 'audio_cache' || key.startsWith('lumina_img_cache_') || key.startsWith('lumina_img_query_') || key.startsWith('yt_transcript_')) {
+        } else if (key.startsWith('spotlight_history_') || key === 'audio_cache' || key.startsWith('nexus_img_cache_') || key.startsWith('nexus_img_query_') || key.startsWith('yt_transcript_')) {
           cacheSize += sizeBytes;
         } else {
           configSize += sizeBytes;
@@ -2234,9 +2234,9 @@ export class LuminaSettingsModal {
           return `${bytes} B`;
         };
         textEl.textContent = fmt(totalBytes);
-        const dbSizeEl = document.getElementById('lumina-storage-db-size');
-        const configSizeEl = document.getElementById('lumina-storage-config-size');
-        const cacheSizeEl = document.getElementById('lumina-storage-cache-size');
+        const dbSizeEl = document.getElementById('nexus-storage-db-size');
+        const configSizeEl = document.getElementById('nexus-storage-config-size');
+        const cacheSizeEl = document.getElementById('nexus-storage-cache-size');
         if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize + filesSize);
         if (configSizeEl) configSizeEl.textContent = fmt(configSize);
         if (cacheSizeEl) cacheSizeEl.textContent = fmt(totalCacheSize);
@@ -2244,23 +2244,23 @@ export class LuminaSettingsModal {
           const dbPct = ((dbSize + filesSize) / totalBytes * 100).toFixed(2);
           const configPct = (configSize / totalBytes * 100).toFixed(2);
           const cachePct = (totalCacheSize / totalBytes * 100).toFixed(2);
-          const barDb = document.getElementById('lumina-storage-bar-db');
-          const barConfig = document.getElementById('lumina-storage-bar-config');
-          const barCache = document.getElementById('lumina-storage-bar-cache');
+          const barDb = document.getElementById('nexus-storage-bar-db');
+          const barConfig = document.getElementById('nexus-storage-bar-config');
+          const barCache = document.getElementById('nexus-storage-bar-cache');
           requestAnimationFrame(() => {
             if (barDb) barDb.style.width = `${dbPct}%`;
             if (barConfig) barConfig.style.width = `${configPct}%`;
             if (barCache) barCache.style.width = `${cachePct}%`;
           });
         }
-        const sessionsListEl = document.getElementById('lumina-storage-sessions-list');
+        const sessionsListEl = document.getElementById('nexus-storage-sessions-list');
         if (sessionsListEl) {
-          const sessionsMetadata = await LuminaChatDB.getAllSessions();
+          const sessionsMetadata = await NexusChatDB.getAllSessions();
           const sessionList = [];
           for (const sessionId of Object.keys(sessionsMetadata)) {
             const meta = sessionsMetadata[sessionId];
             if (!meta) continue;
-            const sessionMessages = await LuminaChatDB.getMessages(sessionId);
+            const sessionMessages = await NexusChatDB.getMessages(sessionId);
             const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : '';
             const metaStr = JSON.stringify(meta);
             const messagesKeyStr = JSON.stringify(sessionId + '_messages');
@@ -2283,12 +2283,12 @@ export class LuminaSettingsModal {
           sessionList.sort((a, b) => b.size - a.size);
           const top10 = sessionList.slice(0, 10);
           if (top10.length === 0) {
-            sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--lumina-text-muted);">No chat sessions found.</p>';
+            sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--nexus-text-muted);">No chat sessions found.</p>';
           } else {
             sessionsListEl.innerHTML = '';
             top10.forEach(session => {
               const itemEl = document.createElement('div');
-              itemEl.className = 'lumina-storage-session-item';
+              itemEl.className = 'nexus-storage-session-item';
               itemEl.dataset.sessionId = session.id;
               const formattedDate = new Date(session.timestamp).toLocaleDateString(undefined, {
                 month: 'short',
@@ -2298,13 +2298,13 @@ export class LuminaSettingsModal {
               });
               const formattedSize = fmt(session.size);
               itemEl.innerHTML = `
-                <div class="lumina-storage-session-info">
-                  <span class="lumina-storage-session-title" title="${session.title}">${session.title}</span>
-                  <span class="lumina-storage-session-date">${formattedDate}</span>
+                <div class="nexus-storage-session-info">
+                  <span class="nexus-storage-session-title" title="${session.title}">${session.title}</span>
+                  <span class="nexus-storage-session-date">${formattedDate}</span>
                 </div>
-                <div class="lumina-storage-session-right">
-                  <span class="lumina-storage-session-size">${formattedSize}</span>
-                  <button type="button" class="lumina-storage-session-delete" title="Delete Chat Thread">
+                <div class="nexus-storage-session-right">
+                  <span class="nexus-storage-session-size">${formattedSize}</span>
+                  <button type="button" class="nexus-storage-session-delete" title="Delete Chat Thread">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -2314,7 +2314,7 @@ export class LuminaSettingsModal {
                   </button>
                 </div>
               `;
-              const deleteBtn = itemEl.querySelector('.lumina-storage-session-delete');
+              const deleteBtn = itemEl.querySelector('.nexus-storage-session-delete');
               if (deleteBtn) {
                 deleteBtn.addEventListener('click', async (e) => {
                   e.stopPropagation();
@@ -2328,8 +2328,8 @@ export class LuminaSettingsModal {
                     if (confirmed) {
                       if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
                         await ChatHistoryManager.deleteChat(session.id);
-                        LuminaSettingsModal.updateStorageUsage();
-                        const scope = window.LuminaSelectionScope;
+                        NexusSettingsModal.updateStorageUsage();
+                        const scope = window.NexusSelectionScope;
                         if (scope) {
                           scope.renderRecentChatsSidebar();
                           const tabsList = scope.getTabs();
@@ -2344,8 +2344,8 @@ export class LuminaSettingsModal {
                     if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
                       if (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.deleteChat) {
                         await ChatHistoryManager.deleteChat(session.id);
-                        LuminaSettingsModal.updateStorageUsage();
-                        const scope = window.LuminaSelectionScope;
+                        NexusSettingsModal.updateStorageUsage();
+                        const scope = window.NexusSelectionScope;
                         if (scope) {
                           scope.renderRecentChatsSidebar();
                           const tabsList = scope.getTabs();
@@ -2361,16 +2361,16 @@ export class LuminaSettingsModal {
               }
               itemEl.addEventListener('click', async () => {
                 const sid = session.id;
-                LuminaSettingsModal.hide();
-                if (window.LuminaViewManager) {
-                  window.LuminaViewManager.switchView('chat', { sid });
+                NexusSettingsModal.hide();
+                if (window.NexusViewManager) {
+                  window.NexusViewManager.switchView('chat', { sid });
                 }
                 const messages = (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.getSessionMessages)
                   ? await ChatHistoryManager.getSessionMessages(sid)
-                  : (await LuminaChatDB.getMessages(sid));
+                  : (await NexusChatDB.getMessages(sid));
                 const allSessions = (typeof ChatHistoryManager !== 'undefined' && ChatHistoryManager.getAllHistories)
                   ? await ChatHistoryManager.getAllHistories()
-                  : (await LuminaChatDB.getAllSessions());
+                  : (await NexusChatDB.getAllSessions());
                 const meta = allSessions[sid] || { id: sid, title: session.title };
                 const listContainer = document.getElementById('sidebar-recent-chats');
                 if (listContainer) {
@@ -2384,7 +2384,7 @@ export class LuminaSettingsModal {
                 if (typeof window.loadHistoryIntoNewTab === 'function') {
                   window.loadHistoryIntoNewTab(messages, meta, sid);
                 }
-                const sidebar = document.getElementById('lumina-sidebar');
+                const sidebar = document.getElementById('nexus-sidebar');
                 const backdrop = document.querySelector('.sidebar-backdrop');
                 if (sidebar) sidebar.classList.remove('active');
                 if (backdrop) backdrop.classList.remove('active');
@@ -2399,16 +2399,16 @@ export class LuminaSettingsModal {
     this.updateCloudSyncDashboard();
   }
   static updateCloudSyncDashboard() {
-    const sizeEl = document.getElementById('lumina-cloud-stat-size');
-    const md5El = document.getElementById('lumina-cloud-stat-md5');
-    const timeEl = document.getElementById('lumina-cloud-stat-time');
-    const relativeEl = document.getElementById('lumina-cloud-stat-relative');
-    const itemsEl = document.getElementById('lumina-cloud-stat-items');
-    const breakdownEl = document.getElementById('lumina-cloud-stat-breakdown');
-    const mediaEl = document.getElementById('lumina-cloud-stat-media');
-    const mediaSubEl = document.getElementById('lumina-cloud-stat-media-sub');
+    const sizeEl = document.getElementById('nexus-cloud-stat-size');
+    const md5El = document.getElementById('nexus-cloud-stat-md5');
+    const timeEl = document.getElementById('nexus-cloud-stat-time');
+    const relativeEl = document.getElementById('nexus-cloud-stat-relative');
+    const itemsEl = document.getElementById('nexus-cloud-stat-items');
+    const breakdownEl = document.getElementById('nexus-cloud-stat-breakdown');
+    const mediaEl = document.getElementById('nexus-cloud-stat-media');
+    const mediaSubEl = document.getElementById('nexus-cloud-stat-media-sub');
     if (!sizeEl) return;
-    if (typeof LuminaAuth !== 'undefined' && !LuminaAuth.isAuthenticated) {
+    if (typeof NexusAuth !== 'undefined' && !NexusAuth.isAuthenticated) {
       sizeEl.textContent = '—';
       if (md5El) md5El.textContent = 'Not connected';
       timeEl.textContent = 'Not signed in';
@@ -2419,7 +2419,7 @@ export class LuminaSettingsModal {
       if (mediaSubEl) mediaSubEl.textContent = '—';
       return;
     }
-    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'last_cloud_stats', 'lumina_highlights', 'drive_uploaded_blobs'], async (res) => {
+    chrome.storage.local.get(['last_sync_time', 'last_sync_size', 'last_sync_md5', 'last_cloud_stats', 'nexus_highlights', 'drive_uploaded_blobs'], async (res) => {
       if (res.last_sync_size) {
         const bytes = parseInt(res.last_sync_size, 10);
         if (!isNaN(bytes)) {
@@ -2465,16 +2465,16 @@ export class LuminaSettingsModal {
           noteCount = cloudStats.notesCount || 0;
           highlightCount = cloudStats.highlightsCount || 0;
         } else if (res.last_sync_time) {
-          if (typeof LuminaChatDB !== 'undefined') {
-            const sessions = await LuminaChatDB.getAllSessions().catch(() => ({}));
+          if (typeof NexusChatDB !== 'undefined') {
+            const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
             sessionCount = Object.keys(sessions || {}).length;
           }
           if (typeof NotesManager !== 'undefined') {
             const notes = await NotesManager.getNotes().catch(() => []);
             noteCount = notes.length;
           }
-          if (Array.isArray(res.lumina_highlights)) {
-            highlightCount = res.lumina_highlights.length;
+          if (Array.isArray(res.nexus_highlights)) {
+            highlightCount = res.nexus_highlights.length;
           }
         }
         if (itemsEl) {
@@ -2513,9 +2513,9 @@ export class LuminaSettingsModal {
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
-  LuminaSettingsModal.init();
+  NexusSettingsModal.init();
 });
 
 if (typeof globalThis !== 'undefined') {
-    globalThis.LuminaSettingsModal = LuminaSettingsModal;
+    globalThis.NexusSettingsModal = NexusSettingsModal;
 }

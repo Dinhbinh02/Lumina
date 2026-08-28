@@ -3,7 +3,7 @@ export async function searchGoogleImages(query) {
         if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) return resolve([]);
         chrome.runtime.sendMessage({ action: 'fetch_images', keyword: query }, (res) => {
             if (chrome.runtime.lastError) {
-                console.warn('[Lumina] fetch_images error:', chrome.runtime.lastError.message);
+                console.warn('[Nexus] fetch_images error:', chrome.runtime.lastError.message);
                 resolve([]);
             } else if (res && res.success && res.images) {
                 resolve(res.images);
@@ -52,7 +52,7 @@ export async function searchYoutubeVideo(query) {
             }
         }
     } catch (e) {
-        console.warn('[Lumina] searchYoutubeVideo failed:', e);
+        console.warn('[Nexus] searchYoutubeVideo failed:', e);
     }
     return null;
 }
