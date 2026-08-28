@@ -1,6 +1,7 @@
 @import "./tokens.css";
 @import "./base.css";
 @import "../../../../lib/vendor/katex/katex.min.css";
+@import "./hub_layout.css";
 @import "./lumina.css";
 @import "./modals/settings.css";
 @import "./modals/search.css";

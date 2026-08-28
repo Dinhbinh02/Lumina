@@ -66,26 +66,28 @@
     } catch (e) {}
 
     if (viewParam === 'notes' || viewParam === 'sparks' || viewParam === 'tts') {
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.querySelector('.lumina-main-content');
+            if (mainContent) {
+                mainContent.setAttribute('data-active-view', viewParam);
+            }
+        });
         if (viewParam === 'notes') {
             document.title = 'Notes';
-            const savedWidth = parseInt(localStorage.getItem('lumina_notes_sidebar_width'), 10) || 260;
             injectStyle('view-init-style', `
-                #chat-layout, #lumina-topbar, #sparks-page, #tts-page { display: none !important; }
+                .lumina-page-view { display: none !important; }
                 #notes-page { display: flex !important; }
-                @media (min-width: 681px) {
-                    .notes-sidebar-pane { width: ${savedWidth}px !important; flex: 0 0 ${savedWidth}px !important; }
-                }
             `);
         } else if (viewParam === 'sparks') {
             document.title = 'Sparks';
             injectStyle('view-init-style', `
-                #chat-layout, #lumina-topbar, #notes-page, #tts-page { display: none !important; }
+                .lumina-page-view { display: none !important; }
                 #sparks-page { display: flex !important; }
             `);
         } else if (viewParam === 'tts') {
             document.title = 'TTS Studio';
             injectStyle('view-init-style', `
-                #chat-layout, #lumina-topbar, #notes-page, #sparks-page { display: none !important; }
+                .lumina-page-view { display: none !important; }
                 #tts-page { display: flex !important; }
             `);
         }

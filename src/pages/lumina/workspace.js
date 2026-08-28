@@ -6322,7 +6322,7 @@ function updatePaneBlankState() {
 }
 
 function updateTopbarMenuVisibility() {
-    const menuContainer = document.querySelector('.topbar__menu-container');
+    const menuContainer = document.querySelector('.topbar-menu-container, .topbar__menu-container');
     if (!menuContainer) return;
     const targetTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
     const historyEl = targetTab ? targetTab.historyEl : document.getElementById('chat-history');
@@ -7147,23 +7147,19 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
         views: {
             chat: {
-                el: '#chat-layout',
-                hasTopbar: true,
-                displayType: '',
                 onOpen: () => {
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                     document.getElementById('sidebar-tts-btn')?.classList.remove('active');
+                    document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                 }
             },
             notes: {
-                el: '#notes-page',
-                hasTopbar: false,
-                displayType: 'flex',
                 onOpen: (params) => {
                     document.getElementById('sidebar-notes-btn')?.classList.add('active');
                     document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                     document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
 
                     if (!luminaNotesPanelInstance && typeof NotesPanel !== 'undefined') {
                         luminaNotesPanelInstance = new NotesPanel();
@@ -7174,14 +7170,12 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             },
             tts: {
-                el: '#tts-page',
-                hasTopbar: false,
-                displayType: 'flex',
                 onOpen: (params) => {
                     document.getElementById('sidebar-tts-btn')?.classList.add('active');
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                     document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                     document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.sidebar-spark-item.active').forEach(el => el.classList.remove('active'));
 
                     if (!luminaTTSPanelInstance && typeof TTSPanel !== 'undefined') {
                         luminaTTSPanelInstance = new TTSPanel();
@@ -7192,9 +7186,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                 }
             },
             sparks: {
-                el: '#sparks-page',
-                hasTopbar: false,
-                displayType: 'flex',
                 onOpen: (params) => {
                     document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                     document.getElementById('sidebar-tts-btn')?.classList.remove('active');
@@ -7212,43 +7203,14 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             if (!this.views[targetView]) return;
             this.currentView = targetView;
 
-            // Remove head pre-render style override if present
             const initStyle = document.getElementById('view-init-style');
             if (initStyle) initStyle.remove();
 
-            // 1. Hide ALL views automatically except the active target view
-            Object.keys(this.views).forEach(viewName => {
-                const config = this.views[viewName];
-                const domEl = document.querySelector(config.el);
-                if (domEl) {
-                    if (viewName === targetView) {
-                        if (config.displayType) {
-                            domEl.style.display = config.displayType;
-                        } else {
-                            domEl.style.removeProperty('display');
-                        }
-                    } else {
-                        if (viewName === 'chat') {
-                            domEl.style.setProperty('display', 'none', 'important');
-                        } else {
-                            domEl.style.display = 'none';
-                        }
-                    }
-                }
-            });
-
-            // 2. Toggle Topbar
-            const topbar = document.getElementById('lumina-topbar');
-            if (topbar) {
-                if (this.views[targetView].hasTopbar) {
-                    topbar.style.removeProperty('display');
-                    topbar.style.display = 'flex';
-                } else {
-                    topbar.style.setProperty('display', 'none', 'important');
-                }
+            const mainContent = document.querySelector('.lumina-main-content');
+            if (mainContent) {
+                mainContent.setAttribute('data-active-view', targetView);
             }
 
-            // 3. Update Title & URL
             if (targetView === 'tts') {
                 document.title = 'TTS Studio';
             } else if (targetView === 'notes') {
@@ -7261,7 +7223,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
 
             this.updateUrl(targetView, params);
 
-            // 4. Trigger lifecycle hook
             if (this.views[targetView].onOpen) {
                 this.views[targetView].onOpen(params);
             }

@@ -71,34 +71,9 @@ export const LuminaViewManager = {
         const initStyle = document.getElementById('view-init-style');
         if (initStyle) initStyle.remove();
 
-        Object.keys(this.views).forEach(viewName => {
-            const config = this.views[viewName];
-            const domEl = document.querySelector(config.el);
-            if (domEl) {
-                if (viewName === targetView) {
-                    if (config.displayType) {
-                        domEl.style.display = config.displayType;
-                    } else {
-                        domEl.style.removeProperty('display');
-                    }
-                } else {
-                    if (viewName === 'chat') {
-                        domEl.style.setProperty('display', 'none', 'important');
-                    } else {
-                        domEl.style.display = 'none';
-                    }
-                }
-            }
-        });
-
-        const topbar = document.getElementById('lumina-topbar');
-        if (topbar) {
-            if (this.views[targetView].hasTopbar) {
-                topbar.style.removeProperty('display');
-                topbar.style.display = 'flex';
-            } else {
-                topbar.style.setProperty('display', 'none', 'important');
-            }
+        const mainContent = document.querySelector('.lumina-main-content');
+        if (mainContent) {
+            mainContent.setAttribute('data-active-view', targetView);
         }
 
         if (targetView === 'tts') {

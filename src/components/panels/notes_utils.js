@@ -20,6 +20,37 @@ export function timeAgo(timestamp) {
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+export function extractNoteText(content) {
+    if (!content) return '';
+    if (typeof content === 'string') {
+        try {
+            content = JSON.parse(content);
+        } catch {
+            return content.trim();
+        }
+    }
+    if (content && Array.isArray(content.blocks)) {
+        const texts = [];
+        function parseBlock(b) {
+            if (!b) return;
+            if (Array.isArray(b.content)) {
+                b.content.forEach(item => {
+                    if (typeof item === 'string') texts.push(item);
+                    else if (item && item.text) texts.push(item.text);
+                });
+            } else if (typeof b.content === 'string') {
+                texts.push(b.content);
+            }
+            if (Array.isArray(b.children)) {
+                b.children.forEach(parseBlock);
+            }
+        }
+        content.blocks.forEach(parseBlock);
+        return texts.join(' ').trim();
+    }
+    return '';
+}
+
 export function extractSearchSnippet(text, query, snippetLength = 120) {
     if (!text) return '';
     if (!query) return text.slice(0, snippetLength);
