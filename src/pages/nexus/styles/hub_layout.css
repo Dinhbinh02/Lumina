@@ -44,6 +44,19 @@
     border: none;
     box-shadow: none;
     box-sizing: border-box;
+    font-size: 13px !important;
+}
+
+.topbar.nexus-view-topbar button,
+.topbar.nexus-view-topbar input,
+.topbar.nexus-view-topbar select,
+.topbar.nexus-hub-topbar button,
+.topbar.nexus-hub-topbar input,
+.topbar.nexus-hub-topbar select,
+.topbar.nexus-detail-topbar button,
+.topbar.nexus-detail-topbar input,
+.topbar.nexus-detail-topbar select {
+    font-size: inherit;
 }
 
 .topbar.nexus-view-topbar::after,
@@ -84,11 +97,12 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    font-size: 13px;
 }
 
 .nexus-topbar-title {
-    font-size: 1.21em;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: var(--nexus-weight-medium);
     color: var(--nexus-text-primary, #202124);
     letter-spacing: -0.01em;
 }
@@ -115,6 +129,14 @@
     width: 100%;
     overflow: hidden;
     box-sizing: border-box;
+    font-size: 13px !important;
+}
+
+.nexus-hub-view button,
+.nexus-hub-view input,
+.nexus-hub-view select,
+.nexus-hub-view textarea {
+    font-size: inherit;
 }
 
 .nexus-detail-view {
@@ -160,17 +182,26 @@
 .nexus-primary-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    justify-content: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 11px;
     background: var(--nexus-primary-color, #000000);
     color: #FFFFFF;
     border: none;
-    border-radius: 9px;
-    font-size: 1em;
-    font-weight: 500;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: var(--nexus-weight-medium);
     cursor: pointer;
     transition: opacity 0.15s ease;
     white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.nexus-primary-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 [data-theme="dark"] .nexus-primary-btn {
@@ -185,17 +216,26 @@
 .nexus-secondary-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
-    padding: 6px 10px;
+    height: 30px;
+    padding: 0 10px;
     background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
     color: var(--nexus-text-primary, #202124);
     border: none;
-    border-radius: 9px;
-    font-size: 1em;
-    font-weight: 500;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: var(--nexus-weight-medium);
     cursor: pointer;
     transition: background 0.15s ease;
     white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.nexus-secondary-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 [data-theme="dark"] .nexus-secondary-btn {
@@ -369,7 +409,7 @@
     background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
     color: var(--nexus-text-secondary, #5F6368);
     font-size: 1em;
-    font-weight: 500;
+    font-weight: var(--nexus-weight-medium);
     border: none;
     cursor: pointer;
     white-space: nowrap;
@@ -394,7 +434,7 @@
 .nexus-hub-pill.active {
     background: var(--nexus-primary-color, #000000);
     color: #FFFFFF;
-    font-weight: 500;
+    font-weight: var(--nexus-weight-medium);
 }
 
 [data-theme="dark"] .nexus-hub-pill.active {
@@ -467,7 +507,7 @@
     gap: 5px;
     margin-bottom: 8px;
     font-size: 0.85em;
-    font-weight: 600;
+    font-weight: var(--nexus-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--nexus-text-tertiary, #9AA0A6);
@@ -560,7 +600,7 @@
     background: rgba(0, 0, 0, 0.04);
     border: none;
     font-size: 0.9em;
-    font-weight: 500;
+    font-weight: var(--nexus-weight-medium);
     color: var(--nexus-text-secondary, #5F6368);
     max-width: 140px;
     overflow: hidden;
@@ -619,7 +659,7 @@
 
 .nexus-card-title {
     font-size: 1em;
-    font-weight: 600;
+    font-weight: var(--nexus-weight-semibold);
     color: var(--nexus-text-primary, #202124);
     margin: 0;
     line-height: 1.35;
@@ -716,7 +756,7 @@
 
 .nexus-empty-text {
     font-size: 1em;
-    font-weight: 500;
+    font-weight: var(--nexus-weight-medium);
     color: var(--nexus-text-secondary, #5F6368);
     margin: 0;
 }
@@ -754,7 +794,7 @@
 
 .nexus-batch-count {
     font-size: 0.92em;
-    font-weight: 500;
+    font-weight: var(--nexus-weight-medium);
     padding-right: 6px;
 }
 
@@ -768,7 +808,7 @@
     background: rgba(255, 255, 255, 0.15);
     color: #FFFFFF;
     font-size: 0.88em;
-    font-weight: 500;
+    font-weight: var(--nexus-weight-medium);
     cursor: pointer;
     transition: background 0.12s ease;
 }
@@ -795,7 +835,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 1em;
+    font-size: 13px;
     min-width: 0;
 }
 
@@ -803,16 +843,18 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 8px;
-    border-radius: 6px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 8px;
     border: none;
     background: transparent;
     color: var(--nexus-text-primary, #202124);
-    font-size: 1em;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: var(--nexus-weight-medium);
     cursor: pointer;
     transition: background 0.12s ease;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .nexus-back-btn:hover {
@@ -825,6 +867,8 @@
 
 .nexus-breadcrumb-sep {
     color: var(--nexus-text-tertiary, #9AA0A6);
+    font-size: 13px;
+    user-select: none;
 }
 
 .nexus-col-picker-pill {
@@ -832,15 +876,17 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 3px 8px;
+    height: 28px;
+    padding: 0 8px;
     border-radius: 8px;
     background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
     color: var(--nexus-text-secondary, #5F6368);
-    font-size: 1em;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: var(--nexus-weight-medium);
     cursor: pointer;
     border: none;
     transition: background 0.12s ease;
+    box-sizing: border-box;
 }
 
 [data-theme="dark"] .nexus-col-picker-pill {
@@ -858,7 +904,7 @@
 
 .note-title-input {
     font-size: 1.7em !important;
-    font-weight: 700 !important;
+    font-weight: var(--nexus-weight-bold) !important;
     color: var(--nexus-text-primary, #202124) !important;
     border: none !important;
     outline: none !important;

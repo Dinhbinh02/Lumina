@@ -1206,6 +1206,18 @@ body {
   border: none;
   box-shadow: none;
   box-sizing: border-box;
+  font-size: 13px !important;
+}
+.topbar.nexus-view-topbar button,
+.topbar.nexus-view-topbar input,
+.topbar.nexus-view-topbar select,
+.topbar.nexus-hub-topbar button,
+.topbar.nexus-hub-topbar input,
+.topbar.nexus-hub-topbar select,
+.topbar.nexus-detail-topbar button,
+.topbar.nexus-detail-topbar input,
+.topbar.nexus-detail-topbar select {
+  font-size: inherit;
 }
 .topbar.nexus-view-topbar::after,
 .topbar.nexus-hub-topbar::after,
@@ -1240,10 +1252,11 @@ body {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  font-size: 13px;
 }
 .nexus-topbar-title {
-  font-size: 1.21em;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: var(--nexus-weight-medium);
   color: var(--nexus-text-primary, #202124);
   letter-spacing: -0.01em;
 }
@@ -1267,6 +1280,13 @@ body {
   width: 100%;
   overflow: hidden;
   box-sizing: border-box;
+  font-size: 13px !important;
+}
+.nexus-hub-view button,
+.nexus-hub-view input,
+.nexus-hub-view select,
+.nexus-hub-view textarea {
+  font-size: inherit;
 }
 .nexus-detail-view {
   display: none;
@@ -1306,17 +1326,25 @@ body {
 .nexus-primary-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
   background: var(--nexus-primary-color, #000000);
   color: #FFFFFF;
   border: none;
-  border-radius: 9px;
-  font-size: 1em;
-  font-weight: 500;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: var(--nexus-weight-medium);
   cursor: pointer;
   transition: opacity 0.15s ease;
   white-space: nowrap;
+  box-sizing: border-box;
+}
+.nexus-primary-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 [data-theme=dark] .nexus-primary-btn {
   background: #FFFFFF;
@@ -1328,17 +1356,25 @@ body {
 .nexus-secondary-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
-  padding: 6px 10px;
+  height: 30px;
+  padding: 0 10px;
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   color: var(--nexus-text-primary, #202124);
   border: none;
-  border-radius: 9px;
-  font-size: 1em;
-  font-weight: 500;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: var(--nexus-weight-medium);
   cursor: pointer;
   transition: background 0.15s ease;
   white-space: nowrap;
+  box-sizing: border-box;
+}
+.nexus-secondary-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 [data-theme=dark] .nexus-secondary-btn {
   background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
@@ -1488,7 +1524,7 @@ body {
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   color: var(--nexus-text-secondary, #5F6368);
   font-size: 1em;
-  font-weight: 500;
+  font-weight: var(--nexus-weight-medium);
   border: none;
   cursor: pointer;
   white-space: nowrap;
@@ -1509,7 +1545,7 @@ body {
 .nexus-hub-pill.active {
   background: var(--nexus-primary-color, #000000);
   color: #FFFFFF;
-  font-weight: 500;
+  font-weight: var(--nexus-weight-medium);
 }
 [data-theme=dark] .nexus-hub-pill.active {
   background: #FFFFFF;
@@ -1571,7 +1607,7 @@ body {
   gap: 5px;
   margin-bottom: 8px;
   font-size: 0.85em;
-  font-weight: 600;
+  font-weight: var(--nexus-weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--nexus-text-tertiary, #9AA0A6);
@@ -1651,7 +1687,7 @@ body {
   background: rgba(0, 0, 0, 0.04);
   border: none;
   font-size: 0.9em;
-  font-weight: 500;
+  font-weight: var(--nexus-weight-medium);
   color: var(--nexus-text-secondary, #5F6368);
   max-width: 140px;
   overflow: hidden;
@@ -1702,7 +1738,7 @@ body {
 }
 .nexus-card-title {
   font-size: 1em;
-  font-weight: 600;
+  font-weight: var(--nexus-weight-semibold);
   color: var(--nexus-text-primary, #202124);
   margin: 0;
   line-height: 1.35;
@@ -1787,7 +1823,7 @@ body {
 }
 .nexus-empty-text {
   font-size: 1em;
-  font-weight: 500;
+  font-weight: var(--nexus-weight-medium);
   color: var(--nexus-text-secondary, #5F6368);
   margin: 0;
 }
@@ -1821,7 +1857,7 @@ body {
 }
 .nexus-batch-count {
   font-size: 0.92em;
-  font-weight: 500;
+  font-weight: var(--nexus-weight-medium);
   padding-right: 6px;
 }
 .nexus-batch-btn {
@@ -1834,7 +1870,7 @@ body {
   background: rgba(255, 255, 255, 0.15);
   color: #FFFFFF;
   font-size: 0.88em;
-  font-weight: 500;
+  font-weight: var(--nexus-weight-medium);
   cursor: pointer;
   transition: background 0.12s ease;
 }
@@ -1856,23 +1892,25 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 1em;
+  font-size: 13px;
   min-width: 0;
 }
 .nexus-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: var(--nexus-text-primary, #202124);
-  font-size: 1em;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--nexus-weight-medium);
   cursor: pointer;
   transition: background 0.12s ease;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 .nexus-back-btn:hover {
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.05));
@@ -1882,21 +1920,25 @@ body {
 }
 .nexus-breadcrumb-sep {
   color: var(--nexus-text-tertiary, #9AA0A6);
+  font-size: 13px;
+  user-select: none;
 }
 .nexus-col-picker-pill {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
+  height: 28px;
+  padding: 0 8px;
   border-radius: 8px;
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   color: var(--nexus-text-secondary, #5F6368);
-  font-size: 1em;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--nexus-weight-medium);
   cursor: pointer;
   border: none;
   transition: background 0.12s ease;
+  box-sizing: border-box;
 }
 [data-theme=dark] .nexus-col-picker-pill {
   background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
@@ -1910,7 +1952,7 @@ body {
 }
 .note-title-input {
   font-size: 1.7em !important;
-  font-weight: 700 !important;
+  font-weight: var(--nexus-weight-bold) !important;
   color: var(--nexus-text-primary, #202124) !important;
   border: none !important;
   outline: none !important;
@@ -2538,24 +2580,24 @@ body {
   mask-image: url('data:image/svg+xml,<svg id="Layer_1" height="512" viewBox="0 0 24 24" width="512" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1"><path d="m15 20h-10a5.006 5.006 0 0 1 -5-5v-10a5.006 5.006 0 0 1 5-5h10a5.006 5.006 0 0 1 5 5v10a5.006 5.006 0 0 1 -5 5zm9-1v-13a1 1 0 0 0 -2 0v13a3 3 0 0 1 -3 3h-13a1 1 0 0 0 0 2h13a5.006 5.006 0 0 0 5-5z"/></svg>');
 }
 .nexus-icon-plus {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0D%0A</g>%0D%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0D%0A</g>%0D%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0A</g>%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0A</g>%0A</svg>');
 }
 .nexus-icon-refresh {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0D%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0D%0A</g>%0D%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0D%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0D%0A</g>%0D%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0A</g>%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0A</g>%0A</svg>');
 }
 .nexus-icon-text-check {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
 }
 .nexus-icon-thumbtack {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
 }
 .nexus-icon-thumbtack-filled {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
 }
 .nexus-action-item .nexus-svg-icon {
   width: 17px !important;
@@ -10818,9 +10860,9 @@ h1,
   background: transparent;
   border: none;
   color: var(--nexus-heading-color, #0f172a) !important;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10829,13 +10871,8 @@ h1,
 }
 .notes-tb-text-icon {
   font-size: 13px;
-  font-weight: 600;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-weight: var(--nexus-weight-semibold);
+  font-family: inherit;
   color: currentColor;
   letter-spacing: -0.5px;
   line-height: 1;
@@ -11026,10 +11063,10 @@ h1,
   padding: 6px 10px;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--nexus-text, #334155);
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--nexus-weight-medium);
   text-align: left;
   cursor: pointer;
   transition: background 0.12s ease;
@@ -11040,7 +11077,7 @@ h1,
 .notes-dropdown-item.active {
   background: var(--nexus-hover-bg, #f1f5f9);
   color: var(--nexus-text, #0f172a);
-  font-weight: 600;
+  font-weight: var(--nexus-weight-semibold);
 }
 [data-theme=dark] .notes-dropdown-item {
   color: var(--nexus-text, #e2e8f0);

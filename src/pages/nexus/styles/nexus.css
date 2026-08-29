@@ -9845,9 +9845,9 @@ h1,
   background: transparent;
   border: none;
   color: var(--nexus-heading-color, #0f172a) !important;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9857,8 +9857,8 @@ h1,
 
 .notes-tb-text-icon {
   font-size: 13px;
-  font-weight: 600;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: var(--nexus-weight-semibold);
+  font-family: inherit;
   color: currentColor;
   letter-spacing: -0.5px;
   line-height: 1;
@@ -10083,10 +10083,10 @@ h1,
   padding: 6px 10px;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--nexus-text, #334155);
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--nexus-weight-medium);
   text-align: left;
   cursor: pointer;
   transition: background 0.12s ease;
@@ -10099,7 +10099,7 @@ h1,
 .notes-dropdown-item.active {
   background: var(--nexus-hover-bg, #f1f5f9);
   color: var(--nexus-text, #0f172a);
-  font-weight: 600;
+  font-weight: var(--nexus-weight-semibold);
 }
 
 [data-theme="dark"] .notes-dropdown-item {

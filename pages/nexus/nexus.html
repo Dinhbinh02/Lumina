@@ -871,76 +871,16 @@
                         </div>
 
                         <!-- Right Quick Toolbar -->
-                        <div class="nexus-topbar-right notes-toolbar-right">
-                            <button type="button" class="notes-tb-btn" id="note-tb-h1" title="Heading 1">
-                                <span class="notes-tb-text-icon">H1</span>
-                            </button>
-                            <button type="button" class="notes-tb-btn" id="note-tb-h2" title="Heading 2">
-                                <span class="notes-tb-text-icon">H2</span>
-                            </button>
-                            <button type="button" class="notes-tb-btn" id="note-tb-h3" title="Heading 3">
-                                <span class="notes-tb-text-icon">H3</span>
-                            </button>
-                            <button type="button" class="notes-tb-btn" id="note-tb-checklist" title="Checklist">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M9 11l3 3L22 4"></path>
-                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                                </svg>
-                            </button>
-                            <button type="button" class="notes-tb-btn" id="note-tb-bullet" title="Bullet List">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                                </svg>
-                            </button>
-                            <button type="button" class="notes-tb-btn" id="note-tb-number" title="Numbered List">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="10" y1="6" x2="21" y2="6"></line>
-                                    <line x1="10" y1="12" x2="21" y2="12"></line>
-                                    <line x1="10" y1="18" x2="21" y2="18"></line>
-                                    <path d="M4 6h1v4"></path>
-                                    <path d="M4 10h2"></path>
-                                    <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
-                                </svg>
-                            </button>
-                            <button type="button" class="notes-tb-btn" id="note-tb-table" title="Insert Table">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                                    <line x1="3" y1="15" x2="21" y2="15"></line>
-                                    <line x1="12" y1="3" x2="12" y2="21"></line>
-                                </svg>
-                            </button>
-
-                            <div class="notes-tb-divider"></div>
-
-                            <button type="button" class="notes-tb-btn" id="note-tb-undo" title="Undo (Cmd+Z)">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 7v6h6"></path>
-                                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
-                                </svg>
-                            </button>
-
-                            <button type="button" class="notes-tb-btn" id="note-tb-redo" title="Redo (Cmd+Shift+Z)">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 7v6h-6"></path>
-                                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
-                                </svg>
-                            </button>
-
-                            <div class="notes-custom-dropdown" id="notes-more-dropdown">
-                                <button type="button" class="notes-tb-btn" id="note-tb-more" title="More Actions">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="1"></circle>
-                                        <circle cx="19" cy="12" r="1"></circle>
-                                        <circle cx="5" cy="12" r="1"></circle>
+                        <div class="topbar-actions nexus-topbar-right notes-toolbar-right">
+                            <div class="topbar-menu-container" id="notes-more-dropdown">
+                                <button type="button" class="topbar-action-btn" id="note-tb-more" title="More Actions">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <circle cx="12" cy="5" r="2"></circle>
+                                        <circle cx="12" cy="12" r="2"></circle>
+                                        <circle cx="12" cy="19" r="2"></circle>
                                     </svg>
                                 </button>
-                                <div class="notes-dropdown-menu notes-more-menu" id="notes-more-menu" style="display: none;">
+                                <div class="topbar-dropdown-menu notes-dropdown-menu notes-more-menu" id="notes-more-menu" style="display: none;">
                                     <button type="button" class="notes-dropdown-item" id="note-action-pin-detail">
                                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                             <line x1="12" y1="17" x2="12" y2="22"></line>
