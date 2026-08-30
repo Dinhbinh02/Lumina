@@ -92,8 +92,8 @@ export class NexusSettingsModal {
     const keys = [
       'providers', 'models', 'advancedParamsByModel', 'fontSize', 'responseLanguage',
       'theme', 'contrast', 'accentColor', 'fontFamily', 'fontWeight', 'language', 'dictationEnabled', 'spokenLanguage',
-      'voice', 'separateVoiceEnabled', 'ttsModel', 'sttModel', 'baseTone', 'charWarm', 'charEnthusiastic',
-      'charHeaders', 'charEmoji', 'aboutNickname', 'aboutOccupation', 'aboutInterests',
+      'voice', 'separateVoiceEnabled', 'ttsModel', 'sttModel',
+      'aboutNickname', 'aboutOccupation', 'aboutInterests',
       'questionMappings', 'annotationShortcuts',
       'historyRetentionMonths', 'shortcuts'
     ];
@@ -144,21 +144,10 @@ export class NexusSettingsModal {
       const fsVal = items.fontSize || 14;
       const fsInput = document.getElementById('nexus-settings-fontsize');
       if (fsInput) fsInput.value = fsVal;
-      const toneInput = document.getElementById('nexus-settings-base-tone-input');
-      if (toneInput) {
-        const toneVal = items.baseTone || 'default';
-        toneInput.dataset.value = toneVal;
-        const toneMenu = document.getElementById('nexus-settings-base-tone-menu');
-        const matchedDiv = toneMenu?.querySelector(`div[data-val="${toneVal}"]`);
-        toneInput.value = matchedDiv ? matchedDiv.textContent : 'Default';
-        this.adjustInputWidthToContent(toneInput);
-      }
-      document.getElementById('nexus-settings-char-warm').value = items.charWarm || 3;
-      document.getElementById('nexus-settings-char-enthusiastic').value = items.charEnthusiastic || 3;
-      document.getElementById('nexus-settings-char-headers').value = items.charHeaders || 3;
-      document.getElementById('nexus-settings-char-emoji').value = items.charEmoji || 3;
-      document.getElementById('nexus-settings-about-nickname').value = items.aboutNickname || '';
-      document.getElementById('nexus-settings-about-occupation').value = items.aboutOccupation || '';
+      const aboutNicknameEl = document.getElementById('nexus-settings-about-nickname');
+      if (aboutNicknameEl) aboutNicknameEl.value = items.aboutNickname || '';
+      const aboutOccupationEl = document.getElementById('nexus-settings-about-occupation');
+      if (aboutOccupationEl) aboutOccupationEl.value = items.aboutOccupation || '';
       const interestsTextarea = document.getElementById('nexus-settings-about-interests');
       if (interestsTextarea) {
         interestsTextarea.value = items.aboutInterests || '';
@@ -214,11 +203,6 @@ export class NexusSettingsModal {
       separateVoiceEnabled: getChecked('nexus-settings-separate-voice'),
       ttsModel: getDropdownVal('nexus-settings-tts-model', 'gemini-2.5-flash'),
       sttModel: getDropdownVal('nexus-settings-stt-model', 'whisper-large-v3-turbo'),
-      baseTone: document.getElementById('nexus-settings-base-tone-input')?.dataset.value || 'default',
-      charWarm: getInt('nexus-settings-char-warm', 3),
-      charEnthusiastic: getInt('nexus-settings-char-enthusiastic', 3),
-      charHeaders: getInt('nexus-settings-char-headers', 3),
-      charEmoji: getInt('nexus-settings-char-emoji', 3),
       aboutNickname: getVal('nexus-settings-about-nickname').trim(),
       aboutOccupation: getVal('nexus-settings-about-occupation').trim(),
       aboutInterests: getVal('nexus-settings-about-interests').trim(),
@@ -452,12 +436,8 @@ export class NexusSettingsModal {
       if (inputId === 'nexus-setup-provider-input') {
         this.selectProviderSetup(input.dataset.value);
       }
-      if (inputId === 'nexus-settings-base-tone-input') {
-        this.adjustInputWidthToContent(input);
-      }
       if (
         inputId === 'nexus-history-retention-input' ||
-        inputId === 'nexus-settings-base-tone-input' ||
         inputId === 'nexus-settings-fontsize' ||
         inputId === 'nexus-settings-theme' ||
         inputId === 'nexus-settings-contrast' ||
@@ -1207,17 +1187,10 @@ export class NexusSettingsModal {
     });
   }
   static bindPersonalizationTab() {
-    this.setupDropdownInputs('nexus-settings-base-tone-input', 'nexus-settings-base-tone-menu');
-    const ranges = [
-      'nexus-settings-char-warm', 'nexus-settings-char-enthusiastic',
-      'nexus-settings-char-headers', 'nexus-settings-char-emoji'
-    ];
-    ranges.forEach(id => {
-      document.getElementById(id).addEventListener('change', () => this.saveOptions());
-    });
     const inputs = ['nexus-settings-about-nickname', 'nexus-settings-about-occupation', 'nexus-settings-about-interests'];
     inputs.forEach(id => {
-      document.getElementById(id).addEventListener('blur', () => this.saveOptions());
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('blur', () => this.saveOptions());
     });
     const addInstructionBtn = document.getElementById('nexus-add-instruction-btn');
     if (addInstructionBtn) {

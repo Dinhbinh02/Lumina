@@ -38,6 +38,10 @@ export function morphDOM(container, newHTML) {
             if (oldChild.tagName === 'CANVAS' || oldChild.classList?.contains('nexus-interactive-frozen')) {
                 return;
             }
+            // Protect already mounted and running widget iframes, but allow loading skeletons to be replaced
+            if (oldChild.classList?.contains('nexus-widget-wrapper') && !oldChild.classList?.contains('nexus-widget-loading') && newChild.classList?.contains('nexus-widget-wrapper')) {
+                return;
+            }
 
             for (let i = 0; i < newChild.attributes.length; i++) {
                 const attr = newChild.attributes[i];

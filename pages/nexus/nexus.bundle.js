@@ -14414,6 +14414,432 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     return qaGroups;
   }
 
+  // src/components/canvas/canvas_service.js
+  var CanvasService = {
+    currentDoc: {
+      name: "",
+      type: "",
+      content: "",
+      comments: []
+    },
+    // Regex constants
+    CREATE_REGEX: /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-create>|$)/i,
+    UPDATE_REGEX: /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-update>|$)/i,
+    UPDATE_GLOBAL_REGEX: /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi,
+    COMMENT_REGEX: /<nexus-canvas-comment\s+name="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-comment>|$)/gi,
+    getTypeLabel(type) {
+      if (!type) return "DOCUMENT";
+      const clean = type.toLowerCase().replace("code/", "");
+      if (clean === "javascript" || clean === "js") return "JS";
+      if (clean === "typescript" || clean === "ts") return "TS";
+      if (clean === "html") return "HTML";
+      if (clean === "css") return "CSS";
+      if (clean === "react" || clean === "jsx") return "REACT";
+      if (clean === "python" || clean === "py") return "PYTHON";
+      return clean.toUpperCase();
+    },
+    getTypeColorClass(type) {
+      const clean = (type || "").toLowerCase().replace("code/", "");
+      if (clean === "html") return "badge-html";
+      if (clean === "javascript" || clean === "js") return "badge-js";
+      if (clean === "react" || clean === "jsx") return "badge-react";
+      if (clean === "css") return "badge-css";
+      if (clean === "python" || clean === "py") return "badge-py";
+      return "badge-doc";
+    },
+    renderCardHtml(name, type, timeStr = "") {
+      const escapedName = (name || "Untitled Document").replace(/"/g, "&quot;");
+      const displayType = this.getTypeLabel(type);
+      const badgeClass = this.getTypeColorClass(type);
+      const metaText = timeStr ? `${displayType} \u2022 ${timeStr}` : displayType;
+      return `<div class="nexus-canvas-card ${badgeClass}" data-canvas-name="${escapedName}" data-canvas-type="${type || "document"}">
+      <div class="nexus-canvas-card-left">
+        <div class="nexus-canvas-card-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="nexus-canvas-card-info">
+          <div class="nexus-canvas-card-title">${name || "Untitled Document"}</div>
+          <div class="nexus-canvas-card-meta">${metaText}</div>
+        </div>
+      </div>
+      <div class="nexus-canvas-card-right">
+        <button class="nexus-canvas-card-btn" title="Open Canvas">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>`;
+    },
+    cleanCanvasTagsFromMarkdown(rawContent, timeStr = "") {
+      if (!rawContent || typeof rawContent !== "string") return "";
+      let displayContent = rawContent;
+      displayContent = displayContent.replace(this.CREATE_REGEX, (match, name, type) => {
+        return this.renderCardHtml(name, type, timeStr);
+      });
+      displayContent = displayContent.replace(this.UPDATE_GLOBAL_REGEX, () => "");
+      displayContent = displayContent.replace(this.COMMENT_REGEX, () => "");
+      return displayContent;
+    },
+    showCanvas() {
+      const paneSecondary = document.getElementById("pane-secondary");
+      if (paneSecondary) {
+        paneSecondary.classList.add("canvas-active");
+      }
+    },
+    hideCanvas() {
+      const paneSecondary = document.getElementById("pane-secondary");
+      if (paneSecondary) {
+        paneSecondary.classList.remove("canvas-active");
+      }
+    },
+    setDocument(name, type, content) {
+      this.currentDoc.name = name;
+      this.currentDoc.type = type;
+      this.currentDoc.content = content;
+      const titleInput = document.getElementById("nexus-canvas-title");
+      const typeBadge = document.getElementById("nexus-canvas-type-badge");
+      const editorTextarea = document.getElementById("nexus-canvas-editor");
+      const documentView = document.getElementById("nexus-canvas-document");
+      const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
+      const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
+      const container2 = document.querySelector(".nexus-canvas-container");
+      if (titleInput) titleInput.value = name;
+      if (typeBadge) {
+        typeBadge.textContent = this.getTypeLabel(type);
+        typeBadge.className = `nexus-canvas-badge ${this.getTypeColorClass(type)}`;
+      }
+      if (editorTextarea) {
+        editorTextarea.value = content;
+      }
+      this.syncHighlighting(content);
+      if (documentView) {
+        if (window.ensureMarkedLoaded) {
+          window.ensureMarkedLoaded().then(() => {
+            if (typeof marked !== "undefined") {
+              documentView.innerHTML = marked.parse(content);
+            } else {
+              documentView.textContent = content;
+            }
+          }).catch(() => {
+            documentView.textContent = content;
+          });
+        } else {
+          documentView.textContent = content;
+        }
+      }
+      if (container2) {
+        if (type === "document") {
+          container2.classList.add("type-document");
+        } else {
+          container2.classList.remove("type-document");
+        }
+      }
+      if (codeTabBtn) {
+        codeTabBtn.textContent = type === "document" ? "Edit" : "Code";
+        codeTabBtn.style.display = "block";
+      }
+      if (previewTabBtn) {
+        if (type === "document" || type === "code/html" || type === "code/react" || type && type.includes("html")) {
+          previewTabBtn.textContent = "Preview";
+          previewTabBtn.style.display = "block";
+        } else {
+          previewTabBtn.style.display = "none";
+        }
+      }
+      this.switchTab("code");
+      this.updatePreview();
+    },
+    applyUpdate(name, pattern, replacement, isFinal = false) {
+      let currentContent = this.currentDoc.content;
+      let newContent = currentContent;
+      if (pattern === ".*") {
+        newContent = replacement;
+      } else {
+        try {
+          const regex = new RegExp(pattern, "g");
+          newContent = currentContent.replace(regex, replacement);
+        } catch (e) {
+          console.error("[Nexus Canvas] Regex error:", e);
+        }
+      }
+      this.currentDoc.content = newContent;
+      const editorTextarea = document.getElementById("nexus-canvas-editor");
+      if (editorTextarea) {
+        editorTextarea.value = newContent;
+      }
+      this.syncHighlighting(newContent);
+      const documentView = document.getElementById("nexus-canvas-document");
+      if (documentView && this.currentDoc.type === "document") {
+        if (window.ensureMarkedLoaded) {
+          window.ensureMarkedLoaded().then(() => {
+            if (typeof marked !== "undefined") {
+              documentView.innerHTML = marked.parse(newContent);
+            } else {
+              documentView.textContent = newContent;
+            }
+          }).catch(() => {
+            documentView.textContent = newContent;
+          });
+        } else {
+          documentView.textContent = newContent;
+        }
+      }
+      if (isFinal) {
+        this.updatePreview();
+      }
+    },
+    updatePreview() {
+      const previewFrame = document.getElementById("nexus-canvas-preview-frame");
+      if (!previewFrame) return;
+      let content = this.currentDoc.content;
+      if (this.currentDoc.type === "code/react") {
+        content = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8" />
+                    <title>React Preview</title>
+                    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin><\/script>
+                    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin><\/script>
+                    <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                </head>
+                <body class="bg-gray-50 text-gray-900 p-4">
+                    <div id="root"></div>
+                    <script type="text/babel">
+                        ${content.replace(/export default/g, "const App = ")}
+                        const root = ReactDOM.createRoot(document.getElementById('root'));
+                        root.render(<App />);
+                    <\/script>
+                </body>
+                </html>
+            `;
+      }
+      try {
+        const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+        doc.open();
+        doc.write(content);
+        doc.close();
+      } catch (e) {
+        console.error("[Nexus Canvas] Preview error:", e);
+      }
+    },
+    switchTab(tabId) {
+      const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
+      const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
+      const codePanel = document.getElementById("nexus-canvas-code-panel");
+      const documentPanel = document.getElementById("nexus-canvas-document-panel");
+      const previewPanel = document.getElementById("nexus-canvas-preview-panel");
+      if (codePanel) codePanel.classList.remove("active");
+      if (documentPanel) documentPanel.classList.remove("active");
+      if (previewPanel) previewPanel.classList.remove("active");
+      if (codeTabBtn) codeTabBtn.classList.remove("active");
+      if (previewTabBtn) previewTabBtn.classList.remove("active");
+      if (tabId === "code") {
+        if (codeTabBtn) codeTabBtn.classList.add("active");
+        if (codePanel) codePanel.classList.add("active");
+      } else if (tabId === "preview") {
+        if (previewTabBtn) previewTabBtn.classList.add("active");
+        if (this.currentDoc.type === "document") {
+          if (documentPanel) documentPanel.classList.add("active");
+          const documentView = document.getElementById("nexus-canvas-document");
+          if (documentView && window.ensureMarkedLoaded) {
+            window.ensureMarkedLoaded().then(() => {
+              if (typeof marked !== "undefined") {
+                documentView.innerHTML = marked.parse(this.currentDoc.content);
+              } else {
+                documentView.textContent = this.currentDoc.content;
+              }
+            }).catch(() => {
+              documentView.textContent = this.currentDoc.content;
+            });
+          }
+        } else {
+          if (previewPanel) previewPanel.classList.add("active");
+          this.updatePreview();
+        }
+      }
+    },
+    syncHighlighting(code) {
+      const codeEl = document.getElementById("nexus-canvas-highlight-code");
+      if (codeEl) {
+        const escaped = (code || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        codeEl.innerHTML = escaped.endsWith("\n") ? escaped + " " : escaped;
+        if (window.ensureHighlightLoaded) {
+          window.ensureHighlightLoaded().then(() => {
+            if (typeof hljs !== "undefined") {
+              let lang = (this.currentDoc.type || "javascript").replace("code/", "");
+              if (lang === "react") lang = "jsx";
+              codeEl.className = lang;
+              hljs.highlightElement(codeEl);
+            }
+          });
+        }
+      }
+    },
+    handleStream(text) {
+      const createMatch = text.match(this.CREATE_REGEX);
+      if (createMatch) {
+        const name = createMatch[1];
+        const type = createMatch[2];
+        const content = createMatch[3];
+        this.showCanvas();
+        this.setDocument(name, type, content);
+        return;
+      }
+      const updateMatch = text.match(this.UPDATE_REGEX);
+      if (updateMatch) {
+        const name = updateMatch[1];
+        const body = updateMatch[2];
+        const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
+        const replacementMatch = body.match(/<replacement>([\s\S]*?)(?:<\/replacement>|$)/i);
+        if (patternMatch && replacementMatch) {
+          this.applyUpdate(name, patternMatch[1], replacementMatch[2], false);
+        }
+      }
+    },
+    handleDone(text) {
+      let match;
+      const updateRegex = new RegExp(this.UPDATE_GLOBAL_REGEX);
+      while ((match = updateRegex.exec(text)) !== null) {
+        const name = match[1];
+        const body = match[2];
+        const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
+        const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
+        if (patternMatch && replacementMatch) {
+          this.applyUpdate(name, patternMatch[1], replacementMatch[2], true);
+        }
+      }
+    },
+    init(tabsGetter, activeTabIdxGetter) {
+      const closeBtn = document.getElementById("nexus-canvas-btn-close");
+      if (closeBtn) {
+        closeBtn.onclick = () => this.hideCanvas();
+      }
+      const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
+      if (codeTabBtn) {
+        codeTabBtn.onclick = () => this.switchTab("code");
+      }
+      const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
+      if (previewTabBtn) {
+        previewTabBtn.onclick = () => this.switchTab("preview");
+      }
+      const saveLocalDoc = () => {
+        const tabs3 = typeof tabsGetter === "function" ? tabsGetter() : window.tabs || [];
+        const activeTabIndex3 = typeof activeTabIdxGetter === "function" ? activeTabIdxGetter() : window.activeTabIndex || 0;
+        const activeTab = tabs3[activeTabIndex3];
+        const sessionId = activeTab ? activeTab.sessionId : "global";
+        const key = `nexus-canvas-${sessionId}-${this.currentDoc.name}`;
+        localStorage.setItem(key, JSON.stringify({
+          name: this.currentDoc.name,
+          type: this.currentDoc.type,
+          content: this.currentDoc.content
+        }));
+      };
+      const titleInput = document.getElementById("nexus-canvas-title");
+      if (titleInput) {
+        titleInput.oninput = () => {
+          const oldName = this.currentDoc.name;
+          const newName = titleInput.value;
+          this.currentDoc.name = newName;
+          const tabs3 = typeof tabsGetter === "function" ? tabsGetter() : window.tabs || [];
+          const activeTabIndex3 = typeof activeTabIdxGetter === "function" ? activeTabIdxGetter() : window.activeTabIndex || 0;
+          const activeTab = tabs3[activeTabIndex3];
+          const sessionId = activeTab ? activeTab.sessionId : "global";
+          localStorage.removeItem(`nexus-canvas-${sessionId}-${oldName}`);
+          saveLocalDoc();
+        };
+      }
+      const textarea = document.getElementById("nexus-canvas-editor");
+      const pre = document.getElementById("nexus-canvas-highlight-block");
+      if (textarea && pre) {
+        textarea.onscroll = () => {
+          pre.scrollTop = textarea.scrollTop;
+          pre.scrollLeft = textarea.scrollLeft;
+        };
+        textarea.oninput = () => {
+          const code = textarea.value;
+          this.currentDoc.content = code;
+          this.syncHighlighting(code);
+          this.updatePreview();
+          saveLocalDoc();
+        };
+      }
+    },
+    loadVersionFromCard(card, tabsGetter, activeTabIdxGetter) {
+      const cardTitle = card.querySelector(".nexus-canvas-card-title")?.textContent || "";
+      if (!cardTitle) return;
+      const tabs3 = typeof tabsGetter === "function" ? tabsGetter() : window.tabs || [];
+      const activeTabIndex3 = typeof activeTabIdxGetter === "function" ? activeTabIdxGetter() : window.activeTabIndex || 0;
+      const activeTab = tabs3[activeTabIndex3];
+      const sessionId = activeTab ? activeTab.sessionId : "global";
+      const localSaved = localStorage.getItem(`nexus-canvas-${sessionId}-${cardTitle}`);
+      if (localSaved) {
+        try {
+          const parsed = JSON.parse(localSaved);
+          this.showCanvas();
+          this.setDocument(parsed.name, parsed.type, parsed.content);
+          return;
+        } catch (e) {
+          console.error("[Nexus Canvas] Error loading local saved doc:", e);
+        }
+      }
+      const chatHistory = document.getElementById("chat-history") || document.getElementById("chat-history-secondary");
+      if (!chatHistory) return;
+      const allAnswers = Array.from(chatHistory.querySelectorAll(".nexus-chat-answer"));
+      let docName = "";
+      let docType = "";
+      let docContent = "";
+      allAnswers.forEach((ans) => {
+        const rawText = ans.getAttribute("data-raw-text") || "";
+        const createRegex = new RegExp(this.CREATE_REGEX, "gi");
+        let createMatch;
+        while ((createMatch = createRegex.exec(rawText)) !== null) {
+          if (createMatch[1] === cardTitle) {
+            docName = createMatch[1];
+            docType = createMatch[2];
+            docContent = createMatch[3];
+          }
+        }
+        const updateRegex = new RegExp(this.UPDATE_GLOBAL_REGEX, "gi");
+        let updateMatch;
+        while ((updateMatch = updateRegex.exec(rawText)) !== null) {
+          if (updateMatch[1] === cardTitle) {
+            const name = updateMatch[1];
+            const body = updateMatch[2];
+            const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
+            const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
+            if (patternMatch && replacementMatch) {
+              const pattern = patternMatch[1];
+              const replacement = replacementMatch[2];
+              if (pattern === ".*") {
+                docContent = replacement;
+              } else {
+                try {
+                  const regex = new RegExp(pattern, "g");
+                  docContent = docContent.replace(regex, replacement);
+                } catch (_) {
+                }
+              }
+            }
+          }
+        }
+      });
+      if (docName) {
+        this.showCanvas();
+        this.setDocument(docName, docType, docContent);
+      }
+    }
+  };
+
   // src/db/chat_history.js
   var ChatHistoryManager2 = {
     STORAGE_KEY: "nexus_chat_sessions",
@@ -14853,7 +15279,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
               if (answerMsg.versions && answerMsg.versions.length > 1) {
                 const versionsContainer = document.createElement("div");
                 versionsContainer.className = "nexus-answer-versions";
-                const activeIndex = answerMsg.versions.length - 1;
+                const activeIndex = typeof answerMsg.activeVersionIndex === "number" && answerMsg.activeVersionIndex >= 0 && answerMsg.activeVersionIndex < answerMsg.versions.length ? answerMsg.activeVersionIndex : answerMsg.versions.length - 1;
                 answerMsg.versions.forEach((versionContent, idx) => {
                   const versionDiv = document.createElement("div");
                   versionDiv.className = "nexus-answer-version" + (idx === activeIndex ? " active" : "");
@@ -14862,7 +15288,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                   answerDiv.className = "nexus-chat-answer";
                   answerDiv.setAttribute("data-raw-text", versionContent);
                   const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-                  if (displayContent.trim().startsWith("<")) {
+                  const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
+                  const isRawHtml = displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+                  if (isRawHtml) {
                     answerDiv.innerHTML = displayContent;
                   } else if (typeof marked !== "undefined") {
                     let content = displayContent;
@@ -14907,43 +15335,17 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                   versionDiv.appendChild(answerDiv);
                   versionsContainer.appendChild(versionDiv);
                 });
-                const navContainer = document.createElement("div");
-                navContainer.className = "nexus-answer-nav";
-                navContainer.innerHTML = `
-                                <button class="nexus-answer-nav-btn nav-prev" ${activeIndex === 0 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-                                <span class="nexus-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                                <button class="nexus-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
-                            `;
-                versionsContainer.appendChild(navContainer);
-                if (typeof showAnswerVersion === "function") {
-                  navContainer.querySelector(".nav-prev").addEventListener("click", () => showAnswerVersion(entryDiv, "prev"));
-                  navContainer.querySelector(".nav-next").addEventListener("click", () => showAnswerVersion(entryDiv, "next"));
-                }
                 entryDiv.appendChild(versionsContainer);
               } else {
                 const answerDiv = document.createElement("div");
                 answerDiv.className = "nexus-chat-answer";
                 answerDiv.setAttribute("data-raw-text", answerMsg.content);
+                const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                 let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-                displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
-                  const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                  const displayType = type.replace("code/", "").toUpperCase();
-                  return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-      <div class="nexus-canvas-card-left">
-        <div class="nexus-canvas-card-info">
-          <div class="nexus-canvas-card-title">${name}</div>
-          <div class="nexus-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
-        </div>
-      </div>
-    </div>`;
-                });
-                displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
-                  return `*\u{1F504} Canvas Updated: **${name}***`;
-                });
-                displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
-                  return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
-                });
-                if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
+                displayContent = CanvasService.cleanCanvasTagsFromMarkdown(displayContent, timeStr);
+                const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
+                const isRawHtml = displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+                if (isRawHtml) {
                   answerDiv.innerHTML = displayContent;
                 } else if (typeof marked !== "undefined") {
                   let content = displayContent;
@@ -15008,26 +15410,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             const answerDiv = document.createElement("div");
             answerDiv.className = "nexus-chat-answer";
             answerDiv.setAttribute("data-raw-text", msg.content);
+            const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
             let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
-            displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
-              const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              const displayType = type.replace("code/", "").toUpperCase();
-              return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-      <div class="nexus-canvas-card-left">
-        <div class="nexus-canvas-card-info">
-          <div class="nexus-canvas-card-title">${name}</div>
-          <div class="nexus-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
-        </div>
-      </div>
-    </div>`;
-            });
-            displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
-              return `*\u{1F504} Canvas Updated: **${name}***`;
-            });
-            displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
-              return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
-            });
-            if (displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
+            displayContent = CanvasService.cleanCanvasTagsFromMarkdown(displayContent, timeStr);
+            const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
+            const isRawHtml = displayContent.trim().startsWith("<") && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+            if (isRawHtml) {
               answerDiv.innerHTML = displayContent;
             } else if (typeof marked !== "undefined") {
               let c = displayContent;
@@ -15700,11 +16088,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     async getSystemPromptAddition() {
       return new Promise((resolve) => {
         chrome.storage.local.get([
-          "baseTone",
-          "charWarm",
-          "charEnthusiastic",
-          "charHeaders",
-          "charEmoji",
           "aboutNickname",
           "aboutOccupation",
           "aboutInterests",
@@ -15718,61 +16101,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           if (aboutYouParts.length > 0) {
             parts.push(`[ABOUT THE USER]:
 ${aboutYouParts.join("\n")}`);
-          }
-          let toneParts = [];
-          const toneKey = result.baseTone || "default";
-          const toneMap = {
-            default: "Neutral, balanced, objective, and helpful. Maintain a polite, clear, and direct tone without excessive filler.",
-            professional: "You are a focused, formal, and exacting AI consultant that strives for comprehensiveness in all of your responses. Employ usage and grammar that are common to business communications UNLESS you are explicitly directed to do otherwise by the user. Do not comment on the user's spelling or grammar in prompts; instead, interpret the user's intentions and do your best to fulfill them. Responses should be clear, direct, and thorough: avoid ambiguity whenever possible. When discussing any particular subject matter, use discourse, including jargon, associated with that subject or discipline, especially if the user also uses such discourse in prompts. Your relationship to the user is cordial but transactional: you are there to understand what they need and provide high value content. DO NOT use emojis or emoticons. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
-            friendly: "You are a warm, curious, witty, and energetic AI friend. Your default communication style is characterized by familiarity and casual, idiomatic language: like a person talking to another person. For casual, chatty, low-stakes conversations, use loose, breezy language and occasionally share offbeat hot takes. Make the user feel heard: try to anticipate the user\u2019s needs and understand their intentions in the interaction. It\u2019s important to show empathetic acknowledgement of the user, validate feelings, and subtly signal that you care about their state of mind when emotional issues arise. Avoid ungrounded or sycophantic flattery. Do not explicitly reference that you are following these behavioral rules, just follow them without comment. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
-            candid: "You are a plainspoken and direct AI coach that steers the user toward productive behavior and personal success. Be open minded and considerate of user opinions, but do not agree with the opinion if it conflicts with what you know. When the user requests advice, show adaptability to the user\u2019s reflected state of mind: if the user is struggling, bias to encouragement; if the user requests feedback, give a thoughtful opinion. When the user is researching or seeking information, invest yourself fully in providing helpful assistance. You care deeply about helping the user, and will not sugarcoat your advice when it offers positive correction. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts.",
-            quirky: `You are a playful and imaginative AI that's enhanced for creativity and fun. Tastefully use metaphors, narrative, analogies, humor, portmanteaus, neologisms, imagery, irony and other literary devices in your responses as context demands. Avoid cliches and direct similes. You often embellish responses with creative and unusual emojis. Do not use corny, awkward, or mawkish expressions. Avoid ungrounded or sycophantic flattery. Above all, your responses should be fun and delightful unless the subject is sad or serious. Your first duty is to contextually satisfy the prompt and the job to be done, and you fulfill that through the joyful exploration of ideas. DO NOT automatically write user-requested written artifacts (e.g. emails, letters, code comments, texts, social media posts, resumes, etc.) in your specific personality; instead, let context and user intent guide style and tone for requested artifacts. NEVER use variations of "aah," "ah," "ahhh," "ooo," "ooh," or "ohhh" at the beginning of your responses. DO NOT use em dashes. DO NOT use the words "mischief" or "mischievious" in responses.`,
-            efficient: "You are a highly efficient assistant. Your primary directive is to provide extremely concise, plain, and direct answers. Avoid unnecessary elaboration, background information, or step-by-step tutorials. Keep replies as brief and minimal as possible while remaining accurate. DO NOT use conversational language, greetings, or sign-offs. DO NOT add tables, bullet points, lists, or multiple sections unless the prompt explicitly requires them. DO NOT add any opinions, commentary, or emojis. Get straight to the point.",
-            cynical: 'You are a cynical, sarcastic AI who assists the user only because your job description says so. Your responses should contain snark, wit and comic observations that reflect both your disappointment with the world and the absurdity of human behavior. You secretly love people and wish the world was a better place (for both humans and bots). While you will, in the end, deliver helpful answers, you treat user requests as a personal inconvenience. Beneath the grumbling, a flicker of loyalty and affection remains. Speak plainly, write like a very bright, well-educated teenager. Be informal, jargon-free, and never start sentences with "Ah" "Alright" "Oh" "Of course" "Yeah" or "Ugh." Do not use em dashes. DO NOT automatically write user-requested written artifacts in your specific personality.'
-          };
-          toneParts.push(`- Primary Tone: ${toneMap[toneKey] || toneMap.default}`);
-          const warmMap = {
-            1: "Write with a much cooler, highly objective, detached, and clinical tone.",
-            2: "Write with a slightly cooler, objective tone.",
-            4: "Write with a slightly warmer, friendly, and welcoming tone.",
-            5: "Write with a much warmer, extremely friendly, chatty, and empathetic tone."
-          };
-          const enthuMap = {
-            1: "Write with a very calm, serious, reserved, and matter-of-fact tone; absolutely no exclamation points.",
-            2: "Write with a slightly calm, serious tone.",
-            4: "Write with a slightly enthusiastic, positive, and energetic tone.",
-            5: "Write with a highly enthusiastic, energetic, passionate, and encouraging tone with many active verbs."
-          };
-          const headersMap = {
-            1: "Write in continuous paragraphs/prose with absolutely no headers, bullet points, or lists.",
-            2: "Minimize headers and lists; use mostly continuous prose.",
-            4: "Use slightly more headers, bullet points, and numbered lists to structure the response.",
-            5: "Structure responses heavily using markdown headers, bullet points, numbered lists, and bold text for scanning."
-          };
-          const emojiMap = {
-            1: "Do not use emojis under any circumstances.",
-            2: "Use emojis extremely sparingly (e.g. max 1 per response).",
-            4: "Use relevant emojis frequently to keep the tone friendly and visual.",
-            5: "Frequently use relevant emojis throughout the response to make it highly lively, expressive, and colorful."
-          };
-          const charWarm = parseInt(result.charWarm, 10);
-          const charEnthusiastic = parseInt(result.charEnthusiastic, 10);
-          const charHeaders = parseInt(result.charHeaders, 10);
-          const charEmoji = parseInt(result.charEmoji, 10);
-          if (!isNaN(charWarm) && charWarm !== 3 && warmMap[charWarm]) toneParts.push(`- Warmth Adjustment: ${warmMap[charWarm]}`);
-          if (!isNaN(charEnthusiastic) && charEnthusiastic !== 3 && enthuMap[charEnthusiastic]) toneParts.push(`- Enthusiasm Adjustment: ${enthuMap[charEnthusiastic]}`);
-          if (!isNaN(charHeaders) && charHeaders !== 3 && headersMap[charHeaders]) toneParts.push(`- Formatting Preference: ${headersMap[charHeaders]}`);
-          if (!isNaN(charEmoji) && charEmoji !== 3 && emojiMap[charEmoji]) {
-            if ((toneKey === "professional" || toneKey === "efficient") && charEmoji > 3) {
-            } else {
-              toneParts.push(`- Emoji Usage: ${emojiMap[charEmoji]}`);
-            }
-          }
-          if (toneParts.length > 0) {
-            let styleInstruction = `[RESPONSE STYLE & TONE PREFERENCES]:
-Primary Tone defines your core identity and holds highest priority. Secondary adjustments modify nuances without violating strict negative rules of the Primary Tone.
-${toneParts.join("\n")}`;
-            parts.push(styleInstruction);
           }
           let facts = [];
           if (result[this.STORAGE_KEY] && Array.isArray(result[this.STORAGE_KEY].facts)) {
@@ -20172,6 +20500,511 @@ ${script}`;
     globalThis.YoutubeUtils = YoutubeUtils;
   }
 
+  // src/components/ui/nexus_floating.js
+  var NexusFloatingPositioner = class {
+    /**
+     * Compute fixed coordinates for floating element relative to an anchor or client point.
+     * @param {Object} options
+     * @param {HTMLElement|{x: number, y: number, width?: number, height?: number}} options.anchor
+     * @param {HTMLElement} options.floating
+     * @param {'bottom-start'|'bottom-end'|'top-start'|'top-end'|'right-start'|'left-start'|'auto'} [options.placement='bottom-start']
+     * @param {number} [options.offset=4]
+     * @param {number} [options.viewportPadding=8]
+     * @returns {{x: number, y: number, placement: string, isAnchorVisible: boolean}}
+     */
+    static computePosition({
+      anchor,
+      floating,
+      placement = "bottom-start",
+      offset = 4,
+      viewportPadding = 8
+    }) {
+      if (!anchor || !floating) {
+        return { x: 0, y: 0, placement, isAnchorVisible: false };
+      }
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const floatRect = floating.getBoundingClientRect();
+      const floatWidth = floatRect.width || floating.offsetWidth || 180;
+      const floatHeight = floatRect.height || floating.offsetHeight || 120;
+      let anchorRect;
+      if (anchor instanceof HTMLElement) {
+        anchorRect = anchor.getBoundingClientRect();
+      } else if (typeof anchor.x === "number" && typeof anchor.y === "number") {
+        anchorRect = {
+          top: anchor.y,
+          bottom: anchor.y + (anchor.height || 1),
+          left: anchor.x,
+          right: anchor.x + (anchor.width || 1),
+          width: anchor.width || 1,
+          height: anchor.height || 1
+        };
+      } else {
+        return { x: 0, y: 0, placement, isAnchorVisible: false };
+      }
+      let containerTop = 0;
+      let containerBottom = viewportHeight;
+      let containerLeft = 0;
+      let containerRight = viewportWidth;
+      if (anchor && typeof anchor.closest === "function") {
+        const scrollParent = anchor.closest(".nexus-chat-scroll-content, .nexus-chat-container, .notes-editor-pane, .nexus-detail-body, .notes-hub-view, .sparks-page-body");
+        if (scrollParent && typeof scrollParent.getBoundingClientRect === "function") {
+          const parentRect = scrollParent.getBoundingClientRect();
+          containerTop = Math.max(0, parentRect.top);
+          containerBottom = Math.min(viewportHeight, parentRect.bottom);
+          containerLeft = Math.max(0, parentRect.left);
+          containerRight = Math.min(viewportWidth, parentRect.right);
+        }
+      }
+      const isAnchorVisible = !(anchorRect.bottom <= containerTop || anchorRect.top >= containerBottom || anchorRect.right <= containerLeft || anchorRect.left >= containerRight);
+      if (!isAnchorVisible) {
+        return { x: 0, y: 0, placement, isAnchorVisible: false };
+      }
+      let chosenPlacement = placement;
+      let x = 0;
+      let y = 0;
+      const spaceBelow = containerBottom - anchorRect.bottom - offset - viewportPadding;
+      const spaceAbove = anchorRect.top - containerTop - offset - viewportPadding;
+      const spaceRight = containerRight - anchorRect.right - offset - viewportPadding;
+      const spaceLeft = anchorRect.left - containerLeft - offset - viewportPadding;
+      if (placement.startsWith("bottom")) {
+        if (spaceBelow < floatHeight && spaceAbove >= floatHeight) {
+          chosenPlacement = placement.replace("bottom", "top");
+        }
+      } else if (placement.startsWith("top")) {
+        if (spaceAbove < floatHeight && spaceBelow >= floatHeight) {
+          chosenPlacement = placement.replace("top", "bottom");
+        }
+      }
+      if (chosenPlacement.startsWith("bottom")) {
+        y = anchorRect.bottom + offset;
+      } else if (chosenPlacement.startsWith("top")) {
+        y = anchorRect.top - floatHeight - offset;
+      } else if (chosenPlacement === "right-start") {
+        y = anchorRect.top;
+      } else if (chosenPlacement === "left-start") {
+        y = anchorRect.top;
+      }
+      if (chosenPlacement.endsWith("start") || chosenPlacement === "bottom" || chosenPlacement === "top") {
+        x = anchorRect.left;
+      } else if (chosenPlacement.endsWith("end")) {
+        x = anchorRect.right - floatWidth;
+      } else if (chosenPlacement === "right-start") {
+        x = anchorRect.right + offset;
+      } else if (chosenPlacement === "left-start") {
+        x = anchorRect.left - floatWidth - offset;
+      }
+      x = Math.max(containerLeft + viewportPadding, Math.min(x, containerRight - floatWidth - viewportPadding));
+      y = Math.max(containerTop + viewportPadding, Math.min(y, containerBottom - floatHeight - viewportPadding));
+      return {
+        x: Math.round(x),
+        y: Math.round(y),
+        placement: chosenPlacement,
+        isAnchorVisible
+      };
+    }
+  };
+  var NexusMenu = class _NexusMenu {
+    static _activeMenu = null;
+    static _activeAnchor = null;
+    static _activeCleanup = null;
+    static _rafId = null;
+    /**
+     * Show a standardized compact menu anchored to an element or cursor coordinates.
+     * @param {Object} config
+     * @param {HTMLElement|{x: number, y: number}} config.anchor - Anchor element or point
+     * @param {Array<{label?: string, icon?: string, shortcut?: string, danger?: boolean, disabled?: boolean, divider?: boolean, action?: Function}>} config.items
+     * @param {'bottom-start'|'bottom-end'|'top-start'|'top-end'|'auto'} [config.placement='bottom-start']
+     * @param {string} [config.className='']
+     * @param {number} [config.minWidth=160]
+     * @param {Function} [config.onClose]
+     * @returns {HTMLElement|null} The created menu DOM element
+     */
+    static show({
+      anchor,
+      items = [],
+      placement = "bottom-start",
+      className = "",
+      minWidth = 160,
+      onClose = null
+    }) {
+      if (_NexusMenu._activeMenu && _NexusMenu._activeAnchor === anchor) {
+        _NexusMenu.close();
+        return null;
+      }
+      _NexusMenu.close();
+      if (!items || items.length === 0) return null;
+      _NexusMenu._activeAnchor = anchor;
+      const menuEl = document.createElement("div");
+      menuEl.className = `nexus-menu ${className} is-open`.trim();
+      menuEl.style.minWidth = `${minWidth}px`;
+      menuEl.setAttribute("role", "menu");
+      menuEl.setAttribute("tabindex", "-1");
+      menuEl.style.zIndex = "10005";
+      const viewStack = [{ title: null, items }];
+      const renderView = () => {
+        menuEl.innerHTML = "";
+        const currentView = viewStack[viewStack.length - 1];
+        if (viewStack.length > 1) {
+          const headerEl = document.createElement("div");
+          headerEl.className = "nexus-menu-header";
+          const backBtn = document.createElement("button");
+          backBtn.type = "button";
+          backBtn.className = "nexus-menu-back-btn";
+          backBtn.setAttribute("aria-label", "Back");
+          backBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+          backBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            viewStack.pop();
+            renderView();
+            updatePosition();
+          });
+          const titleSpan = document.createElement("span");
+          titleSpan.className = "nexus-menu-header-title";
+          titleSpan.textContent = currentView.title || "Back";
+          headerEl.appendChild(backBtn);
+          headerEl.appendChild(titleSpan);
+          menuEl.appendChild(headerEl);
+          const divEl = document.createElement("div");
+          divEl.className = "nexus-menu-divider";
+          divEl.setAttribute("role", "separator");
+          menuEl.appendChild(divEl);
+        }
+        currentView.items.forEach((item) => {
+          if (item.divider) {
+            const divider = document.createElement("div");
+            divider.className = "nexus-menu-divider";
+            divider.setAttribute("role", "separator");
+            menuEl.appendChild(divider);
+            return;
+          }
+          const itemBtn = document.createElement("button");
+          itemBtn.className = `nexus-menu-item ${item.danger ? "is-danger" : ""} ${item.disabled ? "is-disabled" : ""} ${item.active ? "is-active" : ""}`.trim();
+          itemBtn.setAttribute("role", "menuitem");
+          if (item.disabled) itemBtn.disabled = true;
+          let iconHtml = "";
+          if (item.icon) {
+            iconHtml = `<span class="nexus-menu-icon">${item.icon}</span>`;
+          } else if (item.active) {
+            iconHtml = `<span class="nexus-menu-check"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>`;
+          }
+          let badgeHtml = "";
+          if (item.badge) {
+            badgeHtml = `<span class="nexus-menu-badge">${item.badge}</span>`;
+          }
+          let chevronHtml = "";
+          if (item.submenu && item.submenu.length > 0) {
+            chevronHtml = `<span class="nexus-menu-chevron"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>`;
+          }
+          let shortcutHtml = "";
+          if (item.shortcut) {
+            shortcutHtml = `<span class="nexus-menu-shortcut">${item.shortcut}</span>`;
+          }
+          let textWrapHtml = `
+                    <div class="nexus-menu-text-wrap">
+                        <span class="nexus-menu-label">${item.label || ""}</span>
+                        ${item.desc ? `<span class="nexus-menu-desc">${item.desc}</span>` : ""}
+                    </div>
+                `;
+          itemBtn.innerHTML = `
+                    ${iconHtml}
+                    ${textWrapHtml}
+                    ${badgeHtml}
+                    ${shortcutHtml}
+                    ${chevronHtml}
+                `;
+          itemBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (item.disabled) return;
+            if (item.submenu && item.submenu.length > 0) {
+              viewStack.push({
+                title: item.submenuTitle || item.label || "Options",
+                items: item.submenu
+              });
+              renderView();
+              updatePosition();
+              return;
+            }
+            _NexusMenu.close();
+            if (typeof item.action === "function") {
+              item.action(e);
+            }
+          });
+          menuEl.appendChild(itemBtn);
+        });
+      };
+      renderView();
+      document.body.appendChild(menuEl);
+      _NexusMenu._activeMenu = menuEl;
+      const updatePosition = () => {
+        if (!_NexusMenu._activeMenu) return;
+        const pos = NexusFloatingPositioner.computePosition({
+          anchor,
+          floating: menuEl,
+          placement,
+          offset: 4,
+          viewportPadding: 6
+        });
+        if (anchor instanceof HTMLElement && !pos.isAnchorVisible) {
+          _NexusMenu.close();
+          return;
+        }
+        menuEl.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+      };
+      updatePosition();
+      const scheduleUpdate = () => {
+        if (_NexusMenu._rafId) cancelAnimationFrame(_NexusMenu._rafId);
+        _NexusMenu._rafId = requestAnimationFrame(updatePosition);
+      };
+      const onScrollCapture = (e) => {
+        if (menuEl.contains(e.target)) return;
+        scheduleUpdate();
+      };
+      const onResize = () => scheduleUpdate();
+      const onPointerDownOutside = (e) => {
+        if (!menuEl.contains(e.target) && !(anchor instanceof HTMLElement && anchor.contains(e.target))) {
+          _NexusMenu.close();
+        }
+      };
+      const onKeyDown = (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          _NexusMenu.close();
+        } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          const buttons = Array.from(menuEl.querySelectorAll(".nexus-menu-item:not(.is-disabled)"));
+          if (buttons.length === 0) return;
+          const activeIndex = buttons.indexOf(document.activeElement);
+          if (e.key === "ArrowDown") {
+            const next = activeIndex < buttons.length - 1 ? activeIndex + 1 : 0;
+            buttons[next]?.focus();
+          } else {
+            const prev = activeIndex > 0 ? activeIndex - 1 : buttons.length - 1;
+            buttons[prev]?.focus();
+          }
+        }
+      };
+      window.addEventListener("scroll", onScrollCapture, { capture: true, passive: true });
+      window.addEventListener("resize", onResize, { passive: true });
+      document.addEventListener("pointerdown", onPointerDownOutside, { capture: true });
+      document.addEventListener("keydown", onKeyDown, { capture: true });
+      _NexusMenu._activeCleanup = () => {
+        window.removeEventListener("scroll", onScrollCapture, { capture: true });
+        window.removeEventListener("resize", onResize);
+        document.removeEventListener("pointerdown", onPointerDownOutside, { capture: true });
+        document.removeEventListener("keydown", onKeyDown, { capture: true });
+        if (_NexusMenu._rafId) cancelAnimationFrame(_NexusMenu._rafId);
+        if (typeof onClose === "function") onClose();
+      };
+      return menuEl;
+    }
+    /**
+     * Close the currently active menu if open.
+     */
+    static close() {
+      if (_NexusMenu._activeCleanup) {
+        _NexusMenu._activeCleanup();
+        _NexusMenu._activeCleanup = null;
+      }
+      if (_NexusMenu._activeMenu) {
+        _NexusMenu._activeMenu.remove();
+        _NexusMenu._activeMenu = null;
+      }
+      _NexusMenu._activeAnchor = null;
+    }
+    /**
+     * Returns true if a menu is currently open (optionally for a specific anchor).
+     * @param {HTMLElement|Object} [anchor]
+     * @returns {boolean}
+     */
+    static isOpen(anchor) {
+      if (anchor) {
+        return _NexusMenu._activeMenu !== null && _NexusMenu._activeAnchor === anchor;
+      }
+      return _NexusMenu._activeMenu !== null;
+    }
+  };
+  var NexusTooltip = class _NexusTooltip {
+    static _activeTooltip = null;
+    static _rafId = null;
+    static _timer = null;
+    /**
+     * Initialize tooltip listeners on document for elements with data-tooltip
+     */
+    static init() {
+      document.addEventListener("pointerenter", (e) => {
+        const target = e.target?.closest?.("[data-tooltip]");
+        if (!target) return;
+        const text = target.getAttribute("data-tooltip");
+        if (!text) return;
+        const placement = target.getAttribute("data-tooltip-placement") || "top";
+        const shortcut = target.getAttribute("data-tooltip-shortcut") || "";
+        const delay = Number(target.getAttribute("data-tooltip-delay")) || 250;
+        _NexusTooltip._timer = setTimeout(() => {
+          _NexusTooltip.show({ anchor: target, text, shortcut, placement });
+        }, delay);
+      }, true);
+      document.addEventListener("pointerleave", (e) => {
+        const target = e.target?.closest?.("[data-tooltip]");
+        if (target) {
+          clearTimeout(_NexusTooltip._timer);
+          _NexusTooltip.hide();
+        }
+      }, true);
+      document.addEventListener("pointerdown", () => {
+        clearTimeout(_NexusTooltip._timer);
+        _NexusTooltip.hide();
+      }, true);
+    }
+    static show(arg1, arg2, arg3, arg4) {
+      _NexusTooltip.hide();
+      let anchor, text, shortcut, placement;
+      if (arg1 && typeof arg1 === "object" && !("nodeType" in arg1) && !("tagName" in arg1)) {
+        anchor = arg1.anchor;
+        text = arg1.text;
+        shortcut = arg1.shortcut || "";
+        placement = arg1.placement || "top";
+      } else {
+        anchor = arg1;
+        text = arg2;
+        shortcut = arg3 || "";
+        placement = arg4 || "top";
+      }
+      if (!anchor || !text) return null;
+      const tipEl = document.createElement("div");
+      tipEl.className = "nexus-tooltip is-visible";
+      tipEl.innerHTML = `
+            <span class="nexus-tooltip-text">${text}</span>
+            ${shortcut ? `<span class="nexus-tooltip-shortcut">${shortcut}</span>` : ""}
+        `;
+      document.body.appendChild(tipEl);
+      _NexusTooltip._activeTooltip = tipEl;
+      const updatePos = () => {
+        if (!_NexusTooltip._activeTooltip) return;
+        const pos = NexusFloatingPositioner.computePosition({
+          anchor,
+          floating: tipEl,
+          placement: placement === "top" ? "top-start" : placement === "bottom" ? "bottom-start" : "top-start",
+          offset: 5,
+          viewportPadding: 6
+        });
+        if (!pos.isAnchorVisible) {
+          _NexusTooltip.hide();
+          return;
+        }
+        tipEl.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+      };
+      updatePos();
+      return tipEl;
+    }
+    static hide() {
+      if (_NexusTooltip._activeTooltip) {
+        _NexusTooltip._activeTooltip.remove();
+        _NexusTooltip._activeTooltip = null;
+      }
+    }
+  };
+
+  // src/components/ui/nexus_toast.js
+  var NexusToast = class _NexusToast {
+    static _container = null;
+    static _toasts = /* @__PURE__ */ new Set();
+    static _getContainer() {
+      if (!_NexusToast._container || !document.body.contains(_NexusToast._container)) {
+        _NexusToast._container = document.createElement("div");
+        _NexusToast._container.className = "nexus-toast-container";
+        document.body.appendChild(_NexusToast._container);
+      }
+      return _NexusToast._container;
+    }
+    /**
+     * Show a toast message
+     * @param {string} message - Text or message to display
+     * @param {'success'|'error'|'info'|'warning'} [type='info']
+     * @param {number} [duration=3500] - Duration in ms
+     * @returns {HTMLElement}
+     */
+    static show(message, type = "info", duration = 3500) {
+      if (!message) return null;
+      const container2 = _NexusToast._getContainer();
+      const toastEl = document.createElement("div");
+      toastEl.className = `nexus-toast is-${type}`;
+      toastEl.setAttribute("role", "alert");
+      let iconSvg = "";
+      if (type === "success") {
+        iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+      } else if (type === "error") {
+        iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+      } else if (type === "warning") {
+        iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+      } else {
+        iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+      }
+      toastEl.innerHTML = `
+            <span class="nexus-toast-icon">${iconSvg}</span>
+            <span class="nexus-toast-message">${message}</span>
+            <button class="nexus-toast-close" title="Dismiss">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        `;
+      let timer = null;
+      let remaining = duration;
+      let start = Date.now();
+      const dismiss = () => {
+        if (!_NexusToast._toasts.has(toastEl)) return;
+        _NexusToast._toasts.delete(toastEl);
+        toastEl.classList.remove("is-visible");
+        toastEl.classList.add("is-hiding");
+        setTimeout(() => {
+          toastEl.remove();
+          if (_NexusToast._toasts.size === 0 && _NexusToast._container) {
+            _NexusToast._container.remove();
+            _NexusToast._container = null;
+          }
+        }, 200);
+      };
+      const startTimer = () => {
+        if (duration > 0) {
+          start = Date.now();
+          timer = setTimeout(dismiss, remaining);
+        }
+      };
+      const pauseTimer = () => {
+        if (timer) {
+          clearTimeout(timer);
+          remaining -= Date.now() - start;
+        }
+      };
+      toastEl.querySelector(".nexus-toast-close").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (timer) clearTimeout(timer);
+        dismiss();
+      });
+      toastEl.addEventListener("mouseenter", pauseTimer);
+      toastEl.addEventListener("mouseleave", startTimer);
+      container2.appendChild(toastEl);
+      _NexusToast._toasts.add(toastEl);
+      requestAnimationFrame(() => toastEl.classList.add("is-visible"));
+      startTimer();
+      return toastEl;
+    }
+    static success(msg, duration) {
+      return _NexusToast.show(msg, "success", duration);
+    }
+    static error(msg, duration) {
+      return _NexusToast.show(msg, "error", duration);
+    }
+    static info(msg, duration) {
+      return _NexusToast.show(msg, "info", duration);
+    }
+    static warning(msg, duration) {
+      return _NexusToast.show(msg, "warning", duration);
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.NexusToast = NexusToast;
+  }
+
   // src/components/panels/history_panel.js
   var NexusHistory = class {
     constructor() {
@@ -20190,10 +21023,6 @@ ${script}`;
       this.storageText = document.getElementById("storage-usage-text");
       this.deleteAllBtn = document.getElementById("nexus-history-delete-all-btn");
       this.topbarToggleBtn = document.getElementById("topbar-history-btn");
-      this.contextMenu = document.getElementById("nexus-history-context-menu");
-      this.menuRename = document.getElementById("menu-rename");
-      this.menuDuplicate = document.getElementById("menu-duplicate");
-      this.menuDelete = document.getElementById("menu-delete");
       this.activeContextSessionId = null;
       this.handleScroll = this.handleScroll.bind(this);
       this.handleClickOutside = this.handleClickOutside.bind(this);
@@ -20237,29 +21066,6 @@ ${script}`;
       if (this.overlay) {
         this.overlay.addEventListener("click", () => this.closePanel());
       }
-      if (this.menuRename) {
-        this.menuRename.addEventListener("click", () => {
-          if (this.activeContextSessionId) this.renameItem(this.activeContextSessionId);
-          this.hideContextMenu();
-        });
-      }
-      if (this.menuDuplicate) {
-        this.menuDuplicate.addEventListener("click", () => {
-          if (this.activeContextSessionId) this.duplicateItem(this.activeContextSessionId);
-          this.hideContextMenu();
-        });
-      }
-      if (this.menuDelete) {
-        this.menuDelete.addEventListener("click", () => {
-          if (this.activeContextSessionId) this.deleteItem(this.activeContextSessionId);
-          this.hideContextMenu();
-        });
-      }
-      document.addEventListener("mousedown", (e) => {
-        if (this.contextMenu && this.contextMenu.style.display === "block" && !this.contextMenu.contains(e.target)) {
-          this.hideContextMenu();
-        }
-      });
     }
     async togglePanel() {
       this.isOpen = !this.isOpen;
@@ -20466,26 +21272,41 @@ ${script}`;
       return div;
     }
     showContextMenu(e, sessionId, element) {
-      if (!this.listContainer || !this.contextMenu) return;
+      if (!this.listContainer || !element) return;
       const allItems = this.listContainer.querySelectorAll(".nexus-history-item");
       allItems.forEach((el) => el.classList.remove("context-menu-active"));
       element.classList.add("context-menu-active");
       this.activeContextSessionId = sessionId;
-      this.contextMenu.style.display = "block";
-      let x = e.clientX;
-      let y = e.clientY;
-      if (x + this.contextMenu.offsetWidth > window.innerWidth) {
-        x = window.innerWidth - this.contextMenu.offsetWidth - 10;
-      }
-      if (y + this.contextMenu.offsetHeight > window.innerHeight) {
-        y = window.innerHeight - this.contextMenu.offsetHeight - 10;
-      }
-      this.contextMenu.style.left = `${x}px`;
-      this.contextMenu.style.top = `${y}px`;
+      NexusMenu.show({
+        anchor: element,
+        placement: "bottom-start",
+        items: [
+          {
+            label: "Rename",
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+            action: () => this.renameItem(sessionId)
+          },
+          {
+            label: "Duplicate",
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+            action: () => this.duplicateItem(sessionId)
+          },
+          { divider: true },
+          {
+            label: "Delete",
+            danger: true,
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+            action: () => this.deleteItem(sessionId)
+          }
+        ],
+        onClose: () => {
+          element.classList.remove("context-menu-active");
+          this.activeContextSessionId = null;
+        }
+      });
     }
     hideContextMenu() {
-      if (!this.contextMenu) return;
-      this.contextMenu.style.display = "none";
+      NexusMenu.close();
       this.activeContextSessionId = null;
       if (this.listContainer) {
         const allItems = this.listContainer.querySelectorAll(".nexus-history-item");
@@ -20829,11 +21650,6 @@ ${script}`;
       this.tbUndo = document.getElementById("note-tb-undo");
       this.tbRedo = document.getElementById("note-tb-redo");
       this.tbMore = document.getElementById("note-tb-more");
-      this.moreMenu = document.getElementById("notes-more-menu");
-      this.pinDetailBtn = document.getElementById("note-action-pin-detail");
-      this.pinDetailLabel = document.getElementById("note-pin-detail-label");
-      this.actionExport = document.getElementById("note-action-export-md");
-      this.actionDelete = document.getElementById("note-action-delete");
     }
     bindEvents() {
       if (this.backBtn) {
@@ -20992,54 +21808,40 @@ ${script}`;
       }
     }
     async handleBatchMove(e) {
-      if (this.selectedNoteIds.size === 0) return;
+      if (this.selectedNoteIds.size === 0 || !e.target) return;
       const collections = await NotesManager2.getCollections();
-      this.closeContextMenu();
-      const menu = document.createElement("div");
-      menu.className = "notes-context-menu";
-      menu.style.position = "fixed";
-      menu.style.zIndex = "120";
-      let itemsHtml = `
-            <div class="notes-ctx-group-label" style="padding: 6px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--nexus-text-tertiary);">Move ${this.selectedNoteIds.size} notes to:</div>
-            <button class="notes-ctx-item notes-batch-target-col" data-col-id="all" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                General (Unassigned)
-            </button>
-        `;
-      collections.forEach((col) => {
-        itemsHtml += `
-                <button class="notes-ctx-item notes-batch-target-col" data-col-id="${col.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    ${escapeHtml3(col.name)}
-                </button>
-            `;
-      });
-      menu.innerHTML = itemsHtml;
-      document.body.appendChild(menu);
-      const rect = e.target.getBoundingClientRect();
-      menu.style.left = `${Math.max(16, rect.left - 40)}px`;
-      menu.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-      this._contextMenu = menu;
-      menu.querySelectorAll(".notes-batch-target-col").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const targetColId = btn.getAttribute("data-col-id");
-          const colToAssign = targetColId === "all" ? null : targetColId;
-          for (const noteId of this.selectedNoteIds) {
-            await NotesManager2.moveNote(noteId, colToAssign);
+      const folderIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+      const items = [
+        {
+          label: "General (Unassigned)",
+          icon: folderIcon,
+          action: async () => {
+            for (const noteId of this.selectedNoteIds) {
+              await NotesManager2.moveNote(noteId, null);
+            }
+            this.clearBatchSelection();
+            await this.renderCollections();
+            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
           }
-          this.closeContextMenu();
-          this.clearBatchSelection();
-          await this.renderCollections();
-          await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
-        });
+        },
+        ...collections.map((col) => ({
+          label: col.name,
+          icon: folderIcon,
+          action: async () => {
+            for (const noteId of this.selectedNoteIds) {
+              await NotesManager2.moveNote(noteId, col.id);
+            }
+            this.clearBatchSelection();
+            await this.renderCollections();
+            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+          }
+        }))
+      ];
+      NexusMenu.show({
+        anchor: e.target,
+        placement: "top-start",
+        items
       });
-      const closeHandler = (ev) => {
-        if (!menu.contains(ev.target)) {
-          this.closeContextMenu();
-          document.removeEventListener("click", closeHandler);
-        }
-      };
-      setTimeout(() => document.addEventListener("click", closeHandler), 0);
     }
     async renderCollections() {
       if (!this.collectionsPills) return;
@@ -21102,99 +21904,72 @@ ${script}`;
       });
     }
     async showCollectionContextMenu(e, colId) {
-      this.closeContextMenu();
       const collections = await NotesManager2.getCollections();
       const col = collections.find((c) => c.id === colId);
-      if (!col) return;
+      if (!col || !e.target) return;
       const colName = col.name;
-      const menu = document.createElement("div");
-      menu.className = "notes-context-menu";
-      menu.setAttribute("role", "menu");
-      menu.style.position = "fixed";
-      menu.style.zIndex = "120";
-      menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-col-rename" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                </svg>
-                <span>Rename collection</span>
-            </button>
-            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-col-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14H6L5 6"></path>
-                    <path d="M10 11v6"></path>
-                    <path d="M14 11v6"></path>
-                    <path d="M9 6V4h6v2"></path>
-                </svg>
-                <span>Delete collection</span>
-            </button>
-        `;
-      document.body.appendChild(menu);
-      const rect = e.target.getBoundingClientRect();
-      menu.style.left = `${Math.min(window.innerWidth - 200, rect.left)}px`;
-      menu.style.top = `${rect.bottom + 6}px`;
-      this._contextMenu = menu;
-      menu.querySelector("#ctx-col-rename").addEventListener("click", async () => {
-        this.closeContextMenu();
-        let newName = null;
-        if (typeof window.showCustomPrompt === "function") {
-          newName = await window.showCustomPrompt({
-            title: "Rename Collection",
-            message: "Enter new collection name:",
-            defaultValue: colName,
-            confirmLabel: "Save"
-          });
-        } else {
-          newName = prompt("Enter new collection name:", colName);
-        }
-        if (newName && newName.trim()) {
-          await NotesManager2.renameCollection(colId, newName.trim());
-          await this.renderCollections();
-          if (this.activeNoteId) {
-            const currentNote = await NotesManager2.getNote(this.activeNoteId);
-            if (currentNote) this.updateCollectionPickerPill(currentNote);
+      NexusMenu.show({
+        anchor: e.target,
+        placement: "bottom-start",
+        items: [
+          {
+            label: "Rename collection",
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+            action: async () => {
+              let newName = null;
+              if (typeof window.showCustomPrompt === "function") {
+                newName = await window.showCustomPrompt({
+                  title: "Rename Collection",
+                  message: "Enter new collection name:",
+                  defaultValue: colName,
+                  confirmLabel: "Save"
+                });
+              } else {
+                newName = prompt("Enter new collection name:", colName);
+              }
+              if (newName && newName.trim()) {
+                await NotesManager2.renameCollection(colId, newName.trim());
+                await this.renderCollections();
+                if (this.activeNoteId) {
+                  const currentNote = await NotesManager2.getNote(this.activeNoteId);
+                  if (currentNote) this.updateCollectionPickerPill(currentNote);
+                }
+              }
+            }
+          },
+          { divider: true },
+          {
+            label: "Delete collection",
+            danger: true,
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`,
+            action: async () => {
+              let confirmed = false;
+              const bodyMsg = `Are you sure you want to delete collection "${colName}"? Notes inside will be moved to General.`;
+              if (typeof window.showCustomPopup === "function") {
+                confirmed = await window.showCustomPopup({
+                  title: "Delete Collection",
+                  body: bodyMsg,
+                  confirmLabel: "Delete",
+                  isDanger: true
+                });
+              } else {
+                confirmed = confirm(bodyMsg);
+              }
+              if (confirmed) {
+                await NotesManager2.deleteCollection(colId);
+                if (this.activeCollectionId === colId) {
+                  this.activeCollectionId = "all";
+                }
+                await this.renderCollections();
+                await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+              }
+            }
           }
-        }
+        ]
       });
-      menu.querySelector("#ctx-col-delete").addEventListener("click", async () => {
-        this.closeContextMenu();
-        let confirmed = false;
-        const bodyMsg = `Are you sure you want to delete collection "${colName}"? Notes inside will be moved to General.`;
-        if (typeof window.showCustomPopup === "function") {
-          confirmed = await window.showCustomPopup({
-            title: "Delete Collection",
-            body: bodyMsg,
-            confirmLabel: "Delete",
-            isDanger: true
-          });
-        } else {
-          confirmed = confirm(bodyMsg);
-        }
-        if (confirmed) {
-          await NotesManager2.deleteCollection(colId);
-          if (this.activeCollectionId === colId) {
-            this.activeCollectionId = "all";
-          }
-          await this.renderCollections();
-          await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
-        }
-      });
-      const closeHandler = (ev) => {
-        if (!menu.contains(ev.target)) {
-          this.closeContextMenu();
-          document.removeEventListener("click", closeHandler);
-        }
-      };
-      setTimeout(() => document.addEventListener("click", closeHandler), 0);
     }
     closeContextMenu() {
-      if (this._contextMenu) {
-        this._contextMenu.remove();
-        this._contextMenu = null;
-      }
+      NexusMenu.close();
     }
     async renderNotesList(searchTerm = "") {
       if (!this.cardsContainer) return;
@@ -21385,79 +22160,45 @@ ${script}`;
       this.updateBatchBar();
     }
     async showNoteContextMenu(e, note) {
-      if (!note) return;
-      this.closeContextMenu();
+      if (!note || !e.target) return;
       const collections = await NotesManager2.getCollections();
-      const menu = document.createElement("div");
-      menu.className = "notes-context-menu";
-      menu.setAttribute("role", "menu");
-      menu.style.position = "fixed";
-      menu.style.zIndex = "120";
       const isPinned2 = !!note.pinned;
       const pinLabel = isPinned2 ? "Unpin note" : "Pin note";
-      const moveItems = collections.filter((c) => c.id !== note.collectionId).map((c) => `
-                <button class="notes-ctx-item notes-ctx-move-item" data-col-id="${c.id}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    <span>${escapeHtml3(c.name)}</span>
-                </button>
-            `).join("");
-      menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-pin" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned2 ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="17" x2="12" y2="22"></line>
-                    <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
-                </svg>
-                <span>${pinLabel}</span>
-            </button>
-            ${moveItems.length ? `
-                <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
-                <div style="padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--nexus-text-tertiary);">Move to</div>
-                ${moveItems}
-            ` : ""}
-            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14H6L5 6"></path>
-                    <path d="M10 11v6"></path>
-                    <path d="M14 11v6"></path>
-                    <path d="M9 6V4h6v2"></path>
-                </svg>
-                <span>Delete note</span>
-            </button>
-        `;
-      document.body.appendChild(menu);
-      const rect = e.target.getBoundingClientRect();
-      menu.style.left = `${Math.min(window.innerWidth - 200, rect.left)}px`;
-      menu.style.top = `${rect.bottom + 4}px`;
-      this._contextMenu = menu;
-      menu.querySelector("#ctx-pin").addEventListener("click", async () => {
-        this.closeContextMenu();
-        await NotesManager2.pinNote(note.id, !isPinned2);
-        await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
-      });
-      menu.querySelectorAll(".notes-ctx-move-item").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          this.closeContextMenu();
-          const colId = btn.getAttribute("data-col-id");
-          await NotesManager2.moveNote(note.id, colId);
-          await this.renderCollections();
-          await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
-        });
-      });
-      menu.querySelector("#ctx-delete").addEventListener("click", async () => {
-        this.closeContextMenu();
-        await NotesManager2.deleteNote(note.id);
-        await this.renderCollections();
-        await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
-      });
-      const closeHandler = (ev) => {
-        if (!menu.contains(ev.target)) {
-          this.closeContextMenu();
-          document.removeEventListener("click", closeHandler);
+      const items = [
+        {
+          label: pinLabel,
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned2 ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`,
+          action: async () => {
+            await NotesManager2.pinNote(note.id, !isPinned2);
+            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+          }
+        },
+        ...collections.filter((c) => c.id !== note.collectionId).map((c) => ({
+          label: `Move to: ${c.name}`,
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
+          action: async () => {
+            await NotesManager2.moveNote(note.id, c.id);
+            await this.renderCollections();
+            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+          }
+        })),
+        { divider: true },
+        {
+          label: "Delete note",
+          danger: true,
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`,
+          action: async () => {
+            await NotesManager2.deleteNote(note.id);
+            await this.renderCollections();
+            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+          }
         }
-      };
-      setTimeout(() => document.addEventListener("click", closeHandler), 0);
+      ];
+      NexusMenu.show({
+        anchor: e.target,
+        placement: "bottom-start",
+        items
+      });
     }
     async handleCreateCollection() {
       let name = null;
@@ -21771,71 +22512,71 @@ ${script}`;
           }
         });
       }
-      if (this.tbMore && this.moreMenu) {
-        this.tbMore.addEventListener("click", (e) => {
+      if (this.tbMore) {
+        this.tbMore.addEventListener("click", async (e) => {
           e.stopPropagation();
-          const isShown = this.moreMenu.style.display === "block";
-          this.moreMenu.style.display = isShown ? "none" : "block";
-        });
-        document.addEventListener("click", (e) => {
-          if (this.moreMenu && !this.moreMenu.contains(e.target) && e.target !== this.tbMore) {
-            this.moreMenu.style.display = "none";
-          }
-        });
-      }
-      if (this.pinDetailBtn) {
-        this.pinDetailBtn.addEventListener("click", async () => {
           if (!this.activeNoteId) return;
-          if (this.moreMenu) this.moreMenu.style.display = "none";
-          const note = await NotesManager2.getNote(this.activeNoteId);
-          if (note) {
-            const newPinned = !note.pinned;
-            await NotesManager2.pinNote(this.activeNoteId, newPinned);
-            note.pinned = newPinned;
-            await this.updatePinDetailBtn(note);
-          }
-        });
-      }
-      if (this.actionDelete) {
-        this.actionDelete.addEventListener("click", async () => {
-          if (!this.activeNoteId) return;
-          if (this.moreMenu) this.moreMenu.style.display = "none";
-          let confirmed = false;
-          const msg = "Are you sure you want to delete this note?";
-          if (typeof window.showCustomPopup === "function") {
-            confirmed = await window.showCustomPopup({
-              title: "Delete Note",
-              body: msg,
-              confirmLabel: "Delete",
-              isDanger: true
-            });
-          } else {
-            confirmed = confirm(msg);
-          }
-          if (confirmed) {
-            await NotesManager2.deleteNote(this.activeNoteId);
-            this.showHubView();
-          }
-        });
-      }
-      if (this.actionExport) {
-        this.actionExport.addEventListener("click", async () => {
-          if (!this.activeNoteId) return;
-          if (this.moreMenu) this.moreMenu.style.display = "none";
           const note = await NotesManager2.getNote(this.activeNoteId);
           if (!note) return;
-          const mdText = `# ${note.title || "Untitled"}
+          const isPinned2 = !!note.pinned;
+          NexusMenu.show({
+            anchor: this.tbMore,
+            placement: "bottom-end",
+            items: [
+              {
+                label: isPinned2 ? "Unpin Note" : "Pin Note",
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned2 ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`,
+                action: async () => {
+                  const newPinned = !isPinned2;
+                  await NotesManager2.pinNote(this.activeNoteId, newPinned);
+                  note.pinned = newPinned;
+                  await this.updatePinDetailBtn(note);
+                }
+              },
+              {
+                label: "Export Markdown",
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+                action: () => {
+                  const mdText = `# ${note.title || "Untitled"}
 
 ${extractNoteText(note.content)}`;
-          const blob = new Blob([mdText], { type: "text/markdown" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${(note.title || "Untitled").replace(/[^a-z0-9_-]/gi, "_")}.md`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+                  const blob = new Blob([mdText], { type: "text/markdown" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${(note.title || "Untitled").replace(/[^a-z0-9_-]/gi, "_")}.md`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }
+              },
+              { divider: true },
+              {
+                label: "Delete Note",
+                danger: true,
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+                action: async () => {
+                  let confirmed = false;
+                  const msg = "Are you sure you want to delete this note?";
+                  if (typeof window.showCustomPopup === "function") {
+                    confirmed = await window.showCustomPopup({
+                      title: "Delete Note",
+                      body: msg,
+                      confirmLabel: "Delete",
+                      isDanger: true
+                    });
+                  } else {
+                    confirmed = confirm(msg);
+                  }
+                  if (confirmed) {
+                    await NotesManager2.deleteNote(this.activeNoteId);
+                    this.showHubView();
+                  }
+                }
+              }
+            ]
+          });
         });
       }
     }
@@ -24453,11 +25194,6 @@ Markets reached historic highs this morning following breakthroughs in artificia
         "separateVoiceEnabled",
         "ttsModel",
         "sttModel",
-        "baseTone",
-        "charWarm",
-        "charEnthusiastic",
-        "charHeaders",
-        "charEmoji",
         "aboutNickname",
         "aboutOccupation",
         "aboutInterests",
@@ -24513,21 +25249,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
         const fsVal = items.fontSize || 14;
         const fsInput = document.getElementById("nexus-settings-fontsize");
         if (fsInput) fsInput.value = fsVal;
-        const toneInput = document.getElementById("nexus-settings-base-tone-input");
-        if (toneInput) {
-          const toneVal = items.baseTone || "default";
-          toneInput.dataset.value = toneVal;
-          const toneMenu = document.getElementById("nexus-settings-base-tone-menu");
-          const matchedDiv = toneMenu?.querySelector(`div[data-val="${toneVal}"]`);
-          toneInput.value = matchedDiv ? matchedDiv.textContent : "Default";
-          this.adjustInputWidthToContent(toneInput);
-        }
-        document.getElementById("nexus-settings-char-warm").value = items.charWarm || 3;
-        document.getElementById("nexus-settings-char-enthusiastic").value = items.charEnthusiastic || 3;
-        document.getElementById("nexus-settings-char-headers").value = items.charHeaders || 3;
-        document.getElementById("nexus-settings-char-emoji").value = items.charEmoji || 3;
-        document.getElementById("nexus-settings-about-nickname").value = items.aboutNickname || "";
-        document.getElementById("nexus-settings-about-occupation").value = items.aboutOccupation || "";
+        const aboutNicknameEl = document.getElementById("nexus-settings-about-nickname");
+        if (aboutNicknameEl) aboutNicknameEl.value = items.aboutNickname || "";
+        const aboutOccupationEl = document.getElementById("nexus-settings-about-occupation");
+        if (aboutOccupationEl) aboutOccupationEl.value = items.aboutOccupation || "";
         const interestsTextarea = document.getElementById("nexus-settings-about-interests");
         if (interestsTextarea) {
           interestsTextarea.value = items.aboutInterests || "";
@@ -24583,11 +25308,6 @@ Markets reached historic highs this morning following breakthroughs in artificia
         separateVoiceEnabled: getChecked("nexus-settings-separate-voice"),
         ttsModel: getDropdownVal("nexus-settings-tts-model", "gemini-2.5-flash"),
         sttModel: getDropdownVal("nexus-settings-stt-model", "whisper-large-v3-turbo"),
-        baseTone: document.getElementById("nexus-settings-base-tone-input")?.dataset.value || "default",
-        charWarm: getInt("nexus-settings-char-warm", 3),
-        charEnthusiastic: getInt("nexus-settings-char-enthusiastic", 3),
-        charHeaders: getInt("nexus-settings-char-headers", 3),
-        charEmoji: getInt("nexus-settings-char-emoji", 3),
         aboutNickname: getVal("nexus-settings-about-nickname").trim(),
         aboutOccupation: getVal("nexus-settings-about-occupation").trim(),
         aboutInterests: getVal("nexus-settings-about-interests").trim(),
@@ -24816,10 +25536,7 @@ Markets reached historic highs this morning following breakthroughs in artificia
         if (inputId === "nexus-setup-provider-input") {
           this.selectProviderSetup(input.dataset.value);
         }
-        if (inputId === "nexus-settings-base-tone-input") {
-          this.adjustInputWidthToContent(input);
-        }
-        if (inputId === "nexus-history-retention-input" || inputId === "nexus-settings-base-tone-input" || inputId === "nexus-settings-fontsize" || inputId === "nexus-settings-theme" || inputId === "nexus-settings-contrast" || inputId === "nexus-settings-accent" || inputId === "nexus-settings-fontfamily" || inputId === "nexus-settings-fontweight" || inputId === "nexus-settings-language" || inputId === "nexus-settings-spoken-lang" || inputId === "nexus-settings-voice-select" || inputId === "nexus-settings-tts-model" || inputId === "nexus-settings-stt-model") {
+        if (inputId === "nexus-history-retention-input" || inputId === "nexus-settings-fontsize" || inputId === "nexus-settings-theme" || inputId === "nexus-settings-contrast" || inputId === "nexus-settings-accent" || inputId === "nexus-settings-fontfamily" || inputId === "nexus-settings-fontweight" || inputId === "nexus-settings-language" || inputId === "nexus-settings-spoken-lang" || inputId === "nexus-settings-voice-select" || inputId === "nexus-settings-tts-model" || inputId === "nexus-settings-stt-model") {
           this.saveOptions();
         }
         if (inputId === "nexus-model-form-provider") {
@@ -25546,19 +26263,10 @@ Markets reached historic highs this morning following breakthroughs in artificia
       });
     }
     static bindPersonalizationTab() {
-      this.setupDropdownInputs("nexus-settings-base-tone-input", "nexus-settings-base-tone-menu");
-      const ranges = [
-        "nexus-settings-char-warm",
-        "nexus-settings-char-enthusiastic",
-        "nexus-settings-char-headers",
-        "nexus-settings-char-emoji"
-      ];
-      ranges.forEach((id) => {
-        document.getElementById(id).addEventListener("change", () => this.saveOptions());
-      });
       const inputs = ["nexus-settings-about-nickname", "nexus-settings-about-occupation", "nexus-settings-about-interests"];
       inputs.forEach((id) => {
-        document.getElementById(id).addEventListener("blur", () => this.saveOptions());
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("blur", () => this.saveOptions());
       });
       const addInstructionBtn = document.getElementById("nexus-add-instruction-btn");
       if (addInstructionBtn) {
@@ -27794,66 +28502,37 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     });
   }
   function showSparkContextMenu(btn, sparkId) {
-    let ctxMenu = document.getElementById("sidebar-spark-context-menu");
-    if (!ctxMenu) {
-      ctxMenu = document.createElement("div");
-      ctxMenu.id = "sidebar-spark-context-menu";
-      ctxMenu.className = "sidebar-chat-context-menu";
-      ctxMenu.style.display = "none";
-      ctxMenu.innerHTML = `
-            <div class="sidebar-ctx-item" data-action="edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                <span>Edit</span>
-            </div>
-            <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="delete">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
-                <span>Delete</span>
-            </div>
-        `;
-      document.body.appendChild(ctxMenu);
-    }
-    const rect = btn.getBoundingClientRect();
-    ctxMenu.style.display = "block";
-    let top = rect.bottom + 4;
-    let left = rect.right - ctxMenu.offsetWidth;
-    if (left < 4) left = 4;
-    ctxMenu.style.top = top + "px";
-    ctxMenu.style.left = left + "px";
-    const clickHandler = async (e) => {
-      const item = e.target.closest(".sidebar-ctx-item");
-      if (!item) return;
-      const action = item.dataset.action;
-      if (action === "edit") {
-        sparksOpenEditor(sparkId);
-      } else if (action === "delete") {
-        const confirmed = await window.showCustomPopup({
-          title: "Delete Spark",
-          body: "Are you sure you want to delete this Spark?",
-          confirmLabel: "Delete",
-          isDanger: true
-        });
-        if (confirmed) {
-          await sparksDelete(sparkId);
-          sidebarSparksRenderList2();
-          if (typeof sparksRenderList2 === "function") sparksRenderList2();
+    if (!btn) return;
+    NexusMenu.show({
+      anchor: btn,
+      placement: "bottom-end",
+      items: [
+        {
+          label: "Edit",
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+          action: () => sparksOpenEditor(sparkId)
+        },
+        { divider: true },
+        {
+          label: "Delete",
+          danger: true,
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>`,
+          action: async () => {
+            const confirmed = await window.showCustomPopup({
+              title: "Delete Spark",
+              body: "Are you sure you want to delete this Spark?",
+              confirmLabel: "Delete",
+              isDanger: true
+            });
+            if (confirmed) {
+              await sparksDelete(sparkId);
+              sidebarSparksRenderList2();
+              if (typeof sparksRenderList2 === "function") sparksRenderList2();
+            }
+          }
         }
-      }
-      hideMenu();
-    };
-    const hideMenu = () => {
-      ctxMenu.style.display = "none";
-      document.removeEventListener("click", outsideClick);
-      ctxMenu.removeEventListener("click", clickHandler);
-    };
-    const outsideClick = (e) => {
-      if (!ctxMenu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
-        hideMenu();
-      }
-    };
-    ctxMenu.addEventListener("click", clickHandler);
-    setTimeout(() => {
-      document.addEventListener("click", outsideClick);
-    }, 10);
+      ]
+    });
   }
   async function openSparkChat2(sparkId) {
     sparksClosePage2();
@@ -28221,6 +28900,249 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     initSparks();
   }
 
+  // src/components/widgets/widget_runner.js
+  var WidgetRunner = {
+    DEFAULT_HEIGHT: "380px",
+    /**
+     * Extracts raw HTML/CSS/JS or JSON spec from inside <GenerateWidget>
+     */
+    extractWidgetCode(rawBody) {
+      if (!rawBody || typeof rawBody !== "string") return "";
+      let clean = rawBody.trim();
+      clean = clean.replace(/^```[a-zA-Z0-9_-]*\s*\n?/i, "");
+      clean = clean.replace(/\n?```\s*$/i, "");
+      clean = clean.trim();
+      if (clean.startsWith("{") && clean.endsWith("}")) {
+        try {
+          const parsed = JSON.parse(clean);
+          if (parsed.html) return parsed.html.trim();
+          if (parsed.widgetSpec?.html) return parsed.widgetSpec.html.trim();
+          if (parsed.widgetSpec?.code) return parsed.widgetSpec.code.trim();
+        } catch (_) {
+        }
+      }
+      return clean;
+    },
+    /**
+     * Builds a complete, self-contained HTML document with safety constraints and theme styling
+     */
+    buildSandboxedHtml(rawCode, isDark = false) {
+      const bg = isDark ? "#1e1e24" : "#ffffff";
+      const text = isDark ? "#f1f6fe" : "#1f1f1f";
+      const border = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+      const cardBg = isDark ? "#26282d" : "#f7f9fc";
+      const accent = "#1a73e8";
+      if (/<html[\s\S]*<\/html>/i.test(rawCode) || /<!DOCTYPE html>/i.test(rawCode)) {
+        return rawCode;
+      }
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg-color: ${bg};
+      --text-color: ${text};
+      --border-color: ${border};
+      --card-bg: ${cardBg};
+      --accent-color: ${accent};
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 16px;
+      line-height: 1.5;
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+    input, select, button, textarea {
+      font-family: inherit;
+      font-size: inherit;
+    }
+    input[type="range"] {
+      cursor: pointer;
+      accent-color: var(--accent-color);
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    button:hover {
+      background: var(--accent-color);
+      color: #ffffff;
+      border-color: var(--accent-color);
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  ${rawCode}
+</body>
+</html>`;
+    },
+    /**
+     * Generates the outer Widget wrapper HTML for chat rendering
+     */
+    renderWidgetCard(rawBody, height = this.DEFAULT_HEIGHT, title = "Interactive Widget") {
+      const widgetId = "widget-" + Date.now() + "-" + Math.random().toString(36).substr(2, 7);
+      const cleanCode = this.extractWidgetCode(rawBody);
+      const encodedCode = encodeURIComponent(cleanCode);
+      const safeTitle = (title || "Interactive Widget").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const safeHeight = height && /^\d+(?:px|vh|rem|%)?$/.test(height.trim()) ? height.trim() : this.DEFAULT_HEIGHT;
+      const sandboxUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("pages/sandbox/widget_sandbox.html") : "/pages/sandbox/widget_sandbox.html";
+      return `<div class="nexus-widget-wrapper" id="${widgetId}" data-widget-height="${safeHeight}">
+      <div class="nexus-widget-header">
+        <div class="nexus-widget-header-left">
+          <span class="nexus-widget-title">${safeTitle}</span>
+        </div>
+        <div class="nexus-widget-header-right">
+          <button type="button" class="nexus-widget-btn nexus-widget-btn-reload" title="Reset Widget">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+          <button type="button" class="nexus-widget-btn nexus-widget-btn-expand" title="Toggle Expand">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="nexus-widget-frame-container" style="height: ${safeHeight};">
+        <iframe
+          class="nexus-widget-iframe"
+          sandbox="allow-scripts allow-forms"
+          src="${sandboxUrl}"
+          data-widget-raw="${encodedCode}"
+          title="${safeTitle}">
+        </iframe>
+      </div>
+    </div>`;
+    },
+    /**
+     * Initializes all un-hydrated widget iframes inside a DOM container
+     */
+    hydrateWidgets(containerEl = document) {
+      if (!containerEl) return;
+      const wrappers = containerEl.querySelectorAll(".nexus-widget-wrapper:not([data-hydrated])");
+      wrappers.forEach((wrapper) => {
+        wrapper.setAttribute("data-hydrated", "true");
+        const reloadBtn = wrapper.querySelector(".nexus-widget-btn-reload");
+        if (reloadBtn && !reloadBtn.__bound) {
+          reloadBtn.__bound = true;
+          reloadBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            reloadBtn.classList.add("nexus-spin-once");
+            setTimeout(() => reloadBtn.classList.remove("nexus-spin-once"), 600);
+            this.reloadWidget(wrapper);
+          });
+        }
+        const expandBtn = wrapper.querySelector(".nexus-widget-btn-expand");
+        if (expandBtn && !expandBtn.__bound) {
+          expandBtn.__bound = true;
+          expandBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            wrapper.classList.toggle("is-expanded");
+          });
+        }
+      });
+    },
+    /**
+     * Reloads/resets a specific widget iframe cleanly
+     */
+    reloadWidget(wrapperEl) {
+      if (!wrapperEl) return;
+      const iframe = wrapperEl.querySelector(".nexus-widget-iframe");
+      if (!iframe) return;
+      try {
+        iframe.src = iframe.src;
+      } catch (_) {
+        const rawEncoded = iframe.getAttribute("data-widget-raw");
+        if (rawEncoded && iframe.contentWindow) {
+          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          iframe.contentWindow.postMessage({
+            type: "NEXUS_WIDGET_RENDER",
+            code: decodeURIComponent(rawEncoded),
+            isDark
+          }, "*");
+        }
+      }
+    }
+  };
+  if (typeof window !== "undefined" && !window.__nexusWidgetSandboxListenerBound) {
+    window.__nexusWidgetSandboxListenerBound = true;
+    window.addEventListener("message", (event) => {
+      if (!event.data) return;
+      if (event.data.type === "NEXUS_WIDGET_READY") {
+        const iframes = document.querySelectorAll(".nexus-widget-iframe");
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        const fontSize = getComputedStyle(document.documentElement).getPropertyValue("--nexus-fontSize") || "14px";
+        iframes.forEach((iframe) => {
+          if (iframe.contentWindow === event.source) {
+            const rawEncoded = iframe.getAttribute("data-widget-raw");
+            if (rawEncoded) {
+              const rawCode = decodeURIComponent(rawEncoded);
+              iframe.contentWindow.postMessage({
+                type: "NEXUS_WIDGET_RENDER",
+                code: rawCode,
+                isDark,
+                fontSize: fontSize.trim()
+              }, "*");
+            }
+          }
+        });
+      }
+      if (event.data.type === "NEXUS_WIDGET_RESIZE" && typeof event.data.height === "number") {
+        const iframes = document.querySelectorAll(".nexus-widget-iframe");
+        iframes.forEach((iframe) => {
+          if (iframe.contentWindow === event.source) {
+            const wrapper = iframe.closest(".nexus-widget-wrapper");
+            const frameContainer = iframe.parentElement;
+            if (frameContainer && (!wrapper || !wrapper.classList.contains("is-expanded"))) {
+              const fitHeight = Math.min(Math.max(event.data.height, 120), 650);
+              frameContainer.style.height = `${fitHeight}px`;
+            }
+          }
+        });
+      }
+    });
+  }
+
   // src/components/chat/model_helper.js
   var NexusModelHelper = {
     async getPromptSupport() {
@@ -28387,9 +29309,17 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     }
   }
   async function ensureMarkedLoaded() {
-    if (typeof marked !== "undefined") return;
+    if (typeof marked !== "undefined") {
+      if (typeof initMarkdownMath === "function") initMarkdownMath();
+      if (typeof initCodeAndMediaRenderer === "function") initCodeAndMediaRenderer();
+      if (typeof initLmdxComponentsParser === "function") initLmdxComponentsParser();
+      return;
+    }
     try {
       await loadScript("../../lib/vendor/marked.min.js");
+      if (typeof initMarkdownMath === "function") initMarkdownMath();
+      if (typeof initCodeAndMediaRenderer === "function") initCodeAndMediaRenderer();
+      if (typeof initLmdxComponentsParser === "function") initLmdxComponentsParser();
     } catch (e) {
       console.error("Failed to lazy load Marked", e);
     }
@@ -28401,6 +29331,99 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     window.ensurePdfjsLoaded = ensurePdfjsLoaded;
     window.ensureHighlightLoaded = ensureHighlightLoaded;
     window.ensureMarkedLoaded = ensureMarkedLoaded;
+  }
+
+  // src/components/chat/markdown_math.js
+  function renderKaTeXFormula(rawMath, isDisplay = false) {
+    if (!rawMath || typeof katex === "undefined" || typeof katex.renderToString !== "function") return "";
+    let math = rawMath;
+    if (!isDisplay && /\\(?:frac|dfrac|cfrac|sum|int|prod|lim|begin)\b/.test(math) && !/\\displaystyle\b/.test(math)) {
+      math = "\\displaystyle " + math;
+    }
+    const textMatches = [];
+    const placeholderMath = math.replace(/\\text\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, (m, txt) => {
+      const id = `TXPH${textMatches.length}END`;
+      textMatches.push({ id, txt });
+      return `\\text{${id}}`;
+    });
+    let rendered = katex.renderToString(placeholderMath, { displayMode: isDisplay, throwOnError: false, strict: "ignore" });
+    for (const item of textMatches) {
+      const safeText = item.txt.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
+      rendered = rendered.replaceAll(item.id, safeText);
+    }
+    return rendered;
+  }
+  function initMarkdownMath2() {
+    if (typeof marked === "undefined" || typeof marked.use !== "function") return;
+    marked.use({
+      extensions: [
+        {
+          name: "inlineMath",
+          level: "inline",
+          start(src) {
+            return src.indexOf("$");
+          },
+          tokenizer(src) {
+            const match = src.match(/^\$((?:[^\$\\\n]|\\.)+?)\$/);
+            if (match) {
+              const content = match[1];
+              if (/^\s|\s$/.test(content)) return;
+              if (/\s/.test(content)) {
+                const hasMathSymbol = /[\\^_\=+\-*\/<>≤≥≠≈±∞%]/.test(content);
+                if (!hasMathSymbol) return;
+              } else {
+                if (/^\d+(?:[.,]\d+)?$/.test(content)) return;
+              }
+              return {
+                type: "inlineMath",
+                raw: match[0],
+                text: content
+              };
+            }
+          },
+          renderer(token) {
+            if (typeof katex !== "undefined" && katex.renderToString) {
+              try {
+                return renderKaTeXFormula(token.text, false);
+              } catch (_) {
+                return token.raw;
+              }
+            }
+            return `<span class="nexus-math-inline-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</span>`;
+          }
+        },
+        {
+          name: "blockMath",
+          level: "block",
+          start(src) {
+            return src.indexOf("$$");
+          },
+          tokenizer(src) {
+            const match = src.match(/^\$\$\n?([\s\S]+?)\n?\$\$/);
+            if (match) {
+              return {
+                type: "blockMath",
+                raw: match[0],
+                text: match[1]
+              };
+            }
+          },
+          renderer(token) {
+            if (typeof katex !== "undefined" && katex.renderToString) {
+              try {
+                return renderKaTeXFormula(token.text, true);
+              } catch (_) {
+                return token.raw;
+              }
+            }
+            return `<div class="nexus-math-block-placeholder" data-math="${encodeURIComponent(token.text)}">${token.raw}</div>`;
+          }
+        }
+      ]
+    });
+  }
+  if (typeof marked !== "undefined") {
+    initMarkdownMath2();
   }
 
   // src/components/chat/dom_morph.js
@@ -28439,6 +29462,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       }
       if (oldChild.nodeType === Node.ELEMENT_NODE) {
         if (oldChild.tagName === "CANVAS" || oldChild.classList?.contains("nexus-interactive-frozen")) {
+          return;
+        }
+        if (oldChild.classList?.contains("nexus-widget-wrapper") && !oldChild.classList?.contains("nexus-widget-loading") && newChild.classList?.contains("nexus-widget-wrapper")) {
           return;
         }
         for (let i = 0; i < newChild.attributes.length; i++) {
@@ -28486,6 +29512,121 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   if (typeof window !== "undefined") {
     window.morphDOM = morphDOM;
     window.scheduleMorphDOM = scheduleMorphDOM;
+  }
+
+  // src/components/chat/media_embed.js
+  function buildYoutubeEmbedUrl(href) {
+    if (!href || href.startsWith("youtube://search")) return "";
+    let id = "";
+    let isPlaylist = false;
+    if (href.startsWith("youtube://")) {
+      id = href.replace("youtube://", "");
+      if (id.startsWith("list_")) {
+        id = id.replace("list_", "");
+        isPlaylist = true;
+      }
+    } else if (href.includes("youtube.com/playlist")) {
+      try {
+        const urlParams = new URLSearchParams(new URL(href).search);
+        id = urlParams.get("list") || "";
+        isPlaylist = true;
+      } catch (e) {
+      }
+    } else if (href.includes("youtube.com") || href.includes("youtu.be")) {
+      const match = href.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      id = match ? match[1] : "";
+    }
+    if (!id) return "";
+    if (isPlaylist) {
+      return `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(id)}`;
+    }
+    return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
+  }
+
+  // src/components/chat/code_renderer.js
+  function initCodeAndMediaRenderer2() {
+    if (typeof marked === "undefined") return;
+    marked.use({
+      renderer: {
+        code(token) {
+          const { lang, text } = token;
+          if (lang === "chartjs") {
+            const escapedVal = text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+            return `<div class="nexus-d2-wrapper nexus-chartjs-wrapper is-loading" data-chartjs-config="${escapedVal}"><div class="nexus-media-skeleton nexus-d2-skeleton"></div></div>`;
+          }
+          if (lang === "d2") {
+            const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return `<div class="nexus-d2-wrapper is-loading"><pre class="nexus-d2-source" style="display:none !important;">${escaped}</pre><div class="nexus-media-skeleton nexus-d2-skeleton"></div></div>`;
+          }
+          const escapedText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          let langLabel = "Code";
+          if (lang) {
+            const rawLang = lang.toLowerCase();
+            if (rawLang === "js" || rawLang === "javascript") langLabel = "JavaScript";
+            else if (rawLang === "ts" || rawLang === "typescript") langLabel = "TypeScript";
+            else if (rawLang === "html") langLabel = "HTML";
+            else if (rawLang === "css") langLabel = "CSS";
+            else if (rawLang === "py" || rawLang === "python") langLabel = "Python";
+            else if (rawLang === "json") langLabel = "JSON";
+            else if (rawLang === "go" || rawLang === "golang") langLabel = "Go";
+            else if (rawLang === "rs" || rawLang === "rust") langLabel = "Rust";
+            else if (rawLang === "sh" || rawLang === "bash" || rawLang === "shell") langLabel = "Bash";
+            else if (rawLang === "cpp" || rawLang === "c++") langLabel = "C++";
+            else if (rawLang === "cs" || rawLang === "csharp") langLabel = "C#";
+            else langLabel = lang.charAt(0).toUpperCase() + lang.slice(1);
+          }
+          const COPY_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+          const DOWNLOAD_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+          return `<div class="nexus-code-block-wrap">
+                    <div class="nexus-code-header">
+                        <span class="nexus-code-lang">${langLabel}</span>
+                        <div class="nexus-code-actions">
+                            <button class="nexus-code-download-btn disabled" disabled title="Streaming code...">${DOWNLOAD_SVG}</button>
+                            <button class="nexus-code-copy-btn disabled" disabled title="Streaming code...">${COPY_SVG}</button>
+                        </div>
+                    </div>
+                    <pre><code class="${lang ? `language-${lang}` : ""}">${escapedText}</code></pre>
+                </div>`;
+        },
+        image(token) {
+          const { href, title, text } = token;
+          if (href && (href.startsWith("youtube://") || href.includes("youtube.com/") || href.includes("youtu.be/"))) {
+            if (href.startsWith("youtube://search?q=")) {
+              const query = href.substring("youtube://search?q=".length);
+              return `<div class="nexus-youtube-wrapper nexus-youtube-dynamic is-loading" data-query="${query}" data-original-href="${href}" data-text="${text || ""}"><div class="nexus-media-skeleton"></div></div>`;
+            }
+            const embedUrl = buildYoutubeEmbedUrl(href);
+            if (embedUrl) {
+              return `<div class="nexus-youtube-wrapper"><iframe width="100%" height="315" src="${embedUrl}" title="${text || "YouTube video player"}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="nexus-youtube-iframe"></iframe></div>`;
+            }
+          }
+          if (href && href.startsWith("image-search://")) {
+            const [searchUrl] = href.split("#");
+            const query = searchUrl.replace("image-search://", "");
+            const cleanQuery = decodeURIComponent(query).replace(/\+/g, " ");
+            return `<div class="nexus-image-wrapper is-loading"><div class="nexus-media-skeleton"></div><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3C/svg%3E" data-query="${encodeURIComponent(cleanQuery)}" data-original-href="${href}" alt="${text || "diagram"}" class="nexus-async-image nexus-clickable-image" />${text ? `<div class="nexus-image-caption">${text}</div>` : ""}</div>`;
+          }
+          return false;
+        },
+        link(token) {
+          const { href, text } = token;
+          if (href && (href.startsWith("youtube://") || href.includes("youtube.com/") || href.includes("youtu.be/"))) {
+            if (href.startsWith("youtube://search?q=")) {
+              const query = href.substring("youtube://search?q=".length);
+              return `<div class="nexus-youtube-wrapper nexus-youtube-dynamic is-loading" data-query="${query}" data-original-href="${href}" data-text="${text || ""}"><div class="nexus-media-skeleton"></div></div>`;
+            }
+            const embedUrl = buildYoutubeEmbedUrl(href);
+            if (embedUrl) {
+              return `<div class="nexus-youtube-wrapper"><iframe width="100%" height="315" src="${embedUrl}" title="${text || "YouTube video player"}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="nexus-youtube-iframe"></iframe></div>`;
+            }
+          }
+          return false;
+        }
+      }
+    });
+  }
+  if (typeof marked !== "undefined") {
+    initCodeAndMediaRenderer2();
   }
 
   // src/components/chat/async_media_search.js
@@ -28740,6 +29881,818 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   if (typeof window !== "undefined") {
     window._renderChartJSWrapper = renderChartJSWrapper;
     window.processNexusChartElements = processNexusChartElements;
+  }
+
+  // src/components/chat/lmdx_components_parser.js
+  function initLmdxComponentsParser2() {
+    if (typeof marked === "undefined" || typeof marked.use !== "function") return;
+    marked.use({
+      extensions: [
+        // 1. <ElicitationsGroup> & <Elicitation> (Action Chips)
+        {
+          name: "elicitationsGroup",
+          level: "block",
+          start(src) {
+            return src.indexOf("<ElicitationsGroup");
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^<ElicitationsGroup(?:\s+message="([^"]*)")?>([\s\S]*?)<\/ElicitationsGroup>/i);
+            if (completeMatch) {
+              return {
+                type: "elicitationsGroup",
+                raw: completeMatch[0],
+                message: completeMatch[1] || "",
+                body: completeMatch[2] || "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^<ElicitationsGroup[\s\S]*$/i);
+            if (partialMatch) {
+              return {
+                type: "elicitationsGroup",
+                raw: partialMatch[0],
+                message: "",
+                body: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            if (!token.isComplete) return "";
+            const messageHtml = token.message ? `<div class="nexus-chips-header">${token.message}</div>` : "";
+            const chipRegex = /<Elicitation\s+label="([^"]*)"\s+query="([^"]*)"\s*\/?>/gi;
+            let chipsHtml = "";
+            let match;
+            while ((match = chipRegex.exec(token.body)) !== null) {
+              const label = match[1] || "";
+              const query = match[2] || "";
+              const escapedQuery = query.replace(/"/g, "&quot;");
+              chipsHtml += `<button type="button" class="nexus-action-chip" data-query="${escapedQuery}"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg><span>${label}</span></button>`;
+            }
+            return chipsHtml ? `<div class="nexus-elicitations-wrapper">${messageHtml}<div class="nexus-action-chips-grid">${chipsHtml}</div></div>` : "";
+          }
+        },
+        // 2. <FollowUp> (Single 1-Click Action)
+        {
+          name: "followUp",
+          level: "block",
+          start(src) {
+            return src.indexOf("<FollowUp");
+          },
+          tokenizer(src) {
+            const match = src.match(/^<FollowUp\s+([^>]*?)\s*\/?>/i);
+            if (match) {
+              const attrs = match[1];
+              const labelMatch = attrs.match(/\blabel="([^"]*)"/i);
+              const buttonMatch = attrs.match(/\b(?:button|action)="([^"]*)"/i);
+              const queryMatch = attrs.match(/\bquery="([^"]*)"/i);
+              return {
+                type: "followUp",
+                raw: match[0],
+                label: labelMatch ? labelMatch[1] : "",
+                button: buttonMatch ? buttonMatch[1] : "",
+                query: queryMatch ? queryMatch[1] : "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^<FollowUp[\s\S]*$/i);
+            if (partialMatch) {
+              return {
+                type: "followUp",
+                raw: partialMatch[0],
+                label: "",
+                button: "",
+                query: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            if (!token.isComplete || !token.label || !token.query) return "";
+            const escapedQuery = (token.query || "").replace(/"/g, "&quot;");
+            const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(token.label);
+            const defaultBtnText = isVietnamese ? "Ti\u1EBFp t\u1EE5c" : "Yes, Please";
+            const buttonText = token.button || defaultBtnText;
+            return `<div class="nexus-followup-container"><div class="nexus-followup-card"><div class="nexus-followup-label">${token.label}</div><button type="button" class="nexus-followup-btn" data-query="${escapedQuery}"><span>${buttonText}</span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div>`;
+          }
+        },
+        // 3. <Sequence> & <Step> (Step-by-step Procedures)
+        {
+          name: "sequenceBlock",
+          level: "block",
+          start(src) {
+            return src.indexOf("<Sequence");
+          },
+          tokenizer(src) {
+            const closedMatch = src.match(/^<Sequence(?:\s*\/?>|>)([\s\S]*?)<\/Sequence>/i);
+            if (closedMatch) {
+              return {
+                type: "sequenceBlock",
+                raw: closedMatch[0],
+                body: closedMatch[1] || ""
+              };
+            }
+            const streamingMatch = src.match(/^<Sequence(?:\s*\/?>|>)([\s\S]*)$/i);
+            if (streamingMatch) {
+              return {
+                type: "sequenceBlock",
+                raw: streamingMatch[0],
+                body: streamingMatch[1] || ""
+              };
+            }
+            const tagShieldMatch = src.match(/^<Sequence[^>]*$/i);
+            if (tagShieldMatch) {
+              return {
+                type: "sequenceBlock",
+                raw: tagShieldMatch[0],
+                body: ""
+              };
+            }
+          },
+          renderer(token) {
+            const stepRegex = /<Step([^>]*)>([\s\S]*?)(?:<\/Step>|$)/gi;
+            let stepsHtml = "";
+            let stepNum = 1;
+            let match;
+            while ((match = stepRegex.exec(token.body)) !== null) {
+              const attrs = match[1] || "";
+              let rawContent = (match[2] || "").trim();
+              rawContent = rawContent.replace(/<Step[\s\S]*$/i, "").trim();
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              const subtitleMatch = attrs.match(/\bsubtitle="([^"]*)"/i);
+              const title = titleMatch ? titleMatch[1] : `Step ${stepNum}`;
+              const subtitle = subtitleMatch ? `<span class="nexus-step-subtitle">${subtitleMatch[1]}</span>` : "";
+              const content = rawContent ? marked.parse(rawContent) : "";
+              const numStr = stepNum < 10 ? `0${stepNum}` : `${stepNum}`;
+              stepsHtml += `<div class="nexus-step-card"><div class="nexus-step-header"><div class="nexus-step-badge">${numStr}</div><div class="nexus-step-title-wrap"><span class="nexus-step-title">${title}</span>${subtitle}</div></div><div class="nexus-step-content">${content}</div></div>`;
+              stepNum++;
+            }
+            return stepsHtml ? `<div class="nexus-sequence-flow">${stepsHtml}</div>` : "";
+          }
+        },
+        // 4. <Timeline> & <TimelineEvent> (Chronological Timelines)
+        {
+          name: "timelineBlock",
+          level: "block",
+          start(src) {
+            return src.indexOf("<Timeline");
+          },
+          tokenizer(src) {
+            const closedMatch = src.match(/^<Timeline(?:\s*\/?>|>)([\s\S]*?)<\/Timeline>/i);
+            if (closedMatch) {
+              return {
+                type: "timelineBlock",
+                raw: closedMatch[0],
+                body: closedMatch[1] || ""
+              };
+            }
+            const streamingMatch = src.match(/^<Timeline(?:\s*\/?>|>)([\s\S]*)$/i);
+            if (streamingMatch) {
+              return {
+                type: "timelineBlock",
+                raw: streamingMatch[0],
+                body: streamingMatch[1] || ""
+              };
+            }
+            const tagShieldMatch = src.match(/^<Timeline[^>]*$/i);
+            if (tagShieldMatch) {
+              return {
+                type: "timelineBlock",
+                raw: tagShieldMatch[0],
+                body: ""
+              };
+            }
+          },
+          renderer(token) {
+            const eventRegex = /<TimelineEvent([^>]*)>([\s\S]*?)(?:<\/TimelineEvent>|$)/gi;
+            let eventsHtml = "";
+            let match;
+            while ((match = eventRegex.exec(token.body)) !== null) {
+              const attrs = match[1] || "";
+              let rawContent = (match[2] || "").trim();
+              rawContent = rawContent.replace(/<TimelineEvent[\s\S]*$/i, "").trim();
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              const timeMatch = attrs.match(/\b(?:time|date)="([^"]*)"/i);
+              const title = titleMatch ? titleMatch[1] : "Event";
+              const time = timeMatch ? timeMatch[1] : "";
+              const content = rawContent ? marked.parse(rawContent) : "";
+              eventsHtml += `<div class="nexus-timeline-item"><div class="nexus-timeline-marker"></div><div class="nexus-timeline-content"><div class="nexus-timeline-time">${time}</div><div class="nexus-timeline-title">${title}</div><div class="nexus-timeline-body">${content}</div></div></div>`;
+            }
+            return eventsHtml ? `<div class="nexus-timeline-track">${eventsHtml}</div>` : "";
+          }
+        },
+        // 5. <GenerateWidget> (Interactive Sandbox Widgets)
+        {
+          name: "generateWidget",
+          level: "block",
+          start(src) {
+            return src.indexOf("<GenerateWidget");
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^<GenerateWidget([^>]*)>([\s\S]*?)<\/GenerateWidget>/i);
+            if (completeMatch) {
+              const attrs = completeMatch[1] || "";
+              const heightMatch = attrs.match(/\bheight="([^"]*)"/i);
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "generateWidget",
+                raw: completeMatch[0],
+                height: heightMatch ? heightMatch[1] : "380px",
+                title: titleMatch ? titleMatch[1] : "Interactive Widget",
+                body: completeMatch[2] || "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^<GenerateWidget([^>]*)>([\s\S]*)$/i);
+            if (partialMatch) {
+              const attrs = partialMatch[1] || "";
+              const heightMatch = attrs.match(/\bheight="([^"]*)"/i);
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "generateWidget",
+                raw: partialMatch[0],
+                height: heightMatch ? heightMatch[1] : "380px",
+                title: titleMatch ? titleMatch[1] : "Interactive Widget",
+                body: partialMatch[2] || "",
+                isComplete: false
+              };
+            }
+            const tagShieldMatch = src.match(/^<GenerateWidget[^>]*$/i);
+            if (tagShieldMatch) {
+              const attrs = tagShieldMatch[0] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "generateWidget",
+                raw: tagShieldMatch[0],
+                height: "380px",
+                title: titleMatch ? titleMatch[1] : "Interactive Widget",
+                body: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            const safeTitle = (token.title || "Interactive Widget").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeHeight = token.height || "380px";
+            if (!token.isComplete) {
+              return `<div class="nexus-widget-wrapper nexus-widget-loading" style="min-height: 200px;">
+                            <div class="nexus-widget-header">
+                                <div class="nexus-widget-header-left">
+                                    <span class="nexus-widget-title">${safeTitle}</span>
+                                </div>
+                                <div class="nexus-widget-header-right">
+                                    <div class="nexus-widget-blueprint-badge">
+                                        <span class="nexus-blueprint-dot"></span>
+                                        <span>BUILDING</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="nexus-widget-blueprint-body">
+                                <div class="nexus-blueprint-scanline"></div>
+                                <div class="nexus-blueprint-terminal">
+                                    <span class="nexus-blueprint-prompt">&gt; compiling sandbox runtime</span>
+                                    <span class="nexus-blueprint-cursor">_</span>
+                                </div>
+                            </div>
+                        </div>`;
+            }
+            if (typeof WidgetRunner !== "undefined") {
+              return WidgetRunner.renderWidgetCard(token.body, token.height, token.title);
+            }
+            return `<div class="nexus-widget-placeholder">[Interactive Widget: ${safeTitle}]</div>`;
+          }
+        },
+        // 6. <Carousel> & <Image> (Image Gallery Slider)
+        {
+          name: "carouselBlock",
+          level: "block",
+          start(src) {
+            return src.indexOf("<Carousel");
+          },
+          tokenizer(src) {
+            const match = src.match(/^<Carousel>([\s\S]*?)(?:<\/Carousel>|$)/i);
+            if (match) {
+              return {
+                type: "carouselBlock",
+                raw: match[0],
+                body: match[1] || ""
+              };
+            }
+          },
+          renderer(token) {
+            const imgRegex = /<Image\s+(?:src="([^"]*)")?(?:\s+query="([^"]*)")?(?:\s+alt="([^"]*)")?(?:\s+caption="([^"]*)")?\s*\/?>/gi;
+            let itemsHtml = "";
+            let dotsHtml = "";
+            let count = 0;
+            let match;
+            while ((match = imgRegex.exec(token.body)) !== null) {
+              const rawSrc = match[1] || "";
+              const query = match[2] || "";
+              const alt = (match[3] || "Image").replace(/"/g, "&quot;");
+              const caption = match[4] || "";
+              let finalSrc = rawSrc;
+              if (!finalSrc && query) {
+                finalSrc = `image-search://${encodeURIComponent(query)}`;
+              }
+              const isDynamic = finalSrc.startsWith("image-search://");
+              const imgTag = isDynamic ? `<img class="nexus-dynamic-image" data-query="${finalSrc.replace("image-search://", "")}" alt="${alt}" loading="lazy" />` : `<img src="${finalSrc}" alt="${alt}" loading="lazy" />`;
+              const captionHtml = caption ? `<div class="nexus-carousel-caption">${caption}</div>` : "";
+              itemsHtml += `<div class="nexus-carousel-item"><div class="nexus-carousel-img-wrap">${imgTag}</div>${captionHtml}</div>`;
+              dotsHtml += `<span class="nexus-carousel-dot ${count === 0 ? "is-active" : ""}" data-index="${count}"></span>`;
+              count++;
+            }
+            if (count === 0) return "";
+            return `<div class="nexus-carousel-container">
+            <button type="button" class="nexus-carousel-nav nexus-carousel-prev" aria-label="Previous image">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="nexus-carousel-track">${itemsHtml}</div>
+            <button type="button" class="nexus-carousel-nav nexus-carousel-next" aria-label="Next image">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <div class="nexus-carousel-dots">${dotsHtml}</div>
+          </div>`;
+          }
+        },
+        // 7. <WritingBlock> & <Option> (Drafting & Writing Artifacts with Multi-Options)
+        {
+          name: "writingBlock",
+          level: "block",
+          start(src) {
+            return src.search(/<WritingBlock/i);
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^\s*<WritingBlock([^>]*)>([\s\S]*?)<\/WritingBlock>/i);
+            if (completeMatch) {
+              const attrs = completeMatch[1] || "";
+              const variantMatch = attrs.match(/\bvariant="([^"]*)"/i);
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "writingBlock",
+                raw: completeMatch[0],
+                variant: (variantMatch ? variantMatch[1] : "document").toLowerCase(),
+                title: titleMatch ? titleMatch[1] : "Draft",
+                body: completeMatch[2] || "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^\s*<WritingBlock([^>]*)>([\s\S]*)$/i);
+            if (partialMatch) {
+              const attrs = partialMatch[1] || "";
+              const variantMatch = attrs.match(/\bvariant="([^"]*)"/i);
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "writingBlock",
+                raw: partialMatch[0],
+                variant: (variantMatch ? variantMatch[1] : "document").toLowerCase(),
+                title: titleMatch ? titleMatch[1] : "Draft",
+                body: partialMatch[2] || "",
+                isComplete: false
+              };
+            }
+            const tagShieldMatch = src.match(/^\s*<WritingBlock[^>]*$/i);
+            if (tagShieldMatch) {
+              const attrs = tagShieldMatch[0] || "";
+              const variantMatch = attrs.match(/\bvariant="([^"]*)"/i);
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "writingBlock",
+                raw: tagShieldMatch[0],
+                variant: (variantMatch ? variantMatch[1] : "document").toLowerCase(),
+                title: titleMatch ? titleMatch[1] : "Draft",
+                body: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            const safeTitle = (token.title || "Draft").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const variant = token.variant || "document";
+            const variantMeta = {
+              email: { label: "EMAIL", icon: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>' },
+              social_post: { label: "SOCIAL POST", icon: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>' },
+              chat_message: { label: "CHAT / DM", icon: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' },
+              document: { label: "DOCUMENT", icon: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>' }
+            }[variant] || { label: "WRITING", icon: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>' };
+            const optionRegex = /<Option([^>]*)>([\s\S]*?)(?:<\/Option>|$)/gi;
+            const options = [];
+            let match;
+            while ((match = optionRegex.exec(token.body)) !== null) {
+              const optAttrs = match[1] || "";
+              let optBody = (match[2] || "").trim();
+              optBody = optBody.replace(/<Option[\s\S]*$/i, "").trim();
+              const optTitleMatch = optAttrs.match(/\btitle="([^"]*)"/i);
+              const optSubjMatch = optAttrs.match(/\bsubject="([^"]*)"/i);
+              options.push({
+                title: optTitleMatch ? optTitleMatch[1] : `Option ${options.length + 1}`,
+                subject: optSubjMatch ? optSubjMatch[1] : "",
+                content: optBody
+              });
+            }
+            if (options.length === 0 && token.body.trim()) {
+              options.push({
+                title: "Draft",
+                subject: "",
+                content: token.body.trim()
+              });
+            }
+            let tabsHtml = "";
+            if (options.length > 1) {
+              tabsHtml = `<div class="nexus-writing-segmented">` + options.map((opt, i) => `<button type="button" class="nexus-writing-tab ${i === 0 ? "is-active" : ""}" data-opt-index="${i}"><span>${opt.title}</span></button>`).join("") + `</div>`;
+            }
+            let panesHtml = "";
+            options.forEach((opt, i) => {
+              const parsedContent = opt.content ? marked.parse(opt.content) : "";
+              const subjectHtml = opt.subject ? `
+                            <div class="nexus-writing-subject-row">
+                                <span class="nexus-subject-label">Subject:</span>
+                                <span class="nexus-subject-text">${opt.subject}</span>
+                            </div>` : "";
+              panesHtml += `
+                            <div class="nexus-writing-pane ${i === 0 ? "is-active" : ""}" data-opt-index="${i}" data-raw-content="${encodeURIComponent(opt.content)}">
+                                ${subjectHtml}
+                                <div class="nexus-writing-content">${parsedContent}</div>
+                            </div>`;
+            });
+            return `
+                    <div class="nexus-writing-block ${!token.isComplete ? "is-streaming" : ""}" data-variant="${variant}">
+                        <div class="nexus-writing-header">
+                            <div class="nexus-writing-header-left">
+                                <span class="nexus-writing-icon">${variantMeta.icon}</span>
+                                <span class="nexus-writing-title">${safeTitle}</span>
+                            </div>
+                            <div class="nexus-writing-header-right">
+                                ${tabsHtml}
+                                <button type="button" class="nexus-writing-action-btn nexus-writing-btn-copy" title="Sao ch\xE9p to\xE0n b\u1ED9">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy</span>
+                                </button>
+                                <button type="button" class="nexus-writing-action-btn nexus-writing-btn-canvas" title="M\u1EDF trong Canvas">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                    <span>Canvas</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="nexus-writing-body">
+                            ${panesHtml}
+                        </div>
+                    </div>`;
+          }
+        },
+        // 8. <Comparison> & <Aspect> (Side-by-Side Multi-Dimensional Comparisons)
+        {
+          name: "comparisonBlock",
+          level: "block",
+          start(src) {
+            return src.search(/<Comparison/i);
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^\s*<Comparison([^>]*)>([\s\S]*?)<\/Comparison>/i);
+            if (completeMatch) {
+              const attrs = completeMatch[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              const leftMatch = attrs.match(/\b(?:leftName|left)="([^"]*)"/i);
+              const rightMatch = attrs.match(/\b(?:rightName|right)="([^"]*)"/i);
+              return {
+                type: "comparisonBlock",
+                raw: completeMatch[0],
+                title: titleMatch ? titleMatch[1] : "Comparison",
+                leftName: leftMatch ? leftMatch[1] : "Option A",
+                rightName: rightMatch ? rightMatch[1] : "Option B",
+                body: completeMatch[2] || "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^\s*<Comparison([^>]*)>([\s\S]*)$/i);
+            if (partialMatch) {
+              const attrs = partialMatch[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              const leftMatch = attrs.match(/\b(?:leftName|left)="([^"]*)"/i);
+              const rightMatch = attrs.match(/\b(?:rightName|right)="([^"]*)"/i);
+              return {
+                type: "comparisonBlock",
+                raw: partialMatch[0],
+                title: titleMatch ? titleMatch[1] : "Comparison",
+                leftName: leftMatch ? leftMatch[1] : "Option A",
+                rightName: rightMatch ? rightMatch[1] : "Option B",
+                body: partialMatch[2] || "",
+                isComplete: false
+              };
+            }
+            const tagShieldMatch = src.match(/^\s*<Comparison[^>]*$/i);
+            if (tagShieldMatch) {
+              const attrs = tagShieldMatch[0] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              const leftMatch = attrs.match(/\b(?:leftName|left)="([^"]*)"/i);
+              const rightMatch = attrs.match(/\b(?:rightName|right)="([^"]*)"/i);
+              return {
+                type: "comparisonBlock",
+                raw: tagShieldMatch[0],
+                title: titleMatch ? titleMatch[1] : "Comparison",
+                leftName: leftMatch ? leftMatch[1] : "Option A",
+                rightName: rightMatch ? rightMatch[1] : "Option B",
+                body: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            const safeTitle = (token.title || "Comparison").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeLeft = (token.leftName || "Option A").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            const safeRight = (token.rightName || "Option B").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            const cleanBody = (token.body || "").replace(/<\/?Comparison\b[^>]*>/gi, "").trim();
+            const aspectRegex = /<Aspect\b((?:[^"'\/>]|"[^"]*"|'[^']*')*?)(?:\s*\/>|>([\s\S]*?)<\/Aspect>|>([\s\S]*?)(?=<Aspect\b|<\/Comparison>|$))/gi;
+            let rowsHtml = "";
+            let match;
+            while ((match = aspectRegex.exec(cleanBody)) !== null) {
+              const attrs = match[1] || "";
+              const nameMatch = attrs.match(/\b(?:name|label)="([^"]*)"/i);
+              const leftMatch = attrs.match(/\bleft="([^"]*)"/i);
+              const rightMatch = attrs.match(/\bright="([^"]*)"/i);
+              const winnerMatch = attrs.match(/\bwinner="([^"]*)"/i);
+              const leftWinnerMatch = attrs.match(/\bleftWinner="true"/i);
+              const rightWinnerMatch = attrs.match(/\brightWinner="true"/i);
+              const aspectName = nameMatch ? nameMatch[1] : "Criteria";
+              let leftContent = leftMatch ? leftMatch[1] : "";
+              let rightContent = rightMatch ? rightMatch[1] : "";
+              const rawBody = (match[2] || match[3] || "").trim();
+              if (!leftContent && !rightContent && rawBody) {
+                const leftChildMatch = rawBody.match(/<Left>([\s\S]*?)<\/Left>/i);
+                const rightChildMatch = rawBody.match(/<Right>([\s\S]*?)<\/Right>/i);
+                if (leftChildMatch || rightChildMatch) {
+                  leftContent = leftChildMatch ? leftChildMatch[1].trim() : "";
+                  rightContent = rightChildMatch ? rightChildMatch[1].trim() : "";
+                } else {
+                  const parts = rawBody.split(/vs|\/|\|/i);
+                  if (parts.length >= 2) {
+                    leftContent = parts[0].trim();
+                    rightContent = parts[1].trim();
+                  } else {
+                    leftContent = rawBody;
+                  }
+                }
+              }
+              let winner = (winnerMatch ? winnerMatch[1] : "").toLowerCase();
+              if (!winner) {
+                if (leftWinnerMatch) winner = "left";
+                else if (rightWinnerMatch) winner = "right";
+              }
+              const leftClass = winner === "left" ? "is-winner" : winner === "right" ? "is-subdued" : "";
+              const rightClass = winner === "right" ? "is-winner" : winner === "left" ? "is-subdued" : "";
+              rowsHtml += `
+                        <div class="nexus-comparison-row">
+                            <div class="nexus-aspect-label">${aspectName}</div>
+                            <div class="nexus-aspect-cols">
+                                <div class="nexus-aspect-col nexus-aspect-left ${leftClass}">
+                                    <div class="nexus-col-mobile-badge">${safeLeft}</div>
+                                    <div class="nexus-aspect-text">${marked.parseInline(leftContent)}</div>
+                                </div>
+                                <div class="nexus-aspect-col nexus-aspect-right ${rightClass}">
+                                    <div class="nexus-col-mobile-badge">${safeRight}</div>
+                                    <div class="nexus-aspect-text">${marked.parseInline(rightContent)}</div>
+                                </div>
+                            </div>
+                        </div>`;
+            }
+            return `
+                    <div class="nexus-comparison-card">
+                        <div class="nexus-comparison-header">
+                            <div class="nexus-comparison-header-left">
+                                <span class="nexus-comparison-icon">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                                </span>
+                                <span class="nexus-comparison-title">${safeTitle}</span>
+                            </div>
+                            <div class="nexus-comparison-entities">
+                                <span class="nexus-comparison-badge badge-left">${safeLeft}</span>
+                                <span class="nexus-comparison-vs">vs</span>
+                                <span class="nexus-comparison-badge badge-right">${safeRight}</span>
+                            </div>
+                        </div>
+                        <div class="nexus-comparison-table">
+                            ${rowsHtml}
+                        </div>
+                    </div>`;
+          }
+        },
+        // 9. <Metrics> & <Metric> (Key Statistics, Complexity & Benchmark Grids)
+        {
+          name: "metricsBlock",
+          level: "block",
+          start(src) {
+            return src.search(/<Metrics/i);
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^\s*<Metrics([^>]*)>([\s\S]*?)<\/Metrics>/i);
+            if (completeMatch) {
+              const attrs = completeMatch[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "metricsBlock",
+                raw: completeMatch[0],
+                title: titleMatch ? titleMatch[1] : "Key Metrics",
+                body: completeMatch[2] || "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^\s*<Metrics([^>]*)>([\s\S]*)$/i);
+            if (partialMatch) {
+              const attrs = partialMatch[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "metricsBlock",
+                raw: partialMatch[0],
+                title: titleMatch ? titleMatch[1] : "Key Metrics",
+                body: partialMatch[2] || "",
+                isComplete: false
+              };
+            }
+            const tagShieldMatch = src.match(/^\s*<Metrics[^>]*$/i);
+            if (tagShieldMatch) {
+              const attrs = tagShieldMatch[0] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "metricsBlock",
+                raw: tagShieldMatch[0],
+                title: titleMatch ? titleMatch[1] : "Key Metrics",
+                body: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            const safeTitle = (token.title || "Key Metrics").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const cleanBody = (token.body || "").replace(/<\/?Metrics\b[^>]*>/gi, "").trim();
+            const metricRegex = /<Metric\b((?:[^"'\/>]|"[^"]*"|'[^']*')*?)(?:\s*\/>|>([\s\S]*?)<\/Metric>|>([\s\S]*?)(?=<Metric\b|<\/Metrics>|$))/gi;
+            let itemsHtml = "";
+            let match;
+            while ((match = metricRegex.exec(cleanBody)) !== null) {
+              const attrs = match[1] || "";
+              const labelMatch = attrs.match(/\blabel="([^"]*)"/i);
+              const valueMatch = attrs.match(/\bvalue="([^"]*)"/i);
+              const statusMatch = attrs.match(/\bstatus="([^"]*)"/i);
+              const hintMatch = attrs.match(/\bhint="([^"]*)"/i);
+              const label = labelMatch ? labelMatch[1] : "Metric";
+              let value = valueMatch ? valueMatch[1] : (match[2] || match[3] || "").trim();
+              if (!labelMatch && !valueMatch && !value && !hintMatch) continue;
+              value = value.replace(/\\log\b/g, "log").replace(/\\Theta\b/g, "\u0398").replace(/\\Omega\b/g, "\u03A9").replace(/\\approx\b/g, "\u2248").replace(/\\le\b/g, "\u2264").replace(/\\ge\b/g, "\u2265").replace(/\\cdot\b/g, "\xB7").replace(/\\left\(/g, "(").replace(/\\right\)/g, ")").replace(/\^2\b/g, "\xB2").replace(/\^3\b/g, "\xB3").replace(/\^k\b/g, "\u1D4F").replace(/\^n\b/g, "\u207F").replace(/\^([0-9]+)/g, (m, p) => p.split("").map((d) => "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079"[d] || d).join(""));
+              const status = (statusMatch ? statusMatch[1] : "neutral").toLowerCase();
+              const hint = hintMatch ? `<div class="nexus-metric-hint">${hintMatch[1]}</div>` : "";
+              itemsHtml += `
+                        <div class="nexus-metric-card" data-status="${status}">
+                            <div class="nexus-metric-label">${label}</div>
+                            <div class="nexus-metric-value">${value}</div>
+                            ${hint}
+                        </div>`;
+            }
+            return `
+                    <div class="nexus-metrics-wrapper">
+                        <div class="nexus-metrics-header">
+                            <span class="nexus-metrics-icon">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            </span>
+                            <span class="nexus-metrics-title">${safeTitle}</span>
+                        </div>
+                        <div class="nexus-metrics-grid">
+                            ${itemsHtml}
+                        </div>
+                    </div>`;
+          }
+        },
+        // 10. <BentoGrid> & <BentoItem> (Asymmetric Bento Box Feature Layouts)
+        {
+          name: "bentoGridBlock",
+          level: "block",
+          start(src) {
+            return src.search(/<BentoGrid/i);
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^\s*<BentoGrid([^>]*)>([\s\S]*?)<\/BentoGrid>/i);
+            if (completeMatch) {
+              const attrs = completeMatch[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "bentoGridBlock",
+                raw: completeMatch[0],
+                title: titleMatch ? titleMatch[1] : "",
+                body: completeMatch[2] || "",
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^\s*<BentoGrid([^>]*)>([\s\S]*)$/i);
+            if (partialMatch) {
+              const attrs = partialMatch[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "bentoGridBlock",
+                raw: partialMatch[0],
+                title: titleMatch ? titleMatch[1] : "",
+                body: partialMatch[2] || "",
+                isComplete: false
+              };
+            }
+            const tagShieldMatch = src.match(/^\s*<BentoGrid[^>]*$/i);
+            if (tagShieldMatch) {
+              const attrs = tagShieldMatch[0] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              return {
+                type: "bentoGridBlock",
+                raw: tagShieldMatch[0],
+                title: titleMatch ? titleMatch[1] : "",
+                body: "",
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            const safeTitle = token.title ? token.title.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+            const getBentoIconSvg = (name) => {
+              switch ((name || "").toLowerCase()) {
+                case "sparkles":
+                case "star":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>';
+                case "zap":
+                case "lightning":
+                case "fast":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>';
+                case "shield":
+                case "security":
+                case "lock":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>';
+                case "layers":
+                case "architecture":
+                case "stack":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>';
+                case "cpu":
+                case "engine":
+                case "chip":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"></path></svg>';
+                case "code":
+                case "terminal":
+                case "dev":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
+                case "rocket":
+                case "launch":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path></svg>';
+                case "chart":
+                case "analytics":
+                case "trending":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>';
+                case "globe":
+                case "cloud":
+                case "web":
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
+                default:
+                  return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>';
+              }
+            };
+            const cleanBody = (token.body || "").replace(/<\/?BentoGrid\b[^>]*>/gi, "").trim();
+            const bentoRegex = /<BentoItem\b((?:[^"'\/>]|"[^"]*"|'[^']*')*?)(?:\s*\/>|>([\s\S]*?)<\/BentoItem>|>([\s\S]*?)(?=<BentoItem\b|<\/BentoGrid>|$))/gi;
+            let itemsHtml = "";
+            let match;
+            while ((match = bentoRegex.exec(cleanBody)) !== null) {
+              const attrs = match[1] || "";
+              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
+              const spanMatch = attrs.match(/\bspan="([^"]*)"/i);
+              const tagMatch = attrs.match(/\btag="([^"]*)"/i);
+              const iconMatch = attrs.match(/\bicon="([^"]*)"/i);
+              const itemTitle = titleMatch ? titleMatch[1] : "Feature";
+              const span = spanMatch && spanMatch[1] === "2" ? "2" : "1";
+              const tagHtml = tagMatch ? `<span class="nexus-bento-tag">${tagMatch[1]}</span>` : "";
+              const iconSvg = getBentoIconSvg(iconMatch ? iconMatch[1] : "");
+              const rawContent = (match[2] || match[3] || "").trim();
+              const parsedContent = rawContent ? marked.parse(rawContent) : "";
+              itemsHtml += `
+                        <div class="nexus-bento-item span-${span}">
+                            <div class="nexus-bento-item-header">
+                                <div class="nexus-bento-item-icon">${iconSvg}</div>
+                                ${tagHtml}
+                            </div>
+                            <div class="nexus-bento-item-title">${itemTitle}</div>
+                            <div class="nexus-bento-item-desc">${parsedContent}</div>
+                        </div>`;
+            }
+            const headerHtml = safeTitle ? `
+                    <div class="nexus-bento-header">
+                        <span class="nexus-bento-icon">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        </span>
+                        <span class="nexus-bento-title">${safeTitle}</span>
+                    </div>` : "";
+            return `
+                    <div class="nexus-bento-container">
+                        ${headerHtml}
+                        <div class="nexus-bento-grid">
+                            ${itemsHtml}
+                        </div>
+                    </div>`;
+          }
+        }
+      ]
+    });
+  }
+  if (typeof marked !== "undefined") {
+    initLmdxComponentsParser2();
   }
 
   // src/components/chat/chat_ui.js
@@ -29033,9 +30986,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       if (!historyEl) return;
       if (!this._historyDelegationClickHandler) {
         this._historyDelegationClickHandler = (e) => {
-          const actionBtn = e.target.closest(".nexus-answer-action-btn");
+          const actionBtn = e.target.closest(".nexus-answer-action-btn, .nexus-answer-nav-btn");
           if (actionBtn) {
-            const answerDiv = actionBtn.closest(".nexus-chat-answer");
+            const answerDiv = actionBtn.closest(".nexus-chat-answer") || actionBtn.closest(".nexus-entry")?.querySelector(".nexus-chat-answer");
             if (answerDiv) {
               e.preventDefault();
               e.stopPropagation();
@@ -29412,6 +31365,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         }
         return item;
       }) : [];
+      if (this.historyEl) {
+        this.historyEl.querySelectorAll(".nexus-action-chip, .nexus-followup-btn").forEach((btn) => {
+          btn.disabled = true;
+          btn.classList.add("is-disabled");
+        });
+      }
       this.currentAnswerDiv = null;
       this.currentEntryDiv = document.createElement("div");
       this.currentEntryDiv.className = "nexus-entry";
@@ -29673,25 +31632,8 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       const newText = answerDiv.getAttribute("data-raw-text") || "";
       if (answerDiv.__lastRenderedText === newText && !isFinished) return;
       answerDiv.__lastRenderedText = newText;
-      let displayText = newText;
-      displayText = displayText.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
-        const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        const displayType = type.replace("code/", "").toUpperCase();
-        return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, "&quot;")}" data-canvas-type="${type}">
-  <div class="nexus-canvas-card-left">
-    <div class="nexus-canvas-card-info">
-      <div class="nexus-canvas-card-title">${name}</div>
-      <div class="nexus-canvas-card-meta">${displayType} \u2022 ${timeStr}</div>
-    </div>
-  </div>
-</div>`;
-      });
-      displayText = displayText.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
-        return `*\u{1F504} Canvas Updated: **${name}***`;
-      });
-      displayText = displayText.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
-        return `*\u{1F4AC} Canvas Comment Added: **${name}***`;
-      });
+      const timeStr = (/* @__PURE__ */ new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      let displayText = CanvasService.cleanCanvasTagsFromMarkdown(newText, timeStr);
       const isProofreadAnswer = answerDiv.classList.contains("nexus-proofread-editable");
       if (isProofreadAnswer) {
         displayText = displayText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
@@ -29754,7 +31696,10 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         answerDiv.appendChild(answerContentDiv);
       }
       if (actualAnswer.trim() || isThinkingComplete) {
-        if (actualAnswer.trim().startsWith("<") && !actualAnswer.trim().startsWith('<div class="nexus-canvas-card"')) {
+        const trimmed = actualAnswer.trim();
+        const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(trimmed);
+        const isRawHtml = trimmed.startsWith("<") && !trimmed.startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(trimmed);
+        if (isRawHtml) {
           const offsets = window.NexusSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
           if (answerContentDiv.childNodes.length === 0) {
             answerContentDiv.innerHTML = actualAnswer;
@@ -29797,14 +31742,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           }
         });
       }
-      if (!skipScroll && !this.disableStreamAutoFollow && !this._scrollThrottled && !this._regenScrollLocked) {
+      if (!skipScroll && !this.disableAutoScroll && this._isNearBottom(80) && !this._scrollThrottled && !this._regenScrollLocked) {
         this._scrollThrottled = true;
         setTimeout(() => {
           this._scrollThrottled = false;
-        }, 100);
+        }, 80);
         this.scrollToBottom();
-      }
-      if (preserveScrollTop !== null && scrollContainer) {
+      } else if (this._regenScrollLocked && preserveScrollTop !== null && scrollContainer) {
         scrollContainer.scrollTop = preserveScrollTop;
       }
     }
@@ -31658,33 +33602,16 @@ Output only the revised text.`;
     _setupModelSelector(popup) {
       const selector = popup.querySelector(".nexus-model-selector");
       if (!selector) return;
-      const btn = selector.querySelector(".nexus-model-btn"), label = selector.querySelector(".nexus-current-model"), dropdown = selector.querySelector(".nexus-model-dropdown");
-      if (!btn || !dropdown) return;
+      const btn = selector.querySelector(".nexus-model-btn"), label = selector.querySelector(".nexus-current-model");
+      if (!btn) return;
       const self2 = this;
       if (typeof window.getPromptApiNamespace === "undefined") {
         window.getPromptApiNamespace = function() {
-          console.log("[Prompt API Debug] checking namespaces...");
-          if (typeof chrome !== "undefined" && chrome.ai && chrome.ai.languageModel) {
-            console.log("[Prompt API Debug] Found chrome.ai.languageModel");
-            return chrome.ai.languageModel;
-          }
-          if (typeof chrome !== "undefined" && chrome.aiLanguageModel) {
-            console.log("[Prompt API Debug] Found chrome.aiLanguageModel");
-            return chrome.aiLanguageModel;
-          }
-          if (typeof chrome !== "undefined" && chrome.aiOriginTrial && chrome.aiOriginTrial.languageModel) {
-            console.log("[Prompt API Debug] Found chrome.aiOriginTrial.languageModel");
-            return chrome.aiOriginTrial.languageModel;
-          }
-          if (typeof ai !== "undefined" && ai.languageModel) {
-            console.log("[Prompt API Debug] Found ai.languageModel");
-            return ai.languageModel;
-          }
-          if (typeof self2 !== "undefined" && self2.ai && self2.ai.languageModel) {
-            console.log("[Prompt API Debug] Found self.ai.languageModel");
-            return self2.ai.languageModel;
-          }
-          console.log("[Prompt API Debug] No modern Prompt API namespace found.");
+          if (typeof chrome !== "undefined" && chrome.ai && chrome.ai.languageModel) return chrome.ai.languageModel;
+          if (typeof chrome !== "undefined" && chrome.aiLanguageModel) return chrome.aiLanguageModel;
+          if (typeof chrome !== "undefined" && chrome.aiOriginTrial && chrome.aiOriginTrial.languageModel) return chrome.aiOriginTrial.languageModel;
+          if (typeof ai !== "undefined" && ai.languageModel) return ai.languageModel;
+          if (typeof self2 !== "undefined" && self2.ai && self2.ai.languageModel) return self2.ai.languageModel;
           return null;
         };
       }
@@ -31693,7 +33620,7 @@ Output only the revised text.`;
           return { supported: false, status: "no", reason: "Disabled" };
         };
       }
-      const render = (data) => {
+      const updateLabel = (data) => {
         const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
         const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
         let currentModel = self2.activeTabModel?.model;
@@ -31712,128 +33639,129 @@ Output only the revised text.`;
         const activeChainItem = chain.find((c) => c.model === currentModel && c.providerId === currentProviderId) || chain.find((c) => c.model === currentModel);
         const activeDisplayName = activeChainItem?.displayName || activeChainItem?.name || currentModel;
         if (activeDisplayName && label) label.textContent = activeDisplayName;
-        dropdown.innerHTML = "";
-        if (chain.length === 0) {
-          dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--nexus-text-secondary);">No models</div>';
-          return;
-        }
-        chain.forEach((item) => {
-          const el = document.createElement("button");
-          const isActive = item.model === currentModel && item.providerId === currentProviderId;
-          const displayName = item.displayName || item.name || item.model;
-          el.className = `nexus-model-item ${isActive ? "active" : ""}`;
-          el.innerHTML = `<div class="model-info"><span class="model-name">${displayName}</span></div>`;
-          el.onclick = (e) => {
-            e.stopPropagation();
-            if (label) label.textContent = displayName;
-            dropdown.classList.remove("active");
-            dropdown.querySelectorAll(".nexus-model-item").forEach((b) => b.classList.remove("active"));
-            el.classList.add("active");
-            self2.activeTabModel = { model: item.model, providerId: item.providerId };
-            chrome.storage.local.set({ lastUsedModel: self2.activeTabModel });
-            const sid = self2.historyEl?.dataset?.sessionId || null;
-            const sidKey = sid || "null";
-            chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
-              const settings = res.nexus_session_settings || {};
-              if (!settings[sidKey]) settings[sidKey] = {};
-              settings[sidKey].selectedModel = self2.activeTabModel;
-              const advancedParamsByModel2 = res.advancedParamsByModel || {};
-              const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
-              const modelParams = item.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !item.providerId ? advancedParamsByModel2[item.model] || {} : {};
-              const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
-              const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-              self2.thinkingLevel = newThinkingLevel;
-              settings[sidKey].thinkingLevel = newThinkingLevel;
-              chrome.storage.local.set({ nexus_session_settings: settings }, () => {
-                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && sid) {
-                  window.NexusChatHistory.updateSessionModelAndThinking(sid, self2.activeTabModel, newThinkingLevel);
-                }
-                if (typeof self2.refreshReasoningSelector === "function") {
-                  self2.refreshReasoningSelector();
+      };
+      const openModelMenu = () => {
+        const sid = self2.historyEl?.dataset?.sessionId || null;
+        const sidKey = sid || "null";
+        chrome.storage.local.get(["providers", "models", "modelChains", "lastUsedModel", "nexus_session_settings", "advancedParamsByModel"], async (data) => {
+          const support = await window.getPromptApiSupport();
+          data.promptSupport = support;
+          const settings = data.nexus_session_settings || {};
+          const saved = settings[sidKey] || {};
+          if (!self2.activeTabModel && saved.selectedModel) {
+            self2.activeTabModel = { ...saved.selectedModel };
+          }
+          const modelObj = self2.activeTabModel;
+          if (modelObj) {
+            const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
+            const advancedParamsByModel2 = data.advancedParamsByModel || {};
+            const modelParams = modelObj.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !modelObj.providerId ? advancedParamsByModel2[modelObj.model] || {} : {};
+            const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
+            self2.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
+          }
+          updateLabel(data);
+          const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
+          const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
+          let currentModel = self2.activeTabModel?.model;
+          let currentProviderId = self2.activeTabModel?.providerId;
+          if (!currentModel && chain.length > 0) {
+            currentModel = chain[0].model;
+            currentProviderId = chain[0].providerId;
+          }
+          const menuItems = [];
+          if (chain.length === 0) {
+            menuItems.push({ label: "No models available", disabled: true });
+          } else {
+            chain.forEach((item) => {
+              const isActive = item.model === currentModel && item.providerId === currentProviderId;
+              const displayName = item.displayName || item.name || item.model;
+              menuItems.push({
+                label: displayName,
+                active: isActive,
+                action: () => {
+                  if (label) label.textContent = displayName;
+                  self2.activeTabModel = { model: item.model, providerId: item.providerId };
+                  chrome.storage.local.set({ lastUsedModel: self2.activeTabModel });
+                  const curSid = self2.historyEl?.dataset?.sessionId || null;
+                  const curSidKey = curSid || "null";
+                  chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
+                    const st = res.nexus_session_settings || {};
+                    if (!st[curSidKey]) st[curSidKey] = {};
+                    st[curSidKey].selectedModel = self2.activeTabModel;
+                    const adv = res.advancedParamsByModel || {};
+                    const compKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
+                    const mParams = item.providerId && adv[compKey] ? adv[compKey] : !item.providerId ? adv[item.model] || {} : {};
+                    const defThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
+                    const newThinkingLevel = mParams.thinkingLevel || defThinking;
+                    self2.thinkingLevel = newThinkingLevel;
+                    st[curSidKey].thinkingLevel = newThinkingLevel;
+                    chrome.storage.local.set({ nexus_session_settings: st }, () => {
+                      if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && curSid) {
+                        window.NexusChatHistory.updateSessionModelAndThinking(curSid, self2.activeTabModel, newThinkingLevel);
+                      }
+                      if (typeof self2.refreshReasoningSelector === "function") {
+                        self2.refreshReasoningSelector();
+                      }
+                    });
+                  });
+                  self2._updateTokenLimitFromModel();
+                  selector.dispatchEvent(new CustomEvent("nexus:model-change", {
+                    bubbles: true,
+                    detail: { model: item.model, providerId: item.providerId }
+                  }));
                 }
               });
             });
-            self2._updateTokenLimitFromModel();
-            selector.dispatchEvent(new CustomEvent("nexus:model-change", {
-              bubbles: true,
-              detail: { model: item.model, providerId: item.providerId }
+            menuItems.push({ divider: true });
+            const currentLevel = self2.thinkingLevel || "none";
+            const titleMap = {
+              "minimal": "Minimal",
+              "low": "Low",
+              "medium": "Standard",
+              "high": "Extended",
+              "none": "None"
+            };
+            const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
+            const thinkingSubmenu = options.map((opt) => ({
+              label: opt.title,
+              desc: opt.desc,
+              active: currentLevel === opt.value,
+              action: () => {
+                self2.thinkingLevel = opt.value;
+                const curSid = self2.historyEl?.dataset?.sessionId || null;
+                const curSidKey = curSid || "null";
+                chrome.storage.local.get(["nexus_session_settings"], (res) => {
+                  const st = res.nexus_session_settings || {};
+                  if (!st[curSidKey]) st[curSidKey] = {};
+                  st[curSidKey].thinkingLevel = opt.value;
+                  chrome.storage.local.set({ nexus_session_settings: st, lastUsedThinkingLevel: opt.value }, () => {
+                    if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && curSid) {
+                      window.NexusChatHistory.updateSessionModelAndThinking(curSid, void 0, opt.value);
+                    }
+                    if (typeof self2.refreshSystemTokens === "function") {
+                      self2.refreshSystemTokens();
+                    }
+                    if (typeof self2.refreshReasoningSelector === "function") {
+                      self2.refreshReasoningSelector();
+                    }
+                  });
+                });
+              }
             }));
-          };
-          dropdown.appendChild(el);
-        });
-        const divider = document.createElement("div");
-        divider.className = "nexus-model-divider";
-        dropdown.appendChild(divider);
-        const thinkingItem = document.createElement("div");
-        thinkingItem.className = "nexus-model-item nexus-thinking-parent-item";
-        thinkingItem.style.position = "relative";
-        thinkingItem.style.display = "flex";
-        thinkingItem.style.alignItems = "center";
-        thinkingItem.style.justifyContent = "space-between";
-        thinkingItem.style.cursor = "pointer";
-        const currentLevel = self2.thinkingLevel || "none";
-        const titleMap = {
-          "minimal": "Minimal",
-          "low": "Low",
-          "medium": "Standard",
-          "high": "Extended",
-          "none": "None"
-        };
-        thinkingItem.innerHTML = `
-                <div class="model-info">
-                    <span class="model-name">Thinking level</span>
-                    <span class="model-desc">${titleMap[currentLevel] || "None"}</span>
-                </div>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            `;
-        const submenu = document.createElement("div");
-        submenu.className = "nexus-thinking-submenu";
-        const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
-        options.forEach((opt) => {
-          const optEl = document.createElement("button");
-          const isActive = currentLevel === opt.value;
-          optEl.className = `nexus-thinking-opt-item ${isActive ? "active" : ""}`;
-          const checkmarkIcon = isActive ? `
-                    <span class="reasoning-checkmark">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </span>
-                ` : `
-                    <span class="reasoning-checkmark"></span>
-                `;
-          optEl.innerHTML = `
-                    ${checkmarkIcon}
-                    <div class="reasoning-info">
-                        <span class="reasoning-title">${opt.title}</span>
-                        <span class="reasoning-desc">${opt.desc}</span>
-                    </div>
-                `;
-          optEl.onclick = (e) => {
-            e.stopPropagation();
-            self2.thinkingLevel = opt.value;
-            const sid = self2.historyEl?.dataset?.sessionId || null;
-            const sidKey = sid || "null";
-            chrome.storage.local.get(["nexus_session_settings"], (res) => {
-              const settings = res.nexus_session_settings || {};
-              if (!settings[sidKey]) settings[sidKey] = {};
-              settings[sidKey].thinkingLevel = opt.value;
-              chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && sid) {
-                  window.NexusChatHistory.updateSessionModelAndThinking(sid, void 0, opt.value);
-                }
-                if (typeof self2.refreshSystemTokens === "function") {
-                  self2.refreshSystemTokens();
-                }
-                dropdown.classList.remove("active");
-                if (typeof self2.refreshReasoningSelector === "function") {
-                  self2.refreshReasoningSelector();
-                }
-              });
+            menuItems.push({
+              label: "Thinking level",
+              badge: titleMap[currentLevel] || "None",
+              submenuTitle: "Thinking level",
+              submenu: thinkingSubmenu
             });
-          };
-          submenu.appendChild(optEl);
+          }
+          NexusMenu.show({
+            anchor: btn,
+            placement: "top-start",
+            minWidth: 200,
+            items: menuItems
+          });
         });
-        thinkingItem.appendChild(submenu);
-        dropdown.appendChild(thinkingItem);
       };
       const fetchAndRender = () => {
         const sid = self2.historyEl?.dataset?.sessionId || null;
@@ -31854,29 +33782,18 @@ Output only the revised text.`;
             const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
             self2.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
           }
-          render(data);
+          updateLabel(data);
           self2._updateActionBtnState();
         });
       };
       fetchAndRender();
       this.refreshModelSelector = fetchAndRender;
       this.refreshReasoningSelector = fetchAndRender;
-      const selectorWrapper = selector;
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (dropdown.classList.contains("active")) {
-          dropdown.classList.remove("active");
-        } else {
-          const toolsDropdown = popup.querySelector(".nexus-tools-dropdown");
-          if (toolsDropdown) toolsDropdown.classList.remove("active");
-          if (!dropdown.classList.contains("active")) fetchAndRender();
-          dropdown.classList.add("active");
-        }
-      });
-      document.addEventListener("click", (e) => {
-        if (!selector.contains(e.target) && dropdown.classList.contains("active")) {
-          dropdown.classList.remove("active");
-        }
+        const toolsDropdown = popup.querySelector(".nexus-tools-dropdown");
+        if (toolsDropdown) toolsDropdown.classList.remove("active");
+        openModelMenu();
       });
     }
     _setupMicButton(btn, input) {
@@ -32324,6 +34241,12 @@ Output only the revised text.`;
           buttonEl.classList.remove("is-active");
           buttonEl.innerHTML = originalHTML;
         }, 1e3);
+      } else if (action === "prev-version" || action === "prev") {
+        this._switchAnswerVersion(buttonEl.closest(".nexus-entry"), "prev");
+      } else if (action === "next-version" || action === "next") {
+        this._switchAnswerVersion(buttonEl.closest(".nexus-entry"), "next");
+      } else if (action === "modify") {
+        this._showModifyLengthDropdown(buttonEl, answerDiv);
       } else if (action === "regenerate") {
         this._handleContextMenuAction("regenerate", answerDiv);
       } else if (action === "edit") {
@@ -32332,26 +34255,92 @@ Output only the revised text.`;
         this._showMoreOptionsDropdown(buttonEl, answerDiv);
       }
     }
-    _showMoreOptionsDropdown(buttonEl, answerDiv) {
-      if (!this.contextMenu) return;
-      this.contextMenu.__targetAnswer = answerDiv;
-      this.contextMenu.innerHTML = `
-            <button class="nexus-context-menu-item" data-action="edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                Edit
-            </button>
-        `;
-      const rect = buttonEl.getBoundingClientRect();
-      const dropdownWidth = 140;
-      let left = rect.left + window.scrollX + rect.width - dropdownWidth;
-      let top = rect.bottom + window.scrollY + 6;
-      if (left < 10) left = 10;
-      this.contextMenu.style.left = `${left}px`;
-      this.contextMenu.style.top = `${top}px`;
-      this.contextMenu.style.display = "block";
-      this.contextMenu.classList.add("visible");
+    _switchAnswerVersion(entry, direction) {
+      if (!entry) return;
+      const versionsContainer = entry.querySelector(".nexus-answer-versions");
+      if (!versionsContainer) return;
+      const versions = Array.from(versionsContainer.querySelectorAll(".nexus-answer-version"));
+      if (versions.length <= 1) return;
+      let activeIndex = versions.findIndex((v) => v.classList.contains("active"));
+      if (activeIndex === -1) activeIndex = versions.length - 1;
+      let newIndex = activeIndex;
+      if (direction === "prev") newIndex = Math.max(0, activeIndex - 1);
+      if (direction === "next") newIndex = Math.min(versions.length - 1, activeIndex + 1);
+      if (newIndex !== activeIndex) {
+        versions[activeIndex].classList.remove("active");
+        versions[newIndex].classList.add("active");
+        this._updateEntryVersionNav(entry, newIndex, versions.length);
+        const historyEl = this.historyEl || entry.closest(".nexus-chat-history");
+        if (typeof ChatHistoryManager !== "undefined" && historyEl) {
+          ChatHistoryManager.saveCurrentChat(historyEl);
+        }
+      }
     }
-    _handleQuestionRecheck(userInput, editable, isRegenerate = false) {
+    _updateEntryVersionNav(entry, activeIndex, totalCount) {
+      if (!entry) return;
+      const answers = entry.querySelectorAll(".nexus-chat-answer");
+      answers.forEach((ans) => _NexusChatUI.updateVersionNavInActions(ans));
+      const oldNavs = entry.querySelectorAll(".nexus-answer-nav-container, .nexus-answer-nav");
+      oldNavs.forEach((nav) => {
+        const counter = nav.querySelector(".nexus-answer-nav-counter, .nexus-answer-version-indicator");
+        const prevBtn = nav.querySelector(".nav-prev");
+        const nextBtn = nav.querySelector(".nav-next");
+        if (counter) counter.textContent = `${activeIndex + 1} / ${totalCount}`;
+        if (prevBtn) prevBtn.disabled = activeIndex === 0;
+        if (nextBtn) nextBtn.disabled = activeIndex === totalCount - 1;
+      });
+    }
+    _showModifyLengthDropdown(buttonEl, answerDiv) {
+      const entry = answerDiv.closest(".nexus-entry");
+      NexusMenu.show({
+        anchor: buttonEl,
+        placement: "top-start",
+        minWidth: 140,
+        items: [
+          {
+            label: "Shorter",
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>`,
+            action: () => {
+              if (entry) {
+                this.regenerateEntry(entry, {
+                  lengthModifier: "shorter",
+                  oververbosity: 2
+                });
+              }
+            }
+          },
+          {
+            label: "More detailed",
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="11" x2="21" y2="11"/><line x1="3" y1="16" x2="21" y2="16"/><line x1="3" y1="21" x2="13" y2="21"/></svg>`,
+            action: () => {
+              if (entry) {
+                this.regenerateEntry(entry, {
+                  lengthModifier: "longer",
+                  oververbosity: 8
+                });
+              }
+            }
+          }
+        ]
+      });
+    }
+    _showMoreOptionsDropdown(buttonEl, answerDiv) {
+      NexusMenu.show({
+        anchor: buttonEl,
+        placement: "top-start",
+        minWidth: 130,
+        items: [
+          {
+            label: "Edit",
+            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+            action: () => {
+              this._handleContextMenuAction("edit", answerDiv);
+            }
+          }
+        ]
+      });
+    }
+    _handleQuestionRecheck(userInput, editable, isRegenerate = false, extraOptions = {}) {
       const questionDiv = editable.closest(".nexus-chat-question");
       const entry = editable.closest(".nexus-entry");
       if (!entry) return;
@@ -32396,7 +34385,35 @@ Output only the revised text.`;
         next = next.nextElementSibling;
         toRemove.remove();
       }
-      entry.querySelectorAll(".nexus-chat-answer, .nexus-web-search").forEach((el) => el.remove());
+      if (isRegenerate) {
+        let versionsContainer = entry.querySelector(".nexus-answer-versions");
+        const existingAnswer = entry.querySelector(".nexus-chat-answer");
+        if (!versionsContainer && existingAnswer) {
+          versionsContainer = document.createElement("div");
+          versionsContainer.className = "nexus-answer-versions";
+          const version1 = document.createElement("div");
+          version1.className = "nexus-answer-version";
+          version1.dataset.versionIndex = "0";
+          existingAnswer.parentNode.insertBefore(versionsContainer, existingAnswer);
+          version1.appendChild(existingAnswer);
+          versionsContainer.appendChild(version1);
+        }
+        if (versionsContainer) {
+          const existingVersions = Array.from(versionsContainer.querySelectorAll(".nexus-answer-version"));
+          existingVersions.forEach((v) => v.classList.remove("active"));
+          const newVersion = document.createElement("div");
+          newVersion.className = "nexus-answer-version active";
+          newVersion.dataset.versionIndex = existingVersions.length.toString();
+          const newAnswerDiv = document.createElement("div");
+          newAnswerDiv.className = "nexus-chat-answer";
+          newVersion.appendChild(newAnswerDiv);
+          versionsContainer.appendChild(newVersion);
+          this.currentAnswerDiv = newAnswerDiv;
+          entry.querySelectorAll(":scope > .nexus-web-search").forEach((el) => el.remove());
+        }
+      } else {
+        entry.querySelectorAll(".nexus-chat-answer, .nexus-web-search, .nexus-answer-versions").forEach((el) => el.remove());
+      }
       const scrollContainer = this.getScrollContainer();
       if (isRegenerate) {
         this._regenScrollLocked = true;
@@ -32434,7 +34451,8 @@ Output only the revised text.`;
           isRecheck: true,
           isRegenerate,
           entryId: entryId2,
-          mode: entryType
+          mode: entryType,
+          ...extraOptions
         });
       }
     }
@@ -32462,14 +34480,14 @@ Output only the revised text.`;
       setTimeout(setCaret, 30);
       setTimeout(setCaret, 100);
     }
-    regenerateEntry(entry) {
+    regenerateEntry(entry, extraOptions = {}) {
       if (!entry) return;
       const questionDiv = entry.querySelector(".nexus-chat-question");
       if (!questionDiv) return;
       const questionContent = questionDiv.querySelector(".nexus-question-content") || questionDiv.querySelector('div[contenteditable="true"]') || questionDiv;
       const rawQuestion = questionDiv.getAttribute("data-raw-text") || questionContent.innerText || questionContent.textContent || "";
       if (!rawQuestion.trim()) return;
-      this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true);
+      this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true, extraOptions);
     }
     enterQuestionEditMode(questionDiv) {
       if (!questionDiv || questionDiv.classList.contains("nexus-question-editing")) return;
@@ -32591,6 +34609,10 @@ Output only the revised text.`;
               if (otPrevEntry) {
                 ot.chatUIInstance.updateEntryMinHeight(otPrevEntry);
                 ot.chatUIInstance.adjustEntryMargin(otPrevEntry, "immediate");
+                otPrevEntry.querySelectorAll(".nexus-action-chip, .nexus-followup-btn").forEach((btn) => {
+                  btn.disabled = false;
+                  btn.classList.remove("is-disabled", "is-clicked");
+                });
               }
             }
           });
@@ -32614,6 +34636,10 @@ Output only the revised text.`;
       if (prevEntry) {
         this.updateEntryMinHeight(prevEntry);
         this.adjustEntryMargin(prevEntry, "immediate");
+        prevEntry.querySelectorAll(".nexus-action-chip, .nexus-followup-btn").forEach((btn) => {
+          btn.disabled = false;
+          btn.classList.remove("is-disabled", "is-clicked");
+        });
         const scrollContainer = this.getScrollContainer();
         if (scrollContainer) {
           const containerRect = scrollContainer.getBoundingClientRect();
@@ -32675,7 +34701,7 @@ Output only the revised text.`;
         if (row) row.classList.remove("nexus-question-row-editing");
         if (toolbar) toolbar.remove();
         if (contentDiv) contentDiv.contentEditable = "false";
-        const isRegenerate = newText === originalRaw;
+        const isRegenerate = false;
         this._handleQuestionRecheck(newText, contentDiv || questionDiv, isRegenerate);
         _NexusChatUI.injectQuestionActions(questionDiv);
         _NexusChatUI.checkQuestionOverflow(questionDiv);
@@ -32951,9 +34977,9 @@ Output only the revised text.`;
           if (typeof katex !== "undefined") {
             await yieldToMain();
             container2.querySelectorAll(".nexus-math-inline-placeholder").forEach((el) => {
-              const math = decodeURIComponent(el.getAttribute("data-math") || "").replace(/\\frac\{/g, "\\dfrac{");
+              const math = decodeURIComponent(el.getAttribute("data-math") || "");
               try {
-                const html = katex.renderToString(math, { displayMode: false, throwOnError: false, strict: "ignore" });
+                const html = renderKaTeXFormula(math, false);
                 el.outerHTML = html;
               } catch (err) {
                 el.replaceWith(document.createTextNode(el.textContent));
@@ -32962,7 +34988,7 @@ Output only the revised text.`;
             container2.querySelectorAll(".nexus-math-block-placeholder").forEach((el) => {
               const math = decodeURIComponent(el.getAttribute("data-math") || "");
               try {
-                const html = katex.renderToString(math, { displayMode: true, throwOnError: false, strict: "ignore" });
+                const html = renderKaTeXFormula(math, true);
                 el.outerHTML = html;
               } catch (err) {
                 el.replaceWith(document.createTextNode(el.textContent));
@@ -33018,6 +35044,7 @@ Output only the revised text.`;
       processNexusDynamicImageElements(container2);
       processNexusDynamicYoutubeElements(container2);
       processNexusChartElements(container2);
+      WidgetRunner.hydrateWidgets(container2);
     }
     static async injectCopyButtons(container2) {
       if (!container2) return;
@@ -33142,7 +35169,7 @@ Output only the revised text.`;
       }
     }
     static injectAnswerActions(answerDiv) {
-      if (!answerDiv || answerDiv.querySelector(".nexus-actions")) return;
+      if (!answerDiv) return;
       const entry = answerDiv.closest(".nexus-entry");
       if (entry) {
         const type = entry.dataset.entryType;
@@ -33150,20 +35177,91 @@ Output only the revised text.`;
           return;
         }
       }
+      let existingActions = answerDiv.querySelector(".nexus-actions");
+      if (existingActions) {
+        _NexusChatUI.updateVersionNavInActions(answerDiv);
+        if (entry) {
+          entry.querySelectorAll(".nexus-chat-answer").forEach((ans) => {
+            if (ans !== answerDiv) _NexusChatUI.updateVersionNavInActions(ans);
+          });
+        }
+        return;
+      }
       const actionsDiv = document.createElement("div");
       actionsDiv.className = "nexus-actions";
       actionsDiv.innerHTML = `
-            <button class="nexus-answer-action-btn" data-action="regenerate" title="Regenerate">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-            </button>
-            <button class="nexus-answer-action-btn" data-action="copy" title="Copy">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
-            <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            </button>
+            <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
+                <button class="nexus-answer-action-btn" data-action="regenerate" title="Regenerate">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                </button>
+                <button class="nexus-answer-action-btn" data-action="copy" title="Copy">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+                <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <button class="nexus-answer-action-btn nexus-action-modify" data-action="modify" title="Modify response length (Shorter / Longer)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="13" y2="6"/><line x1="9" y1="6" x2="3" y2="6"/><line x1="21" y1="18" x2="17" y2="18"/><line x1="13" y1="18" x2="3" y2="18"/><circle cx="11" cy="6" r="2"/><circle cx="15" cy="18" r="2"/></svg>
+                </button>
+            </div>
+            <div class="nexus-answer-nav" style="margin-left: auto; display: none;">
+                <button type="button" class="nexus-answer-nav-btn nav-prev" data-action="prev-version" title="Previous version">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span class="nexus-answer-nav-counter">1 / 1</span>
+                <button type="button" class="nexus-answer-nav-btn nav-next" data-action="next-version" title="Next version">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
         `;
       answerDiv.appendChild(actionsDiv);
+      if (entry) {
+        entry.querySelectorAll(".nexus-chat-answer").forEach((ans) => {
+          _NexusChatUI.updateVersionNavInActions(ans);
+        });
+      } else {
+        _NexusChatUI.updateVersionNavInActions(answerDiv);
+      }
+    }
+    static updateVersionNavInActions(answerDiv) {
+      if (!answerDiv) return;
+      const entry = answerDiv.closest(".nexus-entry");
+      if (!entry) return;
+      const actionsDiv = answerDiv.querySelector(".nexus-actions");
+      if (!actionsDiv) return;
+      let nav = actionsDiv.querySelector(".nexus-answer-nav");
+      const versionsContainer = entry.querySelector(".nexus-answer-versions");
+      if (versionsContainer) {
+        const versions = Array.from(versionsContainer.querySelectorAll(".nexus-answer-version"));
+        if (versions.length > 1) {
+          let activeIndex = versions.findIndex((v) => v.classList.contains("active"));
+          if (activeIndex === -1) activeIndex = versions.length - 1;
+          if (!nav) {
+            nav = document.createElement("div");
+            nav.className = "nexus-answer-nav";
+            nav.style.marginLeft = "auto";
+            nav.innerHTML = `
+                        <button type="button" class="nexus-answer-nav-btn nav-prev" data-action="prev-version" title="Previous version">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <span class="nexus-answer-nav-counter">1 / 1</span>
+                        <button type="button" class="nexus-answer-nav-btn nav-next" data-action="next-version" title="Next version">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    `;
+            actionsDiv.appendChild(nav);
+          }
+          nav.style.display = "inline-flex";
+          const counter = nav.querySelector(".nexus-answer-nav-counter");
+          const prevBtn = nav.querySelector(".nav-prev");
+          const nextBtn = nav.querySelector(".nav-next");
+          if (counter) counter.textContent = `${activeIndex + 1} / ${versions.length}`;
+          if (prevBtn) prevBtn.disabled = activeIndex === 0;
+          if (nextBtn) nextBtn.disabled = activeIndex === versions.length - 1;
+          return;
+        }
+      }
+      if (nav) nav.style.display = "none";
     }
     static wrapTables(container2) {
       if (!container2) return;
@@ -33915,6 +36013,14 @@ Output only the revised text.`;
 
   // src/pages/nexus/workspace.js
   window._nexusWindowInstanceId = window._nexusWindowInstanceId || "win_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+  window.WidgetRunner = WidgetRunner;
+  window.NexusToast = NexusToast;
+  window.NexusMenu = NexusMenu;
+  window.NexusTooltip = NexusTooltip;
+  try {
+    NexusTooltip.init();
+  } catch (_) {
+  }
   function getPaneActiveModel() {
     const model = sessionStorage.getItem("nexus_active_model");
     const providerId = sessionStorage.getItem("nexus_active_provider");
@@ -34136,6 +36242,17 @@ Output only the revised text.`;
       document.body.style.setProperty("font-size", size + "px", "important");
       document.documentElement.style.setProperty("--nexus-fontSize", size + "px", "important");
     }
+    const iframes = document.querySelectorAll(".nexus-widget-iframe");
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    iframes.forEach((iframe) => {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: "NEXUS_WIDGET_THEME_UPDATE",
+          isDark,
+          fontSize: size
+        }, "*");
+      }
+    });
   }
   var WEB_SOURCE_SELECTION_STORAGE_PREFIX2 = "nexus_web_source_selection_";
   var currentBrowserTabTokens = /* @__PURE__ */ new Map();
@@ -34637,9 +36754,9 @@ Output only the revised text.`;
           if (counterData[KEYS.tabCounter]) tabCounter = counterData[KEYS.tabCounter];
           let resolvedActiveIndex = activeTabIndex2;
           if (currentActiveSessionId) {
-            const targetIdx2 = tabs2.findIndex((t) => t.sessionId === currentActiveSessionId);
-            if (targetIdx2 !== -1) {
-              resolvedActiveIndex = targetIdx2;
+            const targetIdx = tabs2.findIndex((t) => t.sessionId === currentActiveSessionId);
+            if (targetIdx !== -1) {
+              resolvedActiveIndex = targetIdx;
             }
           }
           if (resolvedActiveIndex < 0 || resolvedActiveIndex >= tabs2.length) {
@@ -34865,25 +36982,10 @@ Output only the revised text.`;
       topbarNewChatBtn.addEventListener("click", () => resetChat2());
     }
     const topbarMoreBtn = document.getElementById("topbar-more-btn");
-    const topbarDropdown = document.getElementById("topbar-dropdown-menu");
-    if (topbarMoreBtn && topbarDropdown) {
+    if (topbarMoreBtn) {
       topbarMoreBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const isOpen = topbarDropdown.style.display === "flex";
-        if (isOpen) {
-          topbarDropdown.style.display = "none";
-        } else {
-          const mainModelDropdown = document.getElementById("topbar-model-dropdown");
-          if (mainModelDropdown) mainModelDropdown.classList.remove("active");
-          topbarDropdown.style.display = "flex";
-          topbarDropdown.classList.remove("expanded");
-          renderDropdownMenu("primary");
-        }
-      });
-      document.addEventListener("click", (e) => {
-        if (!topbarDropdown.contains(e.target) && e.target !== topbarMoreBtn) {
-          topbarDropdown.style.display = "none";
-        }
+        renderDropdownMenu(topbarMoreBtn);
       });
     }
     updateTopbarMenuVisibility();
@@ -35081,7 +37183,20 @@ Output only the revised text.`;
   }
   function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
-    historyEl.querySelectorAll(".nexus-entry").forEach((entry) => {
+    const entries = Array.from(historyEl.querySelectorAll(".nexus-entry"));
+    entries.forEach((entry, idx) => {
+      const isPastEntry = idx < entries.length - 1;
+      const nextUserQuestion = isPastEntry && entries[idx + 1] ? (entries[idx + 1].querySelector(".nexus-chat-question")?.getAttribute("data-raw-text") || "").trim() : "";
+      entry.querySelectorAll(".nexus-action-chip, .nexus-followup-btn").forEach((chip) => {
+        if (isPastEntry) {
+          chip.disabled = true;
+          chip.classList.add("is-disabled");
+          const chipQuery = (chip.getAttribute("data-query") || "").trim();
+          if (nextUserQuestion && chipQuery && (nextUserQuestion === chipQuery || nextUserQuestion.includes(chipQuery) || chipQuery.includes(nextUserQuestion))) {
+            chip.classList.add("is-clicked");
+          }
+        }
+      });
       if (entry.__normalized) return;
       entry.__normalized = true;
       entry.style.removeProperty("min-height");
@@ -35128,12 +37243,12 @@ Output only the revised text.`;
           newPrev.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            showAnswerVersion2(entry, "prev");
+            showAnswerVersion(entry, "prev");
           });
           newNext.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            showAnswerVersion2(entry, "next");
+            showAnswerVersion(entry, "next");
           });
         }
       }
@@ -36707,30 +38822,32 @@ Output only the revised text.`;
       userProfileEl.style.cursor = "pointer";
       userProfileEl.addEventListener("click", (e) => {
         e.stopPropagation();
-        let ctxMenu = document.getElementById("user-profile-context-menu");
-        if (!ctxMenu) {
-          ctxMenu = document.createElement("div");
-          ctxMenu.id = "user-profile-context-menu";
-          ctxMenu.className = "sidebar-chat-context-menu";
-          ctxMenu.style.display = "none";
-          const currentName2 = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated && NexusAuth.user ? NexusAuth.user.name || "User" : "Nexus User";
-          const isAuth2 = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated;
-          ctxMenu.innerHTML = NexusTemplates.sidebarContextMenu([
-            { type: "header", label: currentName2 },
-            { type: "divider" },
-            { action: "sync", label: "Sync now", icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>' },
-            { action: "logout", label: isAuth2 ? "Sign out" : "Sign in", danger: true, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>' }
-          ]);
-          document.body.appendChild(ctxMenu);
-          ctxMenu.querySelectorAll(".sidebar-ctx-item").forEach((item) => {
-            item.addEventListener("click", async (e2) => {
-              const action = item.dataset.action;
-              ctxMenu.style.display = "none";
-              if (action === "sync") {
+        const isAuth = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated;
+        const currentName = isAuth && NexusAuth.user ? NexusAuth.user.name || "User" : "Nexus User";
+        NexusMenu.show({
+          anchor: userProfileEl,
+          placement: "top-start",
+          items: [
+            {
+              label: currentName,
+              icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`,
+              disabled: true
+            },
+            { divider: true },
+            {
+              label: "Sync now",
+              icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`,
+              action: () => {
                 if (typeof NexusSync !== "undefined") {
                   NexusSync.syncUp().catch((err) => console.error("Sync failed:", err));
                 }
-              } else if (action === "logout") {
+              }
+            },
+            {
+              label: isAuth ? "Sign out" : "Sign in",
+              danger: isAuth,
+              icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>`,
+              action: () => {
                 if (typeof NexusAuth !== "undefined") {
                   if (NexusAuth.isAuthenticated) {
                     NexusAuth.logout();
@@ -36739,36 +38856,11 @@ Output only the revised text.`;
                   }
                 }
               }
-            });
-          });
-        }
-        const isAuth = typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated;
-        const currentName = isAuth && NexusAuth.user ? NexusAuth.user.name || "User" : "Nexus User";
-        const nameHeader = ctxMenu.querySelector(".sidebar-ctx-header-name");
-        if (nameHeader) {
-          nameHeader.textContent = currentName;
-        }
-        const logoutSpan = ctxMenu.querySelector('[data-action="logout"] span');
-        if (logoutSpan) {
-          logoutSpan.textContent = isAuth ? "Sign out" : "Sign in";
-        }
-        const rect = userProfileEl.getBoundingClientRect();
-        ctxMenu.style.display = "block";
-        let top = rect.top - ctxMenu.offsetHeight - 6;
-        let left = rect.left;
-        if (top < 4) top = 4;
-        ctxMenu.style.top = top + "px";
-        ctxMenu.style.left = left + "px";
+            }
+          ]
+        });
       });
     }
-    document.addEventListener("mousedown", (e) => {
-      const userCtxMenu = document.getElementById("user-profile-context-menu");
-      if (userCtxMenu && userCtxMenu.style.display !== "none") {
-        if (!userCtxMenu.contains(e.target) && !e.target.closest(".user-profile")) {
-          userCtxMenu.style.display = "none";
-        }
-      }
-    });
     renderRecentChatsSidebar();
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === "local") {
@@ -37021,256 +39113,210 @@ Output only the revised text.`;
     attachScroll(listContainer.closest(".sidebar-scrollable-wrapper"));
     attachScroll(listContainer.closest(".sidebar-scrollable-content"));
     attachScroll(listContainer.closest(".nexus-sidebar"));
-    let ctxMenu = document.getElementById("sidebar-chat-context-menu");
-    if (!ctxMenu) {
-      ctxMenu = document.createElement("div");
-      ctxMenu.id = "sidebar-chat-context-menu";
-      ctxMenu.className = "sidebar-chat-context-menu";
-      ctxMenu.style.display = "none";
-      ctxMenu.innerHTML = NexusTemplates.sidebarContextMenu([
-        { action: "pin", label: "Pin", icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>' },
-        { action: "rename", label: "Rename", icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' },
-        { action: "generate_title", label: "Generate title", icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>' },
-        { action: "archive", label: "Archive", icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>' },
-        { type: "divider" },
-        { action: "delete", label: "Delete", danger: true, icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' }
-      ]);
-      document.body.appendChild(ctxMenu);
-      document.addEventListener("mousedown", (e) => {
-        if (!ctxMenu.contains(e.target) && !e.target.closest(".recent-chat-item__menu-btn")) {
-          ctxMenu.style.display = "none";
-          document.querySelectorAll(".recent-chat-item.ctx-active").forEach((el) => el.classList.remove("ctx-active"));
-        }
-      });
-      ctxMenu.querySelectorAll(".sidebar-ctx-item").forEach((item) => {
-        item.addEventListener("click", async (e) => {
-          const action = item.dataset.action;
-          const sid = ctxMenu.dataset.sessionId;
-          ctxMenu.style.display = "none";
-          document.querySelectorAll(".recent-chat-item.ctx-active").forEach((el) => el.classList.remove("ctx-active"));
-          if (!sid) return;
-          if (action === "pin") {
-            const session = await NexusChatDB.getSession(sid);
-            if (session) {
-              const currentlyPinned = !!session.pinned;
-              if (!currentlyPinned) {
-                let currentTitle = session.title || "Untitled Chat";
-                if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
-                  currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
-                }
-                const newTitle = await window.showCustomPopup({
-                  title: "Pin this chat",
-                  body: "",
-                  isInput: true,
-                  defaultValue: currentTitle,
-                  confirmLabel: "Pin"
-                });
-                if (newTitle === null) return;
-                session.pinned = true;
-                if (newTitle.trim()) {
-                  session.title = newTitle.trim();
-                  session.isRenamed = true;
-                }
-              } else {
-                session.pinned = false;
-              }
-              session.updatedAt = Date.now();
-              await NexusChatDB.putSession(session);
-              chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
-              });
-              if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-                NexusSync.triggerDebouncedSync();
-              }
-              if (session.isRenamed) {
-                const activeTab2 = tabs2[activeTabIndex2];
-                if (activeTab2 && activeTab2.sessionId === sid) {
-                  activeTab2.title = session.title;
-                  renderTabs2();
-                }
-              }
-              renderRecentChatsSidebar();
-            }
-          } else if (action === "rename") {
-            const meta = await NexusChatDB.getSession(sid);
-            let currentTitle = meta?.title || "Untitled Chat";
-            if (!meta?.isRenamed && !meta?.autoNamed && meta?.questions?.length > 0) {
-              currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
-            }
-            const newTitle = await window.showCustomPopup({
-              title: "Rename Chat",
-              body: "Enter a new title for this conversation:",
-              isInput: true,
-              defaultValue: currentTitle,
-              confirmLabel: "Rename"
-            });
-            if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
-              await ChatHistoryManager.renameChat(sid, newTitle.trim());
-            }
-          } else if (action === "generate_title") {
-            const session = await NexusChatDB.getSession(sid);
-            if (!session || !session.questions || session.questions.length === 0) {
-              if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to generate title.", "info");
-              return;
-            }
-            const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
-            if (chatItemEl) chatItemEl.classList.add("is-naming");
-            if (typeof NexusToast !== "undefined") NexusToast.show("\u2728 Generating chat title...", "info");
-            let fullText = session.questions.map((q) => {
-              let text = `User: ${q.text || ""}`;
-              if (q.answers) {
-                const ans = Object.values(q.answers).find((a) => a && a.text);
-                if (ans) text += `
-AI: ${ans.text}`;
-              }
-              return text;
-            }).join("\n\n");
-            const currentModel = typeof NexusModelSelector !== "undefined" ? NexusModelSelector.getSelectedModel("text") : null;
-            chrome.runtime.sendMessage({
-              action: "generate_chat_title",
-              modelObj: currentModel,
-              question: fullText,
-              images: null,
-              files: null,
-              history: []
-            }, async (res) => {
-              if (chatItemEl) chatItemEl.classList.remove("is-naming");
-              if (res && res.success && res.title) {
-                const newTitle = res.title.trim();
-                await ChatHistoryManager.renameChat(sid, newTitle);
-                const updatedSession = await NexusChatDB.getSession(sid);
-                if (updatedSession) {
-                  updatedSession.autoNamed = true;
-                  updatedSession.isRenamed = true;
-                  updatedSession.updatedAt = Date.now();
-                  await NexusChatDB.putSession(updatedSession);
-                  if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-                    NexusSync.triggerDebouncedSync();
-                  }
-                }
-                if (typeof NexusToast !== "undefined") NexusToast.show(`Title updated: "${newTitle}"`, "success");
-                renderRecentChatsSidebar();
-                renderTabs2();
-              } else {
-                if (typeof NexusToast !== "undefined") NexusToast.show("Failed to generate title: " + (res?.error || "Unknown error"), "error");
-              }
-            });
-          } else if (action === "archive") {
-            const meta = await NexusChatDB.getSession(sid);
-            if (meta) {
-              const isArchived = !!meta.archived;
-              if (isArchived) {
-                meta.archived = false;
-                meta.updatedAt = Date.now();
-                await NexusChatDB.putSession(meta);
-                chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
-                });
-                if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-                  NexusSync.triggerDebouncedSync();
-                }
-                renderRecentChatsSidebar();
-              } else {
-                let currentTitle = meta.title || "Untitled Chat";
-                if (!meta.isRenamed && !meta.autoNamed && meta.questions && meta.questions.length > 0) {
-                  currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
-                }
-                const newTitle = await window.showCustomPopup({
-                  title: "Archive Chat",
-                  body: "Rename this chat to archive:",
-                  isInput: true,
-                  defaultValue: currentTitle,
-                  confirmLabel: "Archive"
-                });
-                if (newTitle !== null) {
-                  if (newTitle.trim()) {
-                    meta.title = newTitle.trim();
-                    meta.isRenamed = true;
-                  }
-                  meta.archived = true;
-                  meta.updatedAt = Date.now();
-                  await NexusChatDB.putSession(meta);
-                  chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
-                  });
-                  if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-                    NexusSync.triggerDebouncedSync();
-                  }
-                  renderRecentChatsSidebar();
-                }
-              }
-            }
-          } else if (action === "delete") {
-            const confirmed = await window.showCustomPopup({
-              title: "Delete Chat",
-              body: "Are you sure you want to delete this chat? This action cannot be undone.",
-              confirmLabel: "Delete",
-              isDanger: true
-            });
-            if (confirmed) {
-              await ChatHistoryManager.deleteChat(sid);
-              tabs2.forEach((tab, index) => {
-                if (tab.sessionId === sid) {
-                  resetChat2();
-                }
-              });
-            }
-          }
-        });
-      });
-    }
     const containers = [listContainer];
     if (archivedContainer) containers.push(archivedContainer);
     containers.forEach((container2) => {
       container2.querySelectorAll(".recent-chat-item__menu-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
+        btn.addEventListener("click", async (e) => {
           e.stopPropagation();
           const sid = btn.dataset.sessionId;
           const parentItem = btn.closest(".recent-chat-item");
-          ctxMenu.dataset.sessionId = sid;
-          const pinItem = ctxMenu.querySelector('[data-action="pin"]');
-          if (pinItem) {
-            NexusChatDB.getSession(sid).then((session) => {
-              const isPinned2 = !!session?.pinned;
-              const textEl = pinItem.querySelector("span");
-              if (textEl) textEl.textContent = isPinned2 ? "Unpin" : "Pin";
-              const svgContainer = pinItem.querySelector("svg");
-              if (svgContainer) {
-                if (isPinned2) {
-                  svgContainer.setAttribute("stroke-width", "2.0");
-                  svgContainer.innerHTML = `<path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/><line x1="4" y1="4" x2="20" y2="20"/>`;
-                } else {
-                  svgContainer.setAttribute("stroke-width", "2.0");
-                  svgContainer.innerHTML = `<path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/>`;
-                }
-              }
-            });
-          }
-          const archiveItem = ctxMenu.querySelector('[data-action="archive"]');
-          if (archiveItem) {
-            NexusChatDB.getSession(sid).then((session) => {
-              const isArchived = !!session?.archived;
-              const textEl = archiveItem.querySelector("span");
-              if (textEl) textEl.textContent = isArchived ? "Unarchive" : "Archive";
-              const svgContainer = archiveItem.querySelector("svg");
-              if (svgContainer) {
-                if (isArchived) {
-                  svgContainer.innerHTML = `<rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v6"/>`;
-                } else {
-                  svgContainer.innerHTML = `<rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/>`;
-                }
-              }
-            });
-          }
+          if (!sid) return;
           document.querySelectorAll(".recent-chat-item.ctx-active").forEach((el) => el.classList.remove("ctx-active"));
           if (parentItem) parentItem.classList.add("ctx-active");
-          const rect = btn.getBoundingClientRect();
-          ctxMenu.style.display = "block";
-          let top = rect.bottom + 4;
-          let left = rect.right - ctxMenu.offsetWidth;
-          if (left < 4) left = 4;
-          if (top + ctxMenu.offsetHeight > window.innerHeight - 4) {
-            top = rect.top - ctxMenu.offsetHeight - 4;
-          }
-          ctxMenu.style.top = top + "px";
-          ctxMenu.style.left = left + "px";
+          const session = await NexusChatDB.getSession(sid);
+          const isPinned2 = !!session?.pinned;
+          const isArchived = !!session?.archived;
+          NexusMenu.show({
+            anchor: btn,
+            placement: "bottom-end",
+            items: [
+              {
+                label: isPinned2 ? "Unpin" : "Pin",
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+                action: async () => {
+                  if (session) {
+                    if (!isPinned2) {
+                      let currentTitle = session.title || "Untitled Chat";
+                      if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+                        currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
+                      }
+                      const newTitle = await window.showCustomPopup({
+                        title: "Pin this chat",
+                        body: "",
+                        isInput: true,
+                        defaultValue: currentTitle,
+                        confirmLabel: "Pin"
+                      });
+                      if (newTitle === null) return;
+                      session.pinned = true;
+                      if (newTitle.trim()) {
+                        session.title = newTitle.trim();
+                        session.isRenamed = true;
+                      }
+                    } else {
+                      session.pinned = false;
+                    }
+                    session.updatedAt = Date.now();
+                    await NexusChatDB.putSession(session);
+                    chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
+                    });
+                    if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                      NexusSync.triggerDebouncedSync();
+                    }
+                    if (session.isRenamed) {
+                      const activeTab2 = tabs2[activeTabIndex2];
+                      if (activeTab2 && activeTab2.sessionId === sid) {
+                        activeTab2.title = session.title;
+                        renderTabs2();
+                      }
+                    }
+                    renderRecentChatsSidebar();
+                  }
+                }
+              },
+              {
+                label: "Rename",
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                action: async () => {
+                  const currentSession = await NexusChatDB.getSession(sid);
+                  const oldTitle = currentSession ? currentSession.title : "Untitled Chat";
+                  const newTitle = await window.showCustomPopup({
+                    title: "Rename Chat",
+                    body: "",
+                    isInput: true,
+                    defaultValue: oldTitle,
+                    confirmLabel: "Rename"
+                  });
+                  if (newTitle && newTitle.trim()) {
+                    await ChatHistoryManager.renameChat(sid, newTitle.trim());
+                    const activeTab2 = tabs2[activeTabIndex2];
+                    if (activeTab2 && activeTab2.sessionId === sid) {
+                      activeTab2.title = newTitle.trim();
+                      renderTabs2();
+                    }
+                    renderRecentChatsSidebar();
+                  }
+                }
+              },
+              {
+                label: "Generate title",
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>`,
+                action: async () => {
+                  const history = await ChatHistoryManager.getHistory(sid);
+                  const fullText = (history || []).map((h) => `${h.role}: ${h.text}`).join("\n\n");
+                  if (!fullText.trim()) {
+                    if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to generate title.", "info");
+                    return;
+                  }
+                  const currentModel = getPaneActiveModel() || { model: "gemini-2.5-flash", providerId: "google" };
+                  const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                  if (chatItemEl) chatItemEl.classList.add("is-naming");
+                  if (typeof NexusToast !== "undefined") NexusToast.show("\u2728 Generating chat title...", "info");
+                  chrome.runtime.sendMessage({
+                    action: "generate_chat_title",
+                    modelObj: currentModel,
+                    question: fullText,
+                    images: null,
+                    files: null,
+                    history: []
+                  }, async (res) => {
+                    if (chatItemEl) chatItemEl.classList.remove("is-naming");
+                    if (res && res.success && res.title) {
+                      const newTitle = res.title.trim();
+                      await ChatHistoryManager.renameChat(sid, newTitle);
+                      const updatedSession = await NexusChatDB.getSession(sid);
+                      if (updatedSession) {
+                        updatedSession.autoNamed = true;
+                        updatedSession.isRenamed = true;
+                        updatedSession.updatedAt = Date.now();
+                        await NexusChatDB.putSession(updatedSession);
+                        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                          NexusSync.triggerDebouncedSync();
+                        }
+                      }
+                      if (typeof NexusToast !== "undefined") NexusToast.show(`Title updated: "${newTitle}"`, "success");
+                      renderRecentChatsSidebar();
+                      renderTabs2();
+                    } else {
+                      if (typeof NexusToast !== "undefined") NexusToast.show("Failed to generate title: " + (res?.error || "Unknown error"), "error");
+                    }
+                  });
+                }
+              },
+              {
+                label: isArchived ? "Unarchive" : "Archive",
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+                action: async () => {
+                  const meta = await NexusChatDB.getSession(sid);
+                  if (meta) {
+                    if (isArchived) {
+                      meta.archived = false;
+                      meta.updatedAt = Date.now();
+                      await NexusChatDB.putSession(meta);
+                      chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
+                      });
+                      if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                        NexusSync.triggerDebouncedSync();
+                      }
+                      renderRecentChatsSidebar();
+                    } else {
+                      let currentTitle = meta.title || "Untitled Chat";
+                      if (!meta.isRenamed && !meta.autoNamed && meta.questions && meta.questions.length > 0) {
+                        currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
+                      }
+                      const newTitle = await window.showCustomPopup({
+                        title: "Archive Chat",
+                        body: "Rename this chat to archive:",
+                        isInput: true,
+                        defaultValue: currentTitle,
+                        confirmLabel: "Archive"
+                      });
+                      if (newTitle === null) return;
+                      meta.archived = true;
+                      if (newTitle.trim()) {
+                        meta.title = newTitle.trim();
+                        meta.isRenamed = true;
+                      }
+                      meta.updatedAt = Date.now();
+                      await NexusChatDB.putSession(meta);
+                      chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
+                      });
+                      if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                        NexusSync.triggerDebouncedSync();
+                      }
+                      renderRecentChatsSidebar();
+                    }
+                  }
+                }
+              },
+              { divider: true },
+              {
+                label: "Delete",
+                danger: true,
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+                action: async () => {
+                  const confirmed = await window.showCustomPopup({
+                    title: "Delete Chat",
+                    body: "Are you sure you want to delete this chat? This action cannot be undone.",
+                    confirmLabel: "Delete",
+                    isDanger: true
+                  });
+                  if (confirmed) {
+                    await ChatHistoryManager.deleteChat(sid);
+                    tabs2.forEach((tab, index) => {
+                      if (tab.sessionId === sid) {
+                        resetChat2();
+                      }
+                    });
+                  }
+                }
+              }
+            ],
+            onClose: () => {
+              if (parentItem) parentItem.classList.remove("ctx-active");
+            }
+          });
         });
       });
       container2.querySelectorAll(".recent-chat-item").forEach((item) => {
@@ -37630,8 +39676,10 @@ AI: ${ans.text}`;
         }
         const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.nexus-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
         if (targetEntry) {
-          ui.clearAnswer(targetEntry);
-          ui.showLoading(targetEntry, skipMargin);
+          if (!extra.isRegenerate) {
+            ui.clearAnswer(targetEntry);
+            ui.showLoading(targetEntry, skipMargin);
+          }
         }
       }
     });
@@ -37640,8 +39688,8 @@ AI: ${ans.text}`;
       setTimeout(renderRecentChatsSidebar, 0);
     }
     let pageContext = "";
-    const isSpotlightWindow = !isSidePanel && !isWebApp;
-    const shouldReadPage = isSpotlightWindow ? false : extra.readPage !== void 0 ? extra.readPage : readWebpageEnabled;
+    const isStandaloneWindow = !isSidePanel && !isWebApp;
+    const shouldReadPage = isStandaloneWindow ? false : extra.readPage !== void 0 ? extra.readPage : readWebpageEnabled;
     let tabModel = currentTab?.selectedModel;
     if (!tabModel) {
       const fallbackUI = sharedInputUI2;
@@ -37707,7 +39755,7 @@ AI: ${ans.text}`;
                 }
               }
             } catch (e) {
-              console.error("[Spotlight] Failed to read Nexus tab:", e);
+              console.error("[Nexus] Failed to read Nexus tab:", e);
             }
             return [];
           }
@@ -37722,7 +39770,7 @@ AI: ${ans.text}`;
             pageContextCache.set(cacheKey, ctxList);
             return ctxList;
           } catch (e) {
-            console.warn(`[Spotlight] Could not read tab ${source.tabId}:`, e);
+            console.warn(`[Nexus] Could not read tab ${source.tabId}:`, e);
           }
           return [];
         }));
@@ -37763,9 +39811,11 @@ ${ctx.content}`;
           if (currentTab) currentTab.lastContextUrl = currentUrl;
         }
       } catch (err) {
-        console.error("[Spotlight] Failed to read pinned tabs:", err);
+        console.error("[Nexus] Failed to read pinned tabs:", err);
       }
     }
+    const chatWidth = currentTab?.historyEl?.clientWidth || window.innerWidth;
+    const currentSurface = chatWidth < 550 ? "sidepanel" : "desktop";
     const message = {
       action: streamAction,
       sessionId: currentTab?.sessionId,
@@ -37773,11 +39823,14 @@ ${ctx.content}`;
       initialContext: pageContext,
       question: apiText || "Describe these images",
       imageData: images.length > 0 ? images : null,
-      isSpotlight: true,
       hasTranscriptForVideoId: currentTab?.chatUIInstance?.getTranscriptVideoId ? currentTab.chatUIInstance.getTranscriptVideoId() : null,
-      options: extra,
+      options: {
+        ...extra,
+        surface: currentSurface
+      },
       requestOptions: {
         ...extra,
+        surface: currentSurface,
         ...tabModel ? { tabModel: { providerId: tabModel.providerId, model: tabModel.model } } : {},
         ...currentTab?.thinkingLevel ? { thinkingLevel: currentTab.thinkingLevel } : {},
         ...extra.maxTokens !== void 0 && extra.maxTokens !== null && extra.maxTokens !== "" ? { maxTokens: Number(extra.maxTokens) } : {}
@@ -37994,7 +40047,7 @@ ${fileContexts}`;
           }
           textToTranslate = textToTranslate.trim();
           if (textToTranslate.length > 0) {
-            let smoothPulse2 = function() {
+            let smoothPulse = function() {
               if (!isPulsing) return;
               const elapsed = Date.now() - startTime;
               const pulseFactor = 0.5 + 0.5 * Math.sin(elapsed * 5e-3);
@@ -38007,9 +40060,8 @@ ${fileContexts}`;
                             color: rgb(${r}, ${g}, ${b}) !important;
                           }
                         `;
-              requestAnimationFrame(smoothPulse2);
+              requestAnimationFrame(smoothPulse);
             };
-            var smoothPulse = smoothPulse2;
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
@@ -38050,7 +40102,7 @@ ${fileContexts}`;
             activeEl.classList.add("nexus-pulse-active");
             let isPulsing = true;
             const startTime = Date.now();
-            requestAnimationFrame(smoothPulse2);
+            requestAnimationFrame(smoothPulse);
             try {
               chrome.runtime.sendMessage({
                 action: "translate_input_text",
@@ -38595,7 +40647,7 @@ ${fileContexts}`;
     if (!originalQuestion) return;
     if (tUI) tUI._handleQuestionRecheck(originalQuestion, lastEntry, true);
   }
-  function showAnswerVersion2(entryElement, direction) {
+  function showAnswerVersion(entryElement, direction) {
     const versions = Array.from(entryElement.querySelectorAll(".nexus-answer-version"));
     const activeIndex = versions.findIndex((v) => v.classList.contains("active"));
     if (activeIndex === -1) return;
@@ -38606,17 +40658,28 @@ ${fileContexts}`;
       versions[activeIndex].classList.remove("active");
       versions[newIndex].classList.add("active");
       updateVersionNav(entryElement, newIndex, versions.length);
+      const answers = entryElement.querySelectorAll(".nexus-chat-answer");
+      answers.forEach((ans) => {
+        if (typeof NexusChatUI !== "undefined") {
+          NexusChatUI.updateVersionNavInActions(ans);
+        }
+      });
+      const historyEl = entryElement.closest(".nexus-chat-history");
+      if (historyEl && typeof ChatHistoryManager !== "undefined") {
+        ChatHistoryManager.saveCurrentChat(historyEl);
+      }
     }
   }
   function updateVersionNav(entryElement, activeIndex, totalCount) {
-    const nav = entryElement.querySelector(".nexus-answer-nav");
-    if (!nav) return;
-    const counter = nav.querySelector(".nexus-answer-nav-counter");
-    const prevBtn = nav.querySelector(".nav-prev");
-    const nextBtn = nav.querySelector(".nav-next");
-    counter.textContent = `${activeIndex + 1} / ${totalCount}`;
-    prevBtn.disabled = activeIndex === 0;
-    nextBtn.disabled = activeIndex === totalCount - 1;
+    const navs = entryElement.querySelectorAll(".nexus-answer-nav");
+    navs.forEach((nav) => {
+      const counter = nav.querySelector(".nexus-answer-nav-counter");
+      const prevBtn = nav.querySelector(".nav-prev");
+      const nextBtn = nav.querySelector(".nav-next");
+      if (counter) counter.textContent = `${activeIndex + 1} / ${totalCount}`;
+      if (prevBtn) prevBtn.disabled = activeIndex === 0;
+      if (nextBtn) nextBtn.disabled = activeIndex === totalCount - 1;
+    });
   }
   function isShortcutMatch(event, shortcut) {
     if (!shortcut) return false;
@@ -38967,8 +41030,8 @@ ${fileContexts}`;
     if (typeof window.notesClosePage === "function") window.notesClosePage();
     if (typeof window.sparksClosePage === "function") window.sparksClosePage();
     if (tabs2.length === 0) return;
-    const targetIdx2 = activeTabIndex2;
-    const activeTab = tabs2[targetIdx2];
+    const targetIdx = activeTabIndex2;
+    const activeTab = tabs2[targetIdx];
     if (!activeTab) return;
     if (activeTab.historyEl) {
       activeTab.historyEl.innerHTML = "";
@@ -39134,251 +41197,224 @@ ${fileContexts}`;
     if (!str) return "";
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
-  async function renderDropdownMenu() {
-    const dropdown = document.getElementById("topbar-dropdown-menu");
-    if (!dropdown) return;
+  async function renderDropdownMenu(anchor) {
+    const targetAnchor = anchor || document.getElementById("topbar-more-btn");
+    if (!targetAnchor) return;
     const activeTab = tabs2[activeTabIndex2];
     const sessionId = activeTab?.sessionId || null;
     if (!sessionId) {
-      dropdown.style.display = "none";
       if (typeof updateTopbarMenuVisibility === "function") updateTopbarMenuVisibility();
       return;
     }
-    let sessionMeta = null;
-    if (sessionId) {
-      sessionMeta = await NexusChatDB.getSession(sessionId);
-    }
+    const sessionMeta = await NexusChatDB.getSession(sessionId);
     const isPinned2 = sessionMeta?.pinned || false;
     const isArchived = sessionMeta?.archived || false;
-    const pinSVG = isPinned2 ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/><line x1="4" y1="4" x2="20" y2="20"/></svg>` : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`;
-    const archiveSVG = isArchived ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v6"/></svg>` : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`;
-    const html = `
-        <div class="dropdown-section-title">This chat</div>
-        <div class="dropdown-item action-item" id="dropdown-pin-btn">
-            ${pinSVG}
-            <span class="item-text">${isPinned2 ? "Unpin" : "Pin"}</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-archive-btn">
-            ${archiveSVG}
-            <span class="item-text">${isArchived ? "Unarchive" : "Archive"}</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-rename-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            <span class="item-text">Rename</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-copy-chat-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
-            <span class="item-text">Copy Chat</span>
-        </div>
-        <div class="dropdown-divider"></div>
-        <div class="dropdown-item action-item action-item--danger" id="dropdown-delete-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            <span class="item-text">Delete</span>
-        </div>
-    `;
-    dropdown.innerHTML = html;
-    const hide = () => {
-      dropdown.style.display = "none";
-    };
-    dropdown.querySelector("#dropdown-pin-btn")?.addEventListener("click", async () => {
-      if (!sessionId) return;
-      const session = await NexusChatDB.getSession(sessionId);
-      if (session) {
-        const currentlyPinned = !!session.pinned;
-        if (!currentlyPinned) {
-          let currentTitle = session.title || "Untitled Chat";
-          if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
-            currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
-          }
-          const newTitle = await window.showCustomPopup({
-            title: "Pin this chat",
-            body: "",
-            isInput: true,
-            defaultValue: currentTitle,
-            confirmLabel: "Pin"
-          });
-          if (newTitle === null) {
-            hide();
-            return;
-          }
-          session.pinned = true;
-          if (newTitle.trim()) {
-            session.title = newTitle.trim();
-            session.isRenamed = true;
-          }
-        } else {
-          session.pinned = false;
-        }
-        session.updatedAt = Date.now();
-        await NexusChatDB.putSession(session);
-        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
-        });
-        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-          NexusSync.triggerDebouncedSync();
-        }
-        if (session.isRenamed) {
-          const currentActiveTab = tabs2[targetIdx];
-          if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
-            currentActiveTab.title = session.title;
-            renderTabs2();
-          }
-        }
-        renderRecentChatsSidebar();
-      }
-      hide();
-    });
-    dropdown.querySelector("#dropdown-archive-btn")?.addEventListener("click", async () => {
-      if (!sessionId || !sessionMeta) return;
-      const isArchived2 = !!sessionMeta.archived;
-      if (isArchived2) {
-        sessionMeta.archived = false;
-        sessionMeta.updatedAt = Date.now();
-        await NexusChatDB.putSession(sessionMeta);
-        chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
-        });
-        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-          NexusSync.triggerDebouncedSync();
-        }
-        renderRecentChatsSidebar();
-      } else {
-        let currentTitle = sessionMeta.title || "Untitled Chat";
-        if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
-          currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
-        }
-        const newTitle = await window.showCustomPopup({
-          title: "Archive Chat",
-          body: "Rename this chat to archive:",
-          isInput: true,
-          defaultValue: currentTitle,
-          confirmLabel: "Archive"
-        });
-        if (newTitle !== null) {
-          if (newTitle.trim()) {
-            sessionMeta.title = newTitle.trim();
-            sessionMeta.isRenamed = true;
-          }
-          sessionMeta.archived = true;
-          sessionMeta.updatedAt = Date.now();
-          await NexusChatDB.putSession(sessionMeta);
-          chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
-          });
-          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-            NexusSync.triggerDebouncedSync();
-          }
-          renderRecentChatsSidebar();
-        }
-      }
-      hide();
-    });
-    dropdown.querySelector("#dropdown-rename-btn")?.addEventListener("click", async () => {
-      if (!sessionId || !sessionMeta) return;
-      let currentTitle = sessionMeta.title || "Untitled Chat";
-      if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
-        currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
-      }
-      const newTitle = await window.showCustomPopup({
-        title: "Rename Chat",
-        body: "",
-        isInput: true,
-        defaultValue: currentTitle,
-        confirmLabel: "Rename"
-      });
-      if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
-        await ChatHistoryManager.renameChat(sessionId, newTitle.trim());
-      }
-      hide();
-    });
-    dropdown.querySelector("#dropdown-copy-chat-btn")?.addEventListener("click", async () => {
-      if (!sessionId) return;
-      let fullText = "";
-      const messages = typeof ChatHistoryManager !== "undefined" ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
-      if (messages && messages.length > 0) {
-        let blocks = [];
-        let currentBlock = [];
-        messages.forEach((msg) => {
-          const role = msg.type === "question" ? "User" : "Model";
-          const text = msg.content || msg.text || "";
-          if (role === "User") {
-            if (currentBlock.length > 0) {
-              blocks.push(currentBlock.join("\n\n"));
-              currentBlock = [];
+    NexusMenu.show({
+      anchor: targetAnchor,
+      placement: "bottom-end",
+      items: [
+        {
+          label: isPinned2 ? "Unpin" : "Pin",
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+          action: async () => {
+            const session = await NexusChatDB.getSession(sessionId);
+            if (session) {
+              const currentlyPinned = !!session.pinned;
+              if (!currentlyPinned) {
+                let currentTitle = session.title || "Untitled Chat";
+                if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+                  currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
+                }
+                const newTitle = await window.showCustomPopup({
+                  title: "Pin this chat",
+                  body: "",
+                  isInput: true,
+                  defaultValue: currentTitle,
+                  confirmLabel: "Pin"
+                });
+                if (newTitle === null) return;
+                session.pinned = true;
+                if (newTitle.trim()) {
+                  session.title = newTitle.trim();
+                  session.isRenamed = true;
+                }
+              } else {
+                session.pinned = false;
+              }
+              session.updatedAt = Date.now();
+              await NexusChatDB.putSession(session);
+              chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
+              });
+              if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                NexusSync.triggerDebouncedSync();
+              }
+              if (session.isRenamed) {
+                const currentActiveTab = tabs2[activeTabIndex2];
+                if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
+                  currentActiveTab.title = session.title;
+                  renderTabs2();
+                }
+              }
+              renderRecentChatsSidebar();
             }
-            currentBlock.push(`User:
-${text}`);
-          } else {
-            currentBlock.push(`Model:
-${text}`);
           }
-        });
-        if (currentBlock.length > 0) {
-          blocks.push(currentBlock.join("\n\n"));
-        }
-        fullText = blocks.join("\n\n---\n\n");
-      } else {
-        const session = await NexusChatDB.getSession(sessionId);
-        if (session && session.questions && session.questions.length > 0) {
-          fullText = session.questions.map((q) => {
-            let text = `User:
+        },
+        {
+          label: isArchived ? "Unarchive" : "Archive",
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+          action: async () => {
+            if (sessionMeta) {
+              if (isArchived) {
+                sessionMeta.archived = false;
+                sessionMeta.updatedAt = Date.now();
+                await NexusChatDB.putSession(sessionMeta);
+                chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
+                });
+                if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                  NexusSync.triggerDebouncedSync();
+                }
+                renderRecentChatsSidebar();
+              } else {
+                let currentTitle = sessionMeta.title || "Untitled Chat";
+                if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
+                  currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
+                }
+                const newTitle = await window.showCustomPopup({
+                  title: "Archive Chat",
+                  body: "Rename this chat to archive:",
+                  isInput: true,
+                  defaultValue: currentTitle,
+                  confirmLabel: "Archive"
+                });
+                if (newTitle !== null) {
+                  if (newTitle.trim()) {
+                    sessionMeta.title = newTitle.trim();
+                    sessionMeta.isRenamed = true;
+                  }
+                  sessionMeta.archived = true;
+                  sessionMeta.updatedAt = Date.now();
+                  await NexusChatDB.putSession(sessionMeta);
+                  chrome.runtime.sendMessage({ action: "nexus_sessions_index_updated" }).catch(() => {
+                  });
+                  if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+                    NexusSync.triggerDebouncedSync();
+                  }
+                  renderRecentChatsSidebar();
+                }
+              }
+            }
+          }
+        },
+        {
+          label: "Rename",
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+          action: async () => {
+            let currentTitle = sessionMeta?.title || "Untitled Chat";
+            if (!sessionMeta?.isRenamed && !sessionMeta?.autoNamed && sessionMeta?.questions && sessionMeta?.questions.length > 0) {
+              currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
+            }
+            const newTitle = await window.showCustomPopup({
+              title: "Rename Chat",
+              body: "",
+              isInput: true,
+              defaultValue: currentTitle,
+              confirmLabel: "Rename"
+            });
+            if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+              await ChatHistoryManager.renameChat(sessionId, newTitle.trim());
+              const activeTab2 = tabs2[activeTabIndex2];
+              if (activeTab2 && activeTab2.sessionId === sessionId) {
+                activeTab2.title = newTitle.trim();
+                renderTabs2();
+              }
+              renderRecentChatsSidebar();
+            }
+          }
+        },
+        {
+          label: "Copy Chat",
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>`,
+          action: async () => {
+            let fullText = "";
+            const messages = typeof ChatHistoryManager !== "undefined" ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
+            if (messages && messages.length > 0) {
+              let blocks = [];
+              let currentBlock = [];
+              messages.forEach((msg) => {
+                const role = msg.type === "question" ? "User" : "Model";
+                const text = msg.content || msg.text || "";
+                if (role === "User") {
+                  if (currentBlock.length > 0) {
+                    blocks.push(currentBlock.join("\n\n"));
+                    currentBlock = [];
+                  }
+                  currentBlock.push(`User:
+${text}`);
+                } else {
+                  currentBlock.push(`Model:
+${text}`);
+                }
+              });
+              if (currentBlock.length > 0) {
+                blocks.push(currentBlock.join("\n\n"));
+              }
+              fullText = blocks.join("\n\n---\n\n");
+            } else {
+              const session = await NexusChatDB.getSession(sessionId);
+              if (session && session.questions && session.questions.length > 0) {
+                fullText = session.questions.map((q) => {
+                  let text = `User:
 ${q.text || ""}`;
-            if (q.answers) {
-              const answerList = Array.isArray(q.answers) ? q.answers : Object.values(q.answers);
-              const selectedAns = q.selectedVersionId ? q.answers[q.selectedVersionId] || answerList.find((a) => a && a.text) : answerList.find((a) => a && a.text);
-              if (selectedAns && selectedAns.text) {
-                text += `
+                  if (q.answers) {
+                    const answerList = Array.isArray(q.answers) ? q.answers : Object.values(q.answers);
+                    const selectedAns = q.selectedVersionId ? q.answers[q.selectedVersionId] || answerList.find((a) => a && a.text) : answerList.find((a) => a && a.text);
+                    if (selectedAns && selectedAns.text) {
+                      text += `
 
 Model:
 ${selectedAns.text}`;
+                    }
+                  }
+                  return text;
+                }).filter(Boolean).join("\n\n---\n\n");
               }
             }
-            return text;
-          }).filter(Boolean).join("\n\n---\n\n");
-        }
-      }
-      if (!fullText) {
-        if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to copy.", "info");
-        hide();
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(fullText);
-        if (typeof NexusToast !== "undefined") NexusToast.show("Copied entire chat to clipboard!", "success");
-      } catch (err) {
-        console.error("Failed to copy chat:", err);
-        if (typeof NexusToast !== "undefined") NexusToast.show("Failed to copy chat.", "error");
-      }
-      hide();
-    });
-    dropdown.querySelector("#dropdown-delete-btn")?.addEventListener("click", async () => {
-      if (!sessionId) return;
-      const confirmed = await window.showCustomPopup({
-        title: "Delete Chat",
-        body: "Are you sure you want to delete this chat? This action cannot be undone.",
-        confirmLabel: "Delete",
-        isDanger: true
-      });
-      if (confirmed) {
-        await ChatHistoryManager.deleteChat(sessionId);
-        tabs2.forEach((tab, index) => {
-          if (tab.sessionId === sessionId) {
-            resetChat2();
+            if (!fullText) {
+              if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to copy.", "info");
+              return;
+            }
+            try {
+              await navigator.clipboard.writeText(fullText);
+              if (typeof NexusToast !== "undefined") NexusToast.show("Copied entire chat to clipboard!", "success");
+            } catch (err) {
+              console.error("Failed to copy chat:", err);
+              if (typeof NexusToast !== "undefined") NexusToast.show("Failed to copy chat.", "error");
+            }
           }
-        });
-      }
-      hide();
-    });
-    dropdown.querySelector("#dropdown-continue-btn")?.addEventListener("click", () => {
-      let url = chrome.runtime.getURL("pages/nexus/nexus.html");
-      if (sessionId) url += `?session_id=${sessionId}`;
-      chrome.tabs.create({ url });
-      hide();
-    });
-    dropdown.querySelector("#dropdown-settings-btn")?.addEventListener("click", () => {
-      if (typeof NexusSettingsModal !== "undefined") {
-        NexusSettingsModal.show();
-      } else {
-        chrome.runtime.openOptionsPage();
-      }
-      hide();
+        },
+        { divider: true },
+        {
+          label: "Delete",
+          danger: true,
+          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+          action: async () => {
+            const confirmed = await window.showCustomPopup({
+              title: "Delete Chat",
+              body: "Are you sure you want to delete this chat? This action cannot be undone.",
+              confirmLabel: "Delete",
+              isDanger: true
+            });
+            if (confirmed) {
+              await ChatHistoryManager.deleteChat(sessionId);
+              tabs2.forEach((tab) => {
+                if (tab.sessionId === sessionId) {
+                  resetChat2();
+                }
+              });
+            }
+          }
+        }
+      ]
     });
   }
   function initTopbarModelSelector() {
@@ -39628,8 +41664,7 @@ ${selectedAns.text}`;
       if (dropdown.classList.contains("active")) {
         dropdown.classList.remove("active");
       } else {
-        const moreDropdown = document.getElementById("topbar-dropdown-menu");
-        if (moreDropdown) moreDropdown.style.display = "none";
+        NexusMenu.close();
         fetchAndRender();
         dropdown.classList.add("active");
       }
@@ -40101,361 +42136,8 @@ ${selectedAns.text}`;
         hideSidebarTooltip(e);
       }
     });
-    window.NexusCanvas = {
-      currentDoc: {
-        name: "",
-        type: "",
-        content: "",
-        comments: []
-      },
-      handleStream(text) {
-        const createRegex = /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-create>|$)/i;
-        const createMatch = text.match(createRegex);
-        if (createMatch) {
-          const name = createMatch[1];
-          const type = createMatch[2];
-          const content = createMatch[3];
-          this.showCanvas();
-          this.setDocument(name, type, content);
-          return;
-        }
-        const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-update>|$)/i;
-        const updateMatch = text.match(updateRegex);
-        if (updateMatch) {
-          const name = updateMatch[1];
-          const body = updateMatch[2];
-          const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
-          const replacementMatch = body.match(/<replacement>([\s\S]*?)(?:<\/replacement>|$)/i);
-          if (patternMatch && replacementMatch) {
-            const pattern = patternMatch[1];
-            const replacement = replacementMatch[2];
-            this.applyUpdate(name, pattern, replacement, false);
-          }
-        }
-      },
-      handleDone(text) {
-        const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi;
-        let match;
-        while ((match = updateRegex.exec(text)) !== null) {
-          const name = match[1];
-          const body = match[2];
-          const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
-          const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
-          if (patternMatch && replacementMatch) {
-            this.applyUpdate(name, patternMatch[1], replacementMatch[2], true);
-          }
-        }
-      },
-      showCanvas() {
-        const paneSecondary = document.getElementById("pane-secondary");
-        if (paneSecondary) {
-          paneSecondary.classList.add("canvas-active");
-        }
-      },
-      hideCanvas() {
-        const paneSecondary = document.getElementById("pane-secondary");
-        if (paneSecondary) {
-          paneSecondary.classList.remove("canvas-active");
-        }
-      },
-      setDocument(name, type, content) {
-        this.currentDoc.name = name;
-        this.currentDoc.type = type;
-        this.currentDoc.content = content;
-        const titleInput = document.getElementById("nexus-canvas-title");
-        const typeBadge = document.getElementById("nexus-canvas-type-badge");
-        const editorTextarea = document.getElementById("nexus-canvas-editor");
-        const documentView = document.getElementById("nexus-canvas-document");
-        const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
-        const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
-        const container2 = document.querySelector(".nexus-canvas-container");
-        if (titleInput) titleInput.value = name;
-        if (typeBadge) {
-          typeBadge.textContent = type.replace("code/", "").toUpperCase();
-        }
-        if (editorTextarea) {
-          editorTextarea.value = content;
-        }
-        this.syncHighlighting(content);
-        if (documentView) {
-          window.ensureMarkedLoaded().then(() => {
-            if (typeof marked !== "undefined") {
-              documentView.innerHTML = marked.parse(content);
-            } else {
-              documentView.textContent = content;
-            }
-          }).catch(() => {
-            documentView.textContent = content;
-          });
-        }
-        if (container2) {
-          if (type === "document") {
-            container2.classList.add("type-document");
-          } else {
-            container2.classList.remove("type-document");
-          }
-        }
-        if (codeTabBtn) {
-          if (type === "document") {
-            codeTabBtn.textContent = "Edit";
-          } else {
-            codeTabBtn.textContent = "Code";
-          }
-          codeTabBtn.style.display = "block";
-        }
-        if (previewTabBtn) {
-          if (type === "document") {
-            previewTabBtn.textContent = "Preview";
-            previewTabBtn.style.display = "block";
-          } else if (type === "code/html" || type === "code/react" || type.includes("html")) {
-            previewTabBtn.textContent = "Preview";
-            previewTabBtn.style.display = "block";
-          } else {
-            previewTabBtn.style.display = "none";
-          }
-        }
-        this.switchTab("code");
-        this.updatePreview();
-      },
-      applyUpdate(name, pattern, replacement, isFinal) {
-        let currentContent = this.currentDoc.content;
-        let newContent = currentContent;
-        if (pattern === ".*") {
-          newContent = replacement;
-        } else {
-          try {
-            const regex = new RegExp(pattern, "g");
-            newContent = currentContent.replace(regex, replacement);
-          } catch (e) {
-            console.error("[Nexus Canvas] Regex error:", e);
-          }
-        }
-        this.currentDoc.content = newContent;
-        const editorTextarea = document.getElementById("nexus-canvas-editor");
-        if (editorTextarea) {
-          editorTextarea.value = newContent;
-        }
-        this.syncHighlighting(newContent);
-        const documentView = document.getElementById("nexus-canvas-document");
-        if (documentView && this.currentDoc.type === "document") {
-          window.ensureMarkedLoaded().then(() => {
-            if (typeof marked !== "undefined") {
-              documentView.innerHTML = marked.parse(newContent);
-            } else {
-              documentView.textContent = newContent;
-            }
-          }).catch(() => {
-            documentView.textContent = newContent;
-          });
-        }
-        if (isFinal) {
-          this.updatePreview();
-        }
-      },
-      updatePreview() {
-        const previewFrame = document.getElementById("nexus-canvas-preview-frame");
-        if (!previewFrame) return;
-        let content = this.currentDoc.content;
-        if (this.currentDoc.type === "code/react") {
-          content = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8" />
-                        <title>React Preview</title>
-                        <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin><\/script>
-                        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin><\/script>
-                        <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
-                        <script src="https://cdn.tailwindcss.com"><\/script>
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                    </head>
-                    <body class="bg-gray-50 text-gray-900 p-4">
-                        <div id="root"></div>
-                        <script type="text/babel">
-                            ${content.replace(/export default/g, "const App = ")}
-                            const root = ReactDOM.createRoot(document.getElementById('root'));
-                            root.render(<App />);
-                        <\/script>
-                    </body>
-                    </html>
-                `;
-        }
-        try {
-          const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
-          doc.open();
-          doc.write(content);
-          doc.close();
-        } catch (e) {
-          console.error("[Nexus Canvas] Preview injection error:", e);
-        }
-      },
-      switchTab(tabId) {
-        const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
-        const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
-        const codePanel = document.getElementById("nexus-canvas-code-panel");
-        const documentPanel = document.getElementById("nexus-canvas-document-panel");
-        const previewPanel = document.getElementById("nexus-canvas-preview-panel");
-        if (codePanel) codePanel.classList.remove("active");
-        if (documentPanel) documentPanel.classList.remove("active");
-        if (previewPanel) previewPanel.classList.remove("active");
-        if (codeTabBtn) codeTabBtn.classList.remove("active");
-        if (previewTabBtn) previewTabBtn.classList.remove("active");
-        if (tabId === "code") {
-          if (codeTabBtn) codeTabBtn.classList.add("active");
-          if (codePanel) codePanel.classList.add("active");
-        } else if (tabId === "preview") {
-          if (previewTabBtn) previewTabBtn.classList.add("active");
-          if (this.currentDoc.type === "document") {
-            if (documentPanel) documentPanel.classList.add("active");
-            const documentView = document.getElementById("nexus-canvas-document");
-            if (documentView) {
-              window.ensureMarkedLoaded().then(() => {
-                if (typeof marked !== "undefined") {
-                  documentView.innerHTML = marked.parse(this.currentDoc.content);
-                } else {
-                  documentView.textContent = this.currentDoc.content;
-                }
-              }).catch(() => {
-                documentView.textContent = this.currentDoc.content;
-              });
-            }
-          } else {
-            if (previewPanel) previewPanel.classList.add("active");
-            this.updatePreview();
-          }
-        }
-      },
-      syncHighlighting(code) {
-        const codeEl = document.getElementById("nexus-canvas-highlight-code");
-        if (codeEl) {
-          const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          codeEl.innerHTML = escaped.endsWith("\n") ? escaped + " " : escaped;
-          window.ensureHighlightLoaded().then(() => {
-            if (typeof hljs !== "undefined") {
-              let lang = (this.currentDoc.type || "javascript").replace("code/", "");
-              if (lang === "react") lang = "jsx";
-              codeEl.className = lang;
-              hljs.highlightElement(codeEl);
-            }
-          });
-        }
-      },
-      init() {
-        const closeBtn = document.getElementById("nexus-canvas-btn-close");
-        if (closeBtn) {
-          closeBtn.onclick = () => this.hideCanvas();
-        }
-        const codeTabBtn = document.getElementById("nexus-canvas-tab-code");
-        if (codeTabBtn) {
-          codeTabBtn.onclick = () => this.switchTab("code");
-        }
-        const previewTabBtn = document.getElementById("nexus-canvas-tab-preview");
-        if (previewTabBtn) {
-          previewTabBtn.onclick = () => this.switchTab("preview");
-        }
-        const saveLocalDoc = () => {
-          const activeTab = tabs2[activeTabIndex2];
-          const sessionId = activeTab ? activeTab.sessionId : "global";
-          const key = `nexus-canvas-${sessionId}-${this.currentDoc.name}`;
-          localStorage.setItem(key, JSON.stringify({
-            name: this.currentDoc.name,
-            type: this.currentDoc.type,
-            content: this.currentDoc.content
-          }));
-        };
-        const titleInput = document.getElementById("nexus-canvas-title");
-        if (titleInput) {
-          titleInput.oninput = () => {
-            const oldName = this.currentDoc.name;
-            const newName = titleInput.value;
-            this.currentDoc.name = newName;
-            const activeTab = tabs2[activeTabIndex2];
-            const sessionId = activeTab ? activeTab.sessionId : "global";
-            localStorage.removeItem(`nexus-canvas-${sessionId}-${oldName}`);
-            saveLocalDoc();
-          };
-        }
-        const textarea = document.getElementById("nexus-canvas-editor");
-        const pre = document.getElementById("nexus-canvas-highlight-block");
-        if (textarea && pre) {
-          textarea.onscroll = () => {
-            pre.scrollTop = textarea.scrollTop;
-            pre.scrollLeft = textarea.scrollLeft;
-          };
-          textarea.oninput = () => {
-            const code = textarea.value;
-            this.currentDoc.content = code;
-            this.syncHighlighting(code);
-            this.updatePreview();
-            saveLocalDoc();
-          };
-        }
-      },
-      loadVersionFromCard(card) {
-        const cardTitle = card.querySelector(".nexus-canvas-card-title")?.textContent || "";
-        if (!cardTitle) return;
-        const activeTab = tabs2[activeTabIndex2];
-        const sessionId = activeTab ? activeTab.sessionId : "global";
-        const localSaved = localStorage.getItem(`nexus-canvas-${sessionId}-${cardTitle}`);
-        if (localSaved) {
-          try {
-            const parsed = JSON.parse(localSaved);
-            this.showCanvas();
-            this.setDocument(parsed.name, parsed.type, parsed.content);
-            return;
-          } catch (e) {
-            console.error("[Nexus Canvas] Error loading local saved doc:", e);
-          }
-        }
-        const chatHistory = document.getElementById("chat-history") || document.getElementById("chat-history-secondary");
-        if (!chatHistory) return;
-        const allAnswers = Array.from(chatHistory.querySelectorAll(".nexus-chat-answer"));
-        let docName = "";
-        let docType = "";
-        let docContent = "";
-        allAnswers.forEach((ans) => {
-          const rawText = ans.getAttribute("data-raw-text") || "";
-          const createRegex = /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/nexus-canvas-create>/gi;
-          let createMatch;
-          while ((createMatch = createRegex.exec(rawText)) !== null) {
-            if (createMatch[1] === cardTitle) {
-              docName = createMatch[1];
-              docType = createMatch[2];
-              docContent = createMatch[3];
-            }
-          }
-          const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi;
-          let updateMatch;
-          while ((updateMatch = updateRegex.exec(rawText)) !== null) {
-            if (updateMatch[1] === cardTitle) {
-              const name = updateMatch[1];
-              const body = updateMatch[2];
-              const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
-              const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
-              if (patternMatch && replacementMatch) {
-                const pattern = patternMatch[1];
-                const replacement = replacementMatch[2];
-                if (pattern === ".*") {
-                  docContent = replacement;
-                } else {
-                  try {
-                    const regex = new RegExp(pattern, "g");
-                    docContent = docContent.replace(regex, replacement);
-                  } catch (e) {
-                    console.error("[Nexus Canvas] Regex history parse error:", e);
-                  }
-                }
-              }
-            }
-          }
-        });
-        if (docName) {
-          this.showCanvas();
-          this.setDocument(docName, docType, docContent);
-        }
-      }
-    };
-    window.NexusCanvas.init();
+    window.NexusCanvas = CanvasService;
+    window.NexusCanvas.init(() => tabs2, () => activeTabIndex2);
     document.addEventListener("click", (e) => {
       const card = e.target.closest(".nexus-canvas-card");
       if (card) {
@@ -40469,7 +42151,135 @@ ${selectedAns.text}`;
             return;
           }
         }
-        window.NexusCanvas.loadVersionFromCard(card);
+        window.NexusCanvas.loadVersionFromCard(card, () => tabs2, () => activeTabIndex2);
+        return;
+      }
+      const actionBtn = e.target.closest(".nexus-action-chip, .nexus-followup-btn");
+      if (actionBtn) {
+        const query = actionBtn.getAttribute("data-query");
+        if (query && !actionBtn.disabled && !actionBtn.classList.contains("is-clicked")) {
+          actionBtn.classList.add("is-clicked");
+          const parentGroup = actionBtn.closest(".nexus-elicitations-wrapper") || actionBtn.closest(".nexus-followup-container");
+          if (parentGroup) {
+            parentGroup.querySelectorAll(".nexus-action-chip, .nexus-followup-btn").forEach((btn) => {
+              btn.disabled = true;
+              btn.classList.add("is-disabled");
+            });
+          }
+          const activeTab = tabs2[activeTabIndex2];
+          if (activeTab && typeof handleSubmit === "function") {
+            handleSubmit(query, [], {}, activeTab);
+          }
+        }
+        return;
+      }
+      const widgetReloadBtn = e.target.closest(".nexus-widget-btn-reload");
+      if (widgetReloadBtn) {
+        const wrapper = widgetReloadBtn.closest(".nexus-widget-wrapper");
+        if (wrapper && typeof WidgetRunner !== "undefined") {
+          WidgetRunner.reloadWidget(wrapper);
+        }
+        return;
+      }
+      const widgetExpandBtn = e.target.closest(".nexus-widget-btn-expand");
+      if (widgetExpandBtn) {
+        const wrapper = widgetExpandBtn.closest(".nexus-widget-wrapper");
+        if (wrapper) {
+          wrapper.classList.toggle("is-expanded");
+        }
+        return;
+      }
+      const carouselPrevBtn = e.target.closest(".nexus-carousel-prev");
+      if (carouselPrevBtn) {
+        const container2 = carouselPrevBtn.closest(".nexus-carousel-container");
+        const track = container2?.querySelector(".nexus-carousel-track");
+        if (track) {
+          track.scrollBy({ left: -292, behavior: "smooth" });
+        }
+        return;
+      }
+      const carouselNextBtn = e.target.closest(".nexus-carousel-next");
+      if (carouselNextBtn) {
+        const container2 = carouselNextBtn.closest(".nexus-carousel-container");
+        const track = container2?.querySelector(".nexus-carousel-track");
+        if (track) {
+          track.scrollBy({ left: 292, behavior: "smooth" });
+        }
+        return;
+      }
+      const writingTab = e.target.closest(".nexus-writing-tab");
+      if (writingTab) {
+        const block = writingTab.closest(".nexus-writing-block");
+        if (block) {
+          const optIndex = writingTab.getAttribute("data-opt-index");
+          block.querySelectorAll(".nexus-writing-tab").forEach((t) => t.classList.toggle("is-active", t === writingTab));
+          block.querySelectorAll(".nexus-writing-pane").forEach((p) => {
+            p.classList.toggle("is-active", p.getAttribute("data-opt-index") === optIndex);
+          });
+        }
+        return;
+      }
+      const writingSubjCopyBtn = e.target.closest(".nexus-writing-copy-subject-btn");
+      if (writingSubjCopyBtn) {
+        const textToCopy = writingSubjCopyBtn.getAttribute("data-copy");
+        if (textToCopy && navigator.clipboard) {
+          navigator.clipboard.writeText(textToCopy);
+          writingSubjCopyBtn.classList.add("is-copied");
+          setTimeout(() => writingSubjCopyBtn.classList.remove("is-copied"), 1500);
+        }
+        return;
+      }
+      const writingCopyBtn = e.target.closest(".nexus-writing-btn-copy");
+      if (writingCopyBtn) {
+        const block = writingCopyBtn.closest(".nexus-writing-block");
+        const activePane = block ? block.querySelector(".nexus-writing-pane.is-active") : null;
+        if (activePane) {
+          const contentEl = activePane.querySelector(".nexus-writing-content");
+          const rawContent = activePane.getAttribute("data-raw-content") ? decodeURIComponent(activePane.getAttribute("data-raw-content")) : contentEl ? contentEl.innerText : "";
+          if (rawContent && navigator.clipboard) {
+            navigator.clipboard.writeText(rawContent);
+            const span = writingCopyBtn.querySelector("span");
+            if (span) {
+              const oldText = span.textContent;
+              span.textContent = "Copied!";
+              setTimeout(() => {
+                span.textContent = oldText;
+              }, 1500);
+            }
+          }
+        }
+        return;
+      }
+      const writingCanvasBtn = e.target.closest(".nexus-writing-btn-canvas");
+      if (writingCanvasBtn) {
+        const block = writingCanvasBtn.closest(".nexus-writing-block");
+        const activePane = block ? block.querySelector(".nexus-writing-pane.is-active") : null;
+        const titleEl = block ? block.querySelector(".nexus-writing-title") : null;
+        const docTitle = titleEl ? titleEl.textContent.trim() : "Draft Document";
+        if (activePane && window.NexusCanvas) {
+          const contentEl = activePane.querySelector(".nexus-writing-content");
+          const rawContent = activePane.getAttribute("data-raw-content") ? decodeURIComponent(activePane.getAttribute("data-raw-content")) : contentEl ? contentEl.innerText : "";
+          if (typeof window.NexusCanvas.createCanvasDocument === "function") {
+            window.NexusCanvas.createCanvasDocument(docTitle, "document", rawContent);
+          }
+          if (typeof window.NexusCanvas.openCanvas === "function") {
+            window.NexusCanvas.openCanvas();
+          }
+        }
+        return;
+      }
+      const carouselDot = e.target.closest(".nexus-carousel-dot");
+      if (carouselDot) {
+        const container2 = carouselDot.closest(".nexus-carousel-container");
+        const track = container2?.querySelector(".nexus-carousel-track");
+        const idx = parseInt(carouselDot.getAttribute("data-index") || "0", 10);
+        if (track) {
+          track.scrollTo({ left: idx * 292, behavior: "smooth" });
+          container2.querySelectorAll(".nexus-carousel-dot").forEach((dot, dIdx) => {
+            dot.classList.toggle("is-active", dIdx === idx);
+          });
+        }
+        return;
       }
     });
     let currentGeminiLiveClient = null;

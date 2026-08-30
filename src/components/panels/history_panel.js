@@ -1,4 +1,5 @@
 import { ChatHistoryManager } from '../../db/chat_history.js';
+import { NexusMenu } from '../ui/index.js';
 
 export class NexusHistory {
     constructor() {
@@ -17,10 +18,6 @@ export class NexusHistory {
         this.storageText = document.getElementById('storage-usage-text');
         this.deleteAllBtn = document.getElementById('nexus-history-delete-all-btn');
         this.topbarToggleBtn = document.getElementById('topbar-history-btn');
-        this.contextMenu = document.getElementById('nexus-history-context-menu');
-        this.menuRename = document.getElementById('menu-rename');
-        this.menuDuplicate = document.getElementById('menu-duplicate');
-        this.menuDelete = document.getElementById('menu-delete');
         this.activeContextSessionId = null;
         this.handleScroll = this.handleScroll.bind(this);
         this.handleClickOutside = this.handleClickOutside.bind(this);
@@ -64,29 +61,6 @@ export class NexusHistory {
         if (this.overlay) {
             this.overlay.addEventListener('click', () => this.closePanel());
         }
-        if (this.menuRename) {
-            this.menuRename.addEventListener('click', () => {
-                if (this.activeContextSessionId) this.renameItem(this.activeContextSessionId);
-                this.hideContextMenu();
-            });
-        }
-        if (this.menuDuplicate) {
-            this.menuDuplicate.addEventListener('click', () => {
-                if (this.activeContextSessionId) this.duplicateItem(this.activeContextSessionId);
-                this.hideContextMenu();
-            });
-        }
-        if (this.menuDelete) {
-            this.menuDelete.addEventListener('click', () => {
-                if (this.activeContextSessionId) this.deleteItem(this.activeContextSessionId);
-                this.hideContextMenu();
-            });
-        }
-        document.addEventListener('mousedown', (e) => {
-            if (this.contextMenu && this.contextMenu.style.display === 'block' && !this.contextMenu.contains(e.target)) {
-                this.hideContextMenu();
-            }
-        });
     }
     async togglePanel() {
         this.isOpen = !this.isOpen;
@@ -293,26 +267,42 @@ export class NexusHistory {
         return div;
     }
     showContextMenu(e, sessionId, element) {
-        if (!this.listContainer || !this.contextMenu) return;
+        if (!this.listContainer || !element) return;
         const allItems = this.listContainer.querySelectorAll('.nexus-history-item');
         allItems.forEach(el => el.classList.remove('context-menu-active'));
         element.classList.add('context-menu-active');
         this.activeContextSessionId = sessionId;
-        this.contextMenu.style.display = 'block';
-        let x = e.clientX;
-        let y = e.clientY;
-        if (x + this.contextMenu.offsetWidth > window.innerWidth) {
-            x = window.innerWidth - this.contextMenu.offsetWidth - 10;
-        }
-        if (y + this.contextMenu.offsetHeight > window.innerHeight) {
-            y = window.innerHeight - this.contextMenu.offsetHeight - 10;
-        }
-        this.contextMenu.style.left = `${x}px`;
-        this.contextMenu.style.top = `${y}px`;
+
+        NexusMenu.show({
+            anchor: element,
+            placement: 'bottom-start',
+            items: [
+                {
+                    label: 'Rename',
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                    action: () => this.renameItem(sessionId)
+                },
+                {
+                    label: 'Duplicate',
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+                    action: () => this.duplicateItem(sessionId)
+                },
+                { divider: true },
+                {
+                    label: 'Delete',
+                    danger: true,
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+                    action: () => this.deleteItem(sessionId)
+                }
+            ],
+            onClose: () => {
+                element.classList.remove('context-menu-active');
+                this.activeContextSessionId = null;
+            }
+        });
     }
     hideContextMenu() {
-        if (!this.contextMenu) return;
-        this.contextMenu.style.display = 'none';
+        NexusMenu.close();
         this.activeContextSessionId = null;
         if (this.listContainer) {
             const allItems = this.listContainer.querySelectorAll('.nexus-history-item');

@@ -1,6 +1,7 @@
 import { NexusChatDB } from './chat_db.js';
 import { NexusAttachmentDB } from './attachment_db.js';
 import { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups } from './chat_render_utils.js';
+import { CanvasService } from '../components/canvas/canvas_service.js';
 export { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups };
 
 
@@ -476,7 +477,9 @@ export const ChatHistoryManager = {
                         if (answerMsg.versions && answerMsg.versions.length > 1) {
                             const versionsContainer = document.createElement('div');
                             versionsContainer.className = 'nexus-answer-versions';
-                            const activeIndex = answerMsg.versions.length - 1;
+                            const activeIndex = (typeof answerMsg.activeVersionIndex === 'number' && answerMsg.activeVersionIndex >= 0 && answerMsg.activeVersionIndex < answerMsg.versions.length)
+                                ? answerMsg.activeVersionIndex
+                                : (answerMsg.versions.length - 1);
                             answerMsg.versions.forEach((versionContent, idx) => {
                                 const versionDiv = document.createElement('div');
                                 versionDiv.className = 'nexus-answer-version' + (idx === activeIndex ? ' active' : '');
@@ -485,7 +488,10 @@ export const ChatHistoryManager = {
                                 answerDiv.className = 'nexus-chat-answer';
                                 answerDiv.setAttribute('data-raw-text', versionContent);
                                 const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                                if (displayContent.trim().startsWith('<')) {
+                                const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
+                                const isRawHtml = displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+
+                                if (isRawHtml) {
                                     answerDiv.innerHTML = displayContent;
                                 } else if (typeof marked !== 'undefined') {
                                     let content = displayContent;
@@ -531,43 +537,18 @@ export const ChatHistoryManager = {
                                 versionsContainer.appendChild(versionDiv);
                             });
 
-                            const navContainer = document.createElement('div');
-                            navContainer.className = 'nexus-answer-nav';
-                            navContainer.innerHTML = `
-                                <button class="nexus-answer-nav-btn nav-prev" ${activeIndex === 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-                                <span class="nexus-answer-nav-counter">${activeIndex + 1} / ${answerMsg.versions.length}</span>
-                                <button class="nexus-answer-nav-btn nav-next" ${activeIndex === answerMsg.versions.length - 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
-                            `;
-                            versionsContainer.appendChild(navContainer);
-                            if (typeof showAnswerVersion === 'function') {
-                                navContainer.querySelector('.nav-prev').addEventListener('click', () => showAnswerVersion(entryDiv, 'prev'));
-                                navContainer.querySelector('.nav-next').addEventListener('click', () => showAnswerVersion(entryDiv, 'next'));
-                            }
                             entryDiv.appendChild(versionsContainer);
                         } else {
                             const answerDiv = document.createElement('div');
                             answerDiv.className = 'nexus-chat-answer';
                             answerDiv.setAttribute('data-raw-text', answerMsg.content);
+                            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                            displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
-                                const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                const displayType = type.replace('code/', '').toUpperCase();
-                                return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
-      <div class="nexus-canvas-card-left">
-        <div class="nexus-canvas-card-info">
-          <div class="nexus-canvas-card-title">${name}</div>
-          <div class="nexus-canvas-card-meta">${displayType} • ${timeStr}</div>
-        </div>
-      </div>
-    </div>`;
-                            });
-                            displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
-                                return `*🔄 Canvas Updated: **${name}***`;
-                            });
-                            displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
-                                return `*💬 Canvas Comment Added: **${name}***`;
-                            });
-                            if (displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
+                            displayContent = CanvasService.cleanCanvasTagsFromMarkdown(displayContent, timeStr);
+                            const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
+                            const isRawHtml = displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+
+                            if (isRawHtml) {
                                 answerDiv.innerHTML = displayContent;
                             } else if (typeof marked !== 'undefined') {
                                 let content = displayContent;
@@ -632,26 +613,13 @@ export const ChatHistoryManager = {
                     const answerDiv = document.createElement('div');
                     answerDiv.className = 'nexus-chat-answer';
                     answerDiv.setAttribute('data-raw-text', msg.content);
+                    const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                    displayContent = displayContent.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
-                        const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        const displayType = type.replace('code/', '').toUpperCase();
-                        return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
-      <div class="nexus-canvas-card-left">
-        <div class="nexus-canvas-card-info">
-          <div class="nexus-canvas-card-title">${name}</div>
-          <div class="nexus-canvas-card-meta">${displayType} • ${timeStr}</div>
-        </div>
-      </div>
-    </div>`;
-                    });
-                    displayContent = displayContent.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
-                        return `*🔄 Canvas Updated: **${name}***`;
-                    });
-                    displayContent = displayContent.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
-                        return `*💬 Canvas Comment Added: **${name}***`;
-                    });
-                    if (displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"')) {
+                    displayContent = CanvasService.cleanCanvasTagsFromMarkdown(displayContent, timeStr);
+                    const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
+                    const isRawHtml = displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+
+                    if (isRawHtml) {
                         answerDiv.innerHTML = displayContent;
                     } else if (typeof marked !== 'undefined') {
                         let c = displayContent;

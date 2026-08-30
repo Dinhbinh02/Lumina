@@ -10,4 +10,7 @@ export * from './modals/settings/settings_tabs.js';
 export * from './modals/settings/providers_data.js';
 export * from './modals/settings/dom_templates.js';
 export * from './sparks/index.js';
+export * from './canvas/canvas_service.js';
+export * from './widgets/widget_runner.js';
 export * from './chat/index.js';
+export * from './ui/index.js';

@@ -89,3 +89,7 @@ export function initCodeAndMediaRenderer() {
         }
     });
 }
+
+if (typeof marked !== 'undefined') {
+    initCodeAndMediaRenderer();
+}

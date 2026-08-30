@@ -1,7 +1,10 @@
 import { morphDOM, scheduleMorphDOM } from './dom_morph.js';
-import { streamSafeParse, completeIncompleteMarkdown, initMarkdownMath } from './markdown_math.js';
+import { streamSafeParse, completeIncompleteMarkdown, initMarkdownMath, renderKaTeXFormula } from './markdown_math.js';
 import { renderChartJSWrapper, processNexusChartElements } from './chart_renderer.js';
 import { processNexusDynamicImageElements, processNexusDynamicYoutubeElements } from './dynamic_media_processor.js';
+import { CanvasService } from '../canvas/canvas_service.js';
+import { WidgetRunner } from '../widgets/widget_runner.js';
+import { NexusMenu } from '../ui/nexus_floating.js';
 
 export class NexusChatUI {
 
@@ -305,9 +308,9 @@ export class NexusChatUI {
         if (!historyEl) return;
         if (!this._historyDelegationClickHandler) {
             this._historyDelegationClickHandler = (e) => {
-                const actionBtn = e.target.closest('.nexus-answer-action-btn');
+                const actionBtn = e.target.closest('.nexus-answer-action-btn, .nexus-answer-nav-btn');
                 if (actionBtn) {
-                    const answerDiv = actionBtn.closest('.nexus-chat-answer');
+                    const answerDiv = actionBtn.closest('.nexus-chat-answer') || actionBtn.closest('.nexus-entry')?.querySelector('.nexus-chat-answer');
                     if (answerDiv) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -689,6 +692,12 @@ export class NexusChatUI {
                 return item;
             })
             : [];
+        if (this.historyEl) {
+            this.historyEl.querySelectorAll('.nexus-action-chip, .nexus-followup-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('is-disabled');
+            });
+        }
         this.currentAnswerDiv = null;
         this.currentEntryDiv = document.createElement('div');
         this.currentEntryDiv.className = 'nexus-entry';
@@ -957,25 +966,8 @@ export class NexusChatUI {
         const newText = answerDiv.getAttribute('data-raw-text') || '';
         if (answerDiv.__lastRenderedText === newText && !isFinished) return;
         answerDiv.__lastRenderedText = newText;
-        let displayText = newText;
-        displayText = displayText.replace(/<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-create>|$)/gi, (match, name, type) => {
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const displayType = type.replace('code/', '').toUpperCase();
-            return `<div class="nexus-canvas-card" data-canvas-name="${name.replace(/"/g, '&quot;')}" data-canvas-type="${type}">
-  <div class="nexus-canvas-card-left">
-    <div class="nexus-canvas-card-info">
-      <div class="nexus-canvas-card-title">${name}</div>
-      <div class="nexus-canvas-card-meta">${displayType} • ${timeStr}</div>
-    </div>
-  </div>
-</div>`;
-        });
-        displayText = displayText.replace(/<nexus-canvas-update\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-update>|$)/gi, (match, name) => {
-            return `*🔄 Canvas Updated: **${name}***`;
-        });
-        displayText = displayText.replace(/<nexus-canvas-comment\s+name="([^"]+)">[\s\S]*?(?:<\/nexus-canvas-comment>|$)/gi, (match, name) => {
-            return `*💬 Canvas Comment Added: **${name}***`;
-        });
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let displayText = CanvasService.cleanCanvasTagsFromMarkdown(newText, timeStr);
         const isProofreadAnswer = answerDiv.classList.contains('nexus-proofread-editable');
         if (isProofreadAnswer) {
             displayText = displayText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
@@ -1043,7 +1035,11 @@ export class NexusChatUI {
             answerDiv.appendChild(answerContentDiv);
         }
         if (actualAnswer.trim() || isThinkingComplete) {
-            if (actualAnswer.trim().startsWith('<') && !actualAnswer.trim().startsWith('<div class="nexus-canvas-card"')) {
+            const trimmed = actualAnswer.trim();
+            const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(trimmed);
+            const isRawHtml = trimmed.startsWith('<') && !trimmed.startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(trimmed);
+
+            if (isRawHtml) {
                 const offsets = window.NexusSelection?.getSelectionRelativeOffsets?.(answerContentDiv);
                 if (answerContentDiv.childNodes.length === 0) {
                     answerContentDiv.innerHTML = actualAnswer;
@@ -1086,12 +1082,12 @@ export class NexusChatUI {
                 }
             });
         }
-        if (!skipScroll && !this.disableStreamAutoFollow && !this._scrollThrottled && !this._regenScrollLocked) {
+        // Auto-follow bottom only if user hasn't scrolled up (i.e. is near bottom) and not scroll-locked
+        if (!skipScroll && !this.disableAutoScroll && this._isNearBottom(80) && !this._scrollThrottled && !this._regenScrollLocked) {
             this._scrollThrottled = true;
-            setTimeout(() => { this._scrollThrottled = false; }, 100);
+            setTimeout(() => { this._scrollThrottled = false; }, 80);
             this.scrollToBottom();
-        }
-        if (preserveScrollTop !== null && scrollContainer) {
+        } else if (this._regenScrollLocked && preserveScrollTop !== null && scrollContainer) {
             scrollContainer.scrollTop = preserveScrollTop;
         }
     }
@@ -2919,33 +2915,16 @@ export class NexusChatUI {
     _setupModelSelector(popup) {
         const selector = popup.querySelector('.nexus-model-selector');
         if (!selector) return;
-        const btn = selector.querySelector('.nexus-model-btn'), label = selector.querySelector('.nexus-current-model'), dropdown = selector.querySelector('.nexus-model-dropdown');
-        if (!btn || !dropdown) return;
+        const btn = selector.querySelector('.nexus-model-btn'), label = selector.querySelector('.nexus-current-model');
+        if (!btn) return;
         const self = this;
         if (typeof window.getPromptApiNamespace === 'undefined') {
             window.getPromptApiNamespace = function () {
-                console.log("[Prompt API Debug] checking namespaces...");
-                if (typeof chrome !== 'undefined' && chrome.ai && chrome.ai.languageModel) {
-                    console.log("[Prompt API Debug] Found chrome.ai.languageModel");
-                    return chrome.ai.languageModel;
-                }
-                if (typeof chrome !== 'undefined' && chrome.aiLanguageModel) {
-                    console.log("[Prompt API Debug] Found chrome.aiLanguageModel");
-                    return chrome.aiLanguageModel;
-                }
-                if (typeof chrome !== 'undefined' && chrome.aiOriginTrial && chrome.aiOriginTrial.languageModel) {
-                    console.log("[Prompt API Debug] Found chrome.aiOriginTrial.languageModel");
-                    return chrome.aiOriginTrial.languageModel;
-                }
-                if (typeof ai !== 'undefined' && ai.languageModel) {
-                    console.log("[Prompt API Debug] Found ai.languageModel");
-                    return ai.languageModel;
-                }
-                if (typeof self !== 'undefined' && self.ai && self.ai.languageModel) {
-                    console.log("[Prompt API Debug] Found self.ai.languageModel");
-                    return self.ai.languageModel;
-                }
-                console.log("[Prompt API Debug] No modern Prompt API namespace found.");
+                if (typeof chrome !== 'undefined' && chrome.ai && chrome.ai.languageModel) return chrome.ai.languageModel;
+                if (typeof chrome !== 'undefined' && chrome.aiLanguageModel) return chrome.aiLanguageModel;
+                if (typeof chrome !== 'undefined' && chrome.aiOriginTrial && chrome.aiOriginTrial.languageModel) return chrome.aiOriginTrial.languageModel;
+                if (typeof ai !== 'undefined' && ai.languageModel) return ai.languageModel;
+                if (typeof self !== 'undefined' && self.ai && self.ai.languageModel) return self.ai.languageModel;
                 return null;
             };
         }
@@ -2954,7 +2933,8 @@ export class NexusChatUI {
                 return { supported: false, status: 'no', reason: 'Disabled' };
             };
         }
-        const render = (data) => {
+
+        const updateLabel = (data) => {
             const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
             const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
             let currentModel = self.activeTabModel?.model;
@@ -2973,126 +2953,139 @@ export class NexusChatUI {
             const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
             const activeDisplayName = activeChainItem?.displayName || activeChainItem?.name || currentModel;
             if (activeDisplayName && label) label.textContent = activeDisplayName;
-            dropdown.innerHTML = '';
-            if (chain.length === 0) { dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--nexus-text-secondary);">No models</div>'; return; }
-            chain.forEach((item) => {
-                const el = document.createElement('button');
-                const isActive = item.model === currentModel && item.providerId === currentProviderId;
-                const displayName = item.displayName || item.name || item.model;
-                el.className = `nexus-model-item ${isActive ? 'active' : ''}`;
-                el.innerHTML = `<div class="model-info"><span class="model-name">${displayName}</span></div>`;
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    if (label) label.textContent = displayName;
-                    dropdown.classList.remove('active');
-                    dropdown.querySelectorAll('.nexus-model-item').forEach(b => b.classList.remove('active'));
-                    el.classList.add('active');
-                    self.activeTabModel = { model: item.model, providerId: item.providerId };
-                    chrome.storage.local.set({ lastUsedModel: self.activeTabModel });
-                    const sid = self.historyEl?.dataset?.sessionId || null;
-                    const sidKey = sid || 'null';
-                    chrome.storage.local.get(['nexus_session_settings', 'advancedParamsByModel'], (res) => {
-                        const settings = res.nexus_session_settings || {};
-                        if (!settings[sidKey]) settings[sidKey] = {};
-                        settings[sidKey].selectedModel = self.activeTabModel;
-                        const advancedParamsByModel = res.advancedParamsByModel || {};
-                        const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
-                        const modelParams = (item.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!item.providerId ? (advancedParamsByModel[item.model] || {}) : {});
-                        const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
-                        const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-                        self.thinkingLevel = newThinkingLevel;
-                        settings[sidKey].thinkingLevel = newThinkingLevel;
-                        chrome.storage.local.set({ nexus_session_settings: settings }, () => {
-                            if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && sid) {
-                                window.NexusChatHistory.updateSessionModelAndThinking(sid, self.activeTabModel, newThinkingLevel);
-                            }
-                            if (typeof self.refreshReasoningSelector === 'function') {
-                                self.refreshReasoningSelector();
-                            }
-                        });
-                    });
-                    self._updateTokenLimitFromModel();
-                    selector.dispatchEvent(new CustomEvent('nexus:model-change', {
-                        bubbles: true,
-                        detail: { model: item.model, providerId: item.providerId }
-                    }));
-                };
-                dropdown.appendChild(el);
-            });
-            const divider = document.createElement('div');
-            divider.className = 'nexus-model-divider';
-            dropdown.appendChild(divider);
-            const thinkingItem = document.createElement('div');
-            thinkingItem.className = 'nexus-model-item nexus-thinking-parent-item';
-            thinkingItem.style.position = 'relative';
-            thinkingItem.style.display = 'flex';
-            thinkingItem.style.alignItems = 'center';
-            thinkingItem.style.justifyContent = 'space-between';
-            thinkingItem.style.cursor = 'pointer';
-            const currentLevel = self.thinkingLevel || 'none';
-            const titleMap = {
-                'minimal': 'Minimal',
-                'low': 'Low',
-                'medium': 'Standard',
-                'high': 'Extended',
-                'none': 'None'
-            };
-            thinkingItem.innerHTML = `
-                <div class="model-info">
-                    <span class="model-name">Thinking level</span>
-                    <span class="model-desc">${titleMap[currentLevel] || 'None'}</span>
-                </div>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            `;
-            const submenu = document.createElement('div');
-            submenu.className = 'nexus-thinking-submenu';
-            const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
-            options.forEach((opt) => {
-                const optEl = document.createElement('button');
-                const isActive = currentLevel === opt.value;
-                optEl.className = `nexus-thinking-opt-item ${isActive ? 'active' : ''}`;
-                const checkmarkIcon = isActive ? `
-                    <span class="reasoning-checkmark">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </span>
-                ` : `
-                    <span class="reasoning-checkmark"></span>
-                `;
-                optEl.innerHTML = `
-                    ${checkmarkIcon}
-                    <div class="reasoning-info">
-                        <span class="reasoning-title">${opt.title}</span>
-                        <span class="reasoning-desc">${opt.desc}</span>
-                    </div>
-                `;
-                optEl.onclick = (e) => {
-                    e.stopPropagation();
-                    self.thinkingLevel = opt.value;
-                    const sid = self.historyEl?.dataset?.sessionId || null;
-                    const sidKey = sid || 'null';
-                    chrome.storage.local.get(['nexus_session_settings'], (res) => {
-                        const settings = res.nexus_session_settings || {};
-                        if (!settings[sidKey]) settings[sidKey] = {};
-                        settings[sidKey].thinkingLevel = opt.value;
-                        chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                            if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && sid) {
-                                window.NexusChatHistory.updateSessionModelAndThinking(sid, undefined, opt.value);
-                            }
-                            if (typeof self.refreshSystemTokens === 'function') {
-                                self.refreshSystemTokens();
-                            }
-                            dropdown.classList.remove('active');
-                            if (typeof self.refreshReasoningSelector === 'function') {
-                                self.refreshReasoningSelector();
-                            }
-                        });
-                    });
-                };
-                submenu.appendChild(optEl);
-            });
-            thinkingItem.appendChild(submenu);
-            dropdown.appendChild(thinkingItem);
         };
+
+        const openModelMenu = () => {
+            const sid = self.historyEl?.dataset?.sessionId || null;
+            const sidKey = sid || 'null';
+            chrome.storage.local.get(['providers', 'models', 'modelChains', 'lastUsedModel', 'nexus_session_settings', 'advancedParamsByModel'], async (data) => {
+                const support = await window.getPromptApiSupport();
+                data.promptSupport = support;
+                const settings = data.nexus_session_settings || {};
+                const saved = settings[sidKey] || {};
+                if (!self.activeTabModel && saved.selectedModel) {
+                    self.activeTabModel = { ...saved.selectedModel };
+                }
+                const modelObj = self.activeTabModel;
+                if (modelObj) {
+                    const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
+                    const advancedParamsByModel = data.advancedParamsByModel || {};
+                    const modelParams = (modelObj.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!modelObj.providerId ? (advancedParamsByModel[modelObj.model] || {}) : {});
+                    const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
+                    self.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
+                }
+
+                updateLabel(data);
+                const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
+                const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
+                let currentModel = self.activeTabModel?.model;
+                let currentProviderId = self.activeTabModel?.providerId;
+                if (!currentModel && chain.length > 0) {
+                    currentModel = chain[0].model;
+                    currentProviderId = chain[0].providerId;
+                }
+
+                const menuItems = [];
+                if (chain.length === 0) {
+                    menuItems.push({ label: 'No models available', disabled: true });
+                } else {
+                    chain.forEach((item) => {
+                        const isActive = item.model === currentModel && item.providerId === currentProviderId;
+                        const displayName = item.displayName || item.name || item.model;
+                        menuItems.push({
+                            label: displayName,
+                            active: isActive,
+                            action: () => {
+                                if (label) label.textContent = displayName;
+                                self.activeTabModel = { model: item.model, providerId: item.providerId };
+                                chrome.storage.local.set({ lastUsedModel: self.activeTabModel });
+                                const curSid = self.historyEl?.dataset?.sessionId || null;
+                                const curSidKey = curSid || 'null';
+                                chrome.storage.local.get(['nexus_session_settings', 'advancedParamsByModel'], (res) => {
+                                    const st = res.nexus_session_settings || {};
+                                    if (!st[curSidKey]) st[curSidKey] = {};
+                                    st[curSidKey].selectedModel = self.activeTabModel;
+                                    const adv = res.advancedParamsByModel || {};
+                                    const compKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
+                                    const mParams = (item.providerId && adv[compKey]) ? adv[compKey] : (!item.providerId ? (adv[item.model] || {}) : {});
+                                    const defThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
+                                    const newThinkingLevel = mParams.thinkingLevel || defThinking;
+                                    self.thinkingLevel = newThinkingLevel;
+                                    st[curSidKey].thinkingLevel = newThinkingLevel;
+                                    chrome.storage.local.set({ nexus_session_settings: st }, () => {
+                                        if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && curSid) {
+                                            window.NexusChatHistory.updateSessionModelAndThinking(curSid, self.activeTabModel, newThinkingLevel);
+                                        }
+                                        if (typeof self.refreshReasoningSelector === 'function') {
+                                            self.refreshReasoningSelector();
+                                        }
+                                    });
+                                });
+                                self._updateTokenLimitFromModel();
+                                selector.dispatchEvent(new CustomEvent('nexus:model-change', {
+                                    bubbles: true,
+                                    detail: { model: item.model, providerId: item.providerId }
+                                }));
+                            }
+                        });
+                    });
+
+                    menuItems.push({ divider: true });
+
+                    const currentLevel = self.thinkingLevel || 'none';
+                    const titleMap = {
+                        'minimal': 'Minimal',
+                        'low': 'Low',
+                        'medium': 'Standard',
+                        'high': 'Extended',
+                        'none': 'None'
+                    };
+
+                    const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
+                    const thinkingSubmenu = options.map((opt) => ({
+                        label: opt.title,
+                        desc: opt.desc,
+                        active: currentLevel === opt.value,
+                        action: () => {
+                            self.thinkingLevel = opt.value;
+                            const curSid = self.historyEl?.dataset?.sessionId || null;
+                            const curSidKey = curSid || 'null';
+                            chrome.storage.local.get(['nexus_session_settings'], (res) => {
+                                const st = res.nexus_session_settings || {};
+                                if (!st[curSidKey]) st[curSidKey] = {};
+                                st[curSidKey].thinkingLevel = opt.value;
+                                chrome.storage.local.set({ nexus_session_settings: st, lastUsedThinkingLevel: opt.value }, () => {
+                                    if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && curSid) {
+                                        window.NexusChatHistory.updateSessionModelAndThinking(curSid, undefined, opt.value);
+                                    }
+                                    if (typeof self.refreshSystemTokens === 'function') {
+                                        self.refreshSystemTokens();
+                                    }
+                                    if (typeof self.refreshReasoningSelector === 'function') {
+                                        self.refreshReasoningSelector();
+                                    }
+                                });
+                            });
+                        }
+                    }));
+
+                    menuItems.push({
+                        label: 'Thinking level',
+                        badge: titleMap[currentLevel] || 'None',
+                        submenuTitle: 'Thinking level',
+                        submenu: thinkingSubmenu
+                    });
+                }
+
+                NexusMenu.show({
+                    anchor: btn,
+                    placement: 'top-start',
+                    minWidth: 200,
+                    items: menuItems
+                });
+            });
+        };
+
         const fetchAndRender = () => {
             const sid = self.historyEl?.dataset?.sessionId || null;
             const sidKey = sid || 'null';
@@ -3112,29 +3105,20 @@ export class NexusChatUI {
                     const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
                     self.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
                 }
-                render(data);
+                updateLabel(data);
                 self._updateActionBtnState();
             });
         };
+
         fetchAndRender();
         this.refreshModelSelector = fetchAndRender;
         this.refreshReasoningSelector = fetchAndRender;
-        const selectorWrapper = selector;
+
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (dropdown.classList.contains('active')) {
-                dropdown.classList.remove('active');
-            } else {
-                const toolsDropdown = popup.querySelector('.nexus-tools-dropdown');
-                if (toolsDropdown) toolsDropdown.classList.remove('active');
-                if (!dropdown.classList.contains('active')) fetchAndRender();
-                dropdown.classList.add('active');
-            }
-        });
-        document.addEventListener('click', (e) => {
-            if (!selector.contains(e.target) && dropdown.classList.contains('active')) {
-                dropdown.classList.remove('active');
-            }
+            const toolsDropdown = popup.querySelector('.nexus-tools-dropdown');
+            if (toolsDropdown) toolsDropdown.classList.remove('active');
+            openModelMenu();
         });
     }
     _setupMicButton(btn, input) {
@@ -3582,6 +3566,12 @@ export class NexusChatUI {
                 buttonEl.classList.remove('is-active');
                 buttonEl.innerHTML = originalHTML;
             }, 1000);
+        } else if (action === 'prev-version' || action === 'prev') {
+            this._switchAnswerVersion(buttonEl.closest('.nexus-entry'), 'prev');
+        } else if (action === 'next-version' || action === 'next') {
+            this._switchAnswerVersion(buttonEl.closest('.nexus-entry'), 'next');
+        } else if (action === 'modify') {
+            this._showModifyLengthDropdown(buttonEl, answerDiv);
         } else if (action === 'regenerate') {
             this._handleContextMenuAction('regenerate', answerDiv);
         } else if (action === 'edit') {
@@ -3590,26 +3580,92 @@ export class NexusChatUI {
             this._showMoreOptionsDropdown(buttonEl, answerDiv);
         }
     }
-    _showMoreOptionsDropdown(buttonEl, answerDiv) {
-        if (!this.contextMenu) return;
-        this.contextMenu.__targetAnswer = answerDiv;
-        this.contextMenu.innerHTML = `
-            <button class="nexus-context-menu-item" data-action="edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                Edit
-            </button>
-        `;
-        const rect = buttonEl.getBoundingClientRect();
-        const dropdownWidth = 140;
-        let left = rect.left + window.scrollX + rect.width - dropdownWidth;
-        let top = rect.bottom + window.scrollY + 6;
-        if (left < 10) left = 10;
-        this.contextMenu.style.left = `${left}px`;
-        this.contextMenu.style.top = `${top}px`;
-        this.contextMenu.style.display = 'block';
-        this.contextMenu.classList.add('visible');
+    _switchAnswerVersion(entry, direction) {
+        if (!entry) return;
+        const versionsContainer = entry.querySelector('.nexus-answer-versions');
+        if (!versionsContainer) return;
+        const versions = Array.from(versionsContainer.querySelectorAll('.nexus-answer-version'));
+        if (versions.length <= 1) return;
+        let activeIndex = versions.findIndex(v => v.classList.contains('active'));
+        if (activeIndex === -1) activeIndex = versions.length - 1;
+        let newIndex = activeIndex;
+        if (direction === 'prev') newIndex = Math.max(0, activeIndex - 1);
+        if (direction === 'next') newIndex = Math.min(versions.length - 1, activeIndex + 1);
+        if (newIndex !== activeIndex) {
+            versions[activeIndex].classList.remove('active');
+            versions[newIndex].classList.add('active');
+            this._updateEntryVersionNav(entry, newIndex, versions.length);
+            const historyEl = this.historyEl || entry.closest('.nexus-chat-history');
+            if (typeof ChatHistoryManager !== 'undefined' && historyEl) {
+                ChatHistoryManager.saveCurrentChat(historyEl);
+            }
+        }
     }
-    _handleQuestionRecheck(userInput, editable, isRegenerate = false) {
+    _updateEntryVersionNav(entry, activeIndex, totalCount) {
+        if (!entry) return;
+        const answers = entry.querySelectorAll('.nexus-chat-answer');
+        answers.forEach(ans => NexusChatUI.updateVersionNavInActions(ans));
+        const oldNavs = entry.querySelectorAll('.nexus-answer-nav-container, .nexus-answer-nav');
+        oldNavs.forEach(nav => {
+            const counter = nav.querySelector('.nexus-answer-nav-counter, .nexus-answer-version-indicator');
+            const prevBtn = nav.querySelector('.nav-prev');
+            const nextBtn = nav.querySelector('.nav-next');
+            if (counter) counter.textContent = `${activeIndex + 1} / ${totalCount}`;
+            if (prevBtn) prevBtn.disabled = activeIndex === 0;
+            if (nextBtn) nextBtn.disabled = activeIndex === totalCount - 1;
+        });
+    }
+    _showModifyLengthDropdown(buttonEl, answerDiv) {
+        const entry = answerDiv.closest('.nexus-entry');
+        NexusMenu.show({
+            anchor: buttonEl,
+            placement: 'top-start',
+            minWidth: 140,
+            items: [
+                {
+                    label: 'Shorter',
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>`,
+                    action: () => {
+                        if (entry) {
+                            this.regenerateEntry(entry, {
+                                lengthModifier: 'shorter',
+                                oververbosity: 2
+                            });
+                        }
+                    }
+                },
+                {
+                    label: 'More detailed',
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="11" x2="21" y2="11"/><line x1="3" y1="16" x2="21" y2="16"/><line x1="3" y1="21" x2="13" y2="21"/></svg>`,
+                    action: () => {
+                        if (entry) {
+                            this.regenerateEntry(entry, {
+                                lengthModifier: 'longer',
+                                oververbosity: 8
+                            });
+                        }
+                    }
+                }
+            ]
+        });
+    }
+    _showMoreOptionsDropdown(buttonEl, answerDiv) {
+        NexusMenu.show({
+            anchor: buttonEl,
+            placement: 'top-start',
+            minWidth: 130,
+            items: [
+                {
+                    label: 'Edit',
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                    action: () => {
+                        this._handleContextMenuAction('edit', answerDiv);
+                    }
+                }
+            ]
+        });
+    }
+    _handleQuestionRecheck(userInput, editable, isRegenerate = false, extraOptions = {}) {
         const questionDiv = editable.closest('.nexus-chat-question');
         const entry = editable.closest('.nexus-entry');
         if (!entry) return;
@@ -3654,7 +3710,38 @@ export class NexusChatUI {
             next = next.nextElementSibling;
             toRemove.remove();
         }
-        entry.querySelectorAll('.nexus-chat-answer, .nexus-web-search').forEach(el => el.remove());
+        if (isRegenerate) {
+            let versionsContainer = entry.querySelector('.nexus-answer-versions');
+            const existingAnswer = entry.querySelector('.nexus-chat-answer');
+            if (!versionsContainer && existingAnswer) {
+                versionsContainer = document.createElement('div');
+                versionsContainer.className = 'nexus-answer-versions';
+                const version1 = document.createElement('div');
+                version1.className = 'nexus-answer-version';
+                version1.dataset.versionIndex = '0';
+                existingAnswer.parentNode.insertBefore(versionsContainer, existingAnswer);
+                version1.appendChild(existingAnswer);
+                versionsContainer.appendChild(version1);
+            }
+            if (versionsContainer) {
+                const existingVersions = Array.from(versionsContainer.querySelectorAll('.nexus-answer-version'));
+                existingVersions.forEach(v => v.classList.remove('active'));
+                
+                const newVersion = document.createElement('div');
+                newVersion.className = 'nexus-answer-version active';
+                newVersion.dataset.versionIndex = existingVersions.length.toString();
+                
+                const newAnswerDiv = document.createElement('div');
+                newAnswerDiv.className = 'nexus-chat-answer';
+                newVersion.appendChild(newAnswerDiv);
+                versionsContainer.appendChild(newVersion);
+                
+                this.currentAnswerDiv = newAnswerDiv;
+                entry.querySelectorAll(':scope > .nexus-web-search').forEach(el => el.remove());
+            }
+        } else {
+            entry.querySelectorAll('.nexus-chat-answer, .nexus-web-search, .nexus-answer-versions').forEach(el => el.remove());
+        }
         const scrollContainer = this.getScrollContainer();
         if (isRegenerate) {
             this._regenScrollLocked = true;
@@ -3691,7 +3778,8 @@ export class NexusChatUI {
                 isRecheck: true,
                 isRegenerate,
                 entryId,
-                mode: entryType
+                mode: entryType,
+                ...extraOptions
             });
         }
     }
@@ -3719,7 +3807,7 @@ export class NexusChatUI {
         setTimeout(setCaret, 30);
         setTimeout(setCaret, 100);
     }
-    regenerateEntry(entry) {
+    regenerateEntry(entry, extraOptions = {}) {
         if (!entry) return;
         const questionDiv = entry.querySelector('.nexus-chat-question');
         if (!questionDiv) return;
@@ -3728,7 +3816,7 @@ export class NexusChatUI {
             || questionDiv;
         const rawQuestion = questionDiv.getAttribute('data-raw-text') || questionContent.innerText || questionContent.textContent || '';
         if (!rawQuestion.trim()) return;
-        this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true);
+        this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true, extraOptions);
     }
     enterQuestionEditMode(questionDiv) {
         if (!questionDiv || questionDiv.classList.contains('nexus-question-editing')) return;
@@ -3855,6 +3943,10 @@ export class NexusChatUI {
                         if (otPrevEntry) {
                             ot.chatUIInstance.updateEntryMinHeight(otPrevEntry);
                             ot.chatUIInstance.adjustEntryMargin(otPrevEntry, 'immediate');
+                            otPrevEntry.querySelectorAll('.nexus-action-chip, .nexus-followup-btn').forEach(btn => {
+                                btn.disabled = false;
+                                btn.classList.remove('is-disabled', 'is-clicked');
+                            });
                         }
                     }
                 });
@@ -3879,6 +3971,10 @@ export class NexusChatUI {
         if (prevEntry) {
             this.updateEntryMinHeight(prevEntry);
             this.adjustEntryMargin(prevEntry, 'immediate');
+            prevEntry.querySelectorAll('.nexus-action-chip, .nexus-followup-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('is-disabled', 'is-clicked');
+            });
             const scrollContainer = this.getScrollContainer();
             if (scrollContainer) {
                 const containerRect = scrollContainer.getBoundingClientRect();
@@ -3940,7 +4036,7 @@ export class NexusChatUI {
             if (row) row.classList.remove('nexus-question-row-editing');
             if (toolbar) toolbar.remove();
             if (contentDiv) contentDiv.contentEditable = 'false';
-            const isRegenerate = (newText === originalRaw);
+            const isRegenerate = false;
             this._handleQuestionRecheck(newText, contentDiv || questionDiv, isRegenerate);
             NexusChatUI.injectQuestionActions(questionDiv);
             NexusChatUI.checkQuestionOverflow(questionDiv);
@@ -4218,9 +4314,9 @@ export class NexusChatUI {
                 if (typeof katex !== 'undefined') {
                     await yieldToMain();
                     container.querySelectorAll('.nexus-math-inline-placeholder').forEach(el => {
-                        const math = decodeURIComponent(el.getAttribute('data-math') || '').replace(/\\frac\{/g, '\\dfrac{');
+                        const math = decodeURIComponent(el.getAttribute('data-math') || '');
                         try {
-                            const html = katex.renderToString(math, { displayMode: false, throwOnError: false, strict: 'ignore' });
+                            const html = renderKaTeXFormula(math, false);
                             el.outerHTML = html;
                         } catch (err) {
                             el.replaceWith(document.createTextNode(el.textContent));
@@ -4229,7 +4325,7 @@ export class NexusChatUI {
                     container.querySelectorAll('.nexus-math-block-placeholder').forEach(el => {
                         const math = decodeURIComponent(el.getAttribute('data-math') || '');
                         try {
-                            const html = katex.renderToString(math, { displayMode: true, throwOnError: false, strict: 'ignore' });
+                            const html = renderKaTeXFormula(math, true);
                             el.outerHTML = html;
                         } catch (err) {
                             el.replaceWith(document.createTextNode(el.textContent));
@@ -4284,6 +4380,7 @@ export class NexusChatUI {
         processNexusDynamicImageElements(container);
         processNexusDynamicYoutubeElements(container);
         processNexusChartElements(container);
+        WidgetRunner.hydrateWidgets(container);
     }
     static async injectCopyButtons(container) {
         if (!container) return;
@@ -4411,7 +4508,7 @@ export class NexusChatUI {
         }
     }
     static injectAnswerActions(answerDiv) {
-        if (!answerDiv || answerDiv.querySelector('.nexus-actions')) return;
+        if (!answerDiv) return;
         const entry = answerDiv.closest('.nexus-entry');
         if (entry) {
             const type = entry.dataset.entryType;
@@ -4419,20 +4516,92 @@ export class NexusChatUI {
                 return;
             }
         }
+        let existingActions = answerDiv.querySelector('.nexus-actions');
+        if (existingActions) {
+            NexusChatUI.updateVersionNavInActions(answerDiv);
+            if (entry) {
+                entry.querySelectorAll('.nexus-chat-answer').forEach(ans => {
+                    if (ans !== answerDiv) NexusChatUI.updateVersionNavInActions(ans);
+                });
+            }
+            return;
+        }
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'nexus-actions';
         actionsDiv.innerHTML = `
-            <button class="nexus-answer-action-btn" data-action="regenerate" title="Regenerate">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-            </button>
-            <button class="nexus-answer-action-btn" data-action="copy" title="Copy">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
-            <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            </button>
+            <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
+                <button class="nexus-answer-action-btn" data-action="regenerate" title="Regenerate">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                </button>
+                <button class="nexus-answer-action-btn" data-action="copy" title="Copy">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+                <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <button class="nexus-answer-action-btn nexus-action-modify" data-action="modify" title="Modify response length (Shorter / Longer)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="13" y2="6"/><line x1="9" y1="6" x2="3" y2="6"/><line x1="21" y1="18" x2="17" y2="18"/><line x1="13" y1="18" x2="3" y2="18"/><circle cx="11" cy="6" r="2"/><circle cx="15" cy="18" r="2"/></svg>
+                </button>
+            </div>
+            <div class="nexus-answer-nav" style="margin-left: auto; display: none;">
+                <button type="button" class="nexus-answer-nav-btn nav-prev" data-action="prev-version" title="Previous version">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span class="nexus-answer-nav-counter">1 / 1</span>
+                <button type="button" class="nexus-answer-nav-btn nav-next" data-action="next-version" title="Next version">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
         `;
         answerDiv.appendChild(actionsDiv);
+        if (entry) {
+            entry.querySelectorAll('.nexus-chat-answer').forEach(ans => {
+                NexusChatUI.updateVersionNavInActions(ans);
+            });
+        } else {
+            NexusChatUI.updateVersionNavInActions(answerDiv);
+        }
+    }
+    static updateVersionNavInActions(answerDiv) {
+        if (!answerDiv) return;
+        const entry = answerDiv.closest('.nexus-entry');
+        if (!entry) return;
+        const actionsDiv = answerDiv.querySelector('.nexus-actions');
+        if (!actionsDiv) return;
+        let nav = actionsDiv.querySelector('.nexus-answer-nav');
+        
+        const versionsContainer = entry.querySelector('.nexus-answer-versions');
+        if (versionsContainer) {
+            const versions = Array.from(versionsContainer.querySelectorAll('.nexus-answer-version'));
+            if (versions.length > 1) {
+                let activeIndex = versions.findIndex(v => v.classList.contains('active'));
+                if (activeIndex === -1) activeIndex = versions.length - 1;
+                if (!nav) {
+                    nav = document.createElement('div');
+                    nav.className = 'nexus-answer-nav';
+                    nav.style.marginLeft = 'auto';
+                    nav.innerHTML = `
+                        <button type="button" class="nexus-answer-nav-btn nav-prev" data-action="prev-version" title="Previous version">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <span class="nexus-answer-nav-counter">1 / 1</span>
+                        <button type="button" class="nexus-answer-nav-btn nav-next" data-action="next-version" title="Next version">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    `;
+                    actionsDiv.appendChild(nav);
+                }
+                nav.style.display = 'inline-flex';
+                const counter = nav.querySelector('.nexus-answer-nav-counter');
+                const prevBtn = nav.querySelector('.nav-prev');
+                const nextBtn = nav.querySelector('.nav-next');
+                if (counter) counter.textContent = `${activeIndex + 1} / ${versions.length}`;
+                if (prevBtn) prevBtn.disabled = activeIndex === 0;
+                if (nextBtn) nextBtn.disabled = activeIndex === versions.length - 1;
+                return;
+            }
+        }
+        if (nav) nav.style.display = 'none';
     }
     static wrapTables(container) {
         if (!container) return;

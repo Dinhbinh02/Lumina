@@ -34,6 +34,16 @@
   --nexus-weight-medium: calc(var(--nexus-weight-base) + 100);
   --nexus-weight-semibold: calc(var(--nexus-weight-base) + 200);
   --nexus-weight-bold: calc(var(--nexus-weight-base) + 300);
+
+  /* Standard Harmonious Typographic Scale */
+  --nexus-text-xs: 0.75em;
+  --nexus-text-sm: 0.875em;
+  --nexus-text-base: 1em;
+  --nexus-text-md: 1.125em;
+  --nexus-text-lg: 1.25em;
+  --nexus-text-xl: 1.5em;
+  --nexus-text-2xl: 2em;
+
   --nexus-chat-bg: #FFFFFF;
   --nexus-bg-primary: #ffffff;
   --nexus-sidebar-bg: #fcfcfc;

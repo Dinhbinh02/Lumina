@@ -7,4 +7,5 @@ export * from './code_renderer.js';
 export * from './async_media_search.js';
 export * from './dynamic_media_processor.js';
 export * from './chart_renderer.js';
+export * from './lmdx_components_parser.js';
 export * from './chat_ui.js';

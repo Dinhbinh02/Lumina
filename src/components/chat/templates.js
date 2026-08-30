@@ -121,9 +121,17 @@ export async function ensureHighlightLoaded() {
 }
 
 export async function ensureMarkedLoaded() {
-    if (typeof marked !== 'undefined') return;
+    if (typeof marked !== 'undefined') {
+        if (typeof initMarkdownMath === 'function') initMarkdownMath();
+        if (typeof initCodeAndMediaRenderer === 'function') initCodeAndMediaRenderer();
+        if (typeof initLmdxComponentsParser === 'function') initLmdxComponentsParser();
+        return;
+    }
     try {
         await loadScript('../../lib/vendor/marked.min.js');
+        if (typeof initMarkdownMath === 'function') initMarkdownMath();
+        if (typeof initCodeAndMediaRenderer === 'function') initCodeAndMediaRenderer();
+        if (typeof initLmdxComponentsParser === 'function') initLmdxComponentsParser();
     } catch (e) {
         console.error('Failed to lazy load Marked', e);
     }

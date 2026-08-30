@@ -1,4 +1,5 @@
 import { DEFAULT_SPARKS } from './default_sparks.js';
+import { NexusMenu } from '../ui/index.js';
 export const SPARKS_KEY = 'nexus_sparks';
 let sidebarSparksExpanded = false;
 export { DEFAULT_SPARKS };
@@ -798,66 +799,37 @@ async function sidebarSparksRenderList() {
     });
 }
 function showSparkContextMenu(btn, sparkId) {
-    let ctxMenu = document.getElementById('sidebar-spark-context-menu');
-    if (!ctxMenu) {
-        ctxMenu = document.createElement('div');
-        ctxMenu.id = 'sidebar-spark-context-menu';
-        ctxMenu.className = 'sidebar-chat-context-menu';
-        ctxMenu.style.display = 'none';
-        ctxMenu.innerHTML = `
-            <div class="sidebar-ctx-item" data-action="edit">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                <span>Edit</span>
-            </div>
-            <div class="sidebar-ctx-item sidebar-ctx-item--danger" data-action="delete">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
-                <span>Delete</span>
-            </div>
-        `;
-        document.body.appendChild(ctxMenu);
-    }
-    const rect = btn.getBoundingClientRect();
-    ctxMenu.style.display = 'block';
-    let top = rect.bottom + 4;
-    let left = rect.right - ctxMenu.offsetWidth;
-    if (left < 4) left = 4;
-    ctxMenu.style.top = top + 'px';
-    ctxMenu.style.left = left + 'px';
-    const clickHandler = async (e) => {
-        const item = e.target.closest('.sidebar-ctx-item');
-        if (!item) return;
-        const action = item.dataset.action;
-        if (action === 'edit') {
-            sparksOpenEditor(sparkId);
-        } else if (action === 'delete') {
-            const confirmed = await window.showCustomPopup({
-                title: 'Delete Spark',
-                body: 'Are you sure you want to delete this Spark?',
-                confirmLabel: 'Delete',
-                isDanger: true
-            });
-            if (confirmed) {
-                await sparksDelete(sparkId);
-                sidebarSparksRenderList();
-                if (typeof sparksRenderList === 'function') sparksRenderList();
+    if (!btn) return;
+    NexusMenu.show({
+        anchor: btn,
+        placement: 'bottom-end',
+        items: [
+            {
+                label: 'Edit',
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                action: () => sparksOpenEditor(sparkId)
+            },
+            { divider: true },
+            {
+                label: 'Delete',
+                danger: true,
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>`,
+                action: async () => {
+                    const confirmed = await window.showCustomPopup({
+                        title: 'Delete Spark',
+                        body: 'Are you sure you want to delete this Spark?',
+                        confirmLabel: 'Delete',
+                        isDanger: true
+                    });
+                    if (confirmed) {
+                        await sparksDelete(sparkId);
+                        sidebarSparksRenderList();
+                        if (typeof sparksRenderList === 'function') sparksRenderList();
+                    }
+                }
             }
-        }
-        hideMenu();
-    };
-    const hideMenu = () => {
-        ctxMenu.style.display = 'none';
-        document.removeEventListener('click', outsideClick);
-        ctxMenu.removeEventListener('click', clickHandler);
-    };
-    const outsideClick = (e) => {
-        if (!ctxMenu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
-            hideMenu();
-        }
-    };
-    ctxMenu.addEventListener('click', clickHandler);
-    setTimeout(() => {
-        document.addEventListener('click', outsideClick);
-    }, 10);
+        ]
+    });
 }
 async function openSparkChat(sparkId) {
     sparksClosePage();

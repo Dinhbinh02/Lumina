@@ -37,6 +37,39 @@ export function completeIncompleteMarkdown(rawText) {
         }
     }
 
+    const streamingTags = [
+        'nexus-canvas-create',
+        'nexus-canvas-update',
+        'nexus-canvas-comment',
+        'Step',
+        'Sequence',
+        'TimelineEvent',
+        'Timeline',
+        'Elicitation',
+        'ElicitationsGroup',
+        'FollowUp',
+        'GenerateWidget',
+        'Carousel',
+        'Option',
+        'WritingBlock',
+        'Aspect',
+        'Comparison',
+        'Metric',
+        'Metrics',
+        'BentoItem',
+        'BentoGrid'
+    ];
+
+    for (const tag of streamingTags) {
+        const openRegex = new RegExp(`<${tag}(?:\\s+[^>]*)?>`, 'gi');
+        const closeRegex = new RegExp(`<\/${tag}>`, 'gi');
+        const openCount = (text.match(openRegex) || []).length;
+        const closeCount = (text.match(closeRegex) || []).length;
+        if (openCount > closeCount) {
+            text += `</${tag}>`.repeat(openCount - closeCount);
+        }
+    }
+
     return text;
 }
 
@@ -47,6 +80,33 @@ export function streamSafeParse(rawText) {
         return marked.parse(completed);
     }
     return completed;
+}
+
+export function renderKaTeXFormula(rawMath, isDisplay = false) {
+    if (!rawMath || typeof katex === 'undefined' || typeof katex.renderToString !== 'function') return '';
+    let math = rawMath;
+    if (!isDisplay && /\\(?:frac|dfrac|cfrac|sum|int|prod|lim|begin)\b/.test(math) && !/\\displaystyle\b/.test(math)) {
+        math = '\\displaystyle ' + math;
+    }
+
+    const textMatches = [];
+    const placeholderMath = math.replace(/\\text\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, (m, txt) => {
+        const id = `TXPH${textMatches.length}END`;
+        textMatches.push({ id, txt });
+        return `\\text{${id}}`;
+    });
+
+    let rendered = katex.renderToString(placeholderMath, { displayMode: isDisplay, throwOnError: false, strict: 'ignore' });
+
+    for (const item of textMatches) {
+        const safeText = item.txt
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/ /g, '&nbsp;');
+        rendered = rendered.replaceAll(item.id, safeText);
+    }
+    return rendered;
 }
 
 export function initMarkdownMath() {
@@ -78,8 +138,7 @@ export function initMarkdownMath() {
                 renderer(token) {
                     if (typeof katex !== 'undefined' && katex.renderToString) {
                         try {
-                            const math = (token.text || '').replace(/\\frac\{/g, '\\dfrac{');
-                            return katex.renderToString(math, { displayMode: false, throwOnError: false, strict: 'ignore' });
+                            return renderKaTeXFormula(token.text, false);
                         } catch (_) {
                             return token.raw;
                         }
@@ -104,7 +163,7 @@ export function initMarkdownMath() {
                 renderer(token) {
                     if (typeof katex !== 'undefined' && katex.renderToString) {
                         try {
-                            return katex.renderToString(token.text, { displayMode: true, throwOnError: false, strict: 'ignore' });
+                            return renderKaTeXFormula(token.text, true);
                         } catch (_) {
                             return token.raw;
                         }
@@ -114,4 +173,8 @@ export function initMarkdownMath() {
             }
         ]
     });
+}
+
+if (typeof marked !== 'undefined') {
+    initMarkdownMath();
 }

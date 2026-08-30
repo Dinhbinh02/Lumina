@@ -1,4 +1,16 @@
+import { CanvasService } from '../../components/canvas/canvas_service.js';
+import { WidgetRunner } from '../../components/widgets/widget_runner.js';
+import { NexusToast, NexusTooltip, NexusMenu } from '../../components/ui/index.js';
+
 window._nexusWindowInstanceId = window._nexusWindowInstanceId || 'win_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+window.WidgetRunner = WidgetRunner;
+window.NexusToast = NexusToast;
+window.NexusMenu = NexusMenu;
+window.NexusTooltip = NexusTooltip;
+
+try {
+    NexusTooltip.init();
+} catch (_) { }
 
 function getPaneActiveModel() {
     const model = sessionStorage.getItem('nexus_active_model');
@@ -265,6 +277,19 @@ function applyFontSize(size) {
         document.body.style.setProperty('font-size', size + 'px', 'important');
         document.documentElement.style.setProperty('--nexus-fontSize', size + 'px', 'important');
     }
+
+    // Broadcast font size change live to all widget sandboxes
+    const iframes = document.querySelectorAll('.nexus-widget-iframe');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    iframes.forEach(iframe => {
+        if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+                type: 'NEXUS_WIDGET_THEME_UPDATE',
+                isDark,
+                fontSize: size
+            }, '*');
+        }
+    });
 }
 
 const WEB_SOURCE_SELECTION_STORAGE_PREFIX = 'nexus_web_source_selection_';
@@ -1087,25 +1112,10 @@ async function initTabs() {
         topbarNewChatBtn.addEventListener('click', () => resetChat());
     }
     const topbarMoreBtn = document.getElementById('topbar-more-btn');
-    const topbarDropdown = document.getElementById('topbar-dropdown-menu');
-    if (topbarMoreBtn && topbarDropdown) {
+    if (topbarMoreBtn) {
         topbarMoreBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = topbarDropdown.style.display === 'flex';
-            if (isOpen) {
-                topbarDropdown.style.display = 'none';
-            } else {
-                const mainModelDropdown = document.getElementById('topbar-model-dropdown');
-                if (mainModelDropdown) mainModelDropdown.classList.remove('active');
-                topbarDropdown.style.display = 'flex';
-                topbarDropdown.classList.remove('expanded');
-                renderDropdownMenu('primary');
-            }
-        });
-        document.addEventListener('click', (e) => {
-            if (!topbarDropdown.contains(e.target) && e.target !== topbarMoreBtn) {
-                topbarDropdown.style.display = 'none';
-            }
+            renderDropdownMenu(topbarMoreBtn);
         });
     }
     updateTopbarMenuVisibility();
@@ -1318,7 +1328,22 @@ function saveTabsState(forceSaveChat = false, saveHistory = true) {
 
 function normalizeRestoredHistory(historyEl) {
     if (!historyEl) return;
-    historyEl.querySelectorAll('.nexus-entry').forEach(entry => {
+    const entries = Array.from(historyEl.querySelectorAll('.nexus-entry'));
+    entries.forEach((entry, idx) => {
+        const isPastEntry = idx < entries.length - 1;
+        const nextUserQuestion = isPastEntry && entries[idx + 1] ? (entries[idx + 1].querySelector('.nexus-chat-question')?.getAttribute('data-raw-text') || '').trim() : '';
+
+        entry.querySelectorAll('.nexus-action-chip, .nexus-followup-btn').forEach(chip => {
+            if (isPastEntry) {
+                chip.disabled = true;
+                chip.classList.add('is-disabled');
+                const chipQuery = (chip.getAttribute('data-query') || '').trim();
+                if (nextUserQuestion && chipQuery && (nextUserQuestion === chipQuery || nextUserQuestion.includes(chipQuery) || chipQuery.includes(nextUserQuestion))) {
+                    chip.classList.add('is-clicked');
+                }
+            }
+        });
+
         if (entry.__normalized) return;
         entry.__normalized = true;
         entry.style.removeProperty('min-height');
@@ -3122,30 +3147,33 @@ function initSidebar() {
         userProfileEl.style.cursor = 'pointer';
         userProfileEl.addEventListener('click', (e) => {
             e.stopPropagation();
-            let ctxMenu = document.getElementById('user-profile-context-menu');
-            if (!ctxMenu) {
-                ctxMenu = document.createElement('div');
-                ctxMenu.id = 'user-profile-context-menu';
-                ctxMenu.className = 'sidebar-chat-context-menu';
-                ctxMenu.style.display = 'none';
-                const currentName = (typeof NexusAuth !== 'undefined' && NexusAuth.isAuthenticated && NexusAuth.user) ? (NexusAuth.user.name || "User") : "Nexus User";
-                const isAuth = typeof NexusAuth !== 'undefined' && NexusAuth.isAuthenticated;
-                ctxMenu.innerHTML = NexusTemplates.sidebarContextMenu([
-                    { type: 'header', label: currentName },
-                    { type: 'divider' },
-                    { action: 'sync', label: 'Sync now', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>' },
-                    { action: 'logout', label: isAuth ? 'Sign out' : 'Sign in', danger: true, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>' }
-                ]);
-                document.body.appendChild(ctxMenu);
-                ctxMenu.querySelectorAll('.sidebar-ctx-item').forEach(item => {
-                    item.addEventListener('click', async (e) => {
-                        const action = item.dataset.action;
-                        ctxMenu.style.display = 'none';
-                        if (action === 'sync') {
+            const isAuth = typeof NexusAuth !== 'undefined' && NexusAuth.isAuthenticated;
+            const currentName = (isAuth && NexusAuth.user) ? (NexusAuth.user.name || "User") : "Nexus User";
+
+            NexusMenu.show({
+                anchor: userProfileEl,
+                placement: 'top-start',
+                items: [
+                    {
+                        label: currentName,
+                        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`,
+                        disabled: true
+                    },
+                    { divider: true },
+                    {
+                        label: 'Sync now',
+                        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`,
+                        action: () => {
                             if (typeof NexusSync !== 'undefined') {
                                 NexusSync.syncUp().catch(err => console.error("Sync failed:", err));
                             }
-                        } else if (action === 'logout') {
+                        }
+                    },
+                    {
+                        label: isAuth ? 'Sign out' : 'Sign in',
+                        danger: isAuth,
+                        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>`,
+                        action: () => {
                             if (typeof NexusAuth !== 'undefined') {
                                 if (NexusAuth.isAuthenticated) {
                                     NexusAuth.logout();
@@ -3154,36 +3182,11 @@ function initSidebar() {
                                 }
                             }
                         }
-                    });
-                });
-            }
-            const isAuth = typeof NexusAuth !== 'undefined' && NexusAuth.isAuthenticated;
-            const currentName = (isAuth && NexusAuth.user) ? (NexusAuth.user.name || "User") : "Nexus User";
-            const nameHeader = ctxMenu.querySelector('.sidebar-ctx-header-name');
-            if (nameHeader) {
-                nameHeader.textContent = currentName;
-            }
-            const logoutSpan = ctxMenu.querySelector('[data-action="logout"] span');
-            if (logoutSpan) {
-                logoutSpan.textContent = isAuth ? 'Sign out' : 'Sign in';
-            }
-            const rect = userProfileEl.getBoundingClientRect();
-            ctxMenu.style.display = 'block';
-            let top = rect.top - ctxMenu.offsetHeight - 6;
-            let left = rect.left;
-            if (top < 4) top = 4;
-            ctxMenu.style.top = top + 'px';
-            ctxMenu.style.left = left + 'px';
+                    }
+                ]
+            });
         });
     }
-    document.addEventListener('mousedown', (e) => {
-        const userCtxMenu = document.getElementById('user-profile-context-menu');
-        if (userCtxMenu && userCtxMenu.style.display !== 'none') {
-            if (!userCtxMenu.contains(e.target) && !e.target.closest('.user-profile')) {
-                userCtxMenu.style.display = 'none';
-            }
-        }
-    });
     renderRecentChatsSidebar();
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local') {
@@ -3454,258 +3457,212 @@ async function renderRecentChatsSidebar() {
     attachScroll(listContainer.closest('.sidebar-scrollable-content'));
     attachScroll(listContainer.closest('.nexus-sidebar'));
 
-    let ctxMenu = document.getElementById('sidebar-chat-context-menu');
-    if (!ctxMenu) {
-        ctxMenu = document.createElement('div');
-        ctxMenu.id = 'sidebar-chat-context-menu';
-        ctxMenu.className = 'sidebar-chat-context-menu';
-        ctxMenu.style.display = 'none';
-        ctxMenu.innerHTML = NexusTemplates.sidebarContextMenu([
-            { action: 'pin', label: 'Pin', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>' },
-            { action: 'rename', label: 'Rename', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' },
-            { action: 'generate_title', label: 'Generate title', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>' },
-            { action: 'archive', label: 'Archive', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>' },
-            { type: 'divider' },
-            { action: 'delete', label: 'Delete', danger: true, icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' }
-        ]);
-        document.body.appendChild(ctxMenu);
-        document.addEventListener('mousedown', (e) => {
-            if (!ctxMenu.contains(e.target) && !e.target.closest('.recent-chat-item__menu-btn')) {
-                ctxMenu.style.display = 'none';
-                document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
-            }
-        });
-        ctxMenu.querySelectorAll('.sidebar-ctx-item').forEach(item => {
-            item.addEventListener('click', async (e) => {
-                const action = item.dataset.action;
-                const sid = ctxMenu.dataset.sessionId;
-                ctxMenu.style.display = 'none';
-                document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
-                if (!sid) return;
-                if (action === 'pin') {
-                    const session = await NexusChatDB.getSession(sid);
-                    if (session) {
-                        const currentlyPinned = !!session.pinned;
-                        if (!currentlyPinned) {
-                            let currentTitle = session.title || 'Untitled Chat';
-                            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
-                                currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
-                            }
-                            const newTitle = await window.showCustomPopup({
-                                title: 'Pin this chat',
-                                body: '',
-                                isInput: true,
-                                defaultValue: currentTitle,
-                                confirmLabel: 'Pin'
-                            });
-                            if (newTitle === null) return;
-                            session.pinned = true;
-                            if (newTitle.trim()) {
-                                session.title = newTitle.trim();
-                                session.isRenamed = true;
-                            }
-                        } else {
-                            session.pinned = false;
-                        }
-                        session.updatedAt = Date.now();
-                        await NexusChatDB.putSession(session);
-                        chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
-                        if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                            NexusSync.triggerDebouncedSync();
-                        }
-                        if (session.isRenamed) {
-                            const activeTab = tabs[activeTabIndex];
-                            if (activeTab && activeTab.sessionId === sid) {
-                                activeTab.title = session.title;
-                                renderTabs();
-                            }
-                        }
-                        renderRecentChatsSidebar();
-                    }
-                } else if (action === 'rename') {
-                    const meta = await NexusChatDB.getSession(sid);
-                    let currentTitle = meta?.title || 'Untitled Chat';
-                    if (!meta?.isRenamed && !meta?.autoNamed && meta?.questions?.length > 0) {
-                        currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
-                    }
-                    const newTitle = await window.showCustomPopup({
-                        title: 'Rename Chat',
-                        body: 'Enter a new title for this conversation:',
-                        isInput: true,
-                        defaultValue: currentTitle,
-                        confirmLabel: 'Rename'
-                    });
-                    if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
-                        await ChatHistoryManager.renameChat(sid, newTitle.trim());
-                    }
-                } else if (action === 'generate_title') {
-                    const session = await NexusChatDB.getSession(sid);
-                    if (!session || !session.questions || session.questions.length === 0) {
-                        if (typeof NexusToast !== 'undefined') NexusToast.show('No chat content to generate title.', 'info');
-                        return;
-                    }
-                    const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
-                    if (chatItemEl) chatItemEl.classList.add('is-naming');
-
-                    if (typeof NexusToast !== 'undefined') NexusToast.show('✨ Generating chat title...', 'info');
-                    let fullText = session.questions.map(q => {
-                        let text = `User: ${q.text || ''}`;
-                        if (q.answers) {
-                            const ans = Object.values(q.answers).find(a => a && a.text);
-                            if (ans) text += `\nAI: ${ans.text}`;
-                        }
-                        return text;
-                    }).join('\n\n');
-                    const currentModel = typeof NexusModelSelector !== 'undefined' ? NexusModelSelector.getSelectedModel('text') : null;
-                    chrome.runtime.sendMessage({
-                        action: 'generate_chat_title',
-                        modelObj: currentModel,
-                        question: fullText,
-                        images: null,
-                        files: null,
-                        history: []
-                    }, async (res) => {
-                        if (chatItemEl) chatItemEl.classList.remove('is-naming');
-                        if (res && res.success && res.title) {
-                            const newTitle = res.title.trim();
-                            await ChatHistoryManager.renameChat(sid, newTitle);
-                            const updatedSession = await NexusChatDB.getSession(sid);
-                            if (updatedSession) {
-                                updatedSession.autoNamed = true;
-                                updatedSession.isRenamed = true;
-                                updatedSession.updatedAt = Date.now();
-                                await NexusChatDB.putSession(updatedSession);
-                                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                                    NexusSync.triggerDebouncedSync();
-                                }
-                            }
-                            if (typeof NexusToast !== 'undefined') NexusToast.show(`Title updated: "${newTitle}"`, 'success');
-                            renderRecentChatsSidebar();
-                            renderTabs();
-                        } else {
-                            if (typeof NexusToast !== 'undefined') NexusToast.show('Failed to generate title: ' + (res?.error || 'Unknown error'), 'error');
-                        }
-                    });
-                } else if (action === 'archive') {
-                    const meta = await NexusChatDB.getSession(sid);
-                    if (meta) {
-                        const isArchived = !!meta.archived;
-                        if (isArchived) {
-                            meta.archived = false;
-                            meta.updatedAt = Date.now();
-                            await NexusChatDB.putSession(meta);
-                            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
-                            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                                NexusSync.triggerDebouncedSync();
-                            }
-                            renderRecentChatsSidebar();
-                        } else {
-                            let currentTitle = meta.title || 'Untitled Chat';
-                            if (!meta.isRenamed && !meta.autoNamed && meta.questions && meta.questions.length > 0) {
-                                currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
-                            }
-                            const newTitle = await window.showCustomPopup({
-                                title: 'Archive Chat',
-                                body: 'Rename this chat to archive:',
-                                isInput: true,
-                                defaultValue: currentTitle,
-                                confirmLabel: 'Archive'
-                            });
-                            if (newTitle !== null) {
-                                if (newTitle.trim()) {
-                                    meta.title = newTitle.trim();
-                                    meta.isRenamed = true;
-                                }
-                                meta.archived = true;
-                                meta.updatedAt = Date.now();
-                                await NexusChatDB.putSession(meta);
-                                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
-                                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                                    NexusSync.triggerDebouncedSync();
-                                }
-                                renderRecentChatsSidebar();
-                            }
-                        }
-                    }
-                } else if (action === 'delete') {
-                    const confirmed = await window.showCustomPopup({
-                        title: 'Delete Chat',
-                        body: 'Are you sure you want to delete this chat? This action cannot be undone.',
-                        confirmLabel: 'Delete',
-                        isDanger: true
-                    });
-                    if (confirmed) {
-                        await ChatHistoryManager.deleteChat(sid);
-                        tabs.forEach((tab, index) => {
-                            if (tab.sessionId === sid) {
-                                resetChat();
-                            }
-                        });
-                    }
-                }
-            });
-        });
-    }
-
     const containers = [listContainer];
     if (archivedContainer) containers.push(archivedContainer);
 
     containers.forEach(container => {
         container.querySelectorAll('.recent-chat-item__menu-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const sid = btn.dataset.sessionId;
                 const parentItem = btn.closest('.recent-chat-item');
-                ctxMenu.dataset.sessionId = sid;
-                
-                const pinItem = ctxMenu.querySelector('[data-action="pin"]');
-                if (pinItem) {
-                    NexusChatDB.getSession(sid).then(session => {
-                        const isPinned = !!session?.pinned;
-                        const textEl = pinItem.querySelector('span');
-                        if (textEl) textEl.textContent = isPinned ? 'Unpin' : 'Pin';
-                        const svgContainer = pinItem.querySelector('svg');
-                        if (svgContainer) {
-                            if (isPinned) {
-                                svgContainer.setAttribute('stroke-width', '2.0');
-                                svgContainer.innerHTML = `<path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/><line x1="4" y1="4" x2="20" y2="20"/>`;
-                            } else {
-                                svgContainer.setAttribute('stroke-width', '2.0');
-                                svgContainer.innerHTML = `<path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/>`;
-                            }
-                        }
-                    });
-                }
-
-                const archiveItem = ctxMenu.querySelector('[data-action="archive"]');
-                if (archiveItem) {
-                    NexusChatDB.getSession(sid).then(session => {
-                        const isArchived = !!session?.archived;
-                        const textEl = archiveItem.querySelector('span');
-                        if (textEl) textEl.textContent = isArchived ? 'Unarchive' : 'Archive';
-                        const svgContainer = archiveItem.querySelector('svg');
-                        if (svgContainer) {
-                            if (isArchived) {
-                                svgContainer.innerHTML = `<rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v6"/>`;
-                            } else {
-                                svgContainer.innerHTML = `<rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/>`;
-                            }
-                        }
-                    });
-                }
+                if (!sid) return;
 
                 document.querySelectorAll('.recent-chat-item.ctx-active').forEach(el => el.classList.remove('ctx-active'));
                 if (parentItem) parentItem.classList.add('ctx-active');
-                const rect = btn.getBoundingClientRect();
-                ctxMenu.style.display = 'block';
-                let top = rect.bottom + 4;
-                let left = rect.right - ctxMenu.offsetWidth;
-                if (left < 4) left = 4;
-                if (top + ctxMenu.offsetHeight > window.innerHeight - 4) {
-                    top = rect.top - ctxMenu.offsetHeight - 4;
-                }
-                ctxMenu.style.top = top + 'px';
-                ctxMenu.style.left = left + 'px';
+
+                const session = await NexusChatDB.getSession(sid);
+                const isPinned = !!session?.pinned;
+                const isArchived = !!session?.archived;
+
+                NexusMenu.show({
+                    anchor: btn,
+                    placement: 'bottom-end',
+                    items: [
+                        {
+                            label: isPinned ? 'Unpin' : 'Pin',
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+                            action: async () => {
+                                if (session) {
+                                    if (!isPinned) {
+                                        let currentTitle = session.title || 'Untitled Chat';
+                                        if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+                                            currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
+                                        }
+                                        const newTitle = await window.showCustomPopup({
+                                            title: 'Pin this chat',
+                                            body: '',
+                                            isInput: true,
+                                            defaultValue: currentTitle,
+                                            confirmLabel: 'Pin'
+                                        });
+                                        if (newTitle === null) return;
+                                        session.pinned = true;
+                                        if (newTitle.trim()) {
+                                            session.title = newTitle.trim();
+                                            session.isRenamed = true;
+                                        }
+                                    } else {
+                                        session.pinned = false;
+                                    }
+                                    session.updatedAt = Date.now();
+                                    await NexusChatDB.putSession(session);
+                                    chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                                    if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                                        NexusSync.triggerDebouncedSync();
+                                    }
+                                    if (session.isRenamed) {
+                                        const activeTab = tabs[activeTabIndex];
+                                        if (activeTab && activeTab.sessionId === sid) {
+                                            activeTab.title = session.title;
+                                            renderTabs();
+                                        }
+                                    }
+                                    renderRecentChatsSidebar();
+                                }
+                            }
+                        },
+                        {
+                            label: 'Rename',
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                            action: async () => {
+                                const currentSession = await NexusChatDB.getSession(sid);
+                                const oldTitle = currentSession ? currentSession.title : 'Untitled Chat';
+                                const newTitle = await window.showCustomPopup({
+                                    title: 'Rename Chat',
+                                    body: '',
+                                    isInput: true,
+                                    defaultValue: oldTitle,
+                                    confirmLabel: 'Rename'
+                                });
+                                if (newTitle && newTitle.trim()) {
+                                    await ChatHistoryManager.renameChat(sid, newTitle.trim());
+                                    const activeTab = tabs[activeTabIndex];
+                                    if (activeTab && activeTab.sessionId === sid) {
+                                        activeTab.title = newTitle.trim();
+                                        renderTabs();
+                                    }
+                                    renderRecentChatsSidebar();
+                                }
+                            }
+                        },
+                        {
+                            label: 'Generate title',
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>`,
+                            action: async () => {
+                                const history = await ChatHistoryManager.getHistory(sid);
+                                const fullText = (history || []).map(h => `${h.role}: ${h.text}`).join('\n\n');
+                                if (!fullText.trim()) {
+                                    if (typeof NexusToast !== 'undefined') NexusToast.show('No chat content to generate title.', 'info');
+                                    return;
+                                }
+                                const currentModel = getPaneActiveModel() || { model: 'gemini-2.5-flash', providerId: 'google' };
+                                const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                                if (chatItemEl) chatItemEl.classList.add('is-naming');
+                                if (typeof NexusToast !== 'undefined') NexusToast.show('✨ Generating chat title...', 'info');
+
+                                chrome.runtime.sendMessage({
+                                    action: 'generate_chat_title',
+                                    modelObj: currentModel,
+                                    question: fullText,
+                                    images: null,
+                                    files: null,
+                                    history: []
+                                }, async (res) => {
+                                    if (chatItemEl) chatItemEl.classList.remove('is-naming');
+                                    if (res && res.success && res.title) {
+                                        const newTitle = res.title.trim();
+                                        await ChatHistoryManager.renameChat(sid, newTitle);
+                                        const updatedSession = await NexusChatDB.getSession(sid);
+                                        if (updatedSession) {
+                                            updatedSession.autoNamed = true;
+                                            updatedSession.isRenamed = true;
+                                            updatedSession.updatedAt = Date.now();
+                                            await NexusChatDB.putSession(updatedSession);
+                                            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                                                NexusSync.triggerDebouncedSync();
+                                            }
+                                        }
+                                        if (typeof NexusToast !== 'undefined') NexusToast.show(`Title updated: "${newTitle}"`, 'success');
+                                        renderRecentChatsSidebar();
+                                        renderTabs();
+                                    } else {
+                                        if (typeof NexusToast !== 'undefined') NexusToast.show('Failed to generate title: ' + (res?.error || 'Unknown error'), 'error');
+                                    }
+                                });
+                            }
+                        },
+                        {
+                            label: isArchived ? 'Unarchive' : 'Archive',
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+                            action: async () => {
+                                const meta = await NexusChatDB.getSession(sid);
+                                if (meta) {
+                                    if (isArchived) {
+                                        meta.archived = false;
+                                        meta.updatedAt = Date.now();
+                                        await NexusChatDB.putSession(meta);
+                                        chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                                        if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                                            NexusSync.triggerDebouncedSync();
+                                        }
+                                        renderRecentChatsSidebar();
+                                    } else {
+                                        let currentTitle = meta.title || 'Untitled Chat';
+                                        if (!meta.isRenamed && !meta.autoNamed && meta.questions && meta.questions.length > 0) {
+                                            currentTitle = meta.questions[meta.questions.length - 1].text || currentTitle;
+                                        }
+                                        const newTitle = await window.showCustomPopup({
+                                            title: 'Archive Chat',
+                                            body: 'Rename this chat to archive:',
+                                            isInput: true,
+                                            defaultValue: currentTitle,
+                                            confirmLabel: 'Archive'
+                                        });
+                                        if (newTitle === null) return;
+                                        meta.archived = true;
+                                        if (newTitle.trim()) {
+                                            meta.title = newTitle.trim();
+                                            meta.isRenamed = true;
+                                        }
+                                        meta.updatedAt = Date.now();
+                                        await NexusChatDB.putSession(meta);
+                                        chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                                        if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                                            NexusSync.triggerDebouncedSync();
+                                        }
+                                        renderRecentChatsSidebar();
+                                    }
+                                }
+                            }
+                        },
+                        { divider: true },
+                        {
+                            label: 'Delete',
+                            danger: true,
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+                            action: async () => {
+                                const confirmed = await window.showCustomPopup({
+                                    title: 'Delete Chat',
+                                    body: 'Are you sure you want to delete this chat? This action cannot be undone.',
+                                    confirmLabel: 'Delete',
+                                    isDanger: true
+                                });
+                                if (confirmed) {
+                                    await ChatHistoryManager.deleteChat(sid);
+                                    tabs.forEach((tab, index) => {
+                                        if (tab.sessionId === sid) {
+                                            resetChat();
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    ],
+                    onClose: () => {
+                        if (parentItem) parentItem.classList.remove('ctx-active');
+                    }
+                });
             });
         });
 
@@ -4073,8 +4030,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             }
             const targetEntry = untilEntryId ? ui.historyEl.querySelector(`.nexus-entry[data-entry-id="${untilEntryId}"]`) : ui.historyEl.lastElementChild;
             if (targetEntry) {
-                ui.clearAnswer(targetEntry);
-                ui.showLoading(targetEntry, skipMargin);
+                if (!extra.isRegenerate) {
+                    ui.clearAnswer(targetEntry);
+                    ui.showLoading(targetEntry, skipMargin);
+                }
             }
         }
     });
@@ -4083,8 +4042,8 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         setTimeout(renderRecentChatsSidebar, 0);
     }
     let pageContext = "";
-    const isSpotlightWindow = !isSidePanel && !isWebApp;
-    const shouldReadPage = isSpotlightWindow ? false : ((extra.readPage !== undefined) ? extra.readPage : readWebpageEnabled);
+    const isStandaloneWindow = !isSidePanel && !isWebApp;
+    const shouldReadPage = isStandaloneWindow ? false : ((extra.readPage !== undefined) ? extra.readPage : readWebpageEnabled);
     let tabModel = currentTab?.selectedModel;
     if (!tabModel) {
         const fallbackUI = sharedInputUI;
@@ -4151,7 +4110,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                             }
                         }
                     } catch (e) {
-                        console.error('[Spotlight] Failed to read Nexus tab:', e);
+                        console.error('[Nexus] Failed to read Nexus tab:', e);
                     }
                     return [];
                 }
@@ -4168,7 +4127,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                     pageContextCache.set(cacheKey, ctxList);
                     return ctxList;
                 } catch (e) {
-                    console.warn(`[Spotlight] Could not read tab ${source.tabId}:`, e);
+                    console.warn(`[Nexus] Could not read tab ${source.tabId}:`, e);
                 }
                 return [];
             }));
@@ -4209,9 +4168,11 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 if (currentTab) currentTab.lastContextUrl = currentUrl;
             }
         } catch (err) {
-            console.error("[Spotlight] Failed to read pinned tabs:", err);
+            console.error("[Nexus] Failed to read pinned tabs:", err);
         }
     }
+    const chatWidth = currentTab?.historyEl?.clientWidth || window.innerWidth;
+    const currentSurface = (chatWidth < 550) ? 'sidepanel' : 'desktop';
     const message = {
         action: streamAction,
         sessionId: currentTab?.sessionId,
@@ -4219,11 +4180,14 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         initialContext: pageContext,
         question: apiText || 'Describe these images',
         imageData: images.length > 0 ? images : null,
-        isSpotlight: true,
         hasTranscriptForVideoId: currentTab?.chatUIInstance?.getTranscriptVideoId ? currentTab.chatUIInstance.getTranscriptVideoId() : null,
-        options: extra,
+        options: {
+            ...extra,
+            surface: currentSurface
+        },
         requestOptions: {
             ...extra,
+            surface: currentSurface,
             ...(tabModel ? { tabModel: { providerId: tabModel.providerId, model: tabModel.model } } : {}),
             ...(currentTab?.thinkingLevel ? { thinkingLevel: currentTab.thinkingLevel } : {}),
             ...((extra.maxTokens !== undefined && extra.maxTokens !== null && extra.maxTokens !== '')
@@ -5099,18 +5063,29 @@ function showAnswerVersion(entryElement, direction) {
         versions[activeIndex].classList.remove('active');
         versions[newIndex].classList.add('active');
         updateVersionNav(entryElement, newIndex, versions.length);
+        const answers = entryElement.querySelectorAll('.nexus-chat-answer');
+        answers.forEach(ans => {
+            if (typeof NexusChatUI !== 'undefined') {
+                NexusChatUI.updateVersionNavInActions(ans);
+            }
+        });
+        const historyEl = entryElement.closest('.nexus-chat-history');
+        if (historyEl && typeof ChatHistoryManager !== 'undefined') {
+            ChatHistoryManager.saveCurrentChat(historyEl);
+        }
     }
 }
 
 function updateVersionNav(entryElement, activeIndex, totalCount) {
-    const nav = entryElement.querySelector('.nexus-answer-nav');
-    if (!nav) return;
-    const counter = nav.querySelector('.nexus-answer-nav-counter');
-    const prevBtn = nav.querySelector('.nav-prev');
-    const nextBtn = nav.querySelector('.nav-next');
-    counter.textContent = `${activeIndex + 1} / ${totalCount}`;
-    prevBtn.disabled = activeIndex === 0;
-    nextBtn.disabled = activeIndex === totalCount - 1;
+    const navs = entryElement.querySelectorAll('.nexus-answer-nav');
+    navs.forEach(nav => {
+        const counter = nav.querySelector('.nexus-answer-nav-counter');
+        const prevBtn = nav.querySelector('.nav-prev');
+        const nextBtn = nav.querySelector('.nav-next');
+        if (counter) counter.textContent = `${activeIndex + 1} / ${totalCount}`;
+        if (prevBtn) prevBtn.disabled = activeIndex === 0;
+        if (nextBtn) nextBtn.disabled = activeIndex === totalCount - 1;
+    });
 }
 
 function isShortcutMatch(event, shortcut) {
@@ -5682,246 +5657,218 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
-async function renderDropdownMenu() {
-    const dropdown = document.getElementById('topbar-dropdown-menu');
-    if (!dropdown) return;
+async function renderDropdownMenu(anchor) {
+    const targetAnchor = anchor || document.getElementById('topbar-more-btn');
+    if (!targetAnchor) return;
     const activeTab = tabs[activeTabIndex];
     const sessionId = activeTab?.sessionId || null;
     if (!sessionId) {
-        dropdown.style.display = 'none';
         if (typeof updateTopbarMenuVisibility === 'function') updateTopbarMenuVisibility();
         return;
     }
-    let sessionMeta = null;
-    if (sessionId) {
-        sessionMeta = await NexusChatDB.getSession(sessionId);
-    }
+    const sessionMeta = await NexusChatDB.getSession(sessionId);
     const isPinned = sessionMeta?.pinned || false;
     const isArchived = sessionMeta?.archived || false;
-    const pinSVG = isPinned
-        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/><line x1="4" y1="4" x2="20" y2="20"/></svg>`
-        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`;
-    const archiveSVG = isArchived
-        ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="m9 14 3-3 3 3"/><path d="M12 11v6"/></svg>`
-        : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`;
-    const html = `
-        <div class="dropdown-section-title">This chat</div>
-        <div class="dropdown-item action-item" id="dropdown-pin-btn">
-            ${pinSVG}
-            <span class="item-text">${isPinned ? 'Unpin' : 'Pin'}</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-archive-btn">
-            ${archiveSVG}
-            <span class="item-text">${isArchived ? 'Unarchive' : 'Archive'}</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-rename-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            <span class="item-text">Rename</span>
-        </div>
-        <div class="dropdown-item action-item" id="dropdown-copy-chat-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
-            <span class="item-text">Copy Chat</span>
-        </div>
-        <div class="dropdown-divider"></div>
-        <div class="dropdown-item action-item action-item--danger" id="dropdown-delete-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            <span class="item-text">Delete</span>
-        </div>
-    `;
-    dropdown.innerHTML = html;
-    const hide = () => { dropdown.style.display = 'none'; };
-    dropdown.querySelector('#dropdown-pin-btn')?.addEventListener('click', async () => {
-        if (!sessionId) return;
-        const session = await NexusChatDB.getSession(sessionId);
-        if (session) {
-            const currentlyPinned = !!session.pinned;
-            if (!currentlyPinned) {
-                let currentTitle = session.title || 'Untitled Chat';
-                if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
-                    currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
-                }
-                const newTitle = await window.showCustomPopup({
-                    title: 'Pin this chat',
-                    body: '',
-                    isInput: true,
-                    defaultValue: currentTitle,
-                    confirmLabel: 'Pin'
-                });
-                if (newTitle === null) {
-                    hide();
-                    return;
-                }
-                session.pinned = true;
-                if (newTitle.trim()) {
-                    session.title = newTitle.trim();
-                    session.isRenamed = true;
-                }
-            } else {
-                session.pinned = false;
-            }
-            session.updatedAt = Date.now();
-            await NexusChatDB.putSession(session);
-            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
-            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                NexusSync.triggerDebouncedSync();
-            }
-            if (session.isRenamed) {
-                const currentActiveTab = tabs[targetIdx];
-                if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
-                    currentActiveTab.title = session.title;
-                    renderTabs();
-                }
-            }
-            renderRecentChatsSidebar();
-        }
-        hide();
-    });
-    dropdown.querySelector('#dropdown-archive-btn')?.addEventListener('click', async () => {
-        if (!sessionId || !sessionMeta) return;
-        const isArchived = !!sessionMeta.archived;
-        if (isArchived) {
-            sessionMeta.archived = false;
-            sessionMeta.updatedAt = Date.now();
-            await NexusChatDB.putSession(sessionMeta);
-            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
-            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                NexusSync.triggerDebouncedSync();
-            }
-            renderRecentChatsSidebar();
-        } else {
-            let currentTitle = sessionMeta.title || 'Untitled Chat';
-            if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
-                currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
-            }
-            const newTitle = await window.showCustomPopup({
-                title: 'Archive Chat',
-                body: 'Rename this chat to archive:',
-                isInput: true,
-                defaultValue: currentTitle,
-                confirmLabel: 'Archive'
-            });
-            if (newTitle !== null) {
-                if (newTitle.trim()) {
-                    sessionMeta.title = newTitle.trim();
-                    sessionMeta.isRenamed = true;
-                }
-                sessionMeta.archived = true;
-                sessionMeta.updatedAt = Date.now();
-                await NexusChatDB.putSession(sessionMeta);
-                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
-                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
-                    NexusSync.triggerDebouncedSync();
-                }
-                renderRecentChatsSidebar();
-            }
-        }
-        hide();
-    });
-    dropdown.querySelector('#dropdown-rename-btn')?.addEventListener('click', async () => {
-        if (!sessionId || !sessionMeta) return;
-        let currentTitle = sessionMeta.title || 'Untitled Chat';
-        if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
-            currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
-        }
-        const newTitle = await window.showCustomPopup({
-            title: 'Rename Chat',
-            body: '',
-            isInput: true,
-            defaultValue: currentTitle,
-            confirmLabel: 'Rename'
-        });
-        if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
-            await ChatHistoryManager.renameChat(sessionId, newTitle.trim());
-        }
-        hide();
-    });
-    dropdown.querySelector('#dropdown-copy-chat-btn')?.addEventListener('click', async () => {
-        if (!sessionId) return;
-        let fullText = '';
-        const messages = typeof ChatHistoryManager !== 'undefined' ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
-        if (messages && messages.length > 0) {
-            let blocks = [];
-            let currentBlock = [];
-            messages.forEach(msg => {
-                const role = msg.type === 'question' ? 'User' : 'Model';
-                const text = msg.content || msg.text || '';
-                if (role === 'User') {
-                    if (currentBlock.length > 0) {
-                        blocks.push(currentBlock.join('\n\n'));
-                        currentBlock = [];
+
+    NexusMenu.show({
+        anchor: targetAnchor,
+        placement: 'bottom-end',
+        items: [
+            {
+                label: isPinned ? 'Unpin' : 'Pin',
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+                action: async () => {
+                    const session = await NexusChatDB.getSession(sessionId);
+                    if (session) {
+                        const currentlyPinned = !!session.pinned;
+                        if (!currentlyPinned) {
+                            let currentTitle = session.title || 'Untitled Chat';
+                            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+                                currentTitle = session.questions[session.questions.length - 1].text || currentTitle;
+                            }
+                            const newTitle = await window.showCustomPopup({
+                                title: 'Pin this chat',
+                                body: '',
+                                isInput: true,
+                                defaultValue: currentTitle,
+                                confirmLabel: 'Pin'
+                            });
+                            if (newTitle === null) return;
+                            session.pinned = true;
+                            if (newTitle.trim()) {
+                                session.title = newTitle.trim();
+                                session.isRenamed = true;
+                            }
+                        } else {
+                            session.pinned = false;
+                        }
+                        session.updatedAt = Date.now();
+                        await NexusChatDB.putSession(session);
+                        chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                        if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                            NexusSync.triggerDebouncedSync();
+                        }
+                        if (session.isRenamed) {
+                            const currentActiveTab = tabs[activeTabIndex];
+                            if (currentActiveTab && currentActiveTab.sessionId === sessionId) {
+                                currentActiveTab.title = session.title;
+                                renderTabs();
+                            }
+                        }
+                        renderRecentChatsSidebar();
                     }
-                    currentBlock.push(`User:\n${text}`);
-                } else {
-                    currentBlock.push(`Model:\n${text}`);
                 }
-            });
-            if (currentBlock.length > 0) {
-                blocks.push(currentBlock.join('\n\n'));
-            }
-            fullText = blocks.join('\n\n---\n\n');
-        } else {
-            const session = await NexusChatDB.getSession(sessionId);
-            if (session && session.questions && session.questions.length > 0) {
-                fullText = session.questions.map(q => {
-                    let text = `User:\n${q.text || ''}`;
-                    if (q.answers) {
-                        const answerList = Array.isArray(q.answers) ? q.answers : Object.values(q.answers);
-                        const selectedAns = q.selectedVersionId 
-                            ? (q.answers[q.selectedVersionId] || answerList.find(a => a && a.text))
-                            : answerList.find(a => a && a.text);
-                        if (selectedAns && selectedAns.text) {
-                            text += `\n\nModel:\n${selectedAns.text}`;
+            },
+            {
+                label: isArchived ? 'Unarchive' : 'Archive',
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+                action: async () => {
+                    if (sessionMeta) {
+                        if (isArchived) {
+                            sessionMeta.archived = false;
+                            sessionMeta.updatedAt = Date.now();
+                            await NexusChatDB.putSession(sessionMeta);
+                            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                                NexusSync.triggerDebouncedSync();
+                            }
+                            renderRecentChatsSidebar();
+                        } else {
+                            let currentTitle = sessionMeta.title || 'Untitled Chat';
+                            if (!sessionMeta.isRenamed && !sessionMeta.autoNamed && sessionMeta.questions && sessionMeta.questions.length > 0) {
+                                currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
+                            }
+                            const newTitle = await window.showCustomPopup({
+                                title: 'Archive Chat',
+                                body: 'Rename this chat to archive:',
+                                isInput: true,
+                                defaultValue: currentTitle,
+                                confirmLabel: 'Archive'
+                            });
+                            if (newTitle !== null) {
+                                if (newTitle.trim()) {
+                                    sessionMeta.title = newTitle.trim();
+                                    sessionMeta.isRenamed = true;
+                                }
+                                sessionMeta.archived = true;
+                                sessionMeta.updatedAt = Date.now();
+                                await NexusChatDB.putSession(sessionMeta);
+                                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                                if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                                    NexusSync.triggerDebouncedSync();
+                                }
+                                renderRecentChatsSidebar();
+                            }
                         }
                     }
-                    return text;
-                }).filter(Boolean).join('\n\n---\n\n');
-            }
-        }
-        if (!fullText) {
-            if (typeof NexusToast !== 'undefined') NexusToast.show('No chat content to copy.', 'info');
-            hide();
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(fullText);
-            if (typeof NexusToast !== 'undefined') NexusToast.show('Copied entire chat to clipboard!', 'success');
-        } catch (err) {
-            console.error('Failed to copy chat:', err);
-            if (typeof NexusToast !== 'undefined') NexusToast.show('Failed to copy chat.', 'error');
-        }
-        hide();
-    });
-    dropdown.querySelector('#dropdown-delete-btn')?.addEventListener('click', async () => {
-        if (!sessionId) return;
-        const confirmed = await window.showCustomPopup({
-            title: 'Delete Chat',
-            body: 'Are you sure you want to delete this chat? This action cannot be undone.',
-            confirmLabel: 'Delete',
-            isDanger: true
-        });
-        if (confirmed) {
-            await ChatHistoryManager.deleteChat(sessionId);
-            tabs.forEach((tab, index) => {
-                if (tab.sessionId === sessionId) {
-                    resetChat();
                 }
-            });
-        }
-        hide();
-    });
-    dropdown.querySelector('#dropdown-continue-btn')?.addEventListener('click', () => {
-        let url = chrome.runtime.getURL('pages/nexus/nexus.html');
-        if (sessionId) url += `?session_id=${sessionId}`;
-        chrome.tabs.create({ url });
-        hide();
-    });
-    dropdown.querySelector('#dropdown-settings-btn')?.addEventListener('click', () => {
-        if (typeof NexusSettingsModal !== 'undefined') {
-            NexusSettingsModal.show();
-        } else {
-            chrome.runtime.openOptionsPage();
-        }
-        hide();
+            },
+            {
+                label: 'Rename',
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                action: async () => {
+                    let currentTitle = sessionMeta?.title || 'Untitled Chat';
+                    if (!sessionMeta?.isRenamed && !sessionMeta?.autoNamed && sessionMeta?.questions && sessionMeta?.questions.length > 0) {
+                        currentTitle = sessionMeta.questions[sessionMeta.questions.length - 1].text || currentTitle;
+                    }
+                    const newTitle = await window.showCustomPopup({
+                        title: 'Rename Chat',
+                        body: '',
+                        isInput: true,
+                        defaultValue: currentTitle,
+                        confirmLabel: 'Rename'
+                    });
+                    if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+                        await ChatHistoryManager.renameChat(sessionId, newTitle.trim());
+                        const activeTab = tabs[activeTabIndex];
+                        if (activeTab && activeTab.sessionId === sessionId) {
+                            activeTab.title = newTitle.trim();
+                            renderTabs();
+                        }
+                        renderRecentChatsSidebar();
+                    }
+                }
+            },
+            {
+                label: 'Copy Chat',
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>`,
+                action: async () => {
+                    let fullText = '';
+                    const messages = typeof ChatHistoryManager !== 'undefined' ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
+                    if (messages && messages.length > 0) {
+                        let blocks = [];
+                        let currentBlock = [];
+                        messages.forEach(msg => {
+                            const role = msg.type === 'question' ? 'User' : 'Model';
+                            const text = msg.content || msg.text || '';
+                            if (role === 'User') {
+                                if (currentBlock.length > 0) {
+                                    blocks.push(currentBlock.join('\n\n'));
+                                    currentBlock = [];
+                                }
+                                currentBlock.push(`User:\n${text}`);
+                            } else {
+                                currentBlock.push(`Model:\n${text}`);
+                            }
+                        });
+                        if (currentBlock.length > 0) {
+                            blocks.push(currentBlock.join('\n\n'));
+                        }
+                        fullText = blocks.join('\n\n---\n\n');
+                    } else {
+                        const session = await NexusChatDB.getSession(sessionId);
+                        if (session && session.questions && session.questions.length > 0) {
+                            fullText = session.questions.map(q => {
+                                let text = `User:\n${q.text || ''}`;
+                                if (q.answers) {
+                                    const answerList = Array.isArray(q.answers) ? q.answers : Object.values(q.answers);
+                                    const selectedAns = q.selectedVersionId 
+                                        ? (q.answers[q.selectedVersionId] || answerList.find(a => a && a.text))
+                                        : answerList.find(a => a && a.text);
+                                    if (selectedAns && selectedAns.text) {
+                                        text += `\n\nModel:\n${selectedAns.text}`;
+                                    }
+                                }
+                                return text;
+                            }).filter(Boolean).join('\n\n---\n\n');
+                        }
+                    }
+                    if (!fullText) {
+                        if (typeof NexusToast !== 'undefined') NexusToast.show('No chat content to copy.', 'info');
+                        return;
+                    }
+                    try {
+                        await navigator.clipboard.writeText(fullText);
+                        if (typeof NexusToast !== 'undefined') NexusToast.show('Copied entire chat to clipboard!', 'success');
+                    } catch (err) {
+                        console.error('Failed to copy chat:', err);
+                        if (typeof NexusToast !== 'undefined') NexusToast.show('Failed to copy chat.', 'error');
+                    }
+                }
+            },
+            { divider: true },
+            {
+                label: 'Delete',
+                danger: true,
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+                action: async () => {
+                    const confirmed = await window.showCustomPopup({
+                        title: 'Delete Chat',
+                        body: 'Are you sure you want to delete this chat? This action cannot be undone.',
+                        confirmLabel: 'Delete',
+                        isDanger: true
+                    });
+                    if (confirmed) {
+                        await ChatHistoryManager.deleteChat(sessionId);
+                        tabs.forEach((tab) => {
+                            if (tab.sessionId === sessionId) {
+                                resetChat();
+                            }
+                        });
+                    }
+                }
+            }
+        ]
     });
 }
 
@@ -6172,8 +6119,7 @@ function initTopbarModelSelector() {
         if (dropdown.classList.contains('active')) {
             dropdown.classList.remove('active');
         } else {
-            const moreDropdown = document.getElementById('topbar-dropdown-menu');
-            if (moreDropdown) moreDropdown.style.display = 'none';
+            NexusMenu.close();
             fetchAndRender();
             dropdown.classList.add('active');
         }
@@ -6665,364 +6611,9 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             hideSidebarTooltip(e);
         }
     });
-    window.NexusCanvas = {
-        currentDoc: {
-            name: '',
-            type: '',
-            content: '',
-            comments: []
-        },
-        handleStream(text) {
-            const createRegex = /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-create>|$)/i;
-            const createMatch = text.match(createRegex);
-            if (createMatch) {
-                const name = createMatch[1];
-                const type = createMatch[2];
-                const content = createMatch[3];
-                this.showCanvas();
-                this.setDocument(name, type, content);
-                return;
-            }
-            const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)(?:<\/nexus-canvas-update>|$)/i;
-            const updateMatch = text.match(updateRegex);
-            if (updateMatch) {
-                const name = updateMatch[1];
-                const body = updateMatch[2];
-                const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
-                const replacementMatch = body.match(/<replacement>([\s\S]*?)(?:<\/replacement>|$)/i);
-                if (patternMatch && replacementMatch) {
-                    const pattern = patternMatch[1];
-                    const replacement = replacementMatch[2];
-                    this.applyUpdate(name, pattern, replacement, false);
-                }
-            }
-        },
-        handleDone(text) {
-            const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi;
-            let match;
-            while ((match = updateRegex.exec(text)) !== null) {
-                const name = match[1];
-                const body = match[2];
-                const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
-                const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
-                if (patternMatch && replacementMatch) {
-                    this.applyUpdate(name, patternMatch[1], replacementMatch[2], true);
-                }
-            }
-        },
-        showCanvas() {
-            const paneSecondary = document.getElementById('pane-secondary');
-            if (paneSecondary) {
-                paneSecondary.classList.add('canvas-active');
-            }
-        },
-        hideCanvas() {
-            const paneSecondary = document.getElementById('pane-secondary');
-            if (paneSecondary) {
-                paneSecondary.classList.remove('canvas-active');
-            }
-        },
-        setDocument(name, type, content) {
-            this.currentDoc.name = name;
-            this.currentDoc.type = type;
-            this.currentDoc.content = content;
-            const titleInput = document.getElementById('nexus-canvas-title');
-            const typeBadge = document.getElementById('nexus-canvas-type-badge');
-            const editorTextarea = document.getElementById('nexus-canvas-editor');
-            const documentView = document.getElementById('nexus-canvas-document');
-            const codeTabBtn = document.getElementById('nexus-canvas-tab-code');
-            const previewTabBtn = document.getElementById('nexus-canvas-tab-preview');
-            const container = document.querySelector('.nexus-canvas-container');
-            if (titleInput) titleInput.value = name;
-            if (typeBadge) {
-                typeBadge.textContent = type.replace('code/', '').toUpperCase();
-            }
-            if (editorTextarea) {
-                editorTextarea.value = content;
-            }
-            this.syncHighlighting(content);
-            if (documentView) {
-                window.ensureMarkedLoaded().then(() => {
-                    if (typeof marked !== 'undefined') {
-                        documentView.innerHTML = marked.parse(content);
-                    } else {
-                        documentView.textContent = content;
-                    }
-                }).catch(() => {
-                    documentView.textContent = content;
-                });
-            }
-            if (container) {
-                if (type === 'document') {
-                    container.classList.add('type-document');
-                } else {
-                    container.classList.remove('type-document');
-                }
-            }
-            if (codeTabBtn) {
-                if (type === 'document') {
-                    codeTabBtn.textContent = 'Edit';
-                } else {
-                    codeTabBtn.textContent = 'Code';
-                }
-                codeTabBtn.style.display = 'block';
-            }
-            if (previewTabBtn) {
-                if (type === 'document') {
-                    previewTabBtn.textContent = 'Preview';
-                    previewTabBtn.style.display = 'block';
-                } else if (type === 'code/html' || type === 'code/react' || type.includes('html')) {
-                    previewTabBtn.textContent = 'Preview';
-                    previewTabBtn.style.display = 'block';
-                } else {
-                    previewTabBtn.style.display = 'none';
-                }
-            }
-            this.switchTab('code');
-            this.updatePreview();
-        },
-        applyUpdate(name, pattern, replacement, isFinal) {
-            let currentContent = this.currentDoc.content;
-            let newContent = currentContent;
-            if (pattern === '.*') {
-                newContent = replacement;
-            } else {
-                try {
-                    const regex = new RegExp(pattern, 'g');
-                    newContent = currentContent.replace(regex, replacement);
-                } catch (e) {
-                    console.error('[Nexus Canvas] Regex error:', e);
-                }
-            }
-            this.currentDoc.content = newContent;
-            const editorTextarea = document.getElementById('nexus-canvas-editor');
-            if (editorTextarea) {
-                editorTextarea.value = newContent;
-            }
-            this.syncHighlighting(newContent);
-            const documentView = document.getElementById('nexus-canvas-document');
-            if (documentView && this.currentDoc.type === 'document') {
-                window.ensureMarkedLoaded().then(() => {
-                    if (typeof marked !== 'undefined') {
-                        documentView.innerHTML = marked.parse(newContent);
-                    } else {
-                        documentView.textContent = newContent;
-                    }
-                }).catch(() => {
-                    documentView.textContent = newContent;
-                });
-            }
-            if (isFinal) {
-                this.updatePreview();
-            }
-        },
-        updatePreview() {
-            const previewFrame = document.getElementById('nexus-canvas-preview-frame');
-            if (!previewFrame) return;
-            let content = this.currentDoc.content;
-            if (this.currentDoc.type === 'code/react') {
-                content = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8" />
-                        <title>React Preview</title>
-                        <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-                        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-                        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-                        <script src="https://cdn.tailwindcss.com"></script>
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                    </head>
-                    <body class="bg-gray-50 text-gray-900 p-4">
-                        <div id="root"></div>
-                        <script type="text/babel">
-                            ${content.replace(/export default/g, 'const App = ')}
-                            const root = ReactDOM.createRoot(document.getElementById('root'));
-                            root.render(<App />);
-                        </script>
-                    </body>
-                    </html>
-                `;
-            }
-            try {
-                const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
-                doc.open();
-                doc.write(content);
-                doc.close();
-            } catch (e) {
-                console.error('[Nexus Canvas] Preview injection error:', e);
-            }
-        },
-        switchTab(tabId) {
-            const codeTabBtn = document.getElementById('nexus-canvas-tab-code');
-            const previewTabBtn = document.getElementById('nexus-canvas-tab-preview');
-            const codePanel = document.getElementById('nexus-canvas-code-panel');
-            const documentPanel = document.getElementById('nexus-canvas-document-panel');
-            const previewPanel = document.getElementById('nexus-canvas-preview-panel');
-            if (codePanel) codePanel.classList.remove('active');
-            if (documentPanel) documentPanel.classList.remove('active');
-            if (previewPanel) previewPanel.classList.remove('active');
-            if (codeTabBtn) codeTabBtn.classList.remove('active');
-            if (previewTabBtn) previewTabBtn.classList.remove('active');
-            if (tabId === 'code') {
-                if (codeTabBtn) codeTabBtn.classList.add('active');
-                if (codePanel) codePanel.classList.add('active');
-            } else if (tabId === 'preview') {
-                if (previewTabBtn) previewTabBtn.classList.add('active');
-                if (this.currentDoc.type === 'document') {
-                    if (documentPanel) documentPanel.classList.add('active');
-                    const documentView = document.getElementById('nexus-canvas-document');
-                    if (documentView) {
-                        window.ensureMarkedLoaded().then(() => {
-                            if (typeof marked !== 'undefined') {
-                                documentView.innerHTML = marked.parse(this.currentDoc.content);
-                            } else {
-                                documentView.textContent = this.currentDoc.content;
-                            }
-                        }).catch(() => {
-                            documentView.textContent = this.currentDoc.content;
-                        });
-                    }
-                } else {
-                    if (previewPanel) previewPanel.classList.add('active');
-                    this.updatePreview();
-                }
-            }
-        },
-        syncHighlighting(code) {
-            const codeEl = document.getElementById('nexus-canvas-highlight-code');
-            if (codeEl) {
-                const escaped = code
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
-                codeEl.innerHTML = escaped.endsWith('\n') ? escaped + ' ' : escaped;
-                window.ensureHighlightLoaded().then(() => {
-                    if (typeof hljs !== 'undefined') {
-                        let lang = (this.currentDoc.type || 'javascript').replace('code/', '');
-                        if (lang === 'react') lang = 'jsx';
-                        codeEl.className = lang;
-                        hljs.highlightElement(codeEl);
-                    }
-                });
-            }
-        },
-        init() {
-            const closeBtn = document.getElementById('nexus-canvas-btn-close');
-            if (closeBtn) {
-                closeBtn.onclick = () => this.hideCanvas();
-            }
-            const codeTabBtn = document.getElementById('nexus-canvas-tab-code');
-            if (codeTabBtn) {
-                codeTabBtn.onclick = () => this.switchTab('code');
-            }
-            const previewTabBtn = document.getElementById('nexus-canvas-tab-preview');
-            if (previewTabBtn) {
-                previewTabBtn.onclick = () => this.switchTab('preview');
-            }
-            const saveLocalDoc = () => {
-                const activeTab = tabs[activeTabIndex];
-                const sessionId = activeTab ? activeTab.sessionId : 'global';
-                const key = `nexus-canvas-${sessionId}-${this.currentDoc.name}`;
-                localStorage.setItem(key, JSON.stringify({
-                    name: this.currentDoc.name,
-                    type: this.currentDoc.type,
-                    content: this.currentDoc.content
-                }));
-            };
-            const titleInput = document.getElementById('nexus-canvas-title');
-            if (titleInput) {
-                titleInput.oninput = () => {
-                    const oldName = this.currentDoc.name;
-                    const newName = titleInput.value;
-                    this.currentDoc.name = newName;
-                    const activeTab = tabs[activeTabIndex];
-                    const sessionId = activeTab ? activeTab.sessionId : 'global';
-                    localStorage.removeItem(`nexus-canvas-${sessionId}-${oldName}`);
-                    saveLocalDoc();
-                };
-            }
-            const textarea = document.getElementById('nexus-canvas-editor');
-            const pre = document.getElementById('nexus-canvas-highlight-block');
-            if (textarea && pre) {
-                textarea.onscroll = () => {
-                    pre.scrollTop = textarea.scrollTop;
-                    pre.scrollLeft = textarea.scrollLeft;
-                };
-                textarea.oninput = () => {
-                    const code = textarea.value;
-                    this.currentDoc.content = code;
-                    this.syncHighlighting(code);
-                    this.updatePreview();
-                    saveLocalDoc();
-                };
-            }
-        },
-        loadVersionFromCard(card) {
-            const cardTitle = card.querySelector('.nexus-canvas-card-title')?.textContent || '';
-            if (!cardTitle) return;
-            const activeTab = tabs[activeTabIndex];
-            const sessionId = activeTab ? activeTab.sessionId : 'global';
-            const localSaved = localStorage.getItem(`nexus-canvas-${sessionId}-${cardTitle}`);
-            if (localSaved) {
-                try {
-                    const parsed = JSON.parse(localSaved);
-                    this.showCanvas();
-                    this.setDocument(parsed.name, parsed.type, parsed.content);
-                    return;
-                } catch (e) {
-                    console.error('[Nexus Canvas] Error loading local saved doc:', e);
-                }
-            }
-            const chatHistory = document.getElementById('chat-history') || document.getElementById('chat-history-secondary');
-            if (!chatHistory) return;
-            const allAnswers = Array.from(chatHistory.querySelectorAll('.nexus-chat-answer'));
-            let docName = '';
-            let docType = '';
-            let docContent = '';
-            allAnswers.forEach(ans => {
-                const rawText = ans.getAttribute('data-raw-text') || '';
-                const createRegex = /<nexus-canvas-create\s+name="([^"]+)"\s+type="([^"]+)">([\s\S]*?)<\/nexus-canvas-create>/gi;
-                let createMatch;
-                while ((createMatch = createRegex.exec(rawText)) !== null) {
-                    if (createMatch[1] === cardTitle) {
-                        docName = createMatch[1];
-                        docType = createMatch[2];
-                        docContent = createMatch[3];
-                    }
-                }
-                const updateRegex = /<nexus-canvas-update\s+name="([^"]+)">([\s\S]*?)<\/nexus-canvas-update>/gi;
-                let updateMatch;
-                while ((updateMatch = updateRegex.exec(rawText)) !== null) {
-                    if (updateMatch[1] === cardTitle) {
-                        const name = updateMatch[1];
-                        const body = updateMatch[2];
-                        const patternMatch = body.match(/<pattern>([\s\S]*?)<\/pattern>/i);
-                        const replacementMatch = body.match(/<replacement>([\s\S]*?)<\/replacement>/i);
-                        if (patternMatch && replacementMatch) {
-                            const pattern = patternMatch[1];
-                            const replacement = replacementMatch[2];
-                            if (pattern === '.*') {
-                                docContent = replacement;
-                            } else {
-                                try {
-                                    const regex = new RegExp(pattern, 'g');
-                                    docContent = docContent.replace(regex, replacement);
-                                } catch (e) {
-                                    console.error('[Nexus Canvas] Regex history parse error:', e);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            if (docName) {
-                this.showCanvas();
-                this.setDocument(docName, docType, docContent);
-            }
-        }
-    };
-    window.NexusCanvas.init();
+    window.NexusCanvas = CanvasService;
+    window.NexusCanvas.init(() => tabs, () => activeTabIndex);
+
     document.addEventListener('click', (e) => {
         const card = e.target.closest('.nexus-canvas-card');
         if (card) {
@@ -7036,7 +6627,147 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
                     return;
                 }
             }
-            window.NexusCanvas.loadVersionFromCard(card);
+            window.NexusCanvas.loadVersionFromCard(card, () => tabs, () => activeTabIndex);
+            return;
+        }
+
+        const actionBtn = e.target.closest('.nexus-action-chip, .nexus-followup-btn');
+        if (actionBtn) {
+            const query = actionBtn.getAttribute('data-query');
+            if (query && !actionBtn.disabled && !actionBtn.classList.contains('is-clicked')) {
+                actionBtn.classList.add('is-clicked');
+                const parentGroup = actionBtn.closest('.nexus-elicitations-wrapper') || actionBtn.closest('.nexus-followup-container');
+                if (parentGroup) {
+                    parentGroup.querySelectorAll('.nexus-action-chip, .nexus-followup-btn').forEach(btn => {
+                        btn.disabled = true;
+                        btn.classList.add('is-disabled');
+                    });
+                }
+                const activeTab = tabs[activeTabIndex];
+                if (activeTab && typeof handleSubmit === 'function') {
+                    handleSubmit(query, [], {}, activeTab);
+                }
+            }
+            return;
+        }
+
+        const widgetReloadBtn = e.target.closest('.nexus-widget-btn-reload');
+        if (widgetReloadBtn) {
+            const wrapper = widgetReloadBtn.closest('.nexus-widget-wrapper');
+            if (wrapper && typeof WidgetRunner !== 'undefined') {
+                WidgetRunner.reloadWidget(wrapper);
+            }
+            return;
+        }
+
+        const widgetExpandBtn = e.target.closest('.nexus-widget-btn-expand');
+        if (widgetExpandBtn) {
+            const wrapper = widgetExpandBtn.closest('.nexus-widget-wrapper');
+            if (wrapper) {
+                wrapper.classList.toggle('is-expanded');
+            }
+            return;
+        }
+
+        const carouselPrevBtn = e.target.closest('.nexus-carousel-prev');
+        if (carouselPrevBtn) {
+            const container = carouselPrevBtn.closest('.nexus-carousel-container');
+            const track = container?.querySelector('.nexus-carousel-track');
+            if (track) {
+                track.scrollBy({ left: -292, behavior: 'smooth' });
+            }
+            return;
+        }
+
+        const carouselNextBtn = e.target.closest('.nexus-carousel-next');
+        if (carouselNextBtn) {
+            const container = carouselNextBtn.closest('.nexus-carousel-container');
+            const track = container?.querySelector('.nexus-carousel-track');
+            if (track) {
+                track.scrollBy({ left: 292, behavior: 'smooth' });
+            }
+            return;
+        }
+
+        // Writing Block: Tab Switcher
+        const writingTab = e.target.closest('.nexus-writing-tab');
+        if (writingTab) {
+            const block = writingTab.closest('.nexus-writing-block');
+            if (block) {
+                const optIndex = writingTab.getAttribute('data-opt-index');
+                block.querySelectorAll('.nexus-writing-tab').forEach(t => t.classList.toggle('is-active', t === writingTab));
+                block.querySelectorAll('.nexus-writing-pane').forEach(p => {
+                    p.classList.toggle('is-active', p.getAttribute('data-opt-index') === optIndex);
+                });
+            }
+            return;
+        }
+
+        // Writing Block: Copy Subject
+        const writingSubjCopyBtn = e.target.closest('.nexus-writing-copy-subject-btn');
+        if (writingSubjCopyBtn) {
+            const textToCopy = writingSubjCopyBtn.getAttribute('data-copy');
+            if (textToCopy && navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy);
+                writingSubjCopyBtn.classList.add('is-copied');
+                setTimeout(() => writingSubjCopyBtn.classList.remove('is-copied'), 1500);
+            }
+            return;
+        }
+
+        // Writing Block: Copy Content
+        const writingCopyBtn = e.target.closest('.nexus-writing-btn-copy');
+        if (writingCopyBtn) {
+            const block = writingCopyBtn.closest('.nexus-writing-block');
+            const activePane = block ? block.querySelector('.nexus-writing-pane.is-active') : null;
+            if (activePane) {
+                const contentEl = activePane.querySelector('.nexus-writing-content');
+                const rawContent = activePane.getAttribute('data-raw-content') ? decodeURIComponent(activePane.getAttribute('data-raw-content')) : (contentEl ? contentEl.innerText : '');
+                if (rawContent && navigator.clipboard) {
+                    navigator.clipboard.writeText(rawContent);
+                    const span = writingCopyBtn.querySelector('span');
+                    if (span) {
+                        const oldText = span.textContent;
+                        span.textContent = 'Copied!';
+                        setTimeout(() => { span.textContent = oldText; }, 1500);
+                    }
+                }
+            }
+            return;
+        }
+
+        // Writing Block: Open / Create in Canvas
+        const writingCanvasBtn = e.target.closest('.nexus-writing-btn-canvas');
+        if (writingCanvasBtn) {
+            const block = writingCanvasBtn.closest('.nexus-writing-block');
+            const activePane = block ? block.querySelector('.nexus-writing-pane.is-active') : null;
+            const titleEl = block ? block.querySelector('.nexus-writing-title') : null;
+            const docTitle = titleEl ? titleEl.textContent.trim() : 'Draft Document';
+            if (activePane && window.NexusCanvas) {
+                const contentEl = activePane.querySelector('.nexus-writing-content');
+                const rawContent = activePane.getAttribute('data-raw-content') ? decodeURIComponent(activePane.getAttribute('data-raw-content')) : (contentEl ? contentEl.innerText : '');
+                if (typeof window.NexusCanvas.createCanvasDocument === 'function') {
+                    window.NexusCanvas.createCanvasDocument(docTitle, 'document', rawContent);
+                }
+                if (typeof window.NexusCanvas.openCanvas === 'function') {
+                    window.NexusCanvas.openCanvas();
+                }
+            }
+            return;
+        }
+
+        const carouselDot = e.target.closest('.nexus-carousel-dot');
+        if (carouselDot) {
+            const container = carouselDot.closest('.nexus-carousel-container');
+            const track = container?.querySelector('.nexus-carousel-track');
+            const idx = parseInt(carouselDot.getAttribute('data-index') || '0', 10);
+            if (track) {
+                track.scrollTo({ left: idx * 292, behavior: 'smooth' });
+                container.querySelectorAll('.nexus-carousel-dot').forEach((dot, dIdx) => {
+                    dot.classList.toggle('is-active', dIdx === idx);
+                });
+            }
+            return;
         }
     });
 

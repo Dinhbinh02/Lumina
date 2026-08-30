@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Sandbox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght,MONO@0,300..800,1;1,300..800,1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../../lib/vendor/katex/katex.min.css">
+  <script src="../../lib/vendor/katex/katex.min.js"></script>
+  <script src="../../lib/vendor/katex/auto-render.min.js"></script>
+  <style id="theme-style">
+    :root {
+      font-size: 14px;
+      --bg-color: #ffffff;
+      --text-color: #1f1f1f;
+      --text-secondary: rgba(31, 31, 31, 0.65);
+      --border-color: rgba(0, 0, 0, 0.08);
+      --card-bg: #f8fafc;
+      --card-sub-bg: #f1f5f9;
+      --accent-color: #1f1f1f;
+
+      /* Standard Harmonious Typographic Scale */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'Google Sans Code', ui-monospace, SFMono-Regular, "SF Mono", monospace;
+
+      --text-xs: 0.75em;
+      --text-sm: 0.875em;
+      --text-base: 1em;
+      --text-md: 1.125em;
+      --text-lg: 1.25em;
+      --text-xl: 1.5em;
+      --text-2xl: 2em;
+
+      --font-weight-regular: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 600;
+      --font-weight-bold: 700;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: transparent;
+      color: var(--text-color);
+      padding: 0.7em;
+      line-height: 1.5;
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-regular);
+      overflow-x: hidden;
+      overflow-y: hidden;
+      box-sizing: border-box;
+    }
+
+    #sandbox-root {
+      display: flow-root;
+      width: 100%;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      font-family: inherit;
+      font-size: var(--text-base);
+    }
+
+    input[type="range"] {
+      cursor: pointer;
+      accent-color: var(--text-color);
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--text-color);
+      color: var(--bg-color);
+      padding: 0.5em 1.1em;
+      border-radius: 0.5em;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stat-box {
+      background: var(--card-sub-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-color);
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="sandbox-root"></div>
+  <script>
+    function notifyHeight() {
+      const root = document.getElementById('sandbox-root');
+      if (!root) return;
+      const computed = window.getComputedStyle(document.body);
+      const padTop = parseFloat(computed.paddingTop) || 12;
+      const padBottom = parseFloat(computed.paddingBottom) || 12;
+      const contentHeight = Math.ceil(root.getBoundingClientRect().height);
+      const fullHeight = Math.ceil(contentHeight + padTop + padBottom);
+      if (fullHeight > 40) {
+        window.parent.postMessage({ type: 'NEXUS_WIDGET_RESIZE', height: fullHeight }, '*');
+      }
+    }
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => {
+        notifyHeight();
+      });
+      document.addEventListener('DOMContentLoaded', () => {
+        const root = document.getElementById('sandbox-root');
+        if (root) ro.observe(root);
+      });
+    }
+
+    let currentRenderedCode = null;
+
+    function applyThemeTokens(isDark, fontSize) {
+      if (fontSize) {
+        const fsStr = String(fontSize).trim();
+        document.documentElement.style.fontSize = fsStr.endsWith('px') ? fsStr : `${fsStr}px`;
+      }
+
+      const bg = isDark ? '#1e1e24' : '#ffffff';
+      const text = isDark ? '#f1f6fe' : '#1f1f1f';
+      const textSec = isDark ? 'rgba(241, 246, 254, 0.65)' : 'rgba(31, 31, 31, 0.65)';
+      const border = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+      const cardBg = isDark ? '#26282d' : '#f8fafc';
+      const cardSubBg = isDark ? '#1e1e24' : '#f1f5f9';
+      const accent = isDark ? '#f1f6fe' : '#1f1f1f';
+
+      document.documentElement.style.setProperty('--bg-color', bg);
+      document.documentElement.style.setProperty('--text-color', text);
+      document.documentElement.style.setProperty('--text-secondary', textSec);
+      document.documentElement.style.setProperty('--border-color', border);
+      document.documentElement.style.setProperty('--card-bg', cardBg);
+      document.documentElement.style.setProperty('--card-sub-bg', cardSubBg);
+      document.documentElement.style.setProperty('--accent-color', accent);
+      document.body.style.color = text;
+    }
+
+    async function renderContent(rawCode, isDark, fontSize) {
+      if (!rawCode) return;
+      applyThemeTokens(isDark, fontSize);
+
+      // Guard: if same code already executed, do not re-run scripts
+      if (currentRenderedCode === rawCode) {
+        return;
+      }
+      currentRenderedCode = rawCode;
+
+      const container = document.getElementById('sandbox-root');
+      container.innerHTML = rawCode;
+
+      if (typeof window.renderMathInElement === 'function') {
+        try {
+          window.renderMathInElement(container, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'canvas'],
+            throwOnError: false
+          });
+        } catch (e) {
+          console.warn('[Sandbox] KaTeX render error:', e);
+        }
+      }
+
+      // Re-insert scripts sequentially (waiting for external scripts with src to load first)
+      const scripts = Array.from(container.querySelectorAll('script'));
+      for (const oldScript of scripts) {
+        await new Promise((resolve) => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          
+          if (oldScript.src) {
+            newScript.onload = () => {
+              notifyHeight();
+              resolve();
+            };
+            newScript.onerror = () => {
+              console.warn("External script failed to load:", oldScript.src);
+              resolve();
+            };
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+          } else {
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+            resolve();
+          }
+        });
+      }
+
+      setTimeout(notifyHeight, 30);
+      setTimeout(notifyHeight, 120);
+      setTimeout(notifyHeight, 300);
+    }
+
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'NEXUS_WIDGET_RENDER') {
+        renderContent(event.data.code, event.data.isDark, event.data.fontSize);
+      } else if (event.data && event.data.type === 'NEXUS_WIDGET_THEME_UPDATE') {
+        applyThemeTokens(event.data.isDark, event.data.fontSize);
+        setTimeout(notifyHeight, 50);
+      }
+    });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => notifyHeight());
+      ro.observe(document.body);
+    }
+
+    // Notify parent iframe container that sandbox is ready
+    window.parent.postMessage({ type: 'NEXUS_WIDGET_READY' }, '*');
+    setTimeout(notifyHeight, 50);
+  </script>
+</body>
+
+</html>

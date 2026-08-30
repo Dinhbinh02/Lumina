@@ -202,8 +202,6 @@
                                     <circle cx="12" cy="19" r="2" />
                                 </svg>
                             </button>
-                            <div class="topbar-dropdown-menu" id="topbar-dropdown-menu">
-                            </div>
                         </div>
                     </div>
                     <div class="topbar-progress" id="topbar-progress"></div>
@@ -880,30 +878,6 @@
                                         <circle cx="12" cy="19" r="2"></circle>
                                     </svg>
                                 </button>
-                                <div class="topbar-dropdown-menu notes-dropdown-menu notes-more-menu" id="notes-more-menu" style="display: none;">
-                                    <button type="button" class="notes-dropdown-item" id="note-action-pin-detail">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="12" y1="17" x2="12" y2="22"></line>
-                                            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
-                                        </svg>
-                                        <span id="note-pin-detail-label">Pin Note</span>
-                                    </button>
-                                    <button type="button" class="notes-dropdown-item" id="note-action-export-md">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                            <polyline points="7 10 12 15 17 10"></polyline>
-                                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                                        </svg>
-                                        <span>Export Markdown</span>
-                                    </button>
-                                    <button type="button" class="notes-dropdown-item danger" id="note-action-delete">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        </svg>
-                                        <span>Delete Note</span>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </header>
@@ -1391,72 +1365,6 @@
 
                     <section class="nexus-settings-section" id="nexus-settings-sec-personalization">
                         <h2 class="nexus-settings-section-title">Personalization</h2>
-
-                        <div class="nexus-settings-card">
-                            <div class="nexus-settings-card-header">
-                                <h3>Base style and tone</h3>
-                            </div>
-                            <div class="nexus-settings-card-body">
-                                <div class="nexus-settings-field">
-                                    <div class="nexus-settings-dropdown-wrapper auto-width">
-                                        <input type="text" id="nexus-settings-base-tone-input" readonly value="Default"
-                                            data-value="default">
-                                        <div id="nexus-settings-base-tone-menu" class="nexus-settings-dropdown-menu">
-                                            <div data-val="default">Default</div>
-                                            <div data-val="professional">Professional (Polished and precise)</div>
-                                            <div data-val="friendly">Friendly (Warm and chatty)</div>
-                                            <div data-val="candid">Candid (Direct and encouraging)</div>
-                                            <div data-val="quirky">Quirky (Playful and imaginative)</div>
-                                            <div data-val="efficient">Efficient (Concise and plain)</div>
-                                            <div data-val="cynical">Cynical (Critical and sarcastic)</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p class="desc-small">Choose additional customizations on top of your base style and
-                                    tone.</p>
-
-                                <div class="nexus-settings-slider-row">
-                                    <span class="label">Warm</span>
-                                    <div class="slider-container">
-                                        <span class="slider-side-label">Less</span>
-                                        <input type="range" id="nexus-settings-char-warm" min="1" max="5" step="1"
-                                            value="3">
-                                        <span class="slider-side-label">More</span>
-                                    </div>
-                                </div>
-
-                                <div class="nexus-settings-slider-row">
-                                    <span class="label">Enthusiastic</span>
-                                    <div class="slider-container">
-                                        <span class="slider-side-label">Less</span>
-                                        <input type="range" id="nexus-settings-char-enthusiastic" min="1" max="5"
-                                            step="1" value="3">
-                                        <span class="slider-side-label">More</span>
-                                    </div>
-                                </div>
-
-                                <div class="nexus-settings-slider-row">
-                                    <span class="label">Headers & Lists</span>
-                                    <div class="slider-container">
-                                        <span class="slider-side-label">Less</span>
-                                        <input type="range" id="nexus-settings-char-headers" min="1" max="5" step="1"
-                                            value="3">
-                                        <span class="slider-side-label">More</span>
-                                    </div>
-                                </div>
-
-                                <div class="nexus-settings-slider-row">
-                                    <span class="label">Emoji</span>
-                                    <div class="slider-container">
-                                        <span class="slider-side-label">Less</span>
-                                        <input type="range" id="nexus-settings-char-emoji" min="1" max="5" step="1"
-                                            value="3">
-                                        <span class="slider-side-label">More</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="nexus-settings-card">
                             <div class="nexus-settings-card-header">

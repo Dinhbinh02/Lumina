@@ -1,5 +1,6 @@
 import { NotesManager } from '../../db/notes_manager.js';
 import { timeAgo, escapeHtml, extractNoteText, extractSearchSnippet, highlightSnippet } from './notes_utils.js';
+import { NexusMenu } from '../ui/index.js';
 
 export class NotesPanel {
     constructor() {
@@ -170,11 +171,6 @@ export class NotesPanel {
         this.tbUndo = document.getElementById('note-tb-undo');
         this.tbRedo = document.getElementById('note-tb-redo');
         this.tbMore = document.getElementById('note-tb-more');
-        this.moreMenu = document.getElementById('notes-more-menu');
-        this.pinDetailBtn = document.getElementById('note-action-pin-detail');
-        this.pinDetailLabel = document.getElementById('note-pin-detail-label');
-        this.actionExport = document.getElementById('note-action-export-md');
-        this.actionDelete = document.getElementById('note-action-delete');
     }
 
     bindEvents() {
@@ -353,56 +349,43 @@ export class NotesPanel {
     }
 
     async handleBatchMove(e) {
-        if (this.selectedNoteIds.size === 0) return;
+        if (this.selectedNoteIds.size === 0 || !e.target) return;
         const collections = await NotesManager.getCollections();
-        this.closeContextMenu();
-        const menu = document.createElement('div');
-        menu.className = 'notes-context-menu';
-        menu.style.position = 'fixed';
-        menu.style.zIndex = '120';
-        let itemsHtml = `
-            <div class="notes-ctx-group-label" style="padding: 6px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--nexus-text-tertiary);">Move ${this.selectedNoteIds.size} notes to:</div>
-            <button class="notes-ctx-item notes-batch-target-col" data-col-id="all" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                General (Unassigned)
-            </button>
-        `;
-        collections.forEach(col => {
-            itemsHtml += `
-                <button class="notes-ctx-item notes-batch-target-col" data-col-id="${col.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    ${escapeHtml(col.name)}
-                </button>
-            `;
-        });
-        menu.innerHTML = itemsHtml;
-        document.body.appendChild(menu);
-        const rect = e.target.getBoundingClientRect();
-        menu.style.left = `${Math.max(16, rect.left - 40)}px`;
-        menu.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-        this._contextMenu = menu;
+        
+        const folderIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
 
-        menu.querySelectorAll('.notes-batch-target-col').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const targetColId = btn.getAttribute('data-col-id');
-                const colToAssign = targetColId === 'all' ? null : targetColId;
-                for (const noteId of this.selectedNoteIds) {
-                    await NotesManager.moveNote(noteId, colToAssign);
+        const items = [
+            {
+                label: 'General (Unassigned)',
+                icon: folderIcon,
+                action: async () => {
+                    for (const noteId of this.selectedNoteIds) {
+                        await NotesManager.moveNote(noteId, null);
+                    }
+                    this.clearBatchSelection();
+                    await this.renderCollections();
+                    await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
                 }
-                this.closeContextMenu();
-                this.clearBatchSelection();
-                await this.renderCollections();
-                await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
-            });
-        });
+            },
+            ...collections.map(col => ({
+                label: col.name,
+                icon: folderIcon,
+                action: async () => {
+                    for (const noteId of this.selectedNoteIds) {
+                        await NotesManager.moveNote(noteId, col.id);
+                    }
+                    this.clearBatchSelection();
+                    await this.renderCollections();
+                    await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+                }
+            }))
+        ];
 
-        const closeHandler = (ev) => {
-            if (!menu.contains(ev.target)) {
-                this.closeContextMenu();
-                document.removeEventListener('click', closeHandler);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+        NexusMenu.show({
+            anchor: e.target,
+            placement: 'top-start',
+            items
+        });
     }
 
     async renderCollections() {
@@ -475,104 +458,74 @@ export class NotesPanel {
     }
 
     async showCollectionContextMenu(e, colId) {
-        this.closeContextMenu();
         const collections = await NotesManager.getCollections();
         const col = collections.find(c => c.id === colId);
-        if (!col) return;
+        if (!col || !e.target) return;
         const colName = col.name;
 
-        const menu = document.createElement('div');
-        menu.className = 'notes-context-menu';
-        menu.setAttribute('role', 'menu');
-        menu.style.position = 'fixed';
-        menu.style.zIndex = '120';
-        menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-col-rename" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                </svg>
-                <span>Rename collection</span>
-            </button>
-            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-col-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14H6L5 6"></path>
-                    <path d="M10 11v6"></path>
-                    <path d="M14 11v6"></path>
-                    <path d="M9 6V4h6v2"></path>
-                </svg>
-                <span>Delete collection</span>
-            </button>
-        `;
-        document.body.appendChild(menu);
-        const rect = e.target.getBoundingClientRect();
-        menu.style.left = `${Math.min(window.innerWidth - 200, rect.left)}px`;
-        menu.style.top = `${rect.bottom + 6}px`;
-        this._contextMenu = menu;
-
-        menu.querySelector('#ctx-col-rename').addEventListener('click', async () => {
-            this.closeContextMenu();
-            let newName = null;
-            if (typeof window.showCustomPrompt === 'function') {
-                newName = await window.showCustomPrompt({
-                    title: 'Rename Collection',
-                    message: 'Enter new collection name:',
-                    defaultValue: colName,
-                    confirmLabel: 'Save'
-                });
-            } else {
-                newName = prompt('Enter new collection name:', colName);
-            }
-            if (newName && newName.trim()) {
-                await NotesManager.renameCollection(colId, newName.trim());
-                await this.renderCollections();
-                if (this.activeNoteId) {
-                    const currentNote = await NotesManager.getNote(this.activeNoteId);
-                    if (currentNote) this.updateCollectionPickerPill(currentNote);
+        NexusMenu.show({
+            anchor: e.target,
+            placement: 'bottom-start',
+            items: [
+                {
+                    label: 'Rename collection',
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+                    action: async () => {
+                        let newName = null;
+                        if (typeof window.showCustomPrompt === 'function') {
+                            newName = await window.showCustomPrompt({
+                                title: 'Rename Collection',
+                                message: 'Enter new collection name:',
+                                defaultValue: colName,
+                                confirmLabel: 'Save'
+                            });
+                        } else {
+                            newName = prompt('Enter new collection name:', colName);
+                        }
+                        if (newName && newName.trim()) {
+                            await NotesManager.renameCollection(colId, newName.trim());
+                            await this.renderCollections();
+                            if (this.activeNoteId) {
+                                const currentNote = await NotesManager.getNote(this.activeNoteId);
+                                if (currentNote) this.updateCollectionPickerPill(currentNote);
+                            }
+                        }
+                    }
+                },
+                { divider: true },
+                {
+                    label: 'Delete collection',
+                    danger: true,
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`,
+                    action: async () => {
+                        let confirmed = false;
+                        const bodyMsg = `Are you sure you want to delete collection "${colName}"? Notes inside will be moved to General.`;
+                        if (typeof window.showCustomPopup === 'function') {
+                            confirmed = await window.showCustomPopup({
+                                title: 'Delete Collection',
+                                body: bodyMsg,
+                                confirmLabel: 'Delete',
+                                isDanger: true
+                            });
+                        } else {
+                            confirmed = confirm(bodyMsg);
+                        }
+                        if (confirmed) {
+                            await NotesManager.deleteCollection(colId);
+                            if (this.activeCollectionId === colId) {
+                                this.activeCollectionId = 'all';
+                            }
+                            await this.renderCollections();
+                            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+                        }
+                    }
                 }
-            }
+            ]
         });
-
-        menu.querySelector('#ctx-col-delete').addEventListener('click', async () => {
-            this.closeContextMenu();
-            let confirmed = false;
-            const bodyMsg = `Are you sure you want to delete collection "${colName}"? Notes inside will be moved to General.`;
-            if (typeof window.showCustomPopup === 'function') {
-                confirmed = await window.showCustomPopup({
-                    title: 'Delete Collection',
-                    body: bodyMsg,
-                    confirmLabel: 'Delete',
-                    isDanger: true
-                });
-            } else {
-                confirmed = confirm(bodyMsg);
-            }
-            if (confirmed) {
-                await NotesManager.deleteCollection(colId);
-                if (this.activeCollectionId === colId) {
-                    this.activeCollectionId = 'all';
-                }
-                await this.renderCollections();
-                await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
-            }
-        });
-
-        const closeHandler = (ev) => {
-            if (!menu.contains(ev.target)) {
-                this.closeContextMenu();
-                document.removeEventListener('click', closeHandler);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', closeHandler), 0);
     }
 
     closeContextMenu() {
-        if (this._contextMenu) {
-            this._contextMenu.remove();
-            this._contextMenu = null;
-        }
+        NexusMenu.close();
     }
 
     async renderNotesList(searchTerm = '') {
@@ -785,88 +738,49 @@ export class NotesPanel {
     }
 
     async showNoteContextMenu(e, note) {
-        if (!note) return;
-        this.closeContextMenu();
+        if (!note || !e.target) return;
         const collections = await NotesManager.getCollections();
-        const menu = document.createElement('div');
-        menu.className = 'notes-context-menu';
-        menu.setAttribute('role', 'menu');
-        menu.style.position = 'fixed';
-        menu.style.zIndex = '120';
         const isPinned = !!note.pinned;
         const pinLabel = isPinned ? 'Unpin note' : 'Pin note';
 
-        const moveItems = collections
-            .filter(c => c.id !== note.collectionId)
-            .map(c => `
-                <button class="notes-ctx-item notes-ctx-move-item" data-col-id="${c.id}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    <span>${escapeHtml(c.name)}</span>
-                </button>
-            `).join('');
-
-        menu.innerHTML = `
-            <button class="notes-ctx-item" id="ctx-pin" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-text-primary);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="17" x2="12" y2="22"></line>
-                    <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
-                </svg>
-                <span>${pinLabel}</span>
-            </button>
-            ${moveItems.length ? `
-                <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
-                <div style="padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--nexus-text-tertiary);">Move to</div>
-                ${moveItems}
-            ` : ''}
-            <div style="height:1px;background:var(--nexus-ui-border);margin:4px 0;"></div>
-            <button class="notes-ctx-item notes-ctx-danger" id="ctx-delete" style="display:flex;align-items:center;gap:8px;padding:8px 14px;width:100%;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--nexus-danger-color);">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14H6L5 6"></path>
-                    <path d="M10 11v6"></path>
-                    <path d="M14 11v6"></path>
-                    <path d="M9 6V4h6v2"></path>
-                </svg>
-                <span>Delete note</span>
-            </button>
-        `;
-
-        document.body.appendChild(menu);
-        const rect = e.target.getBoundingClientRect();
-        menu.style.left = `${Math.min(window.innerWidth - 200, rect.left)}px`;
-        menu.style.top = `${rect.bottom + 4}px`;
-        this._contextMenu = menu;
-
-        menu.querySelector('#ctx-pin').addEventListener('click', async () => {
-            this.closeContextMenu();
-            await NotesManager.pinNote(note.id, !isPinned);
-            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
-        });
-
-        menu.querySelectorAll('.notes-ctx-move-item').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                this.closeContextMenu();
-                const colId = btn.getAttribute('data-col-id');
-                await NotesManager.moveNote(note.id, colId);
-                await this.renderCollections();
-                await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
-            });
-        });
-
-        menu.querySelector('#ctx-delete').addEventListener('click', async () => {
-            this.closeContextMenu();
-            await NotesManager.deleteNote(note.id);
-            await this.renderCollections();
-            await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
-        });
-
-        const closeHandler = (ev) => {
-            if (!menu.contains(ev.target)) {
-                this.closeContextMenu();
-                document.removeEventListener('click', closeHandler);
+        const items = [
+            {
+                label: pinLabel,
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`,
+                action: async () => {
+                    await NotesManager.pinNote(note.id, !isPinned);
+                    await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+                }
+            },
+            ...collections
+                .filter(c => c.id !== note.collectionId)
+                .map(c => ({
+                    label: `Move to: ${c.name}`,
+                    icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
+                    action: async () => {
+                        await NotesManager.moveNote(note.id, c.id);
+                        await this.renderCollections();
+                        await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+                    }
+                })),
+            { divider: true },
+            {
+                label: 'Delete note',
+                danger: true,
+                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>`,
+                action: async () => {
+                    await NotesManager.deleteNote(note.id);
+                    await this.renderCollections();
+                    await this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+                }
             }
-        };
-        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+        ];
+
+        NexusMenu.show({
+            anchor: e.target,
+            placement: 'bottom-start',
+            items
+        });
     }
 
     async handleCreateCollection() {
@@ -1203,72 +1117,70 @@ export class NotesPanel {
             });
         }
 
-        if (this.tbMore && this.moreMenu) {
-            this.tbMore.addEventListener('click', (e) => {
+        if (this.tbMore) {
+            this.tbMore.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const isShown = this.moreMenu.style.display === 'block';
-                this.moreMenu.style.display = isShown ? 'none' : 'block';
-            });
-            document.addEventListener('click', (e) => {
-                if (this.moreMenu && !this.moreMenu.contains(e.target) && e.target !== this.tbMore) {
-                    this.moreMenu.style.display = 'none';
-                }
-            });
-        }
-
-        if (this.pinDetailBtn) {
-            this.pinDetailBtn.addEventListener('click', async () => {
                 if (!this.activeNoteId) return;
-                if (this.moreMenu) this.moreMenu.style.display = 'none';
-                const note = await NotesManager.getNote(this.activeNoteId);
-                if (note) {
-                    const newPinned = !note.pinned;
-                    await NotesManager.pinNote(this.activeNoteId, newPinned);
-                    note.pinned = newPinned;
-                    await this.updatePinDetailBtn(note);
-                }
-            });
-        }
-
-        if (this.actionDelete) {
-            this.actionDelete.addEventListener('click', async () => {
-                if (!this.activeNoteId) return;
-                if (this.moreMenu) this.moreMenu.style.display = 'none';
-                let confirmed = false;
-                const msg = 'Are you sure you want to delete this note?';
-                if (typeof window.showCustomPopup === 'function') {
-                    confirmed = await window.showCustomPopup({
-                        title: 'Delete Note',
-                        body: msg,
-                        confirmLabel: 'Delete',
-                        isDanger: true
-                    });
-                } else {
-                    confirmed = confirm(msg);
-                }
-                if (confirmed) {
-                    await NotesManager.deleteNote(this.activeNoteId);
-                    this.showHubView();
-                }
-            });
-        }
-
-        if (this.actionExport) {
-            this.actionExport.addEventListener('click', async () => {
-                if (!this.activeNoteId) return;
-                if (this.moreMenu) this.moreMenu.style.display = 'none';
                 const note = await NotesManager.getNote(this.activeNoteId);
                 if (!note) return;
-                const mdText = `# ${note.title || 'Untitled'}\n\n${extractNoteText(note.content)}`;
-                const blob = new Blob([mdText], { type: 'text/markdown' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${(note.title || 'Untitled').replace(/[^a-z0-9_-]/gi, '_')}.md`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                const isPinned = !!note.pinned;
+
+                NexusMenu.show({
+                    anchor: this.tbMore,
+                    placement: 'bottom-end',
+                    items: [
+                        {
+                            label: isPinned ? 'Unpin Note' : 'Pin Note',
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V6a3 3 0 0 0-6 0v4.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`,
+                            action: async () => {
+                                const newPinned = !isPinned;
+                                await NotesManager.pinNote(this.activeNoteId, newPinned);
+                                note.pinned = newPinned;
+                                await this.updatePinDetailBtn(note);
+                            }
+                        },
+                        {
+                            label: 'Export Markdown',
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+                            action: () => {
+                                const mdText = `# ${note.title || 'Untitled'}\n\n${extractNoteText(note.content)}`;
+                                const blob = new Blob([mdText], { type: 'text/markdown' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${(note.title || 'Untitled').replace(/[^a-z0-9_-]/gi, '_')}.md`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }
+                        },
+                        { divider: true },
+                        {
+                            label: 'Delete Note',
+                            danger: true,
+                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+                            action: async () => {
+                                let confirmed = false;
+                                const msg = 'Are you sure you want to delete this note?';
+                                if (typeof window.showCustomPopup === 'function') {
+                                    confirmed = await window.showCustomPopup({
+                                        title: 'Delete Note',
+                                        body: msg,
+                                        confirmLabel: 'Delete',
+                                        isDanger: true
+                                    });
+                                } else {
+                                    confirmed = confirm(msg);
+                                }
+                                if (confirmed) {
+                                    await NotesManager.deleteNote(this.activeNoteId);
+                                    this.showHubView();
+                                }
+                            }
+                        }
+                    ]
+                });
             });
         }
     }
