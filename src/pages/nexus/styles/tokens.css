@@ -26,7 +26,7 @@
   --nexus-border-color: rgba(0, 0, 0, 0.12);
   --nexus-font-sans: 'Inter', sans-serif;
   --nexus-font-serif: 'Noto Serif', serif;
-  --nexus-font-mono: 'Google Sans Code', monospace;
+  --nexus-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --nexus-font-family: var(--nexus-font-sans);
   --nexus-font-family-monospace: var(--nexus-font-mono);
   --nexus-weight-base: 400;
@@ -43,6 +43,8 @@
   --nexus-text-lg: 1.25em;
   --nexus-text-xl: 1.5em;
   --nexus-text-2xl: 2em;
+  --nexus-text-3xl: 2.25em;
+  --nexus-text-4xl: 2.75em;
 
   --nexus-chat-bg: #FFFFFF;
   --nexus-bg-primary: #ffffff;

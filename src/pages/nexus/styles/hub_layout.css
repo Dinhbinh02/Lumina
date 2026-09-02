@@ -62,7 +62,15 @@
 .topbar.nexus-view-topbar::after,
 .topbar.nexus-hub-topbar::after,
 .topbar.nexus-detail-topbar::after {
-    display: none !important;
+    content: "" !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 16px !important;
+    background: linear-gradient(to bottom, rgb(var(--nexus-ui-base-rgb)), transparent) !important;
+    pointer-events: none !important;
+    z-index: 10 !important;
 }
 
 .nexus-topbar-left {
@@ -79,6 +87,7 @@
 }
 
 @media (max-width: 768px) {
+
     .nexus-topbar-left .sidebar-toggle-btn,
     .topbar.nexus-view-topbar .sidebar-toggle-btn,
     #notes-sidebar-toggle-btn {

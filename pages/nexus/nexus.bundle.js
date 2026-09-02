@@ -14849,7 +14849,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     RETENTION_DAYS: 180,
     currentSessionId: null,
     generateSessionId() {
-      return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      return `${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
     },
     async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null, suppressBroadcast = false) {
       if (!historyEl && typeof currentPopup !== "undefined" && currentPopup) {
@@ -14873,10 +14873,13 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       if (messages.length === 0) {
         return;
       }
-      let activeSessionId = optionalSessionId || this.currentSessionId;
+      let activeSessionId = optionalSessionId || history && history.dataset && history.dataset.sessionId || this.currentSessionId;
       if (!activeSessionId) {
         activeSessionId = this.generateSessionId();
-        if (!optionalSessionId) this.currentSessionId = activeSessionId;
+      }
+      this.currentSessionId = activeSessionId;
+      if (history && !history.dataset.sessionId) {
+        history.dataset.sessionId = activeSessionId;
       }
       const title = this.generateChatTitle(history);
       const timestamp = Date.now();
@@ -15028,12 +15031,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             const ans = v.querySelector(".nexus-chat-answer");
             return ans ? ans.getAttribute("data-raw-text") || ans.innerHTML : "";
           });
+          const versionModifiers = versions.map((v) => v.dataset.modifierLabel || "Normal");
           const activeAnswerEl = activeVersion ? activeVersion.querySelector(".nexus-chat-answer") : versions[0] ? versions[0].querySelector(".nexus-chat-answer") : null;
           const webSearchData = activeAnswerEl?.dataset.webSearch ? JSON.parse(activeAnswerEl.dataset.webSearch) : null;
           messages.push({
             type: "answer",
             content: versionContents[activeIndex] || versionContents[0] || "",
             versions: versionContents,
+            versionModifiers,
             activeVersionIndex: activeIndex,
             timestamp,
             metadata: { fromCache, webSearch: webSearchData }
@@ -15284,6 +15289,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
                   const versionDiv = document.createElement("div");
                   versionDiv.className = "nexus-answer-version" + (idx === activeIndex ? " active" : "");
                   versionDiv.dataset.versionIndex = idx.toString();
+                  versionDiv.dataset.modifierLabel = answerMsg.versionModifiers && answerMsg.versionModifiers[idx] ? answerMsg.versionModifiers[idx] : "Normal";
                   const answerDiv = document.createElement("div");
                   answerDiv.className = "nexus-chat-answer";
                   answerDiv.setAttribute("data-raw-text", versionContent);
@@ -15590,6 +15596,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     },
     async getAllHistories() {
       return await NexusChatDB2.getAllSessions();
+    },
+    async getSession(sessionId) {
+      if (!sessionId) return null;
+      return await NexusChatDB2.getSession(sessionId);
     },
     async deleteSessionWithAttachments(sessionId) {
       try {
@@ -21005,6 +21015,620 @@ ${script}`;
     window.NexusToast = NexusToast;
   }
 
+  // src/components/ui/nexus_date_picker.js
+  var NexusDatePicker = class _NexusDatePicker {
+    static activeInstance = null;
+    static closeActive() {
+      if (_NexusDatePicker.activeInstance && _NexusDatePicker.activeInstance.isOpen) {
+        _NexusDatePicker.activeInstance.close();
+      }
+      _NexusDatePicker.activeInstance = null;
+    }
+    constructor(containerEl, options = {}) {
+      this.containerEl = containerEl;
+      this.value = options.value || _NexusDatePicker.getTodayStr();
+      this.onChange = options.onChange || (() => {
+      });
+      this.format = options.format || "DD/MM/YYYY";
+      this.isOpen = false;
+      this.viewMode = "days";
+      const initialDate = /* @__PURE__ */ new Date(this.value + "T00:00:00");
+      const now = /* @__PURE__ */ new Date();
+      this.viewYear = isNaN(initialDate.getFullYear()) ? now.getFullYear() : initialDate.getFullYear();
+      this.viewMonth = isNaN(initialDate.getMonth()) ? now.getMonth() : initialDate.getMonth();
+      this.boundHandleDocClick = this._handleDocClick.bind(this);
+      this.render();
+      this.bindEvents();
+    }
+    static getTodayStr() {
+      const now = /* @__PURE__ */ new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    static formatDisplayDate(dateStr) {
+      if (!dateStr) return "";
+      const parts = dateStr.split("-");
+      if (parts.length !== 3) return dateStr;
+      const [y, m, d] = parts;
+      return `${d}/${m}/${y}`;
+    }
+    setValue(dateStr, triggerChange = true) {
+      this.value = dateStr;
+      const d = /* @__PURE__ */ new Date(dateStr + "T00:00:00");
+      if (!isNaN(d.getTime())) {
+        this.viewYear = d.getFullYear();
+        this.viewMonth = d.getMonth();
+      }
+      this._updateDisplay();
+      if (triggerChange && typeof this.onChange === "function") {
+        this.onChange(this.value);
+      }
+    }
+    toggle() {
+      if (this.isOpen) {
+        this.close();
+      } else {
+        this.open();
+      }
+    }
+    open() {
+      if (_NexusDatePicker.activeInstance && _NexusDatePicker.activeInstance !== this) {
+        _NexusDatePicker.activeInstance.close();
+      }
+      _NexusDatePicker.activeInstance = this;
+      this.isOpen = true;
+      this.viewMode = "days";
+      const d = /* @__PURE__ */ new Date(this.value + "T00:00:00");
+      if (!isNaN(d.getTime())) {
+        this.viewYear = d.getFullYear();
+        this.viewMonth = d.getMonth();
+      }
+      this._updateDisplay();
+      document.removeEventListener("click", this.boundHandleDocClick);
+      setTimeout(() => {
+        if (this.isOpen) {
+          document.addEventListener("click", this.boundHandleDocClick);
+        }
+      }, 0);
+    }
+    close() {
+      if (_NexusDatePicker.activeInstance === this) {
+        _NexusDatePicker.activeInstance = null;
+      }
+      this.isOpen = false;
+      this._updateDisplay();
+      document.removeEventListener("click", this.boundHandleDocClick);
+    }
+    _handleDocClick(e) {
+      if (!this.containerEl.contains(e.target)) {
+        this.close();
+      }
+    }
+    _generateCalendarHtml() {
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ];
+      const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const todayStr = _NexusDatePicker.getTodayStr();
+      const selectedDate = /* @__PURE__ */ new Date(this.value + "T00:00:00");
+      const selYear = selectedDate.getFullYear();
+      const selMonth = selectedDate.getMonth();
+      if (this.viewMode === "days") {
+        const firstDayOfMonth = new Date(this.viewYear, this.viewMonth, 1).getDay();
+        const startOffset = (firstDayOfMonth === 0 ? 7 : firstDayOfMonth) - 1;
+        const daysInMonth = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+        const daysInPrevMonth = new Date(this.viewYear, this.viewMonth, 0).getDate();
+        let daysHtml = "";
+        for (let i = startOffset - 1; i >= 0; i--) {
+          const dayNum = daysInPrevMonth - i;
+          daysHtml += `<div class="nexus-dp-day is-dimmed">${dayNum}</div>`;
+        }
+        for (let day = 1; day <= daysInMonth; day++) {
+          const mm = String(this.viewMonth + 1).padStart(2, "0");
+          const dd = String(day).padStart(2, "0");
+          const iso = `${this.viewYear}-${mm}-${dd}`;
+          const isSelected = iso === this.value;
+          const isToday = iso === todayStr;
+          daysHtml += `
+                    <button type="button" class="nexus-dp-day ${isSelected ? "is-selected" : ""} ${isToday ? "is-today" : ""}" data-dp-select="${iso}">
+                        ${day}
+                    </button>
+                `;
+        }
+        const totalCells = startOffset + daysInMonth;
+        const remaining = (7 - totalCells % 7) % 7;
+        for (let day = 1; day <= remaining; day++) {
+          daysHtml += `<div class="nexus-dp-day is-dimmed">${day}</div>`;
+        }
+        return `
+                <div class="nexus-dp-header">
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="-1" title="Previous Month">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button type="button" class="nexus-dp-month-title is-interactive" data-dp-drill="up" title="Select Month & Year">
+                        ${monthNames[this.viewMonth]} ${this.viewYear}
+                    </button>
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="1" title="Next Month">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+
+                <div class="nexus-dp-weekdays">
+                    <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+                </div>
+
+                <div class="nexus-dp-grid">
+                    ${daysHtml}
+                </div>
+
+                <div class="nexus-dp-footer">
+                    <button type="button" class="nexus-dp-today-btn" data-dp-today>Today</button>
+                </div>
+            `;
+      }
+      if (this.viewMode === "months") {
+        let monthsHtml = "";
+        for (let m = 0; m < 12; m++) {
+          const isSelected = selYear === this.viewYear && selMonth === m;
+          monthsHtml += `
+                    <button type="button" class="nexus-dp-item-cell ${isSelected ? "is-selected" : ""}" data-dp-month="${m}">
+                        ${monthShorts[m]}
+                    </button>
+                `;
+        }
+        return `
+                <div class="nexus-dp-header">
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="-1" title="Previous Year">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button type="button" class="nexus-dp-month-title is-interactive" data-dp-drill="up" title="Select Year Range">
+                        ${this.viewYear}
+                    </button>
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="1" title="Next Year">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+
+                <div class="nexus-dp-large-grid">
+                    ${monthsHtml}
+                </div>
+            `;
+      }
+      if (this.viewMode === "years") {
+        const decadeStart = Math.floor(this.viewYear / 10) * 10;
+        const decadeEnd = decadeStart + 9;
+        let yearsHtml = "";
+        yearsHtml += `<button type="button" class="nexus-dp-item-cell is-dimmed" data-dp-year="${decadeStart - 1}">${decadeStart - 1}</button>`;
+        for (let y = decadeStart; y <= decadeEnd; y++) {
+          const isSelected = selYear === y;
+          yearsHtml += `
+                    <button type="button" class="nexus-dp-item-cell ${isSelected ? "is-selected" : ""}" data-dp-year="${y}">
+                        ${y}
+                    </button>
+                `;
+        }
+        yearsHtml += `<button type="button" class="nexus-dp-item-cell is-dimmed" data-dp-year="${decadeEnd + 1}">${decadeEnd + 1}</button>`;
+        return `
+                <div class="nexus-dp-header">
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="-1" title="Previous Decade">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button type="button" class="nexus-dp-month-title is-interactive" data-dp-drill="up" title="Select Century Range">
+                        ${decadeStart} \u2013 ${decadeEnd}
+                    </button>
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="1" title="Next Decade">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+
+                <div class="nexus-dp-large-grid">
+                    ${yearsHtml}
+                </div>
+            `;
+      }
+      if (this.viewMode === "decades") {
+        const centuryStart = Math.floor(this.viewYear / 100) * 100;
+        const centuryEnd = centuryStart + 99;
+        let decadesHtml = "";
+        for (let d = centuryStart; d <= centuryEnd; d += 10) {
+          const isSelected = selYear >= d && selYear < d + 10;
+          decadesHtml += `
+                    <button type="button" class="nexus-dp-item-cell ${isSelected ? "is-selected" : ""}" data-dp-decade="${d}">
+                        ${d}s
+                    </button>
+                `;
+        }
+        return `
+                <div class="nexus-dp-header">
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="-1" title="Previous Century">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <span class="nexus-dp-month-title">
+                        ${centuryStart} \u2013 ${centuryEnd}
+                    </span>
+                    <button type="button" class="nexus-dp-nav-btn" data-dp-nav="1" title="Next Century">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+
+                <div class="nexus-dp-large-grid">
+                    ${decadesHtml}
+                </div>
+            `;
+      }
+      return "";
+    }
+    render() {
+      this.containerEl.innerHTML = `
+            <div class="nexus-datepicker-wrap ${this.isOpen ? "is-open" : ""}">
+                <button type="button" class="nexus-datepicker-trigger" data-action="toggle-picker">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span data-display-date>${_NexusDatePicker.formatDisplayDate(this.value)}</span>
+                </button>
+                <div class="nexus-datepicker-popover" style="${this.isOpen ? "display:flex;" : "display:none;"}">
+                    ${this.isOpen ? this._generateCalendarHtml() : ""}
+                </div>
+            </div>
+        `;
+    }
+    _updateDisplay() {
+      const wrap = this.containerEl.querySelector(".nexus-datepicker-wrap");
+      const popover = this.containerEl.querySelector(".nexus-datepicker-popover");
+      const labelEl = this.containerEl.querySelector("[data-display-date]");
+      if (labelEl) {
+        labelEl.textContent = _NexusDatePicker.formatDisplayDate(this.value);
+      }
+      if (wrap) {
+        wrap.classList.toggle("is-open", this.isOpen);
+      }
+      if (popover) {
+        if (this.isOpen) {
+          popover.style.display = "flex";
+          popover.innerHTML = this._generateCalendarHtml();
+        } else {
+          popover.style.display = "none";
+          popover.innerHTML = "";
+        }
+      }
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const toggleBtn = e.target.closest('[data-action="toggle-picker"]');
+        if (toggleBtn) {
+          this.toggle();
+          return;
+        }
+        const drillBtn = e.target.closest("[data-dp-drill]");
+        if (drillBtn) {
+          if (this.viewMode === "days") this.viewMode = "months";
+          else if (this.viewMode === "months") this.viewMode = "years";
+          else if (this.viewMode === "years") this.viewMode = "decades";
+          this._updateDisplay();
+          return;
+        }
+        const navBtn = e.target.closest("[data-dp-nav]");
+        if (navBtn) {
+          const dir = parseInt(navBtn.dataset.dpNav, 10);
+          if (this.viewMode === "days") {
+            this.viewMonth += dir;
+            if (this.viewMonth < 0) {
+              this.viewMonth = 11;
+              this.viewYear--;
+            } else if (this.viewMonth > 11) {
+              this.viewMonth = 0;
+              this.viewYear++;
+            }
+          } else if (this.viewMode === "months") {
+            this.viewYear += dir;
+          } else if (this.viewMode === "years") {
+            this.viewYear += dir * 10;
+          } else if (this.viewMode === "decades") {
+            this.viewYear += dir * 100;
+          }
+          this._updateDisplay();
+          return;
+        }
+        const decadeBtn = e.target.closest("[data-dp-decade]");
+        if (decadeBtn) {
+          this.viewYear = parseInt(decadeBtn.dataset.dpDecade, 10);
+          this.viewMode = "years";
+          this._updateDisplay();
+          return;
+        }
+        const yearBtn = e.target.closest("[data-dp-year]");
+        if (yearBtn) {
+          this.viewYear = parseInt(yearBtn.dataset.dpYear, 10);
+          this.viewMode = "months";
+          this._updateDisplay();
+          return;
+        }
+        const monthBtn = e.target.closest("[data-dp-month]");
+        if (monthBtn) {
+          this.viewMonth = parseInt(monthBtn.dataset.dpMonth, 10);
+          this.viewMode = "days";
+          this._updateDisplay();
+          return;
+        }
+        const dayBtn = e.target.closest("[data-dp-select]");
+        if (dayBtn) {
+          const selectedIso = dayBtn.dataset.dpSelect;
+          this.setValue(selectedIso, true);
+          this.close();
+          return;
+        }
+        const todayBtn = e.target.closest("[data-dp-today]");
+        if (todayBtn) {
+          const todayStr = _NexusDatePicker.getTodayStr();
+          this.setValue(todayStr, true);
+          this.close();
+          return;
+        }
+      });
+    }
+    destroy() {
+      document.removeEventListener("click", this.boundHandleDocClick);
+      this.containerEl.innerHTML = "";
+    }
+  };
+
+  // src/components/ui/nexus_search_select.js
+  var NexusSearchSelect = class _NexusSearchSelect {
+    static activeInstance = null;
+    static closeActive() {
+      if (_NexusSearchSelect.activeInstance && _NexusSearchSelect.activeInstance.isOpen) {
+        _NexusSearchSelect.activeInstance.close();
+      }
+      _NexusSearchSelect.activeInstance = null;
+    }
+    constructor(containerEl, options = {}) {
+      this.containerEl = containerEl;
+      this.options = options.options || [];
+      this.value = options.value || (this.options[0] ? this.options[0].value : "");
+      this.onChange = options.onChange || (() => {
+      });
+      this.placeholder = options.placeholder || "Search...";
+      this.width = options.width || "115px";
+      this.popoverWidth = options.popoverWidth || "240px";
+      this.isOpen = false;
+      this.searchQuery = "";
+      this.highlightIndex = 0;
+      this.filteredOptions = [...this.options];
+      this.boundHandleDocClick = this._handleDocClick.bind(this);
+      this.render();
+      this.bindEvents();
+    }
+    setOptions(newOptions) {
+      this.options = newOptions || [];
+      this._filterOptions();
+      this._updateButtonDisplay();
+      if (this.isOpen) {
+        this._renderList();
+      }
+    }
+    setValue(newValue) {
+      this.value = newValue;
+      this._updateButtonDisplay();
+      if (this.isOpen) {
+        this._renderList();
+      }
+    }
+    _getSelectedItem() {
+      return this.options.find((o) => o.value === this.value) || {
+        value: this.value,
+        label: this.value,
+        flag: "\u{1F310}",
+        symbol: this.value
+      };
+    }
+    _filterOptions() {
+      const q = this.searchQuery.trim().toLowerCase();
+      if (!q) {
+        this.filteredOptions = [...this.options];
+      } else {
+        this.filteredOptions = this.options.filter((item) => {
+          const val = (item.value || "").toLowerCase();
+          const lbl = (item.label || "").toLowerCase();
+          const desc = (item.description || "").toLowerCase();
+          const country = (item.country || "").toLowerCase();
+          return val.includes(q) || lbl.includes(q) || desc.includes(q) || country.includes(q);
+        });
+      }
+      this.highlightIndex = 0;
+    }
+    render() {
+      const selected = this._getSelectedItem();
+      this.containerEl.innerHTML = `
+            <div class="nexus-select-wrap" style="width: ${this.width};">
+                <button type="button" class="nexus-select-btn" data-action="toggle-select">
+                    <span class="nexus-select-btn-flag">${selected.flag || "\u{1F310}"}</span>
+                    <span class="nexus-select-btn-val" data-btn-val>${selected.value}</span>
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nexus-select-chevron">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="nexus-select-popover ${this.isOpen ? "is-open" : ""}" style="width: ${this.popoverWidth};" data-select-popover>
+                    <div class="nexus-select-search-bar">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" class="nexus-select-search-input" placeholder="${this.placeholder}" data-search-input />
+                    </div>
+                    <div class="nexus-select-list" data-select-list>
+                        ${this._generateListHtml()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _generateListHtml() {
+      if (this.filteredOptions.length === 0) {
+        return `<div class="nexus-select-empty">No results found</div>`;
+      }
+      return this.filteredOptions.map((item, idx) => {
+        const isSelected = item.value === this.value;
+        const isHighlighted = idx === this.highlightIndex;
+        return `
+                <div class="nexus-select-item ${isSelected ? "is-selected" : ""} ${isHighlighted ? "is-highlighted" : ""}" data-item-index="${idx}" data-item-value="${item.value}">
+                    ${item.flag ? `<span class="nexus-select-item-flag">${item.flag}</span>` : ""}
+                    <div class="nexus-select-item-info">
+                        <span class="nexus-select-item-code">${item.value}</span>
+                        ${item.label && item.label !== item.value ? `<span class="nexus-select-item-name">${item.label}</span>` : ""}
+                    </div>
+                    ${item.symbol && item.symbol !== item.value ? `<span class="nexus-select-item-symbol">${item.symbol}</span>` : ""}
+                    ${isSelected ? `
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nexus-select-check">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    ` : ""}
+                </div>
+            `;
+      }).join("");
+    }
+    _renderList() {
+      const listEl = this.containerEl.querySelector("[data-select-list]");
+      if (listEl) {
+        listEl.innerHTML = this._generateListHtml();
+        this._scrollToHighlighted();
+      }
+    }
+    _scrollToHighlighted() {
+      const listEl = this.containerEl.querySelector("[data-select-list]");
+      if (!listEl) return;
+      const highlightedEl = listEl.querySelector(".is-highlighted");
+      if (highlightedEl) {
+        highlightedEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+    _updateButtonDisplay() {
+      const selected = this._getSelectedItem();
+      const flagEl = this.containerEl.querySelector(".nexus-select-btn-flag");
+      const valEl = this.containerEl.querySelector("[data-btn-val]");
+      if (flagEl) flagEl.textContent = selected.flag || "\u{1F310}";
+      if (valEl) valEl.textContent = selected.value;
+    }
+    open() {
+      if (_NexusSearchSelect.activeInstance && _NexusSearchSelect.activeInstance !== this) {
+        _NexusSearchSelect.activeInstance.close();
+      }
+      _NexusSearchSelect.activeInstance = this;
+      this.isOpen = true;
+      this.searchQuery = "";
+      this._filterOptions();
+      const selIdx = this.filteredOptions.findIndex((o) => o.value === this.value);
+      this.highlightIndex = selIdx >= 0 ? selIdx : 0;
+      const popover = this.containerEl.querySelector("[data-select-popover]");
+      if (popover) popover.classList.add("is-open");
+      const searchIn = this.containerEl.querySelector("[data-search-input]");
+      if (searchIn) {
+        searchIn.value = "";
+        setTimeout(() => searchIn.focus(), 10);
+      }
+      this._renderList();
+      setTimeout(() => {
+        document.addEventListener("click", this.boundHandleDocClick);
+      }, 0);
+    }
+    close() {
+      this.isOpen = false;
+      const popover = this.containerEl.querySelector("[data-select-popover]");
+      if (popover) popover.classList.remove("is-open");
+      document.removeEventListener("click", this.boundHandleDocClick);
+      if (_NexusSearchSelect.activeInstance === this) {
+        _NexusSearchSelect.activeInstance = null;
+      }
+    }
+    toggle() {
+      if (this.isOpen) {
+        this.close();
+      } else {
+        this.open();
+      }
+    }
+    _selectItem(item) {
+      if (!item) return;
+      this.value = item.value;
+      this._updateButtonDisplay();
+      this.close();
+      this.onChange(item.value, item);
+    }
+    _selectHighlighted() {
+      if (this.filteredOptions.length > 0 && this.highlightIndex >= 0 && this.highlightIndex < this.filteredOptions.length) {
+        this._selectItem(this.filteredOptions[this.highlightIndex]);
+      }
+    }
+    _handleDocClick(e) {
+      if (!this.containerEl.contains(e.target)) {
+        this.close();
+      }
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        const toggleBtn = e.target.closest('[data-action="toggle-select"]');
+        if (toggleBtn) {
+          e.stopPropagation();
+          this.toggle();
+          return;
+        }
+        const itemEl = e.target.closest("[data-item-value]");
+        if (itemEl) {
+          e.stopPropagation();
+          const val = itemEl.dataset.itemValue;
+          const item = this.options.find((o) => o.value === val);
+          this._selectItem(item);
+        }
+      });
+      this.containerEl.addEventListener("input", (e) => {
+        const searchIn = e.target.closest("[data-search-input]");
+        if (searchIn) {
+          this.searchQuery = searchIn.value;
+          this._filterOptions();
+          this._renderList();
+        }
+      });
+      this.containerEl.addEventListener("keydown", (e) => {
+        if (!this.isOpen) return;
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (this.filteredOptions.length > 0) {
+            this.highlightIndex = (this.highlightIndex + 1) % this.filteredOptions.length;
+            this._renderList();
+          }
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (this.filteredOptions.length > 0) {
+            this.highlightIndex = (this.highlightIndex - 1 + this.filteredOptions.length) % this.filteredOptions.length;
+            this._renderList();
+          }
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          this._selectHighlighted();
+        } else if (e.key === "Escape" || e.key === "Tab") {
+          this.close();
+        }
+      });
+    }
+  };
+
   // src/components/panels/history_panel.js
   var NexusHistory = class {
     constructor() {
@@ -21283,19 +21907,17 @@ ${script}`;
         items: [
           {
             label: "Rename",
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
             action: () => this.renameItem(sessionId)
           },
           {
             label: "Duplicate",
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="13" height="13" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`,
             action: () => this.duplicateItem(sessionId)
           },
-          { divider: true },
           {
             label: "Delete",
-            danger: true,
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
             action: () => this.deleteItem(sessionId)
           }
         ],
@@ -21914,7 +22536,7 @@ ${script}`;
         items: [
           {
             label: "Rename collection",
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
             action: async () => {
               let newName = null;
               if (typeof window.showCustomPrompt === "function") {
@@ -21937,11 +22559,9 @@ ${script}`;
               }
             }
           },
-          { divider: true },
           {
             label: "Delete collection",
-            danger: true,
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`,
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
             action: async () => {
               let confirmed = false;
               const bodyMsg = `Are you sure you want to delete collection "${colName}"? Notes inside will be moved to General.`;
@@ -28274,9 +28894,8 @@ ${fileContexts}`;
       const label = overlay.querySelector("#sparks-preview-model-label");
       const dropdown = overlay.querySelector("#sparks-preview-model-dropdown");
       if (!btn || !dropdown || !label) return;
-      const data = await chrome.storage.local.get(["providers", "advancedParamsByModel", "lastUsedModel", "promptSupport"]);
-      const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-      const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data, promptSupport) : [];
+      const data = await chrome.storage.local.get(["providers", "advancedParamsByModel", "lastUsedModel"]);
+      const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : [];
       let currentModel = data.lastUsedModel?.model;
       let currentProviderId = data.lastUsedModel?.providerId;
       if (!currentModel && chain.length > 0) {
@@ -28509,14 +29128,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       items: [
         {
           label: "Edit",
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
           action: () => sparksOpenEditor(sparkId)
         },
-        { divider: true },
         {
           label: "Delete",
-          danger: true,
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>`,
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
           action: async () => {
             const confirmed = await window.showCustomPopup({
               title: "Delete Spark",
@@ -28620,7 +29237,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
       else if (typeof renderTabs === "function") renderTabs();
       if (typeof window.saveTabsState === "function") window.saveTabsState();
       else if (typeof saveTabsState === "function") saveTabsState();
-      if (window.updateTopbarModelSelector) {
+      if (typeof window.updateModelSelector === "function") {
+        window.updateModelSelector();
+      } else if (typeof window.updateTopbarModelSelector === "function") {
         window.updateTopbarModelSelector();
       }
       if (typeof window.updateInputPlaceholder === "function") {
@@ -28900,6 +29519,7399 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     initSparks();
   }
 
+  // src/components/widgets/audio_notifier.js
+  var NexusAudioNotifier = class {
+    constructor() {
+      this.ctx = null;
+    }
+    _initCtx() {
+      if (!this.ctx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          this.ctx = new AudioContextClass();
+        }
+      }
+      if (this.ctx && this.ctx.state === "suspended") {
+        this.ctx.resume().catch(() => {
+        });
+      }
+    }
+    playChime() {
+      try {
+        this._initCtx();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+        osc1.type = "sine";
+        osc2.type = "sine";
+        osc1.frequency.setValueAtTime(659.25, now);
+        osc1.frequency.exponentialRampToValueAtTime(987.77, now + 0.15);
+        osc2.frequency.setValueAtTime(1318.51, now + 0.1);
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(1e-3, now + 1.2);
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+        osc1.start(now);
+        osc2.start(now + 0.1);
+        osc1.stop(now + 1.2);
+        osc2.stop(now + 1.2);
+      } catch (e) {
+        console.warn("[NexusAudioNotifier] Failed to play chime:", e);
+      }
+    }
+  };
+  var audioNotifier = new NexusAudioNotifier();
+
+  // src/components/widgets/timer_widget.js
+  var NexusTimerWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      const initialMinutes = Math.max(0, parseInt(props.minutes, 10) || 0);
+      const initialSeconds = Math.max(0, parseInt(props.seconds, 10) || 0);
+      this.totalDurationSeconds = initialMinutes * 60 + initialSeconds;
+      if (this.totalDurationSeconds <= 0) this.totalDurationSeconds = 3 * 60;
+      this.remainingSeconds = this.totalDurationSeconds;
+      this.label = "Timer";
+      this.intervalId = null;
+      this.isRunning = false;
+      this.render();
+      this.bindEvents();
+    }
+    _formatTime(totalSecs) {
+      const h = Math.floor(totalSecs / 3600);
+      const m = Math.floor(totalSecs % 3600 / 60);
+      const s = totalSecs % 60;
+      if (h > 0) {
+        return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+      }
+      return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }
+    _calcRingOffset() {
+      const circumference = 219.91;
+      if (this.totalDurationSeconds <= 0) return 0;
+      const fraction = this.remainingSeconds / this.totalDurationSeconds;
+      return circumference * (1 - fraction);
+    }
+    _generateTicks() {
+      const lines = [];
+      const cx = 44, cy = 44;
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        const r1 = 30;
+        const r2 = 33;
+        const x1 = cx + r1 * Math.cos(angle);
+        const y1 = cy + r1 * Math.sin(angle);
+        const x2 = cx + r2 * Math.cos(angle);
+        const y2 = cy + r2 * Math.sin(angle);
+        lines.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="nexus-timer-tick" />`);
+      }
+      return lines.join("");
+    }
+    render() {
+      const timeStr = this._formatTime(this.remainingSeconds);
+      const percent = this.totalDurationSeconds > 0 ? this.remainingSeconds / this.totalDurationSeconds * 100 : 0;
+      const displayMins = Math.max(1, Math.round(this.totalDurationSeconds / 60));
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-timer-card">
+                    <!-- Top Bar: Title & Inline Minute Edit -->
+                    <div class="nexus-timer-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot ${this.isRunning ? "is-running" : ""}"></span>
+                            <span class="nexus-widget-title-text">${this._escapeHtml(this.label)}</span>
+                        </div>
+
+                        <!-- Custom Inline Editable Duration Input -->
+                        <div class="nexus-pomo-custom-input-box" title="Click to customize duration">
+                            <input type="number" min="1" max="180" class="nexus-pomo-inline-input" value="${displayMins}" data-input-timer-mins />
+                            <span class="nexus-pomo-input-unit">min</span>
+                        </div>
+                    </div>
+
+                    <!-- Big Digital Digits -->
+                    <div class="nexus-sol-timer-time" data-time-display>${timeStr}</div>
+
+                    <!-- Slim Linear Progress Bar -->
+                    <div class="nexus-timer-linear-progress-track">
+                        <div class="nexus-timer-linear-progress-fill" data-progress-fill style="width: ${percent}%;"></div>
+                    </div>
+
+                    <!-- Controls & Quick Add Chips -->
+                    <div class="nexus-sol-timer-controls">
+                        <div class="nexus-sol-timer-actions-left">
+                            <button type="button" class="nexus-timer-btn-main ${this.isRunning ? "is-running" : ""}" data-action="toggle">
+                                <svg class="icon-play" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="${this.isRunning ? "display:none;" : ""}">
+                                    <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                                </svg>
+                                <svg class="icon-pause" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="${this.isRunning ? "" : "display:none;"}">
+                                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                                </svg>
+                                <span data-btn-label>${this.isRunning ? "Pause" : "Start"}</span>
+                            </button>
+                            <button type="button" class="nexus-timer-btn-ghost" data-action="reset" title="Reset timer">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                    <path d="M3 3v5h5"></path>
+                                </svg>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                        <div class="nexus-sol-timer-chips-right">
+                            <button type="button" class="nexus-timer-chip-btn" data-add-sec="60">+1m</button>
+                            <button type="button" class="nexus-timer-chip-btn" data-add-sec="300">+5m</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        const toggleBtn = e.target.closest('[data-action="toggle"]');
+        if (toggleBtn) {
+          this.toggle();
+          return;
+        }
+        const resetBtn = e.target.closest('[data-action="reset"]');
+        if (resetBtn) {
+          this.reset();
+          return;
+        }
+        const presetBtn = e.target.closest("[data-add-sec]");
+        if (presetBtn) {
+          const addSecs = parseInt(presetBtn.dataset.addSec, 10) || 0;
+          this.addTime(addSecs);
+          return;
+        }
+      });
+      this.containerEl.addEventListener("change", (e) => {
+        const inputEl = e.target.closest("[data-input-timer-mins]");
+        if (inputEl) {
+          let mins = parseInt(inputEl.value, 10);
+          if (isNaN(mins) || mins < 1) mins = 1;
+          if (mins > 180) mins = 180;
+          inputEl.value = mins;
+          this.totalDurationSeconds = mins * 60;
+          this.remainingSeconds = this.totalDurationSeconds;
+          this.pause();
+          this.render();
+        }
+      });
+      this.containerEl.addEventListener("keydown", (e) => {
+        const inputEl = e.target.closest("[data-input-timer-mins]");
+        if (inputEl && e.key === "Enter") {
+          inputEl.blur();
+        }
+      });
+    }
+    toggle() {
+      if (this.isRunning) {
+        this.pause();
+      } else {
+        this.start();
+      }
+    }
+    start() {
+      if (this.isRunning) return;
+      if (this.remainingSeconds <= 0) {
+        this.remainingSeconds = this.totalDurationSeconds;
+      }
+      this.isRunning = true;
+      this._updateUIState();
+      this.intervalId = setInterval(() => {
+        if (this.remainingSeconds > 0) {
+          this.remainingSeconds--;
+          this._updateDisplay();
+          if (this.remainingSeconds === 0) {
+            this._onFinish();
+          }
+        }
+      }, 1e3);
+    }
+    pause() {
+      if (!this.isRunning) return;
+      this.isRunning = false;
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      this._updateUIState();
+    }
+    reset() {
+      this.pause();
+      this.remainingSeconds = this.totalDurationSeconds;
+      this._updateDisplay();
+      this._updateUIState();
+    }
+    addTime(seconds) {
+      this.remainingSeconds += seconds;
+      this.totalDurationSeconds = Math.max(this.totalDurationSeconds, this.remainingSeconds);
+      const inputEl = this.containerEl.querySelector("[data-input-timer-mins]");
+      if (inputEl) {
+        inputEl.value = Math.max(1, Math.ceil(this.remainingSeconds / 60));
+      }
+      this._updateDisplay();
+    }
+    _onFinish() {
+      this.pause();
+      audioNotifier.playSuccessChime();
+      this._updateDisplay();
+    }
+    _updateDisplay() {
+      const timeEl = this.containerEl.querySelector("[data-time-display]");
+      const fillEl = this.containerEl.querySelector("[data-progress-fill]");
+      if (timeEl) {
+        timeEl.textContent = this._formatTime(this.remainingSeconds);
+      }
+      if (fillEl) {
+        const percent = this.totalDurationSeconds > 0 ? this.remainingSeconds / this.totalDurationSeconds * 100 : 0;
+        fillEl.style.width = `${percent}%`;
+      }
+    }
+    _updateUIState() {
+      const playIcon = this.containerEl.querySelector(".icon-play");
+      const pauseIcon = this.containerEl.querySelector(".icon-pause");
+      const btnLabel = this.containerEl.querySelector("[data-btn-label]");
+      const mainBtn = this.containerEl.querySelector(".nexus-timer-btn-main");
+      const statusDot = this.containerEl.querySelector(".nexus-widget-status-dot") || this.containerEl.querySelector(".nexus-timer-status-dot");
+      if (playIcon) playIcon.style.display = this.isRunning ? "none" : "";
+      if (pauseIcon) pauseIcon.style.display = this.isRunning ? "" : "none";
+      if (btnLabel) btnLabel.textContent = this.isRunning ? "Pause" : "Start";
+      if (mainBtn) mainBtn.classList.toggle("is-running", this.isRunning);
+      if (statusDot) statusDot.classList.toggle("is-running", this.isRunning);
+    }
+    _escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  };
+
+  // src/components/widgets/pomodoro_widget.js
+  var NexusPomodoroWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.workMins = Math.max(1, parseInt(props.work || props.minutes, 10) || 25);
+      this.breakMins = Math.max(1, parseInt(props.break, 10) || 5);
+      this.longBreakMins = Math.max(1, parseInt(props.longBreak, 10) || 15);
+      this.label = props.label || props.title || "Pomodoro Focus";
+      this.currentMode = "work";
+      this.sessionCount = 1;
+      this.totalDurationSeconds = this.workMins * 60;
+      this.remainingSeconds = this.totalDurationSeconds;
+      this.intervalId = null;
+      this.isRunning = false;
+      this.render();
+      this.bindEvents();
+    }
+    _formatTime(totalSecs) {
+      const m = Math.floor(totalSecs / 60);
+      const s = totalSecs % 60;
+      return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }
+    _calcRingOffset() {
+      const circumference = 219.91;
+      if (this.totalDurationSeconds <= 0) return 0;
+      const fraction = this.remainingSeconds / this.totalDurationSeconds;
+      return circumference * (1 - fraction);
+    }
+    _generateTicks() {
+      const lines = [];
+      const cx = 44, cy = 44;
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        const r1 = 30;
+        const r2 = 33;
+        const x1 = cx + r1 * Math.cos(angle);
+        const y1 = cy + r1 * Math.sin(angle);
+        const x2 = cx + r2 * Math.cos(angle);
+        const y2 = cy + r2 * Math.sin(angle);
+        lines.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="nexus-pomo-tick" />`);
+      }
+      return lines.join("");
+    }
+    render() {
+      const timeStr = this._formatTime(this.remainingSeconds);
+      const ringOffset = this._calcRingOffset();
+      const isFocus = this.currentMode === "work";
+      const ringColor = isFocus ? "#f97316" : "#10b981";
+      const currentMins = isFocus ? this.workMins : this.breakMins;
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-pomo-card is-mode-${this.currentMode}">
+                    <!-- Left Column: Controls, Mode switch, Timer -->
+                    <div class="nexus-sol-pomo-left">
+                        <!-- Mode Tabs & Custom Minute Input -->
+                        <div class="nexus-pomo-top-bar">
+                            <div class="nexus-pomo-mode-tabs">
+                                <button type="button" class="nexus-pomo-tab ${isFocus ? "is-active" : ""}" data-set-mode="work">Focus</button>
+                                <button type="button" class="nexus-pomo-tab ${!isFocus ? "is-active" : ""}" data-set-mode="break">Break</button>
+                            </div>
+
+                            <!-- Custom Inline Editable Minute Input -->
+                            <div class="nexus-pomo-custom-input-box" title="Click to customize duration">
+                                <input type="number" min="1" max="180" class="nexus-pomo-inline-input" value="${currentMins}" data-input-duration />
+                                <span class="nexus-pomo-input-unit">min</span>
+                            </div>
+                        </div>
+
+                        <!-- Big Digital Digits -->
+                        <div class="nexus-sol-pomo-time" data-time-display>${timeStr}</div>
+
+                        <!-- Session Dots & Info -->
+                        <div class="nexus-pomo-meta-row">
+                            <div class="nexus-pomo-dots">
+                                ${[1, 2, 3, 4].map((idx) => `
+                                    <span class="nexus-pomo-dot ${idx <= this.sessionCount ? "is-active" : ""} ${idx === this.sessionCount && isFocus ? "is-current" : ""}"></span>
+                                `).join("")}
+                            </div>
+                            <span class="nexus-pomo-cycle-label">Session ${this.sessionCount}/4</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="nexus-sol-pomo-controls">
+                            <button type="button" class="nexus-pomo-btn-main ${this.isRunning ? "is-running" : ""}" data-action="toggle">
+                                <svg class="icon-play" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="${this.isRunning ? "display:none;" : ""}">
+                                    <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                                </svg>
+                                <svg class="icon-pause" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="${this.isRunning ? "" : "display:none;"}">
+                                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                                </svg>
+                                <span data-btn-label>${this.isRunning ? "Pause" : "Start"}</span>
+                            </button>
+                            <button type="button" class="nexus-pomo-btn-ghost" data-action="skip" title="Skip to next phase">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                                </svg>
+                                <span>Skip</span>
+                            </button>
+                            <button type="button" class="nexus-pomo-btn-ghost" data-action="reset" title="Reset session">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                    <path d="M3 3v5h5"></path>
+                                </svg>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Precision Swiss Dial + Live SVG Progress Ring -->
+                    <div class="nexus-sol-pomo-right">
+                        <svg class="nexus-sol-pomo-dial" viewBox="0 0 88 88" width="88" height="88">
+                            <!-- Background Dial Face -->
+                            <circle cx="44" cy="44" r="41" class="nexus-pomo-dial-bg" />
+                            <!-- 12 Precision Tick Marks -->
+                            ${this._generateTicks()}
+                            <!-- Background Track Circle -->
+                            <circle cx="44" cy="44" r="35" class="nexus-pomo-track" />
+                            <!-- Active Progress Ring -->
+                            <circle cx="44" cy="44" r="35" class="nexus-pomo-progress-ring" data-progress-ring
+                                style="stroke-dasharray: 219.91; stroke-dashoffset: ${ringOffset}; stroke: ${ringColor};" />
+                            
+                            <!-- Center Lucide Professional Icon -->
+                            <g class="nexus-pomo-center-icon">
+                                ${isFocus ? `
+                                    <!-- Official Lucide Target Bullseye -->
+                                    <g transform="translate(32, 32)" stroke="${ringColor}" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <circle cx="12" cy="12" r="6"></circle>
+                                        <circle cx="12" cy="12" r="2" fill="${ringColor}"></circle>
+                                    </g>
+                                ` : `
+                                    <!-- Official Lucide Coffee Cup with Steam Trails -->
+                                    <g transform="translate(32, 32)" stroke="${ringColor}" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+                                        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path>
+                                        <line x1="6" x2="6" y1="2" y2="4"></line>
+                                        <line x1="10" x2="10" y1="2" y2="4"></line>
+                                        <line x1="14" x2="14" y1="2" y2="4"></line>
+                                    </g>
+                                `}
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        const toggleBtn = e.target.closest('[data-action="toggle"]');
+        if (toggleBtn) {
+          this.toggle();
+          return;
+        }
+        const skipBtn = e.target.closest('[data-action="skip"]');
+        if (skipBtn) {
+          this.skipPhase();
+          return;
+        }
+        const resetBtn = e.target.closest('[data-action="reset"]');
+        if (resetBtn) {
+          this.reset();
+          return;
+        }
+        const modeTab = e.target.closest("[data-set-mode]");
+        if (modeTab) {
+          const targetMode = modeTab.getAttribute("data-set-mode");
+          if (targetMode !== this.currentMode) {
+            this.currentMode = targetMode;
+            this.totalDurationSeconds = (this.currentMode === "work" ? this.workMins : this.breakMins) * 60;
+            this.remainingSeconds = this.totalDurationSeconds;
+            this.pause();
+            this.render();
+          }
+          return;
+        }
+      });
+      this.containerEl.addEventListener("change", (e) => {
+        const inputEl = e.target.closest("[data-input-duration]");
+        if (inputEl) {
+          let mins = parseInt(inputEl.value, 10);
+          if (isNaN(mins) || mins < 1) mins = 1;
+          if (mins > 180) mins = 180;
+          inputEl.value = mins;
+          if (this.currentMode === "work") {
+            this.workMins = mins;
+          } else {
+            this.breakMins = mins;
+          }
+          this.totalDurationSeconds = mins * 60;
+          this.remainingSeconds = this.totalDurationSeconds;
+          this.pause();
+          this.render();
+        }
+      });
+      this.containerEl.addEventListener("keydown", (e) => {
+        const inputEl = e.target.closest("[data-input-duration]");
+        if (inputEl && e.key === "Enter") {
+          inputEl.blur();
+        }
+      });
+    }
+    toggle() {
+      if (this.isRunning) {
+        this.pause();
+      } else {
+        this.start();
+      }
+    }
+    start() {
+      if (this.isRunning) return;
+      if (this.remainingSeconds <= 0) {
+        this._switchMode();
+      }
+      this.isRunning = true;
+      this._updateUIState();
+      this.intervalId = setInterval(() => {
+        if (this.remainingSeconds > 0) {
+          this.remainingSeconds--;
+          this._updateDisplay();
+          if (this.remainingSeconds === 0) {
+            this._onPhaseComplete();
+          }
+        }
+      }, 1e3);
+    }
+    pause() {
+      if (!this.isRunning) return;
+      this.isRunning = false;
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      this._updateUIState();
+    }
+    reset() {
+      this.pause();
+      this.totalDurationSeconds = (this.currentMode === "work" ? this.workMins : this.breakMins) * 60;
+      this.remainingSeconds = this.totalDurationSeconds;
+      this.render();
+    }
+    skipPhase() {
+      this.pause();
+      this._switchMode();
+      this.render();
+    }
+    _switchMode() {
+      if (this.currentMode === "work") {
+        if (this.sessionCount >= 4) {
+          this.currentMode = "long_break";
+          this.totalDurationSeconds = this.longBreakMins * 60;
+        } else {
+          this.currentMode = "break";
+          this.totalDurationSeconds = this.breakMins * 60;
+        }
+      } else {
+        if (this.currentMode === "long_break") {
+          this.sessionCount = 1;
+        } else {
+          this.sessionCount++;
+        }
+        this.currentMode = "work";
+        this.totalDurationSeconds = this.workMins * 60;
+      }
+      this.remainingSeconds = this.totalDurationSeconds;
+    }
+    _onPhaseComplete() {
+      this.pause();
+      audioNotifier.playSuccessChime();
+      this._switchMode();
+      this.render();
+    }
+    _updateDisplay() {
+      const timeEl = this.containerEl.querySelector("[data-time-display]");
+      const ringEl = this.containerEl.querySelector("[data-progress-ring]");
+      if (timeEl) {
+        timeEl.textContent = this._formatTime(this.remainingSeconds);
+      }
+      if (ringEl) {
+        ringEl.style.strokeDashoffset = this._calcRingOffset();
+      }
+    }
+    _updateUIState() {
+      const playIcon = this.containerEl.querySelector(".icon-play");
+      const pauseIcon = this.containerEl.querySelector(".icon-pause");
+      const btnLabel = this.containerEl.querySelector("[data-btn-label]");
+      const mainBtn = this.containerEl.querySelector(".nexus-pomo-btn-main");
+      if (playIcon) playIcon.style.display = this.isRunning ? "none" : "";
+      if (pauseIcon) pauseIcon.style.display = this.isRunning ? "" : "none";
+      if (btnLabel) btnLabel.textContent = this.isRunning ? "Pause" : "Start";
+      if (mainBtn) mainBtn.classList.toggle("is-running", this.isRunning);
+    }
+  };
+
+  // src/components/widgets/stopwatch_widget.js
+  var NexusStopwatchWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "Stopwatch";
+      this.elapsedMs = 0;
+      this.startTime = 0;
+      this.intervalId = null;
+      this.isRunning = false;
+      this.laps = [];
+      this.render();
+      this.bindEvents();
+    }
+    _formatTime(totalMs) {
+      const ms = Math.floor(totalMs % 1e3 / 10);
+      const totalSecs = Math.floor(totalMs / 1e3);
+      const m = Math.floor(totalSecs / 60);
+      const s = totalSecs % 60;
+      return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
+    }
+    _calcHandAngle() {
+      const totalSecs = this.elapsedMs / 1e3 % 60;
+      return totalSecs / 60 * 360;
+    }
+    _generateTicks() {
+      const lines = [];
+      const cx = 44, cy = 44;
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        const r1 = 30;
+        const r2 = 33;
+        const x1 = cx + r1 * Math.cos(angle);
+        const y1 = cy + r1 * Math.sin(angle);
+        const x2 = cx + r2 * Math.cos(angle);
+        const y2 = cy + r2 * Math.sin(angle);
+        lines.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="nexus-stopwatch-tick" />`);
+      }
+      return lines.join("");
+    }
+    render() {
+      const timeStr = this._formatTime(this.elapsedMs);
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-stopwatch-card">
+                    <!-- Top Bar: Title & Laps Pill -->
+                    <div class="nexus-stopwatch-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot ${this.isRunning ? "is-running-emerald" : ""}"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                        <span class="nexus-stopwatch-laps-pill" data-lap-counter>${this.laps.length} Laps</span>
+                    </div>
+
+                    <!-- Big Digital Digits -->
+                    <div class="nexus-sol-stopwatch-time" data-time-display>${timeStr}</div>
+
+                    <!-- Controls -->
+                    <div class="nexus-sol-stopwatch-controls">
+                        <button type="button" class="nexus-stopwatch-btn-main ${this.isRunning ? "is-running" : ""}" data-action="toggle">
+                            <svg class="icon-play" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="${this.isRunning ? "display:none;" : ""}">
+                                <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                            </svg>
+                            <svg class="icon-pause" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="${this.isRunning ? "" : "display:none;"}">
+                                <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                                <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                            </svg>
+                            <span data-btn-label>${this.isRunning ? "Stop" : "Start"}</span>
+                        </button>
+                        <button type="button" class="nexus-stopwatch-btn-ghost" data-action="lap" ${!this.isRunning && this.elapsedMs === 0 ? "disabled" : ""} title="Record Lap">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                            <span>Lap</span>
+                        </button>
+                        <button type="button" class="nexus-stopwatch-btn-ghost" data-action="reset" title="Reset stopwatch">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+
+                    <!-- Laps Scroll Table -->
+                    <div class="nexus-sol-stopwatch-laps" data-laps-wrapper style="${this.laps.length > 0 ? "" : "display:none;"}">
+                        <div class="nexus-sol-laps-header">
+                            <span>Lap</span>
+                            <span>Split</span>
+                            <span>Total</span>
+                        </div>
+                        <div class="nexus-sol-laps-list" data-laps-list>
+                            ${this._renderLapsHtml()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        const toggleBtn = e.target.closest('[data-action="toggle"]');
+        if (toggleBtn) {
+          this.toggle();
+          return;
+        }
+        const lapBtn = e.target.closest('[data-action="lap"]');
+        if (lapBtn && !lapBtn.disabled) {
+          this.recordLap();
+          return;
+        }
+        const resetBtn = e.target.closest('[data-action="reset"]');
+        if (resetBtn) {
+          this.reset();
+          return;
+        }
+      });
+    }
+    toggle() {
+      if (this.isRunning) {
+        this.stop();
+      } else {
+        this.start();
+      }
+    }
+    start() {
+      if (this.isRunning) return;
+      this.isRunning = true;
+      this.startTime = performance.now() - this.elapsedMs;
+      this._updateUIState();
+      this.intervalId = setInterval(() => {
+        this.elapsedMs = performance.now() - this.startTime;
+        this._updateDisplay();
+      }, 30);
+    }
+    stop() {
+      if (!this.isRunning) return;
+      this.isRunning = false;
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      this._updateUIState();
+    }
+    reset() {
+      this.stop();
+      this.elapsedMs = 0;
+      this.laps = [];
+      this.render();
+    }
+    recordLap() {
+      const lastLapTotal = this.laps.length > 0 ? this.laps[0].totalTimeMs : 0;
+      const currentLapTime = this.elapsedMs - lastLapTotal;
+      const newLap = {
+        id: this.laps.length + 1,
+        lapTimeMs: currentLapTime,
+        totalTimeMs: this.elapsedMs
+      };
+      this.laps.unshift(newLap);
+      this._updateLapsUI();
+    }
+    _renderLapsHtml() {
+      if (this.laps.length === 0) return "";
+      let fastestLapId = null;
+      let slowestLapId = null;
+      if (this.laps.length >= 2) {
+        let minTime = Infinity;
+        let maxTime = -Infinity;
+        this.laps.forEach((lap) => {
+          if (lap.lapTimeMs < minTime) {
+            minTime = lap.lapTimeMs;
+            fastestLapId = lap.id;
+          }
+          if (lap.lapTimeMs > maxTime) {
+            maxTime = lap.lapTimeMs;
+            slowestLapId = lap.id;
+          }
+        });
+      }
+      return this.laps.map((lap) => {
+        let badgeClass = "";
+        let badgeText = "";
+        if (lap.id === fastestLapId) {
+          badgeClass = "is-fastest";
+          badgeText = "Fastest";
+        } else if (lap.id === slowestLapId) {
+          badgeClass = "is-slowest";
+          badgeText = "Slowest";
+        }
+        return `
+                <div class="nexus-sol-lap-row ${badgeClass}">
+                    <span class="lap-num">
+                        #${lap.id}
+                        ${badgeText ? `<span class="lap-indicator ${badgeClass}">${badgeText}</span>` : ""}
+                    </span>
+                    <span class="lap-split">${this._formatTime(lap.lapTimeMs)}</span>
+                    <span class="lap-total">${this._formatTime(lap.totalTimeMs)}</span>
+                </div>
+            `;
+      }).join("");
+    }
+    _updateDisplay() {
+      const timeEl = this.containerEl.querySelector("[data-time-display]");
+      if (timeEl) {
+        timeEl.textContent = this._formatTime(this.elapsedMs);
+      }
+    }
+    _updateUIState() {
+      const playIcon = this.containerEl.querySelector(".icon-play");
+      const pauseIcon = this.containerEl.querySelector(".icon-pause");
+      const btnLabel = this.containerEl.querySelector("[data-btn-label]");
+      const mainBtn = this.containerEl.querySelector(".nexus-stopwatch-btn-main");
+      const lapBtn = this.containerEl.querySelector('[data-action="lap"]');
+      const statusDot = this.containerEl.querySelector(".nexus-widget-status-dot") || this.containerEl.querySelector(".nexus-timer-status-dot");
+      if (playIcon) playIcon.style.display = this.isRunning ? "none" : "";
+      if (pauseIcon) pauseIcon.style.display = this.isRunning ? "" : "none";
+      if (btnLabel) btnLabel.textContent = this.isRunning ? "Stop" : "Start";
+      if (mainBtn) mainBtn.classList.toggle("is-running", this.isRunning);
+      if (statusDot) statusDot.classList.toggle("is-running-emerald", this.isRunning);
+      if (lapBtn) {
+        lapBtn.disabled = !this.isRunning && this.elapsedMs === 0;
+      }
+    }
+    _updateLapsUI() {
+      const wrapperEl = this.containerEl.querySelector("[data-laps-wrapper]");
+      const listEl = this.containerEl.querySelector("[data-laps-list]");
+      const counterEl = this.containerEl.querySelector("[data-lap-counter]");
+      if (wrapperEl) wrapperEl.style.display = this.laps.length > 0 ? "" : "none";
+      if (listEl) listEl.innerHTML = this._renderLapsHtml();
+      if (counterEl) counterEl.textContent = `${this.laps.length} Laps`;
+    }
+  };
+
+  // src/components/widgets/unit_converter_widget.js
+  var NexusUnitConverterWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "Unit Converter";
+      this.categories = {
+        length: {
+          name: "Length",
+          base: "m",
+          units: {
+            m: { name: "Meter (m)", factor: 1 },
+            km: { name: "Kilometer (km)", factor: 1e3 },
+            cm: { name: "Centimeter (cm)", factor: 0.01 },
+            mm: { name: "Millimeter (mm)", factor: 1e-3 },
+            mi: { name: "Mile (mi)", factor: 1609.344 },
+            yd: { name: "Yard (yd)", factor: 0.9144 },
+            ft: { name: "Foot (ft)", factor: 0.3048 },
+            in: { name: "Inch (in)", factor: 0.0254 }
+          }
+        },
+        weight: {
+          name: "Weight / Mass",
+          base: "kg",
+          units: {
+            kg: { name: "Kilogram (kg)", factor: 1 },
+            g: { name: "Gram (g)", factor: 1e-3 },
+            mg: { name: "Milligram (mg)", factor: 1e-6 },
+            lb: { name: "Pound (lb)", factor: 0.45359237 },
+            oz: { name: "Ounce (oz)", factor: 0.028349523125 },
+            ton: { name: "Metric Ton (t)", factor: 1e3 }
+          }
+        },
+        temperature: {
+          name: "Temperature",
+          isSpecial: true,
+          units: {
+            c: { name: "Celsius (\xB0C)" },
+            f: { name: "Fahrenheit (\xB0F)" },
+            k: { name: "Kelvin (K)" }
+          }
+        },
+        speed: {
+          name: "Speed",
+          base: "m/s",
+          units: {
+            "m/s": { name: "Meter/sec (m/s)", factor: 1 },
+            "km/h": { name: "Km/hour (km/h)", factor: 1 / 3.6 },
+            "mph": { name: "Miles/hour (mph)", factor: 0.44704 },
+            "knot": { name: "Knot (kn)", factor: 0.514444 }
+          }
+        },
+        volume: {
+          name: "Volume",
+          base: "l",
+          units: {
+            l: { name: "Liter (L)", factor: 1 },
+            ml: { name: "Milliliter (mL)", factor: 1e-3 },
+            gal: { name: "US Gallon (gal)", factor: 3.78541 },
+            cup: { name: "Cup (US)", factor: 0.236588 },
+            floz: { name: "Fluid Ounce (fl oz)", factor: 0.0295735 }
+          }
+        },
+        data: {
+          name: "Digital Data",
+          base: "B",
+          units: {
+            B: { name: "Bytes (B)", factor: 1 },
+            KB: { name: "Kilobytes (KB)", factor: 1024 },
+            MB: { name: "Megabytes (MB)", factor: 1024 ** 2 },
+            GB: { name: "Gigabytes (GB)", factor: 1024 ** 3 },
+            TB: { name: "Terabytes (TB)", factor: 1024 ** 4 }
+          }
+        },
+        area: {
+          name: "Area",
+          base: "m2",
+          units: {
+            m2: { name: "Square Meter (m\xB2)", factor: 1 },
+            km2: { name: "Square Km (km\xB2)", factor: 1e6 },
+            ha: { name: "Hectare (ha)", factor: 1e4 },
+            ft2: { name: "Square Foot (ft\xB2)", factor: 0.092903 },
+            ac: { name: "Acre (ac)", factor: 4046.86 }
+          }
+        }
+      };
+      this.currentCategoryKey = this._detectCategory(props);
+      const cat = this.categories[this.currentCategoryKey];
+      const unitKeys = Object.keys(cat.units);
+      this.fromUnit = (props.from || unitKeys[0]).toLowerCase();
+      if (!cat.units[this.fromUnit]) this.fromUnit = unitKeys[0];
+      this.toUnit = (props.to || unitKeys[1] || unitKeys[0]).toLowerCase();
+      if (!cat.units[this.toUnit]) this.toUnit = unitKeys[1] || unitKeys[0];
+      this.fromValue = props.value !== void 0 && props.value !== "" ? parseFloat(props.value) : 1;
+      if (isNaN(this.fromValue)) this.fromValue = 1;
+      this.openDropdown = null;
+      this.render();
+      this.bindEvents();
+    }
+    _detectCategory(props) {
+      if (props.category && this.categories[props.category.toLowerCase()]) {
+        return props.category.toLowerCase();
+      }
+      const from = (props.from || "").toLowerCase();
+      const to = (props.to || "").toLowerCase();
+      for (const [key, cat] of Object.entries(this.categories)) {
+        if (cat.units[from] || cat.units[to]) return key;
+      }
+      return "length";
+    }
+    _convert(val, fromKey, toKey, catKey) {
+      if (isNaN(val)) return 0;
+      const cat = this.categories[catKey];
+      if (!cat) return val;
+      if (cat.isSpecial && catKey === "temperature") {
+        let c = val;
+        if (fromKey === "f") c = (val - 32) * (5 / 9);
+        else if (fromKey === "k") c = val - 273.15;
+        if (toKey === "c") return c;
+        if (toKey === "f") return c * (9 / 5) + 32;
+        if (toKey === "k") return c + 273.15;
+        return c;
+      }
+      const fromFactor = cat.units[fromKey]?.factor || 1;
+      const toFactor = cat.units[toKey]?.factor || 1;
+      const baseValue = val * fromFactor;
+      return baseValue / toFactor;
+    }
+    render() {
+      const cat = this.categories[this.currentCategoryKey];
+      const fromUnitObj = cat.units[this.fromUnit] || { name: this.fromUnit };
+      const toUnitObj = cat.units[this.toUnit] || { name: this.toUnit };
+      const toValue = this._convert(this.fromValue, this.fromUnit, this.toUnit, this.currentCategoryKey);
+      const formattedToValue = this._formatNumber(toValue);
+      const formulaHint = this._getFormulaText();
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-converter-card">
+                    <!-- Top Bar: Title Badge & Custom Nexus Category Dropdown -->
+                    <div class="nexus-converter-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-cyan"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+
+                        <!-- Custom Nexus Category Dropdown -->
+                        <div class="nexus-custom-dropdown-wrap ${this.openDropdown === "category" ? "is-open" : ""}">
+                            <button type="button" class="nexus-custom-dropdown-trigger" data-toggle-dropdown="category">
+                                <span>${cat.name}</span>
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div class="nexus-custom-dropdown-menu">
+                                ${Object.entries(this.categories).map(([k, c]) => `
+                                    <div class="nexus-custom-dropdown-item ${k === this.currentCategoryKey ? "is-active" : ""}" data-select-category="${k}">
+                                        <span>${c.name}</span>
+                                        ${k === this.currentCategoryKey ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ""}
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Conversion Row -->
+                    <div class="nexus-sol-converter-row">
+                        <!-- From Field Group -->
+                        <div class="nexus-sol-converter-group">
+                            <input type="number" step="any" class="nexus-sol-converter-input" value="${this.fromValue}" data-input-from />
+                            
+                            <!-- Custom Nexus From-Unit Dropdown -->
+                            <div class="nexus-custom-dropdown-wrap is-inline ${this.openDropdown === "from" ? "is-open" : ""}">
+                                <button type="button" class="nexus-custom-dropdown-trigger is-unit" data-toggle-dropdown="from">
+                                    <span>${fromUnitObj.name}</span>
+                                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="nexus-custom-dropdown-menu is-unit-menu">
+                                    ${Object.entries(cat.units).map(([uKey, uVal]) => `
+                                        <div class="nexus-custom-dropdown-item ${uKey === this.fromUnit ? "is-active" : ""}" data-select-from="${uKey}">
+                                            <span>${uVal.name}</span>
+                                            ${uKey === this.fromUnit ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ""}
+                                        </div>
+                                    `).join("")}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Swap Button -->
+                        <button type="button" class="nexus-sol-swap-btn" data-action="swap" title="Swap Units">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m16 3 4 4-4 4"></path>
+                                <path d="M20 7H4"></path>
+                                <path d="m8 21-4-4 4-4"></path>
+                                <path d="M4 17h16"></path>
+                            </svg>
+                        </button>
+
+                        <!-- To Field Group -->
+                        <div class="nexus-sol-converter-group">
+                            <input type="number" step="any" class="nexus-sol-converter-input is-result" value="${formattedToValue}" data-input-to />
+                            
+                            <!-- Custom Nexus To-Unit Dropdown -->
+                            <div class="nexus-custom-dropdown-wrap is-inline ${this.openDropdown === "to" ? "is-open" : ""}">
+                                <button type="button" class="nexus-custom-dropdown-trigger is-unit" data-toggle-dropdown="to">
+                                    <span>${toUnitObj.name}</span>
+                                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="nexus-custom-dropdown-menu is-unit-menu">
+                                    ${Object.entries(cat.units).map(([uKey, uVal]) => `
+                                        <div class="nexus-custom-dropdown-item ${uKey === this.toUnit ? "is-active" : ""}" data-select-to="${uKey}">
+                                            <span>${uVal.name}</span>
+                                            ${uKey === this.toUnit ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ""}
+                                        </div>
+                                    `).join("")}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Formula Reference (Bright, Readable & Clean) -->
+                    <div class="nexus-sol-converter-formula">
+                        <span class="nexus-formula-tag">Formula</span>
+                        <span class="nexus-formula-expr">${formulaHint}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("input", (e) => {
+        const fromInput = e.target.closest("[data-input-from]");
+        if (fromInput) {
+          this.fromValue = parseFloat(fromInput.value);
+          if (isNaN(this.fromValue)) this.fromValue = 0;
+          this._updateToField();
+          return;
+        }
+        const toInput = e.target.closest("[data-input-to]");
+        if (toInput) {
+          const toVal = parseFloat(toInput.value);
+          if (!isNaN(toVal)) {
+            this.fromValue = this._convert(toVal, this.toUnit, this.fromUnit, this.currentCategoryKey);
+            const fromInputEl = this.containerEl.querySelector("[data-input-from]");
+            if (fromInputEl) {
+              fromInputEl.value = Number.isInteger(this.fromValue) ? this.fromValue : parseFloat(this.fromValue.toFixed(4));
+            }
+            this._updateFormulaHint();
+          }
+          return;
+        }
+      });
+      this.containerEl.addEventListener("click", (e) => {
+        const toggleTrigger = e.target.closest("[data-toggle-dropdown]");
+        if (toggleTrigger) {
+          e.stopPropagation();
+          const wrap = toggleTrigger.closest(".nexus-custom-dropdown-wrap");
+          const wasOpen = wrap ? wrap.classList.contains("is-open") : false;
+          this.containerEl.querySelectorAll(".nexus-custom-dropdown-wrap.is-open").forEach((el) => el.classList.remove("is-open"));
+          if (wrap && !wasOpen) {
+            wrap.classList.add("is-open");
+          }
+          return;
+        }
+        const catItem = e.target.closest("[data-select-category]");
+        if (catItem) {
+          e.stopPropagation();
+          this.currentCategoryKey = catItem.dataset.selectCategory;
+          const cat = this.categories[this.currentCategoryKey];
+          const unitKeys = Object.keys(cat.units);
+          this.fromUnit = unitKeys[0];
+          this.toUnit = unitKeys[1] || unitKeys[0];
+          this.render();
+          return;
+        }
+        const fromItem = e.target.closest("[data-select-from]");
+        if (fromItem) {
+          e.stopPropagation();
+          this.fromUnit = fromItem.dataset.selectFrom;
+          this.render();
+          return;
+        }
+        const toItem = e.target.closest("[data-select-to]");
+        if (toItem) {
+          e.stopPropagation();
+          this.toUnit = toItem.dataset.selectTo;
+          this.render();
+          return;
+        }
+        const swapBtn = e.target.closest('[data-action="swap"]');
+        if (swapBtn) {
+          const temp = this.fromUnit;
+          this.fromUnit = this.toUnit;
+          this.toUnit = temp;
+          this.render();
+          return;
+        }
+        this.containerEl.querySelectorAll(".nexus-custom-dropdown-wrap.is-open").forEach((el) => el.classList.remove("is-open"));
+      });
+      document.addEventListener("click", (e) => {
+        if (!this.containerEl.contains(e.target)) {
+          this.containerEl.querySelectorAll(".nexus-custom-dropdown-wrap.is-open").forEach((el) => el.classList.remove("is-open"));
+        }
+      });
+    }
+    _formatNumber(val) {
+      if (val === 0 || isNaN(val)) return "0";
+      if (Number.isInteger(val)) return val.toString();
+      const abs = Math.abs(val);
+      if (abs >= 1) {
+        return parseFloat(val.toFixed(4)).toString();
+      }
+      if (abs >= 1e-6) {
+        return parseFloat(val.toFixed(6)).toString();
+      }
+      return parseFloat(val.toPrecision(4)).toString();
+    }
+    _updateToField() {
+      const toInput = this.containerEl.querySelector("[data-input-to]");
+      if (toInput) {
+        const toValue = this._convert(this.fromValue, this.fromUnit, this.toUnit, this.currentCategoryKey);
+        toInput.value = this._formatNumber(toValue);
+      }
+      this._updateFormulaHint();
+    }
+    _getFormulaText() {
+      const cat = this.categories[this.currentCategoryKey];
+      if (!cat) return "";
+      if (this.currentCategoryKey === "temperature") {
+        if (this.fromUnit === "f" && this.toUnit === "c") return "C = (F \u2212 32) \xD7 5/9";
+        if (this.fromUnit === "c" && this.toUnit === "f") return "F = (C \xD7 9/5) + 32";
+        if (this.fromUnit === "c" && this.toUnit === "k") return "K = C + 273.15";
+        if (this.fromUnit === "k" && this.toUnit === "c") return "C = K \u2212 273.15";
+        if (this.fromUnit === "f" && this.toUnit === "k") return "K = (F \u2212 32) \xD7 5/9 + 273.15";
+        if (this.fromUnit === "k" && this.toUnit === "f") return "F = (K \u2212 273.15) \xD7 9/5 + 32";
+        return "C = (F \u2212 32) \xD7 5/9";
+      }
+      const fromUnitObj = cat.units[this.fromUnit] || { name: this.fromUnit };
+      const toUnitObj = cat.units[this.toUnit] || { name: this.toUnit };
+      const fromShort = fromUnitObj.name.includes("(") ? fromUnitObj.name.split("(")[1].replace(")", "") : fromUnitObj.name.split(" ")[0];
+      const toShort = toUnitObj.name.includes("(") ? toUnitObj.name.split("(")[1].replace(")", "") : toUnitObj.name.split(" ")[0];
+      const forward = this._convert(1, this.fromUnit, this.toUnit, this.currentCategoryKey);
+      if (forward >= 1e-3) {
+        const formatted = Number.isInteger(forward) ? forward.toLocaleString("en-US") : parseFloat(forward.toFixed(6));
+        return `1 ${fromShort} = ${formatted} ${toShort}`;
+      } else {
+        const reverse = this._convert(1, this.toUnit, this.fromUnit, this.currentCategoryKey);
+        const formattedRev = Number.isInteger(reverse) ? reverse.toLocaleString("en-US") : parseFloat(reverse.toFixed(6));
+        return `1 ${toShort} = ${formattedRev} ${fromShort}`;
+      }
+    }
+    _updateFormulaHint() {
+      const formulaEl = this.containerEl.querySelector(".nexus-formula-expr");
+      if (formulaEl) {
+        formulaEl.textContent = this._getFormulaText();
+      }
+    }
+  };
+
+  // src/components/widgets/world_clock_widget.js
+  var NexusWorldClockWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "World Clock";
+      this.cityDatabase = {
+        // Vietnam / Local
+        "hanoi": { name: "Hanoi, VN", tzName: "ICT", tz: "Asia/Ho_Chi_Minh" },
+        "saigon": { name: "Ho Chi Minh City, VN", tzName: "ICT", tz: "Asia/Ho_Chi_Minh" },
+        "vietnam": { name: "Hanoi, VN", tzName: "ICT", tz: "Asia/Ho_Chi_Minh" },
+        "vi\u1EC7t nam": { name: "Hanoi, VN", tzName: "ICT", tz: "Asia/Ho_Chi_Minh" },
+        // Australia & Oceania
+        "sydney": { name: "Sydney, Australia", tzName: "AEST", tz: "Australia/Sydney" },
+        "melbourne": { name: "Melbourne, Australia", tzName: "AEST", tz: "Australia/Melbourne" },
+        "brisbane": { name: "Brisbane, Australia", tzName: "AEST", tz: "Australia/Brisbane" },
+        "perth": { name: "Perth, Australia", tzName: "AWST", tz: "Australia/Perth" },
+        "australia": { name: "Sydney, Australia", tzName: "AEST", tz: "Australia/Sydney" },
+        "\xFAc": { name: "Sydney, Australia", tzName: "AEST", tz: "Australia/Sydney" },
+        "auckland": { name: "Auckland, NZ", tzName: "NZST", tz: "Pacific/Auckland" },
+        // Asia
+        "tokyo": { name: "Tokyo, Japan", tzName: "JST", tz: "Asia/Tokyo" },
+        "japan": { name: "Tokyo, Japan", tzName: "JST", tz: "Asia/Tokyo" },
+        "nh\u1EADt": { name: "Tokyo, Japan", tzName: "JST", tz: "Asia/Tokyo" },
+        "nh\u1EADt b\u1EA3n": { name: "Tokyo, Japan", tzName: "JST", tz: "Asia/Tokyo" },
+        "seoul": { name: "Seoul, South Korea", tzName: "KST", tz: "Asia/Seoul" },
+        "korea": { name: "Seoul, South Korea", tzName: "KST", tz: "Asia/Seoul" },
+        "h\xE0n qu\u1ED1c": { name: "Seoul, South Korea", tzName: "KST", tz: "Asia/Seoul" },
+        "beijing": { name: "Beijing, China", tzName: "CST", tz: "Asia/Shanghai" },
+        "shanghai": { name: "Shanghai, China", tzName: "CST", tz: "Asia/Shanghai" },
+        "china": { name: "Beijing, China", tzName: "CST", tz: "Asia/Shanghai" },
+        "trung qu\u1ED1c": { name: "Beijing, China", tzName: "CST", tz: "Asia/Shanghai" },
+        "singapore": { name: "Singapore", tzName: "SGT", tz: "Asia/Singapore" },
+        "bangkok": { name: "Bangkok, Thailand", tzName: "ICT", tz: "Asia/Bangkok" },
+        "thailand": { name: "Bangkok, Thailand", tzName: "ICT", tz: "Asia/Bangkok" },
+        "dubai": { name: "Dubai, UAE", tzName: "GST", tz: "Asia/Dubai" },
+        // Europe
+        "london": { name: "London, UK", tzName: "GMT", tz: "Europe/London" },
+        "uk": { name: "London, UK", tzName: "GMT", tz: "Europe/London" },
+        "anh": { name: "London, UK", tzName: "GMT", tz: "Europe/London" },
+        "paris": { name: "Paris, France", tzName: "CEST", tz: "Europe/Paris" },
+        "france": { name: "Paris, France", tzName: "CEST", tz: "Europe/Paris" },
+        "ph\xE1p": { name: "Paris, France", tzName: "CEST", tz: "Europe/Paris" },
+        "berlin": { name: "Berlin, Germany", tzName: "CEST", tz: "Europe/Berlin" },
+        "germany": { name: "Berlin, Germany", tzName: "CEST", tz: "Europe/Berlin" },
+        "\u0111\u1EE9c": { name: "Berlin, Germany", tzName: "CEST", tz: "Europe/Berlin" },
+        "rome": { name: "Rome, Italy", tzName: "CEST", tz: "Europe/Rome" },
+        "moscow": { name: "Moscow, Russia", tzName: "MSK", tz: "Europe/Moscow" },
+        // Americas
+        "new york": { name: "New York, NY", tzName: "EDT", tz: "America/New_York" },
+        "ny": { name: "New York, NY", tzName: "EDT", tz: "America/New_York" },
+        "san francisco": { name: "San Francisco, CA", tzName: "PDT", tz: "America/Los_Angeles" },
+        "los angeles": { name: "Los Angeles, CA", tzName: "PDT", tz: "America/Los_Angeles" },
+        "california": { name: "Los Angeles, CA", tzName: "PDT", tz: "America/Los_Angeles" },
+        "us": { name: "New York, NY", tzName: "EDT", tz: "America/New_York" },
+        "usa": { name: "New York, NY", tzName: "EDT", tz: "America/New_York" },
+        "m\u1EF9": { name: "New York, NY", tzName: "EDT", tz: "America/New_York" },
+        "chicago": { name: "Chicago, IL", tzName: "CDT", tz: "America/Chicago" },
+        "toronto": { name: "Toronto, Canada", tzName: "EDT", tz: "America/Toronto" }
+      };
+      this.targetCity = this._resolveCity(props.cities || props.location || props.city);
+      this.intervalId = null;
+      this.render();
+      this.startTicking();
+    }
+    _resolveCity(input) {
+      if (!input) return this.cityDatabase["new york"];
+      const clean = String(input).split(/[,;+&]/)[0].trim().toLowerCase();
+      if (this.cityDatabase[clean]) return this.cityDatabase[clean];
+      for (const [key, val] of Object.entries(this.cityDatabase)) {
+        if (key.includes(clean) || clean.includes(key)) return val;
+      }
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: input.trim() });
+        const parts = input.trim().split("/");
+        return {
+          name: parts[1]?.replace("_", " ") || parts[0],
+          tzName: "TZ",
+          tz: input.trim()
+        };
+      } catch (_) {
+        return this.cityDatabase["new york"];
+      }
+    }
+    _getTimeData(tz) {
+      const now = /* @__PURE__ */ new Date();
+      try {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          hour12: false,
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric"
+        });
+        const parts = formatter.formatToParts(now);
+        const p = {};
+        parts.forEach((part) => {
+          p[part.type] = part.value;
+        });
+        const hours = parseInt(p.hour, 10);
+        const minutes = parseInt(p.minute, 10);
+        const seconds = parseInt(p.second, 10);
+        const targetYear = parseInt(p.year, 10);
+        const targetMonth = parseInt(p.month, 10);
+        const targetDay = parseInt(p.day, 10);
+        const hh = String(hours).padStart(2, "0");
+        const mm = String(minutes).padStart(2, "0");
+        const digitalTime = `${hh}:${mm}`;
+        const localNow = /* @__PURE__ */ new Date();
+        let relativeDay = "Today";
+        if (targetDay > localNow.getDate() || targetMonth > localNow.getMonth() + 1) {
+          relativeDay = "Tomorrow";
+        } else if (targetDay < localNow.getDate() || targetMonth < localNow.getMonth() + 1) {
+          relativeDay = "Yesterday";
+        }
+        const targetUtc = new Date(Date.UTC(targetYear, targetMonth - 1, targetDay, hours, minutes, seconds));
+        const localUtc = new Date(Date.UTC(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), localNow.getHours(), localNow.getMinutes(), localNow.getSeconds()));
+        const diffHours = Math.round((targetUtc.getTime() - localUtc.getTime()) / (1e3 * 60 * 60));
+        let diffText = "";
+        if (diffHours === 0) diffText = "Same time";
+        else if (diffHours > 0) diffText = `+${diffHours}hrs`;
+        else diffText = `${diffHours}hrs`;
+        const secAngle = seconds / 60 * 360;
+        const minAngle = (minutes + seconds / 60) / 60 * 360;
+        const hrAngle = (hours % 12 + minutes / 60) / 12 * 360;
+        return {
+          digitalTime,
+          relativeText: `${relativeDay}, ${diffText}`,
+          secAngle,
+          minAngle,
+          hrAngle
+        };
+      } catch (e) {
+        return {
+          digitalTime: "--:--",
+          relativeText: "Time unavailable",
+          secAngle: 0,
+          minAngle: 0,
+          hrAngle: 0
+        };
+      }
+    }
+    _generateClockNumbers() {
+      const numbers = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+      const center = 44;
+      const radius = 32;
+      return numbers.map((num, idx) => {
+        const angle = (idx * 30 - 90) * (Math.PI / 180);
+        const x = center + radius * Math.cos(angle);
+        const y = center + radius * Math.sin(angle);
+        return `<text x="${x.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="middle" class="nexus-analog-num">${num}</text>`;
+      }).join("");
+    }
+    render() {
+      const { digitalTime, relativeText, hrAngle, minAngle, secAngle } = this._getTimeData(this.targetCity.tz);
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-clock-card">
+                    <div class="nexus-sol-clock-left">
+                        <div class="nexus-sol-clock-time" data-clock-digital>${digitalTime}</div>
+                        <div class="nexus-sol-clock-title">${this._escapeHtml(this.targetCity.name)} (${this._escapeHtml(this.targetCity.tzName)})</div>
+                        <div class="nexus-sol-clock-relative" data-clock-relative>${relativeText}</div>
+                    </div>
+                    <div class="nexus-sol-clock-right">
+                        <svg class="nexus-sol-analog-clock" viewBox="0 0 88 88" width="88" height="88">
+                            <!-- Clock Face Dial -->
+                            <circle cx="44" cy="44" r="42" class="nexus-analog-dial" />
+                            ${this._generateClockNumbers()}
+                            <!-- Hour Hand -->
+                            <line x1="44" y1="44" x2="44" y2="24" class="nexus-analog-hour-hand" data-clock-hour style="transform: rotate(${hrAngle}deg); transform-origin: 44px 44px;" />
+                            <!-- Minute Hand -->
+                            <line x1="44" y1="44" x2="44" y2="16" class="nexus-analog-min-hand" data-clock-min style="transform: rotate(${minAngle}deg); transform-origin: 44px 44px;" />
+                            <!-- Second Hand (Accent Blue) -->
+                            <line x1="44" y1="50" x2="44" y2="13" class="nexus-analog-sec-hand" data-clock-sec style="transform: rotate(${secAngle}deg); transform-origin: 44px 44px;" />
+                            <!-- Pivot Center Cap -->
+                            <circle cx="44" cy="44" r="3" class="nexus-analog-center-cap" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    startTicking() {
+      if (this.intervalId) clearInterval(this.intervalId);
+      this.intervalId = setInterval(() => {
+        const { digitalTime, relativeText, hrAngle, minAngle, secAngle } = this._getTimeData(this.targetCity.tz);
+        const digitalEl = this.containerEl.querySelector("[data-clock-digital]");
+        const relativeEl = this.containerEl.querySelector("[data-clock-relative]");
+        const hrHand = this.containerEl.querySelector("[data-clock-hour]");
+        const minHand = this.containerEl.querySelector("[data-clock-min]");
+        const secHand = this.containerEl.querySelector("[data-clock-sec]");
+        if (digitalEl) digitalEl.textContent = digitalTime;
+        if (relativeEl) relativeEl.textContent = relativeText;
+        if (hrHand) hrHand.style.transform = `rotate(${hrAngle}deg)`;
+        if (minHand) minHand.style.transform = `rotate(${minAngle}deg)`;
+        if (secHand) secHand.style.transform = `rotate(${secAngle}deg)`;
+      }, 1e3);
+    }
+    _escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  };
+
+  // src/components/widgets/date_diff_widget.js
+  var NexusDateDiffWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "Date Difference";
+      const todayStr = NexusDatePicker.getTodayStr();
+      const yyyy = (/* @__PURE__ */ new Date()).getFullYear();
+      this.startDate = props.from || todayStr;
+      this.endDate = props.to || `${yyyy}-12-31`;
+      this.startPicker = null;
+      this.endPicker = null;
+      this.render();
+    }
+    _calculateDiff() {
+      const d1 = /* @__PURE__ */ new Date(this.startDate + "T00:00:00");
+      const d2 = /* @__PURE__ */ new Date(this.endDate + "T00:00:00");
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
+        return { isValid: false };
+      }
+      const isPast = d2 < d1;
+      const [earlier, later] = isPast ? [d2, d1] : [d1, d2];
+      const diffMs = later.getTime() - earlier.getTime();
+      const totalDays = Math.round(diffMs / (1e3 * 60 * 60 * 24));
+      const weeks = Math.floor(totalDays / 7);
+      const remainDays = totalDays % 7;
+      let workingDays = 0;
+      const cur = new Date(earlier);
+      while (cur < later) {
+        const dayOfWeek = cur.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          workingDays++;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      let y = later.getFullYear() - earlier.getFullYear();
+      let m = later.getMonth() - earlier.getMonth();
+      let d = later.getDate() - earlier.getDate();
+      if (d < 0) {
+        m--;
+        const prevMonth = new Date(later.getFullYear(), later.getMonth(), 0);
+        d += prevMonth.getDate();
+      }
+      if (m < 0) {
+        y--;
+        m += 12;
+      }
+      const isMultiYear = y >= 1;
+      return {
+        isValid: true,
+        totalDays,
+        weeks,
+        remainDays,
+        workingDays,
+        years: y,
+        months: m,
+        days: d,
+        isPast,
+        isMultiYear
+      };
+    }
+    render() {
+      const diff = this._calculateDiff();
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-datediff-card">
+                    <!-- Top Bar: Clean Universal Title Badge -->
+                    <div class="nexus-datediff-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-purple"></span>
+                            <span class="nexus-widget-title-text">${this._escapeHtml(this.label)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Hero Counter -->
+                    ${diff.isValid ? `
+                        <div class="nexus-datediff-hero-section">
+                            <div class="nexus-datediff-hero">
+                                <span class="nexus-datediff-num">${diff.isMultiYear ? diff.years : diff.totalDays.toLocaleString("en-US")}</span>
+                                <span class="nexus-datediff-unit">${diff.isMultiYear ? diff.isPast ? "YEARS AGO" : "YEARS" : diff.isPast ? "DAYS AGO" : "DAYS"}</span>
+                            </div>
+                            <div class="nexus-datediff-substats">
+                                ${diff.isMultiYear ? `
+                                    <span><strong>${diff.years}y ${diff.months}m ${diff.days}d</strong></span>
+                                    <span class="nexus-dot-sep">\xB7</span>
+                                    <span><strong>${diff.totalDays.toLocaleString("en-US")}</strong> total days</span>
+                                    <span class="nexus-dot-sep">\xB7</span>
+                                    <span><strong>${diff.workingDays.toLocaleString("en-US")}</strong> workdays</span>
+                                ` : `
+                                    <span><strong>${diff.weeks}w ${diff.remainDays}d</strong></span>
+                                    <span class="nexus-dot-sep">\xB7</span>
+                                    <span><strong>${diff.workingDays.toLocaleString("en-US")}</strong> workdays</span>
+                                    <span class="nexus-dot-sep">\xB7</span>
+                                    <span><strong>${diff.months}</strong> months</span>
+                                `}
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="nexus-datediff-invalid">Please select valid start and end dates.</div>
+                    `}
+
+                    <!-- Nexus Custom Date Range Pickers (Shared UI Component) -->
+                    <div class="nexus-datediff-pickers-row">
+                        <div class="nexus-start-dp-container" style="flex: 1;"></div>
+                        <span class="nexus-datediff-arrow">\u2192</span>
+                        <div class="nexus-end-dp-container" style="flex: 1;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+      const startMount = this.containerEl.querySelector(".nexus-start-dp-container");
+      const endMount = this.containerEl.querySelector(".nexus-end-dp-container");
+      if (startMount) {
+        this.startPicker = new NexusDatePicker(startMount, {
+          value: this.startDate,
+          onChange: (newDate) => {
+            this.startDate = newDate;
+            this.render();
+          }
+        });
+      }
+      if (endMount) {
+        this.endPicker = new NexusDatePicker(endMount, {
+          value: this.endDate,
+          onChange: (newDate) => {
+            this.endDate = newDate;
+            this.render();
+          }
+        });
+      }
+    }
+    _escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  };
+
+  // node_modules/qrcode-generator/dist/qrcode.mjs
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+    const PAD0 = 236;
+    const PAD1 = 17;
+    let _typeNumber = typeNumber;
+    const _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    let _modules = null;
+    let _moduleCount = 0;
+    let _dataCache = null;
+    const _dataList = [];
+    const _this = {};
+    const makeImpl = function(test, maskPattern) {
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = (function(moduleCount) {
+        const modules = new Array(moduleCount);
+        for (let row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (let col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      })(_moduleCount);
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+      mapData(_dataCache, maskPattern);
+    };
+    const setupPositionProbePattern = function(row, col) {
+      for (let r = -1; r <= 7; r += 1) {
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+        for (let c = -1; c <= 7; c += 1) {
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+          if (0 <= r && r <= 6 && (c == 0 || c == 6) || 0 <= c && c <= 6 && (r == 0 || r == 6) || 2 <= r && r <= 4 && 2 <= c && c <= 4) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+    const getBestMaskPattern = function() {
+      let minLostPoint = 0;
+      let pattern = 0;
+      for (let i = 0; i < 8; i += 1) {
+        makeImpl(true, i);
+        const lostPoint = QRUtil.getLostPoint(_this);
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+      return pattern;
+    };
+    const setupTimingPattern = function() {
+      for (let r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = r % 2 == 0;
+      }
+      for (let c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = c % 2 == 0;
+      }
+    };
+    const setupPositionAdjustPattern = function() {
+      const pos = QRUtil.getPatternPosition(_typeNumber);
+      for (let i = 0; i < pos.length; i += 1) {
+        for (let j = 0; j < pos.length; j += 1) {
+          const row = pos[i];
+          const col = pos[j];
+          if (_modules[row][col] != null) {
+            continue;
+          }
+          for (let r = -2; r <= 2; r += 1) {
+            for (let c = -2; c <= 2; c += 1) {
+              if (r == -2 || r == 2 || c == -2 || c == 2 || r == 0 && c == 0) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+    const setupTypeNumber = function(test) {
+      const bits = QRUtil.getBCHTypeNumber(_typeNumber);
+      for (let i = 0; i < 18; i += 1) {
+        const mod = !test && (bits >> i & 1) == 1;
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+      for (let i = 0; i < 18; i += 1) {
+        const mod = !test && (bits >> i & 1) == 1;
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+    const setupTypeInfo = function(test, maskPattern) {
+      const data = _errorCorrectionLevel << 3 | maskPattern;
+      const bits = QRUtil.getBCHTypeInfo(data);
+      for (let i = 0; i < 15; i += 1) {
+        const mod = !test && (bits >> i & 1) == 1;
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+      for (let i = 0; i < 15; i += 1) {
+        const mod = !test && (bits >> i & 1) == 1;
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+      _modules[_moduleCount - 8][8] = !test;
+    };
+    const mapData = function(data, maskPattern) {
+      let inc = -1;
+      let row = _moduleCount - 1;
+      let bitIndex = 7;
+      let byteIndex = 0;
+      const maskFunc = QRUtil.getMaskFunction(maskPattern);
+      for (let col = _moduleCount - 1; col > 0; col -= 2) {
+        if (col == 6) col -= 1;
+        while (true) {
+          for (let c = 0; c < 2; c += 1) {
+            if (_modules[row][col - c] == null) {
+              let dark = false;
+              if (byteIndex < data.length) {
+                dark = (data[byteIndex] >>> bitIndex & 1) == 1;
+              }
+              const mask = maskFunc(row, col - c);
+              if (mask) {
+                dark = !dark;
+              }
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+          row += inc;
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+    const createBytes = function(buffer, rsBlocks) {
+      let offset = 0;
+      let maxDcCount = 0;
+      let maxEcCount = 0;
+      const dcdata = new Array(rsBlocks.length);
+      const ecdata = new Array(rsBlocks.length);
+      for (let r = 0; r < rsBlocks.length; r += 1) {
+        const dcCount = rsBlocks[r].dataCount;
+        const ecCount = rsBlocks[r].totalCount - dcCount;
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+        dcdata[r] = new Array(dcCount);
+        for (let i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 255 & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+        const rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        const rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+        const modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (let i = 0; i < ecdata[r].length; i += 1) {
+          const modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = modIndex >= 0 ? modPoly.getAt(modIndex) : 0;
+        }
+      }
+      let totalCodeCount = 0;
+      for (let i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+      const data = new Array(totalCodeCount);
+      let index = 0;
+      for (let i = 0; i < maxDcCount; i += 1) {
+        for (let r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+      for (let i = 0; i < maxEcCount; i += 1) {
+        for (let r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+      return data;
+    };
+    const createData = function(typeNumber2, errorCorrectionLevel2, dataList) {
+      const rsBlocks = QRRSBlock.getRSBlocks(typeNumber2, errorCorrectionLevel2);
+      const buffer = qrBitBuffer();
+      for (let i = 0; i < dataList.length; i += 1) {
+        const data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber2));
+        data.write(buffer);
+      }
+      let totalDataCount = 0;
+      for (let i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw "code length overflow. (" + buffer.getLengthInBits() + ">" + totalDataCount * 8 + ")";
+      }
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+      while (true) {
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+      return createBytes(buffer, rsBlocks);
+    };
+    _this.addData = function(data, mode) {
+      mode = mode || "Byte";
+      let newData = null;
+      switch (mode) {
+        case "Numeric":
+          newData = qrNumber(data);
+          break;
+        case "Alphanumeric":
+          newData = qrAlphaNum(data);
+          break;
+        case "Byte":
+          newData = qr8BitByte(data);
+          break;
+        case "Kanji":
+          newData = qrKanji(data);
+          break;
+        default:
+          throw "mode:" + mode;
+      }
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + "," + col;
+      }
+      return _modules[row][col];
+    };
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        let typeNumber2 = 1;
+        for (; typeNumber2 < 40; typeNumber2++) {
+          const rsBlocks = QRRSBlock.getRSBlocks(typeNumber2, _errorCorrectionLevel);
+          const buffer = qrBitBuffer();
+          for (let i = 0; i < _dataList.length; i++) {
+            const data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber2));
+            data.write(buffer);
+          }
+          let totalDataCount = 0;
+          for (let i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+        _typeNumber = typeNumber2;
+      }
+      makeImpl(false, getBestMaskPattern());
+    };
+    _this.createTableTag = function(cellSize, margin) {
+      cellSize = cellSize || 2;
+      margin = typeof margin == "undefined" ? cellSize * 4 : margin;
+      let qrHtml = "";
+      qrHtml += '<table style="';
+      qrHtml += " border-width: 0px; border-style: none;";
+      qrHtml += " border-collapse: collapse;";
+      qrHtml += " padding: 0px; margin: " + margin + "px;";
+      qrHtml += '">';
+      qrHtml += "<tbody>";
+      for (let r = 0; r < _this.getModuleCount(); r += 1) {
+        qrHtml += "<tr>";
+        for (let c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += " border-width: 0px; border-style: none;";
+          qrHtml += " border-collapse: collapse;";
+          qrHtml += " padding: 0px; margin: 0px;";
+          qrHtml += " width: " + cellSize + "px;";
+          qrHtml += " height: " + cellSize + "px;";
+          qrHtml += " background-color: ";
+          qrHtml += _this.isDark(r, c) ? "#000000" : "#ffffff";
+          qrHtml += ";";
+          qrHtml += '"/>';
+        }
+        qrHtml += "</tr>";
+      }
+      qrHtml += "</tbody>";
+      qrHtml += "</table>";
+      return qrHtml;
+    };
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+      let opts = {};
+      if (typeof arguments[0] == "object") {
+        opts = arguments[0];
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+      cellSize = cellSize || 2;
+      margin = typeof margin == "undefined" ? cellSize * 4 : margin;
+      alt = typeof alt === "string" ? { text: alt } : alt || {};
+      alt.text = alt.text || null;
+      alt.id = alt.text ? alt.id || "qrcode-description" : null;
+      title = typeof title === "string" ? { text: title } : title || {};
+      title.text = title.text || null;
+      title.id = title.text ? title.id || "qrcode-title" : null;
+      const size = _this.getModuleCount() * cellSize + margin * 2;
+      let c, mc, r, mr, qrSvg = "", rect;
+      rect = "l" + cellSize + ",0 0," + cellSize + " -" + cellSize + ",0 0,-" + cellSize + "z ";
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : "";
+      qrSvg += ' viewBox="0 0 ' + size + " " + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += title.text || alt.text ? ' role="img" aria-labelledby="' + escapeXml([title.id, alt.id].join(" ").trim()) + '"' : "";
+      qrSvg += ">";
+      qrSvg += title.text ? '<title id="' + escapeXml(title.id) + '">' + escapeXml(title.text) + "</title>" : "";
+      qrSvg += alt.text ? '<description id="' + escapeXml(alt.id) + '">' + escapeXml(alt.text) + "</description>" : "";
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c)) {
+            mc = c * cellSize + margin;
+            qrSvg += "M" + mc + "," + mr + rect;
+          }
+        }
+      }
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += "</svg>";
+      return qrSvg;
+    };
+    _this.createDataURL = function(cellSize, margin) {
+      cellSize = cellSize || 2;
+      margin = typeof margin == "undefined" ? cellSize * 4 : margin;
+      const size = _this.getModuleCount() * cellSize + margin * 2;
+      const min = margin;
+      const max = size - margin;
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          const c = Math.floor((x - min) / cellSize);
+          const r = Math.floor((y - min) / cellSize);
+          return _this.isDark(r, c) ? 0 : 1;
+        } else {
+          return 1;
+        }
+      });
+    };
+    _this.createImgTag = function(cellSize, margin, alt) {
+      cellSize = cellSize || 2;
+      margin = typeof margin == "undefined" ? cellSize * 4 : margin;
+      const size = _this.getModuleCount() * cellSize + margin * 2;
+      let img = "";
+      img += "<img";
+      img += ' src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += ' width="';
+      img += size;
+      img += '"';
+      img += ' height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += ' alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += "/>";
+      return img;
+    };
+    const escapeXml = function(s) {
+      let escaped = "";
+      for (let i = 0; i < s.length; i += 1) {
+        const c = s.charAt(i);
+        switch (c) {
+          case "<":
+            escaped += "&lt;";
+            break;
+          case ">":
+            escaped += "&gt;";
+            break;
+          case "&":
+            escaped += "&amp;";
+            break;
+          case '"':
+            escaped += "&quot;";
+            break;
+          default:
+            escaped += c;
+            break;
+        }
+      }
+      return escaped;
+    };
+    const _createHalfASCII = function(margin) {
+      const cellSize = 1;
+      margin = typeof margin == "undefined" ? cellSize * 2 : margin;
+      const size = _this.getModuleCount() * cellSize + margin * 2;
+      const min = margin;
+      const max = size - margin;
+      let y, x, r1, r2, p;
+      const blocks = {
+        "\u2588\u2588": "\u2588",
+        "\u2588 ": "\u2580",
+        " \u2588": "\u2584",
+        "  ": " "
+      };
+      const blocksLastLineNoMargin = {
+        "\u2588\u2588": "\u2580",
+        "\u2588 ": "\u2580",
+        " \u2588": " ",
+        "  ": " "
+      };
+      let ascii = "";
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = "\u2588";
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = " ";
+          }
+          if (min <= x && x < max && min <= y + 1 && y + 1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += " ";
+          } else {
+            p += "\u2588";
+          }
+          ascii += margin < 1 && y + 1 >= max ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+        ascii += "\n";
+      }
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size + 1).join("\u2580");
+      }
+      return ascii.substring(0, ascii.length - 1);
+    };
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+      cellSize -= 1;
+      margin = typeof margin == "undefined" ? cellSize * 2 : margin;
+      const size = _this.getModuleCount() * cellSize + margin * 2;
+      const min = margin;
+      const max = size - margin;
+      let y, x, r, p;
+      const white = Array(cellSize + 1).join("\u2588\u2588");
+      const black = Array(cellSize + 1).join("  ");
+      let ascii = "";
+      let line = "";
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor((y - min) / cellSize);
+        line = "";
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+          line += p ? white : black;
+        }
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + "\n";
+        }
+      }
+      return ascii.substring(0, ascii.length - 1);
+    };
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      const length = _this.getModuleCount();
+      for (let row = 0; row < length; row++) {
+        for (let col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? "black" : "white";
+          context.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    };
+    return _this;
+  };
+  qrcode.stringToBytes = function(s) {
+    const bytes = [];
+    for (let i = 0; i < s.length; i += 1) {
+      const c = s.charCodeAt(i);
+      bytes.push(c & 255);
+    }
+    return bytes;
+  };
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+    const unicodeMap = (function() {
+      const bin = base64DecodeInputStream(unicodeData);
+      const read = function() {
+        const b = bin.read();
+        if (b == -1) throw "eof";
+        return b;
+      };
+      let count = 0;
+      const unicodeMap2 = {};
+      while (true) {
+        const b0 = bin.read();
+        if (b0 == -1) break;
+        const b1 = read();
+        const b2 = read();
+        const b3 = read();
+        const k = String.fromCharCode(b0 << 8 | b1);
+        const v = b2 << 8 | b3;
+        unicodeMap2[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + " != " + numChars;
+      }
+      return unicodeMap2;
+    })();
+    const unknownChar = "?".charCodeAt(0);
+    return function(s) {
+      const bytes = [];
+      for (let i = 0; i < s.length; i += 1) {
+        const c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          const b = unicodeMap[s.charAt(i)];
+          if (typeof b == "number") {
+            if ((b & 255) == b) {
+              bytes.push(b);
+            } else {
+              bytes.push(b >>> 8);
+              bytes.push(b & 255);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+  var QRMode = {
+    MODE_NUMBER: 1 << 0,
+    MODE_ALPHA_NUM: 1 << 1,
+    MODE_8BIT_BYTE: 1 << 2,
+    MODE_KANJI: 1 << 3
+  };
+  var QRErrorCorrectionLevel = {
+    L: 1,
+    M: 0,
+    Q: 3,
+    H: 2
+  };
+  var QRMaskPattern = {
+    PATTERN000: 0,
+    PATTERN001: 1,
+    PATTERN010: 2,
+    PATTERN011: 3,
+    PATTERN100: 4,
+    PATTERN101: 5,
+    PATTERN110: 6,
+    PATTERN111: 7
+  };
+  var QRUtil = (function() {
+    const PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    const G15 = 1 << 10 | 1 << 8 | 1 << 5 | 1 << 4 | 1 << 2 | 1 << 1 | 1 << 0;
+    const G18 = 1 << 12 | 1 << 11 | 1 << 10 | 1 << 9 | 1 << 8 | 1 << 5 | 1 << 2 | 1 << 0;
+    const G15_MASK = 1 << 14 | 1 << 12 | 1 << 10 | 1 << 4 | 1 << 1;
+    const _this = {};
+    const getBCHDigit = function(data) {
+      let digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+    _this.getBCHTypeInfo = function(data) {
+      let d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= G15 << getBCHDigit(d) - getBCHDigit(G15);
+      }
+      return (data << 10 | d) ^ G15_MASK;
+    };
+    _this.getBCHTypeNumber = function(data) {
+      let d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= G18 << getBCHDigit(d) - getBCHDigit(G18);
+      }
+      return data << 12 | d;
+    };
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+    _this.getMaskFunction = function(maskPattern) {
+      switch (maskPattern) {
+        case QRMaskPattern.PATTERN000:
+          return function(i, j) {
+            return (i + j) % 2 == 0;
+          };
+        case QRMaskPattern.PATTERN001:
+          return function(i, j) {
+            return i % 2 == 0;
+          };
+        case QRMaskPattern.PATTERN010:
+          return function(i, j) {
+            return j % 3 == 0;
+          };
+        case QRMaskPattern.PATTERN011:
+          return function(i, j) {
+            return (i + j) % 3 == 0;
+          };
+        case QRMaskPattern.PATTERN100:
+          return function(i, j) {
+            return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 == 0;
+          };
+        case QRMaskPattern.PATTERN101:
+          return function(i, j) {
+            return i * j % 2 + i * j % 3 == 0;
+          };
+        case QRMaskPattern.PATTERN110:
+          return function(i, j) {
+            return (i * j % 2 + i * j % 3) % 2 == 0;
+          };
+        case QRMaskPattern.PATTERN111:
+          return function(i, j) {
+            return (i * j % 3 + (i + j) % 2) % 2 == 0;
+          };
+        default:
+          throw "bad maskPattern:" + maskPattern;
+      }
+    };
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      let a = qrPolynomial([1], 0);
+      for (let i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0));
+      }
+      return a;
+    };
+    _this.getLengthInBits = function(mode, type) {
+      if (1 <= type && type < 10) {
+        switch (mode) {
+          case QRMode.MODE_NUMBER:
+            return 10;
+          case QRMode.MODE_ALPHA_NUM:
+            return 9;
+          case QRMode.MODE_8BIT_BYTE:
+            return 8;
+          case QRMode.MODE_KANJI:
+            return 8;
+          default:
+            throw "mode:" + mode;
+        }
+      } else if (type < 27) {
+        switch (mode) {
+          case QRMode.MODE_NUMBER:
+            return 12;
+          case QRMode.MODE_ALPHA_NUM:
+            return 11;
+          case QRMode.MODE_8BIT_BYTE:
+            return 16;
+          case QRMode.MODE_KANJI:
+            return 10;
+          default:
+            throw "mode:" + mode;
+        }
+      } else if (type < 41) {
+        switch (mode) {
+          case QRMode.MODE_NUMBER:
+            return 14;
+          case QRMode.MODE_ALPHA_NUM:
+            return 13;
+          case QRMode.MODE_8BIT_BYTE:
+            return 16;
+          case QRMode.MODE_KANJI:
+            return 12;
+          default:
+            throw "mode:" + mode;
+        }
+      } else {
+        throw "type:" + type;
+      }
+    };
+    _this.getLostPoint = function(qrcode2) {
+      const moduleCount = qrcode2.getModuleCount();
+      let lostPoint = 0;
+      for (let row = 0; row < moduleCount; row += 1) {
+        for (let col = 0; col < moduleCount; col += 1) {
+          let sameCount = 0;
+          const dark = qrcode2.isDark(row, col);
+          for (let r = -1; r <= 1; r += 1) {
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+            for (let c = -1; c <= 1; c += 1) {
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+              if (r == 0 && c == 0) {
+                continue;
+              }
+              if (dark == qrcode2.isDark(row + r, col + c)) {
+                sameCount += 1;
+              }
+            }
+          }
+          if (sameCount > 5) {
+            lostPoint += 3 + sameCount - 5;
+          }
+        }
+      }
+      ;
+      for (let row = 0; row < moduleCount - 1; row += 1) {
+        for (let col = 0; col < moduleCount - 1; col += 1) {
+          let count = 0;
+          if (qrcode2.isDark(row, col)) count += 1;
+          if (qrcode2.isDark(row + 1, col)) count += 1;
+          if (qrcode2.isDark(row, col + 1)) count += 1;
+          if (qrcode2.isDark(row + 1, col + 1)) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+      for (let row = 0; row < moduleCount; row += 1) {
+        for (let col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode2.isDark(row, col) && !qrcode2.isDark(row, col + 1) && qrcode2.isDark(row, col + 2) && qrcode2.isDark(row, col + 3) && qrcode2.isDark(row, col + 4) && !qrcode2.isDark(row, col + 5) && qrcode2.isDark(row, col + 6)) {
+            lostPoint += 40;
+          }
+        }
+      }
+      for (let col = 0; col < moduleCount; col += 1) {
+        for (let row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode2.isDark(row, col) && !qrcode2.isDark(row + 1, col) && qrcode2.isDark(row + 2, col) && qrcode2.isDark(row + 3, col) && qrcode2.isDark(row + 4, col) && !qrcode2.isDark(row + 5, col) && qrcode2.isDark(row + 6, col)) {
+            lostPoint += 40;
+          }
+        }
+      }
+      let darkCount = 0;
+      for (let col = 0; col < moduleCount; col += 1) {
+        for (let row = 0; row < moduleCount; row += 1) {
+          if (qrcode2.isDark(row, col)) {
+            darkCount += 1;
+          }
+        }
+      }
+      const ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+      return lostPoint;
+    };
+    return _this;
+  })();
+  var QRMath = (function() {
+    const EXP_TABLE = new Array(256);
+    const LOG_TABLE = new Array(256);
+    for (let i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (let i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4] ^ EXP_TABLE[i - 5] ^ EXP_TABLE[i - 6] ^ EXP_TABLE[i - 8];
+    }
+    for (let i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i]] = i;
+    }
+    const _this = {};
+    _this.glog = function(n) {
+      if (n < 1) {
+        throw "glog(" + n + ")";
+      }
+      return LOG_TABLE[n];
+    };
+    _this.gexp = function(n) {
+      while (n < 0) {
+        n += 255;
+      }
+      while (n >= 256) {
+        n -= 255;
+      }
+      return EXP_TABLE[n];
+    };
+    return _this;
+  })();
+  var qrPolynomial = function(num, shift) {
+    if (typeof num.length == "undefined") {
+      throw num.length + "/" + shift;
+    }
+    const _num = (function() {
+      let offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      const _num2 = new Array(num.length - offset + shift);
+      for (let i = 0; i < num.length - offset; i += 1) {
+        _num2[i] = num[i + offset];
+      }
+      return _num2;
+    })();
+    const _this = {};
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+    _this.getLength = function() {
+      return _num.length;
+    };
+    _this.multiply = function(e) {
+      const num2 = new Array(_this.getLength() + e.getLength() - 1);
+      for (let i = 0; i < _this.getLength(); i += 1) {
+        for (let j = 0; j < e.getLength(); j += 1) {
+          num2[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i)) + QRMath.glog(e.getAt(j)));
+        }
+      }
+      return qrPolynomial(num2, 0);
+    };
+    _this.mod = function(e) {
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+      const ratio = QRMath.glog(_this.getAt(0)) - QRMath.glog(e.getAt(0));
+      const num2 = new Array(_this.getLength());
+      for (let i = 0; i < _this.getLength(); i += 1) {
+        num2[i] = _this.getAt(i);
+      }
+      for (let i = 0; i < e.getLength(); i += 1) {
+        num2[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i)) + ratio);
+      }
+      return qrPolynomial(num2, 0).mod(e);
+    };
+    return _this;
+  };
+  var QRRSBlock = (function() {
+    const RS_BLOCK_TABLE = [
+      // L
+      // M
+      // Q
+      // H
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+    const qrRSBlock = function(totalCount, dataCount) {
+      const _this2 = {};
+      _this2.totalCount = totalCount;
+      _this2.dataCount = dataCount;
+      return _this2;
+    };
+    const _this = {};
+    const getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+      switch (errorCorrectionLevel) {
+        case QRErrorCorrectionLevel.L:
+          return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+        case QRErrorCorrectionLevel.M:
+          return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+        case QRErrorCorrectionLevel.Q:
+          return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+        case QRErrorCorrectionLevel.H:
+          return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+        default:
+          return void 0;
+      }
+    };
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+      const rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+      if (typeof rsBlock == "undefined") {
+        throw "bad rs block @ typeNumber:" + typeNumber + "/errorCorrectionLevel:" + errorCorrectionLevel;
+      }
+      const length = rsBlock.length / 3;
+      const list = [];
+      for (let i = 0; i < length; i += 1) {
+        const count = rsBlock[i * 3 + 0];
+        const totalCount = rsBlock[i * 3 + 1];
+        const dataCount = rsBlock[i * 3 + 2];
+        for (let j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount));
+        }
+      }
+      return list;
+    };
+    return _this;
+  })();
+  var qrBitBuffer = function() {
+    const _buffer = [];
+    let _length = 0;
+    const _this = {};
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+    _this.getAt = function(index) {
+      const bufIndex = Math.floor(index / 8);
+      return (_buffer[bufIndex] >>> 7 - index % 8 & 1) == 1;
+    };
+    _this.put = function(num, length) {
+      for (let i = 0; i < length; i += 1) {
+        _this.putBit((num >>> length - i - 1 & 1) == 1);
+      }
+    };
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+    _this.putBit = function(bit) {
+      const bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+      if (bit) {
+        _buffer[bufIndex] |= 128 >>> _length % 8;
+      }
+      _length += 1;
+    };
+    return _this;
+  };
+  var qrNumber = function(data) {
+    const _mode = QRMode.MODE_NUMBER;
+    const _data = data;
+    const _this = {};
+    _this.getMode = function() {
+      return _mode;
+    };
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+    _this.write = function(buffer) {
+      const data2 = _data;
+      let i = 0;
+      while (i + 2 < data2.length) {
+        buffer.put(strToNum(data2.substring(i, i + 3)), 10);
+        i += 3;
+      }
+      if (i < data2.length) {
+        if (data2.length - i == 1) {
+          buffer.put(strToNum(data2.substring(i, i + 1)), 4);
+        } else if (data2.length - i == 2) {
+          buffer.put(strToNum(data2.substring(i, i + 2)), 7);
+        }
+      }
+    };
+    const strToNum = function(s) {
+      let num = 0;
+      for (let i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i));
+      }
+      return num;
+    };
+    const chatToNum = function(c) {
+      if ("0" <= c && c <= "9") {
+        return c.charCodeAt(0) - "0".charCodeAt(0);
+      }
+      throw "illegal char :" + c;
+    };
+    return _this;
+  };
+  var qrAlphaNum = function(data) {
+    const _mode = QRMode.MODE_ALPHA_NUM;
+    const _data = data;
+    const _this = {};
+    _this.getMode = function() {
+      return _mode;
+    };
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+    _this.write = function(buffer) {
+      const s = _data;
+      let i = 0;
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i)) * 45 + getCode(s.charAt(i + 1)),
+          11
+        );
+        i += 2;
+      }
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i)), 6);
+      }
+    };
+    const getCode = function(c) {
+      if ("0" <= c && c <= "9") {
+        return c.charCodeAt(0) - "0".charCodeAt(0);
+      } else if ("A" <= c && c <= "Z") {
+        return c.charCodeAt(0) - "A".charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+          case " ":
+            return 36;
+          case "$":
+            return 37;
+          case "%":
+            return 38;
+          case "*":
+            return 39;
+          case "+":
+            return 40;
+          case "-":
+            return 41;
+          case ".":
+            return 42;
+          case "/":
+            return 43;
+          case ":":
+            return 44;
+          default:
+            throw "illegal char :" + c;
+        }
+      }
+    };
+    return _this;
+  };
+  var qr8BitByte = function(data) {
+    const _mode = QRMode.MODE_8BIT_BYTE;
+    const _data = data;
+    const _bytes = qrcode.stringToBytes(data);
+    const _this = {};
+    _this.getMode = function() {
+      return _mode;
+    };
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+    _this.write = function(buffer) {
+      for (let i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+    return _this;
+  };
+  var qrKanji = function(data) {
+    const _mode = QRMode.MODE_KANJI;
+    const _data = data;
+    const stringToBytes2 = qrcode.stringToBytes;
+    !(function(c, code) {
+      const test = stringToBytes2(c);
+      if (test.length != 2 || (test[0] << 8 | test[1]) != code) {
+        throw "sjis not supported.";
+      }
+    })("\u53CB", 38726);
+    const _bytes = stringToBytes2(data);
+    const _this = {};
+    _this.getMode = function() {
+      return _mode;
+    };
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+    _this.write = function(buffer) {
+      const data2 = _bytes;
+      let i = 0;
+      while (i + 1 < data2.length) {
+        let c = (255 & data2[i]) << 8 | 255 & data2[i + 1];
+        if (33088 <= c && c <= 40956) {
+          c -= 33088;
+        } else if (57408 <= c && c <= 60351) {
+          c -= 49472;
+        } else {
+          throw "illegal char at " + (i + 1) + "/" + c;
+        }
+        c = (c >>> 8 & 255) * 192 + (c & 255);
+        buffer.put(c, 13);
+        i += 2;
+      }
+      if (i < data2.length) {
+        throw "illegal char at " + (i + 1);
+      }
+    };
+    return _this;
+  };
+  var byteArrayOutputStream = function() {
+    const _bytes = [];
+    const _this = {};
+    _this.writeByte = function(b) {
+      _bytes.push(b & 255);
+    };
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (let i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+    _this.writeString = function(s) {
+      for (let i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i));
+      }
+    };
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+    _this.toString = function() {
+      let s = "";
+      s += "[";
+      for (let i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ",";
+        }
+        s += _bytes[i];
+      }
+      s += "]";
+      return s;
+    };
+    return _this;
+  };
+  var base64EncodeOutputStream = function() {
+    let _buffer = 0;
+    let _buflen = 0;
+    let _length = 0;
+    let _base64 = "";
+    const _this = {};
+    const writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 63));
+    };
+    const encode = function(n) {
+      if (n < 0) {
+        throw "n:" + n;
+      } else if (n < 26) {
+        return 65 + n;
+      } else if (n < 52) {
+        return 97 + (n - 26);
+      } else if (n < 62) {
+        return 48 + (n - 52);
+      } else if (n == 62) {
+        return 43;
+      } else if (n == 63) {
+        return 47;
+      } else {
+        throw "n:" + n;
+      }
+    };
+    _this.writeByte = function(n) {
+      _buffer = _buffer << 8 | n & 255;
+      _buflen += 8;
+      _length += 1;
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> _buflen - 6);
+        _buflen -= 6;
+      }
+    };
+    _this.flush = function() {
+      if (_buflen > 0) {
+        writeEncoded(_buffer << 6 - _buflen);
+        _buffer = 0;
+        _buflen = 0;
+      }
+      if (_length % 3 != 0) {
+        const padlen = 3 - _length % 3;
+        for (let i = 0; i < padlen; i += 1) {
+          _base64 += "=";
+        }
+      }
+    };
+    _this.toString = function() {
+      return _base64;
+    };
+    return _this;
+  };
+  var base64DecodeInputStream = function(str) {
+    const _str = str;
+    let _pos = 0;
+    let _buffer = 0;
+    let _buflen = 0;
+    const _this = {};
+    _this.read = function() {
+      while (_buflen < 8) {
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw "unexpected end of file./" + _buflen;
+        }
+        const c = _str.charAt(_pos);
+        _pos += 1;
+        if (c == "=") {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/)) {
+          continue;
+        }
+        _buffer = _buffer << 6 | decode(c.charCodeAt(0));
+        _buflen += 6;
+      }
+      const n = _buffer >>> _buflen - 8 & 255;
+      _buflen -= 8;
+      return n;
+    };
+    const decode = function(c) {
+      if (65 <= c && c <= 90) {
+        return c - 65;
+      } else if (97 <= c && c <= 122) {
+        return c - 97 + 26;
+      } else if (48 <= c && c <= 57) {
+        return c - 48 + 52;
+      } else if (c == 43) {
+        return 62;
+      } else if (c == 47) {
+        return 63;
+      } else {
+        throw "c:" + c;
+      }
+    };
+    return _this;
+  };
+  var gifImage = function(width, height) {
+    const _width = width;
+    const _height = height;
+    const _data = new Array(width * height);
+    const _this = {};
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+    _this.write = function(out) {
+      out.writeString("GIF87a");
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(128);
+      out.writeByte(0);
+      out.writeByte(0);
+      out.writeByte(0);
+      out.writeByte(0);
+      out.writeByte(0);
+      out.writeByte(255);
+      out.writeByte(255);
+      out.writeByte(255);
+      out.writeString(",");
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+      const lzwMinCodeSize = 2;
+      const raster = getLZWRaster(lzwMinCodeSize);
+      out.writeByte(lzwMinCodeSize);
+      let offset = 0;
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0);
+      out.writeString(";");
+    };
+    const bitOutputStream = function(out) {
+      const _out = out;
+      let _bitLength = 0;
+      let _bitBuffer = 0;
+      const _this2 = {};
+      _this2.write = function(data, length) {
+        if (data >>> length != 0) {
+          throw "length over";
+        }
+        while (_bitLength + length >= 8) {
+          _out.writeByte(255 & (data << _bitLength | _bitBuffer));
+          length -= 8 - _bitLength;
+          data >>>= 8 - _bitLength;
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+        _bitBuffer = data << _bitLength | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+      _this2.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+      return _this2;
+    };
+    const getLZWRaster = function(lzwMinCodeSize) {
+      const clearCode = 1 << lzwMinCodeSize;
+      const endCode = (1 << lzwMinCodeSize) + 1;
+      let bitLength = lzwMinCodeSize + 1;
+      const table = lzwTable();
+      for (let i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i));
+      }
+      table.add(String.fromCharCode(clearCode));
+      table.add(String.fromCharCode(endCode));
+      const byteOut = byteArrayOutputStream();
+      const bitOut = bitOutputStream(byteOut);
+      bitOut.write(clearCode, bitLength);
+      let dataIndex = 0;
+      let s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+      while (dataIndex < _data.length) {
+        const c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+        if (table.contains(s + c)) {
+          s = s + c;
+        } else {
+          bitOut.write(table.indexOf(s), bitLength);
+          if (table.size() < 4095) {
+            if (table.size() == 1 << bitLength) {
+              bitLength += 1;
+            }
+            table.add(s + c);
+          }
+          s = c;
+        }
+      }
+      bitOut.write(table.indexOf(s), bitLength);
+      bitOut.write(endCode, bitLength);
+      bitOut.flush();
+      return byteOut.toByteArray();
+    };
+    const lzwTable = function() {
+      const _map = {};
+      let _size = 0;
+      const _this2 = {};
+      _this2.add = function(key) {
+        if (_this2.contains(key)) {
+          throw "dup key:" + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+      _this2.size = function() {
+        return _size;
+      };
+      _this2.indexOf = function(key) {
+        return _map[key];
+      };
+      _this2.contains = function(key) {
+        return typeof _map[key] != "undefined";
+      };
+      return _this2;
+    };
+    return _this;
+  };
+  var createDataURL = function(width, height, getPixel) {
+    const gif = gifImage(width, height);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y));
+      }
+    }
+    const b = byteArrayOutputStream();
+    gif.write(b);
+    const base64 = base64EncodeOutputStream();
+    const bytes = b.toByteArray();
+    for (let i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+    return "data:image/gif;base64," + base64;
+  };
+  var qrcode_default = qrcode;
+  var stringToBytes = qrcode.stringToBytes;
+
+  // src/components/widgets/qr_generator_widget.js
+  var NexusQrGeneratorWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "QR Code";
+      this.text = props.text || props.url || props.data || "https://github.com";
+      this.render();
+      this.bindEvents();
+      this.drawQr();
+    }
+    render() {
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-qr-card">
+                    <!-- Top Bar: Universal Title Badge -->
+                    <div class="nexus-qr-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-emerald"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Row: QR Canvas on Left, Controls & Input on Right -->
+                    <div class="nexus-sol-qr-row">
+                        <!-- High Quality White QR Code Canvas Card -->
+                        <div class="nexus-sol-qr-canvas-box">
+                            <canvas width="90" height="90" class="nexus-sol-qr-canvas" data-qr-canvas></canvas>
+                        </div>
+
+                        <!-- Right Column: Input & Action Buttons -->
+                        <div class="nexus-sol-qr-right">
+                            <div class="nexus-sol-qr-input-wrap">
+                                <input type="text" class="nexus-sol-qr-input" value="${this._escapeHtml(this.text)}" placeholder="Enter URL or text..." data-qr-input />
+                            </div>
+
+                            <div class="nexus-sol-qr-actions">
+                                <button type="button" class="nexus-sol-qr-btn is-primary" data-action="download" title="Download QR PNG Image">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    <span>Download</span>
+                                </button>
+                                <button type="button" class="nexus-sol-qr-btn is-ghost" data-action="copy" title="Copy QR Code Image to Clipboard">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    <span data-copy-label>Copy</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    drawQr() {
+      const canvas = this.containerEl.querySelector("[data-qr-canvas]");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const content = this.text || "https://nexus.ai";
+      try {
+        const qr = qrcode_default(0, "M");
+        qr.addData(content);
+        qr.make();
+        const moduleCount = qr.getModuleCount();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const padding = 4;
+        const cellSize = (canvasWidth - padding * 2) / moduleCount;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillStyle = "#000000";
+        for (let r = 0; r < moduleCount; r++) {
+          for (let c = 0; c < moduleCount; c++) {
+            if (qr.isDark(r, c)) {
+              const x = padding + c * cellSize;
+              const y = padding + r * cellSize;
+              ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(cellSize), Math.ceil(cellSize));
+            }
+          }
+        }
+      } catch (e) {
+        console.error("[Nexus QR Widget] Error generating QR code:", e);
+      }
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("input", (e) => {
+        const inputEl = e.target.closest("[data-qr-input]");
+        if (inputEl) {
+          this.text = inputEl.value;
+          this.drawQr();
+        }
+      });
+      this.containerEl.addEventListener("click", (e) => {
+        const downloadBtn = e.target.closest('[data-action="download"]');
+        if (downloadBtn) {
+          const canvas = this.containerEl.querySelector("[data-qr-canvas]");
+          if (!canvas) return;
+          const link = document.createElement("a");
+          link.download = "nexus-qr-code.png";
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+          return;
+        }
+        const copyBtn = e.target.closest('[data-action="copy"]');
+        if (copyBtn) {
+          const canvas = this.containerEl.querySelector("[data-qr-canvas]");
+          const showSuccess = () => {
+            const labelEl = this.containerEl.querySelector("[data-copy-label]");
+            if (labelEl) {
+              labelEl.textContent = "Copied!";
+              setTimeout(() => {
+                labelEl.textContent = "Copy";
+              }, 2e3);
+            }
+          };
+          if (canvas && canvas.toBlob && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const item = new ClipboardItem({ "image/png": blob });
+                navigator.clipboard.write([item]).then(showSuccess).catch(() => {
+                  navigator.clipboard.writeText(this.text).then(showSuccess);
+                });
+              } else {
+                navigator.clipboard.writeText(this.text).then(showSuccess);
+              }
+            }, "image/png");
+          } else {
+            navigator.clipboard.writeText(this.text).then(showSuccess);
+          }
+        }
+      });
+    }
+    _escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  };
+
+  // src/components/widgets/currency_widget.js
+  var ALL_CURRENCIES = {
+    // Major & Asia Pacific
+    USD: { name: "US Dollar", symbol: "$", flag: "\u{1F1FA}\u{1F1F8}", country: "United States" },
+    VND: { name: "Vietnamese Dong", symbol: "\u20AB", flag: "\u{1F1FB}\u{1F1F3}", country: "Vietnam" },
+    EUR: { name: "Euro", symbol: "\u20AC", flag: "\u{1F1EA}\u{1F1FA}", country: "European Union" },
+    JPY: { name: "Japanese Yen", symbol: "\xA5", flag: "\u{1F1EF}\u{1F1F5}", country: "Japan" },
+    GBP: { name: "British Pound", symbol: "\xA3", flag: "\u{1F1EC}\u{1F1E7}", country: "United Kingdom" },
+    CNY: { name: "Chinese Yuan", symbol: "\xA5", flag: "\u{1F1E8}\u{1F1F3}", country: "China" },
+    KRW: { name: "South Korean Won", symbol: "\u20A9", flag: "\u{1F1F0}\u{1F1F7}", country: "South Korea" },
+    SGD: { name: "Singapore Dollar", symbol: "S$", flag: "\u{1F1F8}\u{1F1EC}", country: "Singapore" },
+    AUD: { name: "Australian Dollar", symbol: "A$", flag: "\u{1F1E6}\u{1F1FA}", country: "Australia" },
+    CAD: { name: "Canadian Dollar", symbol: "C$", flag: "\u{1F1E8}\u{1F1E6}", country: "Canada" },
+    CHF: { name: "Swiss Franc", symbol: "CHF", flag: "\u{1F1E8}\u{1F1ED}", country: "Switzerland" },
+    HKD: { name: "Hong Kong Dollar", symbol: "HK$", flag: "\u{1F1ED}\u{1F1F0}", country: "Hong Kong" },
+    TWD: { name: "New Taiwan Dollar", symbol: "NT$", flag: "\u{1F1F9}\u{1F1FC}", country: "Taiwan" },
+    THB: { name: "Thai Baht", symbol: "\u0E3F", flag: "\u{1F1F9}\u{1F1ED}", country: "Thailand" },
+    MYR: { name: "Malaysian Ringgit", symbol: "RM", flag: "\u{1F1F2}\u{1F1FE}", country: "Malaysia" },
+    IDR: { name: "Indonesian Rupiah", symbol: "Rp", flag: "\u{1F1EE}\u{1F1E9}", country: "Indonesia" },
+    PHP: { name: "Philippine Peso", symbol: "\u20B1", flag: "\u{1F1F5}\u{1F1ED}", country: "Philippines" },
+    INR: { name: "Indian Rupee", symbol: "\u20B9", flag: "\u{1F1EE}\u{1F1F3}", country: "India" },
+    NZD: { name: "New Zealand Dollar", symbol: "NZ$", flag: "\u{1F1F3}\u{1F1FF}", country: "New Zealand" },
+    // Europe & Scandinavia
+    SEK: { name: "Swedish Krona", symbol: "kr", flag: "\u{1F1F8}\u{1F1EA}", country: "Sweden" },
+    NOK: { name: "Norwegian Krone", symbol: "kr", flag: "\u{1F1F3}\u{1F1F4}", country: "Norway" },
+    DKK: { name: "Danish Krone", symbol: "kr", flag: "\u{1F1E9}\u{1F1F0}", country: "Denmark" },
+    PLN: { name: "Polish Zloty", symbol: "z\u0142", flag: "\u{1F1F5}\u{1F1F1}", country: "Poland" },
+    CZK: { name: "Czech Koruna", symbol: "K\u010D", flag: "\u{1F1E8}\u{1F1FF}", country: "Czech Republic" },
+    HUF: { name: "Hungarian Forint", symbol: "Ft", flag: "\u{1F1ED}\u{1F1FA}", country: "Hungary" },
+    RON: { name: "Romanian Leu", symbol: "lei", flag: "\u{1F1F7}\u{1F1F4}", country: "Romania" },
+    RUB: { name: "Russian Ruble", symbol: "\u20BD", flag: "\u{1F1F7}\u{1F1FA}", country: "Russia" },
+    TRY: { name: "Turkish Lira", symbol: "\u20BA", flag: "\u{1F1F9}\u{1F1F7}", country: "Turkey" },
+    UAH: { name: "Ukrainian Hryvnia", symbol: "\u20B4", flag: "\u{1F1FA}\u{1F1E6}", country: "Ukraine" },
+    BGN: { name: "Bulgarian Lev", symbol: "\u043B\u0432", flag: "\u{1F1E7}\u{1F1EC}", country: "Bulgaria" },
+    HRK: { name: "Croatian Kuna", symbol: "kn", flag: "\u{1F1ED}\u{1F1F7}", country: "Croatia" },
+    RSD: { name: "Serbian Dinar", symbol: "din", flag: "\u{1F1F7}\u{1F1F8}", country: "Serbia" },
+    ISK: { name: "Icelandic Kr\xF3na", symbol: "kr", flag: "\u{1F1EE}\u{1F1F8}", country: "Iceland" },
+    // Americas
+    BRL: { name: "Brazilian Real", symbol: "R$", flag: "\u{1F1E7}\u{1F1F7}", country: "Brazil" },
+    MXN: { name: "Mexican Peso", symbol: "$", flag: "\u{1F1F2}\u{1F1FD}", country: "Mexico" },
+    ARS: { name: "Argentine Peso", symbol: "$", flag: "\u{1F1E6}\u{1F1F7}", country: "Argentina" },
+    CLP: { name: "Chilean Peso", symbol: "$", flag: "\u{1F1E8}\u{1F1F1}", country: "Chile" },
+    COP: { name: "Colombian Peso", symbol: "$", flag: "\u{1F1E8}\u{1F1F4}", country: "Colombia" },
+    PEN: { name: "Peruvian Sol", symbol: "S/.", flag: "\u{1F1F5}\u{1F1EA}", country: "Peru" },
+    CRC: { name: "Costa Rican Col\xF3n", symbol: "\u20A1", flag: "\u{1F1E8}\u{1F1F7}", country: "Costa Rica" },
+    DOP: { name: "Dominican Peso", symbol: "RD$", flag: "\u{1F1E9}\u{1F1F4}", country: "Dominican Republic" },
+    GTQ: { name: "Guatemalan Quetzal", symbol: "Q", flag: "\u{1F1EC}\u{1F1F9}", country: "Guatemala" },
+    PAB: { name: "Panamanian Balboa", symbol: "B/.", flag: "\u{1F1F5}\u{1F1E6}", country: "Panama" },
+    UYU: { name: "Uruguayan Peso", symbol: "$U", flag: "\u{1F1FA}\u{1F1FE}", country: "Uruguay" },
+    BOB: { name: "Bolivian Boliviano", symbol: "Bs", flag: "\u{1F1E7}\u{1F1F4}", country: "Bolivia" },
+    PYG: { name: "Paraguayan Guarani", symbol: "\u20B2", flag: "\u{1F1F5}\u{1F1FE}", country: "Paraguay" },
+    JMD: { name: "Jamaican Dollar", symbol: "J$", flag: "\u{1F1EF}\u{1F1F2}", country: "Jamaica" },
+    TTD: { name: "Trinidad and Tobago Dollar", symbol: "TT$", flag: "\u{1F1F9}\u{1F1F9}", country: "Trinidad" },
+    BSD: { name: "Bahamian Dollar", symbol: "B$", flag: "\u{1F1E7}\u{1F1F8}", country: "Bahamas" },
+    BBD: { name: "Barbadian Dollar", symbol: "Bds$", flag: "\u{1F1E7}\u{1F1E7}", country: "Barbados" },
+    // Middle East & North Africa
+    AED: { name: "UAE Dirham", symbol: "AED", flag: "\u{1F1E6}\u{1F1EA}", country: "United Arab Emirates" },
+    SAR: { name: "Saudi Riyal", symbol: "SAR", flag: "\u{1F1F8}\u{1F1E6}", country: "Saudi Arabia" },
+    QAR: { name: "Qatari Riyal", symbol: "QR", flag: "\u{1F1F6}\u{1F1E6}", country: "Qatar" },
+    KWD: { name: "Kuwaiti Dinar", symbol: "KD", flag: "\u{1F1F0}\u{1F1FC}", country: "Kuwait" },
+    BHD: { name: "Bahraini Dinar", symbol: "BD", flag: "\u{1F1E7}\u{1F1ED}", country: "Bahrain" },
+    OMR: { name: "Omani Rial", symbol: "OMR", flag: "\u{1F1F4}\u{1F1F2}", country: "Oman" },
+    ILS: { name: "Israeli Shekel", symbol: "\u20AA", flag: "\u{1F1EE}\u{1F1F1}", country: "Israel" },
+    JOD: { name: "Jordanian Dinar", symbol: "JD", flag: "\u{1F1EF}\u{1F1F4}", country: "Jordan" },
+    EGP: { name: "Egyptian Pound", symbol: "E\xA3", flag: "\u{1F1EA}\u{1F1EC}", country: "Egypt" },
+    MAD: { name: "Moroccan Dirham", symbol: "MAD", flag: "\u{1F1F2}\u{1F1E6}", country: "Morocco" },
+    DZD: { name: "Algerian Dinar", symbol: "DA", flag: "\u{1F1E9}\u{1F1FF}", country: "Algeria" },
+    TND: { name: "Tunisian Dinar", symbol: "DT", flag: "\u{1F1F9}\u{1F1F3}", country: "Tunisia" },
+    LBP: { name: "Lebanese Pound", symbol: "L\xA3", flag: "\u{1F1F1}\u{1F1E7}", country: "Lebanon" },
+    IQD: { name: "Iraqi Dinar", symbol: "IQD", flag: "\u{1F1EE}\u{1F1F6}", country: "Iraq" },
+    // Sub-Saharan Africa
+    ZAR: { name: "South African Rand", symbol: "R", flag: "\u{1F1FF}\u{1F1E6}", country: "South Africa" },
+    NGN: { name: "Nigerian Naira", symbol: "\u20A6", flag: "\u{1F1F3}\u{1F1EC}", country: "Nigeria" },
+    KES: { name: "Kenyan Shilling", symbol: "KSh", flag: "\u{1F1F0}\u{1F1EA}", country: "Kenya" },
+    GHS: { name: "Ghanaian Cedi", symbol: "GH\u20B5", flag: "\u{1F1EC}\u{1F1ED}", country: "Ghana" },
+    TZS: { name: "Tanzanian Shilling", symbol: "TSh", flag: "\u{1F1F9}\u{1F1FF}", country: "Tanzania" },
+    UGX: { name: "Ugandan Shilling", symbol: "USh", flag: "\u{1F1FA}\u{1F1EC}", country: "Uganda" },
+    MUR: { name: "Mauritian Rupee", symbol: "\u20A8", flag: "\u{1F1F2}\u{1F1FA}", country: "Mauritius" },
+    BWP: { name: "Botswanan Pula", symbol: "P", flag: "\u{1F1E7}\u{1F1FC}", country: "Botswana" },
+    XAF: { name: "Central African CFA Franc", symbol: "FCFA", flag: "\u{1F1E8}\u{1F1F2}", country: "Central Africa" },
+    XOF: { name: "West African CFA Franc", symbol: "CFA", flag: "\u{1F1F8}\u{1F1F3}", country: "West Africa" },
+    // Other Asia & Global
+    PKR: { name: "Pakistani Rupee", symbol: "\u20A8", flag: "\u{1F1F5}\u{1F1F0}", country: "Pakistan" },
+    BDT: { name: "Bangladeshi Taka", symbol: "\u09F3", flag: "\u{1F1E7}\u{1F1E9}", country: "Bangladesh" },
+    LKR: { name: "Sri Lankan Rupee", symbol: "Rs", flag: "\u{1F1F1}\u{1F1F0}", country: "Sri Lanka" },
+    NPR: { name: "Nepalese Rupee", symbol: "\u20A8", flag: "\u{1F1F3}\u{1F1F5}", country: "Nepal" },
+    KZT: { name: "Kazakhstani Tenge", symbol: "\u20B8", flag: "\u{1F1F0}\u{1F1FF}", country: "Kazakhstan" },
+    UZS: { name: "Uzbekistani Som", symbol: "UZS", flag: "\u{1F1FA}\u{1F1FF}", country: "Uzbekistan" },
+    GEL: { name: "Georgian Lari", symbol: "\u20BE", flag: "\u{1F1EC}\u{1F1EA}", country: "Georgia" },
+    AZN: { name: "Azerbaijani Manat", symbol: "\u20BC", flag: "\u{1F1E6}\u{1F1FF}", country: "Azerbaijan" },
+    KHR: { name: "Cambodian Riel", symbol: "\u17DB", flag: "\u{1F1F0}\u{1F1ED}", country: "Cambodia" },
+    LAK: { name: "Laotian Kip", symbol: "\u20AD", flag: "\u{1F1F1}\u{1F1E6}", country: "Laos" },
+    MMK: { name: "Myanmar Kyat", symbol: "K", flag: "\u{1F1F2}\u{1F1F2}", country: "Myanmar" },
+    MOP: { name: "Macanese Pataca", symbol: "MOP$", flag: "\u{1F1F2}\u{1F1F4}", country: "Macau" },
+    BND: { name: "Brunei Dollar", symbol: "B$", flag: "\u{1F1E7}\u{1F1F3}", country: "Brunei" },
+    MNT: { name: "Mongolian Tugrik", symbol: "\u20AE", flag: "\u{1F1F2}\u{1F1F3}", country: "Mongolia" },
+    FJD: { name: "Fijian Dollar", symbol: "FJ$", flag: "\u{1F1EB}\u{1F1EF}", country: "Fiji" }
+  };
+  var FALLBACK_USD_RATES = {
+    USD: 1,
+    VND: 25450,
+    EUR: 0.92,
+    JPY: 154.5,
+    GBP: 0.78,
+    CNY: 7.24,
+    KRW: 1375,
+    SGD: 1.35,
+    AUD: 1.52,
+    CAD: 1.36,
+    CHF: 0.9,
+    HKD: 7.82,
+    TWD: 32.2,
+    THB: 36.5,
+    MYR: 4.72,
+    IDR: 16250,
+    PHP: 58.2,
+    INR: 83.5,
+    NZD: 1.66,
+    SEK: 10.6,
+    NOK: 10.8,
+    DKK: 6.88,
+    PLN: 3.95,
+    CZK: 23.2,
+    HUF: 365,
+    RON: 4.58,
+    RUB: 91.5,
+    TRY: 33,
+    BRL: 5.45,
+    MXN: 18.2,
+    ARS: 935,
+    CLP: 940,
+    COP: 4100,
+    PEN: 3.75,
+    AED: 3.67,
+    SAR: 3.75,
+    QAR: 3.64,
+    KWD: 0.31,
+    ILS: 3.72,
+    ZAR: 18.3,
+    EGP: 48.5
+  };
+  var NexusCurrencyWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "Currency Converter";
+      this.fromCurrency = (props.from || "USD").toUpperCase();
+      this.toCurrency = (props.to || "VND").toUpperCase();
+      this.amount = parseFloat(props.amount || props.value || 1) || 1;
+      this.ratesMap = { ...FALLBACK_USD_RATES };
+      this.fromSelect = null;
+      this.toSelect = null;
+      this.rate = this._calculateRate(this.fromCurrency, this.toCurrency);
+      this.isLoading = false;
+      this.render();
+      this.initSelects();
+      this.bindEvents();
+      this.fetchLiveRates();
+    }
+    _getMeta(code) {
+      return ALL_CURRENCIES[code] || { name: code, symbol: code, flag: "\u{1F310}", country: code };
+    }
+    _calculateRate(from, to) {
+      const fromRate = this.ratesMap[from] || (FALLBACK_USD_RATES[from] ? 1 / FALLBACK_USD_RATES[from] : 1);
+      const toRate = this.ratesMap[to] || (FALLBACK_USD_RATES[to] ? 1 / FALLBACK_USD_RATES[to] : 1);
+      if (this.ratesMap[from] && this.ratesMap[to]) {
+        return this.ratesMap[to] / this.ratesMap[from];
+      }
+      const fromUsd = FALLBACK_USD_RATES[from] || 1;
+      const toUsd = FALLBACK_USD_RATES[to] || 1;
+      return toUsd / fromUsd;
+    }
+    _buildSelectOptions() {
+      const codes = Object.keys(ALL_CURRENCIES);
+      if (this.ratesMap) {
+        Object.keys(this.ratesMap).forEach((c) => {
+          if (!ALL_CURRENCIES[c]) codes.push(c);
+        });
+      }
+      return codes.map((code) => {
+        const meta = this._getMeta(code);
+        return {
+          value: code,
+          label: meta.name,
+          flag: meta.flag,
+          symbol: meta.symbol,
+          country: meta.country || meta.name
+        };
+      });
+    }
+    initSelects() {
+      const fromContainer = this.containerEl.querySelector("[data-from-select-container]");
+      const toContainer = this.containerEl.querySelector("[data-to-select-container]");
+      const options = this._buildSelectOptions();
+      if (fromContainer) {
+        this.fromSelect = new NexusSearchSelect(fromContainer, {
+          value: this.fromCurrency,
+          options,
+          placeholder: "Search currency or country...",
+          width: "115px",
+          popoverWidth: "245px",
+          onChange: (val) => {
+            this.fromCurrency = val;
+            this.rate = this._calculateRate(this.fromCurrency, this.toCurrency);
+            this._updateOutput();
+            this._updateSymbolDisplay();
+            this.fetchLiveRates();
+          }
+        });
+      }
+      if (toContainer) {
+        this.toSelect = new NexusSearchSelect(toContainer, {
+          value: this.toCurrency,
+          options,
+          placeholder: "Search currency or country...",
+          width: "115px",
+          popoverWidth: "245px",
+          onChange: (val) => {
+            this.toCurrency = val;
+            this.rate = this._calculateRate(this.fromCurrency, this.toCurrency);
+            this._updateOutput();
+            this._updateSymbolDisplay();
+            this.fetchLiveRates();
+          }
+        });
+      }
+    }
+    async fetchLiveRates() {
+      this.isLoading = true;
+      try {
+        const res = await fetch(`https://open.er-api.com/v6/latest/${this.fromCurrency}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rates) {
+            this.ratesMap = data.rates;
+            if (data.rates[this.toCurrency]) {
+              this.rate = data.rates[this.toCurrency];
+            } else {
+              this.rate = this._calculateRate(this.fromCurrency, this.toCurrency);
+            }
+            const options = this._buildSelectOptions();
+            if (this.fromSelect) this.fromSelect.setOptions(options);
+            if (this.toSelect) this.toSelect.setOptions(options);
+            this._updateRateDisplay();
+            this._updateOutput();
+          }
+        }
+      } catch (e) {
+        console.warn("[Nexus Currency] Using fallback rates:", e);
+      } finally {
+        this.isLoading = false;
+      }
+    }
+    _formatNumber(val) {
+      if (isNaN(val)) return "0";
+      if (val >= 100) {
+        return Number(val.toFixed(2)).toLocaleString("en-US", { maximumFractionDigits: 2 });
+      }
+      return Number(val.toFixed(4)).toLocaleString("en-US", { maximumFractionDigits: 4 });
+    }
+    render() {
+      const converted = this.amount * this.rate;
+      const fromMeta = this._getMeta(this.fromCurrency);
+      const toMeta = this._getMeta(this.toCurrency);
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-currency-card">
+                    <!-- Top Bar: Universal Title Badge -->
+                    <div class="nexus-currency-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-emerald"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                        <span class="nexus-currency-rate-badge" data-rate-display>
+                            1 ${this.fromCurrency} = ${this._formatNumber(this.rate)} ${this.toCurrency}
+                        </span>
+                    </div>
+
+                    <!-- Main Conversion Body -->
+                    <div class="nexus-currency-body">
+                        <!-- From Currency Row -->
+                        <div class="nexus-currency-row">
+                            <div class="nexus-currency-input-box">
+                                <span class="nexus-currency-symbol" data-from-symbol>${fromMeta.symbol}</span>
+                                <input type="number" class="nexus-currency-input" value="${this.amount}" step="any" min="0" data-from-input />
+                            </div>
+                            <div data-from-select-container></div>
+                        </div>
+
+                        <!-- Quick Swap Button Divider -->
+                        <div class="nexus-currency-divider">
+                            <button type="button" class="nexus-currency-swap-btn" data-action="swap" title="Swap currencies">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 10h14l-4-4"></path>
+                                    <path d="M17 14H3l4 4"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- To Currency Row -->
+                        <div class="nexus-currency-row">
+                            <div class="nexus-currency-input-box">
+                                <span class="nexus-currency-symbol" data-to-symbol>${toMeta.symbol}</span>
+                                <input type="number" class="nexus-currency-input" value="${Number(converted.toFixed(2))}" step="any" min="0" data-to-input />
+                            </div>
+                            <div data-to-select-container></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateSymbolDisplay() {
+      const fromSym = this.containerEl.querySelector("[data-from-symbol]");
+      const toSym = this.containerEl.querySelector("[data-to-symbol]");
+      if (fromSym) fromSym.textContent = this._getMeta(this.fromCurrency).symbol;
+      if (toSym) toSym.textContent = this._getMeta(this.toCurrency).symbol;
+    }
+    _updateOutput() {
+      const toInput = this.containerEl.querySelector("[data-to-input]");
+      if (toInput) {
+        const converted = this.amount * this.rate;
+        toInput.value = Number(converted.toFixed(2));
+      }
+      this._updateRateDisplay();
+    }
+    _updateRateDisplay() {
+      const rateEl = this.containerEl.querySelector("[data-rate-display]");
+      if (rateEl) {
+        rateEl.textContent = `1 ${this.fromCurrency} = ${this._formatNumber(this.rate)} ${this.toCurrency}`;
+      }
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("input", (e) => {
+        const fromInput = e.target.closest("[data-from-input]");
+        if (fromInput) {
+          this.amount = parseFloat(fromInput.value) || 0;
+          this._updateOutput();
+          return;
+        }
+        const toInput = e.target.closest("[data-to-input]");
+        if (toInput) {
+          const targetVal = parseFloat(toInput.value) || 0;
+          this.amount = this.rate > 0 ? targetVal / this.rate : 0;
+          const fromIn = this.containerEl.querySelector("[data-from-input]");
+          if (fromIn) fromIn.value = Number(this.amount.toFixed(2));
+        }
+      });
+      this.containerEl.addEventListener("click", (e) => {
+        const swapBtn = e.target.closest('[data-action="swap"]');
+        if (swapBtn) {
+          const temp = this.fromCurrency;
+          this.fromCurrency = this.toCurrency;
+          this.toCurrency = temp;
+          if (this.fromSelect) this.fromSelect.setValue(this.fromCurrency);
+          if (this.toSelect) this.toSelect.setValue(this.toCurrency);
+          this.rate = this._calculateRate(this.fromCurrency, this.toCurrency);
+          this._updateSymbolDisplay();
+          this._updateOutput();
+          this.fetchLiveRates();
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/crypto_widget.js
+  var POPULAR_CRYPTO = {
+    // Top 30 Market Cap
+    BTC: { name: "Bitcoin", symbol: "BTC", pair: "BTCUSDT", defaultPrice: 78800 },
+    ETH: { name: "Ethereum", symbol: "ETH", pair: "ETHUSDT", defaultPrice: 3450 },
+    SOL: { name: "Solana", symbol: "SOL", pair: "SOLUSDT", defaultPrice: 165.5 },
+    BNB: { name: "BNB", symbol: "BNB", pair: "BNBUSDT", defaultPrice: 698.8 },
+    XRP: { name: "XRP", symbol: "XRP", pair: "XRPUSDT", defaultPrice: 0.58 },
+    DOGE: { name: "Dogecoin", symbol: "DOGE", pair: "DOGEUSDT", defaultPrice: 0.125 },
+    ADA: { name: "Cardano", symbol: "ADA", pair: "ADAUSDT", defaultPrice: 0.42 },
+    AVAX: { name: "Avalanche", symbol: "AVAX", pair: "AVAXUSDT", defaultPrice: 28.5 },
+    SHIB: { name: "Shiba Inu", symbol: "SHIB", pair: "SHIBUSDT", defaultPrice: 18e-6 },
+    DOT: { name: "Polkadot", symbol: "DOT", pair: "DOTUSDT", defaultPrice: 6.2 },
+    LINK: { name: "Chainlink", symbol: "LINK", pair: "LINKUSDT", defaultPrice: 14.8 },
+    NEAR: { name: "NEAR Protocol", symbol: "NEAR", pair: "NEARUSDT", defaultPrice: 5.4 },
+    SUI: { name: "Sui", symbol: "SUI", pair: "SUIUSDT", defaultPrice: 2.1 },
+    APT: { name: "Aptos", symbol: "APT", pair: "APTUSDT", defaultPrice: 9.8 },
+    TON: { name: "Toncoin", symbol: "TON", pair: "TONUSDT", defaultPrice: 5.6 },
+    PEPE: { name: "Pepe", symbol: "PEPE", pair: "PEPEUSDT", defaultPrice: 95e-7 },
+    UNI: { name: "Uniswap", symbol: "UNI", pair: "UNIUSDT", defaultPrice: 7.8 },
+    LTC: { name: "Litecoin", symbol: "LTC", pair: "LTCUSDT", defaultPrice: 72.5 },
+    ATOM: { name: "Cosmos", symbol: "ATOM", pair: "ATOMUSDT", defaultPrice: 5.1 },
+    XLM: { name: "Stellar", symbol: "XLM", pair: "XLMUSDT", defaultPrice: 0.11 },
+    TRX: { name: "TRON", symbol: "TRX", pair: "TRXUSDT", defaultPrice: 0.16 },
+    ARB: { name: "Arbitrum", symbol: "ARB", pair: "ARBUSDT", defaultPrice: 0.58 },
+    OP: { name: "Optimism", symbol: "OP", pair: "OPUSDT", defaultPrice: 1.65 },
+    POL: { name: "Polygon Ecosystem Token", symbol: "POL", pair: "POLUSDT", defaultPrice: 0.41 },
+    RENDER: { name: "Render", symbol: "RENDER", pair: "RENDERUSDT", defaultPrice: 6.2 },
+    FET: { name: "Artificial Superintelligence", symbol: "FET", pair: "FETUSDT", defaultPrice: 1.45 },
+    TAO: { name: "Bittensor", symbol: "TAO", pair: "TAOUSDT", defaultPrice: 540 },
+    AAVE: { name: "Aave", symbol: "AAVE", pair: "AAVEUSDT", defaultPrice: 165 },
+    INJ: { name: "Injective", symbol: "INJ", pair: "INJUSDT", defaultPrice: 22.4 },
+    KAS: { name: "Kaspa", symbol: "KAS", pair: "KASUSDT", defaultPrice: 0.14 },
+    // Layer 1 / Layer 2 / Infra
+    TIA: { name: "Celestia", symbol: "TIA", pair: "TIAUSDT", defaultPrice: 6.2 },
+    SEI: { name: "Sei", symbol: "SEI", pair: "SEIUSDT", defaultPrice: 0.45 },
+    STRK: { name: "Starknet", symbol: "STRK", pair: "STRKUSDT", defaultPrice: 0.42 },
+    W: { name: "Wormhole", symbol: "W", pair: "WUSDT", defaultPrice: 0.31 },
+    FTM: { name: "Fantom", symbol: "FTM", pair: "FTMUSDT", defaultPrice: 0.72 },
+    ICP: { name: "Internet Computer", symbol: "ICP", pair: "ICPUSDT", defaultPrice: 8.5 },
+    ALGO: { name: "Algorand", symbol: "ALGO", pair: "ALGOUSDT", defaultPrice: 0.14 },
+    HBAR: { name: "Hedera", symbol: "HBAR", pair: "HBARUSDT", defaultPrice: 0.058 },
+    STX: { name: "Stacks", symbol: "STX", pair: "STXUSDT", defaultPrice: 1.75 },
+    IMX: { name: "Immutable", symbol: "IMX", pair: "IMXUSDT", defaultPrice: 1.45 },
+    MANTA: { name: "Manta Network", symbol: "MANTA", pair: "MANTAUSDT", defaultPrice: 0.85 },
+    ALT: { name: "AltLayer", symbol: "ALT", pair: "ALTUSDT", defaultPrice: 0.12 },
+    DYM: { name: "Dymension", symbol: "DYM", pair: "DYMUSDT", defaultPrice: 1.6 },
+    RONIN: { name: "Ronin", symbol: "RONIN", pair: "RONINUSDT", defaultPrice: 1.75 },
+    ZK: { name: "ZKsync", symbol: "ZK", pair: "ZKUSDT", defaultPrice: 0.14 },
+    ZRO: { name: "LayerZero", symbol: "ZRO", pair: "ZROUSDT", defaultPrice: 3.8 },
+    // DeFi & RWA
+    PENDLE: { name: "Pendle", symbol: "PENDLE", pair: "PENDLEUSDT", defaultPrice: 4.8 },
+    ONDO: { name: "Ondo", symbol: "ONDO", pair: "ONDOUSDT", defaultPrice: 0.78 },
+    ENA: { name: "Ethena", symbol: "ENA", pair: "ENAUSDT", defaultPrice: 0.38 },
+    JUP: { name: "Jupiter", symbol: "JUP", pair: "JUPUSDT", defaultPrice: 0.88 },
+    PYTH: { name: "Pyth Network", symbol: "PYTH", pair: "PYTHUSDT", defaultPrice: 0.34 },
+    RUNE: { name: "THORChain", symbol: "RUNE", pair: "RUNEUSDT", defaultPrice: 5.2 },
+    MKR: { name: "Maker", symbol: "MKR", pair: "MKRUSDT", defaultPrice: 1650 },
+    CRV: { name: "Curve DAO", symbol: "CRV", pair: "CRVUSDT", defaultPrice: 0.32 },
+    LDO: { name: "Lido DAO", symbol: "LDO", pair: "LDOUSDT", defaultPrice: 1.25 },
+    DYDX: { name: "dYdX", symbol: "DYDX", pair: "DYDXUSDT", defaultPrice: 1.1 },
+    GMX: { name: "GMX", symbol: "GMX", pair: "GMXUSDT", defaultPrice: 28.5 },
+    CAKE: { name: "PancakeSwap", symbol: "CAKE", pair: "CAKEUSDT", defaultPrice: 1.85 },
+    "1INCH": { name: "1inch Network", symbol: "1INCH", pair: "1INCHUSDT", defaultPrice: 0.28 },
+    COMP: { name: "Compound", symbol: "COMP", pair: "COMPUSDT", defaultPrice: 48.5 },
+    SNX: { name: "Synthetix", symbol: "SNX", pair: "SNXUSDT", defaultPrice: 1.55 },
+    // Meme Coins
+    WIF: { name: "dogwifhat", symbol: "WIF", pair: "WIFUSDT", defaultPrice: 2.45 },
+    BONK: { name: "Bonk", symbol: "BONK", pair: "BONKUSDT", defaultPrice: 22e-6 },
+    FLOKI: { name: "Floki", symbol: "FLOKI", pair: "FLOKIUSDT", defaultPrice: 15e-5 },
+    BOME: { name: "BOOK OF MEME", symbol: "BOME", pair: "BOMEUSDT", defaultPrice: 85e-4 },
+    MEME: { name: "Memecoin", symbol: "MEME", pair: "MEMEUSDT", defaultPrice: 0.012 },
+    PEOPLE: { name: "ConstitutionDAO", symbol: "PEOPLE", pair: "PEOPLEUSDT", defaultPrice: 0.065 },
+    NEIRO: { name: "First Neiro on Ethereum", symbol: "NEIRO", pair: "NEIROUSDT", defaultPrice: 18e-4 },
+    // AI & Big Data & Gaming
+    WLD: { name: "Worldcoin", symbol: "WLD", pair: "WLDUSDT", defaultPrice: 2.1 },
+    ARKM: { name: "Arkham", symbol: "ARKM", pair: "ARKMUSDT", defaultPrice: 1.65 },
+    GALA: { name: "GALA", symbol: "GALA", pair: "GALAUSDT", defaultPrice: 0.024 },
+    SAND: { name: "The Sandbox", symbol: "SAND", pair: "SANDUSDT", defaultPrice: 0.28 },
+    MANA: { name: "Decentraland", symbol: "MANA", pair: "MANAUSDT", defaultPrice: 0.32 },
+    AXS: { name: "Axie Infinity", symbol: "AXS", pair: "AXSUSDT", defaultPrice: 5.2 },
+    BEAM: { name: "Beam", symbol: "BEAM", pair: "BEAMXUSDT", defaultPrice: 0.018 },
+    ILV: { name: "Illuvium", symbol: "ILV", pair: "ILVUSDT", defaultPrice: 42.5 },
+    JASMY: { name: "JasmyCoin", symbol: "JASMY", pair: "JASMYUSDT", defaultPrice: 0.021 }
+  };
+  var TIMEFRAMES = [
+    { label: "24H", interval: "1h", limit: 24 },
+    { label: "7D", interval: "4h", limit: 42 },
+    { label: "1M", interval: "1d", limit: 30 },
+    { label: "1Y", interval: "1w", limit: 52 }
+  ];
+  var NexusCryptoWidget = class _NexusCryptoWidget {
+    static cachedBinanceCoins = null;
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "Crypto";
+      let symbol = (props.symbol || props.coin || props.pair || "BTC").toUpperCase().replace("USDT", "");
+      this.currentCoin = symbol;
+      this.currentTimeframe = "24H";
+      const meta = this._getCoinMeta(this.currentCoin);
+      this.price = meta.defaultPrice || 100;
+      this.changePercent = 1.48;
+      this.high24h = (meta.defaultPrice || 100) * 1.02;
+      this.low24h = (meta.defaultPrice || 100) * 0.98;
+      this.volume24h = "1.24B";
+      this.chartPoints = [];
+      this.isLoading = false;
+      this.searchSelect = null;
+      this.render();
+      this.initSearchDropdown();
+      this.bindEvents();
+      this.fetchData();
+      this.loadAllBinanceCoins();
+    }
+    _getCoinMeta(coin) {
+      return POPULAR_CRYPTO[coin] || { name: coin, symbol: coin, pair: `${coin}USDT`, defaultPrice: 1 };
+    }
+    _formatPrice(val) {
+      if (isNaN(val)) return "$0.00";
+      if (val >= 1e3) {
+        return "$" + Number(val.toFixed(2)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      if (val >= 1) {
+        return "$" + Number(val.toFixed(2)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+      }
+      if (val >= 1e-4) {
+        return "$" + Number(val.toFixed(6)).toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+      }
+      return "$" + val.toFixed(8);
+    }
+    _buildSearchOptions() {
+      if (_NexusCryptoWidget.cachedBinanceCoins && _NexusCryptoWidget.cachedBinanceCoins.length > 0) {
+        return _NexusCryptoWidget.cachedBinanceCoins;
+      }
+      return Object.keys(POPULAR_CRYPTO).map((c) => {
+        const m = POPULAR_CRYPTO[c];
+        return {
+          value: c,
+          label: m.name,
+          symbol: m.symbol,
+          description: `${m.name} (${m.symbol})`
+        };
+      });
+    }
+    initSearchDropdown() {
+      const searchContainer = this.containerEl.querySelector("[data-crypto-search-container]");
+      if (!searchContainer) return;
+      const options = this._buildSearchOptions();
+      this.searchSelect = new NexusSearchSelect(searchContainer, {
+        value: this.currentCoin,
+        options,
+        placeholder: "Search 100+ cryptos on Binance...",
+        width: "24px",
+        popoverWidth: "235px",
+        onChange: (coin) => {
+          this.selectCoin(coin);
+        }
+      });
+    }
+    async loadAllBinanceCoins() {
+      if (_NexusCryptoWidget.cachedBinanceCoins) {
+        if (this.searchSelect) this.searchSelect.setOptions(_NexusCryptoWidget.cachedBinanceCoins);
+        return;
+      }
+      try {
+        const res = await fetch("https://api.binance.com/api/v3/ticker/price");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const usdtCoins = /* @__PURE__ */ new Set();
+            data.forEach((item) => {
+              if (item.symbol && item.symbol.endsWith("USDT")) {
+                const coin = item.symbol.slice(0, -4);
+                if (coin && !coin.startsWith("1000") && !coin.includes("UP") && !coin.includes("DOWN") && !coin.includes("BEAR") && !coin.includes("BULL")) {
+                  usdtCoins.add(coin);
+                }
+              }
+            });
+            const known = Object.keys(POPULAR_CRYPTO);
+            const others = Array.from(usdtCoins).filter((c) => !POPULAR_CRYPTO[c]).sort();
+            const all = [...known, ...others];
+            _NexusCryptoWidget.cachedBinanceCoins = all.map((c) => {
+              const meta = POPULAR_CRYPTO[c];
+              return {
+                value: c,
+                label: meta ? meta.name : c,
+                symbol: c,
+                description: meta ? `${meta.name} (${c})` : c
+              };
+            });
+            if (this.searchSelect) {
+              this.searchSelect.setOptions(_NexusCryptoWidget.cachedBinanceCoins);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[Nexus Crypto] Failed to load all Binance coins list:", e);
+      }
+    }
+    selectCoin(coin) {
+      if (!coin) return;
+      this.currentCoin = coin;
+      if (this.searchSelect) this.searchSelect.setValue(coin);
+      this.render();
+      this.initSearchDropdown();
+      this.fetchData();
+    }
+    selectTimeframe(tf) {
+      this.currentTimeframe = tf;
+      this._updateTimeframeTabs();
+      this.fetchKlines();
+    }
+    async fetchData() {
+      await Promise.all([
+        this.fetch24hTicker(),
+        this.fetchKlines()
+      ]);
+    }
+    async fetch24hTicker() {
+      const meta = this._getCoinMeta(this.currentCoin);
+      try {
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${meta.pair}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.lastPrice) {
+            this.price = parseFloat(data.lastPrice);
+            if (this.currentTimeframe === "24H") {
+              this.changePercent = parseFloat(data.priceChangePercent);
+            }
+            this.high24h = parseFloat(data.highPrice);
+            this.low24h = parseFloat(data.lowPrice);
+            const vol = parseFloat(data.quoteVolume);
+            this.volume24h = vol >= 1e9 ? `${(vol / 1e9).toFixed(2)}B` : `${(vol / 1e6).toFixed(2)}M`;
+            this._updateStatsUI();
+          }
+        }
+      } catch (e) {
+        console.warn("[Nexus Crypto] 24h ticker fallback:", e);
+      }
+    }
+    async fetchKlines() {
+      const meta = this._getCoinMeta(this.currentCoin);
+      const tf = TIMEFRAMES.find((t) => t.label === this.currentTimeframe) || TIMEFRAMES[0];
+      try {
+        const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${meta.pair}&interval=${tf.interval}&limit=${tf.limit}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            this.chartPoints = data.map((k) => parseFloat(k[4]));
+            if (this.chartPoints.length >= 2) {
+              const first = this.chartPoints[0];
+              const last = this.chartPoints[this.chartPoints.length - 1];
+              this.changePercent = (last - first) / first * 100;
+            }
+            this._updateChartUI();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[Nexus Crypto] Kline chart fallback:", e);
+      }
+      this.chartPoints = [100, 101, 100.5, 102, 103.5, 102.8, 104.5];
+      this._updateChartUI();
+    }
+    _generateChartSvg() {
+      const isPositive = this.changePercent >= 0;
+      const strokeColor = isPositive ? "#10b981" : "#f43f5e";
+      const fillId = `cryptoGrad_${this.currentCoin}_${this.currentTimeframe}`;
+      if (!this.chartPoints || this.chartPoints.length < 2) {
+        return `<div class="nexus-crypto-chart-empty">Loading chart...</div>`;
+      }
+      const min = Math.min(...this.chartPoints);
+      const max = Math.max(...this.chartPoints);
+      const range = max - min || 1;
+      const w = 314;
+      const h = 54;
+      const padding = 4;
+      const pts = this.chartPoints.map((val, idx) => {
+        const x = idx / (this.chartPoints.length - 1) * w;
+        const y = h - padding - (val - min) / range * (h - padding * 2);
+        return [x, y];
+      });
+      let pathD = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+      for (let i = 1; i < pts.length; i++) {
+        const prev = pts[i - 1];
+        const curr = pts[i];
+        const mx = (prev[0] + curr[0]) / 2;
+        pathD += ` C ${mx.toFixed(1)} ${prev[1].toFixed(1)}, ${mx.toFixed(1)} ${curr[1].toFixed(1)}, ${curr[0].toFixed(1)} ${curr[1].toFixed(1)}`;
+      }
+      const areaD = `${pathD} L ${w} ${h} L 0 ${h} Z`;
+      return `
+            <svg viewBox="0 0 ${w} ${h}" class="nexus-crypto-area-chart" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="${fillId}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.25"></stop>
+                        <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0"></stop>
+                    </linearGradient>
+                </defs>
+                <path d="${areaD}" fill="url(#${fillId})"></path>
+                <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+        `;
+    }
+    render() {
+      const meta = this._getCoinMeta(this.currentCoin);
+      const isPositive = this.changePercent >= 0;
+      const changeSign = isPositive ? "+" : "";
+      const changePillClass = isPositive ? "is-positive" : "is-negative";
+      const top3Coins = ["BTC", "ETH", "SOL"];
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-crypto-card">
+                    <!-- Top Bar: Title & Integrated Pill Group (Top 3 + Search) -->
+                    <div class="nexus-crypto-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-cyan"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                        <div class="nexus-crypto-tabs-group">
+                            ${top3Coins.map((k) => `
+                                <button type="button" class="nexus-crypto-tab-btn ${k === this.currentCoin ? "is-active" : ""}" data-coin="${k}">
+                                    ${k}
+                                </button>
+                            `).join("")}
+                            <div class="nexus-crypto-search-slot" data-crypto-search-container></div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Price & Change Row -->
+                    <div class="nexus-crypto-hero-row">
+                        <div class="nexus-crypto-price-block">
+                            <div class="nexus-crypto-name-row">
+                                <span class="nexus-crypto-fullname">${meta.name}</span>
+                                <span class="nexus-crypto-symbol-badge">${meta.symbol}</span>
+                            </div>
+                            <div class="nexus-crypto-price-val" data-price-display>
+                                ${this._formatPrice(this.price)}
+                            </div>
+                        </div>
+
+                        <div class="nexus-crypto-timeframe-block">
+                            <div class="nexus-crypto-change-pill ${changePillClass}" data-change-pill>
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    ${isPositive ? '<polyline points="18 15 12 9 6 15"></polyline>' : '<polyline points="6 9 12 15 18 9"></polyline>'}
+                                </svg>
+                                <span data-change-text>${changeSign}${this.changePercent.toFixed(2)}%</span>
+                            </div>
+                            <!-- Timeframe Selector Tabs -->
+                            <div class="nexus-crypto-timeframes">
+                                ${TIMEFRAMES.map((tf) => `
+                                    <button type="button" class="nexus-crypto-tf-btn ${tf.label === this.currentTimeframe ? "is-active" : ""}" data-timeframe="${tf.label}">
+                                        ${tf.label}
+                                    </button>
+                                `).join("")}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Area Chart Visual -->
+                    <div class="nexus-crypto-chart-container" data-chart-wrap>
+                        ${this._generateChartSvg()}
+                    </div>
+
+                    <!-- Key 24h Stats Footer -->
+                    <div class="nexus-crypto-stats-row">
+                        <div class="nexus-crypto-stat-item">
+                            <span class="nexus-crypto-stat-label">24h High</span>
+                            <span class="nexus-crypto-stat-val" data-high-val>${this._formatPrice(this.high24h)}</span>
+                        </div>
+                        <div class="nexus-crypto-stat-item">
+                            <span class="nexus-crypto-stat-label">24h Low</span>
+                            <span class="nexus-crypto-stat-val" data-low-val>${this._formatPrice(this.low24h)}</span>
+                        </div>
+                        <div class="nexus-crypto-stat-item">
+                            <span class="nexus-crypto-stat-label">24h Volume</span>
+                            <span class="nexus-crypto-stat-val" data-vol-val>$${this.volume24h}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateStatsUI() {
+      const priceEl = this.containerEl.querySelector("[data-price-display]");
+      if (priceEl) priceEl.textContent = this._formatPrice(this.price);
+      const highEl = this.containerEl.querySelector("[data-high-val]");
+      if (highEl) highEl.textContent = this._formatPrice(this.high24h);
+      const lowEl = this.containerEl.querySelector("[data-low-val]");
+      if (lowEl) lowEl.textContent = this._formatPrice(this.low24h);
+      const volEl = this.containerEl.querySelector("[data-vol-val]");
+      if (volEl) volEl.textContent = `$${this.volume24h}`;
+    }
+    _updateChartUI() {
+      const isPositive = this.changePercent >= 0;
+      const changeSign = isPositive ? "+" : "";
+      const changePill = this.containerEl.querySelector("[data-change-pill]");
+      if (changePill) {
+        changePill.className = `nexus-crypto-change-pill ${isPositive ? "is-positive" : "is-negative"}`;
+        changePill.innerHTML = `
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    ${isPositive ? '<polyline points="18 15 12 9 6 15"></polyline>' : '<polyline points="6 9 12 15 18 9"></polyline>'}
+                </svg>
+                <span data-change-text>${changeSign}${this.changePercent.toFixed(2)}%</span>
+            `;
+      }
+      const chartWrap = this.containerEl.querySelector("[data-chart-wrap]");
+      if (chartWrap) {
+        chartWrap.innerHTML = this._generateChartSvg();
+      }
+    }
+    _updateTimeframeTabs() {
+      const tfBtns = this.containerEl.querySelectorAll("[data-timeframe]");
+      tfBtns.forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.timeframe === this.currentTimeframe);
+      });
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        const coinBtn = e.target.closest("[data-coin]");
+        if (coinBtn) {
+          this.selectCoin(coinBtn.dataset.coin);
+          return;
+        }
+        const tfBtn = e.target.closest("[data-timeframe]");
+        if (tfBtn) {
+          this.selectTimeframe(tfBtn.dataset.timeframe);
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/loan_calc_widget.js
+  var NexusLoanCalcWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = "Loan Calculator";
+      const rawAmount = parseFloat(props.amount || props.principal || 1e9);
+      this.amount = isNaN(rawAmount) || rawAmount <= 0 ? 1e9 : rawAmount;
+      this.rate = Math.max(0.1, Math.min(30, parseFloat(props.rate || props.interest || 8) || 8));
+      this.years = Math.max(1, Math.min(35, parseInt(props.years || props.term || 15, 10) || 15));
+      this.isVnd = this.amount >= 1e6;
+      this.render();
+      this.bindEvents();
+    }
+    _calculateAmortization() {
+      const P = this.amount;
+      const annualRate = this.rate / 100;
+      const monthlyRate = annualRate / 12;
+      const totalMonths = this.years * 12;
+      let monthlyPayment = 0;
+      if (monthlyRate === 0) {
+        monthlyPayment = P / totalMonths;
+      } else {
+        const factor = Math.pow(1 + monthlyRate, totalMonths);
+        monthlyPayment = P * monthlyRate * factor / (factor - 1);
+      }
+      const totalPayment = monthlyPayment * totalMonths;
+      const totalInterest = Math.max(0, totalPayment - P);
+      const principalRatio = totalPayment > 0 ? P / totalPayment * 100 : 100;
+      const interestRatio = 100 - principalRatio;
+      return {
+        monthlyPayment,
+        totalPayment,
+        totalInterest,
+        principalRatio,
+        interestRatio,
+        totalMonths
+      };
+    }
+    _formatMoney(val) {
+      if (isNaN(val)) return "0";
+      if (this.isVnd) {
+        return Math.round(val).toLocaleString("vi-VN") + " \u0111";
+      }
+      return "$" + Number(val.toFixed(0)).toLocaleString("en-US");
+    }
+    render() {
+      const data = this._calculateAmortization();
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-loan-card">
+                    <!-- Top Bar: Universal Title Badge & Reset -->
+                    <div class="nexus-loan-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-cyan"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Hero: Monthly Payment (Left-aligned & Structured) -->
+                    <div class="nexus-loan-hero-block">
+                        <span class="nexus-loan-hero-label">Estimated Monthly Payment</span>
+                        <div class="nexus-loan-hero-val-row">
+                            <span class="nexus-loan-hero-val" data-monthly-val>${this._formatMoney(data.monthlyPayment)}</span>
+                            <span class="nexus-loan-hero-per">/ mo</span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Principal vs Interest Ratio Bar -->
+                    <div class="nexus-loan-ratio-wrap">
+                        <div class="nexus-loan-ratio-bar" title="Principal (Blue) vs Interest (Amber) Ratio">
+                            <div class="nexus-loan-ratio-segment is-principal" style="flex: ${data.principalRatio.toFixed(2)}; width: auto;" data-bar-principal></div>
+                            <div class="nexus-loan-ratio-segment is-interest" style="flex: ${data.interestRatio.toFixed(2)}; width: auto;" data-bar-interest></div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Control Sliders -->
+                    <div class="nexus-loan-controls">
+                        <!-- Loan Amount Control -->
+                        <div class="nexus-loan-control-row">
+                            <div class="nexus-loan-control-header">
+                                <span class="nexus-loan-label">Loan Amount</span>
+                                <span class="nexus-loan-num-display" data-amount-display>${this._formatMoney(this.amount)}</span>
+                            </div>
+                            <input type="range" class="nexus-loan-slider" min="${this.isVnd ? 5e7 : 5e3}" max="${this.isVnd ? 1e10 : 1e6}" step="${this.isVnd ? 5e7 : 5e3}" value="${this.amount}" data-slider="amount" />
+                        </div>
+
+                        <!-- Interest Rate Control -->
+                        <div class="nexus-loan-control-row">
+                            <div class="nexus-loan-control-header">
+                                <span class="nexus-loan-label">Interest Rate</span>
+                                <span class="nexus-loan-num-display" data-rate-display>${this.rate.toFixed(1)}% / yr</span>
+                            </div>
+                            <input type="range" class="nexus-loan-slider" min="1" max="20" step="0.1" value="${this.rate}" data-slider="rate" />
+                        </div>
+
+                        <!-- Term Control -->
+                        <div class="nexus-loan-control-row">
+                            <div class="nexus-loan-control-header">
+                                <span class="nexus-loan-label">Loan Term</span>
+                                <span class="nexus-loan-num-display" data-years-display>${this.years} Years (${data.totalMonths} mos)</span>
+                            </div>
+                            <input type="range" class="nexus-loan-slider" min="1" max="30" step="1" value="${this.years}" data-slider="years" />
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats Breakdown Footer (2 Columns: Interest & Total) -->
+                    <div class="nexus-loan-summary-row">
+                        <div class="nexus-loan-summary-item">
+                            <span class="nexus-loan-summary-label">Total Interest</span>
+                            <span class="nexus-loan-summary-val is-amber" data-sum-interest>${this._formatMoney(data.totalInterest)}</span>
+                        </div>
+                        <div class="nexus-loan-summary-item">
+                            <span class="nexus-loan-summary-label">Total Payment</span>
+                            <span class="nexus-loan-summary-val" data-sum-total>${this._formatMoney(data.totalPayment)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateLiveUI() {
+      const data = this._calculateAmortization();
+      const monthlyEl = this.containerEl.querySelector("[data-monthly-val]");
+      if (monthlyEl) monthlyEl.textContent = this._formatMoney(data.monthlyPayment);
+      const amtDisp = this.containerEl.querySelector("[data-amount-display]");
+      if (amtDisp) amtDisp.textContent = this._formatMoney(this.amount);
+      const rateDisp = this.containerEl.querySelector("[data-rate-display]");
+      if (rateDisp) rateDisp.textContent = `${this.rate.toFixed(1)}% / yr`;
+      const yrsDisp = this.containerEl.querySelector("[data-years-display]");
+      if (yrsDisp) yrsDisp.textContent = `${this.years} Years (${data.totalMonths} mos)`;
+      const barP = this.containerEl.querySelector("[data-bar-principal]");
+      const barI = this.containerEl.querySelector("[data-bar-interest]");
+      if (barP) barP.style.flex = `${data.principalRatio.toFixed(2)}`;
+      if (barI) barI.style.flex = `${data.interestRatio.toFixed(2)}`;
+      const sumI = this.containerEl.querySelector("[data-sum-interest]");
+      const sumT = this.containerEl.querySelector("[data-sum-total]");
+      if (sumI) sumI.textContent = this._formatMoney(data.totalInterest);
+      if (sumT) sumT.textContent = this._formatMoney(data.totalPayment);
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("input", (e) => {
+        const slider = e.target.closest("[data-slider]");
+        if (slider) {
+          const type = slider.dataset.slider;
+          if (type === "amount") {
+            this.amount = parseFloat(slider.value) || 0;
+          } else if (type === "rate") {
+            this.rate = parseFloat(slider.value) || 0;
+          } else if (type === "years") {
+            this.years = parseInt(slider.value, 10) || 1;
+          }
+          this._updateLiveUI();
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/compound_interest_widget.js
+  var CompoundInterestWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "Compound Growth";
+      const rawInitial = parseFloat(props.initial || props.principal || props.initial_amount);
+      const rawMonthly = parseFloat(props.monthly || props.deposit || props.monthly_deposit);
+      const rawRate = parseFloat(props.rate || props.interest || props.annual_rate);
+      const rawYears = parseInt(props.years || props.term || props.duration, 10);
+      let cur = (props.currency || props.unit || "").toUpperCase().trim();
+      if (!cur) {
+        cur = props.isVnd === true || !isNaN(rawInitial) && rawInitial > 1e3 || !isNaN(rawMonthly) && rawMonthly > 1e3 ? "VND" : "USD";
+      }
+      this.currency = cur;
+      this.isVnd = this.currency === "VND" || this.currency === "\u0110" || this.currency === "VN\u0110";
+      this.initial = !isNaN(rawInitial) ? rawInitial : this.isVnd ? 5e7 : 5e3;
+      this.monthly = !isNaN(rawMonthly) ? rawMonthly : this.isVnd ? 5e6 : 500;
+      this.rate = !isNaN(rawRate) ? rawRate : 10;
+      this.years = !isNaN(rawYears) && rawYears >= 1 ? Math.min(40, rawYears) : 10;
+      this.render();
+      this.bindEvents();
+    }
+    _formatMoney(val) {
+      if (isNaN(val)) return "0";
+      if (this.isVnd) {
+        return Math.round(val).toLocaleString("vi-VN") + " \u0111";
+      }
+      if (this.currency === "USD" || this.currency === "$") {
+        return "$" + Number(val.toFixed(0)).toLocaleString("en-US");
+      }
+      if (this.currency === "EUR" || this.currency === "\u20AC") {
+        return "\u20AC" + Number(val.toFixed(0)).toLocaleString("de-DE");
+      }
+      if (this.currency === "GBP" || this.currency === "\xA3") {
+        return "\xA3" + Number(val.toFixed(0)).toLocaleString("en-GB");
+      }
+      return Number(val.toFixed(0)).toLocaleString("en-US") + " " + this.currency;
+    }
+    _calculateGrowth() {
+      const r = this.rate / 100 / 12;
+      const totalMonths = this.years * 12;
+      let totalDeposits = this.initial + this.monthly * totalMonths;
+      let futureValue = this.initial * Math.pow(1 + r, totalMonths);
+      if (r > 0) {
+        futureValue += this.monthly * ((Math.pow(1 + r, totalMonths) - 1) / r);
+      } else {
+        futureValue = totalDeposits;
+      }
+      const totalInterest = Math.max(0, futureValue - totalDeposits);
+      const trajectory = [];
+      for (let y = 1; y <= this.years; y++) {
+        const m = y * 12;
+        let fv = this.initial * Math.pow(1 + r, m);
+        if (r > 0) {
+          fv += this.monthly * ((Math.pow(1 + r, m) - 1) / r);
+        } else {
+          fv = this.initial + this.monthly * m;
+        }
+        const dep = this.initial + this.monthly * m;
+        trajectory.push({
+          year: y,
+          deposits: dep,
+          total: fv,
+          interest: Math.max(0, fv - dep)
+        });
+      }
+      return {
+        totalDeposits,
+        totalInterest,
+        futureValue,
+        trajectory
+      };
+    }
+    _pointsToSmoothPath(pts) {
+      if (pts.length === 0) return "";
+      if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
+      let d = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[Math.min(pts.length - 1, i + 2)];
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+      }
+      return d;
+    }
+    _generateChartSvg(trajectory, futureValue) {
+      if (!trajectory || trajectory.length === 0) return "";
+      const maxVal = Math.max(1, futureValue);
+      const svgW = 310;
+      const svgH = 72;
+      const padX = 6;
+      const padY = 8;
+      const chartW = svgW - padX * 2;
+      const chartH = svgH - padY * 2;
+      const numPoints = trajectory.length;
+      const stepX = chartW / Math.max(1, numPoints - 1);
+      const totalPts = trajectory.map((item, idx) => ({
+        x: padX + idx * stepX,
+        y: padY + chartH - item.total / maxVal * chartH
+      }));
+      const depPts = trajectory.map((item, idx) => ({
+        x: padX + idx * stepX,
+        y: padY + chartH - item.deposits / maxVal * chartH
+      }));
+      const smoothTotalLine = this._pointsToSmoothPath(totalPts);
+      const smoothTotalArea = `${smoothTotalLine} L ${padX + chartW},${padY + chartH} L ${padX},${padY + chartH} Z`;
+      const depLine = `M ${depPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ")}`;
+      const lastTotal = totalPts[totalPts.length - 1];
+      return `
+            <svg class="nexus-compound-chart-svg" viewBox="0 0 ${svgW} ${svgH}" width="100%" height="${svgH}">
+                <defs>
+                    <linearGradient id="nexusGrowthGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/>
+                        <stop offset="70%" stop-color="#10b981" stop-opacity="0.06"/>
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                    </linearGradient>
+                    <filter id="nexusGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#10b981" flood-opacity="0.45"/>
+                    </filter>
+                </defs>
+                <!-- Smooth Area Gradient -->
+                <path d="${smoothTotalArea}" fill="url(#nexusGrowthGrad)" />
+                <!-- Principal Benchmark Baseline (Clean Dashed Guide) -->
+                <path d="${depLine}" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.2" stroke-dasharray="3,3" />
+                <!-- Top Glowing Growth Line -->
+                <path d="${smoothTotalLine}" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#nexusGlow)" />
+                <!-- End Value Pulsing Dot -->
+                <circle cx="${lastTotal.x.toFixed(1)}" cy="${lastTotal.y.toFixed(1)}" r="3" fill="#ffffff" stroke="#10b981" stroke-width="1.5" />
+            </svg>
+        `;
+    }
+    render() {
+      const data = this._calculateGrowth();
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-compound-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-compound-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-emerald"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Hero: Total Future Value -->
+                    <div class="nexus-compound-hero-block">
+                        <span class="nexus-compound-hero-label">Total Future Balance</span>
+                        <div class="nexus-compound-hero-val" data-fv-val>${this._formatMoney(data.futureValue)}</div>
+                    </div>
+
+                    <!-- Dynamic SVG Growth Trajectory Chart -->
+                    <div class="nexus-compound-chart-box" data-chart-box>
+                        ${this._generateChartSvg(data.trajectory, data.futureValue)}
+                    </div>
+
+                    <!-- Interactive Control Sliders -->
+                    <div class="nexus-compound-controls">
+                        <!-- Initial Principal -->
+                        <div class="nexus-compound-control-row">
+                            <div class="nexus-compound-control-header">
+                                <span class="nexus-compound-label">Initial Principal</span>
+                                <span class="nexus-compound-num-display" data-initial-display>${this._formatMoney(this.initial)}</span>
+                            </div>
+                            <input type="range" class="nexus-compound-slider" min="0" max="${this.isVnd ? 1e9 : 1e5}" step="${this.isVnd ? 5e6 : 500}" value="${this.initial}" data-slider="initial" />
+                        </div>
+
+                        <!-- Monthly Contribution -->
+                        <div class="nexus-compound-control-row">
+                            <div class="nexus-compound-control-header">
+                                <span class="nexus-compound-label">Monthly Deposit</span>
+                                <span class="nexus-compound-num-display" data-monthly-display>${this._formatMoney(this.monthly)}</span>
+                            </div>
+                            <input type="range" class="nexus-compound-slider" min="0" max="${this.isVnd ? 1e8 : 1e4}" step="${this.isVnd ? 5e5 : 50}" value="${this.monthly}" data-slider="monthly" />
+                        </div>
+
+                        <!-- Annual Return % -->
+                        <div class="nexus-compound-control-row">
+                            <div class="nexus-compound-control-header">
+                                <span class="nexus-compound-label">Annual Return</span>
+                                <span class="nexus-compound-num-display" data-rate-display>${this.rate.toFixed(1)}% / yr</span>
+                            </div>
+                            <input type="range" class="nexus-compound-slider" min="1" max="25" step="0.5" value="${this.rate}" data-slider="rate" />
+                        </div>
+
+                        <!-- Investment Horizon (Years) -->
+                        <div class="nexus-compound-control-row">
+                            <div class="nexus-compound-control-header">
+                                <span class="nexus-compound-label">Time Horizon</span>
+                                <span class="nexus-compound-num-display" data-years-display>${this.years} Years</span>
+                            </div>
+                            <input type="range" class="nexus-compound-slider" min="1" max="40" step="1" value="${this.years}" data-slider="years" />
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats Footer -->
+                    <div class="nexus-compound-summary-row">
+                        <div class="nexus-compound-summary-item">
+                            <span class="nexus-compound-summary-label">Total Deposits</span>
+                            <span class="nexus-compound-summary-val" data-sum-deposits>${this._formatMoney(data.totalDeposits)}</span>
+                        </div>
+                        <div class="nexus-compound-summary-item">
+                            <span class="nexus-compound-summary-label">Total Interest</span>
+                            <span class="nexus-compound-summary-val is-emerald" data-sum-interest>+${this._formatMoney(data.totalInterest)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateLiveUI() {
+      const data = this._calculateGrowth();
+      const fvEl = this.containerEl.querySelector("[data-fv-val]");
+      if (fvEl) fvEl.textContent = this._formatMoney(data.futureValue);
+      const initDisp = this.containerEl.querySelector("[data-initial-display]");
+      if (initDisp) initDisp.textContent = this._formatMoney(this.initial);
+      const mDisp = this.containerEl.querySelector("[data-monthly-display]");
+      if (mDisp) mDisp.textContent = this._formatMoney(this.monthly);
+      const rateDisp = this.containerEl.querySelector("[data-rate-display]");
+      if (rateDisp) rateDisp.textContent = `${this.rate.toFixed(1)}% / yr`;
+      const yrsDisp = this.containerEl.querySelector("[data-years-display]");
+      if (yrsDisp) yrsDisp.textContent = `${this.years} Years`;
+      const chartBox = this.containerEl.querySelector("[data-chart-box]");
+      if (chartBox) chartBox.innerHTML = this._generateChartSvg(data.trajectory, data.futureValue);
+      const sumDep = this.containerEl.querySelector("[data-sum-deposits]");
+      const sumInt = this.containerEl.querySelector("[data-sum-interest]");
+      if (sumDep) sumDep.textContent = this._formatMoney(data.totalDeposits);
+      if (sumInt) sumInt.textContent = `+${this._formatMoney(data.totalInterest)}`;
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("input", (e) => {
+        const slider = e.target.closest("[data-slider]");
+        if (slider) {
+          const type = slider.dataset.slider;
+          if (type === "initial") {
+            this.initial = parseFloat(slider.value) || 0;
+          } else if (type === "monthly") {
+            this.monthly = parseFloat(slider.value) || 0;
+          } else if (type === "rate") {
+            this.rate = parseFloat(slider.value) || 0;
+          } else if (type === "years") {
+            this.years = parseInt(slider.value, 10) || 1;
+          }
+          this._updateLiveUI();
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/tip_splitter_widget.js
+  var TipSplitterWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "Bill Splitter";
+      const rawBill = parseFloat(props.bill || props.total || props.total_bill || props.amount);
+      const rawTip = parseFloat(props.tip || props.tip_percent || props.tip_rate);
+      const rawPeople = parseInt(props.people || props.num_people || props.split || props.count, 10);
+      let cur = (props.currency || props.unit || "").toUpperCase().trim();
+      if (!cur) {
+        cur = props.isVnd === true || !isNaN(rawBill) && rawBill > 1e3 ? "VND" : "USD";
+      }
+      this.currency = cur;
+      this.isVnd = this.currency === "VND" || this.currency === "\u0110" || this.currency === "VN\u0110";
+      this.bill = !isNaN(rawBill) && rawBill > 0 ? rawBill : this.isVnd ? 85e4 : 85;
+      this.tipPercent = !isNaN(rawTip) && rawTip >= 0 ? rawTip : 10;
+      this.people = !isNaN(rawPeople) && rawPeople >= 1 ? Math.min(50, rawPeople) : 3;
+      this.render();
+      this.bindEvents();
+    }
+    _formatMoney(val) {
+      if (isNaN(val)) return "0";
+      if (this.isVnd) {
+        return Math.round(val).toLocaleString("vi-VN") + " \u0111";
+      }
+      if (this.currency === "USD" || this.currency === "$") {
+        return "$" + Number(val.toFixed(2)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      if (this.currency === "EUR" || this.currency === "\u20AC") {
+        return "\u20AC" + Number(val.toFixed(2)).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      if (this.currency === "GBP" || this.currency === "\xA3") {
+        return "\xA3" + Number(val.toFixed(2)).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      if (this.currency === "JPY" || this.currency === "\xA5") {
+        return "\xA5" + Math.round(val).toLocaleString("ja-JP");
+      }
+      return Number(val.toFixed(2)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + this.currency;
+    }
+    _calculateSplit() {
+      const tipAmount = this.bill * (this.tipPercent / 100);
+      const totalWithTip = this.bill + tipAmount;
+      const perPerson = this.people > 0 ? totalWithTip / this.people : totalWithTip;
+      const tipPerPerson = this.people > 0 ? tipAmount / this.people : 0;
+      return {
+        bill: this.bill,
+        tipPercent: this.tipPercent,
+        tipAmount,
+        totalWithTip,
+        people: this.people,
+        perPerson,
+        tipPerPerson
+      };
+    }
+    render() {
+      const data = this._calculateSplit();
+      const tipPresets = [0, 5, 10, 15, 20];
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-tip-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-tip-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-cyan"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Hero: Amount Per Person -->
+                    <div class="nexus-tip-hero-block">
+                        <span class="nexus-tip-hero-label">Each Person Pays</span>
+                        <div class="nexus-tip-hero-val-row">
+                            <span class="nexus-tip-hero-val" data-per-person-val>${this._formatMoney(data.perPerson)}</span>
+                            <span class="nexus-tip-hero-per">/ person</span>
+                        </div>
+                    </div>
+
+                    <!-- Controls Section -->
+                    <div class="nexus-tip-controls">
+                        <!-- Bill Amount Slider -->
+                        <div class="nexus-tip-control-row">
+                            <div class="nexus-tip-control-header">
+                                <span class="nexus-tip-label">Bill Amount</span>
+                                <span class="nexus-tip-num-display" data-bill-display>${this._formatMoney(this.bill)}</span>
+                            </div>
+                            <input type="range" class="nexus-tip-slider" min="${this.isVnd ? 5e4 : 10}" max="${this.isVnd ? 1e7 : 1e3}" step="${this.isVnd ? 5e4 : 5}" value="${this.bill}" data-slider="bill" />
+                        </div>
+
+                        <!-- Tip Percentage Chips Row -->
+                        <div class="nexus-tip-control-row">
+                            <div class="nexus-tip-control-header">
+                                <span class="nexus-tip-label">Tip: <strong data-tip-percent-text>${this.tipPercent}%</strong> (+${this._formatMoney(data.tipAmount)})</span>
+                            </div>
+                            <div class="nexus-tip-chips-row">
+                                ${tipPresets.map((p) => `
+                                    <button type="button" class="nexus-tip-chip ${this.tipPercent === p ? "is-active" : ""}" data-tip-val="${p}">
+                                        ${p === 0 ? "No Tip" : `${p}%`}
+                                    </button>
+                                `).join("")}
+                            </div>
+                        </div>
+
+                        <!-- Number of People Stepper & Slider -->
+                        <div class="nexus-tip-control-row">
+                            <div class="nexus-tip-control-header">
+                                <span class="nexus-tip-label">Number of People</span>
+                                <div class="nexus-tip-stepper-box">
+                                    <button type="button" class="nexus-tip-step-btn" data-step="-1" title="Decrease person">\u2212</button>
+                                    <span class="nexus-tip-stepper-count" data-people-count>${this.people}</span>
+                                    <button type="button" class="nexus-tip-step-btn" data-step="1" title="Increase person">+</button>
+                                </div>
+                            </div>
+                            <input type="range" class="nexus-tip-slider" min="1" max="20" step="1" value="${this.people}" data-slider="people" />
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats Breakdown Footer -->
+                    <div class="nexus-tip-summary-row">
+                        <div class="nexus-tip-summary-item">
+                            <span class="nexus-tip-summary-label">Total Tip</span>
+                            <span class="nexus-tip-summary-val is-cyan" data-sum-tip>+${this._formatMoney(data.tipAmount)}</span>
+                        </div>
+                        <div class="nexus-tip-summary-item">
+                            <span class="nexus-tip-summary-label">Total Bill + Tip</span>
+                            <span class="nexus-tip-summary-val" data-sum-total>${this._formatMoney(data.totalWithTip)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateLiveUI() {
+      const data = this._calculateSplit();
+      const perPersonEl = this.containerEl.querySelector("[data-per-person-val]");
+      if (perPersonEl) perPersonEl.textContent = this._formatMoney(data.perPerson);
+      const billDisp = this.containerEl.querySelector("[data-bill-display]");
+      if (billDisp) billDisp.textContent = this._formatMoney(this.bill);
+      const tipText = this.containerEl.querySelector("[data-tip-percent-text]");
+      if (tipText) tipText.textContent = `${this.tipPercent}%`;
+      const peopleCount = this.containerEl.querySelector("[data-people-count]");
+      if (peopleCount) peopleCount.textContent = `${this.people}`;
+      const peopleSlider = this.containerEl.querySelector('[data-slider="people"]');
+      if (peopleSlider) peopleSlider.value = this.people;
+      const sumTip = this.containerEl.querySelector("[data-sum-tip]");
+      if (sumTip) sumTip.textContent = `+${this._formatMoney(data.tipAmount)}`;
+      const sumTotal = this.containerEl.querySelector("[data-sum-total]");
+      if (sumTotal) sumTotal.textContent = this._formatMoney(data.totalWithTip);
+      const chips = this.containerEl.querySelectorAll(".nexus-tip-chip");
+      chips.forEach((chip) => {
+        const val = parseFloat(chip.dataset.tipVal);
+        if (val === this.tipPercent) {
+          chip.classList.add("is-active");
+        } else {
+          chip.classList.remove("is-active");
+        }
+      });
+    }
+    bindEvents() {
+      this.containerEl.addEventListener("click", (e) => {
+        const tipChip = e.target.closest("[data-tip-val]");
+        if (tipChip) {
+          this.tipPercent = parseFloat(tipChip.dataset.tipVal) || 0;
+          this._updateLiveUI();
+          return;
+        }
+        const stepBtn = e.target.closest("[data-step]");
+        if (stepBtn) {
+          const delta = parseInt(stepBtn.dataset.step, 10) || 0;
+          this.people = Math.max(1, Math.min(30, this.people + delta));
+          this._updateLiveUI();
+          return;
+        }
+      });
+      this.containerEl.addEventListener("input", (e) => {
+        const slider = e.target.closest("[data-slider]");
+        if (slider) {
+          const type = slider.dataset.slider;
+          if (type === "bill") {
+            this.bill = parseFloat(slider.value) || 0;
+          } else if (type === "people") {
+            this.people = parseInt(slider.value, 10) || 1;
+          }
+          this._updateLiveUI();
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/gold_price_widget.js
+  var TIMEFRAMES2 = [
+    { label: "24H", interval: "1h", limit: 24 },
+    { label: "7D", interval: "4h", limit: 42 },
+    { label: "1M", interval: "1d", limit: 30 },
+    { label: "1Y", interval: "1w", limit: 52 }
+  ];
+  var GoldPriceWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "Gold Spot (XAU/USD)";
+      this.activeUnit = this._normalizeUnit(props.unit);
+      this.quantity = parseFloat(props.quantity || props.amount || 1) || 1;
+      this.currentTimeframe = "24H";
+      this.pricePerOz = 2875.5;
+      this.changePercent = 0.85;
+      this.high24h = 2892;
+      this.low24h = 2860.2;
+      this.volume24h = "$42.5M";
+      this.chartPoints = [];
+      this.klineCache = {};
+      this.isFetchingKlines = false;
+      this._eventsBound = false;
+      this.render();
+      this.bindEvents();
+      this.fetchData();
+    }
+    _normalizeUnit(raw) {
+      if (!raw) return "oz";
+      const u = String(raw).toLowerCase().trim();
+      if (u === "tael" || u === "luong" || u === "cay") return "tael";
+      if (u === "g" || u === "gram" || u === "grams") return "g";
+      return "oz";
+    }
+    _getUnitMultiplier() {
+      if (this.activeUnit === "tael") return 1.205653;
+      if (this.activeUnit === "g") return 1 / 31.1034768;
+      return 1;
+    }
+    _formatUsd(val, decimals = 2) {
+      if (isNaN(val)) return "$0.00";
+      return "$" + Number(val.toFixed(decimals)).toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+    async fetchData() {
+      await Promise.all([
+        this.fetch24hTicker(),
+        this.fetchKlines()
+      ]);
+    }
+    async fetch24hTicker() {
+      try {
+        const res = await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=PAXGUSDT");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.lastPrice) {
+            this.pricePerOz = parseFloat(data.lastPrice);
+            if (this.currentTimeframe === "24H") {
+              this.changePercent = parseFloat(data.priceChangePercent);
+            }
+            this.high24h = parseFloat(data.highPrice);
+            this.low24h = parseFloat(data.lowPrice);
+            const vol = parseFloat(data.quoteVolume);
+            this.volume24h = vol >= 1e9 ? `$${(vol / 1e9).toFixed(2)}B` : `$${(vol / 1e6).toFixed(1)}M`;
+            this._updateStatsUI();
+          }
+        }
+      } catch (e) {
+        console.warn("[GoldPriceWidget] 24h ticker fallback:", e);
+      }
+    }
+    async fetchKlines(force = false) {
+      const tf = TIMEFRAMES2.find((t) => t.label === this.currentTimeframe) || TIMEFRAMES2[0];
+      if (!force && this.klineCache[tf.label] && this.klineCache[tf.label].length >= 2) {
+        this.chartPoints = this.klineCache[tf.label];
+        const first = this.chartPoints[0];
+        const last = this.chartPoints[this.chartPoints.length - 1];
+        this.changePercent = (last - first) / first * 100;
+        this._updateChartUI();
+        return;
+      }
+      if (this.isFetchingKlines) return;
+      this.isFetchingKlines = true;
+      try {
+        const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=${tf.interval}&limit=${tf.limit}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const pts = data.map((k) => parseFloat(k[4]));
+            this.klineCache[tf.label] = pts;
+            this.chartPoints = pts;
+            if (this.chartPoints.length >= 2) {
+              const first = this.chartPoints[0];
+              const last = this.chartPoints[this.chartPoints.length - 1];
+              this.changePercent = (last - first) / first * 100;
+            }
+            this._updateChartUI();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[GoldPriceWidget] Kline chart fallback:", e);
+      } finally {
+        this.isFetchingKlines = false;
+      }
+      this.chartPoints = [2860, 2865, 2862, 2870, 2878, 2872, 2875.5];
+      this._updateChartUI();
+    }
+    _pointsToSmoothPath(pts) {
+      if (pts.length === 0) return "";
+      if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
+      let d = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[Math.min(pts.length - 1, i + 2)];
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+      }
+      return d;
+    }
+    _generateChartSvg() {
+      if (!this.chartPoints || this.chartPoints.length < 2) {
+        return `<div class="nexus-gold-chart-empty">Loading chart...</div>`;
+      }
+      const isPositive = this.changePercent >= 0;
+      const strokeColor = isPositive ? "#10b981" : "#f43f5e";
+      const gradId = `goldChartGrad_${this.currentTimeframe}`;
+      const multiplier = this._getUnitMultiplier();
+      const ptsValues = this.chartPoints.map((p) => p * multiplier);
+      const min = Math.min(...ptsValues);
+      const max = Math.max(...ptsValues);
+      const range = max - min || 1;
+      const w = 310;
+      const h = 64;
+      const padX = 6;
+      const padY = 8;
+      const chartW = w - padX * 2;
+      const chartH = h - padY * 2;
+      const stepX = chartW / Math.max(1, ptsValues.length - 1);
+      const pts = ptsValues.map((val, idx) => ({
+        x: padX + idx * stepX,
+        y: padY + chartH - (val - min) / range * chartH
+      }));
+      const smoothLine = this._pointsToSmoothPath(pts);
+      const smoothArea = `${smoothLine} L ${padX + chartW},${padY + chartH} L ${padX},${padY + chartH} Z`;
+      const lastPt = pts[pts.length - 1];
+      return `
+            <svg class="nexus-gold-chart-svg" viewBox="0 0 ${w} ${h}" width="100%" height="${h}">
+                <defs>
+                    <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.32"/>
+                        <stop offset="70%" stop-color="${strokeColor}" stop-opacity="0.05"/>
+                        <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0"/>
+                    </linearGradient>
+                    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="${strokeColor}" flood-opacity="0.4"/>
+                    </filter>
+                </defs>
+                <path d="${smoothArea}" fill="url(#${gradId})" />
+                <path d="${smoothLine}" fill="none" stroke="${strokeColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#goldGlow)" />
+                <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.5" />
+            </svg>
+        `;
+    }
+    render() {
+      const isUp = this.changePercent >= 0;
+      const changeStr = (isUp ? "+" : "") + this.changePercent.toFixed(2) + "%";
+      const multiplier = this._getUnitMultiplier();
+      const currentUnitPrice = this.pricePerOz * multiplier;
+      const totalPrice = currentUnitPrice * this.quantity;
+      const unitDisplayNames = {
+        oz: "Troy Ounce (oz)",
+        tael: "Tael (37.5g)",
+        g: "Gram (g)"
+      };
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-gold-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-gold-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-amber"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                        <div class="nexus-gold-actions">
+                            <span class="nexus-gold-change-badge ${isUp ? "is-up" : "is-down"}" data-gold-change>${changeStr}</span>
+                            <button type="button" class="nexus-gold-refresh-btn" data-action="refresh" title="Refresh live price">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Unit Selector Tabs (English: Ounce, Tael, Gram) -->
+                    <div class="nexus-gold-unit-tabs">
+                        <button type="button" class="nexus-gold-unit-tab ${this.activeUnit === "oz" ? "is-active" : ""}" data-unit="oz">Ounce (oz)</button>
+                        <button type="button" class="nexus-gold-unit-tab ${this.activeUnit === "tael" ? "is-active" : ""}" data-unit="tael">Tael (37.5g)</button>
+                        <button type="button" class="nexus-gold-unit-tab ${this.activeUnit === "g" ? "is-active" : ""}" data-unit="g">Gram (g)</button>
+                    </div>
+
+                    <!-- Main Hero: Gold Price Display in USD -->
+                    <div class="nexus-gold-hero-block">
+                        <span class="nexus-gold-hero-label" data-unit-label>Spot Price / ${unitDisplayNames[this.activeUnit]}</span>
+                        <div class="nexus-gold-hero-val-row">
+                            <span class="nexus-gold-hero-val" data-gold-price-val>${this._formatUsd(currentUnitPrice)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Timeframe Switcher Tabs (24H, 7D, 1M, 1Y) -->
+                    <div class="nexus-gold-timeframe-row">
+                        ${TIMEFRAMES2.map((tf) => `
+                            <button type="button" class="nexus-gold-tf-btn ${this.currentTimeframe === tf.label ? "is-active" : ""}" data-tf="${tf.label}">
+                                ${tf.label}
+                            </button>
+                        `).join("")}
+                    </div>
+
+                    <!-- Dynamic Live Chart Area -->
+                    <div class="nexus-gold-chart-box" data-gold-chart-box>
+                        ${this._generateChartSvg()}
+                    </div>
+
+                    <!-- Quantity Stepper & Calculator -->
+                    <div class="nexus-gold-calc-box">
+                        <div class="nexus-gold-calc-header">
+                            <span class="nexus-gold-calc-label">Total for <strong data-qty-text>${this.quantity} ${this.activeUnit.toUpperCase()}</strong></span>
+                            <div class="nexus-gold-stepper-row">
+                                <button type="button" class="nexus-gold-step-btn" data-step="-1">\u2212</button>
+                                <span class="nexus-gold-qty-display" data-qty-display>${this.quantity}</span>
+                                <button type="button" class="nexus-gold-step-btn" data-step="1">+</button>
+                            </div>
+                        </div>
+                        <div class="nexus-gold-calc-total-val" data-calc-total>
+                            ${this._formatUsd(totalPrice)}
+                        </div>
+                    </div>
+
+                    <!-- Stats Breakdown Footer (24h Low, High, Volume) -->
+                    <div class="nexus-gold-summary-row">
+                        <div class="nexus-gold-summary-item">
+                            <span class="nexus-gold-summary-label">24h Low</span>
+                            <span class="nexus-gold-summary-val" data-gold-low>${this._formatUsd(this.low24h * multiplier)}</span>
+                        </div>
+                        <div class="nexus-gold-summary-item">
+                            <span class="nexus-gold-summary-label">24h High</span>
+                            <span class="nexus-gold-summary-val" data-gold-high>${this._formatUsd(this.high24h * multiplier)}</span>
+                        </div>
+                        <div class="nexus-gold-summary-item">
+                            <span class="nexus-gold-summary-label">24h Volume</span>
+                            <span class="nexus-gold-summary-val" data-gold-vol>${this.volume24h}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateStatsUI() {
+      const isUp = this.changePercent >= 0;
+      const changeStr = (isUp ? "+" : "") + this.changePercent.toFixed(2) + "%";
+      const multiplier = this._getUnitMultiplier();
+      const currentUnitPrice = this.pricePerOz * multiplier;
+      const unitDisplayNames = {
+        oz: "Troy Ounce (oz)",
+        tael: "Tael (37.5g)",
+        g: "Gram (g)"
+      };
+      const unitLabelEl = this.containerEl.querySelector("[data-unit-label]");
+      if (unitLabelEl) unitLabelEl.textContent = `Spot Price / ${unitDisplayNames[this.activeUnit]}`;
+      const changeEl = this.containerEl.querySelector("[data-gold-change]");
+      if (changeEl) {
+        changeEl.textContent = changeStr;
+        changeEl.className = `nexus-gold-change-badge ${isUp ? "is-up" : "is-down"}`;
+      }
+      const priceEl = this.containerEl.querySelector("[data-gold-price-val]");
+      if (priceEl) priceEl.textContent = this._formatUsd(currentUnitPrice);
+      const qtyText = this.containerEl.querySelector("[data-qty-text]");
+      if (qtyText) qtyText.textContent = `${this.quantity} ${this.activeUnit.toUpperCase()}`;
+      const qtyDisp = this.containerEl.querySelector("[data-qty-display]");
+      if (qtyDisp) qtyDisp.textContent = `${this.quantity}`;
+      const calcTotal = this.containerEl.querySelector("[data-calc-total]");
+      if (calcTotal) calcTotal.textContent = this._formatUsd(currentUnitPrice * this.quantity);
+      const lowEl = this.containerEl.querySelector("[data-gold-low]");
+      if (lowEl) lowEl.textContent = this._formatUsd(this.low24h * multiplier);
+      const highEl = this.containerEl.querySelector("[data-gold-high]");
+      if (highEl) highEl.textContent = this._formatUsd(this.high24h * multiplier);
+      const volEl = this.containerEl.querySelector("[data-gold-vol]");
+      if (volEl) volEl.textContent = this.volume24h;
+    }
+    _updateChartUI() {
+      this._updateStatsUI();
+      const chartBox = this.containerEl.querySelector("[data-gold-chart-box]");
+      if (chartBox) {
+        chartBox.innerHTML = this._generateChartSvg();
+      }
+    }
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      this.containerEl.addEventListener("click", (e) => {
+        const unitTab = e.target.closest("[data-unit]");
+        if (unitTab) {
+          this.activeUnit = unitTab.dataset.unit;
+          const allTabs = this.containerEl.querySelectorAll(".nexus-gold-unit-tab");
+          allTabs.forEach((t) => {
+            if (t.dataset.unit === this.activeUnit) {
+              t.classList.add("is-active");
+            } else {
+              t.classList.remove("is-active");
+            }
+          });
+          this._updateChartUI();
+          return;
+        }
+        const tfBtn = e.target.closest("[data-tf]");
+        if (tfBtn) {
+          this.currentTimeframe = tfBtn.dataset.tf;
+          const allTf = this.containerEl.querySelectorAll(".nexus-gold-tf-btn");
+          allTf.forEach((btn) => {
+            if (btn.dataset.tf === this.currentTimeframe) {
+              btn.classList.add("is-active");
+            } else {
+              btn.classList.remove("is-active");
+            }
+          });
+          this.fetchKlines();
+          return;
+        }
+        const stepBtn = e.target.closest("[data-step]");
+        if (stepBtn) {
+          const delta = parseInt(stepBtn.dataset.step, 10) || 0;
+          this.quantity = Math.max(1, Math.min(1e3, this.quantity + delta));
+          this._updateStatsUI();
+          return;
+        }
+        const refreshBtn = e.target.closest('[data-action="refresh"]');
+        if (refreshBtn) {
+          refreshBtn.style.opacity = "0.5";
+          setTimeout(() => {
+            refreshBtn.style.opacity = "1";
+          }, 300);
+          this.klineCache = {};
+          this.fetchData();
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/weather_widget.js
+  var WMO_WEATHER_CODES = {
+    0: { label: "Clear Sky", icon: "sun", color: "#f59e0b" },
+    1: { label: "Mainly Clear", icon: "sun-cloud", color: "#fbbf24" },
+    2: { label: "Partly Cloudy", icon: "cloud-sun", color: "#94a3b8" },
+    3: { label: "Overcast", icon: "cloud", color: "#64748b" },
+    45: { label: "Foggy", icon: "fog", color: "#94a3b8" },
+    48: { label: "Depositing Rime Fog", icon: "fog", color: "#94a3b8" },
+    51: { label: "Light Drizzle", icon: "rain-drizzle", color: "#38bdf8" },
+    53: { label: "Moderate Drizzle", icon: "rain-drizzle", color: "#0284c7" },
+    55: { label: "Dense Drizzle", icon: "rain", color: "#0284c7" },
+    61: { label: "Slight Rain", icon: "rain", color: "#38bdf8" },
+    63: { label: "Moderate Rain", icon: "rain", color: "#2563eb" },
+    65: { label: "Heavy Rain", icon: "rain-heavy", color: "#1d4ed8" },
+    71: { label: "Slight Snow", icon: "snow", color: "#e0f2fe" },
+    73: { label: "Moderate Snow", icon: "snow", color: "#bae6fd" },
+    75: { label: "Heavy Snow", icon: "snow", color: "#7dd3fc" },
+    80: { label: "Rain Showers", icon: "rain", color: "#38bdf8" },
+    81: { label: "Moderate Showers", icon: "rain", color: "#2563eb" },
+    82: { label: "Violent Showers", icon: "rain-heavy", color: "#1e40af" },
+    95: { label: "Thunderstorm", icon: "thunderstorm", color: "#a855f7" },
+    96: { label: "Thunderstorm with Hail", icon: "thunderstorm", color: "#9333ea" },
+    99: { label: "Heavy Thunderstorm with Hail", icon: "thunderstorm", color: "#7e22ce" }
+  };
+  var WeatherWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "Live Weather";
+      this.city = props.city || props.location || props.name || "Hanoi";
+      this.unit = (props.unit || "c").toLowerCase();
+      this.latitude = parseFloat(props.lat || props.latitude) || 21.0285;
+      this.longitude = parseFloat(props.lon || props.longitude) || 105.8542;
+      this.resolvedCityName = this.city;
+      this.tempC = 28.5;
+      this.feelsLikeC = 31;
+      this.humidity = 75;
+      this.windSpeed = 12.5;
+      this.weatherCode = 1;
+      this.isDay = 1;
+      this.precipitation = 0;
+      this.isLoading = false;
+      this._eventsBound = false;
+      this.render();
+      this.bindEvents();
+      this.fetchWeatherData();
+    }
+    _getWeatherInfo() {
+      return WMO_WEATHER_CODES[this.weatherCode] || { label: "Fair Weather", icon: "sun-cloud", color: "#38bdf8" };
+    }
+    _renderWeatherIconSvg(iconType, isDay = 1) {
+      if (iconType === "sun") {
+        return isDay ? `
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4" fill="#f59e0b" fill-opacity="0.25"/>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+            ` : `
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="#38bdf8" fill-opacity="0.25"/>
+                </svg>
+            `;
+      }
+      if (iconType === "thunderstorm") {
+        return `
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="#a855f7" fill-opacity="0.15"/>
+                    <path d="m13 11-4 6h4l-2 5" stroke="#facc15" stroke-width="2.2"/>
+                </svg>
+            `;
+      }
+      if (iconType === "rain" || iconType === "rain-heavy" || iconType === "rain-drizzle") {
+        return `
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 15H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="#38bdf8" fill-opacity="0.15"/>
+                    <path d="M8 19v2M12 19v2M16 19v2" stroke="#38bdf8" stroke-width="2.2"/>
+                </svg>
+            `;
+      }
+      if (iconType === "snow") {
+        return `
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#bae6fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 15H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="#bae6fd" fill-opacity="0.15"/>
+                    <path d="M8 18h.01M12 18h.01M16 18h.01M10 21h.01M14 21h.01"/>
+                </svg>
+            `;
+      }
+      return `
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="#94a3b8" fill-opacity="0.2"/>
+                <circle cx="12" cy="7" r="3" stroke="#f59e0b" fill="#f59e0b" fill-opacity="0.3"/>
+            </svg>
+        `;
+    }
+    _formatTemp(tempC) {
+      if (this.unit === "f") {
+        const f = tempC * 9 / 5 + 32;
+        return Math.round(f) + "\xB0F";
+      }
+      return Math.round(tempC) + "\xB0C";
+    }
+    async fetchWeatherData() {
+      if (this.isLoading) return;
+      this.isLoading = true;
+      try {
+        if (this.city && (!this.latitude || !this.longitude || this.city !== "Hanoi")) {
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(this.city)}&count=1&language=en&format=json`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData && geoData.results && geoData.results.length > 0) {
+              const loc = geoData.results[0];
+              this.latitude = loc.latitude;
+              this.longitude = loc.longitude;
+              this.resolvedCityName = `${loc.name}${loc.country_code ? ", " + loc.country_code : ""}`;
+            }
+          }
+        }
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${this.latitude}&longitude=${this.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&timezone=auto`;
+        const res = await fetch(weatherUrl);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.current) {
+            this.tempC = data.current.temperature_2m;
+            this.feelsLikeC = data.current.apparent_temperature;
+            this.humidity = data.current.relative_humidity_2m;
+            this.windSpeed = data.current.wind_speed_10m;
+            this.weatherCode = data.current.weather_code;
+            this.isDay = data.current.is_day;
+            this.precipitation = data.current.precipitation || 0;
+            this._updateUI();
+          }
+        }
+      } catch (e) {
+        console.warn("[WeatherWidget] Weather fetch fallback:", e);
+      } finally {
+        this.isLoading = false;
+      }
+    }
+    render() {
+      const info = this._getWeatherInfo();
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-weather-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-weather-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-cyan"></span>
+                            <span class="nexus-widget-title-text" data-weather-city>${this.resolvedCityName}</span>
+                        </div>
+                        <div class="nexus-weather-actions">
+                            <button type="button" class="nexus-weather-unit-btn ${this.unit === "c" ? "is-active" : ""}" data-action="toggle-unit">
+                                ${this.unit === "c" ? "\xB0C" : "\xB0F"}
+                            </button>
+                            <button type="button" class="nexus-weather-refresh-btn" data-action="refresh" title="Refresh weather">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Hero: Big Temperature & Weather Icon -->
+                    <div class="nexus-weather-hero-row">
+                        <div class="nexus-weather-temp-block">
+                            <span class="nexus-weather-temp-val" data-weather-temp>${this._formatTemp(this.tempC)}</span>
+                            <span class="nexus-weather-condition-tag" data-weather-condition style="color: ${info.color}">
+                                ${info.label}
+                            </span>
+                        </div>
+                        <div class="nexus-weather-icon-box" data-weather-icon-box>
+                            ${this._renderWeatherIconSvg(info.icon, this.isDay)}
+                        </div>
+                    </div>
+
+                    <!-- Environmental Metrics Grid (Feels Like, Humidity, Wind, Precip) -->
+                    <div class="nexus-weather-stats-grid">
+                        <div class="nexus-weather-stat-item">
+                            <span class="nexus-weather-stat-label">Feels Like</span>
+                            <span class="nexus-weather-stat-val" data-weather-feels>${this._formatTemp(this.feelsLikeC)}</span>
+                        </div>
+                        <div class="nexus-weather-stat-item">
+                            <span class="nexus-weather-stat-label">Humidity</span>
+                            <span class="nexus-weather-stat-val" data-weather-humidity>${this.humidity}%</span>
+                        </div>
+                        <div class="nexus-weather-stat-item">
+                            <span class="nexus-weather-stat-label">Wind</span>
+                            <span class="nexus-weather-stat-val" data-weather-wind>${this.windSpeed.toFixed(1)} km/h</span>
+                        </div>
+                        <div class="nexus-weather-stat-item">
+                            <span class="nexus-weather-stat-label">Precipitation</span>
+                            <span class="nexus-weather-stat-val" data-weather-precip>${this.precipitation.toFixed(1)} mm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateUI() {
+      const info = this._getWeatherInfo();
+      const cityEl = this.containerEl.querySelector("[data-weather-city]");
+      if (cityEl) cityEl.textContent = this.resolvedCityName;
+      const tempEl = this.containerEl.querySelector("[data-weather-temp]");
+      if (tempEl) tempEl.textContent = this._formatTemp(this.tempC);
+      const condEl = this.containerEl.querySelector("[data-weather-condition]");
+      if (condEl) {
+        condEl.textContent = info.label;
+        condEl.style.color = info.color;
+      }
+      const iconBox = this.containerEl.querySelector("[data-weather-icon-box]");
+      if (iconBox) iconBox.innerHTML = this._renderWeatherIconSvg(info.icon, this.isDay);
+      const feelsEl = this.containerEl.querySelector("[data-weather-feels]");
+      if (feelsEl) feelsEl.textContent = this._formatTemp(this.feelsLikeC);
+      const humEl = this.containerEl.querySelector("[data-weather-humidity]");
+      if (humEl) humEl.textContent = `${this.humidity}%`;
+      const windEl = this.containerEl.querySelector("[data-weather-wind]");
+      if (windEl) windEl.textContent = `${this.windSpeed.toFixed(1)} km/h`;
+      const precipEl = this.containerEl.querySelector("[data-weather-precip]");
+      if (precipEl) precipEl.textContent = `${this.precipitation.toFixed(1)} mm`;
+      const unitBtn = this.containerEl.querySelector('[data-action="toggle-unit"]');
+      if (unitBtn) unitBtn.textContent = this.unit === "c" ? "\xB0C" : "\xB0F";
+    }
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      this.containerEl.addEventListener("click", (e) => {
+        const unitBtn = e.target.closest('[data-action="toggle-unit"]');
+        if (unitBtn) {
+          this.unit = this.unit === "c" ? "f" : "c";
+          this._updateUI();
+          return;
+        }
+        const refreshBtn = e.target.closest('[data-action="refresh"]');
+        if (refreshBtn) {
+          refreshBtn.style.opacity = "0.5";
+          setTimeout(() => {
+            refreshBtn.style.opacity = "1";
+          }, 300);
+          this.fetchWeatherData();
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/weather_forecast_widget.js
+  var WeatherForecastWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "7-Day Forecast";
+      this.city = props.city || props.location || props.name || "Hanoi";
+      this.unit = (props.unit || "c").toLowerCase();
+      this.latitude = parseFloat(props.lat || props.latitude) || 21.0285;
+      this.longitude = parseFloat(props.lon || props.longitude) || 105.8542;
+      this.resolvedCityName = this.city;
+      this.current = {
+        temp: 28,
+        feelsLike: 31,
+        humidity: 75,
+        windSpeed: 12,
+        weatherCode: 1
+      };
+      this.hourly = [];
+      this.days = [];
+      this.todayUv = 6;
+      this.isLoading = false;
+      this._eventsBound = false;
+      this.render();
+      this.bindEvents();
+      this.fetchForecastData();
+    }
+    _formatTemp(tempC) {
+      if (tempC === null || tempC === void 0 || isNaN(tempC)) return "--\xB0";
+      if (this.unit === "f") {
+        const f = tempC * 9 / 5 + 32;
+        return Math.round(f) + "\xB0";
+      }
+      return Math.round(tempC) + "\xB0";
+    }
+    _getDayLabel(dateStr, idx) {
+      if (idx === 0) return "Today";
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-US", { weekday: "short" });
+    }
+    _renderSmallWeatherIcon(iconType) {
+      if (iconType === "sun") {
+        return `
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4" fill="#f59e0b" fill-opacity="0.25"/>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+            `;
+      }
+      if (iconType === "thunderstorm") {
+        return `
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                    <path d="m13 11-4 6h4l-2 5" stroke="#facc15" stroke-width="2"/>
+                </svg>
+            `;
+      }
+      if (iconType === "rain" || iconType === "rain-heavy" || iconType === "rain-drizzle") {
+        return `
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 15H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                    <path d="M8 18v2M12 18v2M16 18v2" stroke="#38bdf8" stroke-width="2"/>
+                </svg>
+            `;
+      }
+      if (iconType === "snow") {
+        return `
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bae6fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 15H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                    <path d="M8 18h.01M12 18h.01M16 18h.01"/>
+                </svg>
+            `;
+      }
+      return `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+            </svg>
+        `;
+    }
+    async fetchForecastData() {
+      if (this.isLoading) return;
+      this.isLoading = true;
+      try {
+        if (this.city && (!this.latitude || !this.longitude || this.city !== "Hanoi")) {
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(this.city)}&count=1&language=en&format=json`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData && geoData.results && geoData.results.length > 0) {
+              const loc = geoData.results[0];
+              this.latitude = loc.latitude;
+              this.longitude = loc.longitude;
+              this.resolvedCityName = `${loc.name}${loc.country_code ? ", " + loc.country_code : ""}`;
+            }
+          }
+        }
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${this.latitude}&longitude=${this.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_probability_max,wind_speed_10m_max&timezone=auto`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.current) {
+            this.current = {
+              temp: data.current.temperature_2m,
+              feelsLike: data.current.apparent_temperature,
+              humidity: data.current.relative_humidity_2m,
+              windSpeed: data.current.wind_speed_10m,
+              weatherCode: data.current.weather_code
+            };
+          }
+          if (data.hourly && Array.isArray(data.hourly.time)) {
+            const currentHourIso = (/* @__PURE__ */ new Date()).toISOString().slice(0, 13);
+            let startIdx = data.hourly.time.findIndex((t) => t.startsWith(currentHourIso));
+            if (startIdx === -1) startIdx = 0;
+            this.hourly = data.hourly.time.slice(startIdx, startIdx + 16).map((timeStr, idx) => {
+              const code = data.hourly.weather_code[startIdx + idx];
+              const temp = data.hourly.temperature_2m[startIdx + idx];
+              const pop = data.hourly.precipitation_probability ? data.hourly.precipitation_probability[startIdx + idx] : 0;
+              const dateObj = new Date(timeStr);
+              const label = idx === 0 ? "Now" : dateObj.toLocaleTimeString("en-US", { hour: "numeric", hour12: true });
+              const info = WMO_WEATHER_CODES[code] || { label: "Clear", icon: "sun", color: "#f59e0b" };
+              return {
+                label,
+                temp,
+                pop,
+                code,
+                info
+              };
+            });
+          }
+          if (data.daily && Array.isArray(data.daily.time)) {
+            this.todayUv = data.daily.uv_index_max ? Math.round(data.daily.uv_index_max[0]) : 6;
+            this.days = data.daily.time.slice(0, 7).map((dateStr, idx) => {
+              const code = data.daily.weather_code[idx];
+              const info = WMO_WEATHER_CODES[code] || { label: "Clear", icon: "sun", color: "#f59e0b" };
+              return {
+                date: dateStr,
+                label: this._getDayLabel(dateStr, idx),
+                maxTemp: data.daily.temperature_2m_max[idx],
+                minTemp: data.daily.temperature_2m_min[idx],
+                precipProb: data.daily.precipitation_probability_max ? data.daily.precipitation_probability_max[idx] : 0,
+                code,
+                info
+              };
+            });
+          }
+          this._updateUI();
+        }
+      } catch (e) {
+        console.warn("[WeatherForecastWidget] Fetch fallback:", e);
+      } finally {
+        this.isLoading = false;
+      }
+    }
+    _getWeekBounds() {
+      if (!this.days || this.days.length === 0) return { weekMin: 20, weekMax: 35, span: 15 };
+      const mins = this.days.map((d) => d.minTemp);
+      const maxs = this.days.map((d) => d.maxTemp);
+      const weekMin = Math.min(...mins);
+      const weekMax = Math.max(...maxs);
+      return {
+        weekMin,
+        weekMax,
+        span: Math.max(weekMax - weekMin, 1)
+      };
+    }
+    _renderDayRowHtml(d, weekBounds) {
+      const leftPercent = Math.max(0, Math.min(100, (d.minTemp - weekBounds.weekMin) / weekBounds.span * 100));
+      const rightPercent = Math.max(0, Math.min(100, (d.maxTemp - weekBounds.weekMin) / weekBounds.span * 100));
+      const barWidth = Math.max(12, rightPercent - leftPercent);
+      const rainClass = d.precipProb >= 40 ? "is-rain-high" : d.precipProb > 0 ? "is-rain-low" : "is-rain-zero";
+      return `
+            <div class="nexus-forecast-day-row">
+                <span class="nexus-forecast-day-name ${d.label === "Today" ? "is-today" : ""}">${d.label}</span>
+                <div class="nexus-forecast-day-icon-col">
+                    <span class="nexus-forecast-mini-icon">${this._renderSmallWeatherIcon(d.info.icon)}</span>
+                    <span class="nexus-forecast-rain-prob ${rainClass}">${d.precipProb}%</span>
+                </div>
+                <span class="nexus-forecast-min-temp">${this._formatTemp(d.minTemp)}</span>
+                <div class="nexus-forecast-bar-track">
+                    <div class="nexus-forecast-bar-fill" style="left: ${leftPercent.toFixed(1)}%; width: ${barWidth.toFixed(1)}%;"></div>
+                </div>
+                <span class="nexus-forecast-max-temp">${this._formatTemp(d.maxTemp)}</span>
+            </div>
+        `;
+    }
+    _renderHourlyScrollerHtml() {
+      if (!this.hourly || this.hourly.length === 0) return "";
+      return `
+            <div class="nexus-forecast-hourly-scroller">
+                ${this.hourly.map((h) => `
+                    <div class="nexus-forecast-hour-card">
+                        <span class="nexus-forecast-hour-time">${h.label}</span>
+                        <span class="nexus-forecast-hour-icon">${this._renderSmallWeatherIcon(h.info.icon)}</span>
+                        <span class="nexus-forecast-hour-pop">${h.pop >= 15 ? `${h.pop}%` : "&nbsp;"}</span>
+                        <span class="nexus-forecast-hour-temp">${this._formatTemp(h.temp)}</span>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+    }
+    render() {
+      const hasDays = this.days && this.days.length > 0;
+      const weekBounds = this._getWeekBounds();
+      const currentInfo = WMO_WEATHER_CODES[this.current.weatherCode] || { label: "Clear Sky", icon: "sun" };
+      const todayHigh = this.days.length > 0 ? this._formatTemp(this.days[0].maxTemp) : "--";
+      const todayLow = this.days.length > 0 ? this._formatTemp(this.days[0].minTemp) : "--";
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-forecast-card">
+                    <!-- Top Bar with Integrated Control Group -->
+                    <div class="nexus-forecast-top-bar">
+                        <div class="nexus-forecast-header-left">
+                            <div class="nexus-widget-title-badge">
+                                <span class="nexus-widget-status-dot is-running-cyan"></span>
+                                <span class="nexus-widget-title-text" data-forecast-city>${this.resolvedCityName}</span>
+                            </div>
+                            <span class="nexus-forecast-subtitle" data-forecast-subtitle>${currentInfo.label} \u2022 H: ${todayHigh} L: ${todayLow}</span>
+                        </div>
+                        <div class="nexus-forecast-control-group">
+                            <button type="button" class="nexus-forecast-pill-btn" data-action="toggle-unit" title="Switch \xB0C / \xB0F">
+                                <span class="${this.unit === "c" ? "is-active" : ""}">\xB0C</span>
+                                <span class="nexus-forecast-pill-divider">/</span>
+                                <span class="${this.unit === "f" ? "is-active" : ""}">\xB0F</span>
+                            </button>
+                            <button type="button" class="nexus-forecast-ghost-btn" data-action="refresh" title="Refresh weather data">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hourly 24H Carousel -->
+                    <div class="nexus-forecast-hourly-section" data-forecast-hourly>
+                        ${this._renderHourlyScrollerHtml()}
+                    </div>
+
+                    <!-- 7-Day Extended Forecast Grid -->
+                    <div class="nexus-forecast-days-list" data-forecast-days>
+                        ${hasDays ? this.days.map((d) => this._renderDayRowHtml(d, weekBounds)).join("") : `
+                            <div class="nexus-forecast-loading-state">Loading weather forecast...</div>
+                        `}
+                    </div>
+
+                    <!-- Bottom Quick Insights Bar -->
+                    <div class="nexus-forecast-insights-bar" data-forecast-insights>
+                        <div class="nexus-forecast-insight-item">
+                            <span class="nexus-forecast-insight-label">HUMIDITY</span>
+                            <span class="nexus-forecast-insight-val">${this.current.humidity}%</span>
+                        </div>
+                        <div class="nexus-forecast-insight-item">
+                            <span class="nexus-forecast-insight-label">WIND</span>
+                            <span class="nexus-forecast-insight-val">${Math.round(this.current.windSpeed)} km/h</span>
+                        </div>
+                        <div class="nexus-forecast-insight-item">
+                            <span class="nexus-forecast-insight-label">PEAK UV</span>
+                            <span class="nexus-forecast-insight-val">${this.todayUv}</span>
+                        </div>
+                        <div class="nexus-forecast-insight-item">
+                            <span class="nexus-forecast-insight-label">FEELS LIKE</span>
+                            <span class="nexus-forecast-insight-val">${this._formatTemp(this.current.feelsLike)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateUI() {
+      const cityEl = this.containerEl.querySelector("[data-forecast-city]");
+      if (cityEl) cityEl.textContent = this.resolvedCityName;
+      const currentInfo = WMO_WEATHER_CODES[this.current.weatherCode] || { label: "Clear Sky", icon: "sun" };
+      const todayHigh = this.days.length > 0 ? this._formatTemp(this.days[0].maxTemp) : "--";
+      const todayLow = this.days.length > 0 ? this._formatTemp(this.days[0].minTemp) : "--";
+      const subEl = this.containerEl.querySelector("[data-forecast-subtitle]");
+      if (subEl) subEl.textContent = `${currentInfo.label} \u2022 H: ${todayHigh} L: ${todayLow}`;
+      const hourlyEl = this.containerEl.querySelector("[data-forecast-hourly]");
+      if (hourlyEl) hourlyEl.innerHTML = this._renderHourlyScrollerHtml();
+      const listEl = this.containerEl.querySelector("[data-forecast-days]");
+      if (listEl && this.days.length > 0) {
+        const weekBounds = this._getWeekBounds();
+        listEl.innerHTML = this.days.map((d) => this._renderDayRowHtml(d, weekBounds)).join("");
+      }
+      const insightsEl = this.containerEl.querySelector("[data-forecast-insights]");
+      if (insightsEl) {
+        insightsEl.innerHTML = `
+                <div class="nexus-forecast-insight-item">
+                    <span class="nexus-forecast-insight-label">HUMIDITY</span>
+                    <span class="nexus-forecast-insight-val">${this.current.humidity}%</span>
+                </div>
+                <div class="nexus-forecast-insight-item">
+                    <span class="nexus-forecast-insight-label">WIND</span>
+                    <span class="nexus-forecast-insight-val">${Math.round(this.current.windSpeed)} km/h</span>
+                </div>
+                <div class="nexus-forecast-insight-item">
+                    <span class="nexus-forecast-insight-label">PEAK UV</span>
+                    <span class="nexus-forecast-insight-val">${this.todayUv}</span>
+                </div>
+                <div class="nexus-forecast-insight-item">
+                    <span class="nexus-forecast-insight-label">FEELS LIKE</span>
+                    <span class="nexus-forecast-insight-val">${this._formatTemp(this.current.feelsLike)}</span>
+                </div>
+            `;
+      }
+      const unitBtn = this.containerEl.querySelector('[data-action="toggle-unit"]');
+      if (unitBtn) {
+        unitBtn.innerHTML = `
+                <span class="${this.unit === "c" ? "is-active" : ""}">\xB0C</span>
+                <span class="nexus-forecast-pill-divider">/</span>
+                <span class="${this.unit === "f" ? "is-active" : ""}">\xB0F</span>
+            `;
+      }
+    }
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      this.containerEl.addEventListener("click", (e) => {
+        const unitBtn = e.target.closest('[data-action="toggle-unit"]');
+        if (unitBtn) {
+          this.unit = this.unit === "c" ? "f" : "c";
+          this._updateUI();
+          return;
+        }
+        const refreshBtn = e.target.closest('[data-action="refresh"]');
+        if (refreshBtn) {
+          refreshBtn.style.opacity = "0.5";
+          setTimeout(() => {
+            refreshBtn.style.opacity = "1";
+          }, 300);
+          this.fetchForecastData();
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/air_quality_widget.js
+  var AirQualityWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "Air Quality Index";
+      this.city = props.city || props.location || props.name || "Hanoi";
+      this.latitude = parseFloat(props.lat || props.latitude) || 21.0285;
+      this.longitude = parseFloat(props.lon || props.longitude) || 105.8542;
+      this.resolvedCityName = this.city;
+      this.usAqi = 85;
+      this.pm25 = 28.4;
+      this.pm10 = 54.2;
+      this.o3 = 45;
+      this.no2 = 22.1;
+      this.isLoading = false;
+      this._eventsBound = false;
+      this.render();
+      this.bindEvents();
+      this.fetchAqiData();
+    }
+    _getAqiStatus(aqi) {
+      if (aqi <= 50) {
+        return {
+          label: "Good",
+          color: "#10b981",
+          bg: "rgba(16, 185, 129, 0.15)",
+          advice: "Air quality is satisfactory. Enjoy outdoor activities."
+        };
+      }
+      if (aqi <= 100) {
+        return {
+          label: "Moderate",
+          color: "#f59e0b",
+          bg: "rgba(245, 158, 11, 0.15)",
+          advice: "Acceptable quality. Sensitive individuals should take care."
+        };
+      }
+      if (aqi <= 150) {
+        return {
+          label: "Unhealthy for Sensitive Groups",
+          color: "#f97316",
+          bg: "rgba(249, 115, 22, 0.15)",
+          advice: "Wear a mask outdoors if you have respiratory conditions."
+        };
+      }
+      if (aqi <= 200) {
+        return {
+          label: "Unhealthy",
+          color: "#ef4444",
+          bg: "rgba(239, 68, 68, 0.15)",
+          advice: "Everyone should wear a mask and keep windows closed."
+        };
+      }
+      if (aqi <= 300) {
+        return {
+          label: "Very Unhealthy",
+          color: "#a855f7",
+          bg: "rgba(168, 85, 247, 0.15)",
+          advice: "Health alert: Avoid outdoor exertion and run air purifiers."
+        };
+      }
+      return {
+        label: "Hazardous",
+        color: "#b91c1c",
+        bg: "rgba(185, 28, 28, 0.2)",
+        advice: "Emergency conditions. Remain indoors with air filtration."
+      };
+    }
+    async fetchAqiData() {
+      if (this.isLoading) return;
+      this.isLoading = true;
+      try {
+        if (this.city && (!this.latitude || !this.longitude || this.city !== "Hanoi")) {
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(this.city)}&count=1&language=en&format=json`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData && geoData.results && geoData.results.length > 0) {
+              const loc = geoData.results[0];
+              this.latitude = loc.latitude;
+              this.longitude = loc.longitude;
+              this.resolvedCityName = `${loc.name}${loc.country_code ? ", " + loc.country_code : ""}`;
+            }
+          }
+        }
+        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${this.latitude}&longitude=${this.longitude}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.current) {
+            this.usAqi = Math.round(data.current.us_aqi || 50);
+            this.pm25 = parseFloat((data.current.pm2_5 || 15).toFixed(1));
+            this.pm10 = parseFloat((data.current.pm10 || 30).toFixed(1));
+            this.o3 = parseFloat((data.current.ozone || 40).toFixed(1));
+            this.no2 = parseFloat((data.current.nitrogen_dioxide || 20).toFixed(1));
+            this._updateUI();
+          }
+        }
+      } catch (e) {
+        console.warn("[AirQualityWidget] Fetch fallback:", e);
+      } finally {
+        this.isLoading = false;
+      }
+    }
+    render() {
+      const status = this._getAqiStatus(this.usAqi);
+      const gaugePercent = Math.min(100, Math.max(0, this.usAqi / 300 * 100));
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-aqi-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-aqi-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot" style="background: ${status.color}; box-shadow: 0 0 0 2px ${status.bg};"></span>
+                            <span class="nexus-widget-title-text" data-aqi-city>${this.resolvedCityName}</span>
+                        </div>
+                        <button type="button" class="nexus-aqi-refresh-btn" data-action="refresh" title="Refresh AQI">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Main Hero: Big AQI & Status Badge -->
+                    <div class="nexus-aqi-hero-block">
+                        <span class="nexus-aqi-hero-label">US Air Quality Index</span>
+                        <div class="nexus-aqi-hero-row">
+                            <span class="nexus-aqi-hero-val" data-aqi-val style="color: ${status.color}">${this.usAqi}</span>
+                            <span class="nexus-aqi-status-chip" data-aqi-chip style="color: ${status.color}; background: ${status.bg}; border-color: ${status.color}40;">
+                                ${status.label}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Linear Spectrum Gauge -->
+                    <div class="nexus-aqi-gauge-box">
+                        <div class="nexus-aqi-spectrum-track">
+                            <div class="nexus-aqi-gauge-marker" data-aqi-marker style="left: ${gaugePercent}%; background: ${status.color};"></div>
+                        </div>
+                        <div class="nexus-aqi-spectrum-labels">
+                            <span>0 Good</span>
+                            <span>100</span>
+                            <span>200</span>
+                            <span>300+ Haz</span>
+                        </div>
+                    </div>
+
+                    <!-- Pollutants Breakdown Grid (PM2.5, PM10, O3, NO2) -->
+                    <div class="nexus-aqi-pollutants-grid">
+                        <div class="nexus-aqi-pollutant-item">
+                            <span class="nexus-aqi-pollutant-label">PM2.5</span>
+                            <span class="nexus-aqi-pollutant-val" data-aqi-pm25>${this.pm25} <small>\xB5g/m\xB3</small></span>
+                        </div>
+                        <div class="nexus-aqi-pollutant-item">
+                            <span class="nexus-aqi-pollutant-label">PM10</span>
+                            <span class="nexus-aqi-pollutant-val" data-aqi-pm10>${this.pm10} <small>\xB5g/m\xB3</small></span>
+                        </div>
+                        <div class="nexus-aqi-pollutant-item">
+                            <span class="nexus-aqi-pollutant-label">Ozone (O\u2083)</span>
+                            <span class="nexus-aqi-pollutant-val" data-aqi-o3>${this.o3} <small>\xB5g/m\xB3</small></span>
+                        </div>
+                        <div class="nexus-aqi-pollutant-item">
+                            <span class="nexus-aqi-pollutant-label">NO\u2082</span>
+                            <span class="nexus-aqi-pollutant-val" data-aqi-no2>${this.no2} <small>\xB5g/m\xB3</small></span>
+                        </div>
+                    </div>
+
+                    <!-- Health Recommendation Footer -->
+                    <div class="nexus-aqi-advice-row">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="${status.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 14 4-4M3.34 17a10 10 0 1 1 17.32 0"/>
+                        </svg>
+                        <span class="nexus-aqi-advice-text" data-aqi-advice>${status.advice}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateUI() {
+      const status = this._getAqiStatus(this.usAqi);
+      const gaugePercent = Math.min(100, Math.max(0, this.usAqi / 300 * 100));
+      const cityEl = this.containerEl.querySelector("[data-aqi-city]");
+      if (cityEl) cityEl.textContent = this.resolvedCityName;
+      const valEl = this.containerEl.querySelector("[data-aqi-val]");
+      if (valEl) {
+        valEl.textContent = this.usAqi;
+        valEl.style.color = status.color;
+      }
+      const chipEl = this.containerEl.querySelector("[data-aqi-chip]");
+      if (chipEl) {
+        chipEl.textContent = status.label;
+        chipEl.style.color = status.color;
+        chipEl.style.background = status.bg;
+        chipEl.style.borderColor = `${status.color}40`;
+      }
+      const markerEl = this.containerEl.querySelector("[data-aqi-marker]");
+      if (markerEl) {
+        markerEl.style.left = `${gaugePercent}%`;
+        markerEl.style.background = status.color;
+      }
+      const pm25El = this.containerEl.querySelector("[data-aqi-pm25]");
+      if (pm25El) pm25El.innerHTML = `${this.pm25} <small>\xB5g/m\xB3</small>`;
+      const pm10El = this.containerEl.querySelector("[data-aqi-pm10]");
+      if (pm10El) pm10El.innerHTML = `${this.pm10} <small>\xB5g/m\xB3</small>`;
+      const o3El = this.containerEl.querySelector("[data-aqi-o3]");
+      if (o3El) o3El.innerHTML = `${this.o3} <small>\xB5g/m\xB3</small>`;
+      const no2El = this.containerEl.querySelector("[data-aqi-no2]");
+      if (no2El) no2El.innerHTML = `${this.no2} <small>\xB5g/m\xB3</small>`;
+      const adviceEl = this.containerEl.querySelector("[data-aqi-advice]");
+      if (adviceEl) adviceEl.textContent = status.advice;
+    }
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      this.containerEl.addEventListener("click", (e) => {
+        const refreshBtn = e.target.closest('[data-action="refresh"]');
+        if (refreshBtn) {
+          refreshBtn.style.opacity = "0.5";
+          setTimeout(() => {
+            refreshBtn.style.opacity = "1";
+          }, 300);
+          this.fetchAqiData();
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/sun_uv_widget.js
+  var SunUvWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "Sun & UV Index";
+      this.city = props.city || props.location || props.name || "Hanoi";
+      this.latitude = parseFloat(props.lat || props.latitude) || 21.0285;
+      this.longitude = parseFloat(props.lon || props.longitude) || 105.8542;
+      this.resolvedCityName = this.city;
+      this.currentUv = 6.2;
+      this.maxUv = 8.5;
+      this.sunriseStr = "05:48";
+      this.sunsetStr = "18:15";
+      this.daylightHours = "12h 27m";
+      this.solarProgress = 0.65;
+      this.isLoading = false;
+      this._eventsBound = false;
+      this.render();
+      this.bindEvents();
+      this.fetchSunUvData();
+    }
+    _getUvSeverity(uv) {
+      if (uv <= 2.9) {
+        return { label: "Low", color: "#10b981", advice: "No protection required." };
+      }
+      if (uv <= 5.9) {
+        return { label: "Moderate", color: "#f59e0b", advice: "Wear sunglasses & SPF 30+." };
+      }
+      if (uv <= 7.9) {
+        return { label: "High", color: "#f97316", advice: "Seek shade during midday & hat." };
+      }
+      if (uv <= 10.9) {
+        return { label: "Very High", color: "#ef4444", advice: "Avoid sun 10AM-4PM. Cover up." };
+      }
+      return { label: "Extreme", color: "#a855f7", advice: "Take full precautions outdoors." };
+    }
+    async fetchSunUvData() {
+      if (this.isLoading) return;
+      this.isLoading = true;
+      try {
+        if (this.city && (!this.latitude || !this.longitude || this.city !== "Hanoi")) {
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(this.city)}&count=1&language=en&format=json`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData && geoData.results && geoData.results.length > 0) {
+              const loc = geoData.results[0];
+              this.latitude = loc.latitude;
+              this.longitude = loc.longitude;
+              this.resolvedCityName = `${loc.name}${loc.country_code ? ", " + loc.country_code : ""}`;
+            }
+          }
+        }
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${this.latitude}&longitude=${this.longitude}&daily=sunrise,sunset,uv_index_max&hourly=uv_index&timezone=auto`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.daily && data.daily.sunrise && data.daily.sunrise.length > 0) {
+            const sunriseDate = new Date(data.daily.sunrise[0]);
+            const sunsetDate = new Date(data.daily.sunset[0]);
+            const now = /* @__PURE__ */ new Date();
+            this.sunriseStr = sunriseDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+            this.sunsetStr = sunsetDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+            const totalMs = sunsetDate - sunriseDate;
+            const elapsedMs = now - sunriseDate;
+            if (totalMs > 0) {
+              const mins = Math.round(totalMs / 6e4);
+              this.daylightHours = `${Math.floor(mins / 60)}h ${mins % 60}m`;
+              this.solarProgress = Math.max(0, Math.min(1, elapsedMs / totalMs));
+            }
+            this.maxUv = parseFloat((data.daily.uv_index_max[0] || 7.5).toFixed(1));
+            if (data.hourly && Array.isArray(data.hourly.uv_index)) {
+              const currentHour = now.getHours();
+              this.currentUv = parseFloat((data.hourly.uv_index[currentHour] || this.maxUv * 0.7).toFixed(1));
+            }
+            this._updateUI();
+          }
+        }
+      } catch (e) {
+        console.warn("[SunUvWidget] Fetch fallback:", e);
+      } finally {
+        this.isLoading = false;
+      }
+    }
+    _generateSolarArcSvg() {
+      const w = 310;
+      const h = 76;
+      const padX = 20;
+      const radius = (w - padX * 2) / 2;
+      const centerX = w / 2;
+      const centerY = h - 6;
+      const arcPath = `M ${padX},${centerY} A ${radius},${radius * 0.75} 0 0,1 ${w - padX},${centerY}`;
+      const angleRad = Math.PI * (1 - this.solarProgress);
+      const sunX = centerX + radius * Math.cos(angleRad);
+      const sunY = centerY - radius * 0.75 * Math.sin(angleRad);
+      const isDaytime = this.solarProgress > 0 && this.solarProgress < 1;
+      return `
+            <svg class="nexus-sunuv-arc-svg" viewBox="0 0 ${w} ${h}" width="100%" height="${h}">
+                <defs>
+                    <linearGradient id="sunArcGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4"/>
+                        <stop offset="50%" stop-color="#facc15" stop-opacity="0.9"/>
+                        <stop offset="100%" stop-color="#f97316" stop-opacity="0.4"/>
+                    </linearGradient>
+                    <filter id="sunGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#facc15" flood-opacity="0.7"/>
+                    </filter>
+                </defs>
+                <!-- Horizon line -->
+                <line x1="${padX - 8}" y1="${centerY}" x2="${w - padX + 8}" y2="${centerY}" stroke="rgba(255, 255, 255, 0.12)" stroke-dasharray="3 3"/>
+                <!-- Sun Arc -->
+                <path d="${arcPath}" fill="none" stroke="url(#sunArcGrad)" stroke-width="2" stroke-dasharray="4 3" />
+                <!-- Sun body icon -->
+                ${isDaytime ? `
+                    <circle cx="${sunX.toFixed(1)}" cy="${sunY.toFixed(1)}" r="6" fill="#facc15" stroke="#ffffff" stroke-width="1.8" filter="url(#sunGlow)"/>
+                ` : `
+                    <circle cx="${padX}" cy="${centerY}" r="4" fill="#38bdf8" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                `}
+            </svg>
+        `;
+    }
+    render() {
+      const severity = this._getUvSeverity(this.currentUv);
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-sunuv-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-sunuv-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot is-running-amber"></span>
+                            <span class="nexus-widget-title-text" data-sunuv-city>${this.resolvedCityName}</span>
+                        </div>
+                        <button type="button" class="nexus-sunuv-refresh-btn" data-action="refresh" title="Refresh UV & Sun">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Main Hero: Big UV Index Display -->
+                    <div class="nexus-sunuv-hero-block">
+                        <span class="nexus-sunuv-hero-label">Current UV Index</span>
+                        <div class="nexus-sunuv-hero-row">
+                            <span class="nexus-sunuv-hero-val" data-sunuv-val style="color: ${severity.color}">${this.currentUv}</span>
+                            <span class="nexus-sunuv-status-chip" data-sunuv-chip style="color: ${severity.color}; background: ${severity.color}22; border-color: ${severity.color}40;">
+                                ${severity.label}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Solar Celestial Arc Tracker -->
+                    <div class="nexus-sunuv-arc-box" data-sunuv-arc-box>
+                        ${this._generateSolarArcSvg()}
+                    </div>
+
+                    <!-- Sunrise, Sunset & Peak UV Breakdown -->
+                    <div class="nexus-sunuv-summary-grid">
+                        <div class="nexus-sunuv-summary-item">
+                            <span class="nexus-sunuv-summary-label">Sunrise</span>
+                            <span class="nexus-sunuv-summary-val" data-sunuv-sunrise>${this.sunriseStr}</span>
+                        </div>
+                        <div class="nexus-sunuv-summary-item">
+                            <span class="nexus-sunuv-summary-label">Sunset</span>
+                            <span class="nexus-sunuv-summary-val" data-sunuv-sunset>${this.sunsetStr}</span>
+                        </div>
+                        <div class="nexus-sunuv-summary-item">
+                            <span class="nexus-sunuv-summary-label">Peak UV</span>
+                            <span class="nexus-sunuv-summary-val" data-sunuv-max>${this.maxUv}</span>
+                        </div>
+                        <div class="nexus-sunuv-summary-item">
+                            <span class="nexus-sunuv-summary-label">Daylight</span>
+                            <span class="nexus-sunuv-summary-val" data-sunuv-daylight>${this.daylightHours}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateUI() {
+      const severity = this._getUvSeverity(this.currentUv);
+      const cityEl = this.containerEl.querySelector("[data-sunuv-city]");
+      if (cityEl) cityEl.textContent = this.resolvedCityName;
+      const valEl = this.containerEl.querySelector("[data-sunuv-val]");
+      if (valEl) {
+        valEl.textContent = this.currentUv;
+        valEl.style.color = severity.color;
+      }
+      const chipEl = this.containerEl.querySelector("[data-sunuv-chip]");
+      if (chipEl) {
+        chipEl.textContent = severity.label;
+        chipEl.style.color = severity.color;
+        chipEl.style.background = `${severity.color}22`;
+        chipEl.style.borderColor = `${severity.color}40`;
+      }
+      const arcBox = this.containerEl.querySelector("[data-sunuv-arc-box]");
+      if (arcBox) arcBox.innerHTML = this._generateSolarArcSvg();
+      const sunriseEl = this.containerEl.querySelector("[data-sunuv-sunrise]");
+      if (sunriseEl) sunriseEl.textContent = this.sunriseStr;
+      const sunsetEl = this.containerEl.querySelector("[data-sunuv-sunset]");
+      if (sunsetEl) sunsetEl.textContent = this.sunsetStr;
+      const maxEl = this.containerEl.querySelector("[data-sunuv-max]");
+      if (maxEl) maxEl.textContent = this.maxUv;
+      const daylightEl = this.containerEl.querySelector("[data-sunuv-daylight]");
+      if (daylightEl) daylightEl.textContent = this.daylightHours;
+    }
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      this.containerEl.addEventListener("click", (e) => {
+        const refreshBtn = e.target.closest('[data-action="refresh"]');
+        if (refreshBtn) {
+          refreshBtn.style.opacity = "0.5";
+          setTimeout(() => {
+            refreshBtn.style.opacity = "1";
+          }, 300);
+          this.fetchSunUvData();
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/bmi_tdee_widget.js
+  var ACTIVITY_MULTIPLIERS = {
+    sedentary: { label: "Sedentary (Desk Job)", factor: 1.2 },
+    light: { label: "Lightly Active (1-3 days/wk)", factor: 1.375 },
+    moderate: { label: "Moderately Active (3-5 days/wk)", factor: 1.55 },
+    active: { label: "Very Active (6-7 days/wk)", factor: 1.725 }
+  };
+  var BmiTdeeWidget = class {
+    constructor(containerEl, props = {}) {
+      this.containerEl = containerEl;
+      this.label = props.label || props.title || "BMI & Daily Calorie (TDEE)";
+      this.heightCm = Math.max(100, Math.min(240, parseFloat(props.height || props.height_cm || 175) || 175));
+      this.weightKg = Math.max(30, Math.min(250, parseFloat(props.weight || props.weight_kg || 70) || 70));
+      this.age = Math.max(12, Math.min(100, parseInt(props.age || 26, 10) || 26));
+      this.gender = (props.gender || "male").toLowerCase() === "female" ? "female" : "male";
+      this.activity = props.activity || "moderate";
+      this.activeTab = "bmi";
+      this._eventsBound = false;
+      this.render();
+      this.bindEvents();
+    }
+    _calculateMetrics() {
+      const heightM = this.heightCm / 100;
+      const bmi = parseFloat((this.weightKg / (heightM * heightM)).toFixed(1));
+      let bmiCategory = { label: "Normal", color: "#10b981", desc: "Healthy Body Weight" };
+      if (bmi < 18.5) {
+        bmiCategory = { label: "Underweight", color: "#38bdf8", desc: "Below Healthy Range" };
+      } else if (bmi >= 25 && bmi < 29.9) {
+        bmiCategory = { label: "Overweight", color: "#f59e0b", desc: "Above Healthy Range" };
+      } else if (bmi >= 30) {
+        bmiCategory = { label: "Obese", color: "#ef4444", desc: "Significantly Elevated" };
+      }
+      let bmr = 10 * this.weightKg + 6.25 * this.heightCm - 5 * this.age;
+      bmr += this.gender === "male" ? 5 : -161;
+      bmr = Math.round(bmr);
+      const factor = ACTIVITY_MULTIPLIERS[this.activity]?.factor || 1.55;
+      const tdee = Math.round(bmr * factor);
+      return {
+        bmi,
+        bmiCategory,
+        bmr,
+        tdee,
+        cutCalories: Math.max(1200, tdee - 500),
+        bulkCalories: tdee + 500
+      };
+    }
+    render() {
+      const data = this._calculateMetrics();
+      const markerPercent = Math.min(100, Math.max(0, (data.bmi - 15) / 25 * 100));
+      this.containerEl.innerHTML = `
+            <div class="nexus-widget">
+                <div class="nexus-sol-bmitdee-card">
+                    <!-- Top Bar -->
+                    <div class="nexus-bmitdee-top-bar">
+                        <div class="nexus-widget-title-badge">
+                            <span class="nexus-widget-status-dot" style="background: ${data.bmiCategory.color}; box-shadow: 0 0 0 2px ${data.bmiCategory.color}33;"></span>
+                            <span class="nexus-widget-title-text">${this.label}</span>
+                        </div>
+                        <div class="nexus-bmitdee-tabs">
+                            <button type="button" class="nexus-bmitdee-tab-btn ${this.activeTab === "bmi" ? "is-active" : ""}" data-tab="bmi">BMI</button>
+                            <button type="button" class="nexus-bmitdee-tab-btn ${this.activeTab === "tdee" ? "is-active" : ""}" data-tab="tdee">Calories</button>
+                        </div>
+                    </div>
+
+                    <!-- Main Hero Display -->
+                    <div class="nexus-bmitdee-hero-block">
+                        ${this.activeTab === "bmi" ? `
+                            <span class="nexus-bmitdee-hero-label">Body Mass Index (BMI)</span>
+                            <div class="nexus-bmitdee-hero-row">
+                                <span class="nexus-bmitdee-hero-val" data-bmi-val style="color: ${data.bmiCategory.color}">${data.bmi}</span>
+                                <span class="nexus-bmitdee-status-chip" data-bmi-chip style="color: ${data.bmiCategory.color}; background: ${data.bmiCategory.color}20; border-color: ${data.bmiCategory.color}40;">
+                                    ${data.bmiCategory.label}
+                                </span>
+                            </div>
+                        ` : `
+                            <span class="nexus-bmitdee-hero-label">Daily Maintenance (TDEE)</span>
+                            <div class="nexus-bmitdee-hero-row">
+                                <span class="nexus-bmitdee-hero-val" data-tdee-val style="color: #38bdf8">${data.tdee}</span>
+                                <span class="nexus-bmitdee-unit-tag">kcal / day</span>
+                            </div>
+                        `}
+                    </div>
+
+                    ${this.activeTab === "bmi" ? `
+                        <!-- Visual BMI Spectrum Bar -->
+                        <div class="nexus-bmitdee-gauge-box">
+                            <div class="nexus-bmitdee-spectrum-track">
+                                <div class="nexus-bmitdee-gauge-marker" data-bmi-marker style="left: ${markerPercent}%; background: ${data.bmiCategory.color};"></div>
+                            </div>
+                            <div class="nexus-bmitdee-spectrum-labels">
+                                <span style="color: #38bdf8">< 18.5</span>
+                                <span style="color: #10b981">18.5 - 24.9</span>
+                                <span style="color: #f59e0b">25 - 29.9</span>
+                                <span style="color: #ef4444">30+</span>
+                            </div>
+                        </div>
+                    ` : `
+                        <!-- Calories Goal Breakdown -->
+                        <div class="nexus-bmitdee-goals-row">
+                            <div class="nexus-bmitdee-goal-item">
+                                <span class="nexus-bmitdee-goal-label">Weight Loss (-500)</span>
+                                <span class="nexus-bmitdee-goal-val is-cyan">${data.cutCalories} <small>kcal</small></span>
+                            </div>
+                            <div class="nexus-bmitdee-goal-item">
+                                <span class="nexus-bmitdee-goal-label">Weight Gain (+500)</span>
+                                <span class="nexus-bmitdee-goal-val is-amber">${data.bulkCalories} <small>kcal</small></span>
+                            </div>
+                        </div>
+                    `}
+
+                    <!-- Interactive Controls (Height & Weight Sliders) -->
+                    <div class="nexus-bmitdee-controls">
+                        <!-- Height Slider -->
+                        <div class="nexus-bmitdee-control-row">
+                            <div class="nexus-bmitdee-control-header">
+                                <span class="nexus-bmitdee-label">Height</span>
+                                <span class="nexus-bmitdee-num-display" data-height-disp>${this.heightCm} cm</span>
+                            </div>
+                            <input type="range" class="nexus-bmitdee-slider" min="120" max="220" step="1" value="${this.heightCm}" data-slider="height" />
+                        </div>
+
+                        <!-- Weight Slider -->
+                        <div class="nexus-bmitdee-control-row">
+                            <div class="nexus-bmitdee-control-header">
+                                <span class="nexus-bmitdee-label">Weight</span>
+                                <span class="nexus-bmitdee-num-display" data-weight-disp>${this.weightKg} kg</span>
+                            </div>
+                            <input type="range" class="nexus-bmitdee-slider" min="40" max="150" step="0.5" value="${this.weightKg}" data-slider="weight" />
+                        </div>
+                    </div>
+
+                    <!-- Footer Details: BMR & Ideal Range -->
+                    <div class="nexus-bmitdee-summary-row">
+                        <div class="nexus-bmitdee-summary-item">
+                            <span class="nexus-bmitdee-summary-label">Basal Metabolic (BMR)</span>
+                            <span class="nexus-bmitdee-summary-val" data-bmr-val>${data.bmr} kcal</span>
+                        </div>
+                        <div class="nexus-bmitdee-summary-item">
+                            <span class="nexus-bmitdee-summary-label">Healthy Weight</span>
+                            <span class="nexus-bmitdee-summary-val" data-ideal-range>${Math.round(18.5 * Math.pow(this.heightCm / 100, 2))} - ${Math.round(24.9 * Math.pow(this.heightCm / 100, 2))} kg</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    _updateMetricsUI() {
+      const data = this._calculateMetrics();
+      const markerPercent = Math.min(100, Math.max(0, (data.bmi - 15) / 25 * 100));
+      const hDisp = this.containerEl.querySelector("[data-height-disp]");
+      if (hDisp) hDisp.textContent = `${this.heightCm} cm`;
+      const wDisp = this.containerEl.querySelector("[data-weight-disp]");
+      if (wDisp) wDisp.textContent = `${this.weightKg} kg`;
+      const bmiVal = this.containerEl.querySelector("[data-bmi-val]");
+      if (bmiVal) {
+        bmiVal.textContent = data.bmi;
+        bmiVal.style.color = data.bmiCategory.color;
+      }
+      const bmiChip = this.containerEl.querySelector("[data-bmi-chip]");
+      if (bmiChip) {
+        bmiChip.textContent = data.bmiCategory.label;
+        bmiChip.style.color = data.bmiCategory.color;
+        bmiChip.style.background = `${data.bmiCategory.color}20`;
+        bmiChip.style.borderColor = `${data.bmiCategory.color}40`;
+      }
+      const marker = this.containerEl.querySelector("[data-bmi-marker]");
+      if (marker) {
+        marker.style.left = `${markerPercent}%`;
+        marker.style.background = data.bmiCategory.color;
+      }
+      const tdeeVal = this.containerEl.querySelector("[data-tdee-val]");
+      if (tdeeVal) tdeeVal.textContent = data.tdee;
+      const bmrVal = this.containerEl.querySelector("[data-bmr-val]");
+      if (bmrVal) bmrVal.textContent = `${data.bmr} kcal`;
+      const idealRange = this.containerEl.querySelector("[data-ideal-range]");
+      if (idealRange) {
+        const minW = Math.round(18.5 * Math.pow(this.heightCm / 100, 2));
+        const maxW = Math.round(24.9 * Math.pow(this.heightCm / 100, 2));
+        idealRange.textContent = `${minW} - ${maxW} kg`;
+      }
+    }
+    bindEvents() {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      this.containerEl.addEventListener("input", (e) => {
+        const slider = e.target.closest("[data-slider]");
+        if (!slider) return;
+        if (slider.dataset.slider === "height") {
+          this.heightCm = parseFloat(slider.value) || 175;
+        } else if (slider.dataset.slider === "weight") {
+          this.weightKg = parseFloat(slider.value) || 70;
+        }
+        this._updateMetricsUI();
+      });
+      this.containerEl.addEventListener("click", (e) => {
+        const tabBtn = e.target.closest("[data-tab]");
+        if (tabBtn) {
+          this.activeTab = tabBtn.dataset.tab;
+          this.render();
+          return;
+        }
+      });
+    }
+  };
+
+  // src/components/widgets/function_plotter_widget.js
+  var SafeMathParser = class {
+    constructor(expr) {
+      this.tokens = this.tokenize(expr);
+      this.pos = 0;
+    }
+    tokenize(expr) {
+      let s = (expr || "").trim().toLowerCase();
+      s = s.replace(/(\d+)\s*([a-zA-Z(])/g, "$1*$2");
+      s = s.replace(/\)\s*([a-zA-Z\d(])/g, ")*$1");
+      const tokens = [];
+      let i = 0;
+      while (i < s.length) {
+        const ch = s[i];
+        if (/\s/.test(ch)) {
+          i++;
+          continue;
+        }
+        if (/\d/.test(ch) || ch === "." && /\d/.test(s[i + 1])) {
+          let numStr = "";
+          while (i < s.length && /[\d.]/.test(s[i])) {
+            numStr += s[i];
+            i++;
+          }
+          tokens.push({ type: "number", value: parseFloat(numStr) });
+          continue;
+        }
+        if (/[a-zA-Z]/.test(ch)) {
+          let id = "";
+          while (i < s.length && /[a-zA-Z0-9_]/.test(s[i])) {
+            id += s[i];
+            i++;
+          }
+          tokens.push({ type: "identifier", value: id });
+          continue;
+        }
+        if (["+", "-", "*", "/", "^", "%", "(", ")", ","].includes(ch)) {
+          tokens.push({ type: "op", value: ch });
+          i++;
+          continue;
+        }
+        i++;
+      }
+      return tokens;
+    }
+    peek() {
+      return this.tokens[this.pos] || null;
+    }
+    consume(expected) {
+      const token = this.peek();
+      if (expected && (!token || token.value !== expected)) {
+        throw new Error(`Expected "${expected}"`);
+      }
+      this.pos++;
+      return token;
+    }
+    parse() {
+      if (!this.tokens.length) {
+        throw new Error("Empty formula");
+      }
+      const ast = this.parseExpression();
+      if (this.pos < this.tokens.length) {
+        throw new Error("Unexpected extra symbols in equation");
+      }
+      return ast;
+    }
+    parseExpression() {
+      return this.parseAddSub();
+    }
+    parseAddSub() {
+      let node = this.parseMulDiv();
+      while (this.peek() && (this.peek().value === "+" || this.peek().value === "-")) {
+        const op = this.consume().value;
+        const right = this.parseMulDiv();
+        node = { type: "binary", op, left: node, right };
+      }
+      return node;
+    }
+    parseMulDiv() {
+      let node = this.parseExponent();
+      while (this.peek() && (this.peek().value === "*" || this.peek().value === "/" || this.peek().value === "%")) {
+        const op = this.consume().value;
+        const right = this.parseExponent();
+        node = { type: "binary", op, left: node, right };
+      }
+      return node;
+    }
+    parseExponent() {
+      let node = this.parseUnary();
+      if (this.peek() && this.peek().value === "^") {
+        this.consume();
+        const right = this.parseExponent();
+        node = { type: "binary", op: "^", left: node, right };
+      }
+      return node;
+    }
+    parseUnary() {
+      if (this.peek() && (this.peek().value === "+" || this.peek().value === "-")) {
+        const op = this.consume().value;
+        const arg = this.parseUnary();
+        return { type: "unary", op, arg };
+      }
+      return this.parsePrimary();
+    }
+    parsePrimary() {
+      const token = this.peek();
+      if (!token) throw new Error("Unexpected end of formula");
+      if (token.type === "number") {
+        this.consume();
+        return { type: "literal", value: token.value };
+      }
+      if (token.type === "identifier") {
+        const name = token.value;
+        this.consume();
+        if (name === "x") {
+          return { type: "variable", name: "x" };
+        }
+        if (name === "pi") {
+          return { type: "literal", value: Math.PI };
+        }
+        if (name === "e") {
+          return { type: "literal", value: Math.E };
+        }
+        if (this.peek() && this.peek().value === "(") {
+          this.consume("(");
+          const args = [];
+          if (this.peek() && this.peek().value !== ")") {
+            args.push(this.parseExpression());
+            while (this.peek() && this.peek().value === ",") {
+              this.consume(",");
+              args.push(this.parseExpression());
+            }
+          }
+          this.consume(")");
+          return { type: "call", name, args };
+        }
+        if (["sin", "cos", "tan", "sqrt", "abs", "exp", "ln", "log"].includes(name)) {
+          const arg = this.parsePrimary();
+          return { type: "call", name, args: [arg] };
+        }
+        return { type: "variable", name };
+      }
+      if (token.value === "(") {
+        this.consume("(");
+        const expr = this.parseExpression();
+        this.consume(")");
+        return expr;
+      }
+      throw new Error(`Unexpected symbol: ${token.value}`);
+    }
+  };
+  function evaluateAst(node, x) {
+    if (!node) return 0;
+    switch (node.type) {
+      case "literal":
+        return node.value;
+      case "variable":
+        return node.name === "x" ? x : 0;
+      case "unary": {
+        const val = evaluateAst(node.arg, x);
+        return node.op === "-" ? -val : val;
+      }
+      case "binary": {
+        const left = evaluateAst(node.left, x);
+        const right = evaluateAst(node.right, x);
+        switch (node.op) {
+          case "+":
+            return left + right;
+          case "-":
+            return left - right;
+          case "*":
+            return left * right;
+          case "/":
+            return right !== 0 ? left / right : NaN;
+          case "%":
+            return left % right;
+          case "^":
+            return Math.pow(left, right);
+          default:
+            return 0;
+        }
+      }
+      case "call": {
+        const args = node.args.map((a) => evaluateAst(a, x));
+        const arg0 = args[0] || 0;
+        const arg1 = args[1] || 0;
+        switch (node.name) {
+          case "sin":
+            return Math.sin(arg0);
+          case "cos":
+            return Math.cos(arg0);
+          case "tan":
+            return Math.tan(arg0);
+          case "asin":
+            return Math.asin(arg0);
+          case "acos":
+            return Math.acos(arg0);
+          case "atan":
+            return Math.atan(arg0);
+          case "sqrt":
+            return arg0 >= 0 ? Math.sqrt(arg0) : NaN;
+          case "cbrt":
+            return Math.cbrt(arg0);
+          case "abs":
+            return Math.abs(arg0);
+          case "exp":
+            return Math.exp(arg0);
+          case "ln":
+          case "log":
+            return arg0 > 0 ? Math.log(arg0) : NaN;
+          case "log10":
+            return arg0 > 0 ? Math.log10(arg0) : NaN;
+          case "floor":
+            return Math.floor(arg0);
+          case "ceil":
+            return Math.ceil(arg0);
+          case "round":
+            return Math.round(arg0);
+          case "min":
+            return Math.min(...args);
+          case "max":
+            return Math.max(...args);
+          case "pow":
+            return Math.pow(arg0, arg1);
+          default:
+            return NaN;
+        }
+      }
+      default:
+        return 0;
+    }
+  }
+  var FunctionPlotterWidget = class {
+    constructor(container2, props = {}) {
+      this.container = container2;
+      this.props = props;
+      this.expr = props.expr || props.fn || props.func || props.formula || props.equation || "x^2 - 4*x + 3";
+      this.xmin = props.xmin !== void 0 ? parseFloat(props.xmin) : -6;
+      this.xmax = props.xmax !== void 0 ? parseFloat(props.xmax) : 6;
+      this.ymin = props.ymin !== void 0 ? parseFloat(props.ymin) : -5;
+      this.ymax = props.ymax !== void 0 ? parseFloat(props.ymax) : 7;
+      this.hasExplicitRange = props.xmin !== void 0 || props.ymin !== void 0;
+      this.ast = null;
+      this.hoverPt = null;
+      this.errorMsg = null;
+      this.viewWidth = 370;
+      this.viewHeight = 230;
+      this.init();
+    }
+    init() {
+      this._compileFunction(this.expr);
+      if (!this.hasExplicitRange) {
+        this._autoFitRange();
+      }
+      this._renderBase();
+      this._draw();
+    }
+    _autoFitRange() {
+      if (!this.ast) return;
+      const samples = [];
+      const step = 0.2;
+      for (let x = -8; x <= 8; x += step) {
+        try {
+          const y = evaluateAst(this.ast, x);
+          if (!isNaN(y) && isFinite(y) && Math.abs(y) < 1e5) {
+            samples.push({ x, y });
+          }
+        } catch (_) {
+        }
+      }
+      if (samples.length < 5) return;
+      const yVals = samples.map((s) => s.y).sort((a, b) => a - b);
+      let minY = yVals[0];
+      let maxY = yVals[yVals.length - 1];
+      if (yVals.length > 20) {
+        const p05 = yVals[Math.floor(yVals.length * 0.05)];
+        const p95 = yVals[Math.floor(yVals.length * 0.95)];
+        if (Math.abs(minY) > Math.abs(p05) * 5) minY = p05;
+        if (Math.abs(maxY) > Math.abs(p95) * 5) maxY = p95;
+      }
+      if (minY < -150) minY = -80;
+      if (maxY > 150) maxY = 80;
+      if (minY > 0 && minY < 4) minY = -2;
+      if (maxY < 0 && maxY > -4) maxY = 2;
+      const ySpan = Math.max(maxY - minY, 5);
+      this.ymin = Math.floor(minY - ySpan * 0.15);
+      this.ymax = Math.ceil(maxY + ySpan * 0.15);
+      this.xmin = -7;
+      this.xmax = 7;
+    }
+    _compileFunction(exprStr, isSilent = false) {
+      if (!exprStr || !exprStr.trim()) {
+        if (!isSilent) this.errorMsg = "Please enter a valid function.";
+        return false;
+      }
+      try {
+        const parser = new SafeMathParser(exprStr);
+        const ast = parser.parse();
+        evaluateAst(ast, 1);
+        this.ast = ast;
+        this.expr = exprStr;
+        this.errorMsg = null;
+        return true;
+      } catch (e) {
+        if (!isSilent) {
+          console.warn("[FunctionPlotterWidget] Parse error:", e);
+          this.errorMsg = "Syntax error in equation.";
+        }
+        return false;
+      }
+    }
+    _renderBase() {
+      this.container.innerHTML = `
+            <div class="nexus-sol-plotter-card">
+                <div class="nexus-plotter-header">
+                    <div class="nexus-plotter-brand">
+                        <div class="nexus-plotter-icon-badge">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12h3l3-9 6 18 3-9h3"></path>
+                            </svg>
+                        </div>
+                        <div class="nexus-plotter-brand-text">
+                            <span class="nexus-plotter-title">Function Grapher</span>
+                            <span class="nexus-plotter-subtitle">Analytical 2D Vector Curve</span>
+                        </div>
+                    </div>
+                    <div class="nexus-plotter-toolbar">
+                        <button class="nexus-plotter-tool-btn" id="nexus-plotter-autofit" title="Auto Fit (T\u1EF1 \u0111\u1ED9ng thu ph\xF3ng)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <polyline points="9 21 3 21 3 15"></polyline>
+                                <line x1="21" y1="3" x2="14" y2="10"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                        </button>
+                        <button class="nexus-plotter-tool-btn" id="nexus-plotter-zoom-in" title="Zoom In">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <button class="nexus-plotter-tool-btn" id="nexus-plotter-zoom-out" title="Zoom Out">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <button class="nexus-plotter-tool-btn" id="nexus-plotter-reset" title="Reset View">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="nexus-plotter-input-container">
+                    <div class="nexus-plotter-fn-prefix">
+                        <span>f(x) =</span>
+                    </div>
+                    <input type="text" class="nexus-plotter-formula-input" id="nexus-plotter-input" value="${this._escapeHtml(this.expr)}" placeholder="e.g. x^2 - 4*x + 3, sin(x)">
+                    <button class="nexus-plotter-submit-btn" id="nexus-plotter-plot-btn" title="Plot Function">
+                        <span>Plot</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="nexus-plotter-presets-wrapper">
+                    <span class="nexus-plotter-presets-tag">Presets</span>
+                    <div class="nexus-plotter-presets-scroll">
+                        <button class="nexus-plotter-chip" data-expr="x^2 - 4*x + 3">x\xB2 \u2212 4x + 3</button>
+                        <button class="nexus-plotter-chip" data-expr="x^2 - 4*x - 12">x\xB2 \u2212 4x \u2212 12</button>
+                        <button class="nexus-plotter-chip" data-expr="sin(x)">sin(x)</button>
+                        <button class="nexus-plotter-chip" data-expr="cos(2*x)">cos(2x)</button>
+                        <button class="nexus-plotter-chip" data-expr="x^3 - 3*x">x\xB3 \u2212 3x</button>
+                        <button class="nexus-plotter-chip" data-expr="1/x">1/x</button>
+                        <button class="nexus-plotter-chip" data-expr="exp(-x^2)">e^(\u2212x\xB2)</button>
+                    </div>
+                </div>
+
+                <div class="nexus-plotter-viewport" id="nexus-plotter-viewport" style="cursor: grab;">
+                    <svg class="nexus-plotter-svg" id="nexus-plotter-svg" viewBox="0 0 ${this.viewWidth} ${this.viewHeight}">
+                        <!-- SVG Elements rendered dynamically -->
+                    </svg>
+                    <div class="nexus-plotter-error-overlay" id="nexus-plotter-error" style="display: ${this.errorMsg ? "block" : "none"};">${this._escapeHtml(this.errorMsg || "")}</div>
+                    <div class="nexus-plotter-tooltip" id="nexus-plotter-coords" style="display: none;"></div>
+                </div>
+
+                <div class="nexus-plotter-footer-bar">
+                    <div class="nexus-plotter-range-chip">
+                        <span class="nexus-plotter-range-axis">X:</span>
+                        <span class="nexus-plotter-range-val" id="nexus-plotter-xrange">[${this.xmin.toFixed(1)}, ${this.xmax.toFixed(1)}]</span>
+                    </div>
+                    <div class="nexus-plotter-range-chip">
+                        <span class="nexus-plotter-range-axis">Y:</span>
+                        <span class="nexus-plotter-range-val" id="nexus-plotter-yrange">[${this.ymin.toFixed(1)}, ${this.ymax.toFixed(1)}]</span>
+                    </div>
+                </div>
+            </div>
+        `;
+      this._attachEvents();
+    }
+    _updateRanges() {
+      const xEl = this.container.querySelector("#nexus-plotter-xrange");
+      const yEl = this.container.querySelector("#nexus-plotter-yrange");
+      if (xEl) xEl.textContent = `[${this.xmin.toFixed(1)}, ${this.xmax.toFixed(1)}]`;
+      if (yEl) yEl.textContent = `[${this.ymin.toFixed(1)}, ${this.ymax.toFixed(1)}]`;
+    }
+    _showError(msg) {
+      const errEl = this.container.querySelector("#nexus-plotter-error");
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = "block";
+      }
+    }
+    _hideError() {
+      const errEl = this.container.querySelector("#nexus-plotter-error");
+      if (errEl) {
+        errEl.style.display = "none";
+      }
+    }
+    _attachEvents() {
+      const input = this.container.querySelector("#nexus-plotter-input");
+      const plotBtn = this.container.querySelector("#nexus-plotter-plot-btn");
+      const autoFitBtn = this.container.querySelector("#nexus-plotter-autofit");
+      const zoomIn = this.container.querySelector("#nexus-plotter-zoom-in");
+      const zoomOut = this.container.querySelector("#nexus-plotter-zoom-out");
+      const resetBtn = this.container.querySelector("#nexus-plotter-reset");
+      const presetBtns = this.container.querySelectorAll(".nexus-plotter-chip");
+      const viewport = this.container.querySelector("#nexus-plotter-viewport");
+      if (input && input.addEventListener) {
+        input.addEventListener("input", () => {
+          const val = input.value;
+          if (this._compileFunction(val, true)) {
+            this._hideError();
+            this._autoFitRange();
+            this._updateRanges();
+            this._draw();
+          }
+        });
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            if (this._compileFunction(input.value, false)) {
+              this._hideError();
+              this._autoFitRange();
+              this._updateRanges();
+              this._draw();
+            } else if (this.errorMsg) {
+              this._showError(this.errorMsg);
+            }
+          }
+        });
+      }
+      if (plotBtn && plotBtn.addEventListener) {
+        plotBtn.addEventListener("click", () => {
+          if (input) {
+            if (this._compileFunction(input.value, false)) {
+              this._hideError();
+              this._autoFitRange();
+              this._updateRanges();
+              this._draw();
+            } else if (this.errorMsg) {
+              this._showError(this.errorMsg);
+            }
+          }
+        });
+      }
+      if (autoFitBtn && autoFitBtn.addEventListener) {
+        autoFitBtn.addEventListener("click", () => {
+          this._autoFitRange();
+          this._updateRanges();
+          this._draw();
+        });
+      }
+      if (zoomIn && zoomIn.addEventListener) {
+        zoomIn.addEventListener("click", () => {
+          const xSpan = (this.xmax - this.xmin) * 0.25;
+          const ySpan = (this.ymax - this.ymin) * 0.25;
+          this.xmin += xSpan;
+          this.xmax -= xSpan;
+          this.ymin += ySpan;
+          this.ymax -= ySpan;
+          this._updateRanges();
+          this._draw();
+        });
+      }
+      if (zoomOut && zoomOut.addEventListener) {
+        zoomOut.addEventListener("click", () => {
+          const xSpan = (this.xmax - this.xmin) * 0.33;
+          const ySpan = (this.ymax - this.ymin) * 0.33;
+          this.xmin -= xSpan;
+          this.xmax += xSpan;
+          this.ymin += ySpan;
+          this.ymax += ySpan;
+          this._updateRanges();
+          this._draw();
+        });
+      }
+      if (resetBtn && resetBtn.addEventListener) {
+        resetBtn.addEventListener("click", () => {
+          this.xmin = -6;
+          this.xmax = 6;
+          this.ymin = -5;
+          this.ymax = 7;
+          this._updateRanges();
+          this._draw();
+        });
+      }
+      if (presetBtns) {
+        presetBtns.forEach((btn) => {
+          if (btn && btn.addEventListener) {
+            btn.addEventListener("click", () => {
+              const expr = btn.dataset ? btn.dataset.expr : null;
+              if (expr) {
+                if (input) input.value = expr;
+                this._compileFunction(expr, false);
+                this._hideError();
+                this._autoFitRange();
+                this._updateRanges();
+                this._draw();
+              }
+            });
+          }
+        });
+      }
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initXMin = 0, initXMax = 0, initYMin = 0, initYMax = 0;
+      if (viewport && viewport.addEventListener) {
+        viewport.addEventListener("mousedown", (e) => {
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          initXMin = this.xmin;
+          initXMax = this.xmax;
+          initYMin = this.ymin;
+          initYMax = this.ymax;
+          viewport.style.cursor = "grabbing";
+        });
+        if (typeof window !== "undefined") {
+          window.addEventListener("mousemove", (e) => {
+            if (isDragging) {
+              const dx = e.clientX - startX;
+              const dy = e.clientY - startY;
+              const rect2 = viewport.getBoundingClientRect();
+              const w = rect2.width || this.viewWidth;
+              const h = rect2.height || this.viewHeight;
+              const xRange = initXMax - initXMin;
+              const yRange = initYMax - initYMin;
+              const dXUnits = dx / w * xRange;
+              const dYUnits = dy / h * yRange;
+              this.xmin = initXMin - dXUnits;
+              this.xmax = initXMax - dXUnits;
+              this.ymin = initYMin + dYUnits;
+              this.ymax = initYMax + dYUnits;
+              this._updateRanges();
+              this._draw();
+              return;
+            }
+            if (!viewport.getBoundingClientRect) return;
+            const rect = viewport.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+              return;
+            }
+            const displayW = rect.width || this.viewWidth;
+            const mouseX = e.clientX - rect.left;
+            const xVal = this.xmin + mouseX / displayW * (this.xmax - this.xmin);
+            if (this.ast) {
+              try {
+                const yVal = evaluateAst(this.ast, xVal);
+                if (!isNaN(yVal) && isFinite(yVal)) {
+                  const coordsBox = this.container.querySelector("#nexus-plotter-coords");
+                  if (coordsBox) {
+                    coordsBox.style.display = "flex";
+                    coordsBox.innerHTML = `<span>(<b>${xVal.toFixed(2)}</b>, <b>${yVal.toFixed(2)}</b>)</span>`;
+                  }
+                  this.hoverPt = { x: xVal, y: yVal };
+                  this._draw();
+                  return;
+                }
+              } catch (_) {
+              }
+            }
+          });
+          window.addEventListener("mouseup", () => {
+            if (isDragging) {
+              isDragging = false;
+              viewport.style.cursor = "grab";
+            }
+          });
+        }
+        viewport.addEventListener("wheel", (e) => {
+          e.preventDefault();
+          const zoomFactor = e.deltaY < 0 ? 0.85 : 1.18;
+          const rect = viewport.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const w = rect.width || this.viewWidth;
+          const h = rect.height || this.viewHeight;
+          const mouseXVal = this.xmin + mouseX / w * (this.xmax - this.xmin);
+          const mouseYVal = this.ymin + (h - mouseY) / h * (this.ymax - this.ymin);
+          this.xmin = mouseXVal + (this.xmin - mouseXVal) * zoomFactor;
+          this.xmax = mouseXVal + (this.xmax - mouseXVal) * zoomFactor;
+          this.ymin = mouseYVal + (this.ymin - mouseYVal) * zoomFactor;
+          this.ymax = mouseYVal + (this.ymax - mouseYVal) * zoomFactor;
+          this._updateRanges();
+          this._draw();
+        }, { passive: false });
+        viewport.addEventListener("mouseleave", () => {
+          if (!isDragging) {
+            const coordsBox = this.container.querySelector("#nexus-plotter-coords");
+            if (coordsBox) coordsBox.style.display = "none";
+            this.hoverPt = null;
+            this._draw();
+          }
+        });
+      }
+    }
+    _draw() {
+      const svg = this.container.querySelector("#nexus-plotter-svg");
+      if (!svg) return;
+      const w = this.viewWidth;
+      const h = this.viewHeight;
+      const toScreenX = (x) => (x - this.xmin) / (this.xmax - this.xmin) * w;
+      const toScreenY = (y) => h - (y - this.ymin) / (this.ymax - this.ymin) * h;
+      const getNiceStep = (span, maxTicks) => {
+        if (span <= 0 || !isFinite(span)) return 1;
+        const rawStep = span / Math.max(maxTicks, 2);
+        const power = Math.floor(Math.log10(rawStep));
+        const magnitude = Math.pow(10, power);
+        const residual = rawStep / magnitude;
+        let niceStep;
+        if (residual <= 1.5) {
+          niceStep = 1 * magnitude;
+        } else if (residual <= 3.5) {
+          niceStep = 2 * magnitude;
+        } else if (residual <= 7.5) {
+          niceStep = 5 * magnitude;
+        } else {
+          niceStep = 10 * magnitude;
+        }
+        return niceStep;
+      };
+      const xSpan = this.xmax - this.xmin;
+      const ySpan = this.ymax - this.ymin;
+      const xGridStep = getNiceStep(xSpan, 5);
+      const yGridStep = getNiceStep(ySpan, 4);
+      const formatTickVal = (val) => {
+        const rounded = parseFloat(val.toFixed(6));
+        if (Math.abs(rounded) >= 1e5) {
+          return (rounded / 1e3).toFixed(0) + "k";
+        }
+        return rounded.toString();
+      };
+      let gridLinesSvg = "";
+      let labelsSvg = "";
+      const firstX = Math.ceil(this.xmin / xGridStep) * xGridStep;
+      for (let x = firstX; x <= this.xmax + 1e-7; x += xGridStep) {
+        const sx = toScreenX(x).toFixed(2);
+        gridLinesSvg += `<line x1="${sx}" y1="0" x2="${sx}" y2="${h}" stroke="rgba(255,255,255,0.06)" stroke-width="1" shape-rendering="crispEdges" />`;
+      }
+      const firstY = Math.ceil(this.ymin / yGridStep) * yGridStep;
+      for (let y = firstY; y <= this.ymax + 1e-7; y += yGridStep) {
+        const sy = toScreenY(y).toFixed(2);
+        gridLinesSvg += `<line x1="0" y1="${sy}" x2="${w}" y2="${sy}" stroke="rgba(255,255,255,0.06)" stroke-width="1" shape-rendering="crispEdges" />`;
+      }
+      const y0 = toScreenY(0);
+      const x0 = toScreenX(0);
+      let axesSvg = "";
+      if (this.ymin <= 0 && this.ymax >= 0) {
+        axesSvg += `<line x1="0" y1="${y0.toFixed(2)}" x2="${w}" y2="${y0.toFixed(2)}" stroke="rgba(255,255,255,0.32)" stroke-width="1.5" shape-rendering="crispEdges" />`;
+      }
+      if (this.xmin <= 0 && this.xmax >= 0) {
+        axesSvg += `<line x1="${x0.toFixed(2)}" y1="0" x2="${x0.toFixed(2)}" y2="${h}" stroke="rgba(255,255,255,0.32)" stroke-width="1.5" shape-rendering="crispEdges" />`;
+      }
+      for (let x = firstX; x <= this.xmax + 1e-7; x += xGridStep) {
+        if (Math.abs(x) < 1e-5) continue;
+        const sx = toScreenX(x);
+        if (sx > 20 && sx < w - 20) {
+          const labelY = this.ymin <= 0 && this.ymax >= 0 ? Math.min(Math.max(y0 + 12, 12), h - 6) : h - 6;
+          labelsSvg += `<text x="${sx.toFixed(2)}" y="${labelY.toFixed(2)}" fill="rgba(255,255,255,0.55)" font-size="10" font-family="Inter, sans-serif" font-weight="500" text-anchor="middle">${formatTickVal(x)}</text>`;
+        }
+      }
+      for (let y = firstY; y <= this.ymax + 1e-7; y += yGridStep) {
+        if (Math.abs(y) < 1e-5) continue;
+        const sy = toScreenY(y);
+        if (sy > 12 && sy < h - 12) {
+          const labelX = this.xmin <= 0 && this.xmax >= 0 ? Math.min(Math.max(x0 - 6, 25), w - 6) : 25;
+          labelsSvg += `<text x="${labelX.toFixed(2)}" y="${(sy + 3).toFixed(2)}" fill="rgba(255,255,255,0.55)" font-size="10" font-family="Inter, sans-serif" font-weight="500" text-anchor="end">${formatTickVal(y)}</text>`;
+        }
+      }
+      let curveSvg = "";
+      if (this.ast) {
+        let pathD = "";
+        let isDrawing = false;
+        const steps = 600;
+        const clipYMin = -100;
+        const clipYMax = h + 100;
+        for (let i = 0; i <= steps; i++) {
+          const x = this.xmin + i / steps * (this.xmax - this.xmin);
+          try {
+            const y = evaluateAst(this.ast, x);
+            if (typeof y !== "number" || isNaN(y) || !isFinite(y)) {
+              isDrawing = false;
+              continue;
+            }
+            const sx = toScreenX(x);
+            const rawSy = toScreenY(y);
+            const sy = Math.max(clipYMin, Math.min(clipYMax, rawSy));
+            if (!isDrawing) {
+              pathD += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+              isDrawing = true;
+            } else {
+              pathD += `L ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+            }
+          } catch (_) {
+            isDrawing = false;
+          }
+        }
+        if (pathD) {
+          curveSvg = `<path d="${pathD}" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />`;
+        }
+      }
+      let hoverSvg = "";
+      if (this.hoverPt) {
+        const hx = toScreenX(this.hoverPt.x).toFixed(2);
+        const hy = toScreenY(this.hoverPt.y).toFixed(2);
+        const targetY0 = (y0 >= 0 && y0 <= h ? y0 : h).toFixed(2);
+        const targetX0 = (x0 >= 0 && x0 <= w ? x0 : 0).toFixed(2);
+        hoverSvg = `
+                <g class="nexus-plotter-hover-group">
+                    <line x1="${hx}" y1="${hy}" x2="${hx}" y2="${targetY0}" stroke="rgba(245, 158, 11, 0.45)" stroke-dasharray="3,3" stroke-width="1" />
+                    <line x1="${hx}" y1="${hy}" x2="${targetX0}" y2="${hy}" stroke="rgba(245, 158, 11, 0.45)" stroke-dasharray="3,3" stroke-width="1" />
+                    <circle cx="${hx}" cy="${hy}" r="6" fill="rgba(245, 158, 11, 0.25)" />
+                    <circle cx="${hx}" cy="${hy}" r="3.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5" />
+                </g>
+            `;
+      }
+      svg.innerHTML = `
+            ${gridLinesSvg}
+            ${axesSvg}
+            ${labelsSvg}
+            ${curveSvg}
+            ${hoverSvg}
+        `;
+    }
+    _escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  };
+
+  // src/components/widgets/periodic_table_widget.js
+  var ELEMENTS_DATA = [
+    // Period 1
+    { number: 1, symbol: "H", name: "Hydrogen", mass: "1.008", category: "nonmetal", period: 1, group: 1, phase: "Gas", config: "1s\xB9", electro: "2.20", melt: "-259.1\xB0C", boil: "-252.9\xB0C" },
+    { number: 2, symbol: "He", name: "Helium", mass: "4.0026", category: "noble_gas", period: 1, group: 18, phase: "Gas", config: "1s\xB2", electro: "N/A", melt: "-272.2\xB0C", boil: "-268.9\xB0C" },
+    // Period 2
+    { number: 3, symbol: "Li", name: "Lithium", mass: "6.94", category: "alkali", period: 2, group: 1, phase: "Solid", config: "[He] 2s\xB9", electro: "0.98", melt: "180.5\xB0C", boil: "1342\xB0C" },
+    { number: 4, symbol: "Be", name: "Beryllium", mass: "9.0122", category: "alkaline_earth", period: 2, group: 2, phase: "Solid", config: "[He] 2s\xB2", electro: "1.57", melt: "1287\xB0C", boil: "2469\xB0C" },
+    { number: 5, symbol: "B", name: "Boron", mass: "10.81", category: "metalloid", period: 2, group: 13, phase: "Solid", config: "[He] 2s\xB2 2p\xB9", electro: "2.04", melt: "2076\xB0C", boil: "3927\xB0C" },
+    { number: 6, symbol: "C", name: "Carbon", mass: "12.011", category: "nonmetal", period: 2, group: 14, phase: "Solid", config: "[He] 2s\xB2 2p\xB2", electro: "2.55", melt: "3550\xB0C", boil: "4827\xB0C" },
+    { number: 7, symbol: "N", name: "Nitrogen", mass: "14.007", category: "nonmetal", period: 2, group: 15, phase: "Gas", config: "[He] 2s\xB2 2p\xB3", electro: "3.04", melt: "-210.0\xB0C", boil: "-195.8\xB0C" },
+    { number: 8, symbol: "O", name: "Oxygen", mass: "15.999", category: "nonmetal", period: 2, group: 16, phase: "Gas", config: "[He] 2s\xB2 2p\u2074", electro: "3.44", melt: "-218.8\xB0C", boil: "-183.0\xB0C" },
+    { number: 9, symbol: "F", name: "Fluorine", mass: "18.998", category: "halogen", period: 2, group: 17, phase: "Gas", config: "[He] 2s\xB2 2p\u2075", electro: "3.98", melt: "-219.6\xB0C", boil: "-188.1\xB0C" },
+    { number: 10, symbol: "Ne", name: "Neon", mass: "20.180", category: "noble_gas", period: 2, group: 18, phase: "Gas", config: "[He] 2s\xB2 2p\u2076", electro: "N/A", melt: "-248.6\xB0C", boil: "-246.1\xB0C" },
+    // Period 3
+    { number: 11, symbol: "Na", name: "Sodium", mass: "22.990", category: "alkali", period: 3, group: 1, phase: "Solid", config: "[Ne] 3s\xB9", electro: "0.93", melt: "97.8\xB0C", boil: "883\xB0C" },
+    { number: 12, symbol: "Mg", name: "Magnesium", mass: "24.305", category: "alkaline_earth", period: 3, group: 2, phase: "Solid", config: "[Ne] 3s\xB2", electro: "1.31", melt: "650\xB0C", boil: "1090\xB0C" },
+    { number: 13, symbol: "Al", name: "Aluminium", mass: "26.982", category: "post_transition", period: 3, group: 13, phase: "Solid", config: "[Ne] 3s\xB2 3p\xB9", electro: "1.61", melt: "660.3\xB0C", boil: "2470\xB0C" },
+    { number: 14, symbol: "Si", name: "Silicon", mass: "28.085", category: "metalloid", period: 3, group: 14, phase: "Solid", config: "[Ne] 3s\xB2 3p\xB2", electro: "1.90", melt: "1414\xB0C", boil: "3265\xB0C" },
+    { number: 15, symbol: "P", name: "Phosphorus", mass: "30.974", category: "nonmetal", period: 3, group: 15, phase: "Solid", config: "[Ne] 3s\xB2 3p\xB3", electro: "2.19", melt: "44.2\xB0C", boil: "280.5\xB0C" },
+    { number: 16, symbol: "S", name: "Sulfur", mass: "32.06", category: "nonmetal", period: 3, group: 16, phase: "Solid", config: "[Ne] 3s\xB2 3p\u2074", electro: "2.58", melt: "115.2\xB0C", boil: "444.6\xB0C" },
+    { number: 17, symbol: "Cl", name: "Chlorine", mass: "35.45", category: "halogen", period: 3, group: 17, phase: "Gas", config: "[Ne] 3s\xB2 3p\u2075", electro: "3.16", melt: "-101.5\xB0C", boil: "-34.0\xB0C" },
+    { number: 18, symbol: "Ar", name: "Argon", mass: "39.948", category: "noble_gas", period: 3, group: 18, phase: "Gas", config: "[Ne] 3s\xB2 3p\u2076", electro: "N/A", melt: "-189.3\xB0C", boil: "-185.8\xB0C" },
+    // Period 4
+    { number: 19, symbol: "K", name: "Potassium", mass: "39.098", category: "alkali", period: 4, group: 1, phase: "Solid", config: "[Ar] 4s\xB9", electro: "0.82", melt: "63.5\xB0C", boil: "759\xB0C" },
+    { number: 20, symbol: "Ca", name: "Calcium", mass: "40.078", category: "alkaline_earth", period: 4, group: 2, phase: "Solid", config: "[Ar] 4s\xB2", electro: "1.00", melt: "842\xB0C", boil: "1484\xB0C" },
+    { number: 21, symbol: "Sc", name: "Scandium", mass: "44.956", category: "transition", period: 4, group: 3, phase: "Solid", config: "[Ar] 3d\xB9 4s\xB2", electro: "1.36", melt: "1541\xB0C", boil: "2836\xB0C" },
+    { number: 22, symbol: "Ti", name: "Titanium", mass: "47.867", category: "transition", period: 4, group: 4, phase: "Solid", config: "[Ar] 3d\xB2 4s\xB2", electro: "1.54", melt: "1668\xB0C", boil: "3287\xB0C" },
+    { number: 23, symbol: "V", name: "Vanadium", mass: "50.942", category: "transition", period: 4, group: 5, phase: "Solid", config: "[Ar] 3d\xB3 4s\xB2", electro: "1.63", melt: "1910\xB0C", boil: "3407\xB0C" },
+    { number: 24, symbol: "Cr", name: "Chromium", mass: "51.996", category: "transition", period: 4, group: 6, phase: "Solid", config: "[Ar] 3d\u2075 4s\xB9", electro: "1.66", melt: "1907\xB0C", boil: "2671\xB0C" },
+    { number: 25, symbol: "Mn", name: "Manganese", mass: "54.938", category: "transition", period: 4, group: 7, phase: "Solid", config: "[Ar] 3d\u2075 4s\xB2", electro: "1.55", melt: "1246\xB0C", boil: "2061\xB0C" },
+    { number: 26, symbol: "Fe", name: "Iron", mass: "55.845", category: "transition", period: 4, group: 8, phase: "Solid", config: "[Ar] 3d\u2076 4s\xB2", electro: "1.83", melt: "1538\xB0C", boil: "2862\xB0C" },
+    { number: 27, symbol: "Co", name: "Cobalt", mass: "58.933", category: "transition", period: 4, group: 9, phase: "Solid", config: "[Ar] 3d\u2077 4s\xB2", electro: "1.88", melt: "1495\xB0C", boil: "2927\xB0C" },
+    { number: 28, symbol: "Ni", name: "Nickel", mass: "58.693", category: "transition", period: 4, group: 10, phase: "Solid", config: "[Ar] 3d\u2078 4s\xB2", electro: "1.91", melt: "1455\xB0C", boil: "2913\xB0C" },
+    { number: 29, symbol: "Cu", name: "Copper", mass: "63.546", category: "transition", period: 4, group: 11, phase: "Solid", config: "[Ar] 3d\xB9\u2070 4s\xB9", electro: "1.90", melt: "1085\xB0C", boil: "2562\xB0C" },
+    { number: 30, symbol: "Zn", name: "Zinc", mass: "65.38", category: "transition", period: 4, group: 12, phase: "Solid", config: "[Ar] 3d\xB9\u2070 4s\xB2", electro: "1.65", melt: "419.5\xB0C", boil: "907\xB0C" },
+    { number: 31, symbol: "Ga", name: "Gallium", mass: "69.723", category: "post_transition", period: 4, group: 13, phase: "Solid", config: "[Ar] 3d\xB9\u2070 4s\xB2 4p\xB9", electro: "1.81", melt: "29.76\xB0C", boil: "2400\xB0C" },
+    { number: 32, symbol: "Ge", name: "Germanium", mass: "72.630", category: "metalloid", period: 4, group: 14, phase: "Solid", config: "[Ar] 3d\xB9\u2070 4s\xB2 4p\xB2", electro: "2.01", melt: "938.3\xB0C", boil: "2833\xB0C" },
+    { number: 33, symbol: "As", name: "Arsenic", mass: "74.922", category: "metalloid", period: 4, group: 15, phase: "Solid", config: "[Ar] 3d\xB9\u2070 4s\xB2 4p\xB3", electro: "2.18", melt: "817\xB0C", boil: "614\xB0C" },
+    { number: 34, symbol: "Se", name: "Selenium", mass: "78.971", category: "nonmetal", period: 4, group: 16, phase: "Solid", config: "[Ar] 3d\xB9\u2070 4s\xB2 4p\u2074", electro: "2.55", melt: "221\xB0C", boil: "685\xB0C" },
+    { number: 35, symbol: "Br", name: "Bromine", mass: "79.904", category: "halogen", period: 4, group: 17, phase: "Liquid", config: "[Ar] 3d\xB9\u2070 4s\xB2 4p\u2075", electro: "2.96", melt: "-7.2\xB0C", boil: "58.8\xB0C" },
+    { number: 36, symbol: "Kr", name: "Krypton", mass: "83.798", category: "noble_gas", period: 4, group: 18, phase: "Gas", config: "[Ar] 3d\xB9\u2070 4s\xB2 4p\u2076", electro: "3.00", melt: "-157.4\xB0C", boil: "-153.2\xB0C" },
+    // Period 5
+    { number: 37, symbol: "Rb", name: "Rubidium", mass: "85.468", category: "alkali", period: 5, group: 1, phase: "Solid", config: "[Kr] 5s\xB9", electro: "0.82", melt: "39.3\xB0C", boil: "688\xB0C" },
+    { number: 38, symbol: "Sr", name: "Strontium", mass: "87.62", category: "alkaline_earth", period: 5, group: 2, phase: "Solid", config: "[Kr] 5s\xB2", electro: "0.95", melt: "777\xB0C", boil: "1382\xB0C" },
+    { number: 39, symbol: "Y", name: "Yttrium", mass: "88.906", category: "transition", period: 5, group: 3, phase: "Solid", config: "[Kr] 4d\xB9 5s\xB2", electro: "1.22", melt: "1526\xB0C", boil: "3345\xB0C" },
+    { number: 40, symbol: "Zr", name: "Zirconium", mass: "91.224", category: "transition", period: 5, group: 4, phase: "Solid", config: "[Kr] 4d\xB2 5s\xB2", electro: "1.33", melt: "1855\xB0C", boil: "4409\xB0C" },
+    { number: 41, symbol: "Nb", name: "Niobium", mass: "92.906", category: "transition", period: 5, group: 5, phase: "Solid", config: "[Kr] 4d\u2074 5s\xB9", electro: "1.6", melt: "2477\xB0C", boil: "4744\xB0C" },
+    { number: 42, symbol: "Mo", name: "Molybdenum", mass: "95.95", category: "transition", period: 5, group: 6, phase: "Solid", config: "[Kr] 4d\u2075 5s\xB9", electro: "2.16", melt: "2623\xB0C", boil: "4639\xB0C" },
+    { number: 43, symbol: "Tc", name: "Technetium", mass: "[98]", category: "transition", period: 5, group: 7, phase: "Solid", config: "[Kr] 4d\u2075 5s\xB2", electro: "1.9", melt: "2157\xB0C", boil: "4265\xB0C" },
+    { number: 44, symbol: "Ru", name: "Ruthenium", mass: "101.07", category: "transition", period: 5, group: 8, phase: "Solid", config: "[Kr] 4d\u2077 5s\xB9", electro: "2.2", melt: "2334\xB0C", boil: "4150\xB0C" },
+    { number: 45, symbol: "Rh", name: "Rhodium", mass: "102.91", category: "transition", period: 5, group: 9, phase: "Solid", config: "[Kr] 4d\u2078 5s\xB9", electro: "2.28", melt: "1964\xB0C", boil: "3695\xB0C" },
+    { number: 46, symbol: "Pd", name: "Palladium", mass: "106.42", category: "transition", period: 5, group: 10, phase: "Solid", config: "[Kr] 4d\xB9\u2070", electro: "2.20", melt: "1555\xB0C", boil: "2963\xB0C" },
+    { number: 47, symbol: "Ag", name: "Silver", mass: "107.87", category: "transition", period: 5, group: 11, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB9", electro: "1.93", melt: "961.8\xB0C", boil: "2162\xB0C" },
+    { number: 48, symbol: "Cd", name: "Cadmium", mass: "112.41", category: "transition", period: 5, group: 12, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB2", electro: "1.69", melt: "321.1\xB0C", boil: "767\xB0C" },
+    { number: 49, symbol: "In", name: "Indium", mass: "114.82", category: "post_transition", period: 5, group: 13, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB2 5p\xB9", electro: "1.78", melt: "156.6\xB0C", boil: "2072\xB0C" },
+    { number: 50, symbol: "Sn", name: "Tin", mass: "118.71", category: "post_transition", period: 5, group: 14, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB2 5p\xB2", electro: "1.96", melt: "231.9\xB0C", boil: "2602\xB0C" },
+    { number: 51, symbol: "Sb", name: "Antimony", mass: "121.76", category: "metalloid", period: 5, group: 15, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB2 5p\xB3", electro: "2.05", melt: "630.6\xB0C", boil: "1587\xB0C" },
+    { number: 52, symbol: "Te", name: "Tellurium", mass: "127.60", category: "metalloid", period: 5, group: 16, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB2 5p\u2074", electro: "2.1", melt: "449.5\xB0C", boil: "988\xB0C" },
+    { number: 53, symbol: "I", name: "Iodine", mass: "126.90", category: "halogen", period: 5, group: 17, phase: "Solid", config: "[Kr] 4d\xB9\u2070 5s\xB2 5p\u2075", electro: "2.66", melt: "113.7\xB0C", boil: "184.3\xB0C" },
+    { number: 54, symbol: "Xe", name: "Xenon", mass: "131.29", category: "noble_gas", period: 5, group: 18, phase: "Gas", config: "[Kr] 4d\xB9\u2070 5s\xB2 5p\u2076", electro: "2.6", melt: "-111.8\xB0C", boil: "-108.1\xB0C" },
+    // Period 6
+    { number: 55, symbol: "Cs", name: "Caesium", mass: "132.91", category: "alkali", period: 6, group: 1, phase: "Solid", config: "[Xe] 6s\xB9", electro: "0.79", melt: "28.5\xB0C", boil: "671\xB0C" },
+    { number: 56, symbol: "Ba", name: "Barium", mass: "137.33", category: "alkaline_earth", period: 6, group: 2, phase: "Solid", config: "[Xe] 6s\xB2", electro: "0.89", melt: "727\xB0C", boil: "1897\xB0C" },
+    // Lanthanides (57-71)
+    { number: 57, symbol: "La", name: "Lanthanum", mass: "138.91", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 5d\xB9 6s\xB2", electro: "1.10", melt: "920\xB0C", boil: "3464\xB0C", row: 9, col: 4 },
+    { number: 58, symbol: "Ce", name: "Cerium", mass: "140.12", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9 5d\xB9 6s\xB2", electro: "1.12", melt: "798\xB0C", boil: "3443\xB0C", row: 9, col: 5 },
+    { number: 59, symbol: "Pr", name: "Praseodymium", mass: "140.91", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB3 6s\xB2", electro: "1.13", melt: "931\xB0C", boil: "3520\xB0C", row: 9, col: 6 },
+    { number: 60, symbol: "Nd", name: "Neodymium", mass: "144.24", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\u2074 6s\xB2", electro: "1.14", melt: "1024\xB0C", boil: "3074\xB0C", row: 9, col: 7 },
+    { number: 61, symbol: "Pm", name: "Promethium", mass: "[145]", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\u2075 6s\xB2", electro: "1.13", melt: "1042\xB0C", boil: "3000\xB0C", row: 9, col: 8 },
+    { number: 62, symbol: "Sm", name: "Samarium", mass: "150.36", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\u2076 6s\xB2", electro: "1.17", melt: "1072\xB0C", boil: "1803\xB0C", row: 9, col: 9 },
+    { number: 63, symbol: "Eu", name: "Europium", mass: "151.96", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\u2077 6s\xB2", electro: "1.20", melt: "822\xB0C", boil: "1529\xB0C", row: 9, col: 10 },
+    { number: 64, symbol: "Gd", name: "Gadolinium", mass: "157.25", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\u2077 5d\xB9 6s\xB2", electro: "1.20", melt: "1313\xB0C", boil: "3273\xB0C", row: 9, col: 11 },
+    { number: 65, symbol: "Tb", name: "Terbium", mass: "158.93", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\u2079 6s\xB2", electro: "1.20", melt: "1356\xB0C", boil: "3230\xB0C", row: 9, col: 12 },
+    { number: 66, symbol: "Dy", name: "Dysprosium", mass: "162.50", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9\u2070 6s\xB2", electro: "1.22", melt: "1412\xB0C", boil: "2567\xB0C", row: 9, col: 13 },
+    { number: 67, symbol: "Ho", name: "Holmium", mass: "164.93", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9\xB9 6s\xB2", electro: "1.23", melt: "1474\xB0C", boil: "2700\xB0C", row: 9, col: 14 },
+    { number: 68, symbol: "Er", name: "Erbium", mass: "167.26", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9\xB2 6s\xB2", electro: "1.24", melt: "1529\xB0C", boil: "2868\xB0C", row: 9, col: 15 },
+    { number: 69, symbol: "Tm", name: "Thulium", mass: "168.93", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9\xB3 6s\xB2", electro: "1.25", melt: "1545\xB0C", boil: "1950\xB0C", row: 9, col: 16 },
+    { number: 70, symbol: "Yb", name: "Ytterbium", mass: "173.05", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9\u2074 6s\xB2", electro: "1.10", melt: "819\xB0C", boil: "1196\xB0C", row: 9, col: 17 },
+    { number: 71, symbol: "Lu", name: "Lutetium", mass: "174.97", category: "lanthanide", period: 6, group: 3, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9 6s\xB2", electro: "1.27", melt: "1663\xB0C", boil: "3402\xB0C", row: 9, col: 18 },
+    // Rest of Period 6
+    { number: 72, symbol: "Hf", name: "Hafnium", mass: "178.49", category: "transition", period: 6, group: 4, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB2 6s\xB2", electro: "1.3", melt: "2233\xB0C", boil: "4603\xB0C" },
+    { number: 73, symbol: "Ta", name: "Tantalum", mass: "180.95", category: "transition", period: 6, group: 5, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB3 6s\xB2", electro: "1.5", melt: "3017\xB0C", boil: "5458\xB0C" },
+    { number: 74, symbol: "W", name: "Tungsten", mass: "183.84", category: "transition", period: 6, group: 6, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\u2074 6s\xB2", electro: "2.36", melt: "3422\xB0C", boil: "5555\xB0C" },
+    { number: 75, symbol: "Re", name: "Rhenium", mass: "186.21", category: "transition", period: 6, group: 7, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\u2075 6s\xB2", electro: "1.9", melt: "3186\xB0C", boil: "5596\xB0C" },
+    { number: 76, symbol: "Os", name: "Osmium", mass: "190.23", category: "transition", period: 6, group: 8, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\u2076 6s\xB2", electro: "2.2", melt: "3033\xB0C", boil: "5012\xB0C" },
+    { number: 77, symbol: "Ir", name: "Iridium", mass: "192.22", category: "transition", period: 6, group: 9, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\u2077 6s\xB2", electro: "2.20", melt: "2446\xB0C", boil: "4428\xB0C" },
+    { number: 78, symbol: "Pt", name: "Platinum", mass: "195.08", category: "transition", period: 6, group: 10, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\u2079 6s\xB9", electro: "2.28", melt: "1768\xB0C", boil: "3825\xB0C" },
+    { number: 79, symbol: "Au", name: "Gold", mass: "196.97", category: "transition", period: 6, group: 11, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB9", electro: "2.54", melt: "1064\xB0C", boil: "2970\xB0C" },
+    { number: 80, symbol: "Hg", name: "Mercury", mass: "200.59", category: "transition", period: 6, group: 12, phase: "Liquid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2", electro: "2.00", melt: "-38.8\xB0C", boil: "356.7\xB0C" },
+    { number: 81, symbol: "Tl", name: "Thallium", mass: "204.38", category: "post_transition", period: 6, group: 13, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2 6p\xB9", electro: "1.62", melt: "304\xB0C", boil: "1473\xB0C" },
+    { number: 82, symbol: "Pb", name: "Lead", mass: "207.2", category: "post_transition", period: 6, group: 14, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2 6p\xB2", electro: "2.33", melt: "327.5\xB0C", boil: "1749\xB0C" },
+    { number: 83, symbol: "Bi", name: "Bismuth", mass: "208.98", category: "post_transition", period: 6, group: 15, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2 6p\xB3", electro: "2.02", melt: "271.4\xB0C", boil: "1564\xB0C" },
+    { number: 84, symbol: "Po", name: "Polonium", mass: "[209]", category: "post_transition", period: 6, group: 16, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2 6p\u2074", electro: "2.0", melt: "254\xB0C", boil: "962\xB0C" },
+    { number: 85, symbol: "At", name: "Astatine", mass: "[210]", category: "halogen", period: 6, group: 17, phase: "Solid", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2 6p\u2075", electro: "2.2", melt: "302\xB0C", boil: "337\xB0C" },
+    { number: 86, symbol: "Rn", name: "Radon", mass: "[222]", category: "noble_gas", period: 6, group: 18, phase: "Gas", config: "[Xe] 4f\xB9\u2074 5d\xB9\u2070 6s\xB2 6p\u2076", electro: "2.2", melt: "-71\xB0C", boil: "-61.7\xB0C" },
+    // Period 7
+    { number: 87, symbol: "Fr", name: "Francium", mass: "[223]", category: "alkali", period: 7, group: 1, phase: "Solid", config: "[Rn] 7s\xB9", electro: "0.7", melt: "27\xB0C", boil: "677\xB0C" },
+    { number: 88, symbol: "Ra", name: "Radium", mass: "[226]", category: "alkaline_earth", period: 7, group: 2, phase: "Solid", config: "[Rn] 7s\xB2", electro: "0.9", melt: "700\xB0C", boil: "1737\xB0C" },
+    // Actinides (89-103)
+    { number: 89, symbol: "Ac", name: "Actinium", mass: "[227]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 6d\xB9 7s\xB2", electro: "1.1", melt: "1050\xB0C", boil: "3198\xB0C", row: 10, col: 4 },
+    { number: 90, symbol: "Th", name: "Thorium", mass: "232.04", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 6d\xB2 7s\xB2", electro: "1.3", melt: "1750\xB0C", boil: "4788\xB0C", row: 10, col: 5 },
+    { number: 91, symbol: "Pa", name: "Protactinium", mass: "231.04", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB2 6d\xB9 7s\xB2", electro: "1.5", melt: "1568\xB0C", boil: "4027\xB0C", row: 10, col: 6 },
+    { number: 92, symbol: "U", name: "Uranium", mass: "238.03", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB3 6d\xB9 7s\xB2", electro: "1.38", melt: "1132\xB0C", boil: "4131\xB0C", row: 10, col: 7 },
+    { number: 93, symbol: "Np", name: "Neptunium", mass: "[237]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\u2074 6d\xB9 7s\xB2", electro: "1.36", melt: "644\xB0C", boil: "3902\xB0C", row: 10, col: 8 },
+    { number: 94, symbol: "Pu", name: "Plutonium", mass: "[244]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\u2076 7s\xB2", electro: "1.28", melt: "640\xB0C", boil: "3228\xB0C", row: 10, col: 9 },
+    { number: 95, symbol: "Am", name: "Americium", mass: "[243]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\u2077 7s\xB2", electro: "1.3", melt: "1176\xB0C", boil: "2607\xB0C", row: 10, col: 10 },
+    { number: 96, symbol: "Cm", name: "Curium", mass: "[247]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\u2077 6d\xB9 7s\xB2", electro: "1.3", melt: "1345\xB0C", boil: "3110\xB0C", row: 10, col: 11 },
+    { number: 97, symbol: "Bk", name: "Berkelium", mass: "[247]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\u2079 7s\xB2", electro: "1.3", melt: "986\xB0C", boil: "2627\xB0C", row: 10, col: 12 },
+    { number: 98, symbol: "Cf", name: "Californium", mass: "[251]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB9\u2070 7s\xB2", electro: "1.3", melt: "900\xB0C", boil: "1470\xB0C", row: 10, col: 13 },
+    { number: 99, symbol: "Es", name: "Einsteinium", mass: "[252]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB9\xB9 7s\xB2", electro: "1.3", melt: "860\xB0C", boil: "N/A", row: 10, col: 14 },
+    { number: 100, symbol: "Fm", name: "Fermium", mass: "[257]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB9\xB2 7s\xB2", electro: "1.3", melt: "1527\xB0C", boil: "N/A", row: 10, col: 15 },
+    { number: 101, symbol: "Md", name: "Mendelevium", mass: "[258]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB9\xB3 7s\xB2", electro: "1.3", melt: "827\xB0C", boil: "N/A", row: 10, col: 16 },
+    { number: 102, symbol: "No", name: "Nobelium", mass: "[259]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB9\u2074 7s\xB2", electro: "1.3", melt: "827\xB0C", boil: "N/A", row: 10, col: 17 },
+    { number: 103, symbol: "Lr", name: "Lawrencium", mass: "[266]", category: "actinide", period: 7, group: 3, phase: "Solid", config: "[Rn] 5f\xB9\u2074 7s\xB2 7p\xB9", electro: "1.3", melt: "1627\xB0C", boil: "N/A", row: 10, col: 18 },
+    // Rest of Period 7 (Superheavy)
+    { number: 104, symbol: "Rf", name: "Rutherfordium", mass: "[267]", category: "transition", period: 7, group: 4, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB2 7s\xB2", electro: "N/A", melt: "2100\xB0C", boil: "5500\xB0C" },
+    { number: 105, symbol: "Db", name: "Dubnium", mass: "[268]", category: "transition", period: 7, group: 5, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB3 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 106, symbol: "Sg", name: "Seaborgium", mass: "[269]", category: "transition", period: 7, group: 6, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\u2074 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 107, symbol: "Bh", name: "Bohrium", mass: "[270]", category: "transition", period: 7, group: 7, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\u2075 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 108, symbol: "Hs", name: "Hassium", mass: "[277]", category: "transition", period: 7, group: 8, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\u2076 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 109, symbol: "Mt", name: "Meitnerium", mass: "[278]", category: "transition", period: 7, group: 9, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\u2077 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 110, symbol: "Ds", name: "Darmstadtium", mass: "[281]", category: "transition", period: 7, group: 10, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\u2078 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 111, symbol: "Rg", name: "Roentgenium", mass: "[282]", category: "transition", period: 7, group: 11, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\u2079 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 112, symbol: "Cn", name: "Copernicium", mass: "[285]", category: "transition", period: 7, group: 12, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2", electro: "N/A", melt: "N/A", boil: "N/A" },
+    { number: 113, symbol: "Nh", name: "Nihonium", mass: "[286]", category: "post_transition", period: 7, group: 13, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2 7p\xB9", electro: "N/A", melt: "430\xB0C", boil: "1130\xB0C" },
+    { number: 114, symbol: "Fl", name: "Flerovium", mass: "[289]", category: "post_transition", period: 7, group: 14, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2 7p\xB2", electro: "N/A", melt: "-73\xB0C", boil: "107\xB0C" },
+    { number: 115, symbol: "Mc", name: "Moscovium", mass: "[290]", category: "post_transition", period: 7, group: 15, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2 7p\xB3", electro: "N/A", melt: "400\xB0C", boil: "1100\xB0C" },
+    { number: 116, symbol: "Lv", name: "Livermorium", mass: "[293]", category: "post_transition", period: 7, group: 16, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2 7p\u2074", electro: "N/A", melt: "435\xB0C", boil: "812\xB0C" },
+    { number: 117, symbol: "Ts", name: "Tennessine", mass: "[294]", category: "halogen", period: 7, group: 17, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2 7p\u2075", electro: "N/A", melt: "450\xB0C", boil: "610\xB0C" },
+    { number: 118, symbol: "Og", name: "Oganesson", mass: "[294]", category: "noble_gas", period: 7, group: 18, phase: "Synthetic", config: "[Rn] 5f\xB9\u2074 6d\xB9\u2070 7s\xB2 7p\u2076", electro: "N/A", melt: "52\xB0C", boil: "177\xB0C" }
+  ];
+  var CATEGORY_META = {
+    alkali: { name: "Alkali Metal", color: "#eab308" },
+    alkaline_earth: { name: "Alkaline Earth", color: "#f97316" },
+    transition: { name: "Transition Metal", color: "#0284c7" },
+    post_transition: { name: "Post-transition Metal", color: "#64748b" },
+    metalloid: { name: "Metalloid", color: "#0d9488" },
+    nonmetal: { name: "Reactive Nonmetal", color: "#e11d48" },
+    halogen: { name: "Halogen", color: "#06b6d4" },
+    noble_gas: { name: "Noble Gas", color: "#8b5cf6" },
+    lanthanide: { name: "Lanthanide", color: "#f43f5e" },
+    actinide: { name: "Actinide", color: "#10b981" }
+  };
+  var PeriodicTableWidget = class {
+    constructor(container2, props = {}) {
+      this.container = container2;
+      this.props = props;
+      this.selectedSymbol = props.element || props.symbol || props.query || "Au";
+      this.currentElement = null;
+      this.init();
+    }
+    init() {
+      this._findInitialElement();
+      this._renderBase();
+    }
+    _findInitialElement() {
+      const q = String(this.selectedSymbol).trim().toLowerCase();
+      let el = ELEMENTS_DATA.find(
+        (e) => e.symbol.toLowerCase() === q || e.name.toLowerCase() === q || String(e.number) === q
+      );
+      if (!el) el = ELEMENTS_DATA.find((e) => e.symbol === "Au") || ELEMENTS_DATA[0];
+      this.currentElement = el;
+    }
+    _renderBase() {
+      const el = this.currentElement;
+      const meta = CATEGORY_META[el.category] || { name: el.category, color: "#f59e0b" };
+      this.container.innerHTML = `
+            <div class="nexus-sol-periodic-card">
+                <div class="nexus-periodic-top-bar">
+                    <div class="nexus-periodic-title-row">
+                        <span class="nexus-periodic-badge">\u269B</span>
+                        <span class="nexus-periodic-heading">Periodic Table of Elements</span>
+                    </div>
+                </div>
+
+                <!-- Direct Element Inspector (No nested container boxes) -->
+                <div class="nexus-pt-inspector">
+                    <div class="nexus-pt-hero-left">
+                        <div class="nexus-pt-hero-top">
+                            <span class="nexus-pt-hero-z">${el.number}</span>
+                            <span class="nexus-pt-hero-mass">${el.mass} u</span>
+                        </div>
+                        <span class="nexus-pt-hero-symbol" style="color: ${meta.color};">${el.symbol}</span>
+                        <span class="nexus-pt-hero-name">${this._escapeHtml(el.name)}</span>
+                    </div>
+                    <div class="nexus-pt-hero-specs">
+                        <div class="nexus-pt-spec-item">
+                            <span class="nexus-pt-spec-label">Category</span>
+                            <span class="nexus-pt-spec-val" style="color: ${meta.color}; font-weight: 600;">${this._escapeHtml(meta.name)}</span>
+                        </div>
+                        <div class="nexus-pt-spec-item">
+                            <span class="nexus-pt-spec-label">Electron Config</span>
+                            <span class="nexus-pt-spec-val">${this._formatElectronConfig(el.config)}</span>
+                        </div>
+                        <div class="nexus-pt-spec-item">
+                            <span class="nexus-pt-spec-label">Electronegativity</span>
+                            <span class="nexus-pt-spec-val">${el.electro}</span>
+                        </div>
+                        <div class="nexus-pt-spec-item">
+                            <span class="nexus-pt-spec-label">Phase at STP</span>
+                            <span class="nexus-pt-spec-val">${el.phase} (P${el.period}, G${el.group})</span>
+                        </div>
+                        <div class="nexus-pt-spec-item">
+                            <span class="nexus-pt-spec-label">Melt / Boil</span>
+                            <span class="nexus-pt-spec-val">${el.melt} / ${el.boil}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authentic 18-Column Periodic Table Grid (Direct on container) -->
+                <div class="nexus-pt-grid-wrapper">
+                    <div class="nexus-pt-18-grid">
+                        ${this._render18Grid(el.symbol)}
+                    </div>
+                </div>
+
+                <!-- Category Color Legend -->
+                <div class="nexus-pt-legend-bar">
+                    ${Object.entries(CATEGORY_META).map(([k, v]) => `
+                        <div class="nexus-pt-legend-item">
+                            <span class="nexus-pt-legend-dot" style="background: ${v.color};"></span>
+                            <span class="nexus-pt-legend-text">${v.name}</span>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+        `;
+      this._attachEvents();
+    }
+    _render18Grid(activeSymbol) {
+      let html = "";
+      ELEMENTS_DATA.forEach((item) => {
+        let row = item.row || item.period;
+        let col = item.col || item.group;
+        const isActive = item.symbol === activeSymbol ? "is-active" : "";
+        const style = `grid-row: ${row}; grid-column: ${col};`;
+        html += `
+                <button class="nexus-pt-tile is-cat-${item.category} ${isActive}" 
+                        style="${style}" 
+                        data-symbol="${item.symbol}" 
+                        title="${item.name} (${item.symbol}) - Z: ${item.number}">
+                    <span class="nexus-pt-tile-z">${item.number}</span>
+                    <span class="nexus-pt-tile-sym">${item.symbol}</span>
+                </button>
+            `;
+      });
+      html += `
+            <div class="nexus-pt-placeholder-tile is-cat-lanthanide" style="grid-row: 6; grid-column: 3;" title="Lanthanides 57-71">
+                <span class="nexus-pt-tile-z">57-71</span>
+                <span class="nexus-pt-tile-sym">La-Lu</span>
+            </div>
+            <div class="nexus-pt-placeholder-tile is-cat-actinide" style="grid-row: 7; grid-column: 3;" title="Actinides 89-103">
+                <span class="nexus-pt-tile-z">89-103</span>
+                <span class="nexus-pt-tile-sym">Ac-Lr</span>
+            </div>
+        `;
+      return html;
+    }
+    _attachEvents() {
+      const tiles = this.container.querySelectorAll(".nexus-pt-tile");
+      if (tiles) {
+        tiles.forEach((tile) => {
+          tile.addEventListener("click", () => {
+            const sym = tile.dataset.symbol;
+            const match = ELEMENTS_DATA.find((item) => item.symbol === sym);
+            if (match) {
+              this.currentElement = match;
+              this._renderBase();
+            }
+          });
+        });
+      }
+    }
+    _formatElectronConfig(configStr) {
+      if (!configStr) return "";
+      const superMap = { "\u2070": "0", "\xB9": "1", "\xB2": "2", "\xB3": "3", "\u2074": "4", "\u2075": "5", "\u2076": "6", "\u2077": "7", "\u2078": "8", "\u2079": "9" };
+      return this._escapeHtml(configStr).replace(/([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (match) => {
+        const digits = match.split("").map((ch) => superMap[ch] || ch).join("");
+        return `<sup>${digits}</sup>`;
+      });
+    }
+    _escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  };
+
+  // src/components/widgets/widget_registry.js
+  var NexusWidgetRegistry = class {
+    constructor() {
+      this.factories = /* @__PURE__ */ new Map();
+      this.registerBuiltins();
+    }
+    registerBuiltins() {
+      this.register("timer", (container2, props) => new NexusTimerWidget(container2, props));
+      this.register("pomodoro", (container2, props) => new NexusPomodoroWidget(container2, props));
+      this.register("stopwatch", (container2, props) => new NexusStopwatchWidget(container2, props));
+      this.register("unit_converter", (container2, props) => new NexusUnitConverterWidget(container2, props));
+      this.register("world_clock", (container2, props) => new NexusWorldClockWidget(container2, props));
+      this.register("date_diff", (container2, props) => new NexusDateDiffWidget(container2, props));
+      this.register("qr_generator", (container2, props) => new NexusQrGeneratorWidget(container2, props));
+      this.register("currency", (container2, props) => new NexusCurrencyWidget(container2, props));
+      this.register("crypto", (container2, props) => new NexusCryptoWidget(container2, props));
+      this.register("loan_calc", (container2, props) => new NexusLoanCalcWidget(container2, props));
+      this.register("compound_interest", (container2, props) => new CompoundInterestWidget(container2, props));
+      this.register("tip_splitter", (container2, props) => new TipSplitterWidget(container2, props));
+      this.register("gold_price", (container2, props) => new GoldPriceWidget(container2, props));
+      this.register("weather", (container2, props) => new WeatherWidget(container2, props));
+      this.register("weather_forecast", (container2, props) => new WeatherForecastWidget(container2, props));
+      this.register("air_quality", (container2, props) => new AirQualityWidget(container2, props));
+      this.register("sun_uv", (container2, props) => new SunUvWidget(container2, props));
+      this.register("bmi_tdee", (container2, props) => new BmiTdeeWidget(container2, props));
+      this.register("function_plotter", (container2, props) => new FunctionPlotterWidget(container2, props));
+      this.register("periodic_table", (container2, props) => new PeriodicTableWidget(container2, props));
+      this.register("converter", (container2, props) => new NexusUnitConverterWidget(container2, props));
+      this.register("clock", (container2, props) => new NexusWorldClockWidget(container2, props));
+      this.register("timezone", (container2, props) => new NexusWorldClockWidget(container2, props));
+      this.register("countdown", (container2, props) => new NexusDateDiffWidget(container2, props));
+      this.register("qr_code", (container2, props) => new NexusQrGeneratorWidget(container2, props));
+      this.register("qrcode", (container2, props) => new NexusQrGeneratorWidget(container2, props));
+      this.register("exchange_rate", (container2, props) => new NexusCurrencyWidget(container2, props));
+      this.register("forex", (container2, props) => new NexusCurrencyWidget(container2, props));
+      this.register("coin", (container2, props) => new NexusCryptoWidget(container2, props));
+      this.register("mortgage", (container2, props) => new NexusLoanCalcWidget(container2, props));
+      this.register("loan", (container2, props) => new NexusLoanCalcWidget(container2, props));
+      this.register("savings", (container2, props) => new CompoundInterestWidget(container2, props));
+      this.register("interest", (container2, props) => new CompoundInterestWidget(container2, props));
+      this.register("tip", (container2, props) => new TipSplitterWidget(container2, props));
+      this.register("bill", (container2, props) => new TipSplitterWidget(container2, props));
+      this.register("gold", (container2, props) => new GoldPriceWidget(container2, props));
+      this.register("xau", (container2, props) => new GoldPriceWidget(container2, props));
+      this.register("gia_vang", (container2, props) => new GoldPriceWidget(container2, props));
+      this.register("forecast", (container2, props) => new WeatherForecastWidget(container2, props));
+      this.register("aqi", (container2, props) => new AirQualityWidget(container2, props));
+      this.register("air", (container2, props) => new AirQualityWidget(container2, props));
+      this.register("uv", (container2, props) => new SunUvWidget(container2, props));
+      this.register("sunrise", (container2, props) => new SunUvWidget(container2, props));
+      this.register("sunset", (container2, props) => new SunUvWidget(container2, props));
+      this.register("bmi", (container2, props) => new BmiTdeeWidget(container2, props));
+      this.register("tdee", (container2, props) => new BmiTdeeWidget(container2, props));
+      this.register("calories", (container2, props) => new BmiTdeeWidget(container2, props));
+      this.register("plotter", (container2, props) => new FunctionPlotterWidget(container2, props));
+      this.register("graph", (container2, props) => new FunctionPlotterWidget(container2, props));
+      this.register("graph_plotter", (container2, props) => new FunctionPlotterWidget(container2, props));
+      this.register("element", (container2, props) => new PeriodicTableWidget(container2, props));
+      this.register("chemistry", (container2, props) => new PeriodicTableWidget(container2, props));
+    }
+    register(name, factoryFn) {
+      this.factories.set(name.toLowerCase(), factoryFn);
+    }
+    has(name) {
+      if (!name) return false;
+      return this.factories.has(name.toLowerCase());
+    }
+    mount(name, containerEl, props = {}) {
+      if (!name || !containerEl) return null;
+      const factory = this.factories.get(name.toLowerCase());
+      if (!factory) {
+        console.warn(`[NexusWidgetRegistry] Unknown widget: ${name}`);
+        return null;
+      }
+      return factory(containerEl, props);
+    }
+    mountAllInContainer(rootEl) {
+      if (!rootEl) return;
+      const placeholders = rootEl.querySelectorAll('[data-nexus-widget-placeholder]:not([data-mounted="true"])');
+      placeholders.forEach((el) => {
+        const name = el.dataset.widgetName;
+        let props = {};
+        try {
+          if (el.dataset.widgetProps) {
+            props = JSON.parse(decodeURIComponent(el.dataset.widgetProps));
+          }
+        } catch (e) {
+          console.error("[NexusWidgetRegistry] Failed to parse props:", e);
+        }
+        if (this.has(name)) {
+          el.dataset.mounted = "true";
+          this.mount(name, el, props);
+        }
+      });
+    }
+  };
+  var widgetRegistry = new NexusWidgetRegistry();
+
   // src/components/widgets/widget_runner.js
   var WidgetRunner = {
     DEFAULT_HEIGHT: "380px",
@@ -29055,10 +37067,13 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     </div>`;
     },
     /**
-     * Initializes all un-hydrated widget iframes inside a DOM container
+     * Initializes all un-hydrated widget iframes and built-in widgets inside a DOM container
      */
     hydrateWidgets(containerEl = document) {
       if (!containerEl) return;
+      if (typeof widgetRegistry !== "undefined") {
+        widgetRegistry.mountAllInContainer(containerEl);
+      }
       const wrappers = containerEl.querySelectorAll(".nexus-widget-wrapper:not([data-hydrated])");
       wrappers.forEach((wrapper) => {
         wrapper.setAttribute("data-hydrated", "true");
@@ -29144,56 +37159,110 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   }
 
   // src/components/chat/model_helper.js
+  function _isGemini(modelName, providerId, providers = []) {
+    const provider = providers.find((p) => p.id === providerId);
+    return provider?.type === "gemini" || providerId?.toLowerCase().includes("gemini") || modelName?.toLowerCase().includes("gemini") && !modelName?.toLowerCase().includes("gemma");
+  }
+  function _modelKey(modelObj) {
+    return modelObj?.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj?.model;
+  }
+  function _getAdvParams(modelObj, advancedParamsByModel2 = {}) {
+    if (!modelObj?.model) return {};
+    return advancedParamsByModel2[_modelKey(modelObj)] || advancedParamsByModel2[modelObj.model] || {};
+  }
   var NexusModelHelper = {
-    async getPromptSupport() {
-      if (typeof window.getPromptApiSupport === "function") {
-        return await window.getPromptApiSupport();
-      }
-      return { supported: false, status: "no", reason: "Prompt API not loaded" };
-    },
-    buildModelChain(data, promptSupport) {
-      const chain = [];
-      const modelsList = data.models || [];
-      modelsList.forEach((item) => {
+    buildModelChain(data = {}) {
+      return (data.models || []).filter((item) => {
         const modelVal = item.model || item.modelName;
-        if (modelVal && modelVal !== "Gemini Nano (Built-in)" && item.providerId !== "builtin") {
-          chain.push({
-            ...item,
-            model: modelVal
-          });
-        }
-      });
-      return chain;
+        return modelVal && modelVal !== "Gemini Nano (Built-in)" && item.providerId !== "builtin";
+      }).map((item) => ({ ...item, model: item.model || item.modelName }));
     },
     getThinkingOptions(currentModel, currentProviderId, providers = []) {
-      const provider = providers.find((p) => p.id === currentProviderId);
-      const isGemini = (provider ? provider.type === "gemini" : false) || currentModel && currentModel.toLowerCase().includes("gemini") && !currentModel.toLowerCase().includes("gemma") || currentProviderId && currentProviderId.toLowerCase().includes("gemini");
-      const isGemma4 = currentModel ? /gemma-4/i.test(currentModel) : false;
-      const isGemmaOld = currentModel ? /gemma/i.test(currentModel) && !isGemma4 : false;
-      if (isGemini) {
+      if (_isGemini(currentModel, currentProviderId, providers)) {
         return [
           { value: "minimal", title: "Minimal", desc: "Minimal thinking, very fast" },
           { value: "low", title: "Low", desc: "Short thinking, fast response" },
           { value: "medium", title: "Standard", desc: "Best for most questions" },
           { value: "high", title: "Extended", desc: "Complex problem solving" }
         ];
-      } else if (isGemmaOld) {
-        return [
-          { value: "none", title: "None", desc: "Thinking is not supported" }
-        ];
-      } else {
-        return [
-          { value: "none", title: "None", desc: "No reasoning, fastest response" },
-          { value: "low", title: "Low", desc: "Quick reasoning, low latency" },
-          { value: "medium", title: "Standard", desc: "Best for most questions" },
-          { value: "high", title: "Extended", desc: "Complex problem solving" }
-        ];
       }
+      const isGemma4 = /gemma-4/i.test(currentModel || "");
+      if (/gemma/i.test(currentModel || "") && !isGemma4) {
+        return [{ value: "none", title: "None", desc: "Thinking is not supported" }];
+      }
+      return [
+        { value: "none", title: "None", desc: "No reasoning, fastest response" },
+        { value: "low", title: "Low", desc: "Quick reasoning, low latency" },
+        { value: "medium", title: "Standard", desc: "Best for most questions" },
+        { value: "high", title: "Extended", desc: "Complex problem solving" }
+      ];
     },
     getDefaultThinking(modelName, providerId, providers = []) {
-      const provider = providers && providers.find((p) => p.id === providerId);
-      const isGemini = (provider ? provider.type === "gemini" : false) || providerId && providerId.toLowerCase().includes("gemini") || modelName && modelName.toLowerCase().includes("gemini") && !modelName.toLowerCase().includes("gemma");
-      return isGemini ? "minimal" : "none";
+      return _isGemini(modelName, providerId, providers) ? "minimal" : "none";
+    },
+    getModelThinkingPreference(modelObj, advancedParamsByModel2 = {}, providers = []) {
+      if (!modelObj?.model) return "none";
+      const params = _getAdvParams(modelObj, advancedParamsByModel2);
+      return params.thinkingLevel || this.getDefaultThinking(modelObj.model, modelObj.providerId, providers);
+    },
+    async resolveSessionSettings(sessionId, metaModel = null, metaThinking = null) {
+      const sidKey = sessionId || "null";
+      const data = await chrome.storage.local.get([
+        "providers",
+        "models",
+        "lastUsedModel",
+        "lastUsedThinkingLevel",
+        "nexus_session_settings",
+        "advancedParamsByModel"
+      ]);
+      const saved = (data.nexus_session_settings || {})[sidKey] || {};
+      const sessionModel = sessionId ? saved.selectedModel || metaModel : null;
+      const selectedModel = sessionModel || data.lastUsedModel || metaModel || null;
+      const sessionThinking = sessionId ? saved.thinkingLevel || metaThinking : null;
+      const thinkingLevel = sessionThinking || (selectedModel ? this.getModelThinkingPreference(selectedModel, data.advancedParamsByModel, data.providers) : null) || data.lastUsedThinkingLevel || "none";
+      return { selectedModel, thinkingLevel, storageData: data };
+    },
+    async saveModelSelection(modelObj, sessionId = null, explicitThinking = null) {
+      if (!modelObj?.model) return null;
+      const sidKey = sessionId || "null";
+      const data = await chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel", "providers"]);
+      const settings = data.nexus_session_settings || {};
+      const savedModel = { model: modelObj.model, providerId: modelObj.providerId };
+      const newThinking = explicitThinking || this.getModelThinkingPreference(modelObj, data.advancedParamsByModel, data.providers);
+      settings[sidKey] = { ...settings[sidKey] || {}, selectedModel: savedModel, thinkingLevel: newThinking };
+      settings["null"] = { ...settings["null"] || {}, selectedModel: savedModel, thinkingLevel: newThinking };
+      await chrome.storage.local.set({
+        nexus_session_settings: settings,
+        lastUsedModel: savedModel,
+        lastUsedThinkingLevel: newThinking
+      });
+      if (sessionId && sessionId !== "null") {
+        await window.NexusChatHistory?.updateSessionModelAndThinking?.(sessionId, savedModel, newThinking);
+      }
+      return { selectedModel: savedModel, thinkingLevel: newThinking };
+    },
+    async saveThinkingSelection(thinkingLevel, sessionId = null, currentModel = null) {
+      if (!thinkingLevel) return null;
+      const sidKey = sessionId || "null";
+      const data = await chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"]);
+      const settings = data.nexus_session_settings || {};
+      const advParams = data.advancedParamsByModel || {};
+      settings[sidKey] = { ...settings[sidKey] || {}, thinkingLevel };
+      settings["null"] = { ...settings["null"] || {}, thinkingLevel };
+      if (currentModel?.model) {
+        const cKey = _modelKey(currentModel);
+        advParams[cKey] = { ...advParams[cKey] || {}, thinkingLevel };
+      }
+      await chrome.storage.local.set({
+        nexus_session_settings: settings,
+        lastUsedThinkingLevel: thinkingLevel,
+        advancedParamsByModel: advParams,
+        ...currentModel ? { lastUsedModel: currentModel } : {}
+      });
+      if (sessionId && sessionId !== "null") {
+        await window.NexusChatHistory?.updateSessionModelAndThinking?.(sessionId, void 0, thinkingLevel);
+      }
+      return { thinkingLevel };
     }
   };
   if (typeof window !== "undefined") {
@@ -29348,7 +37417,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
     });
     let rendered = katex.renderToString(placeholderMath, { displayMode: isDisplay, throwOnError: false, strict: "ignore" });
     for (const item of textMatches) {
-      const safeText = item.txt.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
+      const safeText = item.txt.replace(/\\([%$&_#{}\\])/g, "$1").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
       rendered = rendered.replaceAll(item.id, safeText);
     }
     return rendered;
@@ -29364,27 +37433,38 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             return src.indexOf("$");
           },
           tokenizer(src) {
+            const doubleMatch = src.match(/^\$\$((?:[^\$]|\\.)+?)\$\$/);
+            if (doubleMatch) {
+              return {
+                type: "inlineMath",
+                raw: doubleMatch[0],
+                text: doubleMatch[1],
+                display: false
+              };
+            }
             const match = src.match(/^\$((?:[^\$\\\n]|\\.)+?)\$/);
             if (match) {
               const content = match[1];
               if (/^\s|\s$/.test(content)) return;
+              if (/^\d+(?:[.,]\d+)?$/.test(content)) return;
               if (/\s/.test(content)) {
-                const hasMathSymbol = /[\\^_\=+\-*\/<>≤≥≠≈±∞%]/.test(content);
-                if (!hasMathSymbol) return;
-              } else {
-                if (/^\d+(?:[.,]\d+)?$/.test(content)) return;
+                const hasMathSymbol = /[\\^_\=+\-*\/<>≤≥≠≈±∞%()[\]{},;:|~'!√π]/.test(content);
+                const hasMathKeywords = /\b(sin|cos|tan|cot|sec|csc|log|ln|exp|lim|sum|int|prod|det|dim|ker|max|min|arg|deg|gcd|hom|inf|sup)\b/i.test(content);
+                const hasAlphanumericMix = /\b[a-zA-Z]\d|\d[a-zA-Z]\b/.test(content);
+                if (!hasMathSymbol && !hasMathKeywords && !hasAlphanumericMix) return;
               }
               return {
                 type: "inlineMath",
                 raw: match[0],
-                text: content
+                text: content,
+                display: false
               };
             }
           },
           renderer(token) {
             if (typeof katex !== "undefined" && katex.renderToString) {
               try {
-                return renderKaTeXFormula(token.text, false);
+                return renderKaTeXFormula(token.text, token.display || false);
               } catch (_) {
                 return token.raw;
               }
@@ -29465,6 +37545,9 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           return;
         }
         if (oldChild.classList?.contains("nexus-widget-wrapper") && !oldChild.classList?.contains("nexus-widget-loading") && newChild.classList?.contains("nexus-widget-wrapper")) {
+          return;
+        }
+        if ((oldChild.classList?.contains("nexus-widget") || oldChild.classList?.contains("nexus-widget-mount-point")) && oldChild.dataset?.mounted === "true") {
           return;
         }
         for (let i = 0; i < newChild.attributes.length; i++) {
@@ -30162,6 +38245,50 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             return `<div class="nexus-widget-placeholder">[Interactive Widget: ${safeTitle}]</div>`;
           }
         },
+        // 5b. <Widget> (Built-in Native Widgets: Timer, Pomodoro, Stopwatch, etc.)
+        {
+          name: "builtinWidget",
+          level: "block",
+          start(src) {
+            return src.indexOf("<Widget");
+          },
+          tokenizer(src) {
+            const completeMatch = src.match(/^\s*<Widget([^>]*?)(?:\s*\/>|>([\s\S]*?)<\/Widget>)/i);
+            if (completeMatch) {
+              const attrsString = completeMatch[1] || "";
+              const props = {};
+              const attrRegex = /(\w[\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+              let attrMatch;
+              while ((attrMatch = attrRegex.exec(attrsString)) !== null) {
+                props[attrMatch[1]] = attrMatch[2] !== void 0 ? attrMatch[2] : attrMatch[3];
+              }
+              const name = (props.name || "widget").toLowerCase();
+              return {
+                type: "builtinWidget",
+                raw: completeMatch[0],
+                name,
+                props,
+                isComplete: true
+              };
+            }
+            const partialMatch = src.match(/^\s*<Widget[\s\S]*$/i);
+            if (partialMatch) {
+              return {
+                type: "builtinWidget",
+                raw: partialMatch[0],
+                name: "",
+                props: {},
+                isComplete: false
+              };
+            }
+          },
+          renderer(token) {
+            if (!token.isComplete || !token.name) return "";
+            const safeName = token.name.replace(/[^a-zA-Z0-9_-]/g, "");
+            const encodedProps = encodeURIComponent(JSON.stringify(token.props || {}));
+            return `<div class="nexus-widget" data-nexus-widget-placeholder="true" data-widget-name="${safeName}" data-widget-props="${encodedProps}"></div>`;
+          }
+        },
         // 6. <Carousel> & <Image> (Image Gallery Slider)
         {
           name: "carouselBlock",
@@ -30547,12 +38674,6 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             }
             return `
                     <div class="nexus-metrics-wrapper">
-                        <div class="nexus-metrics-header">
-                            <span class="nexus-metrics-icon">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            </span>
-                            <span class="nexus-metrics-title">${safeTitle}</span>
-                        </div>
                         <div class="nexus-metrics-grid">
                             ${itemsHtml}
                         </div>
@@ -30648,7 +38769,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             };
             const cleanBody = (token.body || "").replace(/<\/?BentoGrid\b[^>]*>/gi, "").trim();
             const bentoRegex = /<BentoItem\b((?:[^"'\/>]|"[^"]*"|'[^']*')*?)(?:\s*\/>|>([\s\S]*?)<\/BentoItem>|>([\s\S]*?)(?=<BentoItem\b|<\/BentoGrid>|$))/gi;
-            let itemsHtml = "";
+            const items = [];
             let match;
             while ((match = bentoRegex.exec(cleanBody)) !== null) {
               const attrs = match[1] || "";
@@ -30657,31 +38778,45 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
               const tagMatch = attrs.match(/\btag="([^"]*)"/i);
               const iconMatch = attrs.match(/\bicon="([^"]*)"/i);
               const itemTitle = titleMatch ? titleMatch[1] : "Feature";
-              const span = spanMatch && spanMatch[1] === "2" ? "2" : "1";
-              const tagHtml = tagMatch ? `<span class="nexus-bento-tag">${tagMatch[1]}</span>` : "";
-              const iconSvg = getBentoIconSvg(iconMatch ? iconMatch[1] : "");
+              const requestedSpan = spanMatch && spanMatch[1] === "2" ? 2 : 1;
               const rawContent = (match[2] || match[3] || "").trim();
-              const parsedContent = rawContent ? marked.parse(rawContent) : "";
+              items.push({
+                title: itemTitle,
+                span: requestedSpan,
+                tag: tagMatch ? tagMatch[1] : "",
+                icon: iconMatch ? iconMatch[1] : "",
+                content: rawContent
+              });
+            }
+            let colPos = 0;
+            for (let i = 0; i < items.length; i++) {
+              const it = items[i];
+              if (it.span === 2) {
+                colPos = 0;
+              } else {
+                colPos = (colPos + 1) % 2;
+              }
+            }
+            if (items.length > 0 && colPos === 1) {
+              items[items.length - 1].span = 2;
+            }
+            let itemsHtml = "";
+            items.forEach((it) => {
+              const tagHtml = it.tag ? `<span class="nexus-bento-tag">${it.tag}</span>` : "";
+              const iconSvg = getBentoIconSvg(it.icon);
+              const parsedContent = it.content ? marked.parse(it.content) : "";
               itemsHtml += `
-                        <div class="nexus-bento-item span-${span}">
+                        <div class="nexus-bento-item span-${it.span}">
                             <div class="nexus-bento-item-header">
                                 <div class="nexus-bento-item-icon">${iconSvg}</div>
                                 ${tagHtml}
                             </div>
-                            <div class="nexus-bento-item-title">${itemTitle}</div>
+                            <div class="nexus-bento-item-title">${it.title}</div>
                             <div class="nexus-bento-item-desc">${parsedContent}</div>
                         </div>`;
-            }
-            const headerHtml = safeTitle ? `
-                    <div class="nexus-bento-header">
-                        <span class="nexus-bento-icon">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        </span>
-                        <span class="nexus-bento-title">${safeTitle}</span>
-                    </div>` : "";
+            });
             return `
                     <div class="nexus-bento-container">
-                        ${headerHtml}
                         <div class="nexus-bento-grid">
                             ${itemsHtml}
                         </div>
@@ -31592,6 +39727,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 this.loadingDiv = null;
               }
               morphDOM(answerContentDiv, htmlContent);
+              WidgetRunner.hydrateWidgets(answerContentDiv);
             }
           } else {
             if (this.loadingDiv && answerContentDiv.contains(this.loadingDiv)) {
@@ -31731,6 +39867,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
           }
           if (offsets) window.NexusSelection?.restoreSelectionFromOffsets?.(answerContentDiv, offsets);
           answerContentDiv.__isRich = true;
+          WidgetRunner.hydrateWidgets(answerContentDiv);
         } else {
           answerContentDiv.textContent = actualAnswer;
           answerContentDiv.__isRich = false;
@@ -32934,7 +41071,7 @@ Output only the revised text.`;
           });
         }
         if (answerEl) {
-          let answerText = answerEl.classList.contains("nexus-answer-editing") ? ((answerEl.querySelector(".nexus-answer-content") || answerEl).innerText || (answerEl.querySelector(".nexus-answer-content") || answerEl).textContent || "").trim() : answerEl.getAttribute("data-raw-text") || answerEl.textContent.trim();
+          let answerText = answerEl.classList.contains("is-editing") ? ((answerEl.querySelector(".nexus-answer-content") || answerEl).innerText || (answerEl.querySelector(".nexus-answer-content") || answerEl).textContent || "").trim() : answerEl.getAttribute("data-raw-text") || answerEl.textContent.trim();
           if (answerText) {
             const normLevel = typeof targetThinkingLevel === "string" ? targetThinkingLevel.trim().toLowerCase() : "none";
             if (normLevel === "none" || normLevel === "minimal" || normLevel === "") {
@@ -33047,7 +41184,6 @@ Output only the revised text.`;
                                  <span class="nexus-current-model" id="model-label">Loading...</span>
                                  <svg class="nexus-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" style="opacity: 0.85;"><path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                              </button>
-                             <div class="nexus-model-dropdown" id="model-dropdown"></div>
                          </div>
                          ${isSidePanel2 ? '<div class="nexus-web-chips" id="web-chips-group"></div>' : ""}
                     </div>
@@ -33621,8 +41757,7 @@ Output only the revised text.`;
         };
       }
       const updateLabel = (data) => {
-        const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-        const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
+        const chain = window.NexusModelHelper.buildModelChain(data);
         let currentModel = self2.activeTabModel?.model;
         let currentProviderId = self2.activeTabModel?.providerId;
         const lastUsed = data.lastUsedModel;
@@ -33640,151 +41775,104 @@ Output only the revised text.`;
         const activeDisplayName = activeChainItem?.displayName || activeChainItem?.name || currentModel;
         if (activeDisplayName && label) label.textContent = activeDisplayName;
       };
-      const openModelMenu = () => {
-        const sid = self2.historyEl?.dataset?.sessionId || null;
-        const sidKey = sid || "null";
-        chrome.storage.local.get(["providers", "models", "modelChains", "lastUsedModel", "nexus_session_settings", "advancedParamsByModel"], async (data) => {
-          const support = await window.getPromptApiSupport();
-          data.promptSupport = support;
-          const settings = data.nexus_session_settings || {};
-          const saved = settings[sidKey] || {};
-          if (!self2.activeTabModel && saved.selectedModel) {
-            self2.activeTabModel = { ...saved.selectedModel };
-          }
-          const modelObj = self2.activeTabModel;
-          if (modelObj) {
-            const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
-            const advancedParamsByModel2 = data.advancedParamsByModel || {};
-            const modelParams = modelObj.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !modelObj.providerId ? advancedParamsByModel2[modelObj.model] || {} : {};
-            const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
-            self2.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
-          }
-          updateLabel(data);
-          const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-          const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
-          let currentModel = self2.activeTabModel?.model;
-          let currentProviderId = self2.activeTabModel?.providerId;
-          if (!currentModel && chain.length > 0) {
-            currentModel = chain[0].model;
-            currentProviderId = chain[0].providerId;
-          }
-          const menuItems = [];
-          if (chain.length === 0) {
-            menuItems.push({ label: "No models available", disabled: true });
-          } else {
-            chain.forEach((item) => {
-              const isActive = item.model === currentModel && item.providerId === currentProviderId;
-              const displayName = item.displayName || item.name || item.model;
-              menuItems.push({
-                label: displayName,
-                active: isActive,
-                action: () => {
-                  if (label) label.textContent = displayName;
-                  self2.activeTabModel = { model: item.model, providerId: item.providerId };
-                  chrome.storage.local.set({ lastUsedModel: self2.activeTabModel });
-                  const curSid = self2.historyEl?.dataset?.sessionId || null;
-                  const curSidKey = curSid || "null";
-                  chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
-                    const st = res.nexus_session_settings || {};
-                    if (!st[curSidKey]) st[curSidKey] = {};
-                    st[curSidKey].selectedModel = self2.activeTabModel;
-                    const adv = res.advancedParamsByModel || {};
-                    const compKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
-                    const mParams = item.providerId && adv[compKey] ? adv[compKey] : !item.providerId ? adv[item.model] || {} : {};
-                    const defThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
-                    const newThinkingLevel = mParams.thinkingLevel || defThinking;
-                    self2.thinkingLevel = newThinkingLevel;
-                    st[curSidKey].thinkingLevel = newThinkingLevel;
-                    chrome.storage.local.set({ nexus_session_settings: st }, () => {
-                      if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && curSid) {
-                        window.NexusChatHistory.updateSessionModelAndThinking(curSid, self2.activeTabModel, newThinkingLevel);
-                      }
-                      if (typeof self2.refreshReasoningSelector === "function") {
-                        self2.refreshReasoningSelector();
-                      }
-                    });
-                  });
-                  self2._updateTokenLimitFromModel();
-                  selector.dispatchEvent(new CustomEvent("nexus:model-change", {
-                    bubbles: true,
-                    detail: { model: item.model, providerId: item.providerId }
-                  }));
-                }
-              });
-            });
-            menuItems.push({ divider: true });
-            const currentLevel = self2.thinkingLevel || "none";
-            const titleMap = {
-              "minimal": "Minimal",
-              "low": "Low",
-              "medium": "Standard",
-              "high": "Extended",
-              "none": "None"
-            };
-            const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
-            const thinkingSubmenu = options.map((opt) => ({
-              label: opt.title,
-              desc: opt.desc,
-              active: currentLevel === opt.value,
-              action: () => {
-                self2.thinkingLevel = opt.value;
-                const curSid = self2.historyEl?.dataset?.sessionId || null;
-                const curSidKey = curSid || "null";
-                chrome.storage.local.get(["nexus_session_settings"], (res) => {
-                  const st = res.nexus_session_settings || {};
-                  if (!st[curSidKey]) st[curSidKey] = {};
-                  st[curSidKey].thinkingLevel = opt.value;
-                  chrome.storage.local.set({ nexus_session_settings: st, lastUsedThinkingLevel: opt.value }, () => {
-                    if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && curSid) {
-                      window.NexusChatHistory.updateSessionModelAndThinking(curSid, void 0, opt.value);
-                    }
-                    if (typeof self2.refreshSystemTokens === "function") {
-                      self2.refreshSystemTokens();
-                    }
-                    if (typeof self2.refreshReasoningSelector === "function") {
-                      self2.refreshReasoningSelector();
-                    }
-                  });
-                });
-              }
-            }));
+      const getEffectiveSid = () => {
+        const activeTab = typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+        return self2.historyEl?.dataset?.sessionId || activeTab?.sessionId || new URLSearchParams(window.location?.search || "").get("sid") || null;
+      };
+      const openModelMenu = async () => {
+        const sid = getEffectiveSid();
+        const resolved = await window.NexusModelHelper.resolveSessionSettings(sid, self2.activeTabModel, self2.thinkingLevel);
+        self2.activeTabModel = resolved.selectedModel;
+        self2.thinkingLevel = resolved.thinkingLevel;
+        const data = resolved.storageData;
+        updateLabel(data);
+        const chain = window.NexusModelHelper.buildModelChain(data);
+        let currentModel = self2.activeTabModel?.model;
+        let currentProviderId = self2.activeTabModel?.providerId;
+        if (!currentModel && chain.length > 0) {
+          currentModel = chain[0].model;
+          currentProviderId = chain[0].providerId;
+        }
+        const menuItems = [];
+        if (chain.length === 0) {
+          menuItems.push({ label: "No models available", disabled: true });
+        } else {
+          chain.forEach((item) => {
+            const isActive = item.model === currentModel && item.providerId === currentProviderId;
+            const displayName = item.displayName || item.name || item.model;
             menuItems.push({
-              label: "Thinking level",
-              badge: titleMap[currentLevel] || "None",
-              submenuTitle: "Thinking level",
-              submenu: thinkingSubmenu
+              label: displayName,
+              active: isActive,
+              action: async () => {
+                if (label) label.textContent = displayName;
+                const curSid = getEffectiveSid();
+                const res = await window.NexusModelHelper.saveModelSelection(item, curSid);
+                if (res) {
+                  self2.activeTabModel = res.selectedModel;
+                  self2.thinkingLevel = res.thinkingLevel;
+                }
+                if (typeof self2.refreshReasoningSelector === "function") {
+                  self2.refreshReasoningSelector();
+                }
+                self2._updateTokenLimitFromModel();
+                selector.dispatchEvent(new CustomEvent("nexus:model-change", {
+                  bubbles: true,
+                  detail: { model: item.model, providerId: item.providerId, thinkingLevel: self2.thinkingLevel }
+                }));
+              }
             });
-          }
-          NexusMenu.show({
-            anchor: btn,
-            placement: "top-start",
-            minWidth: 200,
-            items: menuItems
           });
+          menuItems.push({ divider: true });
+          const currentLevel = self2.thinkingLevel || "none";
+          const titleMap = {
+            "minimal": "Minimal",
+            "low": "Low",
+            "medium": "Standard",
+            "high": "Extended",
+            "none": "None"
+          };
+          const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
+          const thinkingSubmenu = options.map((opt) => ({
+            label: opt.title,
+            desc: opt.desc,
+            active: currentLevel === opt.value,
+            action: async () => {
+              self2.thinkingLevel = opt.value;
+              const curSid = getEffectiveSid();
+              await window.NexusModelHelper.saveThinkingSelection(opt.value, curSid, self2.activeTabModel);
+              if (typeof self2.refreshSystemTokens === "function") {
+                self2.refreshSystemTokens();
+              }
+              if (typeof self2.refreshReasoningSelector === "function") {
+                self2.refreshReasoningSelector();
+              }
+              selector.dispatchEvent(new CustomEvent("nexus:model-change", {
+                bubbles: true,
+                detail: { model: self2.activeTabModel?.model, providerId: self2.activeTabModel?.providerId, thinkingLevel: opt.value }
+              }));
+            }
+          }));
+          menuItems.push({
+            label: "Thinking level",
+            badge: titleMap[currentLevel] || "None",
+            submenuTitle: "Thinking level",
+            submenu: thinkingSubmenu
+          });
+        }
+        NexusMenu.show({
+          anchor: btn,
+          placement: "top-start",
+          minWidth: 200,
+          items: menuItems
         });
       };
-      const fetchAndRender = () => {
-        const sid = self2.historyEl?.dataset?.sessionId || null;
-        const sidKey = sid || "null";
-        chrome.storage.local.get(["providers", "models", "modelChains", "lastUsedModel", "nexus_session_settings", "advancedParamsByModel"], async (data) => {
-          const support = await window.getPromptApiSupport();
-          data.promptSupport = support;
-          const settings = data.nexus_session_settings || {};
-          const saved = settings[sidKey] || {};
-          if (!self2.activeTabModel && saved.selectedModel) {
-            self2.activeTabModel = { ...saved.selectedModel };
-          }
-          const modelObj = self2.activeTabModel;
-          if (modelObj) {
-            const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
-            const advancedParamsByModel2 = data.advancedParamsByModel || {};
-            const modelParams = modelObj.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !modelObj.providerId ? advancedParamsByModel2[modelObj.model] || {} : {};
-            const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
-            self2.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
-          }
-          updateLabel(data);
-          self2._updateActionBtnState();
-        });
+      const fetchAndRender = async () => {
+        const sid = getEffectiveSid();
+        const resolved = await window.NexusModelHelper.resolveSessionSettings(sid, self2.activeTabModel, self2.thinkingLevel);
+        self2.activeTabModel = resolved.selectedModel;
+        self2.thinkingLevel = resolved.thinkingLevel;
+        updateLabel(resolved.storageData);
+        self2._updateActionBtnState();
       };
       fetchAndRender();
       this.refreshModelSelector = fetchAndRender;
@@ -34183,7 +42271,7 @@ Output only the revised text.`;
             code.style.backgroundColor = "rgba(0, 0, 0, 0.06)";
             code.style.padding = "2px 6px";
             code.style.borderRadius = "6px";
-            code.style.fontFamily = "'Google Sans Code', 'Source Code Pro', Consolas, Monaco, monospace";
+            code.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
             code.style.fontSize = "0.95em";
             code.style.fontWeight = "500";
             code.innerHTML = code.innerHTML.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
@@ -34245,10 +42333,8 @@ Output only the revised text.`;
         this._switchAnswerVersion(buttonEl.closest(".nexus-entry"), "prev");
       } else if (action === "next-version" || action === "next") {
         this._switchAnswerVersion(buttonEl.closest(".nexus-entry"), "next");
-      } else if (action === "modify") {
-        this._showModifyLengthDropdown(buttonEl, answerDiv);
-      } else if (action === "regenerate") {
-        this._handleContextMenuAction("regenerate", answerDiv);
+      } else if (action === "modify" || action === "regenerate") {
+        this._showRegenerateDropdown(buttonEl, answerDiv);
       } else if (action === "edit") {
         this._handleContextMenuAction("edit", answerDiv);
       } else if (action === "more") {
@@ -34270,9 +42356,11 @@ Output only the revised text.`;
         versions[activeIndex].classList.remove("active");
         versions[newIndex].classList.add("active");
         this._updateEntryVersionNav(entry, newIndex, versions.length);
+        entry.scrollIntoView({ behavior: "instant", block: "start" });
         const historyEl = this.historyEl || entry.closest(".nexus-chat-history");
+        const sid = historyEl?.dataset?.sessionId || null;
         if (typeof ChatHistoryManager !== "undefined" && historyEl) {
-          ChatHistoryManager.saveCurrentChat(historyEl);
+          ChatHistoryManager.saveCurrentChat(historyEl, sid);
         }
       }
     }
@@ -34280,8 +42368,21 @@ Output only the revised text.`;
       if (!entry) return;
       const answers = entry.querySelectorAll(".nexus-chat-answer");
       answers.forEach((ans) => _NexusChatUI.updateVersionNavInActions(ans));
+      const versionsContainer = entry.querySelector(".nexus-answer-versions");
+      const versions = versionsContainer ? Array.from(versionsContainer.querySelectorAll(".nexus-answer-version")) : [];
+      const activeVersion = versions[activeIndex];
+      const modifierLabel = activeVersion?.dataset.modifierLabel || "Normal";
       const oldNavs = entry.querySelectorAll(".nexus-answer-nav-container, .nexus-answer-nav");
       oldNavs.forEach((nav) => {
+        let tag = nav.querySelector(".nexus-answer-version-tag");
+        if (tag) {
+          if (modifierLabel && modifierLabel !== "Normal") {
+            tag.textContent = modifierLabel;
+            tag.style.display = "inline-flex";
+          } else {
+            tag.style.display = "none";
+          }
+        }
         const counter = nav.querySelector(".nexus-answer-nav-counter, .nexus-answer-version-indicator");
         const prevBtn = nav.querySelector(".nav-prev");
         const nextBtn = nav.querySelector(".nav-next");
@@ -34290,33 +42391,58 @@ Output only the revised text.`;
         if (nextBtn) nextBtn.disabled = activeIndex === totalCount - 1;
       });
     }
-    _showModifyLengthDropdown(buttonEl, answerDiv) {
+    _showRegenerateDropdown(buttonEl, answerDiv) {
       const entry = answerDiv.closest(".nexus-entry");
       NexusMenu.show({
         anchor: buttonEl,
         placement: "top-start",
-        minWidth: 140,
+        minWidth: 160,
         items: [
           {
-            label: "Shorter",
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>`,
+            label: "Deep Dive",
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="3.5" x2="20" y2="3.5"/><line x1="4" y1="20.5" x2="20" y2="20.5"/><polyline points="8.5 7.5 12 4 15.5 7.5"/><polyline points="8.5 16.5 12 20 15.5 16.5"/><line x1="12" y1="4" x2="12" y2="20"/></svg>`,
             action: () => {
               if (entry) {
                 this.regenerateEntry(entry, {
-                  lengthModifier: "shorter",
-                  oververbosity: 2
+                  lengthModifier: "longer",
+                  oververbosity: 10,
+                  modifierLabel: "Deep Dive"
                 });
               }
             }
           },
           {
-            label: "More detailed",
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="11" x2="21" y2="11"/><line x1="3" y1="16" x2="21" y2="16"/><line x1="3" y1="21" x2="13" y2="21"/></svg>`,
+            label: "Brief",
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10.5" x2="20" y2="10.5"/><line x1="4" y1="13.5" x2="20" y2="13.5"/><polyline points="8.5 5 12 7.5 15.5 5"/><line x1="12" y1="3" x2="12" y2="7.5"/><polyline points="8.5 19 12 16.5 15.5 19"/><line x1="12" y1="21" x2="12" y2="16.5"/></svg>`,
             action: () => {
               if (entry) {
                 this.regenerateEntry(entry, {
-                  lengthModifier: "longer",
-                  oververbosity: 8
+                  lengthModifier: "shorter",
+                  oververbosity: 1,
+                  modifierLabel: "Brief"
+                });
+              }
+            }
+          },
+          {
+            label: "Don't personalize",
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>`,
+            action: () => {
+              if (entry) {
+                this.regenerateEntry(entry, {
+                  bypassPersonalization: true,
+                  modifierLabel: "Don't personalize"
+                });
+              }
+            }
+          },
+          {
+            label: "Try again",
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/></svg>`,
+            action: () => {
+              if (entry) {
+                this.regenerateEntry(entry, {
+                  modifierLabel: "Normal"
                 });
               }
             }
@@ -34332,7 +42458,7 @@ Output only the revised text.`;
         items: [
           {
             label: "Edit",
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
             action: () => {
               this._handleContextMenuAction("edit", answerDiv);
             }
@@ -34394,6 +42520,7 @@ Output only the revised text.`;
           const version1 = document.createElement("div");
           version1.className = "nexus-answer-version";
           version1.dataset.versionIndex = "0";
+          version1.dataset.modifierLabel = version1.dataset.modifierLabel || "Normal";
           existingAnswer.parentNode.insertBefore(versionsContainer, existingAnswer);
           version1.appendChild(existingAnswer);
           versionsContainer.appendChild(version1);
@@ -34404,6 +42531,7 @@ Output only the revised text.`;
           const newVersion = document.createElement("div");
           newVersion.className = "nexus-answer-version active";
           newVersion.dataset.versionIndex = existingVersions.length.toString();
+          newVersion.dataset.modifierLabel = extraOptions.modifierLabel || (extraOptions.lengthModifier === "longer" ? "Deep Dive" : extraOptions.lengthModifier === "shorter" ? "Brief" : extraOptions.bypassPersonalization ? "Don't personalize" : "Normal");
           const newAnswerDiv = document.createElement("div");
           newAnswerDiv.className = "nexus-chat-answer";
           newVersion.appendChild(newAnswerDiv);
@@ -34490,7 +42618,7 @@ Output only the revised text.`;
       this._handleQuestionRecheck(rawQuestion.trim(), questionContent, true, extraOptions);
     }
     enterQuestionEditMode(questionDiv) {
-      if (!questionDiv || questionDiv.classList.contains("nexus-question-editing")) return;
+      if (!questionDiv || questionDiv.classList.contains("is-editing")) return;
       this._hideContextMenu();
       this.cancelAllQuestionEdits();
       const row = questionDiv.closest(".nexus-question-row");
@@ -34507,7 +42635,7 @@ Output only the revised text.`;
       questionDiv.__originalHTML = contentDiv.innerHTML;
       questionDiv.__originalRaw = questionDiv.getAttribute("data-raw-text") || contentDiv.innerText || "";
       questionDiv.__questionEditOriginalClassName = contentDiv.className;
-      questionDiv.classList.add("is-editing", "nexus-question-editing");
+      questionDiv.classList.add("is-editing");
       questionDiv.classList.remove("has-overflow", "expanded");
       const expandBtn = questionDiv.querySelector(".nexus-question-expand-btn");
       if (expandBtn) expandBtn.remove();
@@ -34662,7 +42790,7 @@ Output only the revised text.`;
       }
     }
     exitQuestionEditMode(questionDiv, save = false) {
-      if (!questionDiv || !questionDiv.classList.contains("nexus-question-editing")) return;
+      if (!questionDiv || !questionDiv.classList.contains("is-editing")) return;
       if (questionDiv.__outsideClickListener) {
         document.removeEventListener("mousedown", questionDiv.__outsideClickListener);
         delete questionDiv.__outsideClickListener;
@@ -34697,7 +42825,7 @@ Output only the revised text.`;
           questionDiv.scrollTop = 0;
           questionDiv.scrollLeft = 0;
         }
-        questionDiv.classList.remove("is-editing", "nexus-question-editing");
+        questionDiv.classList.remove("is-editing");
         if (row) row.classList.remove("nexus-question-row-editing");
         if (toolbar) toolbar.remove();
         if (contentDiv) contentDiv.contentEditable = "false";
@@ -34721,7 +42849,7 @@ Output only the revised text.`;
           questionDiv.scrollLeft = 0;
         }
         questionDiv.setAttribute("data-raw-text", originalRaw);
-        questionDiv.classList.remove("is-editing", "nexus-question-editing");
+        questionDiv.classList.remove("is-editing");
         if (row) row.classList.remove("nexus-question-row-editing");
         if (contentDiv) contentDiv.contentEditable = "false";
         if (toolbar) toolbar.remove();
@@ -34739,14 +42867,15 @@ Output only the revised text.`;
     }
     cancelAllQuestionEdits() {
       if (!this.historyEl) return;
-      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question.nexus-question-editing"));
+      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question.is-editing"));
       editingQuestions.forEach((questionDiv) => {
         this.exitQuestionEditMode(questionDiv, false);
       });
     }
     enterAnswerEditMode(answerDiv) {
-      if (!answerDiv || answerDiv.classList.contains("nexus-answer-editing")) return;
+      if (!answerDiv || answerDiv.classList.contains("is-editing")) return;
       this._hideContextMenu();
+      this.cancelAllAnswerEdits();
       answerDiv.contentEditable = "false";
       let contentDiv = answerDiv.querySelector(".nexus-answer-content");
       if (!contentDiv) {
@@ -34761,37 +42890,53 @@ Output only the revised text.`;
       answerDiv.__originalHTML = contentDiv.innerHTML;
       answerDiv.__originalRaw = originalRaw;
       contentDiv.innerHTML = answerDiv.__originalHTML;
-      answerDiv.classList.add("is-editing", "nexus-answer-editing");
+      answerDiv.classList.add("is-editing");
       contentDiv.contentEditable = "plaintext-only";
-      this._focusEditableAtEnd(contentDiv);
+      contentDiv.spellcheck = false;
       const toolbar = document.createElement("div");
-      toolbar.className = "nexus-edit-toolbar nexus-answer-edit-toolbar";
+      toolbar.className = "nexus-edit-toolbar nexus-question-edit-toolbar nexus-answer-edit-toolbar";
       toolbar.contentEditable = "false";
       toolbar.innerHTML = `
-            <button class="nexus-edit-btn nexus-edit-undo" title="Undo">Undo</button>
-            <div class="nexus-edit-toolbar-spacer"></div>
             <button class="nexus-edit-btn nexus-edit-cancel" title="Cancel">Cancel</button>
-            <button class="nexus-edit-btn nexus-edit-save" title="Save">Save</button>
+            <button class="nexus-edit-btn nexus-edit-save" title="Update" disabled>Update</button>
         `;
       toolbar.onmousedown = (e) => e.preventDefault();
-      toolbar.querySelector(".nexus-edit-undo").onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const entry2 = answerDiv.closest(".nexus-entry");
-        this._undoEditAndTruncate(entry2, "answer", null, answerDiv);
-      };
-      toolbar.querySelector(".nexus-edit-cancel").onclick = (e) => {
+      const saveBtn = toolbar.querySelector(".nexus-edit-save");
+      const cancelBtn = toolbar.querySelector(".nexus-edit-cancel");
+      cancelBtn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         this.exitAnswerEditMode(answerDiv, false);
       };
-      toolbar.querySelector(".nexus-edit-save").onclick = (e) => {
+      saveBtn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.exitAnswerEditMode(answerDiv, true);
+        if (!saveBtn.disabled) {
+          this.exitAnswerEditMode(answerDiv, true);
+        }
       };
-      answerDiv.appendChild(toolbar);
+      const normalizeText = (t) => t.replace(/\n$/, "");
+      const updateSaveBtnState = () => {
+        const currentText = normalizeText(contentDiv.innerText || contentDiv.textContent || "");
+        const originalText = normalizeText(answerDiv.__originalRaw || "");
+        const isEmpty = currentText.trim() === "";
+        const unchanged = currentText === originalText;
+        if (saveBtn) {
+          saveBtn.disabled = isEmpty || unchanged;
+        }
+      };
+      contentDiv.addEventListener("input", updateSaveBtnState);
+      contentDiv.addEventListener("keyup", updateSaveBtnState);
+      answerDiv.__answerEditInputHandler = updateSaveBtnState;
       const entry = answerDiv.closest(".nexus-entry");
+      if (entry) {
+        entry.appendChild(toolbar);
+      } else {
+        answerDiv.after(toolbar);
+      }
+      answerDiv.__answerEditToolbar = toolbar;
+      answerDiv.__answerEditContentDiv = contentDiv;
+      this._focusEditableAtEnd(contentDiv);
       if (entry) {
         requestAnimationFrame(() => {
           const scrollContainer = this.getScrollContainer();
@@ -34806,14 +42951,18 @@ Output only the revised text.`;
           contentDiv.removeEventListener("keydown", keyHandler);
         } else if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
-          this.exitAnswerEditMode(answerDiv, true);
-          contentDiv.removeEventListener("keydown", keyHandler);
+          if (saveBtn && !saveBtn.disabled) {
+            this.exitAnswerEditMode(answerDiv, true);
+            contentDiv.removeEventListener("keydown", keyHandler);
+          }
         }
       };
       contentDiv.addEventListener("keydown", keyHandler);
+      answerDiv.__answerEditKeyHandler = keyHandler;
       setTimeout(() => {
-        if (!answerDiv.classList.contains("nexus-answer-editing")) return;
+        if (!answerDiv.classList.contains("is-editing")) return;
         const outsideClickListener = (e) => {
+          if (toolbar && toolbar.contains(e.target)) return;
           if (!answerDiv.contains(e.target)) {
             this.exitAnswerEditMode(answerDiv, false);
           }
@@ -34823,13 +42972,20 @@ Output only the revised text.`;
       }, 10);
     }
     exitAnswerEditMode(answerDiv, save = false) {
-      if (!answerDiv || !answerDiv.classList.contains("nexus-answer-editing")) return;
+      if (!answerDiv || !answerDiv.classList.contains("is-editing")) return;
       if (answerDiv.__outsideClickListener) {
         document.removeEventListener("mousedown", answerDiv.__outsideClickListener);
         delete answerDiv.__outsideClickListener;
       }
-      const contentDiv = answerDiv.querySelector(".nexus-answer-content") || answerDiv;
-      const toolbar = answerDiv.querySelector(".nexus-answer-edit-toolbar");
+      const contentDiv = answerDiv.__answerEditContentDiv || answerDiv.querySelector(".nexus-answer-content") || answerDiv;
+      const toolbar = answerDiv.__answerEditToolbar || answerDiv.closest(".nexus-entry")?.querySelector(".nexus-edit-toolbar") || answerDiv.querySelector(".nexus-edit-toolbar");
+      if (contentDiv && answerDiv.__answerEditKeyHandler) {
+        contentDiv.removeEventListener("keydown", answerDiv.__answerEditKeyHandler);
+      }
+      if (contentDiv && answerDiv.__answerEditInputHandler) {
+        contentDiv.removeEventListener("input", answerDiv.__answerEditInputHandler);
+        contentDiv.removeEventListener("keyup", answerDiv.__answerEditInputHandler);
+      }
       if (save) {
         const newText = contentDiv.innerText.trim();
         answerDiv.setAttribute("data-raw-text", newText);
@@ -34850,15 +43006,19 @@ Output only the revised text.`;
         contentDiv.innerHTML = answerDiv.__originalHTML;
         answerDiv.setAttribute("data-raw-text", answerDiv.__originalRaw);
       }
-      answerDiv.classList.remove("is-editing", "nexus-answer-editing");
+      answerDiv.classList.remove("is-editing");
       contentDiv.contentEditable = "false";
       if (toolbar) toolbar.remove();
       delete answerDiv.__originalHTML;
       delete answerDiv.__originalRaw;
+      delete answerDiv.__answerEditToolbar;
+      delete answerDiv.__answerEditContentDiv;
+      delete answerDiv.__answerEditKeyHandler;
+      delete answerDiv.__answerEditInputHandler;
     }
     cancelAllAnswerEdits() {
       if (!this.historyEl) return;
-      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer.nexus-answer-editing"));
+      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer.is-editing"));
       editingAnswers.forEach((answerDiv) => {
         this.exitAnswerEditMode(answerDiv, false);
       });
@@ -34870,22 +43030,23 @@ Output only the revised text.`;
       const clonedAnswers = Array.from(clonedHistory.querySelectorAll(".nexus-chat-answer"));
       const liveQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question"));
       const clonedQuestions = Array.from(clonedHistory.querySelectorAll(".nexus-chat-question"));
-      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer.nexus-answer-editing"));
+      const editingAnswers = Array.from(this.historyEl.querySelectorAll(".nexus-chat-answer.is-editing"));
       editingAnswers.forEach((liveAnswer) => {
         const answerIndex = liveAnswers.indexOf(liveAnswer);
         const clonedAnswer = answerIndex >= 0 ? clonedAnswers[answerIndex] : null;
         if (!clonedAnswer) return;
+        const clonedEntry = clonedAnswer.closest(".nexus-entry");
         const clonedContent = clonedAnswer.querySelector(".nexus-answer-content") || clonedAnswer;
         if (typeof liveAnswer.__originalHTML === "string") {
           clonedContent.innerHTML = liveAnswer.__originalHTML;
         }
-        clonedAnswer.classList.remove("nexus-answer-editing");
+        clonedAnswer.classList.remove("is-editing");
         clonedAnswer.contentEditable = "false";
         clonedContent.contentEditable = "false";
-        const clonedToolbar = clonedAnswer.querySelector(".nexus-answer-edit-toolbar");
+        const clonedToolbar = clonedEntry ? clonedEntry.querySelector(".nexus-edit-toolbar") : clonedAnswer.querySelector(".nexus-edit-toolbar");
         if (clonedToolbar) clonedToolbar.remove();
       });
-      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question.nexus-question-editing"));
+      const editingQuestions = Array.from(this.historyEl.querySelectorAll(".nexus-chat-question.is-editing"));
       editingQuestions.forEach((liveQuestion) => {
         const questionIndex = liveQuestions.indexOf(liveQuestion);
         const clonedQuestion = questionIndex >= 0 ? clonedQuestions[questionIndex] : null;
@@ -34897,7 +43058,7 @@ Output only the revised text.`;
         } else if (typeof liveQuestion.getAttribute("data-raw-text") === "string") {
           clonedContent.textContent = liveQuestion.getAttribute("data-raw-text");
         }
-        clonedQuestion.classList.remove("nexus-question-editing", "nexus-answer-editing");
+        clonedQuestion.classList.remove("is-editing");
         if (clonedRow) clonedRow.classList.remove("nexus-question-row-editing");
         clonedContent.contentEditable = "false";
         const clonedToolbar = clonedQuestion.querySelector(".nexus-question-edit-toolbar");
@@ -35200,9 +43361,6 @@ Output only the revised text.`;
                 <button class="nexus-answer-action-btn" data-action="edit" title="Edit">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
-                <button class="nexus-answer-action-btn nexus-action-modify" data-action="modify" title="Modify response length (Shorter / Longer)">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="13" y2="6"/><line x1="9" y1="6" x2="3" y2="6"/><line x1="21" y1="18" x2="17" y2="18"/><line x1="13" y1="18" x2="3" y2="18"/><circle cx="11" cy="6" r="2"/><circle cx="15" cy="18" r="2"/></svg>
-                </button>
             </div>
             <div class="nexus-answer-nav" style="margin-left: auto; display: none;">
                 <button type="button" class="nexus-answer-nav-btn nav-prev" data-action="prev-version" title="Previous version">
@@ -35236,11 +43394,14 @@ Output only the revised text.`;
         if (versions.length > 1) {
           let activeIndex = versions.findIndex((v) => v.classList.contains("active"));
           if (activeIndex === -1) activeIndex = versions.length - 1;
+          const activeVersion = versions[activeIndex];
+          const modifierLabel = activeVersion?.dataset.modifierLabel || "Normal";
           if (!nav) {
             nav = document.createElement("div");
             nav.className = "nexus-answer-nav";
             nav.style.marginLeft = "auto";
             nav.innerHTML = `
+                        <span class="nexus-answer-version-tag"></span>
                         <button type="button" class="nexus-answer-nav-btn nav-prev" data-action="prev-version" title="Previous version">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
@@ -35252,6 +43413,18 @@ Output only the revised text.`;
             actionsDiv.appendChild(nav);
           }
           nav.style.display = "inline-flex";
+          let tag = nav.querySelector(".nexus-answer-version-tag");
+          if (!tag) {
+            tag = document.createElement("span");
+            tag.className = "nexus-answer-version-tag";
+            nav.insertBefore(tag, nav.firstChild);
+          }
+          if (modifierLabel && modifierLabel !== "Normal") {
+            tag.textContent = modifierLabel;
+            tag.style.display = "inline-flex";
+          } else {
+            tag.style.display = "none";
+          }
           const counter = nav.querySelector(".nexus-answer-nav-counter");
           const prevBtn = nav.querySelector(".nav-prev");
           const nextBtn = nav.querySelector(".nav-next");
@@ -36021,37 +44194,6 @@ Output only the revised text.`;
     NexusTooltip.init();
   } catch (_) {
   }
-  function getPaneActiveModel() {
-    const model = sessionStorage.getItem("nexus_active_model");
-    const providerId = sessionStorage.getItem("nexus_active_provider");
-    if (model) {
-      return { model, providerId };
-    }
-    return null;
-  }
-  function setPaneActiveModel(modelObj) {
-    if (modelObj && modelObj.model) {
-      sessionStorage.setItem("nexus_active_model", modelObj.model);
-      if (modelObj.providerId) {
-        sessionStorage.setItem("nexus_active_provider", modelObj.providerId);
-      } else {
-        sessionStorage.removeItem("nexus_active_provider");
-      }
-    } else {
-      sessionStorage.removeItem("nexus_active_model");
-      sessionStorage.removeItem("nexus_active_provider");
-    }
-  }
-  function getPaneActiveThinking() {
-    return sessionStorage.getItem("nexus_active_thinking") || null;
-  }
-  function setPaneActiveThinking(level) {
-    if (level) {
-      sessionStorage.setItem("nexus_active_thinking", level);
-    } else {
-      sessionStorage.removeItem("nexus_active_thinking");
-    }
-  }
   var container = document.querySelector(".nexus-chat-container");
   var fileInput = document.getElementById("file-input");
   function bindContainerWheelForward(containerEl) {
@@ -36791,6 +44933,23 @@ Output only the revised text.`;
           if (messages) {
             const sessions = await ChatHistoryManager.getAllHistories();
             const meta = sessions[tab.sessionId] || {};
+            const resolved = await window.NexusModelHelper.resolveSessionSettings(tab.sessionId, meta.selectedModel, meta.thinkingLevel);
+            tab.selectedModel = resolved.selectedModel;
+            tab.thinkingLevel = resolved.thinkingLevel;
+            if (resolved.selectedModel) {
+              await window.NexusModelHelper.saveModelSelection(resolved.selectedModel, tab.sessionId, resolved.thinkingLevel);
+            }
+            if (tab.chatUIInstance) {
+              tab.chatUIInstance.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
+              tab.chatUIInstance.thinkingLevel = resolved.thinkingLevel || null;
+            }
+            if (sharedInputUI2 && tab === tabs2[activeTabIndex2]) {
+              sharedInputUI2.historyEl = tab.historyEl;
+              sharedInputUI2.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
+              sharedInputUI2.thinkingLevel = resolved.thinkingLevel || null;
+              if (typeof sharedInputUI2.refreshModelSelector === "function") sharedInputUI2.refreshModelSelector();
+              if (typeof sharedInputUI2.refreshReasoningSelector === "function") sharedInputUI2.refreshReasoningSelector();
+            }
             const chatData = {
               ...meta,
               messages,
@@ -36903,19 +45062,11 @@ Output only the revised text.`;
         meta = sessions[sessionId] || {};
         tabTitle = meta.title || "Chat";
       }
-      let activeModel = getPaneActiveModel();
-      let activeThinking = getPaneActiveThinking();
-      if (!activeModel) {
-        activeModel = savedTab?.selectedModel || (sessionId ? sessionSettings[sessionId]?.selectedModel || meta.selectedModel : sessionSettings["null"]?.selectedModel) || null;
-        if (activeModel) {
-          setPaneActiveModel(activeModel);
-        }
-      }
-      if (!activeThinking) {
-        activeThinking = savedTab?.thinkingLevel || (sessionId ? sessionSettings[sessionId]?.thinkingLevel || meta.thinkingLevel : sessionSettings["null"]?.thinkingLevel) || null;
-        if (activeThinking) {
-          setPaneActiveThinking(activeThinking);
-        }
+      const resolved = await window.NexusModelHelper.resolveSessionSettings(sessionId, meta.selectedModel || savedTab?.selectedModel || null, meta.thinkingLevel || savedTab?.thinkingLevel || null);
+      let activeModel = resolved.selectedModel;
+      let activeThinking = resolved.thinkingLevel;
+      if (activeModel) {
+        await window.NexusModelHelper.saveModelSelection(activeModel, sessionId, activeThinking);
       }
       const singleTab = {
         id: "tab-1",
@@ -36938,6 +45089,7 @@ Output only the revised text.`;
         isHistoryLoaded: false
       };
       singleTab.chatUIInstance.historyEl = initialHistory;
+      singleTab.chatUIInstance.activeTabModel = singleTab.selectedModel ? { ...singleTab.selectedModel } : null;
       singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel || null;
       singleTab.chatUIInstance.sparkId = singleTab.sparkId;
       if (singleTab.sessionId) {
@@ -36953,16 +45105,6 @@ Output only the revised text.`;
         ensureTabHistoryLoaded(singleTab);
       }, 0);
       activeTabIndex2 = 0;
-      const modelData = await chrome.storage.local.get(["lastUsedModel", "lastUsedThinkingLevel"]);
-      if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
-        if (!singleTab.selectedModel) singleTab.selectedModel = { ...modelData.lastUsedModel };
-        singleTab.chatUIInstance.activeTabModel = { ...singleTab.selectedModel };
-      }
-      if (modelData.lastUsedThinkingLevel) {
-        if (!singleTab.thinkingLevel) singleTab.thinkingLevel = modelData.lastUsedThinkingLevel;
-        singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel;
-        setPaneActiveThinking(singleTab.thinkingLevel);
-      }
       if (data.nexus_youtube_trigger) {
         setTimeout(() => handleYouTubeTrigger(data.nexus_youtube_trigger), 100);
       }
@@ -37059,8 +45201,8 @@ Output only the revised text.`;
     syncTabUI(activeTab, false, skipScrollRestore);
     loadCurrentWebSelection(activeTab?.id || null);
     updateWebChips();
-    if (typeof window.updateTopbarModelSelector === "function") {
-      window.updateTopbarModelSelector();
+    if (typeof window.updateModelSelector === "function") {
+      window.updateModelSelector();
     }
     renderTabs2();
     saveTabsState2();
@@ -37123,9 +45265,13 @@ Output only the revised text.`;
   }
   function saveTabsState2(forceSaveChat = false, saveHistory = true) {
     const tabsMetadata = tabs2.map((tab) => {
+      const model = tab.selectedModel || sharedInputUI2?.activeTabModel || tab.chatUIInstance?.activeTabModel || null;
+      const thinking = tab.thinkingLevel || sharedInputUI2?.thinkingLevel || tab.chatUIInstance?.thinkingLevel || null;
+      tab.selectedModel = model;
+      tab.thinkingLevel = thinking;
       if (tab.chatUIInstance) {
-        tab.selectedModel = tab.chatUIInstance.activeTabModel || tab.selectedModel || null;
-        tab.thinkingLevel = tab.chatUIInstance.thinkingLevel || tab.thinkingLevel || null;
+        tab.chatUIInstance.activeTabModel = model ? { ...model } : null;
+        tab.chatUIInstance.thinkingLevel = thinking || null;
       }
       return {
         id: tab.id,
@@ -37136,8 +45282,8 @@ Output only the revised text.`;
         scrollAnchorIndex: tab.scrollAnchorIndex,
         scrollAnchorOffset: tab.scrollAnchorOffset,
         isAtBottom: !!tab.isAtBottom,
-        selectedModel: tab.selectedModel || null,
-        thinkingLevel: tab.thinkingLevel || null
+        selectedModel: model,
+        thinkingLevel: thinking
       };
     });
     chrome.storage.local.set({
@@ -37211,7 +45357,7 @@ Output only the revised text.`;
       questionEl.className = `nexus-chat-question${entryType !== "qa" ? ` ${entryType}-question` : ""}`;
       questionEl.dataset.entryType = entryType;
       questionEl.removeAttribute("contenteditable");
-      questionEl.classList.remove("nexus-question-editing", "nexus-answer-editing");
+      questionEl.classList.remove("is-editing");
       if (wasPinned) {
         questionEl.classList.add("is-pinned-question");
       }
@@ -38186,6 +46332,10 @@ Output only the revised text.`;
           if (activeTab) handleSubmit(text, images, extra, activeTab);
         }
       });
+      window.sharedInputUI = sharedInputUI2;
+      window.tabs = tabs2;
+      window.getActiveTabIndex = () => activeTabIndex2;
+      window.getActiveTab = () => tabs2[activeTabIndex2];
     }
     shouldStartNewChat = false;
     try {
@@ -38212,11 +46362,15 @@ Output only the revised text.`;
         chatUI = tabs2[activeTabIndex2].chatUIInstance;
         if (sharedInputUI2) {
           sharedInputUI2.historyEl = tabs2[activeTabIndex2].historyEl;
+          sharedInputUI2.activeTabModel = tabs2[activeTabIndex2].selectedModel ? { ...tabs2[activeTabIndex2].selectedModel } : null;
+          sharedInputUI2.thinkingLevel = tabs2[activeTabIndex2].thinkingLevel || null;
+          if (typeof sharedInputUI2.refreshModelSelector === "function") sharedInputUI2.refreshModelSelector();
+          if (typeof sharedInputUI2.refreshReasoningSelector === "function") sharedInputUI2.refreshReasoningSelector();
           sharedInputUI2._updateActionBtnState();
         }
       }
     }
-    initTopbarModelSelector("primary");
+    initModelSelector("primary");
     updateInputPlaceholder();
     updatePaneHighlight();
     if (typeof tabs2 !== "undefined") {
@@ -38343,21 +46497,34 @@ Output only the revised text.`;
     document.addEventListener("nexus:model-change", (e) => {
       const activeTab = tabs2[activeTabIndex2];
       if (activeTab && e.detail) {
-        activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
+        if (e.detail.model) {
+          activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
+        }
+        if (e.detail.thinkingLevel !== void 0) {
+          activeTab.thinkingLevel = e.detail.thinkingLevel;
+        }
         if (activeTab.chatUIInstance) {
-          activeTab.chatUIInstance.activeTabModel = { ...activeTab.selectedModel };
+          if (activeTab.selectedModel) activeTab.chatUIInstance.activeTabModel = { ...activeTab.selectedModel };
+          if (activeTab.thinkingLevel) activeTab.chatUIInstance.thinkingLevel = activeTab.thinkingLevel;
         }
         if (sharedInputUI2) {
-          sharedInputUI2.activeTabModel = { ...activeTab.selectedModel };
+          if (activeTab.selectedModel) sharedInputUI2.activeTabModel = { ...activeTab.selectedModel };
+          if (activeTab.thinkingLevel) sharedInputUI2.thinkingLevel = activeTab.thinkingLevel;
         }
         const sidKey = activeTab.sessionId || "null";
-        chrome.storage.local.get(["nexus_session_settings"], (res) => {
-          const settings = res.nexus_session_settings || {};
-          if (!settings[sidKey]) settings[sidKey] = {};
-          settings[sidKey].selectedModel = activeTab.selectedModel;
-          chrome.storage.local.set({ nexus_session_settings: settings });
+        sessionSettings[sidKey] = {
+          ...sessionSettings[sidKey] || {},
+          ...activeTab.selectedModel ? { selectedModel: activeTab.selectedModel } : {},
+          ...activeTab.thinkingLevel ? { thinkingLevel: activeTab.thinkingLevel } : {}
+        };
+        chrome.storage.local.set({
+          nexus_session_settings: sessionSettings,
+          ...activeTab.selectedModel ? { lastUsedModel: activeTab.selectedModel } : {},
+          ...activeTab.thinkingLevel ? { lastUsedThinkingLevel: activeTab.thinkingLevel } : {}
         });
-        chrome.storage.local.set({ lastUsedModel: activeTab.selectedModel });
+        if (typeof saveTabsState2 === "function") {
+          saveTabsState2();
+        }
       }
     });
     chrome.runtime.onMessage.addListener((request) => {
@@ -38904,8 +47071,8 @@ Output only the revised text.`;
                   if (sharedInputUI2 && typeof sharedInputUI2.refreshModelSelector === "function") {
                     sharedInputUI2.refreshModelSelector();
                   }
-                  if (typeof window.updateTopbarModelSelector === "function") {
-                    window.updateTopbarModelSelector();
+                  if (typeof window.updateModelSelector === "function") {
+                    window.updateModelSelector();
                   }
                 });
               }
@@ -39133,7 +47300,7 @@ Output only the revised text.`;
             items: [
               {
                 label: isPinned2 ? "Unpin" : "Pin",
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+                icon: isPinned2 ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"></line><path d="M12 6.5 15 9.5l-1.5 1.5"></path><path d="m9 12-4.5 4.5 2 2 1-1 4-4"></path><line x1="7.5" y1="16.5" x2="3" y2="21"></line></svg>` : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4.5 4.5 4.5-2 2-1-1-4.5 4.5 1 1-2 2-4.5-4.5 2-2 1 1 4.5-4.5-1-1 2-2Z"></path><line x1="8" y1="16" x2="3" y2="21"></line></svg>`,
                 action: async () => {
                   if (session) {
                     if (!isPinned2) {
@@ -39177,7 +47344,7 @@ Output only the revised text.`;
               },
               {
                 label: "Rename",
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
                 action: async () => {
                   const currentSession = await NexusChatDB.getSession(sid);
                   const oldTitle = currentSession ? currentSession.title : "Untitled Chat";
@@ -39201,7 +47368,7 @@ Output only the revised text.`;
               },
               {
                 label: "Generate title",
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h10v3"></path><path d="M9 4v16"></path><path d="M6 20h6"></path><path d="m19 10 .8 1.8a.5.5 0 0 0 .4.4l1.8.8-1.8.8a.5.5 0 0 0-.4.4L19 16l-.8-1.8a.5.5 0 0 0-.4-.4l-1.8-.8 1.8-.8a.5.5 0 0 0 .4-.4Z"></path></svg>`,
                 action: async () => {
                   const history = await ChatHistoryManager.getHistory(sid);
                   const fullText = (history || []).map((h) => `${h.role}: ${h.text}`).join("\n\n");
@@ -39209,7 +47376,7 @@ Output only the revised text.`;
                     if (typeof NexusToast !== "undefined") NexusToast.show("No chat content to generate title.", "info");
                     return;
                   }
-                  const currentModel = getPaneActiveModel() || { model: "gemini-2.5-flash", providerId: "google" };
+                  const currentModel = tabs2[activeTabIndex2]?.selectedModel || sharedInputUI2?.activeTabModel || { model: "gemini-2.5-flash", providerId: "google" };
                   const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
                   if (chatItemEl) chatItemEl.classList.add("is-naming");
                   if (typeof NexusToast !== "undefined") NexusToast.show("\u2728 Generating chat title...", "info");
@@ -39246,7 +47413,7 @@ Output only the revised text.`;
               },
               {
                 label: isArchived ? "Unarchive" : "Archive",
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+                icon: isArchived ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="m10 15 2-2 2 2"></path><path d="M12 13v4"></path></svg>` : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>`,
                 action: async () => {
                   const meta = await NexusChatDB.getSession(sid);
                   if (meta) {
@@ -39290,11 +47457,9 @@ Output only the revised text.`;
                   }
                 }
               },
-              { divider: true },
               {
                 label: "Delete",
-                danger: true,
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
                 action: async () => {
                   const confirmed = await window.showCustomPopup({
                     title: "Delete Chat",
@@ -39349,8 +47514,9 @@ Output only the revised text.`;
             window.NexusViewManager.switchView("chat", { sid });
           }
           const messages = await ChatHistoryManager.getSessionMessages(sid);
-          const meta = sessions[sid] || { id: sid };
-          window.loadHistoryIntoNewTab(messages, meta, sid);
+          const allSessions = await ChatHistoryManager.getAllHistories();
+          const meta = allSessions[sid] || sessions[sid] || { id: sid };
+          await window.loadHistoryIntoNewTab(messages, meta, sid);
           const sidebar = document.getElementById("nexus-sidebar");
           const backdrop = document.querySelector(".sidebar-backdrop");
           if (sidebar) sidebar.classList.remove("active");
@@ -39540,7 +47706,11 @@ Output only the revised text.`;
           selectedModel: currentModel,
           thinkingLevel: currentThinking
         };
-        chrome.storage.local.set({ nexus_session_settings: settings });
+        chrome.storage.local.set({
+          nexus_session_settings: settings,
+          ...currentModel ? { lastUsedModel: currentModel } : {},
+          ...currentThinking ? { lastUsedThinkingLevel: currentThinking } : {}
+        });
       });
     }
     const now = Date.now();
@@ -39858,7 +48028,10 @@ ${fileContexts}`;
       }
     }
     if (tabModel) {
-      chrome.storage.local.set({ lastUsedModel: tabModel });
+      chrome.storage.local.set({
+        lastUsedModel: tabModel,
+        ...currentTab?.thinkingLevel ? { lastUsedThinkingLevel: currentTab.thinkingLevel } : {}
+      });
     }
     const sendMessage = () => {
       if (!port) setupPort();
@@ -39934,8 +48107,8 @@ ${fileContexts}`;
     if (sharedInputUI2?.inputEl) {
       sharedInputUI2.inputEl.addEventListener("focus", () => {
         updateInputPlaceholder();
-        if (typeof window.updateTopbarModelSelector === "function") {
-          window.updateTopbarModelSelector();
+        if (typeof window.updateModelSelector === "function") {
+          window.updateModelSelector();
         }
       });
     }
@@ -40395,73 +48568,64 @@ ${fileContexts}`;
       }
     });
   }
-  function resetChat2() {
+  async function resetChat2() {
     if (typeof window.notesClosePage === "function") window.notesClosePage();
     if (typeof window.sparksClosePage === "function") window.sparksClosePage();
     stopSpotlightAudio();
-    if (activeTabIndex2 !== -1) {
-      const activeTab = tabs2[activeTabIndex2];
-      if (activeTab) {
-        if (port && activeTab.sessionId) {
-          port.postMessage({ action: "stop_chat", sessionId: activeTab.sessionId });
-        }
-        const currentModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : chatUI?.activeTabModel ? { ...chatUI.activeTabModel } : null;
-        const currentThinking = activeTab.thinkingLevel || chatUI?.thinkingLevel || null;
-        activeTab.title = "New Tab";
-        activeTab.sessionId = null;
-        activeTab.selectedModel = currentModel;
-        activeTab.thinkingLevel = currentThinking;
-        activeTab.isHistoryLoaded = false;
-        if (activeTab.historyEl) {
-          activeTab.historyEl.removeAttribute("data-session-id");
-        }
-        activeTab.sparkId = null;
-        if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = null;
-        activeTab.scrollTop = -1;
-        updateUrlSessionId2(null);
-        if (currentModel) {
-          const sidKey = "null";
-          sessionSettings[sidKey] = {
-            ...sessionSettings[sidKey] || {},
-            selectedModel: currentModel,
-            thinkingLevel: currentThinking
-          };
-          chrome.storage.local.get(["nexus_session_settings"], (res) => {
-            const settings = res.nexus_session_settings || {};
-            settings[sidKey] = {
-              ...settings[sidKey] || {},
-              selectedModel: currentModel,
-              thinkingLevel: currentThinking
-            };
-            chrome.storage.local.set({ nexus_session_settings: settings });
-          });
-        }
-        if (typeof sidebarSparksRenderList === "function") {
-          sidebarSparksRenderList();
-        }
+    const activeTab = activeTabIndex2 >= 0 && tabs2[activeTabIndex2] ? tabs2[activeTabIndex2] : null;
+    const curSid = activeTab?.sessionId || new URLSearchParams(window.location?.search || "").get("sid") || null;
+    let currentModel = activeTab?.selectedModel || sharedInputUI2?.activeTabModel || null;
+    let currentThinking = activeTab?.thinkingLevel || sharedInputUI2?.thinkingLevel || null;
+    if ((!currentModel || !currentThinking) && curSid) {
+      const resolved = await window.NexusModelHelper.resolveSessionSettings(curSid);
+      if (!currentModel) currentModel = resolved.selectedModel;
+      if (!currentThinking) currentThinking = resolved.thinkingLevel;
+    }
+    if (activeTab) {
+      if (port && activeTab.sessionId) {
+        port.postMessage({ action: "stop_chat", sessionId: activeTab.sessionId });
       }
+      activeTab.title = "New Tab";
+      activeTab.sessionId = null;
+      activeTab.selectedModel = currentModel;
+      activeTab.thinkingLevel = currentThinking;
+      activeTab.isHistoryLoaded = false;
+      if (activeTab.historyEl) {
+        activeTab.historyEl.removeAttribute("data-session-id");
+      }
+      activeTab.sparkId = null;
+      if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = null;
+      activeTab.scrollTop = -1;
+      updateUrlSessionId2(null);
+      if (typeof sidebarSparksRenderList === "function") {
+        sidebarSparksRenderList();
+      }
+    }
+    if (currentModel) {
+      await window.NexusModelHelper?.saveModelSelection?.(currentModel, null);
+      if (currentThinking) {
+        await window.NexusModelHelper?.saveThinkingSelection?.(currentThinking, null, currentModel);
+      }
+    }
+    if (sharedInputUI2) {
+      if (activeTab?.historyEl) sharedInputUI2.historyEl = activeTab.historyEl;
+      sharedInputUI2.activeTabModel = currentModel ? { ...currentModel } : null;
+      sharedInputUI2.thinkingLevel = currentThinking || null;
+      if (typeof sharedInputUI2.refreshModelSelector === "function") sharedInputUI2.refreshModelSelector();
+      if (typeof sharedInputUI2.refreshReasoningSelector === "function") sharedInputUI2.refreshReasoningSelector();
     }
     if (chatUI) {
       chatUI.clearHistory();
-      const activeTab = tabs2[activeTabIndex2];
-      if (activeTab && activeTab.selectedModel) {
-        chatUI.activeTabModel = { ...activeTab.selectedModel };
-        chatUI.thinkingLevel = activeTab.thinkingLevel || null;
-      } else {
-        const savedSettings = sessionSettings["null"] || {};
-        chatUI.activeTabModel = savedSettings.selectedModel ? { ...savedSettings.selectedModel } : null;
-        chatUI.thinkingLevel = savedSettings.thinkingLevel || null;
-      }
-      if (typeof chatUI.refreshModelSelector === "function") chatUI.refreshModelSelector();
-      if (typeof chatUI.refreshReasoningSelector === "function") chatUI.refreshReasoningSelector();
+      chatUI.activeTabModel = currentModel ? { ...currentModel } : null;
+      chatUI.thinkingLevel = currentThinking || null;
       if (chatUI.inputEl) {
         chatUI.inputEl.value = "";
         chatUI.inputEl.style.height = "auto";
         chatUI.inputEl.focus();
       }
     }
-    if (typeof window.updateTopbarModelSelector === "function") {
-      window.updateTopbarModelSelector();
+    if (typeof window.updateModelSelector === "function") {
+      window.updateModelSelector();
     }
     updateWelcomeScreenState2("primary");
     updatePaneBlankState();
@@ -40664,15 +48828,33 @@ ${fileContexts}`;
           NexusChatUI.updateVersionNavInActions(ans);
         }
       });
+      entryElement.scrollIntoView({ behavior: "instant", block: "start" });
       const historyEl = entryElement.closest(".nexus-chat-history");
+      const sid = historyEl?.dataset?.sessionId || null;
       if (historyEl && typeof ChatHistoryManager !== "undefined") {
-        ChatHistoryManager.saveCurrentChat(historyEl);
+        ChatHistoryManager.saveCurrentChat(historyEl, sid);
       }
     }
   }
   function updateVersionNav(entryElement, activeIndex, totalCount) {
+    const versionsContainer = entryElement.querySelector(".nexus-answer-versions");
+    const versions = versionsContainer ? Array.from(versionsContainer.querySelectorAll(".nexus-answer-version")) : [];
+    const activeVersion = versions[activeIndex];
+    const modifierLabel = activeVersion?.dataset.modifierLabel || "Normal";
     const navs = entryElement.querySelectorAll(".nexus-answer-nav");
     navs.forEach((nav) => {
+      let tag = nav.querySelector(".nexus-answer-version-tag");
+      if (!tag) {
+        tag = document.createElement("span");
+        tag.className = "nexus-answer-version-tag";
+        nav.insertBefore(tag, nav.firstChild);
+      }
+      if (modifierLabel && modifierLabel !== "Normal") {
+        tag.textContent = modifierLabel;
+        tag.style.display = "inline-flex";
+      } else {
+        tag.style.display = "none";
+      }
       const counter = nav.querySelector(".nexus-answer-nav-counter");
       const prevBtn = nav.querySelector(".nav-prev");
       const nextBtn = nav.querySelector(".nav-next");
@@ -40761,13 +48943,7 @@ ${fileContexts}`;
     const currentActiveTab = tabs2[activeTabIndex2];
     if (!currentActiveTab) return;
     chrome.storage.local.get(["providers", "models"], async (data) => {
-      let promptSupport;
-      if (typeof window.getPromptApiSupport === "function") {
-        promptSupport = await window.getPromptApiSupport();
-      } else {
-        promptSupport = { supported: false, status: "no", reason: "Prompt API not loaded" };
-      }
-      const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
+      const chain = window.NexusModelHelper.buildModelChain(data);
       if (chain.length <= 1) return;
       let currentModel = currentActiveTab.selectedModel?.model;
       let currentProviderId = currentActiveTab.selectedModel?.providerId;
@@ -40775,46 +48951,32 @@ ${fileContexts}`;
       const nextIndex = (currentIndex + 1) % chain.length;
       const nextItem = chain[nextIndex];
       currentActiveTab.selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
-      setPaneActiveModel(currentActiveTab.selectedModel);
       if (currentActiveTab.chatUIInstance) {
         currentActiveTab.chatUIInstance.activeTabModel = { ...currentActiveTab.selectedModel };
       }
       if (sharedInputUI2) {
         sharedInputUI2.activeTabModel = { ...currentActiveTab.selectedModel };
       }
-      const label = document.getElementById("topbar-model-label");
+      const label = document.getElementById("model-label") || document.querySelector(".nexus-current-model") || document.getElementById("topbar-model-label");
       if (label) {
         label.textContent = nextItem.displayName || nextItem.model;
       }
-      const sidKey = currentActiveTab.sessionId || "null";
-      chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
-        const settings = res.nexus_session_settings || {};
-        if (!settings[sidKey]) settings[sidKey] = {};
-        settings[sidKey].selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
-        const advancedParamsByModel2 = res.advancedParamsByModel || {};
-        const compositeKey = nextItem.providerId ? `${nextItem.providerId}:${nextItem.model}` : nextItem.model;
-        const modelParams = nextItem.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !nextItem.providerId ? advancedParamsByModel2[nextItem.model] || {} : {};
-        const defaultThinking = window.NexusModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
-        const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-        currentActiveTab.thinkingLevel = newThinkingLevel;
-        setPaneActiveThinking(newThinkingLevel);
-        settings[sidKey].thinkingLevel = newThinkingLevel;
+      const res = await window.NexusModelHelper.saveModelSelection(nextItem, currentActiveTab.sessionId);
+      if (res) {
+        currentActiveTab.thinkingLevel = res.thinkingLevel;
         if (currentActiveTab.chatUIInstance) {
-          currentActiveTab.chatUIInstance.thinkingLevel = newThinkingLevel;
+          currentActiveTab.chatUIInstance.thinkingLevel = res.thinkingLevel;
         }
-        chrome.storage.local.set({
-          nexus_session_settings: settings,
-          lastUsedModel: { model: nextItem.model, providerId: nextItem.providerId }
-        }, () => {
-          if (sharedInputUI2 && typeof sharedInputUI2.refreshReasoningSelector === "function") {
-            sharedInputUI2.thinkingLevel = newThinkingLevel;
+        if (sharedInputUI2) {
+          sharedInputUI2.thinkingLevel = res.thinkingLevel;
+          if (typeof sharedInputUI2.refreshReasoningSelector === "function") {
             sharedInputUI2.refreshReasoningSelector();
           }
-          if (typeof window.updateTopbarModelSelector === "function") {
-            window.updateTopbarModelSelector();
-          }
-        });
-      });
+        }
+      }
+      if (typeof window.updateModelSelector === "function") {
+        window.updateModelSelector();
+      }
     });
   }
   function matchesShortcut(event, actionName, shortcuts2) {
@@ -41057,41 +49219,24 @@ ${fileContexts}`;
     }
     activeTab.title = displayTitle;
     const sidKey = historySessionId || "null";
-    const savedSettings = sessionSettings[sidKey] || {};
-    activeTab.selectedModel = meta.selectedModel || savedSettings.selectedModel || activeTab.selectedModel || null;
-    if (savedSettings.thinkingLevel || meta.thinkingLevel) {
-      activeTab.thinkingLevel = savedSettings.thinkingLevel || meta.thinkingLevel;
-    } else {
-      const localData = await chrome.storage.local.get(["advancedParamsByModel"]);
-      const advParams = localData.advancedParamsByModel || {};
-      const modelObj = activeTab.selectedModel;
-      const compositeKey = modelObj ? modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model : "";
-      const modelParams = advParams[compositeKey] || advParams[modelObj?.model] || {};
-      const defaultThinking = modelObj ? window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId) : "none";
-      activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
-    }
+    const resolved = await window.NexusModelHelper.resolveSessionSettings(historySessionId, meta.selectedModel, meta.thinkingLevel);
+    activeTab.selectedModel = resolved.selectedModel;
+    activeTab.thinkingLevel = resolved.thinkingLevel;
     activeTab.sparkId = meta.sparkId || null;
-    if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = activeTab.sparkId;
-    try {
-      const res = await chrome.storage.local.get(["nexus_session_settings"]);
-      const settings = res.nexus_session_settings || {};
-      if (!settings[sidKey]) settings[sidKey] = {};
-      if (activeTab.selectedModel) {
-        settings[sidKey].selectedModel = activeTab.selectedModel;
-      }
-      if (activeTab.thinkingLevel) {
-        settings[sidKey].thinkingLevel = activeTab.thinkingLevel;
-      }
-      await chrome.storage.local.set({ nexus_session_settings: settings });
-      sessionSettings = settings;
-    } catch (e) {
-      console.error("Failed to sync session settings", e);
+    if (activeTab.chatUIInstance) {
+      activeTab.chatUIInstance.sparkId = activeTab.sparkId;
+      activeTab.chatUIInstance.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
+      activeTab.chatUIInstance.thinkingLevel = resolved.thinkingLevel || null;
+    }
+    if (resolved.selectedModel) {
+      await window.NexusModelHelper.saveModelSelection(resolved.selectedModel, historySessionId, resolved.thinkingLevel);
     }
     if (activeTab.historyEl) {
       activeTab.historyEl.dataset.sessionId = historySessionId;
     }
     const targetInputUI = sharedInputUI2;
     if (targetInputUI) {
+      targetInputUI.historyEl = activeTab.historyEl;
       targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
       targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
       if (typeof targetInputUI.refreshModelSelector === "function") targetInputUI.refreshModelSelector();
@@ -41099,8 +49244,8 @@ ${fileContexts}`;
       targetInputUI.restoreInputState(activeTab.inputState || null);
     }
     updateInputPlaceholder();
-    if (typeof window.updateTopbarModelSelector === "function") {
-      window.updateTopbarModelSelector();
+    if (typeof window.updateModelSelector === "function") {
+      window.updateModelSelector();
     }
     if (typeof sidebarSparksRenderList === "function") {
       sidebarSparksRenderList();
@@ -41215,7 +49360,7 @@ ${fileContexts}`;
       items: [
         {
           label: isPinned2 ? "Unpin" : "Pin",
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+          icon: isPinned2 ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"></line><path d="M12 6.5 15 9.5l-1.5 1.5"></path><path d="m9 12-4.5 4.5 2 2 1-1 4-4"></path><line x1="7.5" y1="16.5" x2="3" y2="21"></line></svg>` : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4.5 4.5 4.5-2 2-1-1-4.5 4.5 1 1-2 2-4.5-4.5 2-2 1 1 4.5-4.5-1-1 2-2Z"></path><line x1="8" y1="16" x2="3" y2="21"></line></svg>`,
           action: async () => {
             const session = await NexusChatDB.getSession(sessionId);
             if (session) {
@@ -41261,7 +49406,7 @@ ${fileContexts}`;
         },
         {
           label: isArchived ? "Unarchive" : "Archive",
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+          icon: isArchived ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="m10 15 2-2 2 2"></path><path d="M12 13v4"></path></svg>` : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>`,
           action: async () => {
             if (sessionMeta) {
               if (isArchived) {
@@ -41307,7 +49452,7 @@ ${fileContexts}`;
         },
         {
           label: "Rename",
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
           action: async () => {
             let currentTitle = sessionMeta?.title || "Untitled Chat";
             if (!sessionMeta?.isRenamed && !sessionMeta?.autoNamed && sessionMeta?.questions && sessionMeta?.questions.length > 0) {
@@ -41333,7 +49478,7 @@ ${fileContexts}`;
         },
         {
           label: "Copy Chat",
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>`,
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="13" height="13" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`,
           action: async () => {
             let fullText = "";
             const messages = typeof ChatHistoryManager !== "undefined" ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
@@ -41392,11 +49537,9 @@ ${selectedAns.text}`;
             }
           }
         },
-        { divider: true },
         {
           label: "Delete",
-          danger: true,
-          icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
           action: async () => {
             const confirmed = await window.showCustomPopup({
               title: "Delete Chat",
@@ -41417,265 +49560,25 @@ ${selectedAns.text}`;
       ]
     });
   }
-  function initTopbarModelSelector() {
-    const selector = document.getElementById("topbar-model-selector");
-    if (!selector) return;
-    const btn = document.getElementById("topbar-model-btn");
-    const label = document.getElementById("topbar-model-label");
-    const dropdown = document.getElementById("topbar-model-dropdown");
-    if (!btn || !dropdown) return;
-    if (btn.dataset.initializedModelSelector) {
-      if (window.updateTopbarModelSelector) {
-        window.updateTopbarModelSelector();
+  function initModelSelector() {
+    window.updateModelSelector = () => {
+      const activeTab = typeof tabs2 !== "undefined" && typeof activeTabIndex2 !== "undefined" ? tabs2[activeTabIndex2] : null;
+      if (activeTab?.chatUIInstance?.refreshModelSelector) {
+        activeTab.chatUIInstance.refreshModelSelector();
       }
-      return;
-    }
-    btn.dataset.initializedModelSelector = "true";
-    const render = (data) => {
-      const promptSupport = data.promptSupport || { supported: false, status: "no", reason: "Prompt API not checked" };
-      const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
-      const activeTab = tabs2[activeTabIndex2];
-      let currentModel = activeTab?.selectedModel?.model;
-      let currentProviderId = activeTab?.selectedModel?.providerId;
-      const lastUsed = data.lastUsedModel;
-      if (!currentModel && lastUsed && lastUsed.model) {
-        currentModel = lastUsed.model;
-        currentProviderId = lastUsed.providerId;
+      if (activeTab?.chatUIInstance?.refreshReasoningSelector) {
+        activeTab.chatUIInstance.refreshReasoningSelector();
       }
-      if (!currentModel && chain.length > 0) {
-        currentModel = chain[0].model;
-        currentProviderId = chain[0].providerId;
+      if (sharedInputUI2?.refreshModelSelector) {
+        sharedInputUI2.refreshModelSelector();
       }
-      if (activeTab && currentModel) {
-        activeTab.selectedModel = { model: currentModel, providerId: currentProviderId };
-        if (sharedInputUI2) {
-          sharedInputUI2.activeTabModel = { ...activeTab.selectedModel };
-          sharedInputUI2.thinkingLevel = activeTab.thinkingLevel || null;
-          if (typeof sharedInputUI2.refreshReasoningSelector === "function") {
-            sharedInputUI2.refreshReasoningSelector();
-          }
-        }
+      if (sharedInputUI2?.refreshReasoningSelector) {
+        sharedInputUI2.refreshReasoningSelector();
       }
-      const activeChainItem = chain.find((c) => c.model === currentModel && c.providerId === currentProviderId) || chain.find((c) => c.model === currentModel);
-      if (label) {
-        if (activeChainItem) {
-          label.textContent = activeChainItem.displayName || activeChainItem.model;
-        } else {
-          label.textContent = currentModel;
-        }
-      }
-      dropdown.innerHTML = "";
-      if (chain.length === 0) {
-        dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:#70757a;">No models</div>';
-        return;
-      }
-      chain.forEach((item) => {
-        const el = document.createElement("button");
-        const isActive = item.model === currentModel && item.providerId === currentProviderId;
-        el.className = `nexus-model-item${isActive ? " active" : ""}`;
-        const temp = document.getElementById("nexus-modelItemTemplate");
-        const clone = temp.content.cloneNode(true);
-        clone.querySelector(".model-name").textContent = item.displayName || item.model;
-        clone.querySelector(".model-id").style.display = "none";
-        el.appendChild(clone);
-        el.onclick = (e) => {
-          e.stopPropagation();
-          if (label) label.textContent = item.displayName || item.model;
-          dropdown.classList.remove("active");
-          dropdown.querySelectorAll(".nexus-model-item").forEach((b) => b.classList.remove("active"));
-          el.classList.add("active");
-          const currentActiveTab = tabs2[activeTabIndex2];
-          const tabsToUpdate = [currentActiveTab];
-          tabsToUpdate.forEach((tab) => {
-            tab.selectedModel = { model: item.model, providerId: item.providerId };
-            setPaneActiveModel("primary", tab.selectedModel);
-            if (tab.chatUIInstance) {
-              tab.chatUIInstance.activeTabModel = { ...tab.selectedModel };
-            }
-            if (sharedInputUI2) {
-              sharedInputUI2.activeTabModel = { ...tab.selectedModel };
-            }
-          });
-          if (currentActiveTab) {
-            const sidKey = currentActiveTab.sessionId || "null";
-            chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
-              const settings = res.nexus_session_settings || {};
-              if (!settings[sidKey]) settings[sidKey] = {};
-              settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
-              const advancedParamsByModel2 = res.advancedParamsByModel || {};
-              const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
-              const modelParams = item.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !item.providerId ? advancedParamsByModel2[item.model] || {} : {};
-              const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
-              const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-              tabsToUpdate.forEach((tab) => {
-                tab.thinkingLevel = newThinkingLevel;
-                setPaneActiveThinking("primary", newThinkingLevel);
-                settings[sidKey].thinkingLevel = newThinkingLevel;
-                if (tab.chatUIInstance) {
-                  tab.chatUIInstance.thinkingLevel = newThinkingLevel;
-                }
-                if (sharedInputUI2) {
-                  sharedInputUI2.thinkingLevel = newThinkingLevel;
-                }
-              });
-              chrome.storage.local.set({ nexus_session_settings: settings }, () => {
-                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && currentActiveTab?.sessionId) {
-                  window.NexusChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, { model: item.model, providerId: item.providerId }, newThinkingLevel);
-                }
-                tabsToUpdate.forEach((tab) => {
-                  if (sharedInputUI2 && typeof sharedInputUI2.refreshReasoningSelector === "function") {
-                    sharedInputUI2.refreshReasoningSelector();
-                  }
-                });
-                if (typeof saveTabsState2 === "function") {
-                  saveTabsState2();
-                }
-                if (typeof window.updateTopbarModelSelector === "function") {
-                  window.updateTopbarModelSelector();
-                }
-              });
-            });
-          }
-          chrome.storage.local.set({ lastUsedModel: { model: item.model, providerId: item.providerId } });
-        };
-        dropdown.appendChild(el);
-      });
-      const divider = document.createElement("div");
-      divider.className = "nexus-model-divider";
-      dropdown.appendChild(divider);
-      const thinkingItem = document.createElement("div");
-      thinkingItem.className = "nexus-model-item nexus-thinking-parent-item";
-      thinkingItem.style.position = "relative";
-      thinkingItem.style.display = "flex";
-      thinkingItem.style.alignItems = "center";
-      thinkingItem.style.justifyContent = "space-between";
-      thinkingItem.style.cursor = "pointer";
-      const currentLevel = activeTab?.thinkingLevel || "none";
-      const titleMap = {
-        "minimal": "Minimal",
-        "low": "Low",
-        "medium": "Standard",
-        "high": "Extended",
-        "none": "None"
-      };
-      thinkingItem.innerHTML = `
-            <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
-                <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
-                <span style="font-size:11px; color:var(--nexus-text-secondary);">${titleMap[currentLevel] || "None"}</span>
-            </div>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        `;
-      const submenu = document.createElement("div");
-      submenu.className = "nexus-thinking-submenu";
-      const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
-      options.forEach((opt) => {
-        const optEl = document.createElement("button");
-        const isActive = currentLevel === opt.value;
-        optEl.className = `nexus-thinking-opt-item ${isActive ? "active" : ""}`;
-        const checkmarkIcon = isActive ? `
-                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--nexus-primary);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-            ` : `
-                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px;"></span>
-            `;
-        optEl.innerHTML = `
-                ${checkmarkIcon}
-                <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
-                    <span class="reasoning-title" style="font-size:13px; font-weight:500;">${opt.title}</span>
-                    <span class="reasoning-desc" style="font-size:11px; color:var(--nexus-text-secondary);">${opt.desc}</span>
-                </div>
-            `;
-        optEl.onclick = (e) => {
-          e.stopPropagation();
-          const currentActiveTab = tabs2[activeTabIndex2];
-          const tabsToUpdate = [currentActiveTab];
-          tabsToUpdate.forEach((tab) => {
-            tab.thinkingLevel = opt.value;
-            setPaneActiveThinking("primary", opt.value);
-            if (tab.chatUIInstance) {
-              tab.chatUIInstance.thinkingLevel = opt.value;
-            }
-            if (sharedInputUI2) {
-              sharedInputUI2.thinkingLevel = opt.value;
-            }
-          });
-          if (currentActiveTab) {
-            const sidKey = currentActiveTab.sessionId || "null";
-            chrome.storage.local.get(["nexus_session_settings", "advancedParamsByModel"], (res) => {
-              const settings = res.nexus_session_settings || {};
-              if (!settings[sidKey]) settings[sidKey] = {};
-              settings[sidKey].thinkingLevel = opt.value;
-              chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === "function" && currentActiveTab?.sessionId) {
-                  window.NexusChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, void 0, opt.value);
-                }
-                tabsToUpdate.forEach((tab) => {
-                  if (sharedInputUI2 && typeof sharedInputUI2.refreshSystemTokens === "function") {
-                    sharedInputUI2.refreshSystemTokens();
-                  }
-                });
-                dropdown.classList.remove("active");
-                if (typeof window.updateTopbarModelSelector === "function") {
-                  window.updateTopbarModelSelector();
-                }
-              });
-            });
-          }
-        };
-        submenu.appendChild(optEl);
-      });
-      thinkingItem.appendChild(submenu);
-      dropdown.appendChild(thinkingItem);
+      updateTopbarSparkTitle();
     };
-    const fetchAndRender = () => {
-      const activeTab = tabs2[activeTabIndex2];
-      const sidKey = activeTab?.sessionId || "null";
-      chrome.storage.local.get(["providers", "models", "lastUsedModel", "nexus_session_settings", "advancedParamsByModel"], async (data) => {
-        if (typeof window.getPromptApiSupport === "function") {
-          data.promptSupport = await window.getPromptApiSupport();
-        } else {
-          data.promptSupport = { supported: false, status: "no", reason: "Prompt API not loaded" };
-        }
-        const settings = data.nexus_session_settings || {};
-        const saved = settings[sidKey] || {};
-        if (activeTab && !activeTab.selectedModel && saved.selectedModel) {
-          activeTab.selectedModel = { ...saved.selectedModel };
-        }
-        if (activeTab) {
-          const modelObj = activeTab.selectedModel;
-          if (modelObj) {
-            const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
-            const advancedParamsByModel2 = data.advancedParamsByModel || {};
-            const modelParams = modelObj.providerId && advancedParamsByModel2[compositeKey] ? advancedParamsByModel2[compositeKey] : !modelObj.providerId ? advancedParamsByModel2[modelObj.model] || {} : {};
-            const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
-            activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
-          }
-        }
-        render(data);
-        updateTopbarSparkTitle();
-        if (sharedInputUI2 && typeof sharedInputUI2._updateActionBtnState === "function") {
-          sharedInputUI2._updateActionBtnState();
-        }
-      });
-    };
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (dropdown.classList.contains("active")) {
-        dropdown.classList.remove("active");
-      } else {
-        NexusMenu.close();
-        fetchAndRender();
-        dropdown.classList.add("active");
-      }
-    });
-    document.addEventListener("click", (e) => {
-      if (!selector.contains(e.target) && dropdown.classList.contains("active")) {
-        dropdown.classList.remove("active");
-      }
-    });
-    window.updateTopbarModelSelector = fetchAndRender;
-    fetchAndRender();
+    window.updateTopbarModelSelector = window.updateModelSelector;
+    window.updateModelSelector();
   }
   function updateTopbarSparkTitle() {
     const topbar = document.getElementById("nexus-topbar");

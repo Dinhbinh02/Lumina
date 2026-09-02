@@ -15,7 +15,7 @@ export const ChatHistoryManager = {
     RETENTION_DAYS: 180,
     currentSessionId: null,
     generateSessionId() {
-        return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
     },
     async saveCurrentChat(historyEl = null, optionalSessionId = null, sparkId = null, force = false, extraSettings = null, suppressBroadcast = false) {
         if (!historyEl && typeof currentPopup !== 'undefined' && currentPopup) {
@@ -39,10 +39,13 @@ export const ChatHistoryManager = {
         if (messages.length === 0) {
             return;
         }
-        let activeSessionId = optionalSessionId || this.currentSessionId;
+        let activeSessionId = optionalSessionId || (history && history.dataset && history.dataset.sessionId) || this.currentSessionId;
         if (!activeSessionId) {
             activeSessionId = this.generateSessionId();
-            if (!optionalSessionId) this.currentSessionId = activeSessionId;
+        }
+        this.currentSessionId = activeSessionId;
+        if (history && !history.dataset.sessionId) {
+            history.dataset.sessionId = activeSessionId;
         }
         const title = this.generateChatTitle(history);
         const timestamp = Date.now();
@@ -205,12 +208,14 @@ export const ChatHistoryManager = {
                     const ans = v.querySelector('.nexus-chat-answer');
                     return ans ? (ans.getAttribute('data-raw-text') || ans.innerHTML) : '';
                 });
+                const versionModifiers = versions.map((v) => v.dataset.modifierLabel || 'Normal');
                 const activeAnswerEl = activeVersion ? activeVersion.querySelector('.nexus-chat-answer') : (versions[0] ? versions[0].querySelector('.nexus-chat-answer') : null);
                 const webSearchData = activeAnswerEl?.dataset.webSearch ? JSON.parse(activeAnswerEl.dataset.webSearch) : null;
                 messages.push({
                     type: 'answer',
                     content: versionContents[activeIndex] || versionContents[0] || '',
                     versions: versionContents,
+                    versionModifiers: versionModifiers,
                     activeVersionIndex: activeIndex,
                     timestamp,
                     metadata: { fromCache, webSearch: webSearchData }
@@ -484,6 +489,7 @@ export const ChatHistoryManager = {
                                 const versionDiv = document.createElement('div');
                                 versionDiv.className = 'nexus-answer-version' + (idx === activeIndex ? ' active' : '');
                                 versionDiv.dataset.versionIndex = idx.toString();
+                                versionDiv.dataset.modifierLabel = (answerMsg.versionModifiers && answerMsg.versionModifiers[idx]) ? answerMsg.versionModifiers[idx] : 'Normal';
                                 const answerDiv = document.createElement('div');
                                 answerDiv.className = 'nexus-chat-answer';
                                 answerDiv.setAttribute('data-raw-text', versionContent);
@@ -817,6 +823,10 @@ export const ChatHistoryManager = {
     },
     async getAllHistories() {
         return await NexusChatDB.getAllSessions();
+    },
+    async getSession(sessionId) {
+        if (!sessionId) return null;
+        return await NexusChatDB.getSession(sessionId);
     },
     async deleteSessionWithAttachments(sessionId) {
         try {

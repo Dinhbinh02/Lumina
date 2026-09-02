@@ -570,9 +570,8 @@ async function sparksOpenEditor(sparkId = null) {
         const label = overlay.querySelector('#sparks-preview-model-label');
         const dropdown = overlay.querySelector('#sparks-preview-model-dropdown');
         if (!btn || !dropdown || !label) return;
-        const data = await chrome.storage.local.get(['providers', 'advancedParamsByModel', 'lastUsedModel', 'promptSupport']);
-        const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
-        const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data, promptSupport) : [];
+        const data = await chrome.storage.local.get(['providers', 'advancedParamsByModel', 'lastUsedModel']);
+        const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : [];
         let currentModel = data.lastUsedModel?.model;
         let currentProviderId = data.lastUsedModel?.providerId;
         if (!currentModel && chain.length > 0) {
@@ -806,14 +805,12 @@ function showSparkContextMenu(btn, sparkId) {
         items: [
             {
                 label: 'Edit',
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
                 action: () => sparksOpenEditor(sparkId)
             },
-            { divider: true },
             {
                 label: 'Delete',
-                danger: true,
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
                 action: async () => {
                     const confirmed = await window.showCustomPopup({
                         title: 'Delete Spark',
@@ -921,7 +918,9 @@ async function openSparkChat(sparkId) {
         else if (typeof renderTabs === 'function') renderTabs();
         if (typeof window.saveTabsState === 'function') window.saveTabsState();
         else if (typeof saveTabsState === 'function') saveTabsState();
-        if (window.updateTopbarModelSelector) {
+        if (typeof window.updateModelSelector === 'function') {
+            window.updateModelSelector();
+        } else if (typeof window.updateTopbarModelSelector === 'function') {
             window.updateTopbarModelSelector();
         }
         if (typeof window.updateInputPlaceholder === 'function') {

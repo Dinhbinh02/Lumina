@@ -100,6 +100,7 @@ export function renderKaTeXFormula(rawMath, isDisplay = false) {
 
     for (const item of textMatches) {
         const safeText = item.txt
+            .replace(/\\([%$&_#{}\\])/g, '$1')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -118,27 +119,39 @@ export function initMarkdownMath() {
                 level: 'inline',
                 start(src) { return src.indexOf('$'); },
                 tokenizer(src) {
+                    const doubleMatch = src.match(/^\$\$((?:[^\$]|\\.)+?)\$\$/);
+                    if (doubleMatch) {
+                        return {
+                            type: 'inlineMath',
+                            raw: doubleMatch[0],
+                            text: doubleMatch[1],
+                            display: false
+                        };
+                    }
                     const match = src.match(/^\$((?:[^\$\\\n]|\\.)+?)\$/);
                     if (match) {
                         const content = match[1];
                         if (/^\s|\s$/.test(content)) return;
+                        if (/^\d+(?:[.,]\d+)?$/.test(content)) return;
+
                         if (/\s/.test(content)) {
-                            const hasMathSymbol = /[\\^_\=+\-*\/<>≤≥≠≈±∞%]/.test(content);
-                            if (!hasMathSymbol) return;
-                        } else {
-                            if (/^\d+(?:[.,]\d+)?$/.test(content)) return;
+                            const hasMathSymbol = /[\\^_\=+\-*\/<>≤≥≠≈±∞%()[\]{},;:|~'!√π]/.test(content);
+                            const hasMathKeywords = /\b(sin|cos|tan|cot|sec|csc|log|ln|exp|lim|sum|int|prod|det|dim|ker|max|min|arg|deg|gcd|hom|inf|sup)\b/i.test(content);
+                            const hasAlphanumericMix = /\b[a-zA-Z]\d|\d[a-zA-Z]\b/.test(content);
+                            if (!hasMathSymbol && !hasMathKeywords && !hasAlphanumericMix) return;
                         }
                         return {
                             type: 'inlineMath',
                             raw: match[0],
-                            text: content
+                            text: content,
+                            display: false
                         };
                     }
                 },
                 renderer(token) {
                     if (typeof katex !== 'undefined' && katex.renderToString) {
                         try {
-                            return renderKaTeXFormula(token.text, false);
+                            return renderKaTeXFormula(token.text, token.display || false);
                         } catch (_) {
                             return token.raw;
                         }

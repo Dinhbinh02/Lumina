@@ -1,6 +1,8 @@
+import { widgetRegistry } from './widget_registry.js';
+
 /**
  * WidgetRunner — Manages generation, sandboxing, and lifecycle for
- * Interactive Sandbox Widgets (<GenerateWidget>) in Nexus.
+ * Interactive Sandbox Widgets (<GenerateWidget>) & Built-in Widgets (<Widget>) in Nexus.
  */
 
 export const WidgetRunner = {
@@ -180,10 +182,17 @@ export const WidgetRunner = {
     },
 
     /**
-     * Initializes all un-hydrated widget iframes inside a DOM container
+     * Initializes all un-hydrated widget iframes and built-in widgets inside a DOM container
      */
     hydrateWidgets(containerEl = document) {
         if (!containerEl) return;
+
+        // 1. Mount built-in widgets (<Widget name="..." />)
+        if (typeof widgetRegistry !== 'undefined') {
+            widgetRegistry.mountAllInContainer(containerEl);
+        }
+
+        // 2. Hydrate sandbox iframe widgets (<GenerateWidget>)
         const wrappers = containerEl.querySelectorAll('.nexus-widget-wrapper:not([data-hydrated])');
 
         wrappers.forEach(wrapper => {

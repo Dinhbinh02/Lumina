@@ -12,40 +12,6 @@ try {
     NexusTooltip.init();
 } catch (_) { }
 
-function getPaneActiveModel() {
-    const model = sessionStorage.getItem('nexus_active_model');
-    const providerId = sessionStorage.getItem('nexus_active_provider');
-    if (model) {
-        return { model, providerId };
-    }
-    return null;
-}
-
-function setPaneActiveModel(modelObj) {
-    if (modelObj && modelObj.model) {
-        sessionStorage.setItem('nexus_active_model', modelObj.model);
-        if (modelObj.providerId) {
-            sessionStorage.setItem('nexus_active_provider', modelObj.providerId);
-        } else {
-            sessionStorage.removeItem('nexus_active_provider');
-        }
-    } else {
-        sessionStorage.removeItem('nexus_active_model');
-        sessionStorage.removeItem('nexus_active_provider');
-    }
-}
-
-function getPaneActiveThinking() {
-    return sessionStorage.getItem('nexus_active_thinking') || null;
-}
-
-function setPaneActiveThinking(level) {
-    if (level) {
-        sessionStorage.setItem('nexus_active_thinking', level);
-    } else {
-        sessionStorage.removeItem('nexus_active_thinking');
-    }
-}
 
 const container = document.querySelector('.nexus-chat-container');
 const fileInput = document.getElementById('file-input');
@@ -921,6 +887,23 @@ async function ensureTabHistoryLoaded(tab) {
                 if (messages) {
                     const sessions = await ChatHistoryManager.getAllHistories();
                     const meta = sessions[tab.sessionId] || {};
+                    const resolved = await window.NexusModelHelper.resolveSessionSettings(tab.sessionId, meta.selectedModel, meta.thinkingLevel);
+                    tab.selectedModel = resolved.selectedModel;
+                    tab.thinkingLevel = resolved.thinkingLevel;
+                    if (resolved.selectedModel) {
+                        await window.NexusModelHelper.saveModelSelection(resolved.selectedModel, tab.sessionId, resolved.thinkingLevel);
+                    }
+                    if (tab.chatUIInstance) {
+                        tab.chatUIInstance.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
+                        tab.chatUIInstance.thinkingLevel = resolved.thinkingLevel || null;
+                    }
+                    if (sharedInputUI && tab === tabs[activeTabIndex]) {
+                        sharedInputUI.historyEl = tab.historyEl;
+                        sharedInputUI.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
+                        sharedInputUI.thinkingLevel = resolved.thinkingLevel || null;
+                        if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
+                        if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+                    }
                     const chatData = {
                         ...meta,
                         messages: messages,
@@ -1033,19 +1016,11 @@ async function initTabs() {
             meta = sessions[sessionId] || {};
             tabTitle = meta.title || 'Chat';
         }
-        let activeModel = getPaneActiveModel();
-        let activeThinking = getPaneActiveThinking();
-        if (!activeModel) {
-            activeModel = savedTab?.selectedModel || (sessionId ? (sessionSettings[sessionId]?.selectedModel || meta.selectedModel) : sessionSettings['null']?.selectedModel) || null;
-            if (activeModel) {
-                setPaneActiveModel(activeModel);
-            }
-        }
-        if (!activeThinking) {
-            activeThinking = savedTab?.thinkingLevel || (sessionId ? (sessionSettings[sessionId]?.thinkingLevel || meta.thinkingLevel) : sessionSettings['null']?.thinkingLevel) || null;
-            if (activeThinking) {
-                setPaneActiveThinking(activeThinking);
-            }
+        const resolved = await window.NexusModelHelper.resolveSessionSettings(sessionId, meta.selectedModel || savedTab?.selectedModel || null, meta.thinkingLevel || savedTab?.thinkingLevel || null);
+        let activeModel = resolved.selectedModel;
+        let activeThinking = resolved.thinkingLevel;
+        if (activeModel) {
+            await window.NexusModelHelper.saveModelSelection(activeModel, sessionId, activeThinking);
         }
         const singleTab = {
             id: 'tab-1',
@@ -1068,6 +1043,7 @@ async function initTabs() {
             isHistoryLoaded: false
         };
         singleTab.chatUIInstance.historyEl = initialHistory;
+        singleTab.chatUIInstance.activeTabModel = singleTab.selectedModel ? { ...singleTab.selectedModel } : null;
         singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel || null;
         singleTab.chatUIInstance.sparkId = singleTab.sparkId;
         if (singleTab.sessionId) {
@@ -1083,16 +1059,6 @@ async function initTabs() {
             ensureTabHistoryLoaded(singleTab);
         }, 0);
         activeTabIndex = 0;
-        const modelData = await chrome.storage.local.get(['lastUsedModel', 'lastUsedThinkingLevel']);
-        if (modelData.lastUsedModel && modelData.lastUsedModel.model) {
-            if (!singleTab.selectedModel) singleTab.selectedModel = { ...modelData.lastUsedModel };
-            singleTab.chatUIInstance.activeTabModel = { ...singleTab.selectedModel };
-        }
-        if (modelData.lastUsedThinkingLevel) {
-            if (!singleTab.thinkingLevel) singleTab.thinkingLevel = modelData.lastUsedThinkingLevel;
-            singleTab.chatUIInstance.thinkingLevel = singleTab.thinkingLevel;
-            setPaneActiveThinking(singleTab.thinkingLevel);
-        }
         if (data.nexus_youtube_trigger) {
             setTimeout(() => handleYouTubeTrigger(data.nexus_youtube_trigger), 100);
         }
@@ -1191,8 +1157,8 @@ function switchTab(targetIndex, skipScrollRestore = false) {
     syncTabUI(activeTab, false, skipScrollRestore);
     loadCurrentWebSelection(activeTab?.id || null);
     updateWebChips();
-    if (typeof window.updateTopbarModelSelector === 'function') {
-        window.updateTopbarModelSelector();
+    if (typeof window.updateModelSelector === 'function') {
+        window.updateModelSelector();
     }
     renderTabs();
     saveTabsState();
@@ -1267,9 +1233,13 @@ function updateTabTitle(chatUIInstance, title) {
 
 function saveTabsState(forceSaveChat = false, saveHistory = true) {
     const tabsMetadata = tabs.map(tab => {
+        const model = tab.selectedModel || sharedInputUI?.activeTabModel || tab.chatUIInstance?.activeTabModel || null;
+        const thinking = tab.thinkingLevel || sharedInputUI?.thinkingLevel || tab.chatUIInstance?.thinkingLevel || null;
+        tab.selectedModel = model;
+        tab.thinkingLevel = thinking;
         if (tab.chatUIInstance) {
-            tab.selectedModel = tab.chatUIInstance.activeTabModel || tab.selectedModel || null;
-            tab.thinkingLevel = tab.chatUIInstance.thinkingLevel || tab.thinkingLevel || null;
+            tab.chatUIInstance.activeTabModel = model ? { ...model } : null;
+            tab.chatUIInstance.thinkingLevel = thinking || null;
         }
         return {
             id: tab.id,
@@ -1280,8 +1250,8 @@ function saveTabsState(forceSaveChat = false, saveHistory = true) {
             scrollAnchorIndex: tab.scrollAnchorIndex,
             scrollAnchorOffset: tab.scrollAnchorOffset,
             isAtBottom: !!tab.isAtBottom,
-            selectedModel: tab.selectedModel || null,
-            thinkingLevel: tab.thinkingLevel || null
+            selectedModel: model,
+            thinkingLevel: thinking
         };
     });
     chrome.storage.local.set({
@@ -1359,7 +1329,7 @@ function normalizeRestoredHistory(historyEl) {
         questionEl.className = `nexus-chat-question${entryType !== 'qa' ? ` ${entryType}-question` : ''}`;
         questionEl.dataset.entryType = entryType;
         questionEl.removeAttribute('contenteditable');
-        questionEl.classList.remove('nexus-question-editing', 'nexus-answer-editing');
+        questionEl.classList.remove('is-editing');
         if (wasPinned) {
             questionEl.classList.add('is-pinned-question');
         }
@@ -2500,6 +2470,10 @@ async function init() {
                 if (activeTab) handleSubmit(text, images, extra, activeTab);
             }
         });
+        window.sharedInputUI = sharedInputUI;
+        window.tabs = tabs;
+        window.getActiveTabIndex = () => activeTabIndex;
+        window.getActiveTab = () => tabs[activeTabIndex];
     }
     shouldStartNewChat = false;
     try {
@@ -2526,11 +2500,15 @@ async function init() {
             chatUI = tabs[activeTabIndex].chatUIInstance;
             if (sharedInputUI) {
                 sharedInputUI.historyEl = tabs[activeTabIndex].historyEl;
+                sharedInputUI.activeTabModel = tabs[activeTabIndex].selectedModel ? { ...tabs[activeTabIndex].selectedModel } : null;
+                sharedInputUI.thinkingLevel = tabs[activeTabIndex].thinkingLevel || null;
+                if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
+                if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
                 sharedInputUI._updateActionBtnState();
             }
         }
     }
-    initTopbarModelSelector('primary');
+    initModelSelector('primary');
     updateInputPlaceholder();
     updatePaneHighlight();
     if (typeof tabs !== 'undefined') {
@@ -2657,21 +2635,34 @@ async function init() {
     document.addEventListener('nexus:model-change', (e) => {
         const activeTab = tabs[activeTabIndex];
         if (activeTab && e.detail) {
-            activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
+            if (e.detail.model) {
+                activeTab.selectedModel = { model: e.detail.model, providerId: e.detail.providerId };
+            }
+            if (e.detail.thinkingLevel !== undefined) {
+                activeTab.thinkingLevel = e.detail.thinkingLevel;
+            }
             if (activeTab.chatUIInstance) {
-                activeTab.chatUIInstance.activeTabModel = { ...activeTab.selectedModel };
+                if (activeTab.selectedModel) activeTab.chatUIInstance.activeTabModel = { ...activeTab.selectedModel };
+                if (activeTab.thinkingLevel) activeTab.chatUIInstance.thinkingLevel = activeTab.thinkingLevel;
             }
             if (sharedInputUI) {
-                sharedInputUI.activeTabModel = { ...activeTab.selectedModel };
+                if (activeTab.selectedModel) sharedInputUI.activeTabModel = { ...activeTab.selectedModel };
+                if (activeTab.thinkingLevel) sharedInputUI.thinkingLevel = activeTab.thinkingLevel;
             }
             const sidKey = activeTab.sessionId || 'null';
-            chrome.storage.local.get(['nexus_session_settings'], (res) => {
-                const settings = res.nexus_session_settings || {};
-                if (!settings[sidKey]) settings[sidKey] = {};
-                settings[sidKey].selectedModel = activeTab.selectedModel;
-                chrome.storage.local.set({ nexus_session_settings: settings });
+            sessionSettings[sidKey] = {
+                ...(sessionSettings[sidKey] || {}),
+                ...(activeTab.selectedModel ? { selectedModel: activeTab.selectedModel } : {}),
+                ...(activeTab.thinkingLevel ? { thinkingLevel: activeTab.thinkingLevel } : {})
+            };
+            chrome.storage.local.set({ 
+                nexus_session_settings: sessionSettings,
+                ...(activeTab.selectedModel ? { lastUsedModel: activeTab.selectedModel } : {}),
+                ...(activeTab.thinkingLevel ? { lastUsedThinkingLevel: activeTab.thinkingLevel } : {})
             });
-            chrome.storage.local.set({ lastUsedModel: activeTab.selectedModel });
+            if (typeof saveTabsState === 'function') {
+                saveTabsState();
+            }
         }
     });
     chrome.runtime.onMessage.addListener((request) => {
@@ -3230,8 +3221,8 @@ function initSidebar() {
                                 if (sharedInputUI && typeof sharedInputUI.refreshModelSelector === 'function') {
                                     sharedInputUI.refreshModelSelector();
                                 }
-                                if (typeof window.updateTopbarModelSelector === 'function') {
-                                    window.updateTopbarModelSelector();
+                                if (typeof window.updateModelSelector === 'function') {
+                                    window.updateModelSelector();
                                 }
                             });
                         }
@@ -3481,7 +3472,9 @@ async function renderRecentChatsSidebar() {
                     items: [
                         {
                             label: isPinned ? 'Unpin' : 'Pin',
-                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+                            icon: isPinned 
+                                ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"></line><path d="M12 6.5 15 9.5l-1.5 1.5"></path><path d="m9 12-4.5 4.5 2 2 1-1 4-4"></path><line x1="7.5" y1="16.5" x2="3" y2="21"></line></svg>`
+                                : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4.5 4.5 4.5-2 2-1-1-4.5 4.5 1 1-2 2-4.5-4.5 2-2 1 1 4.5-4.5-1-1 2-2Z"></path><line x1="8" y1="16" x2="3" y2="21"></line></svg>`,
                             action: async () => {
                                 if (session) {
                                     if (!isPinned) {
@@ -3524,7 +3517,7 @@ async function renderRecentChatsSidebar() {
                         },
                         {
                             label: 'Rename',
-                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
                             action: async () => {
                                 const currentSession = await NexusChatDB.getSession(sid);
                                 const oldTitle = currentSession ? currentSession.title : 'Untitled Chat';
@@ -3548,7 +3541,7 @@ async function renderRecentChatsSidebar() {
                         },
                         {
                             label: 'Generate title',
-                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><path d="M18 15l1.2 2.8L22 19l-2.8 1.2L18 23l-1.2-2.8L14 19l2.8-1.2z"/></svg>`,
+                            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h10v3"></path><path d="M9 4v16"></path><path d="M6 20h6"></path><path d="m19 10 .8 1.8a.5.5 0 0 0 .4.4l1.8.8-1.8.8a.5.5 0 0 0-.4.4L19 16l-.8-1.8a.5.5 0 0 0-.4-.4l-1.8-.8 1.8-.8a.5.5 0 0 0 .4-.4Z"></path></svg>`,
                             action: async () => {
                                 const history = await ChatHistoryManager.getHistory(sid);
                                 const fullText = (history || []).map(h => `${h.role}: ${h.text}`).join('\n\n');
@@ -3556,7 +3549,7 @@ async function renderRecentChatsSidebar() {
                                     if (typeof NexusToast !== 'undefined') NexusToast.show('No chat content to generate title.', 'info');
                                     return;
                                 }
-                                const currentModel = getPaneActiveModel() || { model: 'gemini-2.5-flash', providerId: 'google' };
+                                const currentModel = tabs[activeTabIndex]?.selectedModel || sharedInputUI?.activeTabModel || { model: 'gemini-2.5-flash', providerId: 'google' };
                                 const chatItemEl = document.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
                                 if (chatItemEl) chatItemEl.classList.add('is-naming');
                                 if (typeof NexusToast !== 'undefined') NexusToast.show('✨ Generating chat title...', 'info');
@@ -3594,7 +3587,9 @@ async function renderRecentChatsSidebar() {
                         },
                         {
                             label: isArchived ? 'Unarchive' : 'Archive',
-                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+                            icon: isArchived
+                                ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="m10 15 2-2 2 2"></path><path d="M12 13v4"></path></svg>`
+                                : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>`,
                             action: async () => {
                                 const meta = await NexusChatDB.getSession(sid);
                                 if (meta) {
@@ -3636,11 +3631,9 @@ async function renderRecentChatsSidebar() {
                                 }
                             }
                         },
-                        { divider: true },
                         {
                             label: 'Delete',
-                            danger: true,
-                            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+                            icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
                             action: async () => {
                                 const confirmed = await window.showCustomPopup({
                                     title: 'Delete Chat',
@@ -3700,8 +3693,9 @@ async function renderRecentChatsSidebar() {
                 }
 
                 const messages = await ChatHistoryManager.getSessionMessages(sid);
-                const meta = sessions[sid] || { id: sid };
-                window.loadHistoryIntoNewTab(messages, meta, sid);
+                const allSessions = await ChatHistoryManager.getAllHistories();
+                const meta = allSessions[sid] || sessions[sid] || { id: sid };
+                await window.loadHistoryIntoNewTab(messages, meta, sid);
                 const sidebar = document.getElementById('nexus-sidebar');
                 const backdrop = document.querySelector('.sidebar-backdrop');
                 if (sidebar) sidebar.classList.remove('active');
@@ -3894,7 +3888,11 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
                 selectedModel: currentModel,
                 thinkingLevel: currentThinking
             };
-            chrome.storage.local.set({ nexus_session_settings: settings });
+            chrome.storage.local.set({ 
+                nexus_session_settings: settings,
+                ...(currentModel ? { lastUsedModel: currentModel } : {}),
+                ...(currentThinking ? { lastUsedThinkingLevel: currentThinking } : {})
+            });
         });
     }
     const now = Date.now();
@@ -4216,7 +4214,10 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
     if (tabModel) {
-        chrome.storage.local.set({ lastUsedModel: tabModel });
+        chrome.storage.local.set({ 
+            lastUsedModel: tabModel,
+            ...(currentTab?.thinkingLevel ? { lastUsedThinkingLevel: currentTab.thinkingLevel } : {})
+        });
     }
     const sendMessage = () => {
         if (!port) setupPort();
@@ -4304,8 +4305,8 @@ function setupGlobalListeners() {
     if (sharedInputUI?.inputEl) {
         sharedInputUI.inputEl.addEventListener('focus', () => {
             updateInputPlaceholder();
-            if (typeof window.updateTopbarModelSelector === 'function') {
-                window.updateTopbarModelSelector();
+            if (typeof window.updateModelSelector === 'function') {
+                window.updateModelSelector();
             }
         });
     }
@@ -4787,76 +4788,72 @@ function setupGlobalListeners() {
     });
 }
 
-function resetChat() {
+async function resetChat() {
     if (typeof window.notesClosePage === 'function') window.notesClosePage();
     if (typeof window.sparksClosePage === 'function') window.sparksClosePage();
     stopSpotlightAudio();
-    if (activeTabIndex !== -1) {
-        const activeTab = tabs[activeTabIndex];
-        if (activeTab) {
-            if (port && activeTab.sessionId) {
-                port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
-            }
-            const currentModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : (chatUI?.activeTabModel ? { ...chatUI.activeTabModel } : null);
-            const currentThinking = activeTab.thinkingLevel || chatUI?.thinkingLevel || null;
 
-            activeTab.title = 'New Tab';
-            activeTab.sessionId = null;
-            activeTab.selectedModel = currentModel;
-            activeTab.thinkingLevel = currentThinking;
-            activeTab.isHistoryLoaded = false;
-            if (activeTab.historyEl) {
-                activeTab.historyEl.removeAttribute('data-session-id');
-            }
-            activeTab.sparkId = null;
-            if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = null;
-            activeTab.scrollTop = -1;
-            updateUrlSessionId(null);
+    const activeTab = (activeTabIndex >= 0 && tabs[activeTabIndex]) ? tabs[activeTabIndex] : null;
+    const curSid = activeTab?.sessionId || new URLSearchParams(window.location?.search || '').get('sid') || null;
 
-            if (currentModel) {
-                const sidKey = 'null';
-                sessionSettings[sidKey] = {
-                    ...(sessionSettings[sidKey] || {}),
-                    selectedModel: currentModel,
-                    thinkingLevel: currentThinking
-                };
-                chrome.storage.local.get(['nexus_session_settings'], (res) => {
-                    const settings = res.nexus_session_settings || {};
-                    settings[sidKey] = {
-                        ...(settings[sidKey] || {}),
-                        selectedModel: currentModel,
-                        thinkingLevel: currentThinking
-                    };
-                    chrome.storage.local.set({ nexus_session_settings: settings });
-                });
-            }
+    let currentModel = activeTab?.selectedModel || sharedInputUI?.activeTabModel || null;
+    let currentThinking = activeTab?.thinkingLevel || sharedInputUI?.thinkingLevel || null;
 
-            if (typeof sidebarSparksRenderList === 'function') {
-                sidebarSparksRenderList();
-            }
+    if ((!currentModel || !currentThinking) && curSid) {
+        const resolved = await window.NexusModelHelper.resolveSessionSettings(curSid);
+        if (!currentModel) currentModel = resolved.selectedModel;
+        if (!currentThinking) currentThinking = resolved.thinkingLevel;
+    }
+
+    if (activeTab) {
+        if (port && activeTab.sessionId) {
+            port.postMessage({ action: 'stop_chat', sessionId: activeTab.sessionId });
         }
+
+        activeTab.title = 'New Tab';
+        activeTab.sessionId = null;
+        activeTab.selectedModel = currentModel;
+        activeTab.thinkingLevel = currentThinking;
+        activeTab.isHistoryLoaded = false;
+        if (activeTab.historyEl) {
+            activeTab.historyEl.removeAttribute('data-session-id');
+        }
+        activeTab.sparkId = null;
+        if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = null;
+        activeTab.scrollTop = -1;
+        updateUrlSessionId(null);
+
+        if (typeof sidebarSparksRenderList === 'function') {
+            sidebarSparksRenderList();
+        }
+    }
+
+    if (currentModel) {
+        await window.NexusModelHelper?.saveModelSelection?.(currentModel, null);
+        if (currentThinking) {
+            await window.NexusModelHelper?.saveThinkingSelection?.(currentThinking, null, currentModel);
+        }
+    }
+
+    if (sharedInputUI) {
+        if (activeTab?.historyEl) sharedInputUI.historyEl = activeTab.historyEl;
+        sharedInputUI.activeTabModel = currentModel ? { ...currentModel } : null;
+        sharedInputUI.thinkingLevel = currentThinking || null;
+        if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
+        if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
     }
     if (chatUI) {
         chatUI.clearHistory();
-        const activeTab = tabs[activeTabIndex];
-        if (activeTab && activeTab.selectedModel) {
-            chatUI.activeTabModel = { ...activeTab.selectedModel };
-            chatUI.thinkingLevel = activeTab.thinkingLevel || null;
-        } else {
-            const savedSettings = sessionSettings['null'] || {};
-            chatUI.activeTabModel = savedSettings.selectedModel ? { ...savedSettings.selectedModel } : null;
-            chatUI.thinkingLevel = savedSettings.thinkingLevel || null;
-        }
-        if (typeof chatUI.refreshModelSelector === 'function') chatUI.refreshModelSelector();
-        if (typeof chatUI.refreshReasoningSelector === 'function') chatUI.refreshReasoningSelector();
+        chatUI.activeTabModel = currentModel ? { ...currentModel } : null;
+        chatUI.thinkingLevel = currentThinking || null;
         if (chatUI.inputEl) {
             chatUI.inputEl.value = '';
             chatUI.inputEl.style.height = 'auto';
             chatUI.inputEl.focus();
         }
     }
-    if (typeof window.updateTopbarModelSelector === 'function') {
-        window.updateTopbarModelSelector();
+    if (typeof window.updateModelSelector === 'function') {
+        window.updateModelSelector();
     }
     updateWelcomeScreenState('primary');
     updatePaneBlankState();
@@ -5069,16 +5066,34 @@ function showAnswerVersion(entryElement, direction) {
                 NexusChatUI.updateVersionNavInActions(ans);
             }
         });
+        entryElement.scrollIntoView({ behavior: 'instant', block: 'start' });
         const historyEl = entryElement.closest('.nexus-chat-history');
+        const sid = historyEl?.dataset?.sessionId || null;
         if (historyEl && typeof ChatHistoryManager !== 'undefined') {
-            ChatHistoryManager.saveCurrentChat(historyEl);
+            ChatHistoryManager.saveCurrentChat(historyEl, sid);
         }
     }
 }
 
 function updateVersionNav(entryElement, activeIndex, totalCount) {
+    const versionsContainer = entryElement.querySelector('.nexus-answer-versions');
+    const versions = versionsContainer ? Array.from(versionsContainer.querySelectorAll('.nexus-answer-version')) : [];
+    const activeVersion = versions[activeIndex];
+    const modifierLabel = activeVersion?.dataset.modifierLabel || 'Normal';
     const navs = entryElement.querySelectorAll('.nexus-answer-nav');
     navs.forEach(nav => {
+        let tag = nav.querySelector('.nexus-answer-version-tag');
+        if (!tag) {
+            tag = document.createElement('span');
+            tag.className = 'nexus-answer-version-tag';
+            nav.insertBefore(tag, nav.firstChild);
+        }
+        if (modifierLabel && modifierLabel !== 'Normal') {
+            tag.textContent = modifierLabel;
+            tag.style.display = 'inline-flex';
+        } else {
+            tag.style.display = 'none';
+        }
         const counter = nav.querySelector('.nexus-answer-nav-counter');
         const prevBtn = nav.querySelector('.nav-prev');
         const nextBtn = nav.querySelector('.nav-next');
@@ -5172,13 +5187,7 @@ function cycleActiveModel() {
     const currentActiveTab = tabs[activeTabIndex];
     if (!currentActiveTab) return;
     chrome.storage.local.get(['providers', 'models'], async (data) => {
-        let promptSupport;
-        if (typeof window.getPromptApiSupport === 'function') {
-            promptSupport = await window.getPromptApiSupport();
-        } else {
-            promptSupport = { supported: false, status: 'no', reason: 'Prompt API not loaded' };
-        }
-        const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
+        const chain = window.NexusModelHelper.buildModelChain(data);
         if (chain.length <= 1) return;
         let currentModel = currentActiveTab.selectedModel?.model;
         let currentProviderId = currentActiveTab.selectedModel?.providerId;
@@ -5186,46 +5195,34 @@ function cycleActiveModel() {
         const nextIndex = (currentIndex + 1) % chain.length;
         const nextItem = chain[nextIndex];
         currentActiveTab.selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
-        setPaneActiveModel(currentActiveTab.selectedModel);
         if (currentActiveTab.chatUIInstance) {
             currentActiveTab.chatUIInstance.activeTabModel = { ...currentActiveTab.selectedModel };
         }
         if (sharedInputUI) {
             sharedInputUI.activeTabModel = { ...currentActiveTab.selectedModel };
         }
-        const label = document.getElementById('topbar-model-label');
+        const label = document.getElementById('model-label') 
+            || document.querySelector('.nexus-current-model') 
+            || document.getElementById('topbar-model-label');
         if (label) {
             label.textContent = nextItem.displayName || nextItem.model;
         }
-        const sidKey = currentActiveTab.sessionId || 'null';
-        chrome.storage.local.get(['nexus_session_settings', 'advancedParamsByModel'], (res) => {
-            const settings = res.nexus_session_settings || {};
-            if (!settings[sidKey]) settings[sidKey] = {};
-            settings[sidKey].selectedModel = { model: nextItem.model, providerId: nextItem.providerId };
-            const advancedParamsByModel = res.advancedParamsByModel || {};
-            const compositeKey = nextItem.providerId ? `${nextItem.providerId}:${nextItem.model}` : nextItem.model;
-            const modelParams = (nextItem.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!nextItem.providerId ? (advancedParamsByModel[nextItem.model] || {}) : {});
-            const defaultThinking = window.NexusModelHelper.getDefaultThinking(nextItem.model, nextItem.providerId);
-            const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-            currentActiveTab.thinkingLevel = newThinkingLevel;
-            setPaneActiveThinking(newThinkingLevel);
-            settings[sidKey].thinkingLevel = newThinkingLevel;
+        const res = await window.NexusModelHelper.saveModelSelection(nextItem, currentActiveTab.sessionId);
+        if (res) {
+            currentActiveTab.thinkingLevel = res.thinkingLevel;
             if (currentActiveTab.chatUIInstance) {
-                currentActiveTab.chatUIInstance.thinkingLevel = newThinkingLevel;
+                currentActiveTab.chatUIInstance.thinkingLevel = res.thinkingLevel;
             }
-            chrome.storage.local.set({
-                nexus_session_settings: settings,
-                lastUsedModel: { model: nextItem.model, providerId: nextItem.providerId }
-            }, () => {
-                if (sharedInputUI && typeof sharedInputUI.refreshReasoningSelector === 'function') {
-                    sharedInputUI.thinkingLevel = newThinkingLevel;
+            if (sharedInputUI) {
+                sharedInputUI.thinkingLevel = res.thinkingLevel;
+                if (typeof sharedInputUI.refreshReasoningSelector === 'function') {
                     sharedInputUI.refreshReasoningSelector();
                 }
-                if (typeof window.updateTopbarModelSelector === 'function') {
-                    window.updateTopbarModelSelector();
-                }
-            });
-        });
+            }
+        }
+        if (typeof window.updateModelSelector === 'function') {
+            window.updateModelSelector();
+        }
     });
 }
 
@@ -5512,41 +5509,24 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
     }
     activeTab.title = displayTitle;
     const sidKey = historySessionId || 'null';
-    const savedSettings = sessionSettings[sidKey] || {};
-    activeTab.selectedModel = meta.selectedModel || savedSettings.selectedModel || activeTab.selectedModel || null;
-    if (savedSettings.thinkingLevel || meta.thinkingLevel) {
-        activeTab.thinkingLevel = savedSettings.thinkingLevel || meta.thinkingLevel;
-    } else {
-        const localData = await chrome.storage.local.get(['advancedParamsByModel']);
-        const advParams = localData.advancedParamsByModel || {};
-        const modelObj = activeTab.selectedModel;
-        const compositeKey = modelObj ? (modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model) : '';
-        const modelParams = advParams[compositeKey] || advParams[modelObj?.model] || {};
-        const defaultThinking = modelObj ? window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId) : 'none';
-        activeTab.thinkingLevel = modelParams.thinkingLevel || defaultThinking;
-    }
+    const resolved = await window.NexusModelHelper.resolveSessionSettings(historySessionId, meta.selectedModel, meta.thinkingLevel);
+    activeTab.selectedModel = resolved.selectedModel;
+    activeTab.thinkingLevel = resolved.thinkingLevel;
     activeTab.sparkId = meta.sparkId || null;
-    if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = activeTab.sparkId;
-    try {
-        const res = await chrome.storage.local.get(['nexus_session_settings']);
-        const settings = res.nexus_session_settings || {};
-        if (!settings[sidKey]) settings[sidKey] = {};
-        if (activeTab.selectedModel) {
-            settings[sidKey].selectedModel = activeTab.selectedModel;
-        }
-        if (activeTab.thinkingLevel) {
-            settings[sidKey].thinkingLevel = activeTab.thinkingLevel;
-        }
-        await chrome.storage.local.set({ nexus_session_settings: settings });
-        sessionSettings = settings;
-    } catch (e) {
-        console.error('Failed to sync session settings', e);
+    if (activeTab.chatUIInstance) {
+        activeTab.chatUIInstance.sparkId = activeTab.sparkId;
+        activeTab.chatUIInstance.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
+        activeTab.chatUIInstance.thinkingLevel = resolved.thinkingLevel || null;
+    }
+    if (resolved.selectedModel) {
+        await window.NexusModelHelper.saveModelSelection(resolved.selectedModel, historySessionId, resolved.thinkingLevel);
     }
     if (activeTab.historyEl) {
         activeTab.historyEl.dataset.sessionId = historySessionId;
     }
     const targetInputUI = sharedInputUI;
     if (targetInputUI) {
+        targetInputUI.historyEl = activeTab.historyEl;
         targetInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
         targetInputUI.thinkingLevel = activeTab.thinkingLevel || null;
         if (typeof targetInputUI.refreshModelSelector === 'function') targetInputUI.refreshModelSelector();
@@ -5554,8 +5534,8 @@ window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId,
         targetInputUI.restoreInputState(activeTab.inputState || null);
     }
     updateInputPlaceholder();
-    if (typeof window.updateTopbarModelSelector === 'function') {
-        window.updateTopbarModelSelector();
+    if (typeof window.updateModelSelector === 'function') {
+        window.updateModelSelector();
     }
     if (typeof sidebarSparksRenderList === 'function') {
         sidebarSparksRenderList();
@@ -5676,7 +5656,9 @@ async function renderDropdownMenu(anchor) {
         items: [
             {
                 label: isPinned ? 'Unpin' : 'Pin',
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5a1 1 0 0 1 1 1v5.5c0 1.3 1.8 2.1 1.8 3.5a1.2 1.2 0 0 1-1.2 1.2H7.9a1.2 1.2 0 0 1-1.2-1.2c0-1.4 1.8-2.2 1.8-3.5V5a1 1 0 0 1 1-1Z"/><path d="M12 15.2v6.3"/></svg>`,
+                icon: isPinned 
+                    ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"></line><path d="M12 6.5 15 9.5l-1.5 1.5"></path><path d="m9 12-4.5 4.5 2 2 1-1 4-4"></path><line x1="7.5" y1="16.5" x2="3" y2="21"></line></svg>`
+                    : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4.5 4.5 4.5-2 2-1-1-4.5 4.5 1 1-2 2-4.5-4.5 2-2 1 1 4.5-4.5-1-1 2-2Z"></path><line x1="8" y1="16" x2="3" y2="21"></line></svg>`,
                 action: async () => {
                     const session = await NexusChatDB.getSession(sessionId);
                     if (session) {
@@ -5721,7 +5703,9 @@ async function renderDropdownMenu(anchor) {
             },
             {
                 label: isArchived ? 'Unarchive' : 'Archive',
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="2.5"/><path d="M4 8v9a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8"/><path d="M10 12h4"/></svg>`,
+                icon: isArchived
+                    ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="m10 15 2-2 2 2"></path><path d="M12 13v4"></path></svg>`
+                    : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1.5"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>`,
                 action: async () => {
                     if (sessionMeta) {
                         if (isArchived) {
@@ -5765,7 +5749,7 @@ async function renderDropdownMenu(anchor) {
             },
             {
                 label: 'Rename',
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
                 action: async () => {
                     let currentTitle = sessionMeta?.title || 'Untitled Chat';
                     if (!sessionMeta?.isRenamed && !sessionMeta?.autoNamed && sessionMeta?.questions && sessionMeta?.questions.length > 0) {
@@ -5791,7 +5775,7 @@ async function renderDropdownMenu(anchor) {
             },
             {
                 label: 'Copy Chat',
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1.5"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="13" height="13" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`,
                 action: async () => {
                     let fullText = '';
                     const messages = typeof ChatHistoryManager !== 'undefined' ? await ChatHistoryManager.getSessionMessages(sessionId) : null;
@@ -5846,11 +5830,9 @@ async function renderDropdownMenu(anchor) {
                     }
                 }
             },
-            { divider: true },
             {
                 label: 'Delete',
-                danger: true,
-                icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+                icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
                 action: async () => {
                     const confirmed = await window.showCustomPopup({
                         title: 'Delete Chat',
@@ -5872,265 +5854,29 @@ async function renderDropdownMenu(anchor) {
     });
 }
 
+function initModelSelector() {
+    window.updateModelSelector = () => {
+        const activeTab = (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null;
+        if (activeTab?.chatUIInstance?.refreshModelSelector) {
+            activeTab.chatUIInstance.refreshModelSelector();
+        }
+        if (activeTab?.chatUIInstance?.refreshReasoningSelector) {
+            activeTab.chatUIInstance.refreshReasoningSelector();
+        }
+        if (sharedInputUI?.refreshModelSelector) {
+            sharedInputUI.refreshModelSelector();
+        }
+        if (sharedInputUI?.refreshReasoningSelector) {
+            sharedInputUI.refreshReasoningSelector();
+        }
+        updateTopbarSparkTitle();
+    };
+    window.updateTopbarModelSelector = window.updateModelSelector;
+    window.updateModelSelector();
+}
+
 function initTopbarModelSelector() {
-    const selector = document.getElementById('topbar-model-selector');
-    if (!selector) return;
-    const btn = document.getElementById('topbar-model-btn');
-    const label = document.getElementById('topbar-model-label');
-    const dropdown = document.getElementById('topbar-model-dropdown');
-    if (!btn || !dropdown) return;
-    if (btn.dataset.initializedModelSelector) {
-        if (window.updateTopbarModelSelector) {
-            window.updateTopbarModelSelector();
-        }
-        return;
-    }
-    btn.dataset.initializedModelSelector = 'true';
-    const render = (data) => {
-        const promptSupport = data.promptSupport || { supported: false, status: 'no', reason: 'Prompt API not checked' };
-        const chain = window.NexusModelHelper.buildModelChain(data, promptSupport);
-        const activeTab = tabs[activeTabIndex];
-        let currentModel = activeTab?.selectedModel?.model;
-        let currentProviderId = activeTab?.selectedModel?.providerId;
-        const lastUsed = data.lastUsedModel;
-        if (!currentModel && lastUsed && lastUsed.model) {
-            currentModel = lastUsed.model;
-            currentProviderId = lastUsed.providerId;
-        }
-        if (!currentModel && chain.length > 0) {
-            currentModel = chain[0].model;
-            currentProviderId = chain[0].providerId;
-        }
-        if (activeTab && currentModel) {
-            activeTab.selectedModel = { model: currentModel, providerId: currentProviderId };
-            if (sharedInputUI) {
-                sharedInputUI.activeTabModel = { ...activeTab.selectedModel };
-                sharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
-                if (typeof sharedInputUI.refreshReasoningSelector === 'function') {
-                    sharedInputUI.refreshReasoningSelector();
-                }
-            }
-        }
-        const activeChainItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
-        if (label) {
-            if (activeChainItem) {
-                label.textContent = activeChainItem.displayName || activeChainItem.model;
-            } else {
-                label.textContent = currentModel;
-            }
-        }
-        dropdown.innerHTML = '';
-        if (chain.length === 0) {
-            dropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:#70757a;">No models</div>';
-            return;
-        }
-        chain.forEach((item) => {
-            const el = document.createElement('button');
-            const isActive = item.model === currentModel && item.providerId === currentProviderId;
-            el.className = `nexus-model-item${isActive ? ' active' : ''}`;
-            const temp = document.getElementById('nexus-modelItemTemplate');
-            const clone = temp.content.cloneNode(true);
-            clone.querySelector('.model-name').textContent = item.displayName || item.model;
-            clone.querySelector('.model-id').style.display = 'none';
-            el.appendChild(clone);
-            el.onclick = (e) => {
-                e.stopPropagation();
-                if (label) label.textContent = item.displayName || item.model;
-                dropdown.classList.remove('active');
-                dropdown.querySelectorAll('.nexus-model-item').forEach(b => b.classList.remove('active'));
-                el.classList.add('active');
-                const currentActiveTab = tabs[activeTabIndex];
-                const tabsToUpdate = [currentActiveTab];
-                tabsToUpdate.forEach(tab => {
-                    tab.selectedModel = { model: item.model, providerId: item.providerId };
-                    setPaneActiveModel('primary', tab.selectedModel);
-                    if (tab.chatUIInstance) {
-                        tab.chatUIInstance.activeTabModel = { ...tab.selectedModel };
-                    }
-                    if (sharedInputUI) {
-                        sharedInputUI.activeTabModel = { ...tab.selectedModel };
-                    }
-                });
-                if (currentActiveTab) {
-                    const sidKey = currentActiveTab.sessionId || 'null';
-                    chrome.storage.local.get(['nexus_session_settings', 'advancedParamsByModel'], (res) => {
-                        const settings = res.nexus_session_settings || {};
-                        if (!settings[sidKey]) settings[sidKey] = {};
-                        settings[sidKey].selectedModel = { model: item.model, providerId: item.providerId };
-                        const advancedParamsByModel = res.advancedParamsByModel || {};
-                        const compositeKey = item.providerId ? `${item.providerId}:${item.model}` : item.model;
-                        const modelParams = (item.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!item.providerId ? (advancedParamsByModel[item.model] || {}) : {});
-                        const defaultThinking = window.NexusModelHelper.getDefaultThinking(item.model, item.providerId);
-                        const newThinkingLevel = modelParams.thinkingLevel || defaultThinking;
-                        tabsToUpdate.forEach(tab => {
-                            tab.thinkingLevel = newThinkingLevel;
-                            setPaneActiveThinking('primary', newThinkingLevel);
-                            settings[sidKey].thinkingLevel = newThinkingLevel;
-                            if (tab.chatUIInstance) {
-                                tab.chatUIInstance.thinkingLevel = newThinkingLevel;
-                            }
-                            if (sharedInputUI) {
-                                sharedInputUI.thinkingLevel = newThinkingLevel;
-                            }
-                        });
-                        chrome.storage.local.set({ nexus_session_settings: settings }, () => {
-                            if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && currentActiveTab?.sessionId) {
-                                window.NexusChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, { model: item.model, providerId: item.providerId }, newThinkingLevel);
-                            }
-                            tabsToUpdate.forEach(tab => {
-                                if (sharedInputUI && typeof sharedInputUI.refreshReasoningSelector === 'function') {
-                                    sharedInputUI.refreshReasoningSelector();
-                                }
-                            });
-                            if (typeof saveTabsState === 'function') {
-                                saveTabsState();
-                            }
-                            if (typeof window.updateTopbarModelSelector === 'function') {
-                                window.updateTopbarModelSelector();
-                            }
-                        });
-                    });
-                }
-                chrome.storage.local.set({ lastUsedModel: { model: item.model, providerId: item.providerId } });
-            };
-            dropdown.appendChild(el);
-        });
-        const divider = document.createElement('div');
-        divider.className = 'nexus-model-divider';
-        dropdown.appendChild(divider);
-        const thinkingItem = document.createElement('div');
-        thinkingItem.className = 'nexus-model-item nexus-thinking-parent-item';
-        thinkingItem.style.position = 'relative';
-        thinkingItem.style.display = 'flex';
-        thinkingItem.style.alignItems = 'center';
-        thinkingItem.style.justifyContent = 'space-between';
-        thinkingItem.style.cursor = 'pointer';
-        const currentLevel = activeTab?.thinkingLevel || 'none';
-        const titleMap = {
-            'minimal': 'Minimal',
-            'low': 'Low',
-            'medium': 'Standard',
-            'high': 'Extended',
-            'none': 'None'
-        };
-        thinkingItem.innerHTML = `
-            <div class="model-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
-                <span class="model-name" style="font-size:13.5px; font-weight:500;">Thinking level</span>
-                <span style="font-size:11px; color:var(--nexus-text-secondary);">${titleMap[currentLevel] || 'None'}</span>
-            </div>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        `;
-        const submenu = document.createElement('div');
-        submenu.className = 'nexus-thinking-submenu';
-        const options = window.NexusModelHelper.getThinkingOptions(currentModel, currentProviderId, data.providers);
-        options.forEach((opt) => {
-            const optEl = document.createElement('button');
-            const isActive = currentLevel === opt.value;
-            optEl.className = `nexus-thinking-opt-item ${isActive ? 'active' : ''}`;
-            const checkmarkIcon = isActive ? `
-                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px; color:var(--nexus-primary);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-            ` : `
-                <span class="reasoning-checkmark" style="display:flex; align-items:center; justify-content:center; width:16px; margin-right:8px;"></span>
-            `;
-            optEl.innerHTML = `
-                ${checkmarkIcon}
-                <div class="reasoning-info" style="display:flex; flex-direction:column; text-align:left;">
-                    <span class="reasoning-title" style="font-size:13px; font-weight:500;">${opt.title}</span>
-                    <span class="reasoning-desc" style="font-size:11px; color:var(--nexus-text-secondary);">${opt.desc}</span>
-                </div>
-            `;
-            optEl.onclick = (e) => {
-                e.stopPropagation();
-                const currentActiveTab = tabs[activeTabIndex];
-                const tabsToUpdate = [currentActiveTab];
-                tabsToUpdate.forEach(tab => {
-                    tab.thinkingLevel = opt.value;
-                    setPaneActiveThinking('primary', opt.value);
-                    if (tab.chatUIInstance) {
-                        tab.chatUIInstance.thinkingLevel = opt.value;
-                    }
-                    if (sharedInputUI) {
-                        sharedInputUI.thinkingLevel = opt.value;
-                    }
-                });
-                if (currentActiveTab) {
-                    const sidKey = currentActiveTab.sessionId || 'null';
-                    chrome.storage.local.get(['nexus_session_settings', 'advancedParamsByModel'], (res) => {
-                        const settings = res.nexus_session_settings || {};
-                        if (!settings[sidKey]) settings[sidKey] = {};
-                        settings[sidKey].thinkingLevel = opt.value;
-                        chrome.storage.local.set({ nexus_session_settings: settings, lastUsedThinkingLevel: opt.value }, () => {
-                            if (typeof window.NexusChatHistory?.updateSessionModelAndThinking === 'function' && currentActiveTab?.sessionId) {
-                                window.NexusChatHistory.updateSessionModelAndThinking(currentActiveTab.sessionId, undefined, opt.value);
-                            }
-                            tabsToUpdate.forEach(tab => {
-                                if (sharedInputUI && typeof sharedInputUI.refreshSystemTokens === 'function') {
-                                    sharedInputUI.refreshSystemTokens();
-                                }
-                            });
-                            dropdown.classList.remove('active');
-                            if (typeof window.updateTopbarModelSelector === 'function') {
-                                window.updateTopbarModelSelector();
-                            }
-                        });
-                    });
-                }
-            };
-            submenu.appendChild(optEl);
-        });
-        thinkingItem.appendChild(submenu);
-        dropdown.appendChild(thinkingItem);
-    };
-    const fetchAndRender = () => {
-        const activeTab = tabs[activeTabIndex];
-        const sidKey = activeTab?.sessionId || 'null';
-        chrome.storage.local.get(['providers', 'models', 'lastUsedModel', 'nexus_session_settings', 'advancedParamsByModel'], async (data) => {
-            if (typeof window.getPromptApiSupport === 'function') {
-                data.promptSupport = await window.getPromptApiSupport();
-            } else {
-                data.promptSupport = { supported: false, status: 'no', reason: 'Prompt API not loaded' };
-            }
-            const settings = data.nexus_session_settings || {};
-            const saved = settings[sidKey] || {};
-            if (activeTab && !activeTab.selectedModel && saved.selectedModel) {
-                activeTab.selectedModel = { ...saved.selectedModel };
-            }
-            if (activeTab) {
-                const modelObj = activeTab.selectedModel;
-                if (modelObj) {
-                    const compositeKey = modelObj.providerId ? `${modelObj.providerId}:${modelObj.model}` : modelObj.model;
-                    const advancedParamsByModel = data.advancedParamsByModel || {};
-                    const modelParams = (modelObj.providerId && advancedParamsByModel[compositeKey]) ? advancedParamsByModel[compositeKey] : (!modelObj.providerId ? (advancedParamsByModel[modelObj.model] || {}) : {});
-                    const defaultThinking = window.NexusModelHelper.getDefaultThinking(modelObj.model, modelObj.providerId);
-                    activeTab.thinkingLevel = saved.thinkingLevel || modelParams.thinkingLevel || defaultThinking;
-                }
-            }
-            render(data);
-            updateTopbarSparkTitle();
-            if (sharedInputUI && typeof sharedInputUI._updateActionBtnState === 'function') {
-                sharedInputUI._updateActionBtnState();
-            }
-        });
-    };
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (dropdown.classList.contains('active')) {
-            dropdown.classList.remove('active');
-        } else {
-            NexusMenu.close();
-            fetchAndRender();
-            dropdown.classList.add('active');
-        }
-    });
-    document.addEventListener('click', (e) => {
-        if (!selector.contains(e.target) && dropdown.classList.contains('active')) {
-            dropdown.classList.remove('active');
-        }
-    });
-    window.updateTopbarModelSelector = fetchAndRender;
-    fetchAndRender();
+    return initModelSelector();
 }
 
 function updateTopbarSparkTitle() {

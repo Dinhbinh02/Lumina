@@ -42,6 +42,10 @@ export function morphDOM(container, newHTML) {
             if (oldChild.classList?.contains('nexus-widget-wrapper') && !oldChild.classList?.contains('nexus-widget-loading') && newChild.classList?.contains('nexus-widget-wrapper')) {
                 return;
             }
+            // Protect already mounted native widgets (<Widget name="..." />)
+            if ((oldChild.classList?.contains('nexus-widget') || oldChild.classList?.contains('nexus-widget-mount-point')) && oldChild.dataset?.mounted === 'true') {
+                return;
+            }
 
             for (let i = 0; i < newChild.attributes.length; i++) {
                 const attr = newChild.attributes[i];

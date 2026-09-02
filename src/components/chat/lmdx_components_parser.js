@@ -284,6 +284,50 @@ export function initLmdxComponentsParser() {
                 }
             },
 
+            // 5b. <Widget> (Built-in Native Widgets: Timer, Pomodoro, Stopwatch, etc.)
+            {
+                name: 'builtinWidget',
+                level: 'block',
+                start(src) { return src.indexOf('<Widget'); },
+                tokenizer(src) {
+                    const completeMatch = src.match(/^\s*<Widget([^>]*?)(?:\s*\/>|>([\s\S]*?)<\/Widget>)/i);
+                    if (completeMatch) {
+                        const attrsString = completeMatch[1] || '';
+                        const props = {};
+                        const attrRegex = /(\w[\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+                        let attrMatch;
+                        while ((attrMatch = attrRegex.exec(attrsString)) !== null) {
+                            props[attrMatch[1]] = attrMatch[2] !== undefined ? attrMatch[2] : attrMatch[3];
+                        }
+                        const name = (props.name || 'widget').toLowerCase();
+                        return {
+                            type: 'builtinWidget',
+                            raw: completeMatch[0],
+                            name,
+                            props,
+                            isComplete: true
+                        };
+                    }
+                    // Shielding: Hide incomplete raw XML during streaming
+                    const partialMatch = src.match(/^\s*<Widget[\s\S]*$/i);
+                    if (partialMatch) {
+                        return {
+                            type: 'builtinWidget',
+                            raw: partialMatch[0],
+                            name: '',
+                            props: {},
+                            isComplete: false
+                        };
+                    }
+                },
+                renderer(token) {
+                    if (!token.isComplete || !token.name) return '';
+                    const safeName = token.name.replace(/[^a-zA-Z0-9_-]/g, '');
+                    const encodedProps = encodeURIComponent(JSON.stringify(token.props || {}));
+                    return `<div class="nexus-widget" data-nexus-widget-placeholder="true" data-widget-name="${safeName}" data-widget-props="${encodedProps}"></div>`;
+                }
+            },
+
             // 6. <Carousel> & <Image> (Image Gallery Slider)
             {
                 name: 'carouselBlock',
@@ -729,12 +773,6 @@ export function initLmdxComponentsParser() {
 
                     return `
                     <div class="nexus-metrics-wrapper">
-                        <div class="nexus-metrics-header">
-                            <span class="nexus-metrics-icon">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            </span>
-                            <span class="nexus-metrics-title">${safeTitle}</span>
-                        </div>
                         <div class="nexus-metrics-grid">
                             ${itemsHtml}
                         </div>
@@ -836,7 +874,7 @@ export function initLmdxComponentsParser() {
 
                     const cleanBody = (token.body || '').replace(/<\/?BentoGrid\b[^>]*>/gi, '').trim();
                     const bentoRegex = /<BentoItem\b((?:[^"'\/>]|"[^"]*"|'[^']*')*?)(?:\s*\/>|>([\s\S]*?)<\/BentoItem>|>([\s\S]*?)(?=<BentoItem\b|<\/BentoGrid>|$))/gi;
-                    let itemsHtml = '';
+                    const items = [];
                     let match;
                     while ((match = bentoRegex.exec(cleanBody)) !== null) {
                         const attrs = match[1] || '';
@@ -846,35 +884,51 @@ export function initLmdxComponentsParser() {
                         const iconMatch = attrs.match(/\bicon="([^"]*)"/i);
 
                         const itemTitle = titleMatch ? titleMatch[1] : 'Feature';
-                        const span = spanMatch && spanMatch[1] === '2' ? '2' : '1';
-                        const tagHtml = tagMatch ? `<span class="nexus-bento-tag">${tagMatch[1]}</span>` : '';
-                        const iconSvg = getBentoIconSvg(iconMatch ? iconMatch[1] : '');
-
+                        const requestedSpan = spanMatch && spanMatch[1] === '2' ? 2 : 1;
                         const rawContent = (match[2] || match[3] || '').trim();
-                        const parsedContent = rawContent ? marked.parse(rawContent) : '';
+
+                        items.push({
+                            title: itemTitle,
+                            span: requestedSpan,
+                            tag: tagMatch ? tagMatch[1] : '',
+                            icon: iconMatch ? iconMatch[1] : '',
+                            content: rawContent
+                        });
+                    }
+
+                    // Auto-balance grid to avoid orphaned empty cells in 2-column layout
+                    let colPos = 0;
+                    for (let i = 0; i < items.length; i++) {
+                        const it = items[i];
+                        if (it.span === 2) {
+                            colPos = 0;
+                        } else {
+                            colPos = (colPos + 1) % 2;
+                        }
+                    }
+                    if (items.length > 0 && colPos === 1) {
+                        items[items.length - 1].span = 2;
+                    }
+
+                    let itemsHtml = '';
+                    items.forEach(it => {
+                        const tagHtml = it.tag ? `<span class="nexus-bento-tag">${it.tag}</span>` : '';
+                        const iconSvg = getBentoIconSvg(it.icon);
+                        const parsedContent = it.content ? marked.parse(it.content) : '';
 
                         itemsHtml += `
-                        <div class="nexus-bento-item span-${span}">
+                        <div class="nexus-bento-item span-${it.span}">
                             <div class="nexus-bento-item-header">
                                 <div class="nexus-bento-item-icon">${iconSvg}</div>
                                 ${tagHtml}
                             </div>
-                            <div class="nexus-bento-item-title">${itemTitle}</div>
+                            <div class="nexus-bento-item-title">${it.title}</div>
                             <div class="nexus-bento-item-desc">${parsedContent}</div>
                         </div>`;
-                    }
-
-                    const headerHtml = safeTitle ? `
-                    <div class="nexus-bento-header">
-                        <span class="nexus-bento-icon">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        </span>
-                        <span class="nexus-bento-title">${safeTitle}</span>
-                    </div>` : '';
+                    });
 
                     return `
                     <div class="nexus-bento-container">
-                        ${headerHtml}
                         <div class="nexus-bento-grid">
                             ${itemsHtml}
                         </div>

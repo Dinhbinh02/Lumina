@@ -1085,101 +1085,101 @@
   .nexus-comparison-row {
     grid-template-columns: 1fr;
   }
+
   .nexus-aspect-label {
     border-right: none;
     border-bottom: 1px solid var(--nexus-border-color);
     padding: 8px 12px;
   }
+
   .nexus-aspect-cols {
     grid-template-columns: 1fr;
   }
+
   .nexus-aspect-col {
     border-right: none;
     border-bottom: 1px solid var(--nexus-border-color);
     padding: 8px 12px;
   }
+
   .nexus-aspect-col:last-child {
     border-bottom: none;
   }
+
   .nexus-col-mobile-badge {
     display: block;
   }
 }
 
-/* 9. Metrics (<Metrics> & <Metric>) */
+/* ==========================================================================
+   9. Metrics (Modern Floating Card Philosophy)
+   ========================================================================== */
 .nexus-metrics-wrapper {
-  margin: 14px 0;
-  border-radius: var(--nexus-radius-md, 10px);
-  border: 1px solid var(--nexus-border-color);
-  background: var(--nexus-ui-bg);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.nexus-metrics-header {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 38px;
-  box-sizing: border-box;
-  padding: 6px 14px;
-  background: var(--nexus-ui-bg);
-  border-bottom: 1px solid var(--nexus-border-color);
-}
-
-.nexus-metrics-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nexus-primary-color);
-}
-
-.nexus-metrics-title {
-  font-size: var(--nexus-text-sm, 0.875em);
-  font-weight: var(--nexus-weight-semibold, 600);
-  color: var(--nexus-text-primary);
+  margin: 16px 0;
+  width: 100%;
 }
 
 .nexus-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  background: var(--nexus-ui-bg);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  width: 100%;
+  background: transparent;
   padding: 0;
 }
 
 .nexus-metric-card {
-  padding: 12px 14px;
-  background: var(--nexus-ui-bg);
-  border-right: 1px solid var(--nexus-border-color);
-  border-bottom: 1px solid var(--nexus-border-color);
+  padding: 14px 16px;
+  background: var(--nexus-surface-card, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 0;
-  transition: background 0.15s ease;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="light"] .nexus-metric-card {
+  background: #ffffff;
+  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .nexus-metric-card {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .nexus-metric-card:hover {
-  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.02));
+  border-color: var(--nexus-border-hover, rgba(0, 0, 0, 0.2));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .nexus-metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .nexus-metric-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
   font-size: var(--nexus-text-xs, 0.75em);
   font-weight: var(--nexus-weight-semibold, 600);
-  color: var(--nexus-text-muted);
+  color: var(--nexus-text-muted, #71717a);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .nexus-metric-value {
-  font-family: var(--nexus-font-sans);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
   font-variant-numeric: tabular-nums;
-  font-size: 1.15em;
+  font-size: var(--nexus-text-xl, 1.5em);
   font-weight: var(--nexus-weight-bold, 700);
   color: var(--nexus-text-primary);
-  line-height: 1.3;
+  line-height: 1.25;
   word-break: break-word;
+  letter-spacing: -0.02em;
 }
 
 .nexus-metric-card[data-status="success"] .nexus-metric-value {
@@ -1191,135 +1191,176 @@
 }
 
 .nexus-metric-card[data-status="danger"] .nexus-metric-value {
-  color: #ef4444;
+  color: #f43f5e;
+}
+
+.nexus-metric-card[data-status="info"] .nexus-metric-value,
+.nexus-metric-card[data-status="cyan"] .nexus-metric-value {
+  color: #38bdf8;
 }
 
 .nexus-metric-hint {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
   font-size: var(--nexus-text-xs, 0.75em);
-  color: var(--nexus-text-secondary);
+  color: var(--nexus-text-secondary, #a1a1aa);
   line-height: 1.35;
   margin-top: 2px;
 }
 
 /* ==========================================================================
-   BentoGrid & BentoItem (Asymmetric Modern Feature Grids)
+   BentoGrid & BentoItem (Modern Asymmetric Floating Card Philosophy)
    ========================================================================== */
-.nexus-bento-container {
+.nexus-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 12px 0;
-  border: 1px solid var(--nexus-border-color);
-  border-radius: var(--nexus-radius-md, 10px);
-  background: var(--nexus-ui-bg);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+}
+
+.nexus-bento-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: var(--nexus-card-bg, #ffffff);
+  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+  border-radius: var(--nexus-radius-sm, 12px);
+  box-shadow: var(--nexus-shadow-tertiary, 0 1px 3px rgba(0, 0, 0, 0.04));
+  box-sizing: border-box;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 110px;
+}
+
+[data-theme="dark"] .nexus-bento-item {
+  background: var(--nexus-card-bg, #18181b);
+  border-color: var(--nexus-border-color, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.nexus-bento-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: var(--nexus-shadow-secondary, 0 6px 16px rgba(0, 0, 0, 0.08));
+}
+
+[data-theme="dark"] .nexus-bento-item:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.nexus-bento-span-1 {
+  grid-column: span 1;
+}
+
+.nexus-bento-span-2 {
+  grid-column: span 2;
+}
+
+.nexus-bento-span-3 {
+  grid-column: span 3;
 }
 
 .nexus-bento-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: var(--nexus-ui-bg-subtle, rgba(0, 0, 0, 0.015));
-  border-bottom: 1px solid var(--nexus-border-color);
-}
-
-.nexus-bento-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nexus-primary-color);
-}
-
-.nexus-bento-title {
-  font-size: var(--nexus-text-sm, 0.875em);
-  font-weight: var(--nexus-weight-semibold, 600);
-  color: var(--nexus-text-primary);
-}
-
-.nexus-bento-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  background: var(--nexus-border-color);
-  padding: 0;
-}
-
-.nexus-bento-item {
-  padding: 14px 16px;
-  background: var(--nexus-ui-bg);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: background 0.15s ease;
-}
-
-.nexus-bento-item.span-2 {
-  grid-column: span 2;
-}
-
-.nexus-bento-item:hover {
-  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.02));
-}
-
-.nexus-bento-item-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
 }
 
-.nexus-bento-item-icon {
+.nexus-bento-icon-wrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--nexus-primary-color);
-  opacity: 0.85;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--nexus-primary-color, #1a73e8);
+  font-size: var(--nexus-text-sm, 0.875em);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .nexus-bento-icon-wrap {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--nexus-text-primary, #ffffff);
 }
 
 .nexus-bento-tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 6px;
-  border-radius: var(--nexus-radius-sm, 4px);
-  background: var(--nexus-ui-bg-subtle, rgba(0, 0, 0, 0.04));
-  border: 1px solid var(--nexus-border-color);
-  font-size: 0.7em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
   font-weight: var(--nexus-weight-semibold, 600);
   color: var(--nexus-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
+[data-theme="dark"] .nexus-bento-tag {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+}
+
 .nexus-bento-item-title {
-  font-size: 0.9em;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-base, 1em);
   font-weight: var(--nexus-weight-semibold, 600);
   color: var(--nexus-text-primary);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .nexus-bento-item-desc {
-  font-size: var(--nexus-text-sm, 0.8125em);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
   color: var(--nexus-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .nexus-bento-item-desc p {
   margin: 0;
 }
 
+.nexus-bento-item-desc code {
+  font-size: var(--nexus-text-sm, 0.875em);
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  font-family: var(--nexus-font-mono, monospace);
+  color: var(--nexus-text-primary);
+}
+
+[data-theme="dark"] .nexus-bento-item-desc code {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 @media (max-width: 600px) {
   .nexus-bento-grid {
     grid-template-columns: 1fr;
   }
+
   .nexus-bento-item.span-2 {
     grid-column: span 1;
   }
-  .nexus-metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+
   .nexus-metric-card {
+    flex: 1 1 130px;
     padding: 10px 12px;
   }
+
   .nexus-writing-header {
     height: auto;
     min-height: 38px;
@@ -1330,8 +1371,9 @@
 }
 
 @media (max-width: 360px) {
-  .nexus-metrics-grid {
-    grid-template-columns: 1fr;
+  .nexus-metric-card {
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 
@@ -1354,8 +1396,8 @@
   flex-direction: column;
   gap: 2px;
   box-sizing: border-box;
-  font-size: 13px;
-  font-family: var(--nexus-font-sans, Inter, -apple-system, sans-serif);
+  font-size: 13px !important;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
   opacity: 1;
   pointer-events: auto;
   user-select: none;
@@ -1379,9 +1421,9 @@
   border: none;
   outline: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 13px !important;
   font-family: inherit;
-  color: var(--nexus-text-primary, #202124);
+  color: var(--nexus-text-primary, #000000);
   transition: none !important;
   text-align: left;
   width: 100%;
@@ -1390,8 +1432,12 @@
 
 .nexus-menu-item:hover,
 .nexus-menu-item:focus-visible {
-  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.05));
-  color: var(--nexus-text-primary, #202124);
+  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.06));
+  color: var(--nexus-text-primary, #000000);
+}
+
+[data-theme="dark"] .nexus-menu-item {
+  color: var(--nexus-text-primary, #ffffff);
 }
 
 [data-theme="dark"] .nexus-menu-item:hover,
@@ -1420,17 +1466,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
-  color: var(--nexus-text-secondary, #5f6368);
-  opacity: 0.85;
+  color: var(--nexus-text-primary, #000000);
+  opacity: 1;
+}
+
+[data-theme="dark"] .nexus-menu-icon {
+  color: var(--nexus-text-primary, #ffffff);
 }
 
 .nexus-menu-icon svg {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
 
 .nexus-menu-item.is-danger .nexus-menu-icon {
@@ -1443,12 +1493,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 13px !important;
   font-weight: var(--nexus-weight-regular, 400);
 }
 
 .nexus-menu-shortcut {
   font-family: var(--nexus-font-mono, monospace);
-  font-size: 11px;
+  font-size: 11px !important;
   color: var(--nexus-text-muted, #9aa0a6);
   opacity: 0.75;
   margin-left: 8px;
@@ -1490,7 +1541,8 @@
 }
 
 .nexus-menu-header-title {
-  font-size: 13px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 13px !important;
   font-weight: var(--nexus-weight-semibold, 600);
   color: var(--nexus-text-primary, #202124);
   white-space: nowrap;
@@ -1509,7 +1561,8 @@
 }
 
 .nexus-menu-desc {
-  font-size: 11.5px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 11.5px !important;
   color: var(--nexus-text-muted, #8e8e93);
   line-height: 1.25;
   white-space: normal;
@@ -1517,7 +1570,8 @@
 }
 
 .nexus-menu-badge {
-  font-size: 11px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 11px !important;
   color: var(--nexus-text-muted, #8e8e93);
   margin-left: auto;
   padding: 1px 5px;
@@ -1583,8 +1637,8 @@
   pointer-events: none;
   background: #18181b;
   color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 500;
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-medium, 500);
   font-family: var(--nexus-font-sans, Inter, sans-serif);
   padding: 3px 7px;
   border-radius: 5px;
@@ -1601,7 +1655,7 @@
 .nexus-tooltip-shortcut {
   font-family: var(--nexus-font-mono, monospace);
   opacity: 0.7;
-  font-size: 10.5px;
+  font-size: var(--nexus-text-xs, 0.75em);
 }
 
 /* 3. Unified Compact Toast Center (Instant, Flat, Zero Shadow) */
@@ -1628,7 +1682,7 @@
   border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.15));
   border-radius: 8px;
   box-shadow: none !important;
-  font-size: 13px;
+  font-size: var(--nexus-text-sm, 0.875em);
   font-family: var(--nexus-font-sans, Inter, sans-serif);
   color: var(--nexus-text-primary, #202124);
   opacity: 1;
@@ -1655,10 +1709,21 @@
   flex-shrink: 0;
 }
 
-.nexus-toast.is-success .nexus-toast-icon { color: #10b981; }
-.nexus-toast.is-error .nexus-toast-icon { color: #ef4444; }
-.nexus-toast.is-warning .nexus-toast-icon { color: #f59e0b; }
-.nexus-toast.is-info .nexus-toast-icon { color: var(--nexus-primary-color, #3b82f6); }
+.nexus-toast.is-success .nexus-toast-icon {
+  color: #10b981;
+}
+
+.nexus-toast.is-error .nexus-toast-icon {
+  color: #ef4444;
+}
+
+.nexus-toast.is-warning .nexus-toast-icon {
+  color: #f59e0b;
+}
+
+.nexus-toast.is-info .nexus-toast-icon {
+  color: var(--nexus-primary-color, #3b82f6);
+}
 
 .nexus-toast-message {
   flex: 1;
@@ -1687,3 +1752,4687 @@
   background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.05));
   color: var(--nexus-text-primary, #202124);
 }
+
+.nexus-widget,
+.nexus-widget-mount-point {
+  width: 100%;
+  margin: 10px 0;
+  display: block;
+}
+
+.nexus-widget-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--nexus-ui-bg, #ffffff);
+  border: 1px solid var(--nexus-border-color);
+  border-radius: var(--nexus-radius-md, 8px);
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: var(--nexus-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
+.nexus-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.02));
+  border-bottom: 1px solid var(--nexus-border-color);
+  gap: 8px;
+}
+
+.nexus-widget-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.nexus-widget-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nexus-primary-color, #1a73e8);
+  flex-shrink: 0;
+}
+
+.nexus-widget-title {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: var(--nexus-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nexus-widget-badge {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.04));
+  color: var(--nexus-text-secondary);
+  border: 1px solid var(--nexus-border-color);
+  flex-shrink: 0;
+}
+
+.nexus-widget-badge.is-success {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.nexus-widget-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--nexus-ui-bg, #ffffff);
+}
+
+.nexus-timer-display {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-2xl, 2em);
+  font-weight: var(--nexus-weight-bold, 700);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--nexus-text-primary);
+  line-height: 1;
+  user-select: none;
+}
+
+.nexus-timer-display.is-stopwatch {
+  font-size: var(--nexus-text-2xl, 2em);
+}
+
+.nexus-timer-display.is-finished-pulse {
+  animation: nexus-pulse-finish 1.2s infinite ease-in-out;
+  color: #10b981;
+}
+
+@keyframes nexus-pulse-finish {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+.nexus-timer-progress-track {
+  width: 100%;
+  max-width: 260px;
+  height: 3px;
+  background: var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.nexus-timer-progress-bar {
+  height: 100%;
+  background: var(--nexus-primary-color, #1a73e8);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.nexus-timer-progress-bar.pomodoro-bar {
+  background: #ea580c;
+}
+
+.nexus-pomodoro-widget.is-mode-break .pomodoro-bar,
+.nexus-pomodoro-widget.is-mode-long_break .pomodoro-bar {
+  background: #10b981;
+}
+
+.nexus-widget-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.nexus-widget-controls .nexus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 5px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+}
+
+.nexus-widget-controls .nexus-btn-primary {
+  background: var(--nexus-text-primary, #000000);
+  color: var(--nexus-ui-bg, #ffffff);
+  border-color: var(--nexus-text-primary, #000000);
+}
+
+[data-theme="dark"] .nexus-widget-controls .nexus-btn-primary {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.nexus-widget-controls .nexus-btn-primary:hover {
+  opacity: 0.88;
+}
+
+.nexus-widget-controls .nexus-btn-secondary {
+  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.04));
+  color: var(--nexus-text-primary);
+  border-color: var(--nexus-border-color);
+}
+
+.nexus-widget-controls .nexus-btn-secondary:hover {
+  background: var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+}
+
+.nexus-widget-controls .nexus-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   19b. Timer Widget (Pure Black Card, No Header, Swiss Dial Ring)
+   ========================================================================== */
+
+.nexus-sol-timer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  width: 330px;
+  min-width: 300px;
+  max-width: 380px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-timer-card,
+[data-theme="dark"] .nexus-sol-timer-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-timer-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nexus-widget-title-badge,
+.nexus-timer-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.nexus-widget-title-text,
+.nexus-timer-title-text {
+  font-size: 1em;
+  font-weight: var(--nexus-weight-semibold, 600);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.nexus-widget-status-dot,
+.nexus-timer-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.nexus-widget-status-dot.is-running,
+.nexus-timer-status-dot.is-running {
+  background: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.nexus-sol-timer-time {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-4xl, 2.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.nexus-timer-linear-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 2px 0 4px;
+}
+
+.nexus-timer-linear-progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nexus-sol-timer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.nexus-sol-timer-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nexus-sol-timer-chips-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nexus-timer-btn-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: none;
+  background: #3b82f6;
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-timer-btn-main:hover {
+  background: #2563eb;
+  transform: translateY(-0.5px);
+}
+
+.nexus-timer-btn-main.is-running {
+  background: #e11d48;
+}
+
+.nexus-timer-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-timer-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-timer-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-timer-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   20. Pomodoro Widget (Pure Black Card, No Header, Configurable + Live Ring)
+   ========================================================================== */
+
+.nexus-sol-pomo-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  width: 380px;
+  min-width: 350px;
+  max-width: 420px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-pomo-card,
+[data-theme="dark"] .nexus-sol-pomo-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-sol-pomo-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.nexus-pomo-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nexus-pomo-mode-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: #1c1c1e;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nexus-pomo-tab {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-pomo-tab.is-active {
+  background: #2c2c2e;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Inline Editable Minute Input */
+.nexus-pomo-custom-input-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #1c1c1e;
+  transition: all 0.15s ease;
+}
+
+.nexus-pomo-custom-input-box:hover,
+.nexus-pomo-custom-input-box:focus-within {
+  background: #28282a;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nexus-pomo-inline-input {
+  width: 30px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  text-align: right;
+  padding: 0;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.nexus-pomo-inline-input::-webkit-outer-spin-button,
+.nexus-pomo-inline-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.nexus-pomo-input-unit {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+}
+
+.nexus-sol-pomo-time {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.nexus-pomo-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nexus-pomo-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nexus-pomo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.nexus-pomo-dot.is-active {
+  background: #f97316;
+}
+
+.nexus-pomo-dot.is-current {
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.4);
+}
+
+.nexus-pomo-cycle-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.nexus-sol-pomo-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.nexus-pomo-btn-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 6px;
+  border: none;
+  background: #f97316;
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-pomo-btn-main:hover {
+  background: #ea580c;
+  transform: translateY(-0.5px);
+}
+
+.nexus-pomo-btn-main.is-running {
+  background: #e11d48;
+}
+
+.nexus-pomo-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-pomo-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-sol-pomo-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nexus-sol-pomo-dial {
+  display: block;
+  width: 80px;
+  height: 80px;
+}
+
+.nexus-pomo-dial-bg {
+  fill: #141416;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1.2;
+}
+
+.nexus-pomo-tick {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.nexus-pomo-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 3.2;
+}
+
+.nexus-pomo-progress-ring {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 44px 44px;
+  transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
+}
+
+/* ==========================================================================
+   20b. Stopwatch Widget (Pure Black Card, No Header, Sleek Digital + Laps)
+   ========================================================================== */
+
+.nexus-sol-stopwatch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  width: 330px;
+  min-width: 300px;
+  max-width: 380px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-stopwatch-card,
+[data-theme="dark"] .nexus-sol-stopwatch-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-stopwatch-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nexus-stopwatch-laps-pill {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nexus-timer-status-dot.is-running-emerald {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+.nexus-sol-stopwatch-time {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-4xl, 2.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.nexus-sol-stopwatch-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.nexus-stopwatch-btn-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: none;
+  background: #10b981;
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-stopwatch-btn-main:hover {
+  background: #059669;
+  transform: translateY(-0.5px);
+}
+
+.nexus-stopwatch-btn-main.is-running {
+  background: #e11d48;
+}
+
+.nexus-stopwatch-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-stopwatch-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-stopwatch-btn-ghost:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Laps in Pure Black Card */
+.nexus-sol-stopwatch-laps {
+  width: 100%;
+  max-height: 100px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: #141416;
+  margin-top: 4px;
+}
+
+.nexus-sol-laps-header {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  padding: 4px 8px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  background: #1c1c1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nexus-sol-lap-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  padding: 4px 8px;
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.nexus-sol-lap-row.is-fastest {
+  color: #10b981;
+}
+
+.nexus-sol-lap-row.is-slowest {
+  color: #f43f5e;
+}
+
+.lap-indicator {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  padding: 0 3px;
+  border-radius: 3px;
+  margin-left: 3px;
+}
+
+.lap-indicator.is-fastest {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.lap-indicator.is-slowest {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}
+
+.nexus-sol-stopwatch-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nexus-sol-stopwatch-dial {
+  display: block;
+}
+
+.nexus-stopwatch-dial-bg {
+  fill: #141416;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1.2;
+}
+
+.nexus-stopwatch-tick {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.nexus-stopwatch-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1.5;
+}
+
+.nexus-stopwatch-hand {
+  stroke: #10b981;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.nexus-stopwatch-cap {
+  fill: #10b981;
+}
+
+/* ==========================================================================
+   20c. Unit Converter Widget (Pure Black Card, No Header, Inline Groups)
+   ========================================================================== */
+
+.nexus-sol-converter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 14px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  min-width: 360px;
+  max-width: 480px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-converter-card,
+[data-theme="dark"] .nexus-sol-converter-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-timer-status-dot.is-running-cyan {
+  background: #06b6d4;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.4);
+}
+
+.nexus-converter-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Custom Nexus Dropdown System */
+.nexus-custom-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.nexus-custom-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #1c1c1e;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.nexus-custom-dropdown-trigger:hover {
+  background: #28282a;
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.nexus-custom-dropdown-trigger.is-unit {
+  height: 34px;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: #202023;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  padding: 0 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-custom-dropdown-trigger.is-unit span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  display: inline-block;
+}
+
+.nexus-custom-dropdown-trigger.is-unit:hover {
+  background: #28282c;
+  color: #ffffff;
+}
+
+.nexus-custom-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 140px;
+  max-height: 180px;
+  overflow-y: auto;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  padding: 4px;
+  display: none;
+  z-index: 99;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-custom-dropdown-wrap.is-open .nexus-custom-dropdown-menu {
+  display: flex;
+}
+
+.nexus-custom-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.nexus-custom-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-custom-dropdown-item.is-active {
+  color: #38bdf8;
+  font-weight: var(--nexus-weight-semibold, 600);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.nexus-sol-converter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nexus-sol-converter-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  min-width: 0;
+  height: 34px;
+  transition: border-color 0.15s ease;
+  overflow: hidden;
+}
+
+.nexus-sol-converter-group:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.nexus-sol-converter-input {
+  flex: 1;
+  min-width: 45px;
+  height: 100%;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.nexus-sol-converter-input::-webkit-outer-spin-button,
+.nexus-sol-converter-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.nexus-sol-converter-input.is-result {
+  color: #38bdf8;
+}
+
+.nexus-sol-swap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1c1c1e;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.nexus-sol-swap-btn:hover {
+  background: #ffffff;
+  color: #000000;
+  transform: scale(1.05);
+}
+
+.nexus-sol-converter-formula {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.nexus-formula-tag {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nexus-formula-expr {
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   21. ChatGPT-Styled World Clock (Digital + Live Analog Dial)
+   ========================================================================== */
+
+.nexus-sol-clock-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 14px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  width: 350px;
+  min-width: 350px;
+  max-width: 350px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-clock-card,
+[data-theme="dark"] .nexus-sol-clock-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-sol-clock-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nexus-sol-clock-time {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.nexus-sol-clock-title {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-medium, 500);
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 3px;
+}
+
+.nexus-sol-clock-relative {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.nexus-sol-clock-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nexus-sol-analog-clock {
+  display: block;
+}
+
+.nexus-analog-dial {
+  fill: #171717;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1.2;
+}
+
+.nexus-analog-num {
+  fill: rgba(255, 255, 255, 0.75);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-weight: var(--nexus-weight-semibold, 600);
+  user-select: none;
+}
+
+.nexus-analog-hour-hand {
+  stroke: #ffffff;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  transition: transform 0.2s cubic-bezier(0.4, 2, 0.6, 1);
+}
+
+.nexus-analog-min-hand {
+  stroke: #ffffff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  transition: transform 0.2s cubic-bezier(0.4, 2, 0.6, 1);
+}
+
+.nexus-analog-sec-hand {
+  stroke: #3b82f6;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  transition: transform 0.1s linear;
+}
+
+.nexus-analog-center-cap {
+  fill: #3b82f6;
+}
+
+/* ==========================================================================
+   22. Date Diff & Countdown Widget (Pure Black Card, Big Numbers, Minimal Date Range)
+   ========================================================================== */
+
+.nexus-sol-datediff-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  min-width: 340px;
+  max-width: 440px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-datediff-card,
+[data-theme="dark"] .nexus-sol-datediff-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-timer-status-dot.is-running-purple {
+  background: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.4);
+}
+
+.nexus-datediff-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nexus-datediff-hero-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nexus-datediff-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.nexus-datediff-num {
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-4xl, 2.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.nexus-datediff-unit {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #a855f7;
+  letter-spacing: 0.06em;
+}
+
+.nexus-datediff-substats {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nexus-datediff-pickers-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+/* Custom Nexus Date Picker System */
+.nexus-datepicker-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.nexus-datepicker-trigger {
+  width: 100%;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #18181b;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.nexus-datepicker-trigger:hover,
+.nexus-datepicker-wrap.is-open .nexus-datepicker-trigger {
+  background: #222226;
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.nexus-datepicker-trigger svg {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.nexus-datepicker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 220px;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: none;
+  animation: nexusFadeIn 0.12s ease-out;
+}
+
+.nexus-end-dp-container .nexus-datepicker-popover {
+  right: 0;
+  left: auto;
+}
+
+.nexus-dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.nexus-dp-month-title {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: #ffffff;
+  border: none;
+  background: transparent;
+}
+
+.nexus-dp-month-title.is-interactive {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.12s ease;
+}
+
+.nexus-dp-month-title.is-interactive:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #c084fc;
+}
+
+.nexus-dp-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #202024;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.nexus-dp-nav-btn:hover {
+  background: #2c2c32;
+  color: #ffffff;
+}
+
+.nexus-dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nexus-dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.nexus-dp-large-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.nexus-dp-item-cell {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: none;
+  background: #202024;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.nexus-dp-item-cell:hover:not(.is-dimmed) {
+  background: #2c2c32;
+  color: #ffffff;
+  transform: translateY(-0.5px);
+}
+
+.nexus-dp-item-cell.is-selected {
+  background: #a855f7 !important;
+  color: #ffffff !important;
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-dp-item-cell.is-dimmed {
+  color: rgba(255, 255, 255, 0.25);
+  background: transparent;
+}
+
+.nexus-dp-day {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-medium, 500);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  padding: 0;
+}
+
+.nexus-dp-day:hover:not(.is-dimmed) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.nexus-dp-day.is-dimmed {
+  color: rgba(255, 255, 255, 0.2);
+  cursor: default;
+}
+
+.nexus-dp-day.is-today {
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  color: #a855f7;
+  font-weight: var(--nexus-weight-semibold, 600);
+}
+
+.nexus-dp-day.is-selected {
+  background: #a855f7 !important;
+  color: #ffffff !important;
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-dp-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 6px;
+}
+
+.nexus-dp-today-btn {
+  border: none;
+  background: transparent;
+  color: #a855f7;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.nexus-dp-today-btn:hover {
+  background: rgba(168, 85, 247, 0.12);
+}
+
+.nexus-datediff-arrow {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-datediff-invalid {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: #f43f5e;
+}
+
+/* ==========================================================================
+   23. QR Generator Widget (Pure Black Card, No Header, Compact Horizontal)
+   ========================================================================== */
+
+.nexus-sol-qr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 14px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  min-width: 320px;
+  max-width: 440px;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .nexus-sol-qr-card,
+[data-theme="dark"] .nexus-sol-qr-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-sol-qr-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nexus-sol-qr-canvas-box {
+  padding: 6px;
+  background: #ffffff;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nexus-sol-qr-canvas {
+  display: block;
+  width: 90px;
+  height: 90px;
+}
+
+.nexus-sol-qr-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nexus-sol-qr-input-wrap {
+  width: 100%;
+}
+
+.nexus-sol-qr-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #18181b;
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.nexus-sol-qr-input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nexus-sol-qr-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-sol-qr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-sol-qr-btn.is-primary {
+  border: none;
+  background: #10b981;
+  color: #ffffff;
+}
+
+.nexus-sol-qr-btn.is-primary:hover {
+  background: #059669;
+}
+
+.nexus-sol-qr-btn.is-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nexus-sol-qr-btn.is-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-qr-input:focus {
+  border-color: var(--nexus-primary-color, #1a73e8);
+}
+
+/* ==========================================================================
+   26. Phase 2: Currency Converter Widget (.nexus-sol-currency-card)
+   ========================================================================== */
+.nexus-sol-currency-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-currency-card,
+[data-theme="dark"] .nexus-sol-currency-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-currency-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nexus-currency-rate-badge {
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-family: var(--nexus-font-mono, monospace);
+  white-space: nowrap;
+}
+
+.nexus-currency-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nexus-currency-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nexus-currency-input-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  height: 36px;
+  padding: 0 10px;
+  transition: border-color 0.15s ease;
+  min-width: 0;
+}
+
+.nexus-currency-input-box:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.nexus-currency-symbol {
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #10b981;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.nexus-currency-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.nexus-currency-input::-webkit-outer-spin-button,
+.nexus-currency-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Shared UI: NexusSearchSelect Dropdown Popover
+   ========================================================================== */
+.nexus-select-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nexus-select-btn {
+  width: 100%;
+  height: 36px;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.nexus-select-btn:hover {
+  background: #27272a;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.nexus-select-btn-flag {
+  font-size: var(--nexus-text-lg, 1.25em);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.nexus-select-btn-val {
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  color: #ffffff;
+  flex: 1;
+  text-align: left;
+}
+
+.nexus-select-chevron {
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.nexus-select-wrap:focus-within .nexus-select-chevron {
+  color: #ffffff;
+}
+
+/* Popover Card */
+.nexus-select-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: none;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+  animation: nexus-cur-fade 0.15s ease-out;
+  box-sizing: border-box;
+}
+
+.nexus-select-popover.is-open {
+  display: flex;
+}
+
+.nexus-select-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.nexus-select-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+}
+
+.nexus-select-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.nexus-select-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-select-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nexus-select-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.nexus-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.nexus-select-item:hover,
+.nexus-select-item.is-highlighted {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nexus-select-item.is-selected {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.nexus-select-item-flag {
+  font-size: var(--nexus-text-lg, 1.25em);
+  flex-shrink: 0;
+}
+
+.nexus-select-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.nexus-select-item-code {
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.nexus-select-item-name {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.nexus-select-item-symbol {
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--nexus-font-mono, monospace);
+}
+
+.nexus-select-check {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.nexus-select-empty {
+  padding: 16px;
+  text-align: center;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.nexus-currency-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  position: relative;
+}
+
+.nexus-currency-swap-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.nexus-currency-swap-btn:hover {
+  background: #27272a;
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* ==========================================================================
+   27. Phase 2: Crypto Tracker Widget (.nexus-sol-crypto-card)
+   ========================================================================== */
+.nexus-sol-crypto-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-crypto-card,
+[data-theme="dark"] .nexus-sol-crypto-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-crypto-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.nexus-crypto-tabs-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.nexus-crypto-tab-btn {
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  height: 24px;
+}
+
+.nexus-crypto-tab-btn:hover {
+  color: #ffffff;
+}
+
+.nexus-crypto-tab-btn.is-active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.nexus-crypto-search-slot .nexus-select-wrap {
+  width: 24px !important;
+}
+
+.nexus-crypto-search-slot .nexus-select-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-crypto-search-slot .nexus-select-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.nexus-crypto-search-slot .nexus-select-btn-val,
+.nexus-crypto-search-slot .nexus-select-btn-flag,
+.nexus-crypto-search-slot .nexus-select-chevron {
+  display: none;
+}
+
+.nexus-crypto-search-slot .nexus-select-btn::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+
+.nexus-crypto-search-slot .nexus-select-btn:hover::after {
+  opacity: 1;
+}
+
+.nexus-crypto-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.nexus-crypto-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2px;
+}
+
+.nexus-crypto-icon {
+  font-size: var(--nexus-text-base, 1em);
+}
+
+.nexus-crypto-fullname {
+  font-weight: var(--nexus-weight-semibold, 600);
+}
+
+.nexus-crypto-symbol-badge {
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: var(--nexus-font-mono, monospace);
+}
+
+.nexus-crypto-price-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.nexus-crypto-timeframe-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.nexus-crypto-change-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-family: var(--nexus-font-mono, monospace);
+}
+
+.nexus-crypto-change-pill.is-positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.nexus-crypto-change-pill.is-negative {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+}
+
+.nexus-crypto-timeframes {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.nexus-crypto-tf-btn {
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-crypto-tf-btn:hover {
+  color: #ffffff;
+}
+
+.nexus-crypto-tf-btn.is-active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.nexus-crypto-chart-container {
+  width: 100%;
+  height: 54px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.nexus-crypto-area-chart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.nexus-crypto-chart-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.nexus-crypto-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-crypto-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nexus-crypto-stat-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+}
+
+.nexus-crypto-stat-val {
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-mono, monospace);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ==========================================================================
+   28. Phase 2: Loan Calculator Widget (.nexus-sol-loan-card)
+   ========================================================================== */
+.nexus-sol-loan-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-loan-card,
+[data-theme="dark"] .nexus-sol-loan-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-loan-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nexus-loan-hero-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.nexus-loan-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-loan-hero-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.nexus-loan-hero-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: #38bdf8;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.nexus-loan-hero-per {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nexus-loan-ratio-wrap {
+  margin-bottom: 12px;
+}
+
+.nexus-loan-ratio-bar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  gap: 2px;
+}
+
+.nexus-loan-ratio-segment {
+  height: 100%;
+  display: block;
+  flex-shrink: 0;
+  border-radius: 999px;
+  transition: flex 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nexus-loan-ratio-segment.is-principal {
+  background: #38bdf8;
+}
+
+.nexus-loan-ratio-segment.is-interest {
+  background: #f59e0b;
+}
+
+.nexus-loan-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.nexus-loan-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nexus-loan-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+}
+
+.nexus-loan-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: var(--nexus-weight-medium, 500);
+}
+
+.nexus-loan-num-display {
+  color: #ffffff;
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-base, 1em);
+}
+
+.nexus-loan-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+  margin: 3px 0;
+}
+
+.nexus-loan-summary-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-loan-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nexus-loan-summary-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-loan-summary-val {
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+.nexus-loan-summary-val.is-amber {
+  color: #f59e0b;
+}
+
+/* ==========================================================================
+   29. Compound Interest Widget (.nexus-sol-compound-card)
+   ========================================================================== */
+.nexus-sol-compound-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-compound-card,
+[data-theme="dark"] .nexus-sol-compound-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-compound-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nexus-widget-status-dot.is-running-emerald {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+.nexus-widget-status-dot.is-running-cyan {
+  background: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+}
+
+.nexus-compound-hero-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.nexus-compound-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-compound-hero-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.nexus-compound-chart-box {
+  width: 100%;
+  height: 72px;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  overflow: visible;
+  margin: 4px 0 12px;
+}
+
+.nexus-compound-chart-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.nexus-compound-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.nexus-compound-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-compound-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+}
+
+.nexus-compound-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: var(--nexus-weight-medium, 500);
+}
+
+.nexus-compound-num-display {
+  color: #ffffff;
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-base, 1em);
+}
+
+.nexus-compound-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  accent-color: #10b981;
+  cursor: pointer;
+  margin: 3px 0;
+}
+
+.nexus-compound-summary-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-compound-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nexus-compound-summary-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-compound-summary-val {
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+.nexus-compound-summary-val.is-emerald {
+  color: #10b981;
+}
+
+/* ==========================================================================
+   30. Tip Splitter Widget (.nexus-sol-tip-card)
+   ========================================================================== */
+.nexus-sol-tip-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-tip-card,
+[data-theme="dark"] .nexus-sol-tip-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-tip-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nexus-tip-hero-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.nexus-tip-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-tip-hero-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.nexus-tip-hero-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: #38bdf8;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.nexus-tip-hero-per {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nexus-tip-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.nexus-tip-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nexus-tip-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+}
+
+.nexus-tip-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: var(--nexus-weight-medium, 500);
+}
+
+.nexus-tip-num-display {
+  color: #ffffff;
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-base, 1em);
+}
+
+.nexus-tip-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+  margin: 2px 0;
+}
+
+.nexus-tip-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.nexus-tip-chip {
+  flex: 1;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-tip-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-tip-chip.is-active {
+  background: #38bdf8;
+  color: #000000;
+  border-color: #38bdf8;
+  box-shadow: 0 1px 4px rgba(56, 189, 248, 0.3);
+}
+
+.nexus-tip-stepper-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1c1c1e;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nexus-tip-step-btn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.nexus-tip-step-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nexus-tip-stepper-count {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+  min-width: 14px;
+  text-align: center;
+}
+
+.nexus-tip-summary-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-tip-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nexus-tip-summary-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-tip-summary-val {
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+.nexus-tip-summary-val.is-cyan {
+  color: #38bdf8;
+}
+
+/* ==========================================================================
+   32. Gold Price Tracker Widget (.nexus-sol-gold-card)
+   ========================================================================== */
+.nexus-sol-gold-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-gold-card,
+[data-theme="dark"] .nexus-sol-gold-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-gold-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.nexus-widget-status-dot.is-running-amber {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
+}
+
+.nexus-gold-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-gold-change-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-gold-change-badge.is-up {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.nexus-gold-change-badge.is-down {
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.nexus-gold-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-gold-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.nexus-gold-unit-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 10px;
+}
+
+.nexus-gold-unit-tab {
+  flex: 1;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-gold-unit-tab:hover {
+  color: #ffffff;
+}
+
+.nexus-gold-unit-tab.is-active {
+  background: #f59e0b;
+  color: #000000;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.35);
+}
+
+.nexus-gold-hero-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.nexus-gold-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-gold-hero-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.nexus-gold-hero-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.nexus-gold-timeframe-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.nexus-gold-tf-btn {
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 10.5px;
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-gold-tf-btn:hover {
+  color: #ffffff;
+}
+
+.nexus-gold-tf-btn.is-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.nexus-gold-chart-box {
+  width: 100%;
+  height: 64px;
+  margin: 2px 0 10px;
+  overflow: visible;
+}
+
+.nexus-gold-chart-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.nexus-gold-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.nexus-gold-calc-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.nexus-gold-calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+}
+
+.nexus-gold-stepper-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nexus-gold-step-btn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.nexus-gold-step-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nexus-gold-qty-display {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+  min-width: 14px;
+  text-align: center;
+}
+
+.nexus-gold-calc-total-val {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #f59e0b;
+}
+
+.nexus-gold-summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-gold-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nexus-gold-summary-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-gold-summary-val {
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   31. Phase 3: Live Weather Widget (.nexus-sol-weather-card)
+   ========================================================================== */
+.nexus-sol-weather-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-weather-card,
+[data-theme="dark"] .nexus-sol-weather-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-weather-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.nexus-weather-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-weather-unit-btn {
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-weather-unit-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nexus-weather-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.nexus-weather-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.nexus-weather-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.nexus-weather-temp-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.nexus-weather-temp-val {
+  font-size: var(--nexus-text-4xl, 2.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.nexus-weather-condition-tag {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  margin-top: 4px;
+}
+
+.nexus-weather-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nexus-weather-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-weather-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nexus-weather-stat-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-weather-stat-val {
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   32. Phase 3: 7-Day & 24-Hour Forecast Widget (.nexus-sol-forecast-card)
+   ========================================================================== */
+.nexus-sol-forecast-card {
+  width: 380px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 18px 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-forecast-card,
+[data-theme="dark"] .nexus-sol-forecast-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-forecast-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.nexus-forecast-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nexus-forecast-subtitle {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-medium, 500);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.nexus-forecast-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-forecast-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-forecast-pill-btn span.is-active {
+  color: #ffffff;
+}
+
+.nexus-forecast-pill-divider {
+  opacity: 0.35;
+  font-weight: var(--nexus-weight-regular, 400);
+}
+
+.nexus-forecast-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nexus-forecast-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-forecast-ghost-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.nexus-forecast-hourly-section {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-forecast-hourly-scroller {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.nexus-forecast-hourly-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.nexus-forecast-hour-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+
+.nexus-forecast-hour-time {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.nexus-forecast-hour-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nexus-forecast-hour-pop {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #38bdf8;
+  height: 14px;
+  line-height: 14px;
+}
+
+.nexus-forecast-hour-temp {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-base, 1em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+}
+
+.nexus-forecast-days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nexus-forecast-day-row {
+  display: grid;
+  grid-template-columns: 52px 56px 32px 1fr 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.nexus-forecast-day-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nexus-forecast-day-name {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nexus-forecast-day-name.is-today {
+  color: #ffffff;
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-forecast-day-icon-col {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nexus-forecast-mini-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nexus-forecast-rain-prob {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  min-width: 28px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.nexus-forecast-rain-prob.is-rain-high {
+  color: #38bdf8;
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-forecast-rain-prob.is-rain-low {
+  color: rgba(56, 189, 248, 0.75);
+}
+
+.nexus-forecast-rain-prob.is-rain-zero {
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: var(--nexus-weight-regular, 400);
+}
+
+.nexus-forecast-min-temp {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.5);
+  text-align: right;
+}
+
+.nexus-forecast-bar-track {
+  width: 100%;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.nexus-forecast-bar-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 100%);
+}
+
+.nexus-forecast-max-temp {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+  text-align: left;
+}
+
+.nexus-forecast-insights-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-forecast-insight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nexus-forecast-insight-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-forecast-insight-val {
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+
+.nexus-forecast-loading-state {
+  padding: 24px 0;
+  text-align: center;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ==========================================================================
+   33. Phase 3: Air Quality Index Widget (.nexus-sol-aqi-card)
+   ========================================================================== */
+.nexus-sol-aqi-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-aqi-card,
+[data-theme="dark"] .nexus-sol-aqi-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-aqi-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.nexus-aqi-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+}
+
+.nexus-aqi-hero-block {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.nexus-aqi-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-aqi-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.nexus-aqi-hero-val {
+  font-size: var(--nexus-text-4xl, 2.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.nexus-aqi-status-chip {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  border: 1px solid transparent;
+}
+
+.nexus-aqi-gauge-box {
+  margin-bottom: 14px;
+}
+
+.nexus-aqi-spectrum-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #10b981 0%, #f59e0b 33%, #f97316 50%, #ef4444 66%, #a855f7 85%, #7f1d1d 100%);
+  position: relative;
+}
+
+.nexus-aqi-gauge-marker {
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  transition: left 0.3s ease;
+}
+
+.nexus-aqi-spectrum-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+}
+
+.nexus-aqi-pollutants-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+}
+
+.nexus-aqi-pollutant-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-aqi-pollutant-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.nexus-aqi-pollutant-val {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+}
+
+.nexus-aqi-pollutant-val small {
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: var(--nexus-weight-regular, 400);
+}
+
+.nexus-aqi-advice-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-aqi-advice-text {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.3;
+}
+
+/* ==========================================================================
+   34. Phase 3: Sun & UV Index Widget (.nexus-sol-sunuv-card)
+   ========================================================================== */
+.nexus-sol-sunuv-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-sunuv-card,
+[data-theme="dark"] .nexus-sol-sunuv-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-sunuv-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.nexus-sunuv-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+}
+
+.nexus-sunuv-hero-block {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.nexus-sunuv-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-sunuv-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.nexus-sunuv-hero-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.nexus-sunuv-status-chip {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  border: 1px solid transparent;
+}
+
+.nexus-sunuv-arc-box {
+  width: 100%;
+  height: 76px;
+  margin: 4px 0 10px;
+  overflow: visible;
+}
+
+.nexus-sunuv-arc-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.nexus-sunuv-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-sunuv-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-sunuv-summary-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nexus-sunuv-summary-val {
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   35. Phase 3: BMI & TDEE Health Calculator (.nexus-sol-bmitdee-card)
+   ========================================================================== */
+.nexus-sol-bmitdee-card {
+  width: 350px;
+  background: #0d0d0d;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-bmitdee-card,
+[data-theme="dark"] .nexus-sol-bmitdee-card {
+  background: #0d0d0d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-bmitdee-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.nexus-bmitdee-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px;
+  border-radius: 7px;
+}
+
+.nexus-bmitdee-tab-btn {
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  cursor: pointer;
+}
+
+.nexus-bmitdee-tab-btn.is-active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.nexus-bmitdee-hero-block {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.nexus-bmitdee-hero-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-bmitdee-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.nexus-bmitdee-hero-val {
+  font-size: var(--nexus-text-3xl, 2.25em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.nexus-bmitdee-unit-tag {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nexus-bmitdee-status-chip {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  border: 1px solid transparent;
+}
+
+.nexus-bmitdee-gauge-box {
+  margin-bottom: 12px;
+}
+
+.nexus-bmitdee-spectrum-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #38bdf8 0%, #10b981 40%, #f59e0b 70%, #ef4444 100%);
+  position: relative;
+}
+
+.nexus-bmitdee-gauge-marker {
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  transition: left 0.2s ease;
+}
+
+.nexus-bmitdee-spectrum-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  margin-top: 4px;
+}
+
+.nexus-bmitdee-goals-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nexus-bmitdee-goal-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.nexus-bmitdee-goal-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.5);
+  display: block;
+}
+
+.nexus-bmitdee-goal-val {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+}
+
+.nexus-bmitdee-goal-val.is-cyan { color: #38bdf8; }
+.nexus-bmitdee-goal-val.is-amber { color: #f59e0b; }
+
+.nexus-bmitdee-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nexus-bmitdee-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-bmitdee-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+}
+
+.nexus-bmitdee-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: var(--nexus-weight-medium, 500);
+}
+
+.nexus-bmitdee-num-display {
+  color: #ffffff;
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+}
+
+.nexus-bmitdee-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  accent-color: #10b981;
+  cursor: pointer;
+}
+
+.nexus-bmitdee-summary-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nexus-bmitdee-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nexus-bmitdee-summary-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.nexus-bmitdee-summary-val {
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ==========================================================================
+   37. Phase 5: 2D Function Grapher (.nexus-sol-plotter-card)
+   ========================================================================== */
+.nexus-sol-plotter-card {
+  width: 410px;
+  max-width: 100%;
+  background: #0d0f12;
+  color: #ffffff;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-plotter-card,
+[data-theme="dark"] .nexus-sol-plotter-card {
+  background: #0d0f12;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.nexus-plotter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.nexus-plotter-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nexus-plotter-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.15));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.nexus-plotter-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nexus-plotter-title {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.nexus-plotter-subtitle {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nexus-plotter-toolbar {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.nexus-plotter-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-plotter-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.nexus-plotter-input-container {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 3px 4px 3px 10px;
+  gap: 6px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.nexus-plotter-input-container:focus-within {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12);
+}
+
+.nexus-plotter-fn-prefix {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-style: italic;
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: #38bdf8;
+  white-space: nowrap;
+}
+
+.nexus-plotter-formula-input {
+  flex: 1;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-medium, 500);
+  outline: none;
+}
+
+.nexus-plotter-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: none;
+  background: #38bdf8;
+  color: #0d0f12;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-bold, 700);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nexus-plotter-submit-btn:hover {
+  background: #7dd3fc;
+}
+
+.nexus-plotter-presets-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.nexus-plotter-presets-tag {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 10px;
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.nexus-plotter-presets-scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.nexus-plotter-presets-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.nexus-plotter-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.nexus-plotter-chip:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #ffffff;
+}
+
+.nexus-plotter-viewport {
+  position: relative;
+  width: 100%;
+  height: 230px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d0f12;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.nexus-plotter-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+}
+
+.nexus-plotter-tooltip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(13, 15, 18, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.nexus-plotter-error-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.92);
+  color: #ffffff;
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-medium, 500);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.nexus-plotter-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.nexus-plotter-range-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.nexus-plotter-range-axis {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 10px;
+  font-weight: var(--nexus-weight-bold, 700);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.nexus-plotter-range-val {
+  font-family: var(--nexus-font-mono, monospace);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   39. Phase 5: Periodic Table & Chemical Elements (.nexus-sol-periodic-card)
+   ========================================================================== */
+.nexus-sol-periodic-card {
+  width: 440px;
+  max-width: 100%;
+  background: #0d0f12;
+  color: #ffffff;
+  padding: 14px 15px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-theme="light"] .nexus-sol-periodic-card,
+[data-theme="dark"] .nexus-sol-periodic-card {
+  background: #0d0f12;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.nexus-periodic-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.nexus-periodic-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.nexus-periodic-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  font-size: var(--nexus-text-xs, 0.75em);
+  color: #a78bfa;
+}
+
+.nexus-periodic-heading {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-sm, 0.875em);
+  font-weight: var(--nexus-weight-bold, 700);
+  color: #ffffff;
+}
+
+.nexus-pt-inspector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 10px 4px;
+  margin-bottom: 6px;
+}
+
+.nexus-pt-hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.nexus-pt-hero-top {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.nexus-pt-hero-z {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 11px;
+  font-weight: var(--nexus-weight-bold, 700);
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1;
+}
+
+.nexus-pt-hero-mass {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1;
+}
+
+.nexus-pt-hero-symbol {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 2em;
+  font-weight: var(--nexus-weight-bold, 700);
+  line-height: 1;
+  color: #f59e0b;
+  margin-top: 1px;
+}
+
+.nexus-pt-hero-name {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: var(--nexus-text-xs, 0.75em);
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.nexus-pt-hero-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 185px;
+}
+
+.nexus-pt-spec-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nexus-pt-spec-label {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nexus-pt-spec-val {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 11px;
+  font-weight: var(--nexus-weight-semibold, 600);
+  color: #ffffff;
+  text-align: right;
+}
+
+.nexus-pt-spec-val sup {
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: 0.35em;
+  font-weight: var(--nexus-weight-bold, 700);
+  color: inherit;
+}
+
+/* Direct Authentic 18-Column Grid (No nested box border/bg) */
+.nexus-pt-grid-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding: 0;
+  scrollbar-width: thin;
+}
+
+.nexus-pt-18-grid {
+  display: grid;
+  grid-template-columns: repeat(18, 20px);
+  grid-template-rows: repeat(10, 22px);
+  gap: 2px;
+  width: max-content;
+  margin: 0 auto;
+  padding: 2px 0;
+  background: transparent;
+  border: none;
+}
+
+.nexus-pt-tile {
+  width: 20px;
+  height: 22px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nexus-pt-tile:hover {
+  transform: scale(1.35);
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+  border-color: #ffffff;
+}
+
+.nexus-pt-tile.is-active {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+  z-index: 5;
+}
+
+.nexus-pt-tile-z {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 6px;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.nexus-pt-tile-sym {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+/* Category colors (ACS Standard) */
+.nexus-pt-tile.is-cat-alkali { background: rgba(234, 179, 8, 0.22); color: #facc15; border-color: rgba(234, 179, 8, 0.35); }
+.nexus-pt-tile.is-cat-alkaline_earth { background: rgba(249, 115, 22, 0.22); color: #fb923c; border-color: rgba(249, 115, 22, 0.35); }
+.nexus-pt-tile.is-cat-transition { background: rgba(2, 132, 199, 0.22); color: #38bdf8; border-color: rgba(2, 132, 199, 0.35); }
+.nexus-pt-tile.is-cat-post_transition { background: rgba(100, 116, 139, 0.22); color: #cbd5e1; border-color: rgba(100, 116, 139, 0.35); }
+.nexus-pt-tile.is-cat-metalloid { background: rgba(13, 148, 136, 0.22); color: #2dd4bf; border-color: rgba(13, 148, 136, 0.35); }
+.nexus-pt-tile.is-cat-nonmetal { background: rgba(225, 29, 72, 0.22); color: #fb7185; border-color: rgba(225, 29, 72, 0.35); }
+.nexus-pt-tile.is-cat-halogen { background: rgba(6, 182, 212, 0.22); color: #22d3ee; border-color: rgba(6, 182, 212, 0.35); }
+.nexus-pt-tile.is-cat-noble_gas { background: rgba(139, 92, 246, 0.22); color: #a78bfa; border-color: rgba(139, 92, 246, 0.35); }
+.nexus-pt-tile.is-cat-lanthanide { background: rgba(244, 63, 94, 0.22); color: #fda4af; border-color: rgba(244, 63, 94, 0.35); }
+.nexus-pt-tile.is-cat-actinide { background: rgba(16, 185, 129, 0.22); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+
+/* Placeholder tile */
+.nexus-pt-placeholder-tile {
+  width: 20px;
+  height: 22px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 0;
+  opacity: 0.6;
+}
+
+.nexus-pt-placeholder-tile .nexus-pt-tile-z {
+  font-size: 5px;
+}
+.nexus-pt-placeholder-tile .nexus-pt-tile-sym {
+  font-size: 6px;
+}
+
+/* Legend bar (Clean inline, no border-top divider) */
+.nexus-pt-legend-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: none;
+}
+
+.nexus-pt-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nexus-pt-legend-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nexus-pt-legend-text {
+  font-family: var(--nexus-font-sans, Inter, sans-serif);
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+/* Categories Colors */
+.nexus-pt-tile.is-cat-nonmetal { border-color: rgba(56, 189, 248, 0.3); }
+.nexus-pt-tile.is-cat-noble_gas { border-color: rgba(168, 85, 247, 0.3); }
+.nexus-pt-tile.is-cat-alkali { border-color: rgba(239, 68, 68, 0.3); }
+.nexus-pt-tile.is-cat-alkaline_earth { border-color: rgba(249, 115, 22, 0.3); }
+.nexus-pt-tile.is-cat-metalloid { border-color: rgba(16, 185, 129, 0.3); }
+.nexus-pt-tile.is-cat-halogen { border-color: rgba(234, 179, 8, 0.3); }
+.nexus-pt-tile.is-cat-transition { border-color: rgba(245, 158, 11, 0.3); }
+.nexus-pt-tile.is-cat-post_transition { border-color: rgba(99, 102, 241, 0.3); }
+.nexus-pt-tile.is-cat-actinide { border-color: rgba(236, 72, 153, 0.3); }

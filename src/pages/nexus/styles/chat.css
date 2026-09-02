@@ -55,7 +55,7 @@ body {
   --nexus-border-color: rgba(0, 0, 0, 0.12);
   --nexus-font-sans: 'Inter', sans-serif;
   --nexus-font-serif: 'Noto Serif', serif;
-  --nexus-font-mono: 'Google Sans Code', monospace;
+  --nexus-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --nexus-font-family: var(--nexus-font-sans);
   --nexus-weight-base: 400;
   --nexus-weight-regular: var(--nexus-weight-base);
@@ -460,9 +460,11 @@ body {
 .nexus-chat-answer.is-editing {
   width: 100% !important;
   max-width: 100% !important;
-  border: 1.5px solid var(--nexus-primary-color) !important;
-  transition: border-color 0.2s ease !important;
-  background: var(--nexus-input-bg) !important;
+  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.14)) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.1) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  background: var(--nexus-ui-bg, #ffffff) !important;
+  background-clip: padding-box !important;
   padding: 10px !important;
   border-radius: 12px !important;
   z-index: 10;
@@ -470,15 +472,18 @@ body {
   box-sizing: border-box !important;
   overflow: visible !important;
   cursor: default !important;
-}
-
-.nexus-chat-answer.nexus-answer-editing {
   max-height: 60vh !important;
   display: flex !important;
   flex-direction: column !important;
 }
 
-.nexus-chat-answer.nexus-answer-editing .nexus-answer-content {
+[data-theme="dark"] .nexus-chat-answer.is-editing {
+  background: var(--nexus-input-bg, #2c2c2c) !important;
+  border: 1px solid var(--nexus-border-color, rgba(255, 255, 255, 0.16)) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+}
+
+.nexus-chat-answer.is-editing .nexus-answer-content {
   flex: 1 !important;
   max-height: none !important;
   height: auto !important;
@@ -963,30 +968,52 @@ body {
 .nexus-answer-nav {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-top: 12px;
-  padding: 4px 6px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 20px;
-  font-size: 0.85em;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  font-size: 13px !important;
   color: var(--nexus-text-secondary);
   user-select: none;
   width: fit-content;
 }
 
 [data-theme="dark"] .nexus-answer-nav {
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent !important;
+}
+
+.nexus-answer-version-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px !important;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  padding: 2px 7px;
+  margin-right: 6px;
+  border-radius: 10px;
+  background: #18181b;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .nexus-answer-version-tag {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nexus-answer-nav-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 12px;
+  padding: 0;
+  border-radius: 6px;
   color: var(--nexus-text-secondary);
-  font-size: 0.92em;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  font-size: 13px !important;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -995,7 +1022,12 @@ body {
 }
 
 .nexus-answer-nav-btn:hover:not(:disabled) {
-  background: #efefef !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: var(--nexus-text-primary) !important;
+}
+
+[data-theme="dark"] .nexus-answer-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12) !important;
   color: var(--nexus-text-primary) !important;
 }
 
@@ -1007,10 +1039,11 @@ body {
 .nexus-answer-nav-counter {
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
-  min-width: 32px;
+  font-size: 13px !important;
+  font-weight: 500;
+  padding: 0 2px;
+  color: var(--nexus-text-secondary);
   text-align: center;
-  font-weight: var(--nexus-weight-medium);
-  font-size: 0.85em !important;
 }
 
 .nexus-chat-context:hover .nexus-context-remove {
@@ -1033,7 +1066,7 @@ body {
   box-shadow: none !important;
   color: var(--nexus-text-primary) !important;
   padding: 10px 16px !important;
-  border: 1.5px solid transparent !important;
+  border: 1px solid transparent !important;
   border-radius: 20px !important;
   border-bottom-right-radius: 14px !important;
   max-width: 85% !important;
@@ -1045,9 +1078,7 @@ body {
   outline: none !important;
   transition: background-color 0.12s ease, color 0.12s ease !important;
   margin-bottom: 0 !important;
-  position: relative !important;
   overflow: hidden !important;
-  margin-bottom: 0 !important;
 }
 
 .nexus-question-row {
@@ -1081,22 +1112,34 @@ body {
   opacity: 1 !important;
 }
 
-.nexus-chat-question.is-editing,
-.nexus-chat-question.nexus-question-editing {
-  border: none !important;
-  box-shadow: 0 0 0 1.5px var(--nexus-primary-color) !important;
+.nexus-chat-question.is-editing {
+  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.14)) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.1) !important;
   border-radius: 20px !important;
-  background: var(--nexus-input-bg) !important;
+  border-bottom-right-radius: 20px !important;
+  border-bottom-left-radius: 20px !important;
+  border-top-right-radius: 20px !important;
+  border-top-left-radius: 20px !important;
+  background: var(--nexus-ui-bg, #ffffff) !important;
+  background-clip: padding-box !important;
   width: 85% !important;
-  max-height: 450px !important;
-  overflow-y: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+[data-theme="dark"] .nexus-chat-question.is-editing {
+  background: var(--nexus-input-bg, #2c2c2c) !important;
+  border: 1px solid var(--nexus-border-color, rgba(255, 255, 255, 0.16)) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
 }
 
 .nexus-question-row-editing .nexus-question-actions-row {
   display: none !important;
 }
 
-.nexus-question-edit-toolbar {
+.nexus-edit-toolbar,
+.nexus-question-edit-toolbar,
+.nexus-answer-edit-toolbar {
   display: flex !important;
   gap: 8px !important;
   justify-content: flex-end !important;
@@ -1105,29 +1148,44 @@ body {
   border: none !important;
   padding: 0 !important;
   box-shadow: none !important;
-  margin-top: 4px !important;
+  margin-top: 8px !important;
 }
 
-.nexus-question-edit-toolbar .nexus-edit-btn {
+.nexus-edit-toolbar .nexus-edit-btn,
+.nexus-question-edit-toolbar .nexus-edit-btn,
+.nexus-answer-edit-toolbar .nexus-edit-btn {
   font-family: inherit !important;
   font-size: 0.93em !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
 }
 
-.nexus-question-edit-toolbar .nexus-edit-cancel {
+.nexus-edit-toolbar .nexus-edit-cancel,
+.nexus-question-edit-toolbar .nexus-edit-cancel,
+.nexus-answer-edit-toolbar .nexus-edit-cancel {
   background: transparent !important;
   border: none !important;
   color: var(--nexus-text-secondary) !important;
   padding: 6px 12px !important;
+  border-radius: 20px !important;
 }
 
-.nexus-question-edit-toolbar .nexus-edit-cancel:hover {
+.nexus-edit-toolbar .nexus-edit-cancel:hover,
+.nexus-question-edit-toolbar .nexus-edit-cancel:hover,
+.nexus-answer-edit-toolbar .nexus-edit-cancel:hover {
   background: #efefef !important;
   color: var(--nexus-text-primary) !important;
 }
 
-.nexus-question-edit-toolbar .nexus-edit-save {
+[data-theme="dark"] .nexus-edit-toolbar .nexus-edit-cancel:hover,
+[data-theme="dark"] .nexus-question-edit-toolbar .nexus-edit-cancel:hover,
+[data-theme="dark"] .nexus-answer-edit-toolbar .nexus-edit-cancel:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.nexus-edit-toolbar .nexus-edit-save,
+.nexus-question-edit-toolbar .nexus-edit-save,
+.nexus-answer-edit-toolbar .nexus-edit-save {
   background: #000000 !important;
   border: none !important;
   color: #ffffff !important;
@@ -1136,28 +1194,43 @@ body {
   font-weight: var(--nexus-weight-medium) !important;
 }
 
-.nexus-question-edit-toolbar .nexus-edit-save:hover {
+.nexus-edit-toolbar .nexus-edit-save:hover,
+.nexus-question-edit-toolbar .nexus-edit-save:hover,
+.nexus-answer-edit-toolbar .nexus-edit-save:hover {
   background: #222222 !important;
   filter: none !important;
 }
 
-[data-theme="dark"] .nexus-question-edit-toolbar .nexus-edit-save {
+[data-theme="dark"] .nexus-edit-toolbar .nexus-edit-save,
+[data-theme="dark"] .nexus-question-edit-toolbar .nexus-edit-save,
+[data-theme="dark"] .nexus-answer-edit-toolbar .nexus-edit-save {
   background: #ffffff !important;
   color: #000000 !important;
 }
 
-[data-theme="dark"] .nexus-question-edit-toolbar .nexus-edit-save:hover {
+[data-theme="dark"] .nexus-edit-toolbar .nexus-edit-save:hover,
+[data-theme="dark"] .nexus-question-edit-toolbar .nexus-edit-save:hover,
+[data-theme="dark"] .nexus-answer-edit-toolbar .nexus-edit-save:hover {
   background: #e0e0e0 !important;
   filter: none !important;
 }
 
-.nexus-question-edit-toolbar .nexus-edit-save:disabled {
+.nexus-edit-toolbar .nexus-edit-save:disabled,
+.nexus-question-edit-toolbar .nexus-edit-save:disabled,
+.nexus-answer-edit-toolbar .nexus-edit-save:disabled {
   background: #dedddd !important;
   color: #8e8e8e !important;
   cursor: not-allowed !important;
   pointer-events: none !important;
   filter: none !important;
   opacity: 1 !important;
+}
+
+[data-theme="dark"] .nexus-edit-toolbar .nexus-edit-save:disabled,
+[data-theme="dark"] .nexus-question-edit-toolbar .nexus-edit-save:disabled,
+[data-theme="dark"] .nexus-answer-edit-toolbar .nexus-edit-save:disabled {
+  background: #444444 !important;
+  color: #888888 !important;
 }
 
 [data-theme="dark"] .nexus-chat-question {
@@ -1198,10 +1271,7 @@ body {
   line-height: 1.65 !important;
 }
 
-.nexus-chat-question.is-editing>.nexus-question-content,
-.nexus-chat-question.is-editing>.nexus-answer-content,
-.nexus-chat-question.nexus-question-editing>.nexus-question-content,
-.nexus-chat-question.nexus-question-editing>.nexus-answer-content {
+.nexus-chat-question.is-editing>.nexus-question-content {
   outline: none !important;
   border: none !important;
   margin: 0 !important;
@@ -1265,19 +1335,6 @@ body {
   line-height: 1.65 !important;
 }
 
-.nexus-chat-question.is-editing .nexus-answer-content,
-.nexus-chat-question.nexus-question-editing .nexus-answer-content {
-  outline: none !important;
-  border: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  display: block !important;
-  width: 100% !important;
-  max-height: calc(1.65em * 12) !important;
-  overflow-y: auto !important;
-  cursor: text !important;
-  line-height: 1.65 !important;
-}
 
 .nexus-chat-answer {
   width: 100% !important;
@@ -1885,34 +1942,6 @@ body {
 
 [data-theme="dark"] .nexus-input-bar .nexus-model-btn:hover {
   background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.nexus-input-bar .nexus-model-dropdown {
-  position: absolute !important;
-  bottom: calc(100% + 8px) !important;
-  left: 0 !important;
-  right: auto !important;
-  min-width: 240px !important;
-  width: max-content !important;
-  max-width: 340px !important;
-  background: var(--nexus-ui-bg, #ffffff) !important;
-  backdrop-filter: none !important;
-  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.15)) !important;
-  border-radius: var(--nexus-radius-sm, 8px) !important;
-  box-shadow: none !important;
-  padding: 4px !important;
-  display: none !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-  font-size: inherit !important;
-  transition: none !important;
-  pointer-events: none;
-  z-index: 10000 !important;
-}
-
-.nexus-input-bar .nexus-model-dropdown.active {
-  display: flex !important;
-  pointer-events: auto !important;
 }
 
 .nexus-reasoning-item {
@@ -3086,28 +3115,6 @@ body {
   cursor: text;
 }
 
-.nexus-answer-edit-toolbar {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  gap: 8px !important;
-  pointer-events: auto !important;
-  user-select: none !important;
-  animation: nexusFadeIn 0.2s ease-out !important;
-}
-
-.nexus-edit-toolbar-spacer {
-  flex: 1 !important;
-}
-
-.nexus-edit-btn.nexus-edit-undo {
-  background: #ef4444 !important;
-  color: #fff !important;
-}
-
-.nexus-edit-btn.nexus-edit-undo:hover {
-  background: #dc2626 !important;
-}
 
 .nexus-wrapper {
   font-size: inherit !important;
@@ -3909,8 +3916,14 @@ body.is-sidepanel .layout.new-chat-homepage .nexus-chat-input-container,
 }
 
 /* ============================================================
-   KATEX MATH TYPOGRAPHY & UNICODE ACCENT HARMONIZATION
+   KATEX MATH TYPOGRAPHY & UNICODE ACCENT HARMONIZATION (100% INTER)
    ============================================================ */
+
+.nexus-chat-answer .katex,
+.nexus-chat-answer .katex * {
+  font-family: var(--nexus-font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+  font-style: normal !important;
+}
 
 .nexus-chat-answer .katex {
   font-size: 1em !important;
@@ -3932,39 +3945,9 @@ b .katex * {
   font-weight: 600 !important;
 }
 
-/* Ensure all text labels, mathrm, textrm, accent characters, and fallbacks use modern Inter font */
-.nexus-chat-answer .katex .text,
-.nexus-chat-answer .katex .text *,
-.nexus-chat-answer .katex .mathrm,
-.nexus-chat-answer .katex .textrm,
-.nexus-chat-answer .katex .textsf,
-.nexus-chat-answer .katex .mainrm,
-.nexus-chat-answer .katex .mord.text,
-.nexus-chat-answer .katex .mord.text *,
-.nexus-chat-answer .katex .mord.latin_fallback,
-.nexus-chat-answer .katex .latin_fallback,
-.nexus-chat-answer .katex .accent-body {
-  font-family: var(--nexus-font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
-  font-weight: inherit;
-  font-style: normal;
-  letter-spacing: 0.01em;
-}
-
 .nexus-chat-answer .katex .textbf,
 .nexus-chat-answer .katex .mathbf {
   font-weight: 600 !important;
-}
-
-/* Make numbers inside KaTeX blend seamlessly with Inter */
-.nexus-chat-answer .katex .mord:not(.mathnormal):not(.accent):not(.accent *) {
-  font-family: var(--nexus-font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-}
-
-/* Math variables retain elegant mathematical italic */
-.nexus-chat-answer .katex .mathnormal,
-.nexus-chat-answer .katex .mathit {
-  font-family: KaTeX_Math, 'Times New Roman', serif;
-  font-style: italic;
 }
 
 /* Operators, delimiters, relations with generous spacing */
@@ -3975,6 +3958,11 @@ b .katex * {
   color: var(--nexus-text-primary, currentColor);
 }
 
+.nexus-chat-answer .katex .mop {
+  margin-left: 0.12em !important;
+  margin-right: 0.22em !important;
+}
+
 .nexus-chat-answer .katex .mpunct {
   margin-right: 0.18em !important;
   color: var(--nexus-text-primary, currentColor);
@@ -3982,8 +3970,17 @@ b .katex * {
 
 /* Fraction typography & alignment */
 .nexus-chat-answer .katex .mfrac {
-  vertical-align: -0.45em !important;
-  padding: 0 0.15em !important;
+  padding: 0 0.12em !important;
+}
+
+/* Denominator clearance (prevents Vietnamese diacritics & ascenders from touching the fraction line) */
+.nexus-chat-answer .katex .mfrac .vlist > span:first-child {
+  transform: translateY(0.10em) !important;
+}
+
+/* Numerator clearance */
+.nexus-chat-answer .katex .mfrac .vlist > span:last-child {
+  transform: translateY(-0.03em) !important;
 }
 
 /* Matrix & aligned tables */
@@ -3991,29 +3988,26 @@ b .katex * {
   vertical-align: middle;
 }
 
-/* Display block math presentation */
+/* Display block math presentation (Clean & natural without box container) */
 .nexus-chat-answer .katex-display {
-  margin: 0.9em 0 !important;
-  padding: 10px 16px !important;
-  background: var(--nexus-ui-bg-light, rgba(0, 0, 0, 0.02));
-  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.06));
-  border-radius: 12px;
+  margin: 0.8em 0 !important;
+  padding: 4px 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
   overflow-x: auto;
   overflow-y: hidden;
   text-align: center;
-  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .nexus-chat-answer .katex-display > .katex {
-  font-size: 1em !important;
+  font-size: 1.05em !important;
   display: inline-block;
 }
 
 .nexus-chat-answer .katex .frac-line {
   border-bottom-width: 1.2px !important;
   border-color: currentColor !important;
-  margin-top: 1px !important;
-  margin-bottom: 1px !important;
 }
 
 *:not(.katex):not(.katex *):not(.nexus-chat-scroll-content):not(.nexus-chat-input):not(pre):not(.notes-editor-body):not(.notes-pane-body):not(.notes-list):not(.show-scrollbar) {
@@ -5283,7 +5277,7 @@ b .katex * {
   top: 100% !important;
   left: 0 !important;
   right: 0 !important;
-  height: 12px !important;
+  height: 30px !important;
   background: linear-gradient(to bottom, rgb(var(--nexus-ui-base-rgb)), transparent) !important;
   pointer-events: none !important;
   z-index: 1 !important;
@@ -5671,18 +5665,19 @@ b .katex * {
 .nexus-actions .nexus-answer-nav {
   margin-left: auto !important;
   margin-top: 0 !important;
-  padding: 2px 6px !important;
-  border-radius: 14px !important;
-  background: rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.06)) !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  font-size: 13px !important;
 }
 
 [data-theme="dark"] .nexus-actions .nexus-answer-nav {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 .nexus-actions .nexus-answer-nav-btn {
@@ -5697,6 +5692,7 @@ b .katex * {
   border: none !important;
   cursor: pointer !important;
   color: var(--nexus-text-secondary) !important;
+  font-size: 13px !important;
   transition: all 0.15s ease !important;
 }
 
@@ -5716,10 +5712,10 @@ b .katex * {
 }
 
 .nexus-actions .nexus-answer-nav-counter {
-  font-size: 0.76rem !important;
+  font-size: 13px !important;
   font-weight: 500 !important;
   color: var(--nexus-text-secondary) !important;
-  padding: 0 4px !important;
+  padding: 0 2px !important;
   font-variant-numeric: tabular-nums;
   user-select: none;
 }
